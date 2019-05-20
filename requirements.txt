@@ -1,0 +1,6 @@
+# Drakkar-Software requirements
+OctoBot-Channels
+OctoBot-Commons
+OctoBot-Websockets
+
+cython

@@ -1,0 +1,33 @@
+notifications:
+  email: false
+sudo: enabled
+os: linux
+language: python
+cache: pip
+python: 3.7-dev
+install:
+  - python3 -m pip install -r requirements.txt
+
+matrix:
+  include:
+    - name: "Linux - Python 3 nightly"
+      os: linux
+      python: nightly
+      language: python
+      script:
+        - python3 setup.py install
+
+deploy:
+  - provider: pypi
+    user:
+      secure: o3FvNawurGtoAhi+jazEyxIU8TLSICVeyw8y764N83Rtz4nDNebrjUdpHaVNbxvdGPWWVe4MJCgsNcSVLIfDVDQU17aUEzhD+RhTJ9qfKfFys0DhsEOLqrRsDg8j/SHd+1YqqiiBMCuK5xKNsx64EeV3At9XYg+F4gmRWWZZtF2ihBCx5oFV6B0+K6SR99cNiNVa7lqaQVxwOjRAjllfSV57yOw2vebahA8XegdGRnrSuCRLSQGG2vxsoqJh7sJY/QMFjdHloPJcWkaE/R2UQqeOE/M8+38o2a/G6kxJM9cbJowdaIMUptttmqUtwHvNLO8wXROxxSisz6RP21sZ5uGtC+NmPDVxBlW1UTLl5eUgaR79Rz5721QtVZImqPf5LBDVzpaa1BH63XoDuG/utIHgylQbKhIswZT5c17+2G4D0DKIfpx3v8aW/7OydU9IyyXVVCz4AJA+WG+Csm+efRULeHjBp75O1gHaSGf/Q83Qy5YhL5+IqI3SGENZ2R7cx87+4p/W+MBsi4F6AVHw5B3+SozmOyTGnwOd+g5eNgQn2mmzvvawYCU0796Lvzksxs7MyfLsoDchu73U+jmL+XDjLrwHrP1P5d43UL+bZst7JBptoMRQLgxSWov669WzGVIWt1uC+H3Q3DTe6JaKkqJBMn2erDLVE0XmjONA2nM=
+    password:
+      secure: PSieH+Z9+7rQ3TuJq0+Z28NkPB7hhnyJYeTBXAP1TbKH29J2pShpRbUG5SPYQVJVs0hvlZVNjLl/Do45S7EdRdq8Bx8uo9MgYR6+DEDqa3RSzjVYMn/v+akDwAbPoAQdPbc4Cbdupipm4vqZ0GjqLQwtuyUZCLua/ldIfoWMORHrXIAH+7QCDv3YdTlVcR1o/hP+Vb/qdj15Fy9EZDyZhLxkUl9u4nWCN4FXrK/p5akg4iTSFRkU3TMFlhkYAq8zvmP/lWjNlpAAbEPsNAqNNkn9UABAQK/LFlu3P9iGwQRkflhs8Bylogku4AMEHp3uC52dhU4xFdsBdAb2qyeHqYhwO3R7dMEUvcLjByEEDVKpSPEamF1mJSHLVe615q+UsqDQRmQU1p1wYh+oB3SnWbXa4GhMq/vUm/14sdPoJeAX/9M6JsBVxYVnLcAH2SXMVsZUREqUdCEyyFUfGYWpYC90dl+fp9SjpzCP6gTWubNu/iO3A0Jvqu1+jh/9RJ0jzDKti3YZD/IMMspZwOY7SNc3ubQqbv7ogiqgyNpObmw2xwR73zYppgdUrwq3VBsGC9D08+2ZrRl/jvo6++OdiejRfnuELNqOuh/zVGVFR3T4aM54ErXwzzBg9CENnwyoBbPFIwsPqv/ymuZZTrH3p/QgL4pgbmjfqkwl0mGNmBs=
+    skip_existing: true
+    skip_cleanup: true
+    distributions: "sdist bdist_wheel"
+    on:
+      repo: Drakkar-Software/OctoBot-Trading
+      branch: master
+      tags: true
+      condition: $TRAVIS_OS_NAME = 'linux'
