@@ -44,8 +44,8 @@ class OHLCVUpdater(OHLCVProducer):
 #
 #
 # class OHLCVUpdaterProducer(ExchangeProducer):
-#     def __init__(self, exchange):
-#         super().__init__(exchange)
+#     def __init__(self, simulator):
+#         super().__init__(simulator)
 #         self.refreshed_times: int = 0
 #         self.last_update: int = 0
 #
@@ -56,11 +56,11 @@ class OHLCVUpdater(OHLCVProducer):
 #
 #
 # class OHLCVUpdater(ExchangeProducer):
-#     def __init__(self, exchange):
-#         super().__init__(exchange)
-#         self.config = self.exchange.config
-#         self.updated_time_frames = self.exchange.time_frames
-#         self.updated_traded_pairs = self.exchange.traded_pairs
+#     def __init__(self, simulator):
+#         super().__init__(simulator)
+#         self.config = self.simulator.config
+#         self.updated_time_frames = self.simulator.time_frames
+#         self.updated_traded_pairs = self.simulator.traded_pairs
 #
 #         self.ohlcv_producers: Dict[Dict[OHLCVUpdaterProducer]] = {}
 #         self.symbol_evaluators = []
@@ -75,14 +75,14 @@ class OHLCVUpdater(OHLCVProducer):
 #         # create producers
 #         self.ohlcv_producers = {
 #             symbol: {
-#                 time_frame: OHLCVUpdaterProducer(self.exchange)
+#                 time_frame: OHLCVUpdaterProducer(self.simulator)
 #                 for time_frame in self.updated_time_frames
 #             }
 #             for symbol in self.updated_traded_pairs
 #         }
 #
 #         self.symbol_evaluators = [
-#             self.exchange.get_symbol_data(symbol)
+#             self.simulator.get_symbol_data(symbol)
 #             for symbol in self.updated_traded_pairs
 #         ]
 #
@@ -142,26 +142,26 @@ class OHLCVUpdater(OHLCVProducer):
 #         # test if we need to initialize backtesting features
 #         if self.backtesting_enabled:
 #             for symbol in self.updated_traded_pairs:
-#                 self.exchange.get_exchange().init_candles_offset(time_frames, symbol)
+#                 self.simulator.get_exchange().init_candles_offset(time_frames, symbol)
 #
 #     async def _refresh_backtesting_time_frame_data(self, time_frame, symbol, producer: OHLCVUpdaterProducer):
 #         try:
-#             if self.exchange.get_exchange().should_update_data(time_frame, symbol):
+#             if self.simulator.get_exchange().should_update_data(time_frame, symbol):
 #                 await producer.send(True)  # TODO
 #         except BacktestingEndedException as e:
 #             self.logger.info(e)
 #             self.keep_running = False
-#             await self.exchange.get_exchange().end_backtesting(symbol)
+#             await self.simulator.get_exchange().end_backtesting(symbol)
 #
 #     # currently used only during backtesting, will force refresh of each supervised task
 #     async def update_backtesting_order_status(self):
-#         order_manager = self.exchange.get_trader().get_order_manager()
+#         order_manager = self.simulator.get_trader().get_order_manager()
 #         await order_manager.force_update_order_status(simulated_time=True)
 #
 #     async def _refresh_time_frame_data(self, time_frame, symbol, producer: OHLCVUpdaterProducer):
 #         try:
-#             # ask exchange to refresh data
-#             await self.exchange.get_exchange().get_symbol_prices(symbol, time_frame)
+#             # ask simulator to refresh data
+#             await self.simulator.get_exchange().get_symbol_prices(symbol, time_frame)
 #             await producer.send(True)  # TODO
 #         except CancelledError as e:
 #             raise e
@@ -171,10 +171,10 @@ class OHLCVUpdater(OHLCVProducer):
 #
 #     async def trigger_symbols_finalize(self):
 #         sort_symbol_evaluators = sorted(self.symbol_evaluators,
-#                                         key=lambda s: abs(s.get_average_strategy_eval(self.exchange)),
+#                                         key=lambda s: abs(s.get_average_strategy_eval(self.simulator)),
 #                                         reverse=True)
 #         for symbol_evaluator in sort_symbol_evaluators:
-#             await symbol_evaluator.finalize(self.exchange)
+#             await symbol_evaluator.finalize(self.simulator)
 #
 #     def get_refreshed_times(self, time_frame, symbol) -> int:
 #         try:

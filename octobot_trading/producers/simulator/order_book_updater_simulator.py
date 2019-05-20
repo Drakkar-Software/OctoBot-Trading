@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.producers.exchange.order_book_updater import OrderBookUpdater
+from octobot_trading.producers.order_book_updater import OrderBookUpdater
 
 
 class OrderBookUpdaterSimulator(OrderBookUpdater):

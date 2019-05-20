@@ -14,8 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.producers.exchange.balance_updater import BalanceUpdater
+from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
 
 
-class BalanceUpdaterSimulator(BalanceUpdater):
+class RecentTradeUpdaterSimulator(RecentTradeUpdater):
     pass

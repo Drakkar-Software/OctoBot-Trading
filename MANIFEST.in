@@ -1,0 +1,1 @@
+recursive-include octobot_trading *.pyx *.pxd

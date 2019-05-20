@@ -13,16 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from abc import ABCMeta
 
-from octobot_channels.channels.exchange_channel import ExchangeChannel
-from octobot_trading.producers.exchange.exchange_updater import ExchangeUpdater
+from octobot_channels.channels.exchange_channel cimport ExchangeChannel
+from octobot_trading.producers.exchange_updater cimport ExchangeUpdater
 
+cdef class ExchangeUpdaterSimulator(ExchangeUpdater):
 
-class ExchangeUpdaterSimulator(ExchangeUpdater):
-    __metaclass__ = ABCMeta
-
-    def __init__(self, channel: ExchangeChannel):
+    def __init__(self, ExchangeChannel channel):
         super().__init__()
         self.channel = channel
         self.exchange_manager = channel.exchange_manager

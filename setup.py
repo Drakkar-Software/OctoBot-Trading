@@ -21,9 +21,19 @@ from setuptools import setup, Extension
 
 from octobot_trading import PROJECT_NAME, VERSION
 
-ext_modules = []
-
 PACKAGES = find_packages(exclude=["tests"])
+
+packages_list = ["octobot_trading.producers.exchange_updater",
+                 "octobot_trading.producers.simulator.exchange_updater_simulator"]
+
+PACKAGE_DATA = {
+    package: [f"{package.replace('.', '/')}.pxd"]
+    for package in packages_list
+}
+
+ext_modules = [
+    Extension(package, [f"{package.replace('.', '/')}.pyx"], include_dirs=['.'])
+    for package in packages_list]
 
 # long description from README file
 with open('README.md', encoding='utf-8') as f:
@@ -41,6 +51,8 @@ setup(
     author_email='drakkar-software@protonmail.com',
     description='OctoBot project trading package',
     packages=PACKAGES,
+    package_data=PACKAGE_DATA,
+    include_package_data=True,
     long_description=DESCRIPTION,
     install_requires=REQUIRED,
     cmdclass={'build_ext': build_ext},
@@ -54,5 +66,6 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Cython',
     ],
 )

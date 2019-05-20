@@ -13,12 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from abc import ABCMeta
+
+from octobot_trading.producers.balance_updater import BalanceUpdater
 
 
-class ExchangeUpdater:
-    __metaclass__ = ABCMeta
-
-    def __init__(self):
-        # TODO
-        pass
+class BalanceUpdaterSimulator(BalanceUpdater):
+    pass

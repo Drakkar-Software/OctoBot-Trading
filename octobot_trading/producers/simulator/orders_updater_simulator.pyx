@@ -18,16 +18,17 @@ import copy
 from ccxt import InsufficientFunds
 
 from octobot_channels.channels import RECENT_TRADES_CHANNEL
-from octobot_channels.channels.exchange_channel import ExchangeChannel, ExchangeChannels
-from octobot_trading.producers.exchange.orders_updater import OrdersUpdater
-from octobot_trading.producers.exchange.simulator.exchange_updater_simulator import ExchangeUpdaterSimulator
+from octobot_channels.channels.exchange_channel cimport ExchangeChannel, ExchangeChannels
+from octobot_trading.producers.orders_updater import OrdersUpdater
+from octobot_trading.producers.simulator.exchange_updater_simulator import ExchangeUpdaterSimulator
 from trading.exchanges import MissingOrderException
 from trading.exchanges.data.exchange_personal_data import ExchangePersonalData
-from config import OrderStatus, SIMULATOR_LAST_PRICES_TO_CHECK
+from octobot_trading.enums import OrderStatus
 from trading.trader.order import Order
 
 
 class OrdersUpdaterSimulator(OrdersUpdater, ExchangeUpdaterSimulator):
+    SIMULATOR_LAST_PRICES_TO_CHECK = 50
 
     def __init__(self, channel: ExchangeChannel):
         ExchangeUpdaterSimulator.__init__(self, channel)
@@ -40,7 +41,7 @@ class OrdersUpdaterSimulator(OrdersUpdater, ExchangeUpdaterSimulator):
 
     async def handle_recent_trade(self, symbol: str, recent_trade: dict):
         last_prices = self.exchange_manager.exchange_dispatcher.get_symbol_data(symbol=symbol) \
-            .get_symbol_recent_trades(limit=SIMULATOR_LAST_PRICES_TO_CHECK)
+            .get_symbol_recent_trades(limit=self.SIMULATOR_LAST_PRICES_TO_CHECK)
 
         failed_order_updates = await self._update_orders_status(symbol=symbol, last_prices=last_prices)
 
