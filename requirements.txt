@@ -4,3 +4,4 @@ OctoBot-Commons
 OctoBot-Websockets
 
 cython
+ccxt

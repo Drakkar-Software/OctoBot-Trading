@@ -17,40 +17,37 @@ import copy
 
 from ccxt import InsufficientFunds
 
-from octobot_channels.channels import RECENT_TRADES_CHANNEL
-from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel, ExchangeChannels
-from octobot_trading.producers.orders_updater import OrdersUpdater
-from octobot_trading.producers.simulator.exchange_updater_simulator import ExchangeUpdaterSimulator
-from trading.exchanges import MissingOrderException
-from trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.enums import OrderStatus
-from trading.trader.order import Order
+from octobot_trading.producers import MissingOrderException
+from octobot_channels.channels import RECENT_TRADES_CHANNEL
+
+from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel, ExchangeChannels
+from octobot_trading.producers.orders_updater cimport OrdersUpdater
 
 
-class OrdersUpdaterSimulator(OrdersUpdater, ExchangeUpdaterSimulator):
+cdef class OrdersUpdaterSimulator(OrdersUpdater):
     SIMULATOR_LAST_PRICES_TO_CHECK = 50
 
     def __init__(self, channel: ExchangeChannel):
-        ExchangeUpdaterSimulator.__init__(self, channel)
-        OrdersUpdater.__init__(self, channel)
-        self.exchange_personal_data: ExchangePersonalData = self.exchange_manager.exchange_dispatcher.get_exchange_personal_data()
+        super().__init__(channel)
+        self.exchange_personal_data = self.channel.exchange_manager.exchange_dispatcher.get_exchange_personal_data()
 
-        ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.get_name()).new_consumer(
+        ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.get_name()).new_consumer(
             self.handle_recent_trade,
             filter_size=True)
 
     async def handle_recent_trade(self, symbol: str, recent_trade: dict):
-        last_prices = self.exchange_manager.exchange_dispatcher.get_symbol_data(symbol=symbol) \
+        last_prices = self.channel.exchange_manager.exchange_dispatcher.get_symbol_data(symbol=symbol) \
             .get_symbol_recent_trades(limit=self.SIMULATOR_LAST_PRICES_TO_CHECK)
 
         failed_order_updates = await self._update_orders_status(symbol=symbol, last_prices=last_prices)
 
         if failed_order_updates:
             self.logger.info(f"Forcing real trader refresh.")
-            self.exchange_manager.trader.force_refresh_orders_and_portfolio()
+            self.channel.exchange_manager.trader.force_refresh_orders_and_portfolio()
 
     async def _update_order_status(self,
-                                   order: Order,
+                                   order,
                                    failed_order_updates: list,
                                    last_prices: list,
                                    simulated_time: bool = False):
@@ -61,7 +58,7 @@ class OrdersUpdaterSimulator(OrdersUpdater, ExchangeUpdaterSimulator):
             if order.get_status() == OrderStatus.FILLED:
                 order_filled = True
                 self.logger.info(f"{order.get_order_symbol()} {order.get_name()} (ID : {order.get_id()})"
-                                 f" filled on {self.exchange.get_name()} "
+                                 f" filled on {self.channel.exchange.get_name()} "
                                  f"at {order.get_filled_price()}")
                 await order.close_order()
         except MissingOrderException as e:
@@ -94,7 +91,7 @@ class OrdersUpdaterSimulator(OrdersUpdater, ExchangeUpdaterSimulator):
             finally:
                 # ensure always call fill callback
                 if order_filled:
-                    await self.exchange_manager.trader.call_order_update_callback(order)
+                    await self.channel.exchange_manager.trader.call_order_update_callback(order)
         return failed_order_updates
 
     # Currently called by backtesting
@@ -102,7 +99,7 @@ class OrdersUpdaterSimulator(OrdersUpdater, ExchangeUpdaterSimulator):
     # TODO : currently blocking, may implement queue if needed
     async def force_update_order_status(self, blocking=True, simulated_time: bool = False):
         # if blocking:
-        #     for symbol in self.exchange_manager.traded_pairs:
+        #     for symbol in self.channel.exchange_manager.traded_pairs:
         #         return await self._update_orders_status(symbol=symbol, simulated_time=simulated_time)
         # else:
         #     raise NotImplementedError("force_update_order_status(blocking=False) not implemented")

@@ -16,14 +16,10 @@
 import asyncio
 
 from octobot_channels.channels.exchange.balance cimport BalanceProducer
-from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel
 
 
 cdef class BalanceUpdater(BalanceProducer):
     BALANCE_REFRESH_TIME = 60
-
-    def __init__(self, channel: ExchangeChannel):
-        super().__init__(channel)
 
     async def start(self):
         while not self.should_stop:

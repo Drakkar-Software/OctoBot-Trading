@@ -13,14 +13,3 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel
-from octobot_trading.producers.exchange_updater cimport ExchangeUpdater
-
-cdef class ExchangeUpdaterSimulator(ExchangeUpdater):
-
-    def __init__(self, ExchangeChannel channel):
-        super().__init__()
-        self.channel = channel
-        self.exchange_manager = channel.exchange_manager
-        self.exchange = channel.exchange_manager.exchange

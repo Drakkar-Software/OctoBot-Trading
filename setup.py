@@ -24,13 +24,12 @@ from octobot_trading import PROJECT_NAME, VERSION
 PACKAGES = find_packages(exclude=["tests"])
 
 packages_list = ["octobot_trading.producers.balance_updater",
-                 "octobot_trading.producers.exchange_updater",
                  "octobot_trading.producers.ohlcv_updater",
                  "octobot_trading.producers.order_book_updater",
                  "octobot_trading.producers.orders_updater",
                  "octobot_trading.producers.recent_trade_updater",
                  "octobot_trading.producers.ticker_updater",
-                 "octobot_trading.producers.simulator.exchange_updater_simulator"]
+                 "octobot_trading.producers.simulator.orders_updater_simulator"]
 
 PACKAGE_DATA = {
     package: [f"{package.replace('.', '/')}.pxd"]
@@ -38,7 +37,7 @@ PACKAGE_DATA = {
 }
 
 ext_modules = [
-    Extension(package, [f"{package.replace('.', '/')}.pyx"], include_dirs=['.'])
+    Extension(package, [f"{package.replace('.', '/')}.pyx"])
     for package in packages_list]
 
 # long description from README file
@@ -70,7 +69,7 @@ setup(
     python_requires=REQUIRES_PYTHON,
     ext_modules=cythonize(ext_modules),
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Cython',
     ],

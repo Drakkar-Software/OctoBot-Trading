@@ -15,8 +15,7 @@
 # #  License along with this library.
 
 from octobot_trading.producers.orders_updater cimport OrdersUpdater
-from octobot_trading.producers.simulator.exchange_updater_simulator cimport ExchangeUpdaterSimulator
 
 
-class OrdersUpdaterSimulator(OrdersUpdater, ExchangeUpdaterSimulator):
-    pass
+cdef class OrdersUpdaterSimulator(OrdersUpdater):
+    cdef object exchange_personal_data
