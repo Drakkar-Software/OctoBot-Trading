@@ -13,14 +13,22 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 
 from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel
-from octobot_trading.producers.exchange_updater cimport ExchangeUpdater
+from octobot_channels.channels.exchange.recent_trade cimport RecentTradeProducer
 
-cdef class ExchangeUpdaterSimulator(ExchangeUpdater):
 
-    def __init__(self, ExchangeChannel channel):
-        super().__init__()
-        self.channel = channel
-        self.exchange_manager = channel.exchange_manager
-        self.exchange = channel.exchange_manager.exchange
+cdef class RecentTradeUpdater(RecentTradeProducer):
+    RECENT_TRADE_REFRESH_TIME = 60
+
+    def __init__(self, channel: ExchangeChannel):
+        super().__init__(channel)
+
+    async def start(self):
+        while not self.should_stop:
+            for pair in self.channel.exchange_manager.traded_pairs:
+                await self.push(pair,
+                                await self.channel.exchange_manager.exchange_dispatcher.get_recent_trades(pair),
+                                forced=True)
+            await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)

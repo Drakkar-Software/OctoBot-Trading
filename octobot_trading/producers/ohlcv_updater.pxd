@@ -14,8 +14,8 @@
 # #  You should have received a copy of the GNU Lesser General Public
 # #  License along with this library.
 
-from octobot_channels.channels.exchange.orders cimport OrdersProducer
+from octobot_channels.channels.exchange.ohlcv cimport OHLCVProducer
 
 
-cdef class OrdersUpdater(OrdersProducer):
+cdef class OHLCVUpdater(OHLCVProducer):
     pass

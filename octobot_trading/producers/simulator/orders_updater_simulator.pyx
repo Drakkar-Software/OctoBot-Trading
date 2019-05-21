@@ -18,7 +18,7 @@ import copy
 from ccxt import InsufficientFunds
 
 from octobot_channels.channels import RECENT_TRADES_CHANNEL
-from octobot_channels.channels.exchange_channel cimport ExchangeChannel, ExchangeChannels
+from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel, ExchangeChannels
 from octobot_trading.producers.orders_updater import OrdersUpdater
 from octobot_trading.producers.simulator.exchange_updater_simulator import ExchangeUpdaterSimulator
 from trading.exchanges import MissingOrderException

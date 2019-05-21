@@ -15,17 +15,18 @@
 #  License along with this library.
 import asyncio
 
-from octobot_channels.channels.exchange.balance import BalanceProducer
-from octobot_channels.channels.exchange_channel import ExchangeChannel
+from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel
+from octobot_channels.channels.exchange.order_book cimport OrderBookProducer
 
 
-class BalanceUpdater(BalanceProducer):
-    BALANCE_REFRESH_TIME = 60
+cdef class OrderBookUpdater(OrderBookProducer):
+    ORDER_BOOK_REFRESH_TIME = 60
 
     def __init__(self, channel: ExchangeChannel):
         super().__init__(channel)
 
     async def start(self):
         while not self.should_stop:
-            await self.push(await self.channel.exchange_manager.exchange_dispatcher.get_balance())
-            await asyncio.sleep(self.BALANCE_REFRESH_TIME)
+            for pair in self.channel.exchange_manager.traded_pairs:
+                await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_order_book(pair))
+            await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)

@@ -19,4 +19,4 @@ from octobot_trading.producers.simulator.exchange_updater_simulator cimport Exch
 
 
 class OrdersUpdaterSimulator(OrdersUpdater, ExchangeUpdaterSimulator):
-    SIMULATOR_LAST_PRICES_TO_CHECK = 50
+    pass

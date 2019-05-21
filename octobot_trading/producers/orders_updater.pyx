@@ -15,11 +15,11 @@
 # #  License along with this library.
 import asyncio
 
-from octobot_channels.channels.exchange_channel import ExchangeChannel
-from octobot_channels.channels.exchange.orders import OrdersProducer
+from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel
+from octobot_channels.channels.exchange.orders cimport OrdersProducer
 
 
-class OrdersUpdater(OrdersProducer):
+cdef class OrdersUpdater(OrdersProducer):
     ORDERS_REFRESH_TIME = 60
 
     def __init__(self, channel: ExchangeChannel):

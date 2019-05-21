@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_channels.channels.exchange_channel cimport ExchangeChannel
+from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel
 from octobot_trading.producers.exchange_updater cimport ExchangeUpdater
 
 

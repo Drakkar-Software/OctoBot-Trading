@@ -15,12 +15,12 @@
 #  License along with this library.
 import asyncio
 
-from octobot_channels.channels.exchange_channel import ExchangeChannel
-from octobot_channels.channels.exchange.recent_trade import RecentTradeProducer
+from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel
+from octobot_channels.channels.exchange.ticker cimport TickerProducer
 
 
-class RecentTradeUpdater(RecentTradeProducer):
-    RECENT_TRADE_REFRESH_TIME = 60
+cdef class TickerUpdater(TickerProducer):
+    TICKER_REFRESH_TIME = 60
 
     def __init__(self, channel: ExchangeChannel):
         super().__init__(channel)
@@ -28,7 +28,5 @@ class RecentTradeUpdater(RecentTradeProducer):
     async def start(self):
         while not self.should_stop:
             for pair in self.channel.exchange_manager.traded_pairs:
-                await self.push(pair,
-                                await self.channel.exchange_manager.exchange_dispatcher.get_recent_trades(pair),
-                                forced=True)
-            await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
+                await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_price_ticker(pair))
+            await asyncio.sleep(self.TICKER_REFRESH_TIME)

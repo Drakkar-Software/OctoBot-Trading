@@ -23,7 +23,13 @@ from octobot_trading import PROJECT_NAME, VERSION
 
 PACKAGES = find_packages(exclude=["tests"])
 
-packages_list = ["octobot_trading.producers.exchange_updater",
+packages_list = ["octobot_trading.producers.balance_updater",
+                 "octobot_trading.producers.exchange_updater",
+                 "octobot_trading.producers.ohlcv_updater",
+                 "octobot_trading.producers.order_book_updater",
+                 "octobot_trading.producers.orders_updater",
+                 "octobot_trading.producers.recent_trade_updater",
+                 "octobot_trading.producers.ticker_updater",
                  "octobot_trading.producers.simulator.exchange_updater_simulator"]
 
 PACKAGE_DATA = {
