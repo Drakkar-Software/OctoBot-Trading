@@ -15,7 +15,6 @@
 #  License along with this library.
 
 import time
-from abc import *
 from asyncio import Lock
 
 import math
@@ -90,7 +89,6 @@ cdef class Order:
         if self.trader.simulate:
             self.filled_quantity = quantity
 
-    @abstractmethod
     async def update_order_status(self, last_prices: list, simulated_time=False):
         """
         Update_order_status will define the rules for a simulated order to be filled / canceled

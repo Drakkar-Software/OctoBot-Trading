@@ -30,7 +30,14 @@ packages_list = ["octobot_trading.producers.balance_updater",
                  "octobot_trading.producers.recent_trade_updater",
                  "octobot_trading.producers.ticker_updater",
                  "octobot_trading.producers.simulator.orders_updater_simulator",
-                 "octobot_trading.data.order"]
+                 "octobot_trading.data.order",
+                 "octobot_trading.orders.buy_limit_order",
+                 "octobot_trading.orders.buy_market_order",
+                 "octobot_trading.orders.sell_limit_order",
+                 "octobot_trading.orders.sell_market_order",
+                 "octobot_trading.orders.stop_loss_limit_order",
+                 "octobot_trading.orders.trailing_stop_order",
+                 "octobot_trading.orders.stop_loss_order"]
 
 PACKAGE_DATA = {
     package: [f"{package.replace('.', '/')}.pxd"]

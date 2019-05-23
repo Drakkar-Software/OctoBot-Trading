@@ -17,6 +17,7 @@ import copy
 
 from ccxt import InsufficientFunds
 
+from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus
 from octobot_trading.producers import MissingOrderException
 from octobot_channels.channels import RECENT_TRADES_CHANNEL
@@ -47,7 +48,7 @@ cdef class OrdersUpdaterSimulator(OrdersUpdater):
             self.channel.exchange_manager.trader.force_refresh_orders_and_portfolio()
 
     async def _update_order_status(self,
-                                   order,
+                                   order: Order,
                                    failed_order_updates: list,
                                    last_prices: list,
                                    simulated_time: bool = False):
@@ -69,7 +70,8 @@ cdef class OrdersUpdaterSimulator(OrdersUpdater):
             self.logger.error(f"Not enough funds to create order: {e} (updating {order}).")
         return order_filled
 
-    async def _update_orders_status(self, symbol: str,
+    async def _update_orders_status(self,
+                                    symbol: str,
                                     last_prices: list,
                                     simulated_time: bool = False) -> list:
         """
