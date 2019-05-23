@@ -29,7 +29,8 @@ packages_list = ["octobot_trading.producers.balance_updater",
                  "octobot_trading.producers.orders_updater",
                  "octobot_trading.producers.recent_trade_updater",
                  "octobot_trading.producers.ticker_updater",
-                 "octobot_trading.producers.simulator.orders_updater_simulator"]
+                 "octobot_trading.producers.simulator.orders_updater_simulator",
+                 "octobot_trading.data.order"]
 
 PACKAGE_DATA = {
     package: [f"{package.replace('.', '/')}.pxd"]
