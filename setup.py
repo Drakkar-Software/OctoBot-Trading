@@ -40,7 +40,7 @@ packages_list = ["octobot_trading.producers.balance_updater",
                  "octobot_trading.orders.stop_loss_order"]
 
 PACKAGE_DATA = {
-    package: [f"{package.replace('.', '/')}.pxd"]
+    package: [f"{package.replace('.', '/')}.pxd", f"{package.replace('.', '/')}.pyx"]
     for package in packages_list
 }
 
