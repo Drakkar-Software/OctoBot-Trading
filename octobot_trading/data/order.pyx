@@ -16,6 +16,7 @@
 
 import time
 from asyncio import Lock
+from typing import Tuple, List
 
 import math
 
@@ -34,8 +35,6 @@ cdef class Order:
 
     def __init__(self, trader):
         self.trader = trader
-        self.exchange = self.trader.get_exchange()
-        self.is_simulated = self.trader.simulate
         self.status = OrderStatus.OPEN
         self.creation_time = time.time()
         self.lock = Lock()
@@ -47,19 +46,20 @@ cdef class Order:
         return self.lock
 
     # create the order by setting all the required values
-    cdef void new(self, object order_type,
-                  char* symbol,
-                  float current_price,
-                  float quantity,
-                  float price,
-                  float stop_price,
-                  object status,
-                  object order_notifier,
-                  char* order_id,
-                  float quantity_filled,
-                  float timestamp,
-                  object linked_to,
-                  object linked_portfolio):
+    def new(self,
+            order_type,
+            symbol: str,
+            current_price: float,
+            quantity: float,
+            price: float,
+            stop_price: float,
+            status,
+            order_notifier,
+            order_id: str,
+            quantity_filled: float,
+            timestamp = None,
+            linked_to = None,
+            linked_portfolio = None) -> None:
 
         self.order_id = order_id
         self.origin_price = price
@@ -137,22 +137,22 @@ cdef class Order:
     async def close_order(self):
         await self.trader.notify_order_close(self)
 
-    cdef object get_currency_and_market(self):
+    def get_currency_and_market(self) -> Tuple[str, str]:
         return self.currency, self.market
 
-    cdef float get_total_fees(self, char* currency):
+    def get_total_fees(self, currency: str) -> float:
         if self.fee and self.fee[FeePropertyColumns.CURRENCY.value] == currency:
             return self.fee[FeePropertyColumns.COST.value]
         else:
             return 0
 
-    cdef bint is_filled(self):
+    def is_filled(self) -> bool:
         return self.status == OrderStatus.FILLED
 
-    cdef bint is_cancelled(self):
+    def is_cancelled(self) -> bool:
         return self.status == OrderStatus.CANCELED
 
-    def get_string_info(self):
+    def get_string_info(self) -> bool:
         return (f"{self.symbol} | "
                 f"{self.order_type.name} | "
                 f"Price : {self.origin_price} | "
@@ -162,10 +162,10 @@ cdef class Order:
     def get_description(self):
         return f"{self.order_id}{self.exchange.get_name()}{self.get_string_info()}"
 
-    cdef bint matches_description(self, char* description):
+    def matches_description(self, description: str) -> bool:
         return self.get_description() == description
 
-    cdef object infer_taker_or_maker(self):
+    def infer_taker_or_maker(self):
         if self.taker_or_maker is None:
             if self.order_type == TraderOrderType.SELL_MARKET \
                     or self.order_type == TraderOrderType.BUY_MARKET \
@@ -178,7 +178,7 @@ cdef class Order:
                 return ExchangeConstantsMarketPropertyColumns.MAKER.value
         return self.taker_or_maker
 
-    cdef dict get_computed_fee(self, forced_value=None):
+    def get_computed_fee(self, forced_value=None) -> dict:
         computed_fee = self.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,
                                                    self.filled_price, self.infer_taker_or_maker())
         return {
@@ -187,7 +187,7 @@ cdef class Order:
             FeePropertyColumns.CURRENCY.value: computed_fee[FeePropertyColumns.CURRENCY.value],
         }
 
-    cdef float get_profitability(self):
+    def get_profitability(self) -> float:
         if self.filled_price != 0 and self.created_last_price != 0:
             if self.filled_price >= self.created_last_price:
                 self.order_profitability = 1 - self.filled_price / self.created_last_price
@@ -211,7 +211,7 @@ cdef class Order:
         elif new_status == OrderStatus.CANCELED:
             await self.cancel_from_exchange()
 
-    cdef float generate_executed_time(self, simulated_time=False):
+    def generate_executed_time(self, simulated_time: bool = False) -> float:
         if not simulated_time or not self.last_prices:
             return time.time()
         else:

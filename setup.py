@@ -39,11 +39,6 @@ packages_list = ["octobot_trading.producers.balance_updater",
                  "octobot_trading.orders.trailing_stop_order",
                  "octobot_trading.orders.stop_loss_order"]
 
-PACKAGE_DATA = {
-    package: [f"{package.replace('.', '/')}.pxd", f"{package.replace('.', '/')}.pyx"]
-    for package in packages_list
-}
-
 ext_modules = [
     Extension(package, [f"{package.replace('.', '/')}.pyx"])
     for package in packages_list]
@@ -64,7 +59,6 @@ setup(
     author_email='drakkar-software@protonmail.com',
     description='OctoBot project trading package',
     packages=PACKAGES,
-    package_data=PACKAGE_DATA,
     include_package_data=True,
     long_description=DESCRIPTION,
     install_requires=REQUIRED,
