@@ -13,8 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.producers import OHLCVUpdater
+import asyncio
+
+from octobot_channels.channels.exchange.order_book import OrderBookProducer
 
 
-class OHLCVUpdaterSimulator(OHLCVUpdater):
-    pass
+class OrderBookUpdater(OrderBookProducer):
+    ORDER_BOOK_REFRESH_TIME = 60
+
+    async def start(self):
+        while not self.should_stop:
+            for pair in self.channel.exchange_manager.traded_pairs:
+                await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_order_book(pair))
+            await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)

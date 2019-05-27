@@ -1,35 +1,34 @@
-# #  Drakkar-Software OctoBot-Trading
-# #  Copyright (c) Drakkar-Software, All rights reserved.
-# #
-# #  This library is free software; you can redistribute it and/or
-# #  modify it under the terms of the GNU Lesser General Public
-# #  License as published by the Free Software Foundation; either
-# #  version 3.0 of the License, or (at your option) any later version.
-# #
-# #  This library is distributed in the hope that it will be useful,
-# #  but WITHOUT ANY WARRANTY; without even the implied warranty of
-# #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# #  Lesser General Public License for more details.
-# #
-# #  You should have received a copy of the GNU Lesser General Public
-# #  License along with this library.
+#  Drakkar-Software OctoBot-Trading
+#  Copyright (c) Drakkar-Software, All rights reserved.
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 3.0 of the License, or (at your option) any later version.
+#
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library.
 import copy
 
 from ccxt import InsufficientFunds
+from octobot_channels.channels import RECENT_TRADES_CHANNEL
+from octobot_channels.channels.exchange.exchange_channel import ExchangeChannels
 
 from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus
 from octobot_trading.producers import MissingOrderException
-from octobot_channels.channels import RECENT_TRADES_CHANNEL
-
-from octobot_channels.channels.exchange.exchange_channel cimport ExchangeChannel, ExchangeChannels
-from octobot_trading.producers.orders_updater cimport OrdersUpdater
+from octobot_trading.producers.orders_updater import OrdersUpdater
 
 
-cdef class OrdersUpdaterSimulator(OrdersUpdater):
+class OrdersUpdaterSimulator(OrdersUpdater):
     SIMULATOR_LAST_PRICES_TO_CHECK = 50
 
-    def __init__(self, channel: ExchangeChannel):
+    def __init__(self, channel):
         super().__init__(channel)
         self.exchange_personal_data = self.channel.exchange_manager.exchange_dispatcher.get_exchange_personal_data()
 

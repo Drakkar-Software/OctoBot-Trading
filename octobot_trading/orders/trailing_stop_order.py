@@ -13,16 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
+from octobot_trading.enums import TradeOrderSide
+from octobot_trading.data.order import Order
 
-from octobot_channels.channels.exchange.order_book cimport OrderBookProducer
 
+# TODO
+class TrailingStopOrder(Order):
+    def __init__(self, trader):
+        super().__init__(trader)
+        self.side = TradeOrderSide.SELL
 
-cdef class OrderBookUpdater(OrderBookProducer):
-    ORDER_BOOK_REFRESH_TIME = 60
-
-    async def start(self):
-        while not self.should_stop:
-            for pair in self.channel.exchange_manager.traded_pairs:
-                await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_order_book(pair))
-            await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
+    async def update_order_status(self, last_prices: list, simulated_time=False):
+        pass

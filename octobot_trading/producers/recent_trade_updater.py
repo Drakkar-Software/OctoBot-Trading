@@ -15,10 +15,10 @@
 #  License along with this library.
 import asyncio
 
-from octobot_channels.channels.exchange.recent_trade cimport RecentTradeProducer
+from octobot_channels.channels.exchange.recent_trade import RecentTradeProducer
 
 
-cdef class RecentTradeUpdater(RecentTradeProducer):
+class RecentTradeUpdater(RecentTradeProducer):
     RECENT_TRADE_REFRESH_TIME = 60
 
     async def start(self):

@@ -16,22 +16,22 @@
 
 import time
 from asyncio import Lock
-from typing import Tuple, List
+from typing import Tuple
 
 import math
+from octobot_commons.logging.logging_util import get_logger
+from octobot_commons.symbol_util import split_symbol
 
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ECOC
-from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.symbol_util import split_symbol
 
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 
 
-cdef class Order:
+class Order:
 
     def __init__(self, trader):
         self.trader = trader
@@ -46,20 +46,8 @@ cdef class Order:
         return self.lock
 
     # create the order by setting all the required values
-    def new(self,
-            order_type,
-            symbol: str,
-            current_price: float,
-            quantity: float,
-            price: float,
-            stop_price: float,
-            status,
-            order_notifier,
-            order_id: str,
-            quantity_filled: float,
-            timestamp = None,
-            linked_to = None,
-            linked_portfolio = None) -> None:
+    def new(self, order_type, symbol, current_price, quantity, price, stop_price, status, order_notifier, order_id,
+            quantity_filled, timestamp=None, linked_to=None, linked_portfolio=None) -> None:
 
         self.order_id = order_id
         self.origin_price = price
@@ -96,11 +84,12 @@ cdef class Order:
         raise NotImplementedError("Update_order_status not implemented")
 
     # check_last_prices is used to collect data to perform the order update_order_status process
-    cdef bint check_last_prices(self, list last_prices, float price_to_check, bint inferior, bint simulated_time=False):
+    def check_last_prices(self, last_prices, price_to_check, inferior, simulated_time=False) -> bool:
         if last_prices:
             prices = [p[ECOC.PRICE.value]
                       for p in last_prices
-                      if not math.isnan(p[ECOC.PRICE.value]) and (p[ECOC.TIMESTAMP.value] >= self.creation_time or simulated_time)]
+                      if not math.isnan(p[ECOC.PRICE.value]) and (
+                              p[ECOC.TIMESTAMP.value] >= self.creation_time or simulated_time)]
 
             if prices:
                 if inferior:
@@ -140,19 +129,19 @@ cdef class Order:
     def get_currency_and_market(self) -> Tuple[str, str]:
         return self.currency, self.market
 
-    def get_total_fees(self, currency: str) -> float:
+    def get_total_fees(self, currency):
         if self.fee and self.fee[FeePropertyColumns.CURRENCY.value] == currency:
             return self.fee[FeePropertyColumns.COST.value]
         else:
             return 0
 
-    def is_filled(self) -> bool:
+    def is_filled(self):
         return self.status == OrderStatus.FILLED
 
-    def is_cancelled(self) -> bool:
+    def is_cancelled(self):
         return self.status == OrderStatus.CANCELED
 
-    def get_string_info(self) -> bool:
+    def get_string_info(self):
         return (f"{self.symbol} | "
                 f"{self.order_type.name} | "
                 f"Price : {self.origin_price} | "
@@ -162,7 +151,7 @@ cdef class Order:
     def get_description(self):
         return f"{self.order_id}{self.exchange.get_name()}{self.get_string_info()}"
 
-    def matches_description(self, description: str) -> bool:
+    def matches_description(self, description):
         return self.get_description() == description
 
     def infer_taker_or_maker(self):
@@ -178,7 +167,7 @@ cdef class Order:
                 return ExchangeConstantsMarketPropertyColumns.MAKER.value
         return self.taker_or_maker
 
-    def get_computed_fee(self, forced_value=None) -> dict:
+    def get_computed_fee(self, forced_value=None):
         computed_fee = self.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,
                                                    self.filled_price, self.infer_taker_or_maker())
         return {
@@ -187,7 +176,7 @@ cdef class Order:
             FeePropertyColumns.CURRENCY.value: computed_fee[FeePropertyColumns.CURRENCY.value],
         }
 
-    def get_profitability(self) -> float:
+    def get_profitability(self):
         if self.filled_price != 0 and self.created_last_price != 0:
             if self.filled_price >= self.created_last_price:
                 self.order_profitability = 1 - self.filled_price / self.created_last_price
@@ -211,7 +200,7 @@ cdef class Order:
         elif new_status == OrderStatus.CANCELED:
             await self.cancel_from_exchange()
 
-    def generate_executed_time(self, simulated_time: bool = False) -> float:
+    def generate_executed_time(self, simulated_time=False):
         if not simulated_time or not self.last_prices:
             return time.time()
         else:

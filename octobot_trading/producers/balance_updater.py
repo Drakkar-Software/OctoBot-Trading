@@ -13,15 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import TradeOrderSide, OrderStatus
-from octobot_trading.data.order cimport Order
+import asyncio
+
+from octobot_channels.channels.exchange.balance import BalanceProducer
 
 
-# TODO
-cdef class StopLossLimitOrder(Order):
-    def __init__(self):
-        super().__init__()
-        self.side = TradeOrderSide.SELL
+class BalanceUpdater(BalanceProducer):
+    BALANCE_REFRESH_TIME = 60
 
-    async def update_order_status(self, last_prices: list, simulated_time=False):
-        pass
+    async def start(self):
+        while not self.should_stop:
+            await self.push(await self.channel.exchange_manager.exchange_dispatcher.get_balance())
+            await asyncio.sleep(self.BALANCE_REFRESH_TIME)

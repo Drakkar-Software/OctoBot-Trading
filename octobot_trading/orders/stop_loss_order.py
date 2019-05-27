@@ -13,24 +13,30 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import TradeOrderSide, OrderStatus
-from octobot_trading.data.order cimport Order
+from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType
+from octobot_trading.data.order import Order
 
 
-cdef class SellMarketOrder(Order):
-    def __init__(self):
-        super().__init__()
+class StopLossOrder(Order):
+    def __init__(self, trader):
+        super().__init__(trader)
         self.side = TradeOrderSide.SELL
 
     async def update_order_status(self, last_prices: list, simulated_time=False):
-        if not self.trader.simulate:
-            await self.default_exchange_update_order_status()
-        else:
-            # ONLY FOR SIMULATION
+        if self.check_last_prices(last_prices, self.origin_price, True, simulated_time):
             self.status = OrderStatus.FILLED
-            self.origin_price = self.created_last_price
-            self.filled_price = self.created_last_price
+            self.filled_price = self.origin_price
             self.filled_quantity = self.origin_quantity
             self.total_cost = self.filled_price * self.filled_quantity
-            self.fee = self.get_computed_fee()
             self.executed_time = self.generate_executed_time(simulated_time)
+            if self.trader.simulate:
+                # compute normal fees
+                self.fee = self.get_computed_fee()
+            else:
+                # force 0 fee: not a real order: only used as a trigger
+                self.fee = self.get_computed_fee(forced_value=0)
+                for order in self.linked_orders:
+                    await self.trader.cancel_order(order)
+                await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET, self.symbol, self.origin_price,
+                                                          self.origin_quantity, self.origin_price,
+                                                          self.linked_portfolio)

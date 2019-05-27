@@ -23,24 +23,24 @@ from octobot_trading import PROJECT_NAME, VERSION
 
 PACKAGES = find_packages(exclude=["tests"])
 
-packages_list = ["octobot_trading.producers.balance_updater",
-                 "octobot_trading.producers.ohlcv_updater",
-                 "octobot_trading.producers.order_book_updater",
-                 "octobot_trading.producers.orders_updater",
-                 "octobot_trading.producers.recent_trade_updater",
-                 "octobot_trading.producers.ticker_updater",
-                 "octobot_trading.producers.simulator.orders_updater_simulator",
-                 "octobot_trading.data.order",
-                 "octobot_trading.orders.buy_limit_order",
-                 "octobot_trading.orders.buy_market_order",
-                 "octobot_trading.orders.sell_limit_order",
-                 "octobot_trading.orders.sell_market_order",
-                 "octobot_trading.orders.stop_loss_limit_order",
-                 "octobot_trading.orders.trailing_stop_order",
-                 "octobot_trading.orders.stop_loss_order"]
+packages_list: list = ["octobot_trading.producers.balance_updater",
+                       "octobot_trading.producers.ohlcv_updater",
+                       "octobot_trading.producers.order_book_updater",
+                       "octobot_trading.producers.orders_updater",
+                       "octobot_trading.producers.recent_trade_updater",
+                       "octobot_trading.producers.ticker_updater",
+                       "octobot_trading.producers.simulator.orders_updater_simulator",
+                       "octobot_trading.data.order",
+                       "octobot_trading.orders.buy_limit_order",
+                       "octobot_trading.orders.buy_market_order",
+                       "octobot_trading.orders.sell_limit_order",
+                       "octobot_trading.orders.sell_market_order",
+                       "octobot_trading.orders.stop_loss_limit_order",
+                       "octobot_trading.orders.trailing_stop_order",
+                       "octobot_trading.orders.stop_loss_order"]
 
-ext_modules = [
-    Extension(package, [f"{package.replace('.', '/')}.pyx"])
+ext_modules: list = [
+    Extension(package, [f"{package.replace('.', '/')}.py"])
     for package in packages_list]
 
 # long description from README file

@@ -1,12 +1,13 @@
+#cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
-#  This library is free software; you can redichar*ibute it and/or
+#  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
 #  License as published by the Free Software Foundation; either
 #  version 3.0 of the License, or (at your option) any later version.
 #
-#  This library is dichar*ibuted in the hope that it will be useful,
+#  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 #  Lesser General License for more details.
@@ -60,4 +61,30 @@ cdef class Order:
     cdef list last_prices
     cdef public list linked_orders
 
-    cdef bint check_last_prices(self, list last_prices, float price_to_check, bint inferior, bint simulated_time=*)
+    cpdef object get_lock(self)
+    cpdef void new(self,
+            object order_type,
+            str symbol,
+            float current_price,
+            float quantity,
+            float price,
+            float stop_price,
+            object status,
+            object order_notifier,
+            str order_id,
+            float quantity_filled,
+            object timestamp=*,
+            object linked_to=*,
+            object linked_portfolio=*)
+    cpdef bint check_last_prices(self, list last_prices, float price_to_check, bint inferior, bint simulated_time=*)
+    cpdef object get_currency_and_market(self)
+    cpdef float get_total_fees(self, char * currency)
+    cpdef bint is_filled(self)
+    cpdef bint is_cancelled(self)
+    cpdef str get_string_info(self)
+    cpdef str get_description(self)
+    cpdef bint matches_description(self, str description)
+    cpdef object infer_taker_or_maker(self)
+    cpdef dict get_computed_fee(self, object forced_value=*)
+    cpdef float get_profitability(self)
+    cpdef float generate_executed_time(self, bint simulated_time=*)

@@ -13,15 +13,24 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import TradeOrderSide
-from octobot_trading.data.order cimport Order
+from octobot_trading.enums import TradeOrderSide, OrderStatus
+from octobot_trading.data.order import Order
 
 
-# TODO
-cdef class TrailingStopOrder(Order):
-    def __init__(self):
-        super().__init__()
+class SellMarketOrder(Order):
+    def __init__(self, trader):
+        super().__init__(trader)
         self.side = TradeOrderSide.SELL
 
     async def update_order_status(self, last_prices: list, simulated_time=False):
-        pass
+        if not self.trader.simulate:
+            await self.default_exchange_update_order_status()
+        else:
+            # ONLY FOR SIMULATION
+            self.status = OrderStatus.FILLED
+            self.origin_price = self.created_last_price
+            self.filled_price = self.created_last_price
+            self.filled_quantity = self.origin_quantity
+            self.total_cost = self.filled_price * self.filled_quantity
+            self.fee = self.get_computed_fee()
+            self.executed_time = self.generate_executed_time(simulated_time)
