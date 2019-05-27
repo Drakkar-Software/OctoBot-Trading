@@ -1,0 +1,5 @@
+pytest==4.4.0
+pytest-asyncio
+setuptools
+wheel
+cython

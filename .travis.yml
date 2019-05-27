@@ -6,7 +6,7 @@ language: python
 cache: pip
 python: 3.7-dev
 install:
-  - python3 -m pip install -r requirements.txt
+  - python3 -m pip install --upgrade --only-binary=Cython -r requirements.txt -r dev_requirements.txt
 
 matrix:
   include:
@@ -25,7 +25,7 @@ deploy:
       secure: PSieH+Z9+7rQ3TuJq0+Z28NkPB7hhnyJYeTBXAP1TbKH29J2pShpRbUG5SPYQVJVs0hvlZVNjLl/Do45S7EdRdq8Bx8uo9MgYR6+DEDqa3RSzjVYMn/v+akDwAbPoAQdPbc4Cbdupipm4vqZ0GjqLQwtuyUZCLua/ldIfoWMORHrXIAH+7QCDv3YdTlVcR1o/hP+Vb/qdj15Fy9EZDyZhLxkUl9u4nWCN4FXrK/p5akg4iTSFRkU3TMFlhkYAq8zvmP/lWjNlpAAbEPsNAqNNkn9UABAQK/LFlu3P9iGwQRkflhs8Bylogku4AMEHp3uC52dhU4xFdsBdAb2qyeHqYhwO3R7dMEUvcLjByEEDVKpSPEamF1mJSHLVe615q+UsqDQRmQU1p1wYh+oB3SnWbXa4GhMq/vUm/14sdPoJeAX/9M6JsBVxYVnLcAH2SXMVsZUREqUdCEyyFUfGYWpYC90dl+fp9SjpzCP6gTWubNu/iO3A0Jvqu1+jh/9RJ0jzDKti3YZD/IMMspZwOY7SNc3ubQqbv7ogiqgyNpObmw2xwR73zYppgdUrwq3VBsGC9D08+2ZrRl/jvo6++OdiejRfnuELNqOuh/zVGVFR3T4aM54ErXwzzBg9CENnwyoBbPFIwsPqv/ymuZZTrH3p/QgL4pgbmjfqkwl0mGNmBs=
     skip_existing: true
     skip_cleanup: true
-    distributions: "sdist bdist_wheel"
+    distributions: "sdist"
     on:
       repo: Drakkar-Software/OctoBot-Trading
       branch: master
