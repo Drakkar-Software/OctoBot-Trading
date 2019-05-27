@@ -1,1 +1,6 @@
 recursive-include octobot_trading *.pxd
+
+include README.md
+include LICENSE
+include CHANGELOG.md
+include requirements.txt
