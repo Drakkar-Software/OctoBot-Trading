@@ -40,11 +40,6 @@ class Order:
         self.lock = Lock()
         self.linked_orders = []
 
-    # syntax: "async with xxx.get_lock():"
-    # TODO find better way to handle async lock: reuse disposable design pattern ?
-    def get_lock(self):
-        return self.lock
-
     # create the order by setting all the required values
     def new(self, order_type, symbol, current_price, quantity, price, stop_price, status, order_notifier, order_id,
             quantity_filled, timestamp=None, linked_to=None, linked_portfolio=None) -> None:

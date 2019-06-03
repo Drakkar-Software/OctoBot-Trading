@@ -20,18 +20,18 @@
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 
-
 cdef class Order:
     cdef public object trader
     cdef public object exchange
 
     cdef public object side # TradeOrderSide
-    cdef public object status # OrderStatus -> OrderStatus.OPEN
+    cdef public object status # OrderStatus
     cdef public object order_type # TraderOrderType
+    cdef public object taker_or_maker # ExchangeConstantsMarketPropertyColumns
+
     cdef public object linked_to
     cdef public object linked_portfolio
     cdef public object order_notifier
-    cdef public object taker_or_maker # ExchangeConstantsMarketPropertyColumns
     cdef public object lock # Lock
 
     cdef public bint is_simulated
