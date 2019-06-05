@@ -21,26 +21,9 @@ In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 from octobot_trading.data.order cimport Order
 
-cdef class Trade:
-    cdef public str currency
-    cdef public str order_id
-    cdef public str symbol
-    cdef public str market
+cdef class OrderNotifier:
+    cdef public object config
+    cdef public object notifier
+    cdef public object evaluator_notification
 
     cdef public Order order
-    cdef public object final_status # OrderStatus
-    cdef public object side # TradeOrderSide
-    cdef public object order_type # TraderOrderType
-    cdef public object exchange
-
-    cdef public float filled_time
-    cdef public float creation_time
-
-    cdef public dict fee
-
-    cdef public float canceled_time
-    cdef public float price
-    cdef public float cost
-    cdef public float quantity
-
-    cdef public bint simulated

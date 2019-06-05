@@ -23,7 +23,9 @@ from octobot_trading import PROJECT_NAME, VERSION
 
 PACKAGES = find_packages(exclude=["tests"])
 
-packages_list: list = ["octobot_trading.producers.balance_updater",
+packages_list: list = ["octobot_trading.util.initializable",
+                       "octobot_trading.util.order_notifier",
+                       "octobot_trading.producers.balance_updater",
                        "octobot_trading.producers.ohlcv_updater",
                        "octobot_trading.producers.order_book_updater",
                        "octobot_trading.producers.orders_updater",
@@ -34,13 +36,28 @@ packages_list: list = ["octobot_trading.producers.balance_updater",
                        "octobot_trading.data.trade",
                        "octobot_trading.data.portfolio",
                        "octobot_trading.data.sub_portfolio",
+                       "octobot_trading.data_manager.orders_manager",
+                       "octobot_trading.data_manager.trades_manager",
+                       "octobot_trading.data_manager.portfolio_manager",
                        "octobot_trading.orders.buy_limit_order",
                        "octobot_trading.orders.buy_market_order",
                        "octobot_trading.orders.sell_limit_order",
                        "octobot_trading.orders.sell_market_order",
                        "octobot_trading.orders.stop_loss_limit_order",
                        "octobot_trading.orders.trailing_stop_order",
-                       "octobot_trading.orders.stop_loss_order"]
+                       "octobot_trading.orders.stop_loss_order",
+                       "octobot_trading.traders.trader",
+                       "octobot_trading.traders.trader_simulator",
+                       "octobot_trading.exchanges.exchange_manager",
+                       "octobot_trading.exchanges.abstract_exchange",
+                       "octobot_trading.exchanges.rest_exchange",
+                       "octobot_trading.exchanges.websockets.abstract_websocket",
+                       "octobot_trading.exchanges.websockets.octobot_websocket",
+                       "octobot_trading.exchanges.websockets.websocket_callbacks",
+                       "octobot_trading.exchanges.backtesting.backtesting",
+                       "octobot_trading.exchanges.backtesting.exchange_simulator",
+                       "octobot_trading.exchanges.backtesting.collector.data_file_manager",
+                       "octobot_trading.exchanges.backtesting.collector.data_parser"]
 
 ext_modules: list = [
     Extension(package, [f"{package.replace('.', '/')}.py"])

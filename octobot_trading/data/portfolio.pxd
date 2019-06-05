@@ -20,8 +20,9 @@
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 from octobot_trading.data.order cimport Order
+from octobot_trading.util.initializable cimport Initializable
 
-cdef class Portfolio:
+cdef class Portfolio(Initializable):
     cdef object config
     cdef object trader
     cdef object exchange_manager
@@ -36,14 +37,9 @@ cdef class Portfolio:
     cpdef void set_starting_simulated_portfolio(self)
     cpdef float get_currency_portfolio(self, str currency, str portfolio_type=*)
     cpdef void update_portfolio_available(self, Order order, bint is_new_order=*)
-    cpdef void reset_portfolio_available(self, str reset_currency=*, float reset_quantity=*)
+    cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
+    cpdef float get_currency_from_given_portfolio(self, str currency, str portfolio_type=*)
 
     cdef void _update_portfolio_data(self, str currency, float value, bint total=*, bint available=*)
-    cdef void _update_portfolio_available(self, Order order, float factor=*):
-
-    @staticmethod
-    cpdef dict get_portfolio_from_amount_dict(dict amount_dict)
-    @staticmethod
-    cpdef float get_currency_from_given_portfolio(Portfolio portfolio, str currency, str portfolio_type=*)
-    @staticmethod
-    cpdef bint _check_available_should_update(Order order)
+    cdef void _update_portfolio_available(self, Order order, bint factor=*)
+    cdef bint _check_available_should_update(self, Order order)

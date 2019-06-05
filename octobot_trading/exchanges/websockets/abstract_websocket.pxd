@@ -14,22 +14,22 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 
+cdef class AbstractWebsocket:
+    cdef public dict config
 
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
-from octobot_trading.data.order cimport Order
-from octobot_trading.data.portfolio cimport Portfolio
+    cdef public ExchangeManager exchange_manager
 
-cdef class SubPortfolio(Portfolio):
-    cdef public Portfolio parent_portfolio
+    cdef public str name
 
-    cdef public float percent
+    cdef public object client
+    cdef public object logger
 
-    cdef public bint is_relative
-
-    cpdef void update_from_parent(self)
-    cpdef void set_percent(self, float percent)
-    cpdef void update_portfolio_available(self, Order order, bint is_new_order=*)
-    cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
+    # private
+    cdef void _init_ccxt_order_from_other_source(self, object ccxt_order)
+    cdef void _update_order(self, object msg)
+    cdef str _parse_symbol_from_ccxt(self, str symbol)
+    
+    @staticmethod
+    cdef str _adapt_symbol(str symbol)

@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -13,31 +13,24 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-from dataclasses import dataclass, field
-from typing import Dict, Union, Any
-
-from trading.exchanges.exchange_dispatcher import ExchangeDispatcher
-from trading.trader.order import TraderOrderType
+from octobot_trading.data.order import Order
 
 
-@dataclass
 class Trade:
-    """
-    Dataclass to store trade informations
-    """
-    def __post_init__(self):
+    def __init__(self, exchange, order: Order):
+        self.exchange = exchange
+        self.order = order
         self.currency, self.market = self.order.get_currency_and_market()
-        self.quantity = self.order.get_filled_quantity()
-        self.price = self.order.get_filled_price()
-        self.cost = self.order.get_total_cost()
-        self.order_type = self.order.get_order_type()
-        self.final_status = self.order.get_status()
+        self.quantity = self.order.filled_quantity
+        self.price = self.order.filled_price
+        self.cost = self.order.total_cost
+        self.order_type = self.order.order_type
+        self.final_status = self.order.status
         self.fee = self.order.fee
-        self.order_id = self.order.get_id()
-        self.side = self.order.get_side()
-        self.creation_time = self.order.get_creation_time()
+        self.order_id = self.order.order_id
+        self.side = self.order.side
+        self.creation_time = self.order.creation_time
         self.canceled_time = self.order.canceled_time
         self.filled_time = self.order.executed_time
-        self.symbol = self.order.get_order_symbol()
+        self.symbol = self.order.symbol
         self.simulated = self.order.trader.simulate

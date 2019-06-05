@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.data.portfolio import Portfolio
+from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
 
 class SubPortfolio(Portfolio):
@@ -45,8 +46,8 @@ class SubPortfolio(Portfolio):
             balance = self.trader.get_trades_manager().get_origin_portfolio()
 
         # calculate for each currency the new quantity
-        self.portfolio = {currency: {Portfolio.AVAILABLE: balance[currency][Portfolio.AVAILABLE] * self.percent,
-                                     Portfolio.TOTAL: balance[currency][Portfolio.TOTAL] * self.percent}
+        self.portfolio = {currency: {PORTFOLIO_AVAILABLE: balance[currency][PORTFOLIO_AVAILABLE] * self.percent,
+                                     PORTFOLIO_TOTAL: balance[currency][PORTFOLIO_TOTAL] * self.percent}
                           for currency in balance}
 
     def set_percent(self, percent):

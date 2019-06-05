@@ -19,28 +19,24 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
-from octobot_trading.data.order cimport Order
+from octobot_trading.util.initializable cimport Initializable
 
-cdef class Trade:
-    cdef public str currency
-    cdef public str order_id
-    cdef public str symbol
-    cdef public str market
 
-    cdef public Order order
-    cdef public object final_status # OrderStatus
-    cdef public object side # TradeOrderSide
-    cdef public object order_type # TraderOrderType
-    cdef public object exchange
+cdef class Trader(Initializable):
+    cdef float risk
 
-    cdef public float filled_time
-    cdef public float creation_time
+    cdef public str trader_type_str
 
-    cdef public dict fee
+    cdef public bint simulate
+    cdef public bint enable
+    cdef public bint loaded_previous_state
 
-    cdef public float canceled_time
-    cdef public float price
-    cdef public float cost
-    cdef public float quantity
+    cdef object exchange
+    cdef object config
+    cdef object order_refresh_time
+    cdef public object notifier
+    cdef public object logger
+    cdef public object exchange_personal_data
+    cdef public object previous_state_manager
 
-    cdef public bint simulated
+    cdef public list trading_modes

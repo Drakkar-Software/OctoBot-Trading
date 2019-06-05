@@ -15,21 +15,20 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.traders.trader cimport Trader
+from octobot_trading.exchanges.backtesting.exchange_simulator cimport ExchangeSimulator
 
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
-from octobot_trading.data.order cimport Order
-from octobot_trading.data.portfolio cimport Portfolio
+cdef class Backtesting:
+    cdef public object config
+    cdef public float begin_time
+    cdef public bint force_exit_at_end
+    cdef ExchangeSimulator exchange_simulator
+    cdef public set ended_symbols
+    cdef public set symbols_to_test
 
-cdef class SubPortfolio(Portfolio):
-    cdef public Portfolio parent_portfolio
+    cdef object logger
 
-    cdef public float percent
+    cpdef void print_trades_history(self)
+    cpdef Trader get_trader(self)
 
-    cdef public bint is_relative
-
-    cpdef void update_from_parent(self)
-    cpdef void set_percent(self, float percent)
-    cpdef void update_portfolio_available(self, Order order, bint is_new_order=*)
-    cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
+    cdef void _init_symbols_to_test(self)

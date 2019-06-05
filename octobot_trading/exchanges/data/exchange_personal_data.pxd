@@ -14,22 +14,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.data_manager.orders_manager cimport OrdersManager
+from octobot_trading.data_manager.portfolio_manager cimport PortfolioManager
+from octobot_trading.data_manager.trades_manager cimport TradesManager
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+from octobot_trading.traders.trader cimport Trader
 
+cdef class ExchangePersonalData:
+    cdef public object logger
+    cdef public object exchange
 
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
-from octobot_trading.data.order cimport Order
-from octobot_trading.data.portfolio cimport Portfolio
+    cdef public dict config
 
-cdef class SubPortfolio(Portfolio):
-    cdef public Portfolio parent_portfolio
+    cdef public ExchangeManager exchange_manager
+    cdef public Trader trader
 
-    cdef public float percent
-
-    cdef public bint is_relative
-
-    cpdef void update_from_parent(self)
-    cpdef void set_percent(self, float percent)
-    cpdef void update_portfolio_available(self, Order order, bint is_new_order=*)
-    cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
+    cdef public PortfolioManager portfolio_manager
+    cdef public TradesManager trades_manager
+    cdef public OrdersManager orders_manager

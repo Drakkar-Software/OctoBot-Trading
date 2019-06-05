@@ -16,20 +16,12 @@
 #  License along with this library.
 
 
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
-from octobot_trading.data.order cimport Order
-from octobot_trading.data.portfolio cimport Portfolio
+cdef class DataCollectorParser:
+    @staticmethod
+    cdef dict _get_file_content(str file_name)
 
-cdef class SubPortfolio(Portfolio):
-    cdef public Portfolio parent_portfolio
+    @staticmethod
+    cdef dict _merge_arrays(dict arrays)
 
-    cdef public float percent
-
-    cdef public bint is_relative
-
-    cpdef void update_from_parent(self)
-    cpdef void set_percent(self, float percent)
-    cpdef void update_portfolio_available(self, Order order, bint is_new_order=*)
-    cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
+    @staticmethod
+    cdef dict _get_empty_parsed_data()

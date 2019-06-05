@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -16,12 +16,14 @@
 
 from asyncio import Lock
 
+from octobot_trading.util.initializable import Initializable
 from octobot_trading.orders import OrderConstants
 
-from octobot_trading.constants import CURRENT_PORTFOLIO_STRING, SIMULATOR_CURRENT_PORTFOLIO
+from octobot_trading.constants import CURRENT_PORTFOLIO_STRING, SIMULATOR_CURRENT_PORTFOLIO, CONFIG_SIMULATOR, \
+    CONFIG_STARTING_PORTFOLIO, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import TradeOrderSide, TraderOrderType
-from octobot_commons.initializable import Initializable
 from octobot_commons.logging.logging_util import get_logger
+from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
 """ The Portfolio class manage an exchange portfolio
 This will begin by loading current exchange portfolio (by pulling user data)
@@ -32,9 +34,6 @@ This class also manage the availability of each currency in the portfolio:
 
 
 class Portfolio(Initializable):
-    AVAILABLE = "available"
-    TOTAL = "total"
-
     def __init__(self, config, trader, exchange_manager):
         super().__init__()
         self.config = config
@@ -71,52 +70,51 @@ class Portfolio(Initializable):
             # load new portfolio from config settings
             portfolio_amount_dict = self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]
         try:
-            self.portfolio = self.get_portfolio_from_amount_dict(portfolio_amount_dict)
+            self.portfolio = Portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict)
         except Exception as e:
             self.logger.warning(f"Error when loading trading history, will reset history. ({e})")
             self.logger.exception(e)
             self.trader.get_previous_state_manager.reset_trading_history()
-            self.portfolio = self.get_portfolio_from_amount_dict(
+            self.portfolio = Portfolio.get_portfolio_from_amount_dict(
                 self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO])
 
     @staticmethod
     def get_portfolio_from_amount_dict(amount_dict):
         if not all(isinstance(i, (int, float)) for i in amount_dict.values()):
             raise RuntimeError("Portfolio has to be initialized using numbers")
-        return {currency: {Portfolio.AVAILABLE: total, Portfolio.TOTAL: total}
+        return {currency: {PORTFOLIO_AVAILABLE: total, PORTFOLIO_TOTAL: total}
                 for currency, total in amount_dict.items()}
 
     async def update_portfolio_balance(self):
         if not self.is_simulated and self.is_enabled:
             balance = await self.trader.get_exchange().get_balance()
 
-            self.portfolio = {currency: {Portfolio.AVAILABLE: balance[currency][CONFIG_PORTFOLIO_FREE],
-                                         Portfolio.TOTAL: balance[currency][CONFIG_PORTFOLIO_TOTAL]}
+            self.portfolio = {currency: {PORTFOLIO_AVAILABLE: balance[currency][CONFIG_PORTFOLIO_FREE],
+                                         PORTFOLIO_TOTAL: balance[currency][CONFIG_PORTFOLIO_TOTAL]}
                               for currency in balance}
 
-    @staticmethod
-    def get_currency_from_given_portfolio(portfolio, currency, portfolio_type=AVAILABLE):
-        if currency in portfolio:
-            return portfolio[currency][portfolio_type]
-        portfolio[currency] = {
-            Portfolio.AVAILABLE: 0,
-            Portfolio.TOTAL: 0
+    def get_currency_from_given_portfolio(self, currency, portfolio_type=PORTFOLIO_AVAILABLE):
+        if currency in self.portfolio:
+            return self.portfolio[currency][portfolio_type]
+        self.portfolio[currency] = {
+            PORTFOLIO_AVAILABLE: 0,
+            PORTFOLIO_TOTAL: 0
         }
-        return portfolio[currency][portfolio_type]
+        return self.portfolio[currency][portfolio_type]
 
     # Get specified currency quantity in the portfolio
-    def get_currency_portfolio(self, currency, portfolio_type=AVAILABLE):
-        return self.get_currency_from_given_portfolio(self.portfolio, currency, portfolio_type)
+    def get_currency_portfolio(self, currency, portfolio_type=PORTFOLIO_AVAILABLE):
+        return self.get_currency_from_given_portfolio(currency, portfolio_type)
 
     # Set new currency quantity in the portfolio
     def _update_portfolio_data(self, currency, value, total=True, available=False):
         if currency in self.portfolio:
             if total:
-                self.portfolio[currency][Portfolio.TOTAL] += value
+                self.portfolio[currency][PORTFOLIO_TOTAL] += value
             if available:
-                self.portfolio[currency][Portfolio.AVAILABLE] += value
+                self.portfolio[currency][PORTFOLIO_AVAILABLE] += value
         else:
-            self.portfolio[currency] = {Portfolio.AVAILABLE: value, Portfolio.TOTAL: value}
+            self.portfolio[currency] = {PORTFOLIO_AVAILABLE: value, PORTFOLIO_TOTAL: value}
 
     """ update_portfolio performs the update of the total / available quantity of a currency
     It is called only when an order is filled to update the real quantity of the currency to be set in "total" field
@@ -173,8 +171,7 @@ class Portfolio(Initializable):
             self._update_portfolio_available(order, 1 if is_new_order else -1)
 
     # Check if the order has impact on availability
-    @staticmethod
-    def _check_available_should_update(order):
+    def _check_available_should_update(self, order):
         # stop losses and take profits aren't using available portfolio
         return order.__class__ not in [OrderConstants.TraderOrderTypeClasses[TraderOrderType.STOP_LOSS],
                                        OrderConstants.TraderOrderTypeClasses[TraderOrderType.STOP_LOSS_LIMIT]]
@@ -196,13 +193,13 @@ class Portfolio(Initializable):
     # Resets available amount with total amount CAREFUL: if no currency is give, resets all the portfolio !
     def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
         if not reset_currency:
-            self.portfolio.update({currency: {Portfolio.AVAILABLE: self.portfolio[currency][Portfolio.TOTAL],
-                                              Portfolio.TOTAL: self.portfolio[currency][Portfolio.TOTAL]}
+            self.portfolio.update({currency: {PORTFOLIO_AVAILABLE: self.portfolio[currency][PORTFOLIO_TOTAL],
+                                              PORTFOLIO_TOTAL: self.portfolio[currency][PORTFOLIO_TOTAL]}
                                    for currency in self.portfolio})
         else:
             if reset_currency in self.portfolio:
                 if reset_quantity is None:
-                    self.portfolio[reset_currency][Portfolio.AVAILABLE] = \
-                        self.portfolio[reset_currency][Portfolio.TOTAL]
+                    self.portfolio[reset_currency][PORTFOLIO_AVAILABLE] = \
+                        self.portfolio[reset_currency][PORTFOLIO_TOTAL]
                 else:
-                    self.portfolio[reset_currency][Portfolio.AVAILABLE] += reset_quantity
+                    self.portfolio[reset_currency][PORTFOLIO_AVAILABLE] += reset_quantity
