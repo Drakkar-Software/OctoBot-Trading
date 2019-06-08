@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.producers import TickerUpdater
+from octobot_trading.producers.ticker_updater import TickerUpdater
 
 
 class TickerUpdaterSimulator(TickerUpdater):

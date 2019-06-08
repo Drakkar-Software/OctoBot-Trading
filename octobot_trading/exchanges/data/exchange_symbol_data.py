@@ -23,7 +23,7 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_websockets.constants import MINUTE_TO_SECONDS
 
 
-class SymbolData:
+class ExchangeSymbolData:
     MAX_ORDER_BOOK_ORDER_COUNT = 100
     MAX_RECENT_TRADES_COUNT = 100
     MAX_CANDLES_COUNT = 1000
@@ -98,7 +98,7 @@ class SymbolData:
     def add_new_recent_trades(self, recent_trade_data, forced=False):
         if not forced:
             self.recent_trades.append(recent_trade_data)
-            if len(self.recent_trades) >= SymbolData.MAX_RECENT_TRADES_COUNT:
+            if len(self.recent_trades) >= ExchangeSymbolData.MAX_RECENT_TRADES_COUNT:
                 self.recent_trades.pop(0)
         else:
             self.recent_trades = recent_trade_data
@@ -285,7 +285,7 @@ class CandleData:
             self.add_new_candle(new_candles_data)
 
     def change_current_candle(self, new_last_candle_data):
-        if len(self.time_candles_list) >= SymbolData.MAX_CANDLES_COUNT:
+        if len(self.time_candles_list) >= ExchangeSymbolData.MAX_CANDLES_COUNT:
             self.close_candles_list.pop(0)
             self.open_candles_list.pop(0)
             self.high_candles_list.pop(0)

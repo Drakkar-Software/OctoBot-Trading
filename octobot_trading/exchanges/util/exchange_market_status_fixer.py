@@ -57,7 +57,7 @@ class ExchangeMarketStatusFixer:
 
         market_precision = self.market_status[Ecmsc.PRECISION.value]
 
-        if not self._check_market_status_values(market_precision.values(), zero_valid=True):
+        if not ExchangeMarketStatusFixer._check_market_status_values(market_precision.values(), zero_valid=True):
             if self.price_example is not None:
                 self._fix_market_status_precision_with_price()
 
@@ -89,13 +89,13 @@ class ExchangeMarketStatusFixer:
             }
 
         # if some data is missing
-        if not self._check_market_status_limits(market_limit):
+        if not ExchangeMarketStatusFixer._check_market_status_limits(market_limit):
             self._fix_market_status_limits_from_current_data(market_limit)
 
-            if self.market_status_specific and not self._check_market_status_limits(market_limit):
+            if self.market_status_specific and not ExchangeMarketStatusFixer._check_market_status_limits(market_limit):
                 self._fix_market_status_limits_with_specific()
 
-            if self.price_example is not None and not self._check_market_status_limits(market_limit):
+            if self.price_example is not None and not ExchangeMarketStatusFixer._check_market_status_limits(market_limit):
                 self._fix_market_status_limits_with_price()
 
     @staticmethod
@@ -113,16 +113,16 @@ class ExchangeMarketStatusFixer:
 
     def _fix_market_status_limits_from_current_data(self, market_limit):
         # calculate cost
-        if not (self._check_market_status_values(market_limit[Ecmsc.LIMITS_COST.value].values())):
-            self._calculate_costs(market_limit)
+        if not (ExchangeMarketStatusFixer._check_market_status_values(market_limit[Ecmsc.LIMITS_COST.value].values())):
+            ExchangeMarketStatusFixer._calculate_costs(market_limit)
 
         # calculate amounts
-        if not (self._check_market_status_values(market_limit[Ecmsc.LIMITS_AMOUNT.value].values())):
-            self._calculate_amounts(market_limit)
+        if not (ExchangeMarketStatusFixer._check_market_status_values(market_limit[Ecmsc.LIMITS_AMOUNT.value].values())):
+            ExchangeMarketStatusFixer._calculate_amounts(market_limit)
 
         # calculate prices
-        if not (self._check_market_status_values(market_limit[Ecmsc.LIMITS_PRICE.value].values())):
-            self._calculate_prices(market_limit)
+        if not (ExchangeMarketStatusFixer._check_market_status_values(market_limit[Ecmsc.LIMITS_PRICE.value].values())):
+            ExchangeMarketStatusFixer._calculate_prices(market_limit)
 
         if not self.is_ms_valid(market_limit[Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]):
             market_limit[Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] = 0
@@ -269,6 +269,6 @@ class ExchangeMarketStatusFixer:
                                         market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MIN.value]):
                                 market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MIN.value] = \
                                     float(filter_dict[Ecmsic.MIN_QTY.value])
-                self._calculate_costs(market_limit)
+                ExchangeMarketStatusFixer._calculate_costs(market_limit)
         except Exception:
             pass

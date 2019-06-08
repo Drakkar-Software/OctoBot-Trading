@@ -19,6 +19,7 @@ import logging
 import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
 from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce
+from octobot_commons.config_util import decrypt
 
 from octobot_commons.dict_util import get_value_or_default
 
@@ -31,7 +32,7 @@ from octobot_trading.exchanges.abstract_exchange import AbstractExchange
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
 
 
-class RESTExchange(AbstractExchange):
+class RestExchange(AbstractExchange):
     """
     CCXT library wrapper
     """
@@ -202,7 +203,7 @@ class RESTExchange(AbstractExchange):
         try:
             created_order = await self._create_specific_order(order_type, symbol, quantity, price)
             # some exchanges are not returning the full order details on creation: fetch it if necessary
-            if created_order and not self._ensure_order_details_completeness(created_order):
+            if created_order and not RestExchange._ensure_order_details_completeness(created_order):
                 if ecoc.ID.value in created_order:
                     order_symbol = created_order[ecoc.SYMBOL.value] if ecoc.SYMBOL.value in created_order else None
                     created_order = await self.exchange_manager.get_exchange().get_order(created_order[ecoc.ID.value],
@@ -259,7 +260,7 @@ class RESTExchange(AbstractExchange):
                       taker_or_maker=ExchangeConstantsMarketPropertyColumns.TAKER.value):
         return self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
-                                         side=self._get_side(order_type),
+                                         side=RestExchange._get_side(order_type),
                                          amount=quantity,
                                          price=price,
                                          takerOrMaker=taker_or_maker)

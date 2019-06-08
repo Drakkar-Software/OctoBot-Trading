@@ -45,4 +45,4 @@ cdef class ExchangeMarketStatusFixer:
     cdef bint _check_market_status_limits(market_limit)
 
     @staticmethod
-    cdef bint _check_market_status_values(market_limit)
+    cdef bint _check_market_status_values(market_limit, bint zero_valid=*)

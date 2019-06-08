@@ -35,7 +35,7 @@ from octobot_trading.exchanges.backtesting.collector import backtesting_enabled,
     NoCandleDataForThisSymbolException, NoCandleDataForThisTimeFrameException
 from octobot_trading.exchanges.backtesting.collector.data_file_manager import interpret_file_name
 from octobot_trading.exchanges.backtesting.collector.data_parser import DataCollectorParser
-from octobot_trading.exchanges.data.exchange_symbol_data import SymbolData
+from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
 from octobot_trading.util import get_symbols
 
 
@@ -291,7 +291,7 @@ class ExchangeSimulator(AbstractExchange):
 
     def get_full_candles_data(self, symbol, time_frame):
         full_data = self.get_ohlcv(symbol)[time_frame.value]
-        temp_symbol_data = SymbolData(symbol)
+        temp_symbol_data = ExchangeSymbolData(symbol)
         temp_symbol_data.update_symbol_candles(time_frame, full_data, True)
         return temp_symbol_data.get_symbol_prices(time_frame)
 

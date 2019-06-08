@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.producers import OHLCVUpdater
+from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 
 
 class OHLCVUpdaterSimulator(OHLCVUpdater):
