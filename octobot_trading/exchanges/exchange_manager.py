@@ -119,7 +119,7 @@ class ExchangeManager(Initializable):
     async def _create_exchange_channels(self):  # TODO filter creation
         for exchange_channel_class in ExchangeChannel.__subclasses__():
             exchange_channel = exchange_channel_class(self)
-            ExchangeChannels.set_chan(exchange_channel, name=exchange_channel_class.name)
+            ExchangeChannels.set_chan(exchange_channel, name=exchange_channel_class.get_name())
             await exchange_channel.start()
 
     async def _create_exchange_producers(self):  # TODO filter creation

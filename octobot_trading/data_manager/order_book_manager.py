@@ -18,7 +18,7 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.util.initializable import Initializable
 
 
-class OrdersManager(Initializable):
+class OrderBookManager(Initializable):
     def __init__(self):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)

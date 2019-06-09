@@ -47,26 +47,18 @@ class ExchangePersonalData:
                 self.logger.exception(e)
 
     # updates
-    def handle_portfolio_update(self, currency, total, available, in_order):
-        self.portfolio[currency] = {
+    def handle_portfolio_update(self, currency, total, available, in_order):  # TODO
+        self.portfolio_manager[currency] = {
             CONFIG_PORTFOLIO_FREE: available,
             CONFIG_PORTFOLIO_USED: in_order,
             CONFIG_PORTFOLIO_TOTAL: total
         }
 
-    def handle_orders_update(self, currency, total, available, in_order):
-        self.portfolio[currency] = {
-            CONFIG_PORTFOLIO_FREE: available,
-            CONFIG_PORTFOLIO_USED: in_order,
-            CONFIG_PORTFOLIO_TOTAL: total
-        }
+    def handle_orders_update(self):  # TODO
+        pass
 
-    def handle_trades_update(self, currency, total, available, in_order):
-        self.portfolio[currency] = {
-            CONFIG_PORTFOLIO_FREE: available,
-            CONFIG_PORTFOLIO_USED: in_order,
-            CONFIG_PORTFOLIO_TOTAL: total
-        }
+    def handle_trades_update(self):  # TODO
+        pass
 
     def get_order_portfolio(self, order):
         return order.linked_portfolio if order.linked_portfolio is not None else self.portfolio

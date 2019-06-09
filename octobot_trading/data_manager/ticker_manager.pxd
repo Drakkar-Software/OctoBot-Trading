@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -9,19 +10,12 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+#  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.logging.logging_util import get_logger
-
-from octobot_trading.util.initializable import Initializable
+from octobot_trading.util.initializable cimport Initializable
 
 
-class OrdersManager(Initializable):
-    def __init__(self):
-        super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
-
-    async def initialize_impl(self):
-        pass
+cdef class TickerManager(Initializable):
+    cdef object logger

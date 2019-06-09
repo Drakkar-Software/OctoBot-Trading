@@ -19,11 +19,8 @@ from octobot_trading.util.initializable import Initializable
 
 
 class PortfolioManager(Initializable):
-    def __init__(self, config, trader, exchange_manager):
+    def __init__(self):
         super().__init__()
-        self.config = config
-        self.trader = trader
-        self.exchange_manager = exchange_manager
         self.logger = get_logger(self.__class__.__name__)
 
     async def initialize_impl(self):
