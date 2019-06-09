@@ -17,9 +17,6 @@
 from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
 
 cdef class RestExchange(AbstractExchange):
-    # ccxt client
-    cdef object client
-
     # balance additional info
     cdef list info_list
     cdef float free

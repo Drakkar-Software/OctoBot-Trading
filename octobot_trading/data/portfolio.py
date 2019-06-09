@@ -42,7 +42,7 @@ class Portfolio(Initializable):
         self.is_simulated = exchange_manager.is_simulated
         self.is_enabled = trader.enable
         self.portfolio = {}
-        exchange_name = self.trader.get_exchange().get_name()
+        exchange_name = self.trader.get_exchange().name
         self.logger = get_logger(f"{self.__class__.__name__}{'Simulator' if self.is_simulated else ''}[{exchange_name}]")
         self.lock = Lock()
 

@@ -20,12 +20,17 @@ from octobot_channels.channels import TICKER_CHANNEL, ORDER_BOOK_CHANNEL, RECENT
 from octobot_channels.channels.exchange.exchange_channel import ExchangeChannels
 from octobot_websockets.callback import TradeCallback, BookCallback, TickerCallback
 from octobot_websockets.constants import MINUTE_TO_SECONDS
+from octobot_websockets.feeds.bitmex import Bitmex
 from octobot_websockets.feeds.feed import Feeds
 
-from octobot_trading.exchanges.websockets import WEBSOCKET_CLASSES
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.exchanges.websockets.websocket_callbacks import RecentTradesCallBack, OrderBookCallBack, \
     TickersCallBack
+
+
+WEBSOCKET_CLASSES = {
+    "bitmex": Bitmex,
+}
 
 
 class OctoBotWebSocketClient(AbstractWebsocket):
@@ -34,7 +39,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.exchange_manager = exchange_manager
-        self.exchange_name = exchange_manager.exchange.get_name()
+        self.exchange_name = exchange_manager.exchange.name
         self.octobot_websockets = []
         self.octobot_websockets_t = []
         self.octobot_websockets_executors = None
@@ -55,7 +60,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         self.callbacks = {}
 
     def init_web_sockets(self, time_frames, trader_pairs):
-        self.exchange_class = self._get_octobot_feed_class(self.exchange_manager.exchange.get_name())
+        self.exchange_class = self._get_octobot_feed_class(self.exchange_manager.exchange.name)
         self.trader_pairs = trader_pairs
         self.time_frames = time_frames
 
@@ -67,7 +72,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
             # ensure feeds are added
             self._create_octobot_feed_feeds()
         else:
-            self.logger.warning(f"{self.exchange_manager.exchange.get_name().title()}'s "
+            self.logger.warning(f"{self.exchange_manager.exchange.name.title()}'s "
                                 f"websocket has no symbol to feed")
 
     # Feeds
@@ -102,7 +107,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
             self._add_feed_and_run_if_required(Feeds.TICKER, TickerCallback(tickers_callback.tickers_callback))
             self.is_handling_price_ticker = True
         else:
-            self.logger.warning(f"{self.exchange_manager.exchange.get_name()}'s "
+            self.logger.warning(f"{self.exchange_manager.exchange.name}'s "
                                 f"websocket is not handling tickers")
 
     def _is_feed_available(self, feed):
@@ -159,7 +164,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
             is_websocket_running = True
 
         if not is_websocket_running:
-            self.logger.error(f"{self.exchange_manager.exchange.get_name().title()}'s "
+            self.logger.error(f"{self.exchange_manager.exchange.name.title()}'s "
                               f"websocket is not handling anything, it will not be started, ")
 
     def close_and_restart_sockets(self):
@@ -202,3 +207,11 @@ class OctoBotWebSocketClient(AbstractWebsocket):
             return time_frame * MINUTE_TO_SECONDS
         else:
             return time_frame
+
+    @staticmethod
+    def get_websocket_client(config, exchange_manager):
+        return OctoBotWebSocketClient(config, exchange_manager)
+
+    @staticmethod
+    def parse_order_status(status):
+        pass

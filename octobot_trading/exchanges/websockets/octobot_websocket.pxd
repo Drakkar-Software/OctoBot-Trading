@@ -17,6 +17,7 @@
 from octobot_websockets.feeds.feed cimport Feed
 from octobot_trading.exchanges.websockets.abstract_websocket cimport AbstractWebsocket
 
+
 cdef class OctoBotWebSocketClient(AbstractWebsocket):
     cdef public str exchange_name
 

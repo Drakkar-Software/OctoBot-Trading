@@ -32,7 +32,7 @@ class OrdersUpdaterSimulator(OrdersUpdater):
         super().__init__(channel)
         self.exchange_personal_data = self.channel.exchange_manager.exchange_dispatcher.get_exchange_personal_data()
 
-        ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.get_name()).new_consumer(
+        ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(
             self.handle_recent_trade,
             filter_size=True)
 
@@ -57,8 +57,8 @@ class OrdersUpdaterSimulator(OrdersUpdater):
 
             if order.get_status() == OrderStatus.FILLED:
                 order_filled = True
-                self.logger.info(f"{order.get_order_symbol()} {order.get_name()} (ID : {order.get_id()})"
-                                 f" filled on {self.channel.exchange.get_name()} "
+                self.logger.info(f"{order.get_order_symbol()} {order.name} (ID : {order.get_id()})"
+                                 f" filled on {self.channel.exchange.name} "
                                  f"at {order.get_filled_price()}")
                 await order.close_order()
         except MissingOrderException as e:

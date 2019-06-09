@@ -28,7 +28,7 @@ from octobot_channels.channels.exchange.exchange_channel import ExchangeChannel,
 from octobot_commons.time_frame_manager import TimeFrameManager
 
 from octobot_trading.exchanges.backtesting.exchange_simulator import ExchangeSimulator
-from octobot_trading.exchanges.rest_exchange import RESTExchange
+from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.producers.balance_updater import BalanceUpdater
 from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
@@ -89,11 +89,11 @@ class ExchangeManager(Initializable):
         self.exchange_personal_data = ExchangePersonalData(self)
 
     async def create_exchanges(self):
-        self.exchange_type = RESTExchange.create_exchange_type(self.exchange_class_string)
+        self.exchange_type = RestExchange.create_exchange_type(self.exchange_class_string)
 
         if not self.is_simulated:
             # create REST based on ccxt exchange
-            self.exchange = RESTExchange(self.config, self.exchange_type, self)
+            self.exchange = RestExchange(self.config, self.exchange_type, self)
             await self.exchange.initialize()
 
             self._load_constants()
@@ -103,7 +103,7 @@ class ExchangeManager(Initializable):
             if not self.rest_only:
 
                 # search for websocket
-                if self.check_web_socket_config(self.exchange.get_name()):
+                if self.check_web_socket_config(self.exchange.name):
                     self.exchange_web_socket = self._search_and_create_websocket(AbstractWebsocket)
 
         # if simulated : create exchange simulator instance
@@ -119,25 +119,25 @@ class ExchangeManager(Initializable):
     async def _create_exchange_channels(self):  # TODO filter creation
         for exchange_channel_class in ExchangeChannel.__subclasses__():
             exchange_channel = exchange_channel_class(self)
-            ExchangeChannels.set_chan(exchange_channel, name=exchange_channel_class.get_name())
+            ExchangeChannels.set_chan(exchange_channel, name=exchange_channel_class.name)
             await exchange_channel.start()
 
     async def _create_exchange_producers(self):  # TODO filter creation
-        await BalanceUpdater(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.get_name())).run()
-        await OHLCVUpdater(ExchangeChannels.get_chan(OHLCV_CHANNEL, self.exchange.get_name())).run()
-        await OrderBookUpdater(ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, self.exchange.get_name())).run()
-        await RecentTradeUpdater(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.get_name())).run()
-        await TickerUpdater(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.get_name())).run()
+        await BalanceUpdater(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+        await OHLCVUpdater(ExchangeChannels.get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
+        await OrderBookUpdater(ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
+        await RecentTradeUpdater(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
+        await TickerUpdater(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
 
         if self.is_trader_simulated:
-            await OrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.get_name())).run()
+            await OrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
         else:
-            await OrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.get_name())).run()
+            await OrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
 
     def _search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():
             # add websocket exchange if available
-            if socket_manager.has_name(self.exchange.get_name()):
+            if socket_manager.has_name(self.exchange.name):
                 exchange_web_socket = socket_manager.get_websocket_client(self.config, self)
 
                 # init websocket
@@ -191,10 +191,10 @@ class ExchangeManager(Initializable):
 
     def enabled(self):
         # if we can get candlestick data
-        if self.is_simulated or self.exchange.get_name() in self.config[CONFIG_EXCHANGES]:
+        if self.is_simulated or self.exchange.name in self.config[CONFIG_EXCHANGES]:
             return True
         else:
-            self.logger.warning(f"Exchange {self.exchange.get_name()} is currently disabled")
+            self.logger.warning(f"Exchange {self.exchange.name} is currently disabled")
             return False
 
     def get_exchange_symbol_id(self, symbol, with_fixer=False):
@@ -204,7 +204,7 @@ class ExchangeManager(Initializable):
         return self.exchange.get_market_status(symbol, with_fixer=with_fixer)["symbol"]
 
     def _load_config_symbols_and_time_frames(self):
-        client = self.exchange.get_client()
+        client = self.exchange.client
         if client:
             self.client_symbols = client.symbols
             self.client_time_frames[CONFIG_WILDCARD] = client.timeframes if hasattr(client, "timeframes") else {}
@@ -223,7 +223,7 @@ class ExchangeManager(Initializable):
                         if self.symbol_exists(symbol):
                             self.cryptocurrencies_traded_pairs[cryptocurrency].append(symbol)
                         else:
-                            self.logger.error(f"{self.exchange.get_name()} is not supporting the "
+                            self.logger.error(f"{self.exchange.name} is not supporting the "
                                               f"{symbol} trading pair.")
 
                 else:
@@ -236,7 +236,7 @@ class ExchangeManager(Initializable):
 
                 # add to global traded pairs
                 if not self.cryptocurrencies_traded_pairs[cryptocurrency]:
-                    self.logger.error(f"{self.exchange.get_name()} is not supporting any {cryptocurrency} trading pair "
+                    self.logger.error(f"{self.exchange.name} is not supporting any {cryptocurrency} trading pair "
                                       f"from current configuration.")
                 self.traded_pairs += self.cryptocurrencies_traded_pairs[cryptocurrency]
             else:
@@ -256,7 +256,7 @@ class ExchangeManager(Initializable):
     def symbol_exists(self, symbol):
         if self.client_symbols is None:
             self.logger.error(f"Failed to load available symbols from REST exchange, impossible to check if "
-                              f"{symbol} exists on {self.exchange.get_name()}")
+                              f"{symbol} exists on {self.exchange.name}")
             return False
         return symbol in self.client_symbols
 

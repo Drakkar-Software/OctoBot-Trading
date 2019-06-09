@@ -45,7 +45,7 @@ class Trader(Initializable):
 
         # logging
         self.trader_type_str = REAL_TRADER_STR
-        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange.get_name()}]")
+        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange.name}]")
         self.previous_state_manager = previous_state_manager
         self.loaded_previous_state = False
 
@@ -80,9 +80,9 @@ class Trader(Initializable):
                 # can receive current orders updates: start using websocket for orders if available
                 self.exchange_personal_data.init_orders()
 
-            self.logger.debug(f"Enabled on {self.exchange.get_name()}")
+            self.logger.debug(f"Enabled on {self.exchange.name}")
         else:
-            self.logger.debug(f"Disabled on {self.exchange.get_name()}")
+            self.logger.debug(f"Disabled on {self.exchange.name}")
 
     @staticmethod
     def enabled(config):
@@ -203,7 +203,7 @@ class Trader(Initializable):
                                                              new_order.origin_price,
                                                              new_order.origin_stop_price)
 
-            self.logger.info(f"Created order on {self.exchange.get_name()}: {created_order}")
+            self.logger.info(f"Created order on {self.exchange.name}: {created_order}")
 
             # get real order from exchange
             new_order = self.parse_exchange_order_to_order_instance(created_order)
@@ -224,7 +224,7 @@ class Trader(Initializable):
                 odr = order
                 await odr.cancel_order()
                 self.logger.info(f"{odr.symbol} {odr.get_name()} at {odr.origin_price}"
-                                 f" (ID : {odr.order_id}) cancelled on {self.get_exchange().get_name()}")
+                                 f" (ID : {odr.order_id}) cancelled on {self.get_exchange().name}")
 
                 self.exchange.get_exchange_personal_data().orders.remove_order_from_list(order)
 
@@ -406,7 +406,7 @@ class Trader(Initializable):
 
     async def force_refresh_portfolio(self, portfolio=None):
         if not self.simulate:
-            self.logger.info(f"Triggered forced {self.exchange.get_name()} trader portfolio refresh")
+            self.logger.info(f"Triggered forced {self.exchange.name} trader portfolio refresh")
             if portfolio:
                 await portfolio.update_portfolio_balance()
             else:
@@ -416,7 +416,7 @@ class Trader(Initializable):
     async def force_refresh_orders(self, portfolio=None, delete_desync_orders=True):
         # useless in simulation mode
         if not self.simulate:
-            self.logger.info(f"Triggered forced {self.exchange.get_name()} trader orders refresh")
+            self.logger.info(f"Triggered forced {self.exchange.name} trader orders refresh")
             symbols = self.exchange.get_exchange_manager().get_traded_pairs()
             added_orders = 0
             removed_orders = 0

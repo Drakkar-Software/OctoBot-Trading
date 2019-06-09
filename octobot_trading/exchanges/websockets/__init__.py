@@ -13,15 +13,5 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_websockets.feeds.bitmex import Bitmex
 
-from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebSocket
 from octobot_trading.exchanges.websockets.octobot_websocket import OctoBotWebSocketClient
-
-WEBSOCKET_CLASSES = {
-    "bitmex": Bitmex,
-}
-
-
-def get_websocket_client(config, exchange_manager):
-    return OctoBotWebSocketClient(config, exchange_manager)

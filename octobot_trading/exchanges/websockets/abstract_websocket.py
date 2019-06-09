@@ -13,7 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from abc import abstractmethod
+
+from abc import abstractmethod, ABCMeta
 
 from ccxt.base.exchange import Exchange as ccxtExchange
 from octobot_commons.enums import TimeFrames
@@ -21,6 +22,7 @@ from octobot_commons.logging.logging_util import get_logger
 
 
 class AbstractWebsocket:
+    __metaclass__ = ABCMeta
 
     def __init__(self, config, exchange_manager):
         self.config = config
@@ -31,12 +33,10 @@ class AbstractWebsocket:
 
     # Abstract methods
     @classmethod
-    @abstractmethod
     def get_name(cls):
         raise NotImplementedError("get_name not implemented")
 
     @classmethod
-    @abstractmethod
     def has_name(cls, name: str) -> bool:
         raise NotImplementedError("has_name not implemented")
 
@@ -49,7 +49,6 @@ class AbstractWebsocket:
         raise NotImplementedError("stop_sockets not implemented")
 
     @staticmethod
-    @abstractmethod
     def get_websocket_client(config, exchange_manager):
         raise NotImplementedError("get_websocket_client not implemented")
 
@@ -82,7 +81,6 @@ class AbstractWebsocket:
         raise NotImplementedError("handles_funding not implemented")
 
     @staticmethod
-    @abstractmethod
     def parse_order_status(status):
         raise NotImplementedError("parse_order_status not implemented")
 

@@ -56,7 +56,7 @@ class ExchangeDispatcher(AbstractExchange):
         return self._web_socket_available()
 
     def get_name(self):
-        return self.exchange.get_name()
+        return self.exchange.name
 
     def get_exchange_manager(self):
         return self.exchange.get_exchange_manager()
