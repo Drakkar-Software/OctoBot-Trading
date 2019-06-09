@@ -30,7 +30,7 @@ class OrdersUpdaterSimulator(OrdersUpdater):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.exchange_personal_data = self.channel.exchange_manager.exchange_dispatcher.get_exchange_personal_data()
+        self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
 
         ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(
             self.handle_recent_trade,

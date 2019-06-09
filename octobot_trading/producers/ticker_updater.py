@@ -23,6 +23,6 @@ class TickerUpdater(TickerProducer):
 
     async def start(self):
         while not self.should_stop:
-            for pair in self.channel.exchange_manager.traded_pairs:
-                await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_price_ticker(pair))
+            # for pair in self.channel.exchange_manager.traded_pairs:
+            #     await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_price_ticker(pair))
             await asyncio.sleep(self.TICKER_REFRESH_TIME)

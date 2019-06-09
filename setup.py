@@ -18,7 +18,7 @@ from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 from setuptools import find_packages
 from setuptools import setup, Extension
-
+import numpy as np
 from octobot_trading import PROJECT_NAME, VERSION
 
 PACKAGES = find_packages(exclude=["tests"])
@@ -46,7 +46,7 @@ packages_list: list = ["octobot_trading.util.initializable",
                        "octobot_trading.data_manager.portfolio_manager",
                        "octobot_trading.data_manager.candles_manager",
                        "octobot_trading.data_manager.order_book_manager",
-                       "octobot_trading.data_manager.tickers_manager",
+                       "octobot_trading.data_manager.ticker_manager",
                        "octobot_trading.data_manager.recent_trades_manager",
                        "octobot_trading.orders.buy_limit_order",
                        "octobot_trading.orders.buy_market_order",
@@ -94,12 +94,13 @@ setup(
     include_package_data=True,
     long_description=DESCRIPTION,
     install_requires=REQUIRED,
+    include_dirs=[np.get_include()],
     cmdclass={'build_ext': build_ext},
     tests_require=["pytest"],
     test_suite="tests",
     zip_safe=False,
     data_files=[],
-    setup_requires=['Cython'],
+    setup_requires=['Cython', 'numpy'],
     python_requires=REQUIRES_PYTHON,
     ext_modules=cythonize(ext_modules),
     classifiers=[
