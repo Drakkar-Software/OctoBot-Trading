@@ -28,13 +28,12 @@ class OHLCVUpdater(OHLCVProducer):
 
     async def start(self):
         while not self.should_stop:  # TODO TEMP
-            print("Refreshing OHLCV")
             for pair in self.channel.exchange_manager.traded_pairs:
                 for time_frame in self.channel.exchange_manager.time_frames:
-                    print(f"OHLCV : {pair} {time_frame}")
-                    await self.push(pair, time_frame,
-                                    await self.channel.exchange_manager.exchange.get_symbol_prices(pair, time_frame))
-                    print("done")
+                    symbol_prices = await self.channel.exchange_manager.exchange.get_symbol_prices(pair, time_frame)
+                    # await self.perform(time_frame.value, pair, symbol_prices, replace_all=True) TODO
+                    # await self.push(pair, time_frame,
+                    #                 await self.channel.exchange_manager.exchange.get_symbol_prices(pair, time_frame))
             await asyncio.sleep(self.OHLCV_REFRESH_TIME)
 
 # import asyncio

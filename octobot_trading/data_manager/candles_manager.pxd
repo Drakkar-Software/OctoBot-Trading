@@ -44,6 +44,7 @@ cdef class CandlesManager(Initializable):
     cpdef np.float64_t get_symbol_volume_candles(self, object limit=*)
     cpdef dict get_symbol_prices(self, object limit=*)
     cpdef add_new_candle(self, dict new_candle_data)
+    cpdef void replace_all_candles(self, list all_candles_data)
 
     # private
     cdef _set_all_candles(self, object new_candles_data)

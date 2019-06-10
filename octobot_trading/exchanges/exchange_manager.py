@@ -15,19 +15,23 @@
 #  License along with this library.
 import time
 
+from octobot_channels.channels import RECENT_TRADES_CHANNEL, TICKER_CHANNEL, ORDER_BOOK_CHANNEL, OHLCV_CHANNEL, \
+    ORDERS_CHANNEL, BALANCE_CHANNEL
 from octobot_commons.config_util import has_invalid_default_config_value
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME
 from octobot_commons.enums import PriceIndexes
+from octobot_commons.logging.logging_util import get_logger
+from octobot_commons.symbol_util import split_symbol
+from octobot_commons.time_frame_manager import TimeFrameManager
+from octobot_commons.timestamp_util import is_valid_timestamp
 
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannels
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
     CONFIG_EXCHANGE_KEY
-from octobot_channels.channels import RECENT_TRADES_CHANNEL, TICKER_CHANNEL, ORDER_BOOK_CHANNEL, OHLCV_CHANNEL, \
-    ORDERS_CHANNEL, BALANCE_CHANNEL
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannels
-from octobot_commons.time_frame_manager import TimeFrameManager
-
 from octobot_trading.exchanges.backtesting.exchange_simulator import ExchangeSimulator
+from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
+from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.producers.balance_updater import BalanceUpdater
@@ -35,15 +39,9 @@ from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 from octobot_trading.producers.order_book_updater import OrderBookUpdater
 from octobot_trading.producers.orders_updater import OrdersUpdater
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
-from octobot_trading.producers.simulator.orders_updater_simulator import OrdersUpdaterSimulator
 from octobot_trading.producers.ticker_updater import TickerUpdater
-
 from octobot_trading.util import is_trader_simulator_enabled
 from octobot_trading.util.initializable import Initializable
-from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.symbol_util import split_symbol
-from octobot_commons.timestamp_util import is_valid_timestamp
-from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 
 
 class ExchangeManager(Initializable):
@@ -72,6 +70,7 @@ class ExchangeManager(Initializable):
         self.time_frames = []
 
         self.exchange_personal_data = ExchangePersonalData(self)
+        self.exchange_symbols_data = ExchangeSymbolsData(self)
 
     async def initialize_impl(self):
         await self.create_exchanges()
@@ -87,6 +86,9 @@ class ExchangeManager(Initializable):
 
     def need_user_stream(self):
         return self.config[CONFIG_TRADER][CONFIG_ENABLED_OPTION]
+
+    def reset_exchange_symbols_data(self):
+        self.exchange_symbols_data = ExchangeSymbolsData(self)
 
     def reset_exchange_personal_data(self):
         self.exchange_personal_data = ExchangePersonalData(self)
@@ -163,7 +165,7 @@ class ExchangeManager(Initializable):
             self.last_web_socket_reset = time.time()
 
             # clear databases
-            self.exchange_dispatcher.reset_symbols_data()
+            # self.reset_symbols_data()
             self.reset_exchange_personal_data()
 
             # close and restart websockets
@@ -296,12 +298,6 @@ class ExchangeManager(Initializable):
     def get_rate_limit(self):
         return self.exchange_type.rateLimit / 1000
 
-    def get_symbol_data(self, symbol):
-        return self.get_exchange().get_symbol_data(symbol)
-
-    def get_personal_data(self):
-        return self.get_exchange().get_exchange_personal_data()
-
     @staticmethod
     def need_to_uniformize_timestamp(timestamp):
         return not is_valid_timestamp(timestamp)
@@ -322,7 +318,7 @@ class ExchangeManager(Initializable):
 
     def _uniformize_candle_timestamps(self, candle):
         candle[PriceIndexes.IND_PRICE_TIME.value] = \
-            self.exchange_dispatcher.get_uniform_timestamp(candle[PriceIndexes.IND_PRICE_TIME.value])
+            self.exchange.get_uniform_timestamp(candle[PriceIndexes.IND_PRICE_TIME.value])
 
     # Exceptions
     def _raise_exchange_load_error(self):
@@ -344,3 +340,6 @@ class ExchangeManager(Initializable):
     def handle_token_error(error, logger):
         logger.error(f"Exchange configuration tokens are invalid : please check your configuration ! "
                      f"({error.__class__.__name__})")
+
+    def get_symbol_data(self, symbol):
+        return self.exchange_symbols_data.get_exchange_symbol_data(symbol)

@@ -49,34 +49,44 @@ class ExchangeSymbolData:
         self.logger = get_logger(f"{self.__class__.__name__} - {self.symbol}")
 
     # candle functions
-    def update_symbol_candles(self, time_frame, new_symbol_candles_data, replace_all=False):
-        current_time = time.time()
-        if time_frame is not None and time_frame not in self.symbol_candles or replace_all:
-            self.symbol_candles[time_frame] = CandlesManager(new_symbol_candles_data)
-            self.previous_candle_time[time_frame] = current_time
+    async def handle_candles_update(self, time_frame, new_symbol_candles_data, replace_all=False):
+        try:
+            symbol_candles = self.symbol_candles[time_frame]
+        except KeyError:
+            symbol_candles = CandlesManager()
+            await symbol_candles.initialize()
+            symbol_candles.replace_all_candles(new_symbol_candles_data)
+            self.symbol_candles[time_frame] = symbol_candles
+            return
 
+        if replace_all:
+            symbol_candles.replace_all_candles(new_symbol_candles_data)
         else:
-            candle_data = self.symbol_candles[time_frame]
-            # else check if we should edit the last candle or move to a new one
-            if candle_data._should_add_new_candle(new_symbol_candles_data[PriceIndexes.IND_PRICE_TIME.value]):
-                candle_data._change_current_candle(new_symbol_candles_data)
-                self.previous_candle_time[time_frame] = current_time
+            symbol_candles.add_new_candle(new_symbol_candles_data)
 
-            # only need to edit the last candle
-            else:
-                candle_data._set_last_candle(new_symbol_candles_data)
+    def handle_recent_trade_update(self):
+        pass
 
-    def ensure_data_validity(self, time_frame):
-        previous_candle_timestamp = self._get_previous_candle_timestamp(time_frame)
-        error_allowance = 1.2
-        current_time = time.time()
-        if previous_candle_timestamp is not None:
-            # if update time from the previous time frame is greater than this given time frame:
-            # data did not get updated => data are invalid
-            if current_time - previous_candle_timestamp > \
-                    TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS * error_allowance:
-                return False
-        return True
+    def handle_order_book_update(self, asks, bids):
+        self.order_book_manager.order_book_update(asks, bids)
+
+    def handle_order_book_delta_update(self, asks, bids):
+        self.order_book_manager.order_book_delta_update(asks, bids)
+
+    def handle_ticker_update(self):
+        pass
+
+    # def ensure_data_validity(self, time_frame): TODO
+    #     previous_candle_timestamp = self._get_previous_candle_timestamp(time_frame)
+    #     error_allowance = 1.2
+    #     current_time = time.time()
+    #     if previous_candle_timestamp is not None:
+    #         # if update time from the previous time frame is greater than this given time frame:
+    #         # data did not get updated => data are invalid
+    #         if current_time - previous_candle_timestamp > \
+    #                 TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS * error_allowance:
+    #             return False
+    #     return True
 
     '''
     Called by non-trade classes

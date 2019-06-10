@@ -11,3 +11,5 @@ ccxt
 # cli
 click
 click-completion
+
+colorlog

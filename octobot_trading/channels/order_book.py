@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot-Trading
+#  Drakkar-Software OctoBot-Channels
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -22,26 +22,27 @@ from octobot_channels.producer import Producer
 
 
 class OrderBookProducer(Producer):
-    async def push(self, symbol, order_book):
-        await self.perform(symbol, order_book)
+    async def push(self, symbol, asks, bids):
+        await self.perform(symbol, asks, bids)
 
-    async def perform(self, symbol, order_book):
+    async def perform(self, symbol, asks, bids):
         try:
             if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:  # and symbol_data.order_book_is_initialized()
-                self.channel.exchange_manager.get_symbol_data(symbol).update_order_book(order_book)
-                await self.send(symbol, order_book)
-                await self.send(CHANNEL_WILDCARD, order_book)
+                self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_update(asks, bids)
+                await self.send(symbol, asks, bids)
+                await self.send(CHANNEL_WILDCARD, asks, bids)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, order_book):
+    async def send(self, symbol, asks, bids):
         for consumer in self.channel.get_consumers(symbol=symbol):
             consumer.queue.put({
                 "symbol": symbol,
-                "order_book": order_book
+                "asks": asks,
+                "bids": bids
             })
 
 

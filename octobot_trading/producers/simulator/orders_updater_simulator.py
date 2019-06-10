@@ -37,7 +37,7 @@ class OrdersUpdaterSimulator(OrdersUpdater):
             filter_size=True)
 
     async def handle_recent_trade(self, symbol: str, recent_trade: dict):
-        last_prices = self.channel.exchange_manager.exchange_dispatcher.get_symbol_data(symbol=symbol) \
+        last_prices = self.channel.exchange_manager.get_symbol_data(symbol=symbol) \
             .get_symbol_recent_trades(limit=self.SIMULATOR_LAST_PRICES_TO_CHECK)
 
         failed_order_updates = await self._update_orders_status(symbol=symbol, last_prices=last_prices)

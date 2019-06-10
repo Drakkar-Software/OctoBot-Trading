@@ -16,23 +16,29 @@
 from asyncio import CancelledError
 
 from octobot_channels import CHANNEL_WILDCARD, CONSUMER_CALLBACK_TYPE
+from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.channels.exchange_channel import ExchangeChannel
 from octobot_channels.consumer import Consumer
 from octobot_channels.producer import Producer
 
 
 class OHLCVProducer(Producer):
+    def __init__(self, channel):
+        self.logger = get_logger(self.__class__.__name__)
+        super().__init__(channel)
+
     async def push(self, time_frame, symbol, candle):
         await self.perform(symbol, time_frame, candle)
 
-    async def perform(self, time_frame, symbol, candle):
+    async def perform(self, time_frame, symbol, candle, replace_all=False):
         try:
             # TODO manage wildcard
             if symbol in self.channel.consumers and time_frame in self.channel.consumers[symbol]:
                 self.channel.exchange_manager.uniformize_candles_if_necessary(candle)
-                self.channel.exchange_manager.get_symbol_data(symbol).update_symbol_candles(time_frame,
-                                                                                            candle,
-                                                                                            replace_all=False)
+                await self.channel.exchange_manager.get_symbol_data(symbol).handle_candles_update(time_frame,
+                                                                                                  candle,
+                                                                                                  replace_all=replace_all)
                 await self.send(time_frame, symbol, candle)
 
             if CHANNEL_WILDCARD in self.channel.consumers and time_frame in self.channel.consumers[CHANNEL_WILDCARD]:
@@ -63,5 +69,6 @@ class OHLCVConsumer(Consumer):
 
 
 class OHLCVChannel(ExchangeChannel):
-    def new_consumer(self, callback: CONSUMER_CALLBACK_TYPE, size:int = 0, symbol:str = CHANNEL_WILDCARD, time_frame = None):
+    def new_consumer(self, callback: CONSUMER_CALLBACK_TYPE, size: int = 0, symbol: str = CHANNEL_WILDCARD,
+                     time_frame=None):
         self._add_new_consumer_and_run(OHLCVConsumer(callback, size=size), symbol=symbol, time_frame=time_frame)

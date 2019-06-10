@@ -13,30 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.util.initializable import Initializable
+from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
 
 
-class OrderBookManager(Initializable):
-    def __init__(self):
-        super().__init__()
+class ExchangeSymbolsData:
+    def __init__(self, exchange_manager):
         self.logger = get_logger(self.__class__.__name__)
+        self.exchange_manager = exchange_manager
+        self.exchange = exchange_manager.exchange
+        self.config = exchange_manager.config
+        self.exchange_symbol_data = {}
 
-        self.bids = []
-        self.asks = []
-
-    async def initialize_impl(self):
-        self.reset_order_book()
-
-    def reset_order_book(self):
-        self.bids = []
-        self.asks = []
-
-    def order_book_update(self, asks, bids):
-        self.asks = asks
-        self.bids = bids
-        self.logger.info(f"ASKS = {asks} / BIDS = {bids}")
-
-    def order_book_delta_update(self, asks, bids):
-        pass
+    def get_exchange_symbol_data(self, symbol):
+        try:
+            return self.exchange_symbol_data[symbol]
+        except KeyError:
+            self.exchange_symbol_data[symbol] = ExchangeSymbolData(symbol)
+            return self.exchange_symbol_data[symbol]

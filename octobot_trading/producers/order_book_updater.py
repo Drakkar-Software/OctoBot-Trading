@@ -16,6 +16,7 @@
 import asyncio
 
 from octobot_trading.channels.order_book import OrderBookProducer
+from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns
 
 
 class OrderBookUpdater(OrderBookProducer):
@@ -24,9 +25,17 @@ class OrderBookUpdater(OrderBookProducer):
     def __init__(self, channel):
         super().__init__(channel)
         self.should_stop = False
+        self.channel = channel
 
     async def start(self):
         while not self.should_stop:
-            # for pair in self.channel.exchange_manager.traded_pairs:
-                # await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_order_book(pair))
-            await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
+            try:
+                for pair in self.channel.exchange_manager.traded_pairs:
+                    order_book = await self.channel.exchange_manager.exchange.get_order_book(pair)
+                    asks, bids = order_book[ExchangeConstantsOrderBookInfoColumns.ASKS.value], \
+                                 order_book[ExchangeConstantsOrderBookInfoColumns.BIDS.value]
+                    await self.perform(pair, asks, bids)
+                    await self.push(pair, asks, bids)
+                await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
+            except Exception as e:
+                self.logger.exception(f"Fail to update : {e}")

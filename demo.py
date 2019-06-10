@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import logging
+from logging.config import fileConfig
 
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME
 from octobot_commons.enums import TimeFrames
@@ -61,6 +63,8 @@ config = {
 
 
 async def main():
+    fileConfig("logs/logging_config.ini")
+    logging.info("test")
     exchange = ExchangeManager(config, "binance", ignore_config=True)
     await exchange.initialize()
     await asyncio.sleep(1000)

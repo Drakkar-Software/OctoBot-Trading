@@ -276,7 +276,7 @@ class ExchangeSimulator(AbstractExchange):
     def get_candles_exact(self, symbol, time_frame, min_index, max_index, return_list=True):
         self._ensure_available_data(symbol)
         candles = self.get_ohlcv(symbol)[time_frame.value][min_index:max_index]
-        self.get_symbol_data(symbol).update_symbol_candles(time_frame, candles, replace_all=True)
+        self.get_symbol_data(symbol).handle_candles_update(time_frame, candles, replace_all=True)
         return self.get_symbol_data(symbol).get_symbol_prices(time_frame, None, return_list)
 
     async def get_symbol_prices(self, symbol, time_frame, limit=None, return_list=True):
@@ -287,12 +287,12 @@ class ExchangeSimulator(AbstractExchange):
             # if it's at least the second iteration: only use the last candle, otherwise use all
             if self.time_frame_get_times[symbol][time_frame.value] > 1:
                 candles = candles[-1]
-            self.get_symbol_data(symbol).update_symbol_candles(time_frame, candles)
+            self.get_symbol_data(symbol).handle_candles_update(time_frame, candles)
 
     def get_full_candles_data(self, symbol, time_frame):
         full_data = self.get_ohlcv(symbol)[time_frame.value]
         temp_symbol_data = ExchangeSymbolData(symbol)
-        temp_symbol_data.update_symbol_candles(time_frame, full_data, True)
+        temp_symbol_data.handle_candles_update(time_frame, full_data, True)
         return temp_symbol_data.get_symbol_prices(time_frame)
 
     def _get_used_time_frames(self, symbol):

@@ -31,7 +31,6 @@ class CandlesManager(Initializable):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
 
-    async def initialize_impl(self, all_candles_data: Union[List, Dict]):
         self.close_candles_index = 0
         self.open_candles_index = 0
         self.high_candles_index = 0
@@ -39,14 +38,31 @@ class CandlesManager(Initializable):
         self.time_candles_index = 0
         self.volume_candles_index = 0
 
-        self.close_candles = np.empty(CandlesManager.MAX_CANDLES_COUNT, dtype=np.float64)
-        self.open_candles = np.empty(CandlesManager.MAX_CANDLES_COUNT, dtype=np.float64)
-        self.high_candles = np.empty(CandlesManager.MAX_CANDLES_COUNT, dtype=np.float64)
-        self.low_candles = np.empty(CandlesManager.MAX_CANDLES_COUNT, dtype=np.float64)
-        self.time_candles = np.empty(CandlesManager.MAX_CANDLES_COUNT, dtype=np.float64)
-        self.volume_candles = np.empty(CandlesManager.MAX_CANDLES_COUNT, dtype=np.float64)
+        self.close_candles = None
+        self.open_candles = None
+        self.high_candles = None
+        self.low_candles = None
+        self.time_candles = None
+        self.volume_candles = None
+        self._reset_candles()
 
-        self._set_all_candles(all_candles_data)
+    async def initialize_impl(self):
+        self._reset_candles()
+
+    def _reset_candles(self):
+        self.close_candles_index = 0
+        self.open_candles_index = 0
+        self.high_candles_index = 0
+        self.low_candles_index = 0
+        self.time_candles_index = 0
+        self.volume_candles_index = 0
+
+        self.close_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
+        self.open_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
+        self.high_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
+        self.low_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
+        self.time_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
+        self.volume_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
 
     # getters
     def get_symbol_close_candles(self, limit: int = None):
@@ -77,15 +93,20 @@ class CandlesManager(Initializable):
             PriceIndexes.IND_PRICE_TIME.value: self.get_symbol_time_candles(limit)
         }
 
+    def replace_all_candles(self, all_candles_data):
+        self._reset_candles()
+        self._set_all_candles(all_candles_data)
+
     def add_new_candle(self, new_candle_data: Dict):
         if self._should_add_new_candle(new_candle_data[PriceIndexes.IND_PRICE_TIME.value]):
-            self.close_candles[self.close_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_CLOSE.value]
-            self.open_candles[self.open_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_OPEN.value]
-            self.high_candles[self.high_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_HIGH.value]
-            self.low_candles[self.low_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_LOW.value]
-            self.time_candles[self.time_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_TIME.value]
-            self.volume_candles[self.volume_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_VOL.value]
             self._inc_candle_index()
+
+        self.close_candles[self.close_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_CLOSE.value]
+        self.open_candles[self.open_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_OPEN.value]
+        self.high_candles[self.high_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_HIGH.value]
+        self.low_candles[self.low_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_LOW.value]
+        self.time_candles[self.time_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_TIME.value]
+        self.volume_candles[self.volume_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_VOL.value]
 
     # private
     def _set_all_candles(self, new_candles_data: Union[List, Dict]):

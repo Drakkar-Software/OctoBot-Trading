@@ -14,16 +14,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
+from octobot_trading.exchanges.data.exchange_symbol_data cimport ExchangeSymbolData
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 
-from octobot_trading.util.initializable cimport Initializable
+cdef class ExchangeSymbolsData:
+    cdef public object logger
 
+    cdef public dict exchange_symbol_data
+    cdef public dict config
 
-cdef class OrderBookManager(Initializable):
-    cdef object logger
+    cdef public AbstractExchange exchange
+    cdef public ExchangeManager exchange_manager
 
-    cdef public list bids
-    cdef public list asks
-
-    cpdef void reset_order_book(self)
-    cpdef void order_book_update(self, list asks, list bids)
-    cpdef void order_book_delta_update(self, list asks, list bids)
+    cpdef public ExchangeSymbolData get_exchange_symbol_data(self, str symbol)
