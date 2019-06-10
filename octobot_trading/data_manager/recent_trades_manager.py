@@ -39,6 +39,6 @@ class RecentTradesManager(Initializable):
 
     def recent_trade_update(self, recent_trade):
         if recent_trade:
-            if len(self.recent_trades) < self.MAX_TRADES_COUNT:
+            if self.MAX_TRADES_COUNT > len(self.recent_trades) > 0:
                 self.recent_trades.pop(0)
             self.recent_trades += recent_trade

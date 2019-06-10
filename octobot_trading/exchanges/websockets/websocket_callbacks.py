@@ -35,10 +35,8 @@ class OrderBookCallBack(OrderBookProducer):
     async def l2_order_book_callback(self, _, pair, asks, bids, timestamp):
         try:
             asyncio.run_coroutine_threadsafe(self.push(symbol=pair,
-                                                       order_book=(pair,
-                                                                   asks,
-                                                                   bids,
-                                                                   timestamp)), asyncio.get_event_loop())
+                                                       asks=asks,
+                                                       bids=bids), asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Callaback failed : {e}")
 
@@ -53,12 +51,11 @@ class RecentTradesCallBack(RecentTradeProducer):
 
     async def recent_trades_callback(self, _, pair, side, amount, price, timestamp):
         try:
-            asyncio.run_coroutine_threadsafe(self.push(symbol=pair,
-                                                       recent_trade={ECOC.SYMBOL.value: pair,
-                                                                     ECOC.SIDE.value: side,
-                                                                     ECOC.AMOUNT.value: amount,
-                                                                     ECOC.PRICE.value: price,
-                                                                     ECOC.TIMESTAMP.value: timestamp}), asyncio.get_event_loop())
+            asyncio.run_coroutine_threadsafe(self.push(symbol=pair, recent_trades={ECOC.SYMBOL.value: pair,
+                                                                                   ECOC.SIDE.value: side,
+                                                                                   ECOC.AMOUNT.value: amount,
+                                                                                   ECOC.PRICE.value: price,
+                                                                                   ECOC.TIMESTAMP.value: timestamp}), asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Callaback failed : {e}")
 

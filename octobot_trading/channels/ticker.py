@@ -22,6 +22,10 @@ from octobot_channels.producer import Producer
 
 
 class TickerProducer(Producer):
+    def __init__(self, channel):  # TODO remove
+        super().__init__(channel)
+        self.channel = channel
+
     async def push(self, symbol, ticker):
         await self.perform(symbol, ticker)
 

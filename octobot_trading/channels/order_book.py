@@ -22,6 +22,10 @@ from octobot_channels.producer import Producer
 
 
 class OrderBookProducer(Producer):
+    def __init__(self, channel):  # TODO remove
+        super().__init__(channel)
+        self.channel = channel
+
     async def push(self, symbol, asks, bids):
         await self.perform(symbol, asks, bids)
 

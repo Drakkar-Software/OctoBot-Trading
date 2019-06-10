@@ -142,7 +142,7 @@ class ExchangeManager(Initializable):
 
                 # init websocket
                 try:
-                    exchange_web_socket.init_web_sockets(self.get_config_time_frame(), self.traded_pairs)
+                    exchange_web_socket.init_web_sockets(self.time_frames, self.traded_pairs)
 
                     # start the websocket
                     exchange_web_socket.start_sockets()

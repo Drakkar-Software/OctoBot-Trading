@@ -29,12 +29,12 @@ config = {
     "crypto-currencies": {
         "Bitcoin": {
             "pairs": [
-                "BTC/USDT"
+                "BTC/USD"
             ]
         },
     },
     "exchanges": {
-        "binance": {}
+        "bitmex": {}
     },
     CONFIG_TRADER: {
         CONFIG_ENABLED_OPTION: False
@@ -84,7 +84,7 @@ async def main():
     fileConfig("logs/logging_config.ini")
     logging.info("starting...")
 
-    exchange_name = "binance"
+    exchange_name = "bitmex"
     exchange = ExchangeManager(config, exchange_name, ignore_config=True)
     await exchange.initialize()
 
