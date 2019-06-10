@@ -29,12 +29,14 @@ config = {
     "crypto-currencies": {
         "Bitcoin": {
             "pairs": [
-                "BTC/USD"
+                "BTC/USD",
+                "BTC/USDT"
             ]
         },
     },
     "exchanges": {
-        "bitmex": {}
+        "bitmex": {},
+        "binance": {}
     },
     CONFIG_TRADER: {
         CONFIG_ENABLED_OPTION: False
@@ -80,11 +82,7 @@ async def recent_trades_callback(symbol, recent_trades):
     logging.info(f"RECENT TRADE : SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
 
 
-async def main():
-    fileConfig("logs/logging_config.ini")
-    logging.info("starting...")
-
-    exchange_name = "bitmex"
+async def handle_new_exchange(exchange_name):
     exchange = ExchangeManager(config, exchange_name, ignore_config=True)
     await exchange.initialize()
 
@@ -93,6 +91,14 @@ async def main():
     ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_name).new_consumer(recent_trades_callback)
     ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_name).new_consumer(order_book_callback)
     ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_name).new_consumer(ohlcv_callback)
+
+
+async def main():
+    fileConfig("logs/logging_config.ini")
+    logging.info("starting...")
+
+    await handle_new_exchange("bitmex")
+    await handle_new_exchange("binance")
 
     await asyncio.sleep(1000)
 
