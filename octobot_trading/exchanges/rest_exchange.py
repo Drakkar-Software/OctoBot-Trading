@@ -119,15 +119,14 @@ class RestExchange(AbstractExchange):
                               f"To fix this, please synchronize your computer's clock. ")
             raise e
 
-    async def get_symbol_prices(self, symbol, time_frame, limit=None, return_list=True):
+    async def get_symbol_prices(self, symbol, time_frame, limit=None):
+        print("get_symbol_prices")
         if limit:
             candles = await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit)
         else:
             candles = await self.client.fetch_ohlcv(symbol, time_frame.value)
-
+        print("uniformize_candles_if_necessary")
         self.exchange_manager.uniformize_candles_if_necessary(candles)
-
-        self.get_symbol_data(symbol).update_symbol_candles(time_frame, candles, replace_all=True)
 
     # return up to ten bidasks on each side of the order book stack
     async def get_order_book(self, symbol, limit=5):

@@ -113,7 +113,6 @@ class ExchangeManager(Initializable):
 
         # create exchange producers if necessaary
         await self._create_exchange_producers()
-
         self.is_ready = True
 
     async def _create_exchange_channels(self):  # TODO filter creation

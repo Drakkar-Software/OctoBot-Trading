@@ -9,18 +9,21 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General License for more details.
+#  Lesser General Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
 
-from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME
+import click
+from click_shell import shell
+from octobot_commons.constants import CONFIG_TIME_FRAME, CONFIG_ENABLED_OPTION
 from octobot_commons.enums import TimeFrames
 
-from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING
+from octobot_trading.constants import CONFIG_TRADING, CONFIG_TRADER, CONFIG_SIMULATOR
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 
+exchanges = {}
 config = {
     "crypto-currencies": {
         "Bitcoin": {
@@ -54,16 +57,31 @@ config = {
         "risk": 0.5
     },
     CONFIG_TIME_FRAME: {
-        TimeFrames.ONE_MINUTE,
         TimeFrames.ONE_HOUR
     }
 }
 
 
-async def main():
-    exchange = ExchangeManager(config, "binance")
-    await exchange.initialize()
+@shell(prompt='OctoBot-Trading > ', intro='Starting...')
+def app():
+    pass
+
+
+@app.command()
+@click.option("--exchange_name", prompt="Exchange name", help="The name of the exchange to use.")
+# @click.option("--api_key", prompt="API key", help="The api key of the exchange to use.")
+# @click.option("--api_secret", prompt="API secret", help="The api secret of the exchange to use.")
+def connect(exchange_name):
+    if exchange_name not in exchanges:
+        exchanges[exchange_name] = ExchangeManager(config, exchange_name)
+    else:
+        click.echo("Already connected to this exchange", err=True)
+        return
+    asyncio.get_event_loop().run_until_complete(exchanges[exchange_name].initialize())
+    click.echo(f"Connected to {exchange_name}")
+
 
 if __name__ == '__main__':
+    print("** Welcome to OctoBot-Trading command line interface **")
     asyncio.new_event_loop()
-    asyncio.get_event_loop().run_until_complete(main())
+    app()
