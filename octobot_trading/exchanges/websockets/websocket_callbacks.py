@@ -15,10 +15,10 @@
 #  License along with this library.
 import asyncio
 
-from octobot_channels.channels.exchange.ohlcv import OHLCVProducer
-from octobot_channels.channels.exchange.order_book import OrderBookProducer
-from octobot_channels.channels.exchange.recent_trade import RecentTradeProducer
-from octobot_channels.channels.exchange.ticker import TickerProducer
+from octobot_trading.channels.ohlcv import OHLCVProducer
+from octobot_trading.channels.order_book import OrderBookProducer
+from octobot_trading.channels.recent_trade import RecentTradeProducer
+from octobot_trading.channels.ticker import TickerProducer
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ECOC

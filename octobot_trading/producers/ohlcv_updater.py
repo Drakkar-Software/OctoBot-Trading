@@ -15,11 +15,16 @@
 #  License along with this library.
 import asyncio
 
-from octobot_channels.channels.exchange.ohlcv import OHLCVProducer
+from octobot_trading.channels.ohlcv import OHLCVProducer
 
 
 class OHLCVUpdater(OHLCVProducer):
     OHLCV_REFRESH_TIME = 60
+
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.should_stop = False
+        self.channel = channel
 
     async def start(self):
         while not self.should_stop:  # TODO TEMP
@@ -29,6 +34,7 @@ class OHLCVUpdater(OHLCVProducer):
                     print(f"OHLCV : {pair} {time_frame}")
                     await self.push(pair, time_frame,
                                     await self.channel.exchange_manager.exchange.get_symbol_prices(pair, time_frame))
+                    print("done")
             await asyncio.sleep(self.OHLCV_REFRESH_TIME)
 
 # import asyncio

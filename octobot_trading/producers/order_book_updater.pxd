@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_channels.channels.exchange.order_book cimport OrderBookProducer
+from octobot_trading.channels.order_book cimport OrderBookProducer
 
 
 cdef class OrderBookUpdater(OrderBookProducer):

@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_channels.channels.exchange.recent_trade cimport RecentTradeProducer
+from octobot_trading.channels.recent_trade cimport RecentTradeProducer
 
 
 cdef class RecentTradeUpdater(RecentTradeProducer):

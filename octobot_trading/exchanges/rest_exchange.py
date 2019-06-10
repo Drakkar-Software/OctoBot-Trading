@@ -111,8 +111,7 @@ class RestExchange(AbstractExchange):
             balance.pop(CONFIG_PORTFOLIO_FREE, None)
             balance.pop(CONFIG_PORTFOLIO_USED, None)
             balance.pop(CONFIG_PORTFOLIO_TOTAL, None)
-
-            self.exchange_manager.exchange_personal_data().set_portfolio(balance)
+            return balance
 
         except InvalidNonce as e:
             self.logger.error(f"Error when loading {self.name} real trader portfolio: {e}. "
@@ -120,27 +119,21 @@ class RestExchange(AbstractExchange):
             raise e
 
     async def get_symbol_prices(self, symbol, time_frame, limit=None):
-        print("get_symbol_prices")
         if limit:
-            candles = await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit)
-        else:
-            candles = await self.client.fetch_ohlcv(symbol, time_frame.value)
-        print("uniformize_candles_if_necessary")
-        self.exchange_manager.uniformize_candles_if_necessary(candles)
+            return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit)
+        return await self.client.fetch_ohlcv(symbol, time_frame.value)
 
     # return up to ten bidasks on each side of the order book stack
     async def get_order_book(self, symbol, limit=5):
-        order_book = await self.client.fetch_order_book(symbol, limit)
-        self.get_symbol_data(symbol).update_order_book(order_book)
+        return await self.client.fetch_order_book(symbol, limit)
 
     async def get_recent_trades(self, symbol, limit=50):
-        trades = await self.client.fetch_trades(symbol, limit=limit)
-        self.get_symbol_data(symbol).update_recent_trades(trades)
+        return await self.client.fetch_trades(symbol, limit=limit)
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
     async def get_price_ticker(self, symbol):
         try:
-            self.get_symbol_data(symbol).update_symbol_ticker(await self.client.fetch_ticker(symbol))
+            return await self.client.fetch_ticker(symbol)
         except BaseError as e:
             self.logger.error(f"Failed to get_price_ticker {e}")
 
@@ -156,32 +149,30 @@ class RestExchange(AbstractExchange):
     async def get_order(self, order_id, symbol=None):
         if self.client.has['fetchOrder']:
             try:
-                updated_order = await self.client.fetch_order(order_id, symbol)
-                self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order)
+                return await self.client.fetch_order(order_id, symbol)
+                # self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order) TODO
             except OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
-                self.exchange_manager.exchange_personal_data().update_order_attribute(order_id, ecoc.STATUS.value, OrderStatus.CANCELED.value)
+                # self.exchange_manager.exchange_personal_data().update_order_attribute(order_id, ecoc.STATUS.value, OrderStatus.CANCELED.value) TODO
+                pass
         else:
             raise Exception("This exchange doesn't support fetchOrder")
 
     async def get_all_orders(self, symbol=None, since=None, limit=None):
         if self.client.has['fetchOrders']:
-            self.exchange_manager.exchange_personal_data().upsert_orders(
-                await self.client.fetch_orders(symbol=symbol, since=since, limit=limit))
+            return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit)
         else:
             raise Exception("This exchange doesn't support fetchOrders")
 
     async def get_open_orders(self, symbol=None, since=None, limit=None, force_rest=False):
         if self.client.has['fetchOpenOrders']:
-            self.exchange_manager.exchange_personal_data().upsert_orders(
-                await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit))
+            return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit)
         else:
             raise Exception("This exchange doesn't support fetchOpenOrders")
 
     async def get_closed_orders(self, symbol=None, since=None, limit=None):
         if self.client.has['fetchClosedOrders']:
-            self.exchange_manager.exchange_personal_data().upsert_orders(
-                await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit))
+            return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit)
         else:
             raise Exception("This exchange doesn't support fetchClosedOrders")
 

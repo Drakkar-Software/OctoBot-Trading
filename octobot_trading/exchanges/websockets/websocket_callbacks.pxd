@@ -14,10 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_channels.channels.exchange.ohlcv cimport OHLCVProducer
-from octobot_channels.channels.exchange.order_book cimport OrderBookProducer
-from octobot_channels.channels.exchange.recent_trade cimport RecentTradeProducer
-from octobot_channels.channels.exchange.ticker cimport TickerProducer
+from octobot_trading.channels.ohlcv cimport OHLCVProducer
+from octobot_trading.channels.order_book cimport OrderBookProducer
+from octobot_trading.channels.recent_trade cimport RecentTradeProducer
+from octobot_trading.channels.ticker cimport TickerProducer
 
 from octobot_trading.exchanges.websockets.abstract_websocket cimport AbstractWebsocket
 

@@ -61,8 +61,9 @@ config = {
 
 
 async def main():
-    exchange = ExchangeManager(config, "binance")
+    exchange = ExchangeManager(config, "binance", ignore_config=True)
     await exchange.initialize()
+    await asyncio.sleep(1000)
 
 if __name__ == '__main__':
     asyncio.new_event_loop()

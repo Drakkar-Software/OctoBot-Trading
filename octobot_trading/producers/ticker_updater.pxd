@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_channels.channels.exchange.ticker cimport TickerProducer
+from octobot_trading.channels.ticker cimport TickerProducer
 
 
 cdef class TickerUpdater(TickerProducer):

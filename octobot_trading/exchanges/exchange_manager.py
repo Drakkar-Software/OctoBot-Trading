@@ -24,7 +24,7 @@ from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, C
     CONFIG_EXCHANGE_KEY
 from octobot_channels.channels import RECENT_TRADES_CHANNEL, TICKER_CHANNEL, ORDER_BOOK_CHANNEL, OHLCV_CHANNEL, \
     ORDERS_CHANNEL, BALANCE_CHANNEL
-from octobot_channels.channels.exchange.exchange_channel import ExchangeChannel, ExchangeChannels
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannels
 from octobot_commons.time_frame_manager import TimeFrameManager
 
 from octobot_trading.exchanges.backtesting.exchange_simulator import ExchangeSimulator
@@ -61,7 +61,8 @@ class ExchangeManager(Initializable):
         self.is_simulated = is_simulated
         self.is_trader_simulated = is_trader_simulator_enabled(self.config)
 
-        self.exchange_personal_data = ExchangePersonalData(self)
+        self.trader = None
+        self.exchange = None
 
         self.client_symbols = []
         self.client_time_frames = {}
@@ -69,6 +70,8 @@ class ExchangeManager(Initializable):
         self.cryptocurrencies_traded_pairs = {}
         self.traded_pairs = []
         self.time_frames = []
+
+        self.exchange_personal_data = ExchangePersonalData(self)
 
     async def initialize_impl(self):
         await self.create_exchanges()
@@ -127,11 +130,7 @@ class ExchangeManager(Initializable):
         await OrderBookUpdater(ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
         await RecentTradeUpdater(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
         await TickerUpdater(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
-
-        if self.is_trader_simulated:
-            await OrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-        else:
-            await OrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+        await OrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
 
     def _search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():
@@ -315,6 +314,7 @@ class ExchangeManager(Initializable):
             else:
                 if self.need_to_uniformize_timestamp(candle_or_candles[PriceIndexes.IND_PRICE_TIME.value]):
                     self._uniformize_candle_timestamps(candle_or_candles)
+            return candle_or_candles
 
     def _uniformize_candles_timestamps(self, candles):
         for candle in candles:

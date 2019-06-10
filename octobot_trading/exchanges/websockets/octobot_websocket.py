@@ -17,7 +17,7 @@ import asyncio
 from concurrent.futures.thread import ThreadPoolExecutor
 from octobot_commons.enums import TimeFramesMinutes
 from octobot_channels.channels import TICKER_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL
-from octobot_channels.channels.exchange.exchange_channel import ExchangeChannels
+from octobot_trading.channels.exchange_channel import ExchangeChannels
 from octobot_websockets.callback import TradeCallback, BookCallback, TickerCallback
 from octobot_websockets.constants import MINUTE_TO_SECONDS
 from octobot_websockets.feeds.bitmex import Bitmex

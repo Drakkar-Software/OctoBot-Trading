@@ -1,4 +1,5 @@
-#  Drakkar-Software OctoBot-Trading
+# cython: language_level=3
+#  Drakkar-Software OctoBot-Channels
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -13,20 +14,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 
-from octobot_trading.channels.ticker import TickerProducer
+from octobot_trading.channels.exchange_channel cimport ExchangeChannel
+from octobot_channels.consumer cimport Consumer
+from octobot_channels.producer cimport Producer
 
 
-class TickerUpdater(TickerProducer):
-    TICKER_REFRESH_TIME = 60
+cdef class OrdersProducer(Producer):
+    pass
 
-    def __init__(self, channel):
-        super().__init__(channel)
-        self.should_stop = False
+cdef class OrdersConsumer(Consumer):
+    pass
 
-    async def start(self):
-        while not self.should_stop:
-            # for pair in self.channel.exchange_manager.traded_pairs:
-            #     await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_price_ticker(pair))
-            await asyncio.sleep(self.TICKER_REFRESH_TIME)
+cdef class OrdersChannel(ExchangeChannel):
+    pass

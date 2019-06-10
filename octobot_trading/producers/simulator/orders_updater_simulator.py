@@ -17,7 +17,7 @@ import copy
 
 from ccxt import InsufficientFunds
 from octobot_channels.channels import RECENT_TRADES_CHANNEL
-from octobot_channels.channels.exchange.exchange_channel import ExchangeChannels
+from octobot_trading.channels.exchange_channel import ExchangeChannels
 
 from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus

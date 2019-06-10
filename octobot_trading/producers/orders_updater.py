@@ -15,15 +15,21 @@
 #  License along with this library.
 import asyncio
 
-from octobot_channels.channels.exchange.orders import OrdersProducer
+from octobot_trading.channels.orders import OrdersProducer
 
 
 class OrdersUpdater(OrdersProducer):
     ORDERS_REFRESH_TIME = 60
 
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.should_stop = False
+        self.channel = channel
+
     async def start(self):
         while not self.should_stop:
             for pair in self.channel.exchange_manager.traded_pairs:
                 # TODO
-                await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_open_orders(pair))
+                pass
+                # await self.push(pair, await self.channel.exchange_manager.exchange.get_open_orders(pair))
             await asyncio.sleep(self.ORDERS_REFRESH_TIME)

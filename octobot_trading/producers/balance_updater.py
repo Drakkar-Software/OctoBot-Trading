@@ -15,11 +15,15 @@
 #  License along with this library.
 import asyncio
 
-from octobot_channels.channels.exchange.balance import BalanceProducer
+from octobot_trading.channels.balance import BalanceProducer
 
 
 class BalanceUpdater(BalanceProducer):
     BALANCE_REFRESH_TIME = 60
+
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.should_stop = False
 
     async def start(self):
         while not self.should_stop:
