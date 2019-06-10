@@ -22,10 +22,10 @@ from octobot_channels.producer import Producer
 
 
 class RecentTradeProducer(Producer):
-    async def push(self, symbol, recent_trades, forced=False):
-        await self.perform(symbol, recent_trades, forced=forced)
+    async def push(self, symbol, recent_trades, replace_all=False):
+        await self.perform(symbol, recent_trades, replace_all=replace_all)
 
-    async def perform(self, symbol, recent_trades, forced=False):
+    async def perform(self, symbol, recent_trades, replace_all=False):
         try:
             if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:  # and symbol_data.recent_trades_are_initialized()
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_recent_trade_update(recent_trades)

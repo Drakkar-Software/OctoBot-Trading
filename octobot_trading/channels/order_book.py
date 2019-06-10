@@ -51,8 +51,8 @@ class OrderBookConsumer(Consumer):
         super().__init__(callback)
         self.filter_size = 0
         self.should_stop = False
-        self.queue = Queue()
         self.callback = callback
+        self.queue = Queue()
 
     async def consume(self):
         while not self.should_stop:

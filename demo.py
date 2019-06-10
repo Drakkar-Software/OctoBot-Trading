@@ -64,19 +64,19 @@ config = {
 }
 
 
-def ticker_callback(symbol, ticker):
+async def ticker_callback(symbol, ticker):
     logging.info(f"TICKER : SYMBOL = {symbol} || TICKER = {ticker}")
 
 
-def order_book_callback(symbol, asks, bids):
+async def order_book_callback(symbol, asks, bids):
     logging.info(f"ORDERBOOK : SYMBOL = {symbol} || ASKS = {asks} || BIDS = {bids}")
 
 
-def ohlcv_callback(symbol, time_frame, candle):
+async def ohlcv_callback(symbol, time_frame, candle):
     logging.info(f"OHLCV : SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
 
 
-def recent_trades_callback(symbol, recent_trades):
+async def recent_trades_callback(symbol, recent_trades):
     logging.info(f"RECENT TRADE : SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
 
 

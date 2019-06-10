@@ -19,6 +19,8 @@ from octobot_trading.util.initializable import Initializable
 
 
 class RecentTradesManager(Initializable):
+    MAX_TRADES_COUNT = 100
+
     def __init__(self):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
@@ -33,4 +35,10 @@ class RecentTradesManager(Initializable):
 
     def recent_trades_update(self, recent_trades):
         if recent_trades:
-            self.recent_trades += recent_trades
+            self.recent_trades = recent_trades
+
+    def recent_trade_update(self, recent_trade):
+        if recent_trade:
+            if len(self.recent_trades) < self.MAX_TRADES_COUNT:
+                self.recent_trades.pop(0)
+            self.recent_trades += recent_trade
