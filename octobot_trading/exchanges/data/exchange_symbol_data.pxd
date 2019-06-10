@@ -34,3 +34,8 @@ cdef class ExchangeSymbolData:
     cdef public OrderBookManager order_book_manager
     cdef public RecentTradesManager recent_trades_manager
     cdef public TickerManager ticker_manager
+
+    cpdef void handle_recent_trade_update(self, list recent_trades)
+    cpdef void handle_order_book_update(self, list asks, list bids)
+    cpdef void handle_order_book_delta_update(self, list asks, list bids)
+    cpdef void handle_ticker_update(self, dict ticker)

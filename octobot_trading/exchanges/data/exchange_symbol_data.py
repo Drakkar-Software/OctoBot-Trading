@@ -64,8 +64,8 @@ class ExchangeSymbolData:
         else:
             symbol_candles.add_new_candle(new_symbol_candles_data)
 
-    def handle_recent_trade_update(self):
-        pass
+    def handle_recent_trade_update(self, recent_trades):
+        self.recent_trades_manager.recent_trades_update(recent_trades)
 
     def handle_order_book_update(self, asks, bids):
         self.order_book_manager.order_book_update(asks, bids)

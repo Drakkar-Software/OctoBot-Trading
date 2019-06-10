@@ -22,6 +22,15 @@ class RecentTradesManager(Initializable):
     def __init__(self):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
+        self.recent_trades = []
+        self._reset_recent_trades()
 
     async def initialize_impl(self):
-        pass
+        self._reset_recent_trades()
+
+    def _reset_recent_trades(self):
+        self.recent_trades = []
+
+    def recent_trades_update(self, recent_trades):
+        if recent_trades:
+            self.recent_trades += recent_trades

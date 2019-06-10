@@ -19,16 +19,31 @@ from octobot_trading.channels.recent_trade import RecentTradeProducer
 
 
 class RecentTradeUpdater(RecentTradeProducer):
-    RECENT_TRADE_REFRESH_TIME = 60
+    RECENT_TRADE_REFRESH_TIME = 5
+    RECENT_TRADE_LIMIT = 10
 
     def __init__(self, channel):
         super().__init__(channel)
         self.should_stop = False
+        self.channel = channel
 
     async def start(self):
+        await self.initialize()
         while not self.should_stop:
-            # for pair in self.channel.exchange_manager.traded_pairs:
-            #     await self.push(pair,
-            #                     await self.channel.exchange_manager.exchange_dispatcher.get_recent_trades(pair),
-            #                     forced=True)
+            try:
+                for pair in self.channel.exchange_manager.traded_pairs:
+                    await self.push(pair,
+                                    await self.channel.exchange_manager.exchange.get_recent_trades(pair,
+                                                                                                   limit=self.RECENT_TRADE_LIMIT))
+                await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
+            except Exception as e:
+                self.logger.exception(f"Fail to update recent trades : {e}")
+
+    async def initialize(self):
+        try:
+            for pair in self.channel.exchange_manager.traded_pairs:
+                await self.push(pair,
+                                await self.channel.exchange_manager.exchange.get_recent_trades(pair))
             await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
+        except Exception as e:
+            self.logger.exception(f"Fail to initialize recent trades : {e}")

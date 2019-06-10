@@ -76,8 +76,8 @@ def ohlcv_callback(symbol, time_frame, candle):
     logging.info(f"OHLCV : SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
 
 
-def recent_trades_callback(symbol, recent_trade):
-    logging.info(f"RECENT TRADE : SYMBOL = {symbol} || RECENT TRADE = {recent_trade}")
+def recent_trades_callback(symbol, recent_trades):
+    logging.info(f"RECENT TRADE : SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
 
 
 async def main():
