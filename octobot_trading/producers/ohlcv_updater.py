@@ -31,7 +31,6 @@ class OHLCVUpdater(OHLCVProducer):
             for pair in self.channel.exchange_manager.traded_pairs:
                 for time_frame in self.channel.exchange_manager.time_frames:
                     symbol_prices = await self.channel.exchange_manager.exchange.get_symbol_prices(pair, time_frame)
-                    # await self.perform(time_frame.value, pair, symbol_prices, replace_all=True) TODO
                     # await self.push(pair, time_frame,
                     #                 await self.channel.exchange_manager.exchange.get_symbol_prices(pair, time_frame))
             await asyncio.sleep(self.OHLCV_REFRESH_TIME)

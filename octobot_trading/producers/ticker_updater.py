@@ -24,9 +24,13 @@ class TickerUpdater(TickerProducer):
     def __init__(self, channel):
         super().__init__(channel)
         self.should_stop = False
+        self.channel = channel
 
     async def start(self):
         while not self.should_stop:
-            # for pair in self.channel.exchange_manager.traded_pairs:
-            #     await self.push(pair, await self.channel.exchange_manager.exchange_dispatcher.get_price_ticker(pair))
-            await asyncio.sleep(self.TICKER_REFRESH_TIME)
+            try:
+                for pair in self.channel.exchange_manager.traded_pairs:
+                    await self.push(pair, await self.push(pair, await self.channel.exchange_manager.exchange.get_price_ticker(pair)))
+                await asyncio.sleep(self.TICKER_REFRESH_TIME)
+            except Exception as e:
+                self.logger.exception(f"Fail to update ticker : {e}")

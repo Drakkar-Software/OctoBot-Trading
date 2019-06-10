@@ -20,7 +20,7 @@ from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns
 
 
 class OrderBookUpdater(OrderBookProducer):
-    ORDER_BOOK_REFRESH_TIME = 60
+    ORDER_BOOK_REFRESH_TIME = 10
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -34,8 +34,7 @@ class OrderBookUpdater(OrderBookProducer):
                     order_book = await self.channel.exchange_manager.exchange.get_order_book(pair)
                     asks, bids = order_book[ExchangeConstantsOrderBookInfoColumns.ASKS.value], \
                                  order_book[ExchangeConstantsOrderBookInfoColumns.BIDS.value]
-                    await self.perform(pair, asks, bids)
                     await self.push(pair, asks, bids)
                 await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
             except Exception as e:
-                self.logger.exception(f"Fail to update : {e}")
+                self.logger.exception(f"Fail to update order book : {e}")

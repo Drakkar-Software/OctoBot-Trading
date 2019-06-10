@@ -73,8 +73,8 @@ class ExchangeSymbolData:
     def handle_order_book_delta_update(self, asks, bids):
         self.order_book_manager.order_book_delta_update(asks, bids)
 
-    def handle_ticker_update(self):
-        pass
+    def handle_ticker_update(self, ticker):
+        self.ticker_manager.ticker_update(ticker)
 
     # def ensure_data_validity(self, time_frame): TODO
     #     previous_candle_timestamp = self._get_previous_candle_timestamp(time_frame)

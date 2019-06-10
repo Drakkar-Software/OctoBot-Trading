@@ -19,3 +19,7 @@ from octobot_trading.util.initializable cimport Initializable
 
 cdef class TickerManager(Initializable):
     cdef object logger
+
+    cdef public dict ticker
+
+    cpdef void ticker_update(self, dict ticker)
