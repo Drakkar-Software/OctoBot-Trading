@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from asyncio import CancelledError
+from asyncio import CancelledError, Queue
 
 from octobot_channels import CHANNEL_WILDCARD, CONSUMER_CALLBACK_TYPE
 from octobot_trading.channels.exchange_channel import ExchangeChannel
@@ -29,17 +29,17 @@ class OrderBookProducer(Producer):
         try:
             if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:  # and symbol_data.order_book_is_initialized()
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_update(asks, bids)
-                await self.send(symbol, asks, bids)
-                await self.send(CHANNEL_WILDCARD, asks, bids)
+                await self.send(symbol, asks, bids, False)
+                await self.send(symbol, asks, bids, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, asks, bids):
-        for consumer in self.channel.get_consumers(symbol=symbol):
-            consumer.queue.put({
+    async def send(self, symbol, asks, bids, is_wildcard=False):
+        for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
+            await consumer.queue.put({
                 "symbol": symbol,
                 "asks": asks,
                 "bids": bids
@@ -47,11 +47,18 @@ class OrderBookProducer(Producer):
 
 
 class OrderBookConsumer(Consumer):
+    def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0):   # TODO REMOVE
+        super().__init__(callback)
+        self.filter_size = 0
+        self.should_stop = False
+        self.queue = Queue()
+        self.callback = callback
+
     async def consume(self):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(symbol=data["symbol"], order_book=data["order_book"])
+                await self.callback(symbol=data["symbol"], asks=data["asks"], bids=data["bids"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 

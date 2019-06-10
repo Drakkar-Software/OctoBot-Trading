@@ -38,7 +38,6 @@ class OrderBookManager(Initializable):
             self.asks = asks
         if bids:
             self.bids = bids
-        self.logger.info(f"ASKS = {asks} / BIDS = {bids}")
 
     def order_book_delta_update(self, asks, bids):
         pass

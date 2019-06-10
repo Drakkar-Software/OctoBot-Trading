@@ -15,8 +15,6 @@
 #  License along with this library.
 import time
 
-from octobot_channels.channels import RECENT_TRADES_CHANNEL, TICKER_CHANNEL, ORDER_BOOK_CHANNEL, OHLCV_CHANNEL, \
-    ORDERS_CHANNEL, BALANCE_CHANNEL
 from octobot_commons.config_util import has_invalid_default_config_value
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME
 from octobot_commons.enums import PriceIndexes
@@ -25,6 +23,8 @@ from octobot_commons.symbol_util import split_symbol
 from octobot_commons.time_frame_manager import TimeFrameManager
 from octobot_commons.timestamp_util import is_valid_timestamp
 
+from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, \
+    TICKER_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannels
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \

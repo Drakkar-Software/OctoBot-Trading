@@ -20,6 +20,8 @@ from logging.config import fileConfig
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME
 from octobot_commons.enums import TimeFrames
 
+from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, OHLCV_CHANNEL
+from octobot_trading.channels.exchange_channel import ExchangeChannels
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 
@@ -62,12 +64,38 @@ config = {
 }
 
 
+def ticker_callback(symbol, ticker):
+    logging.info(f"TICKER : SYMBOL = {symbol} || TICKER = {ticker}")
+
+
+def order_book_callback(symbol, asks, bids):
+    logging.info(f"ORDERBOOK : SYMBOL = {symbol} || ASKS = {asks} || BIDS = {bids}")
+
+
+def ohlcv_callback(symbol, time_frame, candle):
+    logging.info(f"OHLCV : SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
+
+
+def recent_trades_callback(symbol, recent_trade):
+    logging.info(f"RECENT TRADE : SYMBOL = {symbol} || RECENT TRADE = {recent_trade}")
+
+
 async def main():
     fileConfig("logs/logging_config.ini")
-    logging.info("test")
-    exchange = ExchangeManager(config, "binance", ignore_config=True)
+    logging.info("starting...")
+
+    exchange_name = "binance"
+    exchange = ExchangeManager(config, exchange_name, ignore_config=True)
     await exchange.initialize()
+
+    # consumers
+    ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_name).new_consumer(ticker_callback)
+    ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_name).new_consumer(recent_trades_callback)
+    ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_name).new_consumer(order_book_callback)
+    ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_name).new_consumer(ohlcv_callback)
+
     await asyncio.sleep(1000)
+
 
 if __name__ == '__main__':
     asyncio.new_event_loop()

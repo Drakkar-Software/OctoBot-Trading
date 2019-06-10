@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from asyncio import CancelledError
+from asyncio import CancelledError, Queue
 
 from octobot_channels import CHANNEL_WILDCARD, CONSUMER_CALLBACK_TYPE
 from octobot_commons.logging.logging_util import get_logger
@@ -39,18 +39,19 @@ class OHLCVProducer(Producer):
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_candles_update(time_frame,
                                                                                                   candle,
                                                                                                   replace_all=replace_all)
-                await self.send(time_frame, symbol, candle)
+                await self.send(time_frame, symbol, candle, False)
 
             if CHANNEL_WILDCARD in self.channel.consumers and time_frame in self.channel.consumers[CHANNEL_WILDCARD]:
-                await self.send(time_frame, CHANNEL_WILDCARD, candle)
+                await self.send(time_frame, symbol, candle, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, time_frame, symbol, candle):
-        for consumer in self.channel.get_consumers_by_timeframe(symbol=symbol, time_frame=time_frame):
+    async def send(self, time_frame, symbol, candle, is_wildcard=False):
+        for consumer in self.channel.get_consumers_by_timeframe(symbol=CHANNEL_WILDCARD if is_wildcard else symbol,
+                                                                time_frame=time_frame):
             consumer.queue.put({
                 "symbol": symbol,
                 "time_frame": time_frame,
@@ -59,6 +60,13 @@ class OHLCVProducer(Producer):
 
 
 class OHLCVConsumer(Consumer):
+    def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0):  # TODO REMOVE
+        super().__init__(callback)
+        self.filter_size = 0
+        self.should_stop = False
+        self.queue = Queue()
+        self.callback = callback
+
     async def consume(self):
         while not self.should_stop:
             try:
