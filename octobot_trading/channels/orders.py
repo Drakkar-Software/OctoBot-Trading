@@ -29,7 +29,7 @@ class OrdersProducer(Producer):
         try:
             if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:  # and personnal_data.orders_are_initialized()
                 self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)  # TODO check if exists
-                await self.send(symbol, order, False)
+                await self.send(symbol, order)
                 await self.send(symbol, order, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")

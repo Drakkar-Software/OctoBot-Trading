@@ -55,7 +55,12 @@ class ExchangeSymbolData:
         except KeyError:
             symbol_candles = CandlesManager()
             await symbol_candles.initialize()
-            symbol_candles.replace_all_candles(new_symbol_candles_data)
+
+            if replace_all:
+                symbol_candles.replace_all_candles(new_symbol_candles_data)
+            else:
+                pass  # TODO ask exchange to init
+
             self.symbol_candles[time_frame] = symbol_candles
             return
 

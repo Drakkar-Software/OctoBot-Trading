@@ -67,20 +67,22 @@ class ExchangeChannel(Channel):
                     for consumer in self.consumers[symbol][time_frame]
                     if not consumer.filter_size or should_send_filter]
         except KeyError:
-            self._init_consumer_if_necessary(self.consumers, symbol)
+            self._init_consumer_if_necessary(self.consumers, symbol, is_dict=True)
             self._init_consumer_if_necessary(self.consumers[symbol], time_frame)
             return self.consumers[symbol][time_frame]
 
     def _add_new_consumer_and_run(self, consumer, symbol=CHANNEL_WILDCARD, time_frame=None):
         if symbol:
-            # create dict and list if required
-            self._init_consumer_if_necessary(self.consumers, symbol)
-
             if time_frame:
                 # create dict and list if required
+                self._init_consumer_if_necessary(self.consumers, symbol, is_dict=True)
                 self._init_consumer_if_necessary(self.consumers[symbol], time_frame)
+
                 self.consumers[symbol][time_frame].append(consumer)
             else:
+                # create dict and list if required
+                self._init_consumer_if_necessary(self.consumers, symbol)
+
                 self.consumers[symbol].append(consumer)
         else:
             self.consumers[CHANNEL_WILDCARD] = [consumer]
@@ -88,9 +90,9 @@ class ExchangeChannel(Channel):
         self.logger.info(f"Consumer started for symbol {symbol}")
 
     @staticmethod
-    def _init_consumer_if_necessary(consumer_list: dict, key: str) -> None:
+    def _init_consumer_if_necessary(consumer_list: dict, key: str, is_dict=False) -> None:
         if key not in consumer_list:
-            consumer_list[key] = []
+            consumer_list[key] = [] if not is_dict else {}
 
 
 class ExchangeChannels(Channels):

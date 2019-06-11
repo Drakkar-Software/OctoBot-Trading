@@ -28,20 +28,18 @@ class OHLCVProducer(Producer):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, time_frame, symbol, candle):
-        await self.perform(symbol, time_frame, candle)
+    async def push(self, time_frame, symbol, candle, replace_all=False):
+        await self.perform(symbol, time_frame, candle, replace_all)
 
     async def perform(self, time_frame, symbol, candle, replace_all=False):
         try:
-            # TODO manage wildcard
-            if symbol in self.channel.consumers and time_frame in self.channel.consumers[symbol]:
+            if (CHANNEL_WILDCARD in self.channel.consumers and self.channel.consumers[CHANNEL_WILDCARD]) or \
+                    (symbol in self.channel.consumers or time_frame in self.channel.consumers[symbol]):
                 self.channel.exchange_manager.uniformize_candles_if_necessary(candle)
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_candles_update(time_frame,
                                                                                                   candle,
                                                                                                   replace_all=replace_all)
-                await self.send(time_frame, symbol, candle, False)
-
-            if CHANNEL_WILDCARD in self.channel.consumers and time_frame in self.channel.consumers[CHANNEL_WILDCARD]:
+                await self.send(time_frame, symbol, candle)
                 await self.send(time_frame, symbol, candle, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
@@ -52,7 +50,7 @@ class OHLCVProducer(Producer):
     async def send(self, time_frame, symbol, candle, is_wildcard=False):
         for consumer in self.channel.get_consumers_by_timeframe(symbol=CHANNEL_WILDCARD if is_wildcard else symbol,
                                                                 time_frame=time_frame):
-            consumer.queue.put({
+            await consumer.queue.put({
                 "symbol": symbol,
                 "time_frame": time_frame,
                 "candle": candle
