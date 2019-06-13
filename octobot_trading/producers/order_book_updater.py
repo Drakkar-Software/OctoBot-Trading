@@ -20,7 +20,7 @@ from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns
 
 
 class OrderBookUpdater(OrderBookProducer):
-    ORDER_BOOK_REFRESH_TIME = 10
+    ORDER_BOOK_REFRESH_TIME = 5
 
     def __init__(self, channel):
         super().__init__(channel)

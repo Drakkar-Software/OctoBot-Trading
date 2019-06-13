@@ -49,7 +49,7 @@ class ExchangeSymbolData:
         self.logger = get_logger(f"{self.__class__.__name__} - {self.symbol}")
 
     # candle functions
-    async def handle_candles_update(self, time_frame, new_symbol_candles_data, replace_all=False):
+    async def handle_candles_update(self, time_frame, new_symbol_candles_data, replace_all=False, partial=False):
         try:
             symbol_candles = self.symbol_candles[time_frame]
         except KeyError:
@@ -64,7 +64,9 @@ class ExchangeSymbolData:
             self.symbol_candles[time_frame] = symbol_candles
             return
 
-        if replace_all:
+        if partial:
+            symbol_candles.add_old_and_new_candles(new_symbol_candles_data)
+        elif replace_all:
             symbol_candles.replace_all_candles(new_symbol_candles_data)
         else:
             symbol_candles.add_new_candle(new_symbol_candles_data)

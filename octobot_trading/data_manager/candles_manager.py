@@ -97,6 +97,17 @@ class CandlesManager(Initializable):
         self._reset_candles()
         self._set_all_candles(all_candles_data)
 
+    """
+    Same as add_new_candle but also checks if old candles are missing
+    """
+    def add_old_and_new_candles(self, candles_data):
+        # check old candles
+        for old_candle in candles_data[:-1]:
+            if old_candle[PriceIndexes.IND_PRICE_TIME.value] not in self.time_candles:
+                self.add_new_candle(old_candle)
+
+        self.add_new_candle(candles_data[-1])
+
     def add_new_candle(self, new_candle_data: Dict):
         if self._should_add_new_candle(new_candle_data[PriceIndexes.IND_PRICE_TIME.value]):
             self._inc_candle_index()

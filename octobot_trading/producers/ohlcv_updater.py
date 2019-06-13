@@ -14,47 +14,50 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import time
+
+from octobot_commons.enums import TimeFramesMinutes
+from octobot_websockets.constants import MINUTE_TO_SECONDS
 
 from octobot_trading.channels.ohlcv import OHLCVProducer
 
 
 class OHLCVUpdater(OHLCVProducer):
-    OHLCV_REFRESH_TIME = 60
+    OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
 
     def __init__(self, channel):
         super().__init__(channel)
         self.should_stop = False
         self.channel = channel
+        self.tasks = []
+
+    """
+    Creates OHLCV refresh tasks
+    """
 
     async def start(self):
-        while not self.should_stop:  # TODO TEMP
-            for pair in self.channel.exchange_manager.traded_pairs:
-                for time_frame in self.channel.exchange_manager.time_frames:
-                    await self.push(pair, time_frame,
-                                    await self.channel.exchange_manager.exchange.get_symbol_prices(pair, time_frame))
-            await asyncio.sleep(self.OHLCV_REFRESH_TIME)
+        self.tasks = [
+            asyncio.create_task(self.time_frame_watcher(self.channel.exchange_manager.traded_pairs, time_frame))
+            for time_frame in self.channel.exchange_manager.time_frames]
 
-# import asyncio
-# import time
-# from asyncio import CancelledError
-# from typing import Dict
-#
-# from backtesting import backtesting_enabled, BacktestingEndedException
-# from config import TimeFramesMinutes, MINUTE_TO_SECONDS, UPDATER_MAX_SLEEPING_TIME
-#
-#
-# class OHLCVUpdaterProducer(ExchangeProducer):
-#     def __init__(self, simulator):
-#         super().__init__(simulator)
-#         self.refreshed_times: int = 0
-#         self.last_update: int = 0
-#
-#     async def send(self, data):
-#         self.refreshed_times += 1
-#         self.last_update = time.time()
-#         await super().send(data=data)
-#
-#
+    """
+    Manage timeframe OHLCV data refreshing for all pairs
+    """
+
+    async def time_frame_watcher(self, pairs, time_frame):
+        while not self.should_stop:
+            try:
+                started_time = time.time()
+                for pair in pairs:
+                    await self.push(pair, time_frame,
+                                    await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
+                                                                                                   time_frame,
+                                                                                                   limit=self.OHLCV_LIMIT),
+                                    partial=True)
+                await asyncio.sleep(TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS - (time.time() - started_time))
+            except Exception as e:
+                self.logger.error(f"Failed to update ohlcv data in {time_frame} : {e}")
+
 # class OHLCVUpdater(ExchangeProducer):
 #     def __init__(self, simulator):
 #         super().__init__(simulator)

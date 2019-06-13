@@ -19,4 +19,4 @@ from octobot_trading.channels.ohlcv cimport OHLCVProducer
 
 
 cdef class OHLCVUpdater(OHLCVProducer):
-    pass
+    cdef list tasks

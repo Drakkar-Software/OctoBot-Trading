@@ -28,17 +28,18 @@ class OHLCVProducer(Producer):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, time_frame, symbol, candle, replace_all=False):
-        await self.perform(symbol, time_frame, candle, replace_all)
+    async def push(self, time_frame, symbol, candle, replace_all=False, partial=False):
+        await self.perform(symbol, time_frame, candle, replace_all, partial)
 
-    async def perform(self, time_frame, symbol, candle, replace_all=False):
+    async def perform(self, time_frame, symbol, candle, replace_all=False, partial=False):
         try:
             if (CHANNEL_WILDCARD in self.channel.consumers and self.channel.consumers[CHANNEL_WILDCARD]) or \
                     (symbol in self.channel.consumers or time_frame in self.channel.consumers[symbol]):
                 self.channel.exchange_manager.uniformize_candles_if_necessary(candle)
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_candles_update(time_frame,
                                                                                                   candle,
-                                                                                                  replace_all=replace_all)
+                                                                                                  replace_all=replace_all,
+                                                                                                  partial=partial)
                 await self.send(time_frame, symbol, candle)
                 await self.send(time_frame, symbol, candle, True)
         except CancelledError:
