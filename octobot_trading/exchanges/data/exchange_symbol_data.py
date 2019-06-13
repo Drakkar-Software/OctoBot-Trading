@@ -71,32 +71,25 @@ class ExchangeSymbolData:
         else:
             symbol_candles.add_new_candle(new_symbol_candles_data)
 
-    def handle_recent_trades(self, recent_trades):
-        self.recent_trades_manager.recent_trades_update(recent_trades)
+    def handle_recent_trade_update(self, recent_trades, replace_all=False, partial=False):
+        if partial:
+            # TODO check if initialized
+            self.recent_trades_manager.add_new_trades(recent_trades)
+        elif replace_all:
+            self.recent_trades_manager.set_all_recent_trades(recent_trades)
+        else:
+            # TODO check if initialized
+            self.recent_trades_manager.add_recent_trade(recent_trades[-1])
 
-    def handle_recent_trade_update(self, recent_trades):
-        self.recent_trades_manager.recent_trade_update(recent_trades)
-
-    def handle_order_book_update(self, asks, bids):
-        self.order_book_manager.order_book_update(asks, bids)
-
-    def handle_order_book_delta_update(self, asks, bids):
-        self.order_book_manager.order_book_delta_update(asks, bids)
+    def handle_order_book_update(self, asks, bids, is_delta=False):
+        if is_delta:
+            # TODO check if initialized
+            self.order_book_manager.order_book_delta_update(asks, bids)
+        else:
+            self.order_book_manager.order_book_update(asks, bids)
 
     def handle_ticker_update(self, ticker):
         self.ticker_manager.ticker_update(ticker)
-
-    # def ensure_data_validity(self, time_frame): TODO
-    #     previous_candle_timestamp = self._get_previous_candle_timestamp(time_frame)
-    #     error_allowance = 1.2
-    #     current_time = time.time()
-    #     if previous_candle_timestamp is not None:
-    #         # if update time from the previous time frame is greater than this given time frame:
-    #         # data did not get updated => data are invalid
-    #         if current_time - previous_candle_timestamp > \
-    #                 TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS * error_allowance:
-    #             return False
-    #     return True
 
     '''
     Called by non-trade classes
@@ -127,17 +120,6 @@ class ExchangeSymbolData:
             return self.recent_trades_manager[-limit:]  # TODO
         else:
             return self.recent_trades_manager  # TODO
-
-    # private functions
-    # @staticmethod
-    # def _has_candle_changed(candle_data, start_candle_time):
-    #     return candle_data.time_candles_list[-1] < start_candle_time
-    #
-    # def _get_previous_candle_timestamp(self, time_frame):
-    #     if time_frame in self.previous_candle_time:
-    #         return self.previous_candle_time[time_frame]
-    #     else:
-    #         return None
 
     def candles_are_initialized(self, time_frame):
         if time_frame in self.symbol_candles and self.symbol_candles[time_frame].is_initialized:

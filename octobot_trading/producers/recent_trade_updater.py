@@ -15,16 +15,19 @@
 #  License along with this library.
 import asyncio
 
+from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.channels.recent_trade import RecentTradeProducer
 
 
 class RecentTradeUpdater(RecentTradeProducer):
     RECENT_TRADE_REFRESH_TIME = 5
-    RECENT_TRADE_LIMIT = 50
+    RECENT_TRADE_LIMIT = 20  # should be < to RecentTradesManager's MAX_TRADES_COUNT
 
-    def __init__(self, channel):
+    def __init__(self, channel): # TODO to be removed
         super().__init__(channel)
         self.should_stop = False
+        self.logger = get_logger(self.__class__.__name__)
         self.channel = channel
 
     async def start(self):
@@ -33,7 +36,8 @@ class RecentTradeUpdater(RecentTradeProducer):
                 for pair in self.channel.exchange_manager.traded_pairs:
                     await self.push(pair,
                                     await self.channel.exchange_manager.exchange.get_recent_trades(pair,
-                                                                                                   limit=self.RECENT_TRADE_LIMIT), replace_all=True)
+                                                                                                   limit=self.RECENT_TRADE_LIMIT),
+                                    partial=True)
                 await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
             except Exception as e:
                 self.logger.exception(f"Fail to update recent trades : {e}")

@@ -26,19 +26,18 @@ class RecentTradeProducer(Producer):
         super().__init__(channel)
         self.channel = channel
 
-    async def push(self, symbol, recent_trades, replace_all=False):
-        await self.perform(symbol, recent_trades, replace_all=replace_all)
+    async def push(self, symbol, recent_trades, replace_all=False, partial=False):
+        await self.perform(symbol, recent_trades, replace_all=replace_all, partial=partial)
 
-    async def perform(self, symbol, recent_trades, replace_all=False):
+    async def perform(self, symbol, recent_trades, replace_all=False, partial=False):
         try:
-            if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:  # and symbol_data.recent_trades_are_initialized()
-                if replace_all:
-                    self.channel.exchange_manager.get_symbol_data(symbol).handle_recent_trades(recent_trades)
-                else:
-                    self.channel.exchange_manager.get_symbol_data(symbol).handle_recent_trade_update(recent_trades)
+            if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
+                self.channel.exchange_manager.get_symbol_data(symbol).handle_recent_trade_update(recent_trades,
+                                                                                                 replace_all=replace_all,
+                                                                                                 partial=partial)
 
                 self.channel.will_send()
-                await self.send(symbol, recent_trades, False)
+                await self.send(symbol, recent_trades)
                 await self.send(symbol, recent_trades, True)
                 self.channel.has_send()
         except CancelledError:

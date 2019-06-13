@@ -98,7 +98,7 @@ async def main():
     fileConfig("logs/logging_config.ini")
     logging.info("starting...")
 
-    await handle_new_exchange("bitmex")
+    # await handle_new_exchange("bitmex")
     await handle_new_exchange("binance")
 
     await asyncio.sleep(1000)
