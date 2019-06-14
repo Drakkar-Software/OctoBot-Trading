@@ -19,4 +19,4 @@ from octobot_trading.channels.recent_trade cimport RecentTradeProducer
 
 
 cdef class RecentTradeUpdater(RecentTradeProducer):
-    pass
+    cdef list _cleanup_trades_dict(self, list recent_trades)

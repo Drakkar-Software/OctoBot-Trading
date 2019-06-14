@@ -20,7 +20,7 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class RecentTradesManager(Initializable):
     cdef object logger
 
-    cdef set recent_trades
+    cdef list recent_trades
 
     cdef void _check_recent_trades_size(self)
     cdef void _reset_recent_trades(self)

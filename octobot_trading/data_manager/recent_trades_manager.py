@@ -23,7 +23,7 @@ class RecentTradesManager(Initializable):
     def __init__(self):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
-        self.recent_trades = set()
+        self.recent_trades = []
         self._reset_recent_trades()
 
     async def initialize_impl(self):
@@ -36,19 +36,25 @@ class RecentTradesManager(Initializable):
 
     def add_new_trades(self, recent_trades):
         if recent_trades:
-            self.recent_trades.update(recent_trades)
+            self.recent_trades += [
+                trade
+                for trade in recent_trades
+                if trade not in self.recent_trades]
             self._check_recent_trades_size()
 
     def add_recent_trade(self, recent_trade):
         try:
-            self.recent_trades += recent_trade
-            self._check_recent_trades_size()
+            if recent_trade not in self.recent_trades:
+                self.recent_trades.append(recent_trade)
+                self._check_recent_trades_size()
         except ValueError as e:
             self.logger.error(f"Impossible to add new recent trade ({recent_trade} : {e})")
 
     def _reset_recent_trades(self):
-        self.recent_trades = set()
+        self.recent_trades = []
 
     def _check_recent_trades_size(self):
-        if self.MAX_TRADES_COUNT > len(self.recent_trades) > 0:
+        if self.MAX_TRADES_COUNT == len(self.recent_trades):
+            self.recent_trades.pop(0)
+        elif self.MAX_TRADES_COUNT < len(self.recent_trades):
             self.recent_trades = self.recent_trades[-self.MAX_TRADES_COUNT:]
