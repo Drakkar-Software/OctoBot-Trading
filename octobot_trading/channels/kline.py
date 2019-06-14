@@ -23,42 +23,41 @@ from octobot_channels.consumer import Consumer
 from octobot_channels.producer import Producer
 
 
-class OHLCVProducer(Producer):
+class KlineProducer(Producer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, time_frame, symbol, candle, replace_all=False, partial=False):
-        await self.perform(symbol, time_frame, candle, replace_all, partial)
+    async def push(self, time_frame, symbol, kline, reset=False):
+        await self.perform(symbol, time_frame, kline, reset=reset)
 
-    async def perform(self, time_frame, symbol, candle, replace_all=False, partial=False):
+    async def perform(self, time_frame, symbol, kline, reset=False):
         try:
             if (CHANNEL_WILDCARD in self.channel.consumers and self.channel.consumers[CHANNEL_WILDCARD]) or \
                     (symbol in self.channel.consumers or time_frame in self.channel.consumers[symbol]):
-                self.channel.exchange_manager.uniformize_candles_if_necessary(candle)
-                await self.channel.exchange_manager.get_symbol_data(symbol).handle_candles_update(time_frame,
-                                                                                                  candle,
-                                                                                                  replace_all=replace_all,
-                                                                                                  partial=partial)
-                await self.send(time_frame, symbol, candle)
-                await self.send(time_frame, symbol, candle, True)
+                if not reset:
+                    await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
+                    await self.send(time_frame, symbol, kline)
+                    await self.send(time_frame, symbol, kline, True)
+                else:
+                    await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, time_frame, symbol, candle, is_wildcard=False):
+    async def send(self, time_frame, symbol, kline, is_wildcard=False):
         for consumer in self.channel.get_consumers_by_timeframe(symbol=CHANNEL_WILDCARD if is_wildcard else symbol,
                                                                 time_frame=time_frame):
             await consumer.queue.put({
                 "symbol": symbol,
                 "time_frame": time_frame,
-                "candle": candle
+                "kline": kline
             })
 
 
-class OHLCVConsumer(Consumer):
+class KlineConsumer(Consumer):
     def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0):  # TODO REMOVE
         super().__init__(callback)
         self.filter_size = 0
@@ -70,12 +69,12 @@ class OHLCVConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(symbol=data["symbol"], time_frame=data["time_frame"], candle=data["candle"])
+                await self.callback(symbol=data["symbol"], time_frame=data["time_frame"], kline=data["kline"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 
 
-class OHLCVChannel(ExchangeChannel):
+class KlineChannel(ExchangeChannel):
     def new_consumer(self, callback: CONSUMER_CALLBACK_TYPE, size: int = 0, symbol: str = CHANNEL_WILDCARD,
                      time_frame=None):
-        self._add_new_consumer_and_run(OHLCVConsumer(callback, size=size), symbol=symbol, with_time_frame=True)
+        self._add_new_consumer_and_run(KlineConsumer(callback, size=size), symbol=symbol, with_time_frame=True)

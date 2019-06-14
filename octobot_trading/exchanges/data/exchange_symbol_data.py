@@ -20,9 +20,9 @@ import numpy as np
 from octobot_commons.enums import PriceIndexes, TimeFramesMinutes
 
 from octobot_commons.logging.logging_util import get_logger
-from octobot_websockets.constants import MINUTE_TO_SECONDS
 
 from octobot_trading.data_manager.candles_manager import CandlesManager
+from octobot_trading.data_manager.kline_manager import KlineManager
 from octobot_trading.data_manager.order_book_manager import OrderBookManager
 from octobot_trading.data_manager.recent_trades_manager import RecentTradesManager
 from octobot_trading.data_manager.ticker_manager import TickerManager
@@ -35,16 +35,16 @@ class ExchangeSymbolData:
     def __init__(self, symbol):
         self.symbol = symbol
 
-        self.candles_manager = CandlesManager()
         self.order_book_manager = OrderBookManager()
         self.recent_trades_manager = RecentTradesManager()
         self.ticker_manager = TickerManager()
 
         self.symbol_candles = {}
+        self.symbol_klines = {}
 
-        self.are_recent_trades_initialized = False
-        self.is_order_book_initialized = False
-        self.is_price_ticker_initialized = False
+        self.are_recent_trades_initialized = False  # TODO to be removed
+        self.is_order_book_initialized = False  # TODO to be removed
+        self.is_price_ticker_initialized = False  # TODO to be removed
 
         self.logger = get_logger(f"{self.__class__.__name__} - {self.symbol}")
 
@@ -90,6 +90,24 @@ class ExchangeSymbolData:
 
     def handle_ticker_update(self, ticker):
         self.ticker_manager.ticker_update(ticker)
+
+    async def handle_kline_update(self, time_frame, kline):
+        try:
+            symbol_klines = self.symbol_klines[time_frame]
+        except KeyError:
+            symbol_klines = KlineManager()
+            try:
+                await symbol_klines.initialize(self.symbol_candles[time_frame].get_symbol_prices(1))
+            except KeyError:
+                self.logger.warning("Can't initialize kline manager : symbol candles are not currently available.")
+                return
+
+            self.symbol_klines[time_frame] = symbol_klines
+        symbol_klines.kline_update(kline)
+
+    def handle_kline_reset(self, last_candle, time_frame):
+        if time_frame in self.symbol_klines:
+            self.symbol_klines[time_frame].reset_kline(last_candle)
 
     '''
     Called by non-trade classes

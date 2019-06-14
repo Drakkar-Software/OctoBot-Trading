@@ -44,7 +44,17 @@ class RecentTradeUpdater(RecentTradeProducer):
                 self.logger.exception(f"Fail to update recent trades : {e}")
 
     def _cleanup_trades_dict(self, recent_trades):
-        for trade in recent_trades:
-            if "info" in trade:
+        try:
+            for trade in recent_trades:
                 trade.pop("info")
+                trade.pop("datetime")
+                trade.pop("id")
+                trade.pop("order")
+                trade.pop("symbol")
+                trade.pop("cost")
+                trade.pop("fee")
+                trade.pop("type")
+                trade.pop("takerOrMaker")
+        except KeyError as e:
+            self.logger.error(f"Fail to cleanup recent trades dict ({e})")
         return recent_trades

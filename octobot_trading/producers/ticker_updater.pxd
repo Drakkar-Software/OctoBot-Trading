@@ -19,4 +19,4 @@ from octobot_trading.channels.ticker cimport TickerProducer
 
 
 cdef class TickerUpdater(TickerProducer):
-    pass
+    cdef dict _cleanup_ticker_dict(self, dict ticker)

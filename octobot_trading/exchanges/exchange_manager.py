@@ -24,7 +24,7 @@ from octobot_commons.time_frame_manager import TimeFrameManager
 from octobot_commons.timestamp_util import is_valid_timestamp
 
 from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, \
-    TICKER_CHANNEL, ORDERS_CHANNEL
+    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannels
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
@@ -35,6 +35,7 @@ from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbols
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.producers.balance_updater import BalanceUpdater
+from octobot_trading.producers.kline_updater import KlineUpdater
 from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 from octobot_trading.producers.order_book_updater import OrderBookUpdater
 from octobot_trading.producers.orders_updater import OrdersUpdater
@@ -133,6 +134,7 @@ class ExchangeManager(Initializable):
         await RecentTradeUpdater(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
         await TickerUpdater(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
         await OrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+        await KlineUpdater(ExchangeChannels.get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
     def _search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():

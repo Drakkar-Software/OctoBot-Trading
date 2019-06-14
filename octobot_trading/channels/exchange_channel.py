@@ -71,14 +71,15 @@ class ExchangeChannel(Channel):
             self._init_consumer_if_necessary(self.consumers[symbol], time_frame)
             return self.consumers[symbol][time_frame]
 
-    def _add_new_consumer_and_run(self, consumer, symbol=CHANNEL_WILDCARD, time_frame=None):
+    def _add_new_consumer_and_run(self, consumer, symbol=CHANNEL_WILDCARD, with_time_frame=False):
         if symbol:
-            if time_frame:
+            if with_time_frame:
                 # create dict and list if required
                 self._init_consumer_if_necessary(self.consumers, symbol, is_dict=True)
-                self._init_consumer_if_necessary(self.consumers[symbol], time_frame)
 
-                self.consumers[symbol][time_frame].append(consumer)
+                for time_frame in self.exchange_manager.time_frames:
+                    self._init_consumer_if_necessary(self.consumers[symbol], time_frame)
+                    self.consumers[symbol][time_frame].append(consumer)
             else:
                 # create dict and list if required
                 self._init_consumer_if_necessary(self.consumers, symbol)

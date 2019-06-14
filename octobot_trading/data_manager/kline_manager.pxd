@@ -1,4 +1,5 @@
-#  Drakkar-Software OctoBot-Channels
+# cython: language_level=3
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -9,16 +10,20 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+#  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.util.initializable cimport Initializable
 
-TICKER_CHANNEL = "Ticker"
-RECENT_TRADES_CHANNEL = "RecentTrade"
-ORDER_BOOK_CHANNEL = "OrderBook"
-KLINE_CHANNEL = "Kline"
-OHLCV_CHANNEL = "OHLCV"
-ORDERS_CHANNEL = "Orders"
-BALANCE_CHANNEL = "Balance"
+
+cdef class KlineManager(Initializable):
+    cdef object logger
+
+    cdef public dict kline
+
+    cdef void _reset_kline(self)
+
+    cpdef void reset_kline(self, dict last_candle)
+    cpdef void kline_update(self, dict kline)

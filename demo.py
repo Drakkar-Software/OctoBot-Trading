@@ -20,7 +20,8 @@ from logging.config import fileConfig
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME
 from octobot_commons.enums import TimeFrames
 
-from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, OHLCV_CHANNEL
+from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, OHLCV_CHANNEL, \
+    KLINE_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
@@ -82,6 +83,10 @@ async def recent_trades_callback(symbol, recent_trades):
     logging.info(f"RECENT TRADE : SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
 
 
+async def kline_callback(symbol, kline):
+    logging.info(f"KLINE : SYMBOL = {symbol} || KLINE = {kline}")
+
+
 async def handle_new_exchange(exchange_name):
     exchange = ExchangeManager(config, exchange_name, ignore_config=True)
     await exchange.initialize()
@@ -90,8 +95,8 @@ async def handle_new_exchange(exchange_name):
     ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_name).new_consumer(ticker_callback)
     ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_name).new_consumer(recent_trades_callback)
     ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_name).new_consumer(order_book_callback)
-    ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_name).new_consumer(ohlcv_callback,
-                                                                         time_frame=TimeFrames.ONE_MINUTE)
+    ExchangeChannels.get_chan(KLINE_CHANNEL, exchange_name).new_consumer(kline_callback)
+    ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_name).new_consumer(ohlcv_callback)
 
 
 async def main():
