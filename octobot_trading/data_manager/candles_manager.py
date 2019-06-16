@@ -66,22 +66,22 @@ class CandlesManager(Initializable):
 
     # getters
     def get_symbol_close_candles(self, limit: int = None):
-        return CandlesManager._extract_limited_data(self.close_candles, limit)
+        return CandlesManager._extract_limited_data(self.close_candles, limit, max_limit=self.close_candles_index)
 
     def get_symbol_open_candles(self, limit: int = None):
-        return CandlesManager._extract_limited_data(self.open_candles, limit)
+        return CandlesManager._extract_limited_data(self.open_candles, limit, max_limit=self.open_candles_index)
 
     def get_symbol_high_candles(self, limit: int = None):
-        return CandlesManager._extract_limited_data(self.high_candles, limit)
+        return CandlesManager._extract_limited_data(self.high_candles, limit, max_limit=self.high_candles_index)
 
     def get_symbol_low_candles(self, limit: int = None):
-        return CandlesManager._extract_limited_data(self.low_candles, limit)
+        return CandlesManager._extract_limited_data(self.low_candles, limit, max_limit=self.low_candles_index)
 
     def get_symbol_time_candles(self, limit: int = None):
-        return CandlesManager._extract_limited_data(self.time_candles, limit)
+        return CandlesManager._extract_limited_data(self.time_candles, limit, max_limit=self.time_candles_index)
 
     def get_symbol_volume_candles(self, limit: int = None):
-        return CandlesManager._extract_limited_data(self.volume_candles, limit)
+        return CandlesManager._extract_limited_data(self.volume_candles, limit, max_limit=self.volume_candles_index)
 
     def get_symbol_prices(self, limit: int = None):
         return {
@@ -158,11 +158,14 @@ class CandlesManager(Initializable):
             self.volume_candles_index = -1
 
     @staticmethod
-    def _extract_limited_data(data, limit: int = None):
+    def _extract_limited_data(data, limit: int = None, max_limit: int = -1):
         if limit is None:
             return data
 
-        return data[-min(limit, len(data)):]
+        if max_limit == -1:
+            return data[-min(limit, len(data)):]
+        else:
+            return data[max_limit-limit:max_limit]
 
     # def _sanitize_last_candle(self, close_candle_data, high_candle_data, low_candle_data):
     #     close_last_candle = close_candle_data[-1]

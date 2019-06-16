@@ -29,18 +29,20 @@ class KlineProducer(Producer):
         super().__init__(channel)
 
     async def push(self, time_frame, symbol, kline, reset=False):
-        await self.perform(symbol, time_frame, kline, reset=reset)
+        await self.perform(time_frame, symbol, kline, reset=reset)
 
     async def perform(self, time_frame, symbol, kline, reset=False):
         try:
             if (CHANNEL_WILDCARD in self.channel.consumers and self.channel.consumers[CHANNEL_WILDCARD]) or \
                     (symbol in self.channel.consumers or time_frame in self.channel.consumers[symbol]):
-                if not reset:
-                    await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
-                    await self.send(time_frame, symbol, kline)
-                    await self.send(time_frame, symbol, kline, True)
-                else:
-                    await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
+                await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline,
+                                                                                                should_reset=reset)
+
+                complete_kline = self.channel.exchange_manager.get_symbol_data(symbol).symbol_klines[time_frame].kline
+                await self.send(time_frame, symbol, complete_kline)
+                await self.send(time_frame, symbol, complete_kline, True)
+        except KeyError:
+            pass
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

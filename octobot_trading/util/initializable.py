@@ -31,5 +31,5 @@ class Initializable:
         return False
 
     @abstractmethod
-    async def initialize_impl(self, **args):
+    async def initialize_impl(self):
         raise NotImplementedError("initialize_impl not implemented")

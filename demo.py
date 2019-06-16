@@ -83,8 +83,8 @@ async def recent_trades_callback(symbol, recent_trades):
     logging.info(f"RECENT TRADE : SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
 
 
-async def kline_callback(symbol, kline):
-    logging.info(f"KLINE : SYMBOL = {symbol} || KLINE = {kline}")
+async def kline_callback(symbol, time_frame, kline):
+    logging.info(f"KLINE : SYMBOL = {symbol} || TIME FRAME = {time_frame} || KLINE = {kline}")
 
 
 async def handle_new_exchange(exchange_name):

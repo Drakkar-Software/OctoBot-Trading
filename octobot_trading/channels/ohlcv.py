@@ -40,6 +40,8 @@ class OHLCVProducer(Producer):
                                                                                                   candle,
                                                                                                   replace_all=replace_all,
                                                                                                   partial=partial)
+                if partial or replace_all:
+                    candle = candle[-1]
                 await self.send(time_frame, symbol, candle)
                 await self.send(time_frame, symbol, candle, True)
         except CancelledError:

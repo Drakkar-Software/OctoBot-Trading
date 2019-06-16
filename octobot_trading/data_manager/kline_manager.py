@@ -21,29 +21,26 @@ from octobot_trading.util.initializable import Initializable
 
 
 class KlineManager(Initializable):
-    def __init__(self):  # TODO to be removed
+    def __init__(self): # TODO to be removed
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
-        self.kline = {}
+        self.kline = []
 
-    async def initialize_impl(self, last_candle):
-        self.reset_kline(last_candle)
+    async def initialize_impl(self):
+        self._reset_kline()
 
     def _reset_kline(self):
-        self.kline = {
-            PriceIndexes.IND_PRICE_CLOSE.value: nan,
-            PriceIndexes.IND_PRICE_OPEN.value: nan,
-            PriceIndexes.IND_PRICE_HIGH.value: nan,
-            PriceIndexes.IND_PRICE_LOW.value: nan,
-            PriceIndexes.IND_PRICE_VOL.value: nan,
-            PriceIndexes.IND_PRICE_TIME.value: nan
-        }
+        self.kline = [nan] * len(PriceIndexes)
 
     def reset_kline(self, last_candle):
         self._reset_kline()
-        if last_candle:
+        if last_candle \
+                and last_candle[PriceIndexes.IND_PRICE_TIME.value] is not nan \
+                and last_candle[PriceIndexes.IND_PRICE_OPEN.value] is not nan:
             self.kline[PriceIndexes.IND_PRICE_TIME.value] = last_candle[PriceIndexes.IND_PRICE_TIME.value]
             self.kline[PriceIndexes.IND_PRICE_OPEN.value] = last_candle[PriceIndexes.IND_PRICE_CLOSE.value]
+        else:
+            raise KeyError
 
     def kline_update(self, kline):
         if kline:

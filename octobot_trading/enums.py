@@ -155,6 +155,8 @@ class ExchangeConstantsOrderColumns(Enum):
     TRADES = "trades"
     MAKER = "maker"
     TAKER = "taker"
+    ORDER = "order"
+    TAKERORMAKER = "takerOrMaker"
 
 
 class ExchangeConstantsFeesColumns(Enum):

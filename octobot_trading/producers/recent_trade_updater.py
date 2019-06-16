@@ -18,6 +18,7 @@ import asyncio
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.recent_trade import RecentTradeProducer
+from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
 class RecentTradeUpdater(RecentTradeProducer):
@@ -46,15 +47,15 @@ class RecentTradeUpdater(RecentTradeProducer):
     def _cleanup_trades_dict(self, recent_trades):
         try:
             for trade in recent_trades:
-                trade.pop("info")
-                trade.pop("datetime")
-                trade.pop("id")
-                trade.pop("order")
-                trade.pop("symbol")
-                trade.pop("cost")
-                trade.pop("fee")
-                trade.pop("type")
-                trade.pop("takerOrMaker")
+                trade.pop(ExchangeConstantsOrderColumns.INFO.value)
+                trade.pop(ExchangeConstantsOrderColumns.DATETIME.value)
+                trade.pop(ExchangeConstantsOrderColumns.ID.value)
+                trade.pop(ExchangeConstantsOrderColumns.ORDER.value)
+                trade.pop(ExchangeConstantsOrderColumns.SYMBOL.value)
+                trade.pop(ExchangeConstantsOrderColumns.COST.value)
+                trade.pop(ExchangeConstantsOrderColumns.FEE.value)
+                trade.pop(ExchangeConstantsOrderColumns.TYPE.value)
+                trade.pop(ExchangeConstantsOrderColumns.TAKERORMAKER.value)
         except KeyError as e:
             self.logger.error(f"Fail to cleanup recent trades dict ({e})")
         return recent_trades

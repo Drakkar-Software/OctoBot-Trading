@@ -91,18 +91,22 @@ class ExchangeSymbolData:
     def handle_ticker_update(self, ticker):
         self.ticker_manager.ticker_update(ticker)
 
-    async def handle_kline_update(self, time_frame, kline):
+    async def handle_kline_update(self, time_frame, kline, should_reset=False):
         try:
             symbol_klines = self.symbol_klines[time_frame]
         except KeyError:
             symbol_klines = KlineManager()
             try:
-                await symbol_klines.initialize(self.symbol_candles[time_frame].get_symbol_prices(1))
+                await symbol_klines.initialize()
+                symbol_klines.reset_kline(kline)
+                self.symbol_klines[time_frame] = symbol_klines
             except KeyError:
-                self.logger.warning("Can't initialize kline manager : symbol candles are not currently available.")
+                self.logger.warning("Can't initialize kline manager : missing required candles data.")
                 return
 
-            self.symbol_klines[time_frame] = symbol_klines
+        if should_reset:
+            symbol_klines.reset_kline(kline)
+
         symbol_klines.kline_update(kline)
 
     def handle_kline_reset(self, last_candle, time_frame):
