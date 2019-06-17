@@ -106,7 +106,7 @@ async def main():
     # await handle_new_exchange("bitmex")
     await handle_new_exchange("binance")
 
-    await asyncio.sleep(1000)
+    await asyncio.sleep(10000)
 
 
 if __name__ == '__main__':

@@ -28,19 +28,16 @@ class KlineProducer(Producer):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, time_frame, symbol, kline, reset=False):
-        await self.perform(time_frame, symbol, kline, reset=reset)
+    async def push(self, time_frame, symbol, kline):
+        await self.perform(time_frame, symbol, kline)
 
-    async def perform(self, time_frame, symbol, kline, reset=False):
+    async def perform(self, time_frame, symbol, kline):
         try:
             if (CHANNEL_WILDCARD in self.channel.consumers and self.channel.consumers[CHANNEL_WILDCARD]) or \
                     (symbol in self.channel.consumers or time_frame in self.channel.consumers[symbol]):
-                await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline,
-                                                                                                should_reset=reset)
-
-                complete_kline = self.channel.exchange_manager.get_symbol_data(symbol).symbol_klines[time_frame].kline
-                await self.send(time_frame, symbol, complete_kline)
-                await self.send(time_frame, symbol, complete_kline, True)
+                await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
+                await self.send(time_frame, symbol, kline)
+                await self.send(time_frame, symbol, kline, True)
         except KeyError:
             pass
         except CancelledError:

@@ -305,7 +305,7 @@ class ExchangeManager(Initializable):
         return not is_valid_timestamp(timestamp)
 
     def uniformize_candles_if_necessary(self, candle_or_candles):
-        if candle_or_candles:
+        if candle_or_candles: # TODO improve
             if isinstance(candle_or_candles[0], list):
                 if self.need_to_uniformize_timestamp(candle_or_candles[0][PriceIndexes.IND_PRICE_TIME.value]):
                     self._uniformize_candles_timestamps(candle_or_candles)

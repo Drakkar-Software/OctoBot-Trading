@@ -19,4 +19,4 @@ from octobot_trading.channels.kline cimport KlineProducer
 
 
 cdef class KlineUpdater(KlineProducer):
-    pass
+    cdef list tasks

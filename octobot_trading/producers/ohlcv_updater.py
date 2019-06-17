@@ -52,34 +52,15 @@ class OHLCVUpdater(OHLCVProducer):
                     candles: list = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
                                                                                                    time_frame,
                                                                                                    limit=self.OHLCV_LIMIT)
-                    await self.push(pair, time_frame, candles, partial=True)
+                    await self.push(time_frame, pair, candles[:-1], partial=True)  # push only completed candles
 
                 if candles:
+                    self.channel.exchange_manager.uniformize_candles_if_necessary(candles[-1])
                     await asyncio.sleep((candles[-1][PriceIndexes.IND_PRICE_TIME.value] +
                                          TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS) - time.time())
             except Exception as e:
                 self.logger.error(f"Failed to update ohlcv data in {time_frame} : {e}")
 
-# class OHLCVUpdater(ExchangeProducer):
-#     def __init__(self, simulator):
-#         super().__init__(simulator)
-#         self.config = self.simulator.config
-#         self.updated_time_frames = self.simulator.time_frames
-#         self.updated_traded_pairs = self.simulator.traded_pairs
-#
-#         self.ohlcv_producers: Dict[Dict[OHLCVUpdaterProducer]] = {}
-#         self.symbol_evaluators = []
-#
-#         self.backtesting_enabled = backtesting_enabled(self.config)
-#
-#     # calculate task sleep time between each refresh
-#     async def _update_pause(self, now):
-#         sleeping_time = 0
-#         if not self.backtesting_enabled:
-#             sleeping_time = UPDATER_MAX_SLEEPING_TIME - (time.time() - now)
-#         if sleeping_time > 0:
-#             await asyncio.sleep(sleeping_time)
-#
 #     async def force_refresh_data(self, time_frame, symbol):
 #         if not self.backtesting_enabled:
 #             await self._refresh_time_frame_data(time_frame, symbol, self.ohlcv_producers[symbol][time_frame])
@@ -91,30 +72,10 @@ class OHLCVUpdater(OHLCVProducer):
 #             for symbol in self.updated_traded_pairs:
 #                 self.simulator.get_exchange().init_candles_offset(time_frames, symbol)
 #
-#     async def _refresh_backtesting_time_frame_data(self, time_frame, symbol, producer: OHLCVUpdaterProducer):
-#         try:
-#             if self.simulator.get_exchange().should_update_data(time_frame, symbol):
-#                 await producer.send(True)  # TODO
-#         except BacktestingEndedException as e:
-#             self.logger.info(e)
-#             self.keep_running = False
-#             await self.simulator.get_exchange().end_backtesting(symbol)
-#
 #     # currently used only during backtesting, will force refresh of each supervised task
 #     async def update_backtesting_order_status(self):
 #         order_manager = self.simulator.get_trader().get_order_manager()
 #         await order_manager.force_update_order_status(simulated_time=True)
-#
-#     async def _refresh_time_frame_data(self, time_frame, symbol, producer: OHLCVUpdaterProducer):
-#         try:
-#             # ask simulator to refresh data
-#             await self.simulator.get_exchange().get_symbol_prices(symbol, time_frame)
-#             await producer.send(True)  # TODO
-#         except CancelledError as e:
-#             raise e
-#         except Exception as e:
-#             self.logger.error(f" Error when refreshing data for time frame {time_frame}: {e}")
-#             self.logger.exception(e)
 #
 #     async def trigger_symbols_finalize(self):
 #         sort_symbol_evaluators = sorted(self.symbol_evaluators,
@@ -122,9 +83,3 @@ class OHLCVUpdater(OHLCVProducer):
 #                                         reverse=True)
 #         for symbol_evaluator in sort_symbol_evaluators:
 #             await symbol_evaluator.finalize(self.simulator)
-#
-#     def get_refreshed_times(self, time_frame, symbol) -> int:
-#         try:
-#             return self.ohlcv_producers[symbol][time_frame].refreshed_times
-#         except KeyError:
-#             return 0

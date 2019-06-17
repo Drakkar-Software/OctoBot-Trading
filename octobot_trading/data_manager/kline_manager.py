@@ -21,7 +21,7 @@ from octobot_trading.util.initializable import Initializable
 
 
 class KlineManager(Initializable):
-    def __init__(self): # TODO to be removed
+    def __init__(self):  # Required for python development
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.kline = []
@@ -32,18 +32,18 @@ class KlineManager(Initializable):
     def _reset_kline(self):
         self.kline = [nan] * len(PriceIndexes)
 
-    def reset_kline(self, last_candle):
-        self._reset_kline()
-        if last_candle \
-                and last_candle[PriceIndexes.IND_PRICE_TIME.value] is not nan \
-                and last_candle[PriceIndexes.IND_PRICE_OPEN.value] is not nan:
-            self.kline[PriceIndexes.IND_PRICE_TIME.value] = last_candle[PriceIndexes.IND_PRICE_TIME.value]
-            self.kline[PriceIndexes.IND_PRICE_OPEN.value] = last_candle[PriceIndexes.IND_PRICE_CLOSE.value]
-        else:
-            raise KeyError
-
     def kline_update(self, kline):
         if kline:
+            # test for new candle
+            if self.kline[PriceIndexes.IND_PRICE_TIME.value] != kline[PriceIndexes.IND_PRICE_TIME.value]:
+                self._reset_kline()
+
+            if self.kline[PriceIndexes.IND_PRICE_TIME.value] is nan:
+                self.kline[PriceIndexes.IND_PRICE_TIME.value] = kline[PriceIndexes.IND_PRICE_TIME.value]
+
+            if self.kline[PriceIndexes.IND_PRICE_OPEN.value] is nan:
+                self.kline[PriceIndexes.IND_PRICE_OPEN.value] = kline[PriceIndexes.IND_PRICE_CLOSE.value]
+
             if self.kline[PriceIndexes.IND_PRICE_VOL.value] is nan:
                 self.kline[PriceIndexes.IND_PRICE_VOL.value] = kline[PriceIndexes.IND_PRICE_VOL.value]
             else:

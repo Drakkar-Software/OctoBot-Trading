@@ -31,7 +31,7 @@ class TickerUpdater(TickerProducer):
             try:
                 for pair in self.channel.exchange_manager.traded_pairs:
                     ticker: dict = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
-                    await self.push(pair, await self.push(pair, self._cleanup_ticker_dict(ticker)))
+                    await self.push(pair, self._cleanup_ticker_dict(ticker))
                 await asyncio.sleep(self.TICKER_REFRESH_TIME)
             except Exception as e:
                 self.logger.exception(f"Fail to update ticker : {e}")

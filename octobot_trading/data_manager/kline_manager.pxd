@@ -25,5 +25,4 @@ cdef class KlineManager(Initializable):
 
     cdef void _reset_kline(self)
 
-    cpdef void reset_kline(self, dict last_candle)
-    cpdef void kline_update(self, dict kline)
+    cpdef void kline_update(self, list kline)

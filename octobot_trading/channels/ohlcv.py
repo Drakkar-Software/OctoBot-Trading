@@ -29,7 +29,7 @@ class OHLCVProducer(Producer):
         super().__init__(channel)
 
     async def push(self, time_frame, symbol, candle, replace_all=False, partial=False):
-        await self.perform(symbol, time_frame, candle, replace_all, partial)
+        await self.perform(time_frame, symbol, candle, replace_all, partial)
 
     async def perform(self, time_frame, symbol, candle, replace_all=False, partial=False):
         try:
