@@ -25,7 +25,7 @@ cdef class RecentTradesManager(Initializable):
     cdef void _check_recent_trades_size(self)
     cdef void _reset_recent_trades(self)
 
-    cpdef void set_all_recent_trades(self, list recent_trades)
-    cpdef void add_new_trades(self, list recent_trades)
-    cpdef void add_recent_trade(self, dict recent_trade)
+    cpdef list set_all_recent_trades(self, list recent_trades)
+    cpdef list add_new_trades(self, list recent_trades)
+    cpdef list add_recent_trade(self, dict recent_trade)
 

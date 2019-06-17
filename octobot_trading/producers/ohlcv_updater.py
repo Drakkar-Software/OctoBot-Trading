@@ -16,7 +16,7 @@
 import asyncio
 import time
 
-from octobot_commons.enums import TimeFramesMinutes
+from octobot_commons.enums import TimeFramesMinutes, PriceIndexes
 from octobot_websockets.constants import MINUTE_TO_SECONDS
 
 from octobot_trading.channels.ohlcv import OHLCVProducer
@@ -47,14 +47,16 @@ class OHLCVUpdater(OHLCVProducer):
     async def time_frame_watcher(self, pairs, time_frame):
         while not self.should_stop:
             try:
-                started_time = time.time()
+                candles: list = []
                 for pair in pairs:
-                    await self.push(pair, time_frame,
-                                    await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
+                    candles: list = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
                                                                                                    time_frame,
-                                                                                                   limit=self.OHLCV_LIMIT),
-                                    partial=True)
-                await asyncio.sleep(TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS - (time.time() - started_time))
+                                                                                                   limit=self.OHLCV_LIMIT)
+                    await self.push(pair, time_frame, candles, partial=True)
+
+                if candles:
+                    await asyncio.sleep((candles[-1][PriceIndexes.IND_PRICE_TIME.value] +
+                                         TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS) - time.time())
             except Exception as e:
                 self.logger.error(f"Failed to update ohlcv data in {time_frame} : {e}")
 
@@ -69,64 +71,6 @@ class OHLCVUpdater(OHLCVProducer):
 #         self.symbol_evaluators = []
 #
 #         self.backtesting_enabled = backtesting_enabled(self.config)
-#
-#     # should be called to force refresh
-#     async def receive(self):
-#         await self.perform()
-#
-#     async def start(self):
-#         # create producers
-#         self.ohlcv_producers = {
-#             symbol: {
-#                 time_frame: OHLCVUpdaterProducer(self.simulator)
-#                 for time_frame in self.updated_time_frames
-#             }
-#             for symbol in self.updated_traded_pairs
-#         }
-#
-#         self.symbol_evaluators = [
-#             self.simulator.get_symbol_data(symbol)
-#             for symbol in self.updated_traded_pairs
-#         ]
-#
-#         while self.should_stop:
-#             try:
-#                 await self.perform()
-#             except CancelledError:
-#                 self.logger.info("Update tasks cancelled.")
-#             except Exception as e:
-#                 self.logger.error(f"exception when triggering update: {e}")
-#                 self.logger.exception(e)
-#
-#     async def perform(self):
-#         now = time.time()
-#         update_tasks = []
-#
-#         for symbol in self.updated_traded_pairs:
-#             for time_frame in self.updated_time_frames:
-#                 producer: OHLCVUpdaterProducer = self.ohlcv_producers[symbol][time_frame]
-#
-#                 # backtesting doesn't need to wait a specific time frame to end to refresh data
-#                 if self.backtesting_enabled:
-#                     update_tasks.append(self._refresh_backtesting_time_frame_data(time_frame, symbol, producer))
-#
-#                 # if data from this time frame needs an update
-#                 elif now - producer.last_update >= TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS:
-#                     update_tasks.append(self._refresh_time_frame_data(time_frame, symbol, producer))
-#
-#         await asyncio.gather(*update_tasks)
-#
-#         self.logger.info("Refreshed")
-#
-#         # if update_tasks:
-#         #     await self.trigger_symbols_finalize()
-#         # TODO will occurs in the futur evaluator_task_manager
-#
-#         if self.backtesting_enabled:
-#             await self.update_backtesting_order_status()
-#
-#         if self.should_stop:
-#             await self._update_pause(now)
 #
 #     # calculate task sleep time between each refresh
 #     async def _update_pause(self, now):

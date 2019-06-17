@@ -31,22 +31,26 @@ class RecentTradesManager(Initializable):
 
     def set_all_recent_trades(self, recent_trades):
         if recent_trades:
-            self.recent_trades = set(recent_trades)
+            self.recent_trades = list(set(recent_trades))
             self._check_recent_trades_size()
+            return self.recent_trades
 
     def add_new_trades(self, recent_trades):
         if recent_trades:
-            self.recent_trades += [
+            new_recent_trades: list = [
                 trade
                 for trade in recent_trades
                 if trade not in self.recent_trades]
+            self.recent_trades += new_recent_trades
             self._check_recent_trades_size()
+            return new_recent_trades
 
     def add_recent_trade(self, recent_trade):
         try:
             if recent_trade not in self.recent_trades:
                 self.recent_trades.append(recent_trade)
                 self._check_recent_trades_size()
+                return recent_trade
         except ValueError as e:
             self.logger.error(f"Impossible to add new recent trade ({recent_trade} : {e})")
 

@@ -74,12 +74,11 @@ class ExchangeSymbolData:
     def handle_recent_trade_update(self, recent_trades, replace_all=False, partial=False):
         if partial:
             # TODO check if initialized
-            self.recent_trades_manager.add_new_trades(recent_trades)
+            return self.recent_trades_manager.add_new_trades(recent_trades)
         elif replace_all:
-            self.recent_trades_manager.set_all_recent_trades(recent_trades)
-        else:
-            # TODO check if initialized
-            self.recent_trades_manager.add_recent_trade(recent_trades[-1])
+            return self.recent_trades_manager.set_all_recent_trades(recent_trades)
+        # TODO check if initialized
+        return self.recent_trades_manager.add_recent_trade(recent_trades[-1])
 
     def handle_order_book_update(self, asks, bids, is_delta=False):
         if is_delta:
