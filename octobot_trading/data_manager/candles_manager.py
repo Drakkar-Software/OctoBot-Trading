@@ -106,18 +106,24 @@ class CandlesManager(Initializable):
             if old_candle[PriceIndexes.IND_PRICE_TIME.value] not in self.time_candles:
                 self.add_new_candle(old_candle)
 
-        self.add_new_candle(candles_data[-1])
+        try:
+            self.add_new_candle(candles_data[-1])
+        except IndexError as e:
+            self.logger.error(f"Fail to add last candle {candles_data} : {e}")
 
     def add_new_candle(self, new_candle_data: Dict):
         if self._should_add_new_candle(new_candle_data[PriceIndexes.IND_PRICE_TIME.value]):
             self._inc_candle_index()
 
-        self.close_candles[self.close_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_CLOSE.value]
-        self.open_candles[self.open_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_OPEN.value]
-        self.high_candles[self.high_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_HIGH.value]
-        self.low_candles[self.low_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_LOW.value]
-        self.time_candles[self.time_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_TIME.value]
-        self.volume_candles[self.volume_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_VOL.value]
+        try:
+            self.close_candles[self.close_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_CLOSE.value]
+            self.open_candles[self.open_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_OPEN.value]
+            self.high_candles[self.high_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_HIGH.value]
+            self.low_candles[self.low_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_LOW.value]
+            self.time_candles[self.time_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_TIME.value]
+            self.volume_candles[self.volume_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_VOL.value]
+        except IndexError as e:
+            self.logger.error(f"Fail to add new candle {new_candle_data} : {e}")
 
     # private
     def _set_all_candles(self, new_candles_data: Union[List, Dict]):

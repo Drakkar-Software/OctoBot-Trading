@@ -91,6 +91,9 @@ async def handle_new_exchange(exchange_name):
     exchange = ExchangeManager(config, exchange_name, ignore_config=True)
     await exchange.initialize()
 
+    # set sandbox mode
+    exchange.exchange.client.setSandboxMode(True)
+
     # consumers
     ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_name).new_consumer(ticker_callback)
     ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_name).new_consumer(recent_trades_callback)
@@ -103,8 +106,8 @@ async def main():
     fileConfig("logs/logging_config.ini")
     logging.info("starting...")
 
-    # await handle_new_exchange("bitmex")
-    await handle_new_exchange("binance")
+    await handle_new_exchange("bitmex")
+    # await handle_new_exchange("binance")
 
     await asyncio.sleep(10000)
 

@@ -33,7 +33,7 @@ class KlineManager(Initializable):
         self.kline = [nan] * len(PriceIndexes)
 
     def kline_update(self, kline):
-        if kline:
+        try:
             # test for new candle
             if self.kline[PriceIndexes.IND_PRICE_TIME.value] != kline[PriceIndexes.IND_PRICE_TIME.value]:
                 self._reset_kline()
@@ -58,3 +58,5 @@ class KlineManager(Initializable):
             if self.kline[PriceIndexes.IND_PRICE_LOW.value] is nan or \
                     self.kline[PriceIndexes.IND_PRICE_LOW.value] > kline[PriceIndexes.IND_PRICE_LOW.value]:
                 self.kline[PriceIndexes.IND_PRICE_LOW.value] = kline[PriceIndexes.IND_PRICE_LOW.value]
+        except TypeError as e:
+            self.logger.error(f"Fail to update kline with {kline} : {e}")

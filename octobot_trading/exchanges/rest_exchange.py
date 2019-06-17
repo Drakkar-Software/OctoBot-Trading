@@ -22,6 +22,8 @@ from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce
 from octobot_commons.config_util import decrypt
 
 from octobot_commons.dict_util import get_value_or_default
+from octobot_commons.enums import TimeFramesMinutes
+from octobot_websockets.constants import MSECONDS_TO_MINUTE
 
 from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_KEY, CONFIG_EXCHANGE_SECRET, \
     CONFIG_EXCHANGE_PASSWORD, CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_USED, \
@@ -120,7 +122,8 @@ class RestExchange(AbstractExchange):
 
     async def get_symbol_prices(self, symbol, time_frame, limit=None):
         if limit:
-            return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit)
+            since = self.client.milliseconds() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * limit
+            return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, since=since)
         return await self.client.fetch_ohlcv(symbol, time_frame.value)
 
     # return up to ten bidasks on each side of the order book stack

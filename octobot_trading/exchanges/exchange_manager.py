@@ -107,10 +107,10 @@ class ExchangeManager(Initializable):
 
             # create Websocket exchange if possible
             if not self.rest_only:
-
+                pass
                 # search for websocket
-                if self.check_web_socket_config(self.exchange.name):
-                    self.exchange_web_socket = self._search_and_create_websocket(AbstractWebsocket)
+                # if self.check_web_socket_config(self.exchange.name): TODO temporary WS disabled
+                #     self.exchange_web_socket = self._search_and_create_websocket(AbstractWebsocket)
 
         # if simulated : create exchange simulator instance
         else:
