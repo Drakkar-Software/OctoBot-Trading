@@ -28,7 +28,7 @@ cdef class Trader(Initializable):
     cdef public str trader_type_str
 
     cdef public bint simulate
-    cdef public bint enable
+    cdef public bint enabled
     cdef public bint loaded_previous_state
 
     cdef object exchange

@@ -30,7 +30,7 @@ cdef class ExchangeChannel(Channel):
     cpdef void will_send(self)
     cpdef void has_send(self)
 
-    cpdef object get_consumers(self, str symbol)
+    cpdef object get_consumers(self, str symbol=*)
     cpdef list get_consumers_by_timeframe(self, object time_frame, str symbol)
     cpdef void _add_new_consumer_and_run(self, Consumer consumer, str symbol =*, object time_frame =*)
 

@@ -14,8 +14,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.data.portfolio cimport Portfolio
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+from octobot_trading.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 
 cdef class PortfolioManager(Initializable):
     cdef object logger
+
+    cdef public dict config
+
+    cdef public ExchangeManager exchange_manager
+    cdef public Trader trader
+
+    cdef public Portfolio portfolio
+
+    cdef void _reset_portfolio(self)
+    cdef void _set_starting_simulated_portfolio(self)

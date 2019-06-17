@@ -19,13 +19,17 @@ from octobot_trading.channels.balance import BalanceProducer
 
 
 class BalanceUpdater(BalanceProducer):
-    BALANCE_REFRESH_TIME = 60
+    BALANCE_REFRESH_TIME = 2  # TODO = 300
 
     def __init__(self, channel):
         super().__init__(channel)
         self.should_stop = False
+        self.channel = channel
 
     async def start(self):
         while not self.should_stop:
-            # await self.push(await self.channel.exchange_manager.exchange_dispatcher.get_balance())
-            await asyncio.sleep(self.BALANCE_REFRESH_TIME)
+            try:
+                await self.push((await self.channel.exchange_manager.exchange.get_balance()))
+                await asyncio.sleep(self.BALANCE_REFRESH_TIME)
+            except Exception as e:
+                self.logger.error(f"Failed to update balance : {e}")

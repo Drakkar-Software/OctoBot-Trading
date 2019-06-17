@@ -44,7 +44,7 @@ class ExchangeChannel(Channel):
             self.filter_send_counter = 0
             self.should_send_filter = False
 
-    def get_consumers(self, symbol):
+    def get_consumers(self, symbol=None):
         if not symbol:
             symbol = CHANNEL_WILDCARD
         try:

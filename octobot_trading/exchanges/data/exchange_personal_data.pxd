@@ -19,8 +19,9 @@ from octobot_trading.data_manager.portfolio_manager cimport PortfolioManager
 from octobot_trading.data_manager.trades_manager cimport TradesManager
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.traders.trader cimport Trader
+from octobot_trading.util.initializable cimport Initializable
 
-cdef class ExchangePersonalData:
+cdef class ExchangePersonalData(Initializable):
     cdef public object logger
     cdef public object exchange
 

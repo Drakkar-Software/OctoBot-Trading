@@ -28,7 +28,7 @@ from octobot_websockets.constants import MSECONDS_TO_MINUTE
 from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_KEY, CONFIG_EXCHANGE_SECRET, \
     CONFIG_EXCHANGE_PASSWORD, CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_USED, \
     CONFIG_PORTFOLIO_TOTAL
-from octobot_trading.enums import OrderStatus, TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
+from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ecoc
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer

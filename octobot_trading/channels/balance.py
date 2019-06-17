@@ -20,20 +20,24 @@ Handles balance changes
 from asyncio import CancelledError, Queue
 
 from octobot_channels import CONSUMER_CALLBACK_TYPE
+from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.channels.exchange_channel import ExchangeChannel
 from octobot_channels.consumer import Consumer
 from octobot_channels.producer import Producer
 
 
 class BalanceProducer(Producer):
-    async def push(self, balance):
-        await self.perform(balance)
+    def __init__(self, channel):
+        self.logger = get_logger(self.__class__.__name__)
+        super().__init__(channel)
 
-    async def perform(self, balance):
+    async def push(self, balance, is_delta=False):
+        await self.perform(balance, is_delta=is_delta)
+
+    async def perform(self, balance, is_delta=False):
         try:
-            # if personnal_data.portfolio_is_initialized()
-            self.channel.exchange_manager.get_personal_data().set_portfolio(
-                balance)  # TODO check if full or just update
+            await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update(balance)
             await self.send(balance)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
@@ -43,7 +47,7 @@ class BalanceProducer(Producer):
 
     async def send(self, balance):
         for consumer in self.channel.get_consumers():
-            consumer.queue.put({
+            await consumer.queue.put({
                 "balance": balance
             })
 

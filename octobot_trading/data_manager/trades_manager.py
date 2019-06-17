@@ -19,9 +19,10 @@ from octobot_trading.util.initializable import Initializable
 
 
 class TradesManager(Initializable):
-    def __init__(self):
+    def __init__(self, config, trader, exchange_manager):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
+        self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
 
     async def initialize_impl(self):
         pass

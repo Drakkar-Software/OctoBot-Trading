@@ -26,17 +26,12 @@ class SubPortfolio(Portfolio):
         self.set_percent(percent)
         super().__init__(config, trader)
 
-    # is called in parent initialize
-    async def _load_portfolio(self):
-        await self.update_portfolio_balance()
-
     # overwrite parent update_portfolio_balance
-    async def update_portfolio_balance(self):
-        if self.is_enabled:
-            await self.parent_portfolio.update_portfolio_balance()
-            self.update_from_parent()
+    async def update_portfolio_from_balance(self, balance):
+        await self.parent_portfolio.update_portfolio_from_balance(balance)
+        self.update_from_parent()
 
-    def update_from_parent(self):
+    def update_from_parent(self): # TODO
         # get the current portfolio if percent is relative or if we can't use the origin portfolio
         if self.is_relative or not self.trader.get_trades_manager().get_origin_portfolio():
             balance = self.parent_portfolio.get_portfolio()
@@ -56,9 +51,9 @@ class SubPortfolio(Portfolio):
         else:
             self.percent = self.DEFAULT_SUB_PORTFOLIO_PERCENT
 
-    async def update_portfolio(self, order):
-        await super().update_portfolio(order)
-        await self.parent_portfolio.update_portfolio(order)
+    async def update_portfolio_from_order(self, order):
+        await super().update_portfolio_from_order(order)
+        await self.parent_portfolio.update_portfolio_from_order(order)
 
     def update_portfolio_available(self, order, is_new_order=False):
         super().update_portfolio_available(order, is_new_order=is_new_order)

@@ -34,7 +34,6 @@ cdef class Portfolio(Initializable):
 
     cdef public dict portfolio
 
-    cpdef void set_starting_simulated_portfolio(self)
     cpdef float get_currency_portfolio(self, str currency, str portfolio_type=*)
     cpdef void update_portfolio_available(self, Order order, bint is_new_order=*)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)

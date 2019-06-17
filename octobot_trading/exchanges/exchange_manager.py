@@ -76,9 +76,9 @@ class ExchangeManager(Initializable):
     async def initialize_impl(self):
         await self.create_exchanges()
 
-    def register_trader(self, trader):
+    async def register_trader(self, trader):
         self.trader = trader
-        self.exchange_personal_data.initialize()
+        await self.exchange_personal_data.initialize()
 
     def _load_constants(self):
         self._load_config_symbols_and_time_frames()
