@@ -13,12 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.symbol_util import split_symbol
+
 from octobot_trading.data.order import Order
+from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
 class Trade:
-    def __init__(self, exchange, order: Order):
-        self.exchange = exchange
+    def __init__(self, order: Order):
         self.order = order
         self.currency, self.market = self.order.get_currency_and_market()
         self.quantity = self.order.filled_quantity
@@ -34,3 +36,14 @@ class Trade:
         self.filled_time = self.order.executed_time
         self.symbol = self.order.symbol
         self.simulated = self.order.trader.simulate
+
+
+def create_trade_from_dict(trader, trade_data):  # TODO to be improved
+    order = Order(trader)
+    order.order_id = trade_data[ExchangeConstantsOrderColumns.ID.value]
+    order.origin_price = trade_data[ExchangeConstantsOrderColumns.PRICE.value]
+    order.origin_quantity = trade_data[ExchangeConstantsOrderColumns.AMOUNT.value]
+    order.symbol = trade_data[ExchangeConstantsOrderColumns.SYMBOL.value]
+    order.currency, order.market = split_symbol(trade_data[ExchangeConstantsOrderColumns.SYMBOL.value])
+    order.filled_quantity = trade_data[ExchangeConstantsOrderColumns.AMOUNT.value]
+    return Trade(order)

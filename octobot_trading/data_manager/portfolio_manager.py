@@ -48,7 +48,7 @@ class PortfolioManager(Initializable):
         if self.trader.enabled:
             if self.trader.simulate:
                 self._set_starting_simulated_portfolio()
-            self.logger.info(f"{CURRENT_PORTFOLIO_STRING} {self.portfolio}")
+            self.logger.info(f"{CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
 
     def _set_starting_simulated_portfolio(self):
         # should only be called in trading simulation

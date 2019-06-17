@@ -20,6 +20,7 @@
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 from octobot_trading.data.order cimport Order
+from octobot_trading.traders.trader cimport Trader
 
 cdef class Trade:
     cdef public str currency
@@ -44,3 +45,5 @@ cdef class Trade:
     cdef public float quantity
 
     cdef public bint simulated
+
+cpdef Trade create_trade_from_dict(Trader trader, dict trade_data)

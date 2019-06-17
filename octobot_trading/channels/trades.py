@@ -23,35 +23,35 @@ from octobot_channels.consumer import Consumer
 from octobot_channels.producer import Producer
 
 
-class OrdersProducer(Producer):
+class TradesProducer(Producer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, symbol, order):
-        await self.perform(symbol, order)
+    async def push(self, symbol, trade):
+        await self.perform(symbol, trade)
 
-    async def perform(self, symbol, order):
+    async def perform(self, symbol, trade):
         try:
-            if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:  # and personnal_data.orders_are_initialized()
-                self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)  # TODO check if exists
-                await self.send(symbol, order)
-                await self.send(symbol, order, True)
+            if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
+                # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)  # TODO check if exists
+                await self.send(symbol, trade)
+                await self.send(symbol, trade, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, order, is_wildcard=False):
+    async def send(self, symbol, trade, is_wildcard=False):
         for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
                 "symbol": symbol,
-                "order": order
+                "trade": trade
             })
 
 
-class OrdersConsumer(Consumer):
+class TradesConsumer(Consumer):
     def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0, symbol=""):   # TODO REMOVE
         super().__init__(callback)
         self.filter_size = 0
@@ -64,11 +64,11 @@ class OrdersConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(symbol=data["symbol"], order=data["order"])
+                await self.callback(symbol=data["symbol"], trade=data["trade"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 
 
-class OrdersChannel(ExchangeChannel):
+class TradesChannel(ExchangeChannel):
     def new_consumer(self, callback: CONSUMER_CALLBACK_TYPE, size: int = 0, symbol: str = CHANNEL_WILDCARD):
-        self._add_new_consumer_and_run(OrdersConsumer(callback, size=size), symbol=symbol)
+        self._add_new_consumer_and_run(TradesConsumer(callback, size=size), symbol=symbol)

@@ -43,7 +43,6 @@ class Order:
     # create the order by setting all the required values
     def new(self, order_type, symbol, current_price, quantity, price, stop_price, status, order_notifier, order_id,
             quantity_filled, timestamp=None, linked_to=None, linked_portfolio=None) -> None:
-
         self.order_id = order_id
         self.origin_price = price
         self.status = status
