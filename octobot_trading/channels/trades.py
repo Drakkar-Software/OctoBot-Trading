@@ -22,21 +22,25 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel
 from octobot_channels.consumer import Consumer
 from octobot_channels.producer import Producer
 
+from octobot_trading.enums import ExchangeConstantsOrderColumns
+
 
 class TradesProducer(Producer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, symbol, trade):
-        await self.perform(symbol, trade)
+    async def push(self, trades):
+        await self.perform(trades)
 
-    async def perform(self, symbol, trade):
+    async def perform(self, trades):
         try:
-            if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
-                # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)  # TODO check if exists
-                await self.send(symbol, trade)
-                await self.send(symbol, trade, True)
+            for trade in trades:
+                symbol: str = trade[ExchangeConstantsOrderColumns.SYMBOL.value]
+                if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
+                    # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)
+                    await self.send(symbol, trade)
+                    await self.send(symbol, trade, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

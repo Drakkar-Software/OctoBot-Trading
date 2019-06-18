@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
+import json
 import logging
 
 import ccxt.async_support as ccxt
@@ -161,26 +161,26 @@ class RestExchange(AbstractExchange):
         else:
             raise Exception("This exchange doesn't support fetchOrder")
 
-    async def get_all_orders(self, symbol=None, since=None, limit=None):
+    async def get_all_orders(self, symbol=None, since=None, limit=None, params={}):
         if self.client.has['fetchOrders']:
-            return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit)
+            return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchOrders")
 
-    async def get_open_orders(self, symbol=None, since=None, limit=None, force_rest=False):
+    async def get_open_orders(self, symbol=None, since=None, limit=None, params={}):
         if self.client.has['fetchOpenOrders']:
-            return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit)
+            return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchOpenOrders")
 
-    async def get_closed_orders(self, symbol=None, since=None, limit=None):
+    async def get_closed_orders(self, symbol=None, since=None, limit=None, params={}):
         if self.client.has['fetchClosedOrders']:
-            return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit)
+            return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchClosedOrders")
 
-    async def get_my_recent_trades(self, symbol=None, since=None, limit=None):
-        return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit)
+    async def get_my_recent_trades(self, symbol=None, since=None, limit=None, params={}):
+        return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=params)
 
     async def cancel_order(self, order_id, symbol=None):
         try:
@@ -244,6 +244,40 @@ class RestExchange(AbstractExchange):
                                      ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.REMAINING.value]
         return all(key in order for key in order_required_fields)
 
+    # positions
+    async def get_open_position(self):
+        return await self.client.private_get_position()
+
+    async def get_symbol_position(self, symbol=None):
+        return await self.client.private_get_position(symbol=symbol)
+
+    async def get_symbol_open_position(self, symbol=None):
+        return await self.client.private_get_position({
+            'filter': json.dumps({
+                "isOpen": True,
+                "symbol": symbol
+            })
+        })
+
+    async def get_position_from_id(self, position_id, symbol=None):
+        return await self.client.private_get_position(id=position_id, symbol=symbol)
+
+    # async def get_positions(self, symbol=None, since=None, limit=None, params={}):
+    #     return await self.client.fetch_open_positions(symbol=symbol, since=since, limit=limit, params=params)
+    #
+    # async def get_open_positions(self, symbol=None, since=None, limit=None, params={}):
+    #     return await self.client.get_open_positions(symbol=symbol, since=since, limit=limit, params=params)
+    #
+    # async def get_closed_positions(self, symbol=None, since=None, limit=None, params={}):
+    #     return await self.client.get_closed_positions(symbol=symbol, since=since, limit=limit, params=params)
+    #
+    # async def get_position_trades(self, position_id, symbol=None, since=None, limit=None, params={}):
+    #     return await self.client.get_position_trades(id=position_id, symbol=symbol, since=since, limit=limit,
+    #                                                    params=params)
+
+    async def get_position_status(self, position_id, symbol=None, params={}):
+        return await self.client.get_position_status(id=position_id, symbol=symbol, params=params)
+
     def _log_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
             f" stop_price: {stop_price}"
@@ -291,3 +325,15 @@ class RestExchange(AbstractExchange):
     @staticmethod
     def _get_side(order_type):
         return "buy" if order_type in (TraderOrderType.BUY_LIMIT, TraderOrderType.BUY_MARKET) else "sell"
+
+    def get_pair_from_exchange(self, pair: str) -> str:
+        return self.client.find_market(pair)["symbol"]
+
+    def get_exchange_pair(self, pair: str) -> str:
+        if pair in self.client.symbols:
+            try:
+                return self.client.find_market(pair)["id"]
+            except KeyError:
+                raise KeyError(f'{pair} is not supported')
+        else:
+            raise ValueError(f'{pair} is not supported')

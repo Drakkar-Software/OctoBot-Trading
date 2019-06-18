@@ -98,20 +98,20 @@ async def balance_callback(balance):
     logging.info(f"BALANCE : BALANCE = {balance}")
 
 
-async def trades_callback(symbol, trades):
-    logging.info(f"TRADES : YMBOL = {symbol} || TRADES = {trades}")
+async def trades_callback(symbol, trade):
+    logging.info(f"TRADES : SYMBOL = {symbol} || TRADE = {trade}")
 
 
-async def orders_callback(symbol, orders):
-    logging.info(f"ORDERS : YMBOL = {symbol} || ORDERS = {orders}")
+async def orders_callback(symbol, order):
+    logging.info(f"ORDERS : SYMBOL = {symbol} || ORDER = {order}")
 
 
-async def positions_callback(symbol, positions):
-    logging.info(f"POSITIONS : YMBOL = {symbol} || POSITIONS = {positions}")
+async def positions_callback(symbol, position):
+    logging.info(f"POSITIONS : SYMBOL = {symbol} || POSITIONS = {position}")
 
 
 async def handle_new_exchange(exchange_name):
-    exchange = ExchangeManager(config, exchange_name)
+    exchange = ExchangeManager(config, exchange_name, rest_only=True)  # TODO rest_only=False
     await exchange.initialize()
 
     # print(dir(ccxt.bitmex()))

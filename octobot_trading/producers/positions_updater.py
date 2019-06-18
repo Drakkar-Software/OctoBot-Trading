@@ -19,7 +19,7 @@ from octobot_trading.channels.positions import PositionsProducer
 
 
 class PositionsUpdater(PositionsProducer):
-    POSITIONS_REFRESH_TIME = 60
+    POSITIONS_REFRESH_TIME = 2  # TODO = 10
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -28,8 +28,17 @@ class PositionsUpdater(PositionsProducer):
 
     async def start(self):
         while not self.should_stop:
-            for pair in self.channel.exchange_manager.traded_pairs:
-                # TODO
-                pass
-                # await self.push(pair, await self.channel.exchange_manager.exchange.get_open_orders(pair))
-            await asyncio.sleep(self.ORDERS_REFRESH_TIME)
+            try:
+                positions: list = await self.channel.exchange_manager.exchange.get_open_position()
+                await self.push(positions)
+                await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
+            except Exception as e:
+                self.logger.exception(f"Fail to update positions : {e}")
+
+    def _cleanup_positions_dict(self, positions):
+        for position in positions:
+            try:
+                pass  # TODO
+            except KeyError as e:
+                self.logger.error(f"Fail to cleanup position dict ({e})")
+        return positions

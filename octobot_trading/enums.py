@@ -159,6 +159,11 @@ class ExchangeConstantsOrderColumns(Enum):
     TAKERORMAKER = "takerOrMaker"
 
 
+class ExchangeConstantsPositionColumns(Enum):
+    TIMESTAMP = "timestamp"
+    SYMBOL = "symbol"
+
+
 class ExchangeConstantsFeesColumns(Enum):
     TYPE = "type"
     CURRENCY = "currency"

@@ -109,10 +109,9 @@ class ExchangeManager(Initializable):
 
             # create Websocket exchange if possible
             if not self.rest_only:
-                pass
                 # search for websocket
-                # if self.check_web_socket_config(self.exchange.name): TODO temporary WS disabled
-                #     self.exchange_web_socket = self._search_and_create_websocket(AbstractWebsocket)
+                if self.check_web_socket_config(self.exchange.name):
+                    self.exchange_web_socket = self._search_and_create_websocket(AbstractWebsocket)
 
         # if simulated : create exchange simulator instance
         else:
@@ -204,11 +203,11 @@ class ExchangeManager(Initializable):
             self.logger.warning(f"Exchange {self.exchange.name} is currently disabled")
             return False
 
-    def get_exchange_symbol_id(self, symbol, with_fixer=False):
-        return self.exchange.get_market_status(symbol, with_fixer=with_fixer)["id"]
+    def get_exchange_symbol_id(self, symbol):
+        return self.exchange.get_exchange_pair(symbol)
 
-    def get_exchange_symbol(self, symbol, with_fixer=False):
-        return self.exchange.get_market_status(symbol, with_fixer=with_fixer)["symbol"]
+    def get_exchange_symbol(self, symbol):
+        return self.exchange.get_pair_from_exchange(symbol)
 
     def _load_config_symbols_and_time_frames(self):
         client = self.exchange.client

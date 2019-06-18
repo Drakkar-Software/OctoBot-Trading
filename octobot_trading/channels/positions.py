@@ -22,21 +22,26 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel
 from octobot_channels.consumer import Consumer
 from octobot_channels.producer import Producer
 
+from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstantsPositionColumns
+
 
 class PositionsProducer(Producer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, symbol, position):
-        await self.perform(symbol, position)
+    async def push(self, positions):
+        await self.perform(positions)
 
-    async def perform(self, symbol, position):
+    async def perform(self, positions):
         try:
-            if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
-                # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)  # TODO check if exists
-                await self.send(symbol, position)
-                await self.send(symbol, position, True)
+            for position in positions:
+                symbol: str = self.channel.exchange_manager.get_exchange_symbol(
+                    position[ExchangeConstantsPositionColumns.SYMBOL.value])
+                if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
+                    # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)
+                    await self.send(symbol, position)
+                    await self.send(symbol, position, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
@@ -47,7 +52,7 @@ class PositionsProducer(Producer):
         for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
                 "symbol": symbol,
-                "order": position
+                "position": position
             })
 
 
