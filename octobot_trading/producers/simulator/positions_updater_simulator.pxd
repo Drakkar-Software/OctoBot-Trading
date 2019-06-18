@@ -1,4 +1,5 @@
-#  Drakkar-Software OctoBot-Channels
+# cython: language_level=3
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -13,15 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.producers.positions_updater cimport PositionsUpdater
 
 
-TICKER_CHANNEL = "Ticker"
-RECENT_TRADES_CHANNEL = "RecentTrade"
-ORDER_BOOK_CHANNEL = "OrderBook"
-KLINE_CHANNEL = "Kline"
-OHLCV_CHANNEL = "OHLCV"
-
-TRADES_CHANNEL = "Trades"
-ORDERS_CHANNEL = "Orders"
-BALANCE_CHANNEL = "Balance"
-POSITIONS_CHANNEL = "Positions"
+cdef class PositiosUpdaterSimulator(PositionsUpdater):
+    pass

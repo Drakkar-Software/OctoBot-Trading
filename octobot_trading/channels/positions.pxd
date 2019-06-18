@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Channels
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,14 +15,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.channels.exchange_channel cimport ExchangeChannel
+from octobot_channels.consumer cimport Consumer
+from octobot_channels.producer cimport Producer
 
-TICKER_CHANNEL = "Ticker"
-RECENT_TRADES_CHANNEL = "RecentTrade"
-ORDER_BOOK_CHANNEL = "OrderBook"
-KLINE_CHANNEL = "Kline"
-OHLCV_CHANNEL = "OHLCV"
 
-TRADES_CHANNEL = "Trades"
-ORDERS_CHANNEL = "Orders"
-BALANCE_CHANNEL = "Balance"
-POSITIONS_CHANNEL = "Positions"
+cdef class PositionsProducer(Producer):
+    pass
+
+cdef class PositionsConsumer(Consumer):
+    pass
+
+cdef class PositionsChannel(ExchangeChannel):
+    pass

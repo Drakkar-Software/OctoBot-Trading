@@ -24,7 +24,7 @@ from octobot_commons.time_frame_manager import TimeFrameManager
 from octobot_commons.timestamp_util import is_valid_timestamp
 
 from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, \
-    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL
+    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannels
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
@@ -39,8 +39,10 @@ from octobot_trading.producers.kline_updater import KlineUpdater
 from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 from octobot_trading.producers.order_book_updater import OrderBookUpdater
 from octobot_trading.producers.orders_updater import OrdersUpdater
+from octobot_trading.producers.positions_updater import PositionsUpdater
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
 from octobot_trading.producers.ticker_updater import TickerUpdater
+from octobot_trading.producers.trades_updater import TradesUpdater
 from octobot_trading.util import is_trader_simulator_enabled
 from octobot_trading.util.initializable import Initializable
 
@@ -128,13 +130,16 @@ class ExchangeManager(Initializable):
             await exchange_channel.start()
 
     async def _create_exchange_producers(self):  # TODO filter creation
-        await BalanceUpdater(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
         await OHLCVUpdater(ExchangeChannels.get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
         await OrderBookUpdater(ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
         await RecentTradeUpdater(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
         await TickerUpdater(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
-        await OrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
         await KlineUpdater(ExchangeChannels.get_chan(KLINE_CHANNEL, self.exchange.name)).run()
+
+        await BalanceUpdater(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+        await OrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+        await TradesUpdater(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
+        await PositionsUpdater(ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
     def _search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():

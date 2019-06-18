@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot-Channels
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -13,15 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.logging.logging_util import get_logger
+
+from octobot_trading.util.initializable import Initializable
 
 
-TICKER_CHANNEL = "Ticker"
-RECENT_TRADES_CHANNEL = "RecentTrade"
-ORDER_BOOK_CHANNEL = "OrderBook"
-KLINE_CHANNEL = "Kline"
-OHLCV_CHANNEL = "OHLCV"
+class PositionsManager(Initializable):
+    def __init__(self, config, trader, exchange_manager):
+        super().__init__()
+        self.logger = get_logger(self.__class__.__name__)
+        self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
 
-TRADES_CHANNEL = "Trades"
-ORDERS_CHANNEL = "Orders"
-BALANCE_CHANNEL = "Balance"
-POSITIONS_CHANNEL = "Positions"
+    async def initialize_impl(self):
+        pass

@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot-Channels
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -15,13 +15,6 @@
 #  License along with this library.
 
 
-TICKER_CHANNEL = "Ticker"
-RECENT_TRADES_CHANNEL = "RecentTrade"
-ORDER_BOOK_CHANNEL = "OrderBook"
-KLINE_CHANNEL = "Kline"
-OHLCV_CHANNEL = "OHLCV"
-
-TRADES_CHANNEL = "Trades"
-ORDERS_CHANNEL = "Orders"
-BALANCE_CHANNEL = "Balance"
-POSITIONS_CHANNEL = "Positions"
+class Position:
+    def __init__(self, trader):
+        self.trader = trader

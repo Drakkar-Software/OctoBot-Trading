@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot-Channels
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -13,15 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
+from octobot_trading.channels.positions import PositionsProducer
 
 
-TICKER_CHANNEL = "Ticker"
-RECENT_TRADES_CHANNEL = "RecentTrade"
-ORDER_BOOK_CHANNEL = "OrderBook"
-KLINE_CHANNEL = "Kline"
-OHLCV_CHANNEL = "OHLCV"
+class PositionsUpdater(PositionsProducer):
+    POSITIONS_REFRESH_TIME = 60
 
-TRADES_CHANNEL = "Trades"
-ORDERS_CHANNEL = "Orders"
-BALANCE_CHANNEL = "Balance"
-POSITIONS_CHANNEL = "Positions"
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.should_stop = False
+        self.channel = channel
+
+    async def start(self):
+        while not self.should_stop:
+            for pair in self.channel.exchange_manager.traded_pairs:
+                # TODO
+                pass
+                # await self.push(pair, await self.channel.exchange_manager.exchange.get_open_orders(pair))
+            await asyncio.sleep(self.ORDERS_REFRESH_TIME)

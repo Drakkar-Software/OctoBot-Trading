@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot-Channels
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -14,14 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.producers.positions_updater import PositionsUpdater
 
-TICKER_CHANNEL = "Ticker"
-RECENT_TRADES_CHANNEL = "RecentTrade"
-ORDER_BOOK_CHANNEL = "OrderBook"
-KLINE_CHANNEL = "Kline"
-OHLCV_CHANNEL = "OHLCV"
 
-TRADES_CHANNEL = "Trades"
-ORDERS_CHANNEL = "Orders"
-BALANCE_CHANNEL = "Balance"
-POSITIONS_CHANNEL = "Positions"
+class PositiosUpdaterSimulator(PositionsUpdater):
+    SIMULATOR_LAST_PRICES_TO_CHECK = 50
+
+    def __init__(self, channel):
+        super().__init__(channel)

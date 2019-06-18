@@ -18,12 +18,13 @@ import logging
 import os
 from logging.config import fileConfig
 
+import ccxt
 from octobot_commons.config_util import encrypt
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME
 from octobot_commons.enums import TimeFrames
 
 from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, OHLCV_CHANNEL, \
-    KLINE_CHANNEL, BALANCE_CHANNEL
+    KLINE_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
@@ -97,9 +98,23 @@ async def balance_callback(balance):
     logging.info(f"BALANCE : BALANCE = {balance}")
 
 
+async def trades_callback(symbol, trades):
+    logging.info(f"TRADES : YMBOL = {symbol} || TRADES = {trades}")
+
+
+async def orders_callback(symbol, orders):
+    logging.info(f"ORDERS : YMBOL = {symbol} || ORDERS = {orders}")
+
+
+async def positions_callback(symbol, positions):
+    logging.info(f"POSITIONS : YMBOL = {symbol} || POSITIONS = {positions}")
+
+
 async def handle_new_exchange(exchange_name):
     exchange = ExchangeManager(config, exchange_name)
     await exchange.initialize()
+
+    # print(dir(ccxt.bitmex()))
 
     trader = Trader(config, exchange)
     await trader.initialize()
@@ -113,7 +128,11 @@ async def handle_new_exchange(exchange_name):
     ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_name).new_consumer(order_book_callback)
     ExchangeChannels.get_chan(KLINE_CHANNEL, exchange_name).new_consumer(kline_callback)
     ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_name).new_consumer(ohlcv_callback)
+
     ExchangeChannels.get_chan(BALANCE_CHANNEL, exchange_name).new_consumer(balance_callback)
+    ExchangeChannels.get_chan(TRADES_CHANNEL, exchange_name).new_consumer(trades_callback)
+    ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_name).new_consumer(positions_callback)
+    ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_name).new_consumer(orders_callback)
 
 
 async def main():
