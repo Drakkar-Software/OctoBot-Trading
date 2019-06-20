@@ -35,7 +35,7 @@ class TradesUpdater(TradesProducer):
             await self.push(self._cleanup_trades_dict(trades))
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
         except Exception as e:
-            self.logger.exception(f"Fail to initialize old trades : {e}")
+            self.logger.error(f"Fail to initialize old trades : {e}")
 
     async def start(self):
         await self.init_old_trades()
@@ -45,7 +45,7 @@ class TradesUpdater(TradesProducer):
                 await self.push(self._cleanup_trades_dict(trades))
                 await asyncio.sleep(self.TRADES_REFRESH_TIME)
             except Exception as e:
-                self.logger.exception(f"Fail to update trades : {e}")
+                self.logger.error(f"Fail to update trades : {e}")
 
     def _cleanup_trades_dict(self, trades):
         for trade in trades:

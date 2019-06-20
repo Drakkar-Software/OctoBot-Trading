@@ -53,8 +53,15 @@ class OrdersManager(Initializable):
             self.orders[order_id] = self._create_order_from_raw(raw_order)
             self._check_orders_size()
             return True
-        self._update_order_from_raw(self.orders[order_id], raw_order)
-        return True
+        return self._update_order_from_raw(self.orders[order_id], raw_order)
+
+    def upsert_order_close(self, order_id, raw_order):
+        if order_id in self.orders:
+            self._update_order_from_raw(self.orders[order_id], raw_order)
+            # TODO order -> trade
+            self.orders.pop(order_id)
+            return True
+        return False
 
     # private methods
     def _reset_orders(self):
@@ -71,7 +78,7 @@ class OrdersManager(Initializable):
 
     def _update_order_from_raw(self, order, raw_order):
         # TODO
-        pass
+        return False
 
     def _select_orders(self, state=None, symbol=None, since=None, limit=None):
         orders = [

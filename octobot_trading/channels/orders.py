@@ -30,28 +30,36 @@ class OrdersProducer(Producer):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, orders):
-        await self.perform(orders)
+    async def push(self, orders, is_closed=False):
+        await self.perform(orders, is_closed=is_closed)
 
-    async def perform(self, orders):
+    async def perform(self, orders, is_closed=False):
         try:
             for order in orders:
                 symbol: str = order[ExchangeConstantsOrderColumns.SYMBOL.value]
                 if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
-                    self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)
-                    await self.send(symbol, order)
-                    await self.send(symbol, order, True)
+                    order_id: str = order[ExchangeConstantsOrderColumns.ID.value]
+
+                    if is_closed:
+                        changed: bool = self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(order_id, order)
+                    else:
+                        changed: bool = self.channel.exchange_manager.exchange_personal_data.handle_order_update(order_id, order)
+
+                    if changed:
+                        await self.send(symbol, order, is_closed)
+                        await self.send(symbol, order, is_closed, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, order, is_wildcard=False):
+    async def send(self, symbol, order, is_closed=False, is_wildcard=False):
         for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
                 "symbol": symbol,
-                "order": order
+                "order": order,
+                "is_closed": is_closed
             })
 
 
@@ -68,7 +76,7 @@ class OrdersConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(symbol=data["symbol"], order=data["order"])
+                await self.callback(symbol=data["symbol"], order=data["order"], is_closed=data["is_closed"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 

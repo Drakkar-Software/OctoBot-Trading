@@ -33,7 +33,7 @@ class PositionsUpdater(PositionsProducer):
                 await self.push(positions)
                 await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
             except Exception as e:
-                self.logger.exception(f"Fail to update positions : {e}")
+                self.logger.error(f"Fail to update positions : {e}")
 
     def _cleanup_positions_dict(self, positions):
         for position in positions:

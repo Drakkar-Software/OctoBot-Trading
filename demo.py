@@ -102,15 +102,15 @@ async def trades_callback(symbol, trade):
     logging.info(f"TRADES : SYMBOL = {symbol} || TRADE = {trade}")
 
 
-async def orders_callback(symbol, order):
-    logging.info(f"ORDERS : SYMBOL = {symbol} || ORDER = {order}")
+async def orders_callback(symbol, order, is_closed):
+    logging.info(f"ORDERS : SYMBOL = {symbol} || ORDER = {order} || CLOSED = {is_closed}")
 
 
 async def positions_callback(symbol, position):
     logging.info(f"POSITIONS : SYMBOL = {symbol} || POSITIONS = {position}")
 
 
-async def handle_new_exchange(exchange_name):
+async def handle_new_exchange(exchange_name, sandboxed=False):
     exchange = ExchangeManager(config, exchange_name, rest_only=True)  # TODO rest_only=False
     await exchange.initialize()
 
@@ -120,7 +120,7 @@ async def handle_new_exchange(exchange_name):
     await trader.initialize()
 
     # set sandbox mode
-    exchange.exchange.client.setSandboxMode(True)
+    exchange.exchange.client.setSandboxMode(sandboxed)
 
     # consumers
     ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_name).new_consumer(ticker_callback)
@@ -139,8 +139,8 @@ async def main():
     fileConfig("logs/logging_config.ini")
     logging.info("starting...")
 
-    await handle_new_exchange("bitmex")
-    # await handle_new_exchange("binance")
+    # await handle_new_exchange("bitmex", sandboxed=True)
+    await handle_new_exchange("binance")
 
     await asyncio.sleep(10000)
 

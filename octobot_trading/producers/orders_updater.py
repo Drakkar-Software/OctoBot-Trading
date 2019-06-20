@@ -19,7 +19,7 @@ from octobot_trading.channels.orders import OrdersProducer
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
-class OrdersUpdater(OrdersProducer):
+class OpenOrdersUpdater(OrdersProducer):
     ORDERS_STARTING_REFRESH_TIME = 10
     ORDERS_REFRESH_TIME = 2  # TODO = 10
     ORDERS_UPDATE_LIMIT = 10
@@ -35,17 +35,18 @@ class OrdersUpdater(OrdersProducer):
             await self.push(self._cleanup_open_orders_dict(open_orders))
             await asyncio.sleep(self.ORDERS_STARTING_REFRESH_TIME)
         except Exception as e:
-            self.logger.exception(f"Fail to initialize open orders : {e}")
+            self.logger.error(f"Fail to initialize open orders : {e}")
 
     async def start(self):
         await self.initialize()
         while not self.should_stop:
             try:
-                open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(limit=self.ORDERS_UPDATE_LIMIT)
+                open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
+                    limit=self.ORDERS_UPDATE_LIMIT)
                 await self.push(self._cleanup_open_orders_dict(open_orders))
                 await asyncio.sleep(self.ORDERS_REFRESH_TIME)
             except Exception as e:
-                self.logger.exception(f"Fail to update open orders : {e}")
+                self.logger.error(f"Fail to update open orders : {e}")
 
     def _cleanup_open_orders_dict(self, open_orders):
         for open_order in open_orders:
@@ -54,3 +55,31 @@ class OrdersUpdater(OrdersProducer):
             except KeyError as e:
                 self.logger.error(f"Fail to cleanup open order dict ({e})")
         return open_orders
+
+
+class CloseOrdersUpdater(OrdersProducer):
+    ORDERS_REFRESH_TIME = 2  # TODO = 10
+    ORDERS_UPDATE_LIMIT = 10
+
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.should_stop = False
+        self.channel = channel
+
+    async def start(self):
+        while not self.should_stop:
+            try:
+                close_orders: list = await self.channel.exchange_manager.exchange.get_closed_orders(
+                    limit=self.ORDERS_UPDATE_LIMIT)
+                await self.push(self._cleanup_close_orders_dict(close_orders), is_closed=True)
+                await asyncio.sleep(self.ORDERS_REFRESH_TIME)
+            except Exception as e:
+                self.logger.error(f"Fail to update open orders : {e}")
+
+    def _cleanup_close_orders_dict(self, close_orders):
+        for close_order in close_orders:
+            try:
+                close_order.pop(ExchangeConstantsOrderColumns.INFO.value)
+            except KeyError as e:
+                self.logger.error(f"Fail to cleanup close order dict ({e})")
+        return close_orders

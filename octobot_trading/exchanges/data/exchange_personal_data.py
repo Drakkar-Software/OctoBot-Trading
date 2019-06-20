@@ -62,6 +62,13 @@ class ExchangePersonalData(Initializable):
             self.logger.exception(f"Failed to update order : {e}")
             return False
 
+    def handle_closed_order_update(self, order_id, order) -> bool:
+        try:
+            return self.orders_manager.upsert_order_close(order_id, order)
+        except Exception as e:
+            self.logger.exception(f"Failed to update order : {e}")
+            return False
+
     def handle_trade_update(self, trade_id, trade):
         pass
 

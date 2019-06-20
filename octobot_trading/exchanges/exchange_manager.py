@@ -38,7 +38,7 @@ from octobot_trading.producers.balance_updater import BalanceUpdater
 from octobot_trading.producers.kline_updater import KlineUpdater
 from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 from octobot_trading.producers.order_book_updater import OrderBookUpdater
-from octobot_trading.producers.orders_updater import OrdersUpdater
+from octobot_trading.producers.orders_updater import CloseOrdersUpdater, OpenOrdersUpdater
 from octobot_trading.producers.positions_updater import PositionsUpdater
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
 from octobot_trading.producers.ticker_updater import TickerUpdater
@@ -135,10 +135,14 @@ class ExchangeManager(Initializable):
         await TickerUpdater(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
         await KlineUpdater(ExchangeChannels.get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
-        await BalanceUpdater(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
-        await OrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-        await TradesUpdater(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
-        await PositionsUpdater(ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
+        if self.exchange.is_authenticated:
+            await BalanceUpdater(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+            await CloseOrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+            await OpenOrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+            await TradesUpdater(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
+            await PositionsUpdater(ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
+        else:
+            pass  # TODO use simulator
 
     def _search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():
@@ -309,7 +313,7 @@ class ExchangeManager(Initializable):
         return not is_valid_timestamp(timestamp)
 
     def uniformize_candles_if_necessary(self, candle_or_candles):
-        if candle_or_candles: # TODO improve
+        if candle_or_candles:  # TODO improve
             if isinstance(candle_or_candles[0], list):
                 if self.need_to_uniformize_timestamp(candle_or_candles[0][PriceIndexes.IND_PRICE_TIME.value]):
                     self._uniformize_candles_timestamps(candle_or_candles)

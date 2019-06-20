@@ -42,6 +42,7 @@ class RestExchange(AbstractExchange):
     def __init__(self, config, exchange_type, exchange_manager):
         super().__init__(config, exchange_type, exchange_manager)
         # We will need to create the rest client and fetch exchange config
+        self.is_authenticated = False
         self._create_client()
 
     async def initialize_impl(self):
@@ -71,6 +72,7 @@ class RestExchange(AbstractExchange):
                     secret = decrypt(config_exchange[CONFIG_EXCHANGE_SECRET])
                     password = decrypt(config_exchange[CONFIG_EXCHANGE_PASSWORD]) \
                         if CONFIG_EXCHANGE_PASSWORD in config_exchange else None
+                    self.is_authenticated = True
 
                 self.client = self.exchange_type({
                     'apiKey': key,
@@ -80,6 +82,7 @@ class RestExchange(AbstractExchange):
                     'enableRateLimit': True
                 })
             except Exception as e:
+                self.is_authenticated = False
                 self.exchange_manager.handle_token_error(e, self.logger)
                 self.client = self.exchange_type({'verbose': False})
         else:
@@ -180,7 +183,12 @@ class RestExchange(AbstractExchange):
             raise Exception("This exchange doesn't support fetchClosedOrders")
 
     async def get_my_recent_trades(self, symbol=None, since=None, limit=None, params={}):
-        return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=params)
+        if self.client.has['fetchMyTrades']:
+            return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=params)
+        elif self.client.has['fetchTrades']:
+            return await self.client.fetch_trades(symbol=symbol, since=since, limit=limit, params=params)
+        else:
+            raise Exception("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
     async def cancel_order(self, order_id, symbol=None):
         try:
@@ -252,6 +260,7 @@ class RestExchange(AbstractExchange):
         return await self.client.private_get_position(symbol=symbol)
 
     async def get_symbol_open_position(self, symbol=None):
+
         return await self.client.private_get_position({
             'filter': json.dumps({
                 "isOpen": True,
