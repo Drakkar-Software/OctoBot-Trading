@@ -20,17 +20,28 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
 class OrdersUpdater(OrdersProducer):
+    ORDERS_STARTING_REFRESH_TIME = 10
     ORDERS_REFRESH_TIME = 2  # TODO = 10
+    ORDERS_UPDATE_LIMIT = 10
 
     def __init__(self, channel):
         super().__init__(channel)
         self.should_stop = False
         self.channel = channel
 
+    async def initialize(self):
+        try:
+            open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders()
+            await self.push(self._cleanup_open_orders_dict(open_orders))
+            await asyncio.sleep(self.ORDERS_STARTING_REFRESH_TIME)
+        except Exception as e:
+            self.logger.exception(f"Fail to initialize open orders : {e}")
+
     async def start(self):
+        await self.initialize()
         while not self.should_stop:
             try:
-                open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders()
+                open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(limit=self.ORDERS_UPDATE_LIMIT)
                 await self.push(self._cleanup_open_orders_dict(open_orders))
                 await asyncio.sleep(self.ORDERS_REFRESH_TIME)
             except Exception as e:

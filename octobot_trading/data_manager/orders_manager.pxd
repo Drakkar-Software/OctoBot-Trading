@@ -14,8 +14,31 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.data.order cimport Order
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+from octobot_trading.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 
 cdef class OrdersManager(Initializable):
     cdef object logger
+    cdef dict config
+
+    cdef Trader trader
+    cdef ExchangeManager exchange_manager
+
+    cdef public dict orders
+
+    cdef void _reset_orders(self)
+    cdef void _check_orders_size(self)
+    cdef Order _create_order_from_raw(self, dict raw_order)
+    cdef void _update_order_from_raw(self, Order order, dict raw_order)
+    cdef void _remove_oldest_orders(self, int nb_to_remove)
+    cdef list _select_orders(self, object state=*, str symbol=*, int since=*, int limit=*)
+
+    cpdef void update_order_attribute(self, str order_id, str key, object value)
+    cpdef Order get_order(self, str order_id)
+    cpdef bint upsert_order(self, str order_id, dict raw_order)
+    cpdef list get_all_orders(self, str symbol=*, int since=*, int limit=*)
+    cpdef list get_open_orders(self, str symbol=*, int since=*, int limit=*)
+    cpdef list get_closed_orders(self, str symbol=*, int since=*, int limit=*)

@@ -47,17 +47,22 @@ class ExchangePersonalData(Initializable):
                 self.logger.exception(e)
 
     # updates
-    async def handle_portfolio_update(self, balance):
+    async def handle_portfolio_update(self, balance) -> bool:
         try:
-            await self.portfolio_manager.handle_balance_update(balance)
+            return await self.portfolio_manager.handle_balance_update(balance)
         except AttributeError as e:
             # self.logger.warning(f"Can't handle balance update : trader does not seem to be initialized {e}")
             raise e
+        return False
 
-    def handle_orders_update(self):  # TODO
-        pass
+    def handle_order_update(self, order_id, order) -> bool:
+        try:
+            return self.orders_manager.upsert_order(order_id, order)
+        except Exception as e:
+            self.logger.exception(f"Failed to update order : {e}")
+            return False
 
-    def handle_trades_update(self):  # TODO
+    def handle_trade_update(self, trade_id, trade):
         pass
 
     def get_order_portfolio(self, order):

@@ -34,6 +34,6 @@ cdef class ExchangePersonalData(Initializable):
     cdef public TradesManager trades_manager
     cdef public OrdersManager orders_manager
 
-    cpdef void handle_portfolio_update(self, currency, total, available, in_order)
-    cpdef void handle_orders_update(self)
-    cpdef void handle_trades_update(self)
+    cpdef bint handle_portfolio_update(self, currency, total, available, in_order)
+    cpdef bint handle_order_update(self, str order_id, dict order)
+    cpdef bint handle_trades_update(self, str trade_id, dict trade)

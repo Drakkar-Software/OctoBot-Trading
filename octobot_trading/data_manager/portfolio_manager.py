@@ -35,9 +35,10 @@ class PortfolioManager(Initializable):
         self.portfolio = Portfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
         await self._load_portfolio()
 
-    async def handle_balance_update(self, balance):
+    async def handle_balance_update(self, balance) -> bool:
         if self.trader.enabled:
-            await self.portfolio.update_portfolio_from_balance(balance)
+            return await self.portfolio.update_portfolio_from_balance(balance)
+        return False
 
     async def handle_balance_update_from_order(self, order):
         if self.trader.enabled and self.trader.simulate:

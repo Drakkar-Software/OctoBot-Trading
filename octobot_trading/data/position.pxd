@@ -22,4 +22,20 @@ It is also use to store creation & fill values of the order """
 from octobot_trading.util.initializable cimport Initializable
 
 cdef class Position(Initializable):
-    pass
+    cdef public object trader
+
+    cdef public str symbol
+    cdef public str currency
+    cdef public str market
+    cdef public str position_id
+
+    cdef public int leverage
+
+    cdef public float entry_price
+    cdef public float entry_quantity
+    cdef public float liquidation_price
+
+    cdef public float timestamp
+    cdef public float creation_time
+    cdef public float canceled_time
+    cdef public float executed_time

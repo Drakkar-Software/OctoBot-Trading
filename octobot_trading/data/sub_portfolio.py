@@ -28,8 +28,9 @@ class SubPortfolio(Portfolio):
 
     # overwrite parent update_portfolio_balance
     async def update_portfolio_from_balance(self, balance):
-        await self.parent_portfolio.update_portfolio_from_balance(balance)
+        modified = await self.parent_portfolio.update_portfolio_from_balance(balance)
         self.update_from_parent()
+        return modified
 
     def update_from_parent(self): # TODO
         # get the current portfolio if percent is relative or if we can't use the origin portfolio

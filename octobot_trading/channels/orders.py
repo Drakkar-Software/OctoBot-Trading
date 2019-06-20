@@ -38,7 +38,7 @@ class OrdersProducer(Producer):
             for order in orders:
                 symbol: str = order[ExchangeConstantsOrderColumns.SYMBOL.value]
                 if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
-                    # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)
+                    self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)
                     await self.send(symbol, order)
                     await self.send(symbol, order, True)
         except CancelledError:
