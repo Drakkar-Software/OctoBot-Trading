@@ -29,8 +29,10 @@ class PositionsUpdater(PositionsProducer):
     async def start(self):
         while not self.should_stop:
             try:
-                positions: list = await self.channel.exchange_manager.exchange.get_open_position()
-                await self.push(positions)
+                positions: list = await self.channel.exchange_manager.exchange.get_open_position(symbols=self.channel.exchange_manager.traded_pairs)
+                if positions:
+                    await self.push(positions)
+
                 await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
             except Exception as e:
                 self.logger.error(f"Fail to update positions : {e}")

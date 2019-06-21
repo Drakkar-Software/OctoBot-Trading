@@ -31,19 +31,24 @@ class OpenOrdersUpdater(OrdersProducer):
 
     async def initialize(self):
         try:
-            open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders()
+            open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
+                symbols=self.channel.exchange_manager.traded_pairs)
             await self.push(self._cleanup_open_orders_dict(open_orders))
             await asyncio.sleep(self.ORDERS_STARTING_REFRESH_TIME)
         except Exception as e:
             self.logger.error(f"Fail to initialize open orders : {e}")
 
     async def start(self):
-        await self.initialize()
+        # await self.initialize()
         while not self.should_stop:
             try:
                 open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
+                    symbols=self.channel.exchange_manager.traded_pairs,
                     limit=self.ORDERS_UPDATE_LIMIT)
-                await self.push(self._cleanup_open_orders_dict(open_orders))
+
+                if open_orders:
+                    await self.push(self._cleanup_open_orders_dict(open_orders))
+
                 await asyncio.sleep(self.ORDERS_REFRESH_TIME)
             except Exception as e:
                 self.logger.error(f"Fail to update open orders : {e}")
@@ -70,11 +75,12 @@ class CloseOrdersUpdater(OrdersProducer):
         while not self.should_stop:
             try:
                 close_orders: list = await self.channel.exchange_manager.exchange.get_closed_orders(
+                    symbols=self.channel.exchange_manager.traded_pairs,
                     limit=self.ORDERS_UPDATE_LIMIT)
                 await self.push(self._cleanup_close_orders_dict(close_orders), is_closed=True)
                 await asyncio.sleep(self.ORDERS_REFRESH_TIME)
             except Exception as e:
-                self.logger.error(f"Fail to update open orders : {e}")
+                self.logger.error(f"Fail to update close orders : {e}")
 
     def _cleanup_close_orders_dict(self, close_orders):
         for close_order in close_orders:

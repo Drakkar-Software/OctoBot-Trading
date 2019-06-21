@@ -45,6 +45,8 @@ class RestExchange(AbstractExchange):
         self.is_authenticated = False
         self._create_client()
 
+        self.is_supporting_position = True
+
     async def initialize_impl(self):
         try:
             await self.client.load_markets()
@@ -170,23 +172,51 @@ class RestExchange(AbstractExchange):
         else:
             raise Exception("This exchange doesn't support fetchOrders")
 
-    async def get_open_orders(self, symbol=None, since=None, limit=None, params={}):
+    async def get_open_orders(self, symbol=None, symbols=None, since=None, limit=None, params={}):
         if self.client.has['fetchOpenOrders']:
+            if symbols:
+                open_orders = []
+                for symbol in symbols:
+                    open_orders += await self.get_open_orders(symbol=symbol,
+                                                              since=since,
+                                                              limit=limit,
+                                                              params=params)
+                return open_orders
+
             return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchOpenOrders")
 
-    async def get_closed_orders(self, symbol=None, since=None, limit=None, params={}):
+    async def get_closed_orders(self, symbol=None, symbols=None, since=None, limit=None, params={}):
         if self.client.has['fetchClosedOrders']:
+            if symbols:
+                closed_orders = []
+                for symbol in symbols:
+                    closed_orders += await self.get_closed_orders(symbol=symbol,
+                                                                  since=since,
+                                                                  limit=limit,
+                                                                  params=params)
+                return closed_orders
+
             return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchClosedOrders")
 
-    async def get_my_recent_trades(self, symbol=None, since=None, limit=None, params={}):
-        if self.client.has['fetchMyTrades']:
-            return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=params)
-        elif self.client.has['fetchTrades']:
-            return await self.client.fetch_trades(symbol=symbol, since=since, limit=limit, params=params)
+    async def get_my_recent_trades(self, symbol=None, symbols=None, since=None, limit=None, params={}):
+        if self.client.has['fetchMyTrades'] or self.client.has['fetchTrades']:
+            if symbols:
+                my_trades = []
+                for symbol in symbols:
+                    my_trades += await self.get_my_recent_trades(symbol=symbol,
+                                                                 since=since,
+                                                                 limit=limit,
+                                                                 params=params)
+                return my_trades
+
+            if self.client.has['fetchMyTrades']:
+                return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=params)
+            elif self.client.has['fetchTrades']:
+                return await self.client.fetch_trades(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
@@ -253,15 +283,23 @@ class RestExchange(AbstractExchange):
         return all(key in order for key in order_required_fields)
 
     # positions
-    async def get_open_position(self):
-        return await self.client.private_get_position()
+    async def get_open_position(self, symbol=None, symbols=None, params={}):
+        try:
+            if self.is_supporting_position:
+                if symbols:
+                    positions = []
+                    for symbol in symbols:
+                        symbol_positions = await self.get_open_position(symbol=symbol, params=params)
+                        if symbol_positions:
+                            positions += symbol_positions
+                    return positions
 
-    async def get_symbol_position(self, symbol=None):
-        return await self.client.private_get_position(symbol=symbol)
+                return await self.client.private_get_position()
+        except (AttributeError, ExchangeNotAvailable):
+            self.is_supporting_position = False
 
     async def get_symbol_open_position(self, symbol=None):
-
-        return await self.client.private_get_position({
+        return await self.client.get_open_position({
             'filter': json.dumps({
                 "isOpen": True,
                 "symbol": symbol

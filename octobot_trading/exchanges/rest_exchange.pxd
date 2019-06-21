@@ -18,6 +18,7 @@ from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
 
 cdef class RestExchange(AbstractExchange):
     cdef public bint is_authenticated
+    cdef bint is_supporting_position
 
     # balance additional info
     cdef list info_list

@@ -44,7 +44,15 @@ config = {
             "api-key": os.environ['BITMEX-API-KEY'],
             "api-secret": os.environ['BITMEX-API-SECRET']
         },
-        "binance": {}
+        "binance": {
+            "api-key": os.environ['BINANCE-API-KEY'],
+            "api-secret": os.environ['BINANCE-API-SECRET']
+        },
+        "coinbasepro": {
+            "api-key": os.environ['COINBASE-API-KEY'],
+            "api-secret": os.environ['COINBASE-API-SECRET'],
+            "api-password": os.environ['COINBASE-PASSWORD'],
+        }
     },
     CONFIG_TRADER: {
         CONFIG_ENABLED_OPTION: True
@@ -139,8 +147,9 @@ async def main():
     fileConfig("logs/logging_config.ini")
     logging.info("starting...")
 
-    # await handle_new_exchange("bitmex", sandboxed=True)
-    await handle_new_exchange("binance")
+    await handle_new_exchange("bitmex", sandboxed=True)
+    # await handle_new_exchange("binance")
+    await handle_new_exchange("coinbasepro")
 
     await asyncio.sleep(10000)
 

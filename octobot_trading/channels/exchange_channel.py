@@ -27,6 +27,7 @@ class ExchangeChannel(Channel):
 
     def __init__(self, exchange_manager):
         super().__init__()
+        self.logger = get_logger(f"{self.__class__.__name__}[{exchange_manager.exchange.name}]")
         self.exchange_manager = exchange_manager
         self.exchange = exchange_manager.exchange
 

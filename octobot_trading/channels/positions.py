@@ -36,12 +36,13 @@ class PositionsProducer(Producer):
     async def perform(self, positions):
         try:
             for position in positions:
-                symbol: str = self.channel.exchange_manager.get_exchange_symbol(
-                    position[ExchangeConstantsPositionColumns.SYMBOL.value])
-                if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
-                    # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)
-                    await self.send(symbol, position)
-                    await self.send(symbol, position, True)
+                if position:
+                    symbol: str = self.channel.exchange_manager.get_exchange_symbol(
+                        position[ExchangeConstantsPositionColumns.SYMBOL.value])
+                    if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
+                        # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)
+                        await self.send(symbol, position)
+                        await self.send(symbol, position, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
