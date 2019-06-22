@@ -147,9 +147,9 @@ async def main():
     fileConfig("logs/logging_config.ini")
     logging.info("starting...")
 
-    await handle_new_exchange("bitmex", sandboxed=True)
-    # await handle_new_exchange("binance")
-    await handle_new_exchange("coinbasepro")
+    # await handle_new_exchange("bitmex", sandboxed=True)
+    await handle_new_exchange("binance")
+    # await handle_new_exchange("coinbasepro")
 
     await asyncio.sleep(10000)
 

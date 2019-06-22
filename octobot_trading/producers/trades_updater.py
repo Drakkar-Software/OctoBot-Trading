@@ -31,11 +31,13 @@ class TradesUpdater(TradesProducer):
 
     async def init_old_trades(self):
         try:
-            trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
-                symbols=self.channel.exchange_manager.traded_pairs,
-                limit=self.MAX_OLD_TRADES_TO_FETCH)
-            if trades:
-                await self.push(self._cleanup_trades_dict(trades))
+            for symbol in self.channel.exchange_manager.traded_pairs:
+                trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
+                    symbol=symbol,
+                    limit=self.MAX_OLD_TRADES_TO_FETCH)
+
+                if trades:
+                    await self.push(self._cleanup_trades_dict(trades))
 
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
         except Exception as e:
@@ -45,15 +47,17 @@ class TradesUpdater(TradesProducer):
         await self.init_old_trades()
         while not self.should_stop:
             try:
-                trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
-                    symbols=self.channel.exchange_manager.traded_pairs,
-                    limit=self.TRADES_LIMIT)
+                for symbol in self.channel.exchange_manager.traded_pairs:
+                    trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
+                        symbol=symbol,
+                        limit=self.TRADES_LIMIT)
 
-                if trades:
-                    await self.push(self._cleanup_trades_dict(trades))
-                    await asyncio.sleep(self.TRADES_REFRESH_TIME)
+                    if trades:
+                        await self.push(self._cleanup_trades_dict(trades))
             except Exception as e:
                 self.logger.error(f"Fail to update trades : {e}")
+
+            await asyncio.sleep(self.TRADES_REFRESH_TIME)
 
     def _cleanup_trades_dict(self, trades):
         for trade in trades:

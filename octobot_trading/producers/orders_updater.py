@@ -31,10 +31,13 @@ class OpenOrdersUpdater(OrdersProducer):
 
     async def initialize(self):
         try:
-            open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
-                symbols=self.channel.exchange_manager.traded_pairs)
-            await self.push(self._cleanup_open_orders_dict(open_orders))
-            await asyncio.sleep(self.ORDERS_STARTING_REFRESH_TIME)
+            for symbol in self.channel.exchange_manager.traded_pairs:
+                open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(symbol=symbol)
+
+                if open_orders:
+                    await self.push(self._cleanup_open_orders_dict(open_orders), is_open_by_bot=False)
+
+                await asyncio.sleep(self.ORDERS_STARTING_REFRESH_TIME)
         except Exception as e:
             self.logger.error(f"Fail to initialize open orders : {e}")
 
@@ -42,16 +45,18 @@ class OpenOrdersUpdater(OrdersProducer):
         # await self.initialize()
         while not self.should_stop:
             try:
-                open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
-                    symbols=self.channel.exchange_manager.traded_pairs,
-                    limit=self.ORDERS_UPDATE_LIMIT)
+                for symbol in self.channel.exchange_manager.traded_pairs:
+                    open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
+                        symbol=symbol,
+                        limit=self.ORDERS_UPDATE_LIMIT)
 
-                if open_orders:
-                    await self.push(self._cleanup_open_orders_dict(open_orders))
+                    if open_orders:
+                        await self.push(self._cleanup_open_orders_dict(open_orders))
 
-                await asyncio.sleep(self.ORDERS_REFRESH_TIME)
             except Exception as e:
                 self.logger.error(f"Fail to update open orders : {e}")
+
+            await asyncio.sleep(self.ORDERS_REFRESH_TIME)
 
     def _cleanup_open_orders_dict(self, open_orders):
         for open_order in open_orders:
@@ -74,13 +79,18 @@ class CloseOrdersUpdater(OrdersProducer):
     async def start(self):
         while not self.should_stop:
             try:
-                close_orders: list = await self.channel.exchange_manager.exchange.get_closed_orders(
-                    symbols=self.channel.exchange_manager.traded_pairs,
-                    limit=self.ORDERS_UPDATE_LIMIT)
-                await self.push(self._cleanup_close_orders_dict(close_orders), is_closed=True)
-                await asyncio.sleep(self.ORDERS_REFRESH_TIME)
+                for symbol in self.channel.exchange_manager.traded_pairs:
+                    close_orders: list = await self.channel.exchange_manager.exchange.get_closed_orders(
+                        symbol=symbol,
+                        limit=self.ORDERS_UPDATE_LIMIT)
+
+                    if close_orders:
+                        await self.push(self._cleanup_close_orders_dict(close_orders), is_closed=True)
+
             except Exception as e:
                 self.logger.error(f"Fail to update close orders : {e}")
+
+            await asyncio.sleep(self.ORDERS_REFRESH_TIME)
 
     def _cleanup_close_orders_dict(self, close_orders):
         for close_order in close_orders:

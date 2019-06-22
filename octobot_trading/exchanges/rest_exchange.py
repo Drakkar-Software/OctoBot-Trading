@@ -18,7 +18,7 @@ import logging
 
 import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
-from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce
+from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, ArgumentsRequired
 from octobot_commons.config_util import decrypt
 
 from octobot_commons.dict_util import get_value_or_default
@@ -29,7 +29,7 @@ from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_KEY, CON
     CONFIG_EXCHANGE_PASSWORD, CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_USED, \
     CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
-    ExchangeConstantsOrderColumns as ecoc
+    ExchangeConstantsOrderColumns as ecoc, TradeOrderSide
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
 
@@ -105,7 +105,7 @@ class RestExchange(AbstractExchange):
     # total (free + used), by currency
     async def get_balance(self):
         try:
-            balance = await self.client.fetch_balance()
+            balance = await self.client.fetch_balance(params={'recvWindow': 10000000})
 
             # store portfolio global info
             self.info_list = balance[CONFIG_PORTFOLIO_INFO]
@@ -172,47 +172,20 @@ class RestExchange(AbstractExchange):
         else:
             raise Exception("This exchange doesn't support fetchOrders")
 
-    async def get_open_orders(self, symbol=None, symbols=None, since=None, limit=None, params={}):
+    async def get_open_orders(self, symbol=None, since=None, limit=None, params={}):
         if self.client.has['fetchOpenOrders']:
-            if symbols:
-                open_orders = []
-                for symbol in symbols:
-                    open_orders += await self.get_open_orders(symbol=symbol,
-                                                              since=since,
-                                                              limit=limit,
-                                                              params=params)
-                return open_orders
-
             return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchOpenOrders")
 
-    async def get_closed_orders(self, symbol=None, symbols=None, since=None, limit=None, params={}):
+    async def get_closed_orders(self, symbol=None, since=None, limit=None, params={}):
         if self.client.has['fetchClosedOrders']:
-            if symbols:
-                closed_orders = []
-                for symbol in symbols:
-                    closed_orders += await self.get_closed_orders(symbol=symbol,
-                                                                  since=since,
-                                                                  limit=limit,
-                                                                  params=params)
-                return closed_orders
-
             return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchClosedOrders")
 
-    async def get_my_recent_trades(self, symbol=None, symbols=None, since=None, limit=None, params={}):
+    async def get_my_recent_trades(self, symbol=None, since=None, limit=None, params={}):
         if self.client.has['fetchMyTrades'] or self.client.has['fetchTrades']:
-            if symbols:
-                my_trades = []
-                for symbol in symbols:
-                    my_trades += await self.get_my_recent_trades(symbol=symbol,
-                                                                 since=since,
-                                                                 limit=limit,
-                                                                 params=params)
-                return my_trades
-
             if self.client.has['fetchMyTrades']:
                 return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=params)
             elif self.client.has['fetchTrades']:
@@ -283,18 +256,10 @@ class RestExchange(AbstractExchange):
         return all(key in order for key in order_required_fields)
 
     # positions
-    async def get_open_position(self, symbol=None, symbols=None, params={}):
+    async def get_open_position(self, symbol=None, params={}):
         try:
             if self.is_supporting_position:
-                if symbols:
-                    positions = []
-                    for symbol in symbols:
-                        symbol_positions = await self.get_open_position(symbol=symbol, params=params)
-                        if symbol_positions:
-                            positions += symbol_positions
-                    return positions
-
-                return await self.client.private_get_position()
+                return await self.client.private_get_position(symbol=symbol, params=params)
         except (AttributeError, ExchangeNotAvailable):
             self.is_supporting_position = False
 
@@ -369,10 +334,6 @@ class RestExchange(AbstractExchange):
         await self.client.close()
         self.logger.info(f"Connection closed.")
 
-    @staticmethod
-    def _get_side(order_type):
-        return "buy" if order_type in (TraderOrderType.BUY_LIMIT, TraderOrderType.BUY_MARKET) else "sell"
-
     def get_pair_from_exchange(self, pair: str) -> str:
         return self.client.find_market(pair)["symbol"]
 
@@ -384,3 +345,8 @@ class RestExchange(AbstractExchange):
                 raise KeyError(f'{pair} is not supported')
         else:
             raise ValueError(f'{pair} is not supported')
+
+    @staticmethod
+    def _get_side(order_type):
+        return TradeOrderSide.BUY.value if order_type in (TraderOrderType.BUY_LIMIT, TraderOrderType.BUY_MARKET) \
+            else TradeOrderSide.SELL.value

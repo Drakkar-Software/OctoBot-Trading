@@ -30,10 +30,10 @@ class OrdersProducer(Producer):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, orders, is_closed=False):
-        await self.perform(orders, is_closed=is_closed)
+    async def push(self, orders, is_closed=False, is_open_by_bot=True):
+        await self.perform(orders, is_closed=is_closed, is_open_by_bot=is_open_by_bot)
 
-    async def perform(self, orders, is_closed=False):
+    async def perform(self, orders, is_closed=False, is_open_by_bot=True):
         try:
             for order in orders:
                 symbol: str = order[ExchangeConstantsOrderColumns.SYMBOL.value]
