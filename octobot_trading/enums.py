@@ -162,6 +162,13 @@ class ExchangeConstantsOrderColumns(Enum):
 class ExchangeConstantsPositionColumns(Enum):
     TIMESTAMP = "timestamp"
     SYMBOL = "symbol"
+    LIQUIDATION_PRICE = "liquidationPrice"
+    MARK_PRICE = "markPrice"
+    ENTRY_PRICE = "avgEntryPrice"
+    UNREALISED_PNL = "unrealisedPnl"
+    IS_OPEN = "isOpen"
+    QUANTITY = "currentQty"
+    LEVERAGE = "leverage"
 
 
 class ExchangeConstantsFeesColumns(Enum):

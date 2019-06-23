@@ -55,16 +55,17 @@ class Order:
         self.linked_portfolio = None
         self.linked_to = None
 
-    def update(self, order_type, symbol, current_price, quantity, price, stop_price, status, order_notifier, order_id,
-               quantity_filled, timestamp=None, linked_to=None, linked_portfolio=None):
+    def update(self, order_type, symbol, currency, market,
+               current_price, quantity, price, stop_price, status,
+               order_notifier, order_id, quantity_filled,
+               timestamp=None, linked_to=None, linked_portfolio=None):
         changed: bool = False
 
         if order_id and self.order_id != order_id:
             self.order_id = order_id
 
         if symbol and self.symbol != symbol:
-            self.symbol = symbol
-            self.currency, self.market = split_symbol(symbol)
+            self.symbol, self.currency, self.market = symbol, currency, market
 
         if order_notifier:
             self.order_notifier = order_notifier
@@ -83,6 +84,7 @@ class Order:
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
                 self.creation_time = self.exchange.get_uniform_timestamp(timestamp)
+            self.timestamp = self.creation_time
 
         if price and self.origin_price != price:
             self.origin_price = price

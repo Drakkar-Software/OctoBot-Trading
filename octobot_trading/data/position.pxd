@@ -24,6 +24,8 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class Position(Initializable):
     cdef public object trader
 
+    cdef public bint is_open
+
     cdef public str symbol
     cdef public str currency
     cdef public str market
@@ -32,10 +34,26 @@ cdef class Position(Initializable):
     cdef public int leverage
 
     cdef public float entry_price
-    cdef public float entry_quantity
+    cdef public float mark_price
+    cdef public float quantity
     cdef public float liquidation_price
+    cdef public float unrealised_pnl
 
     cdef public float timestamp
     cdef public float creation_time
     cdef public float canceled_time
     cdef public float executed_time
+
+    cpdef bint update(self,
+                      str position_id,
+                      str symbol,
+                      str currency,
+                      str market,
+                      float timestamp,
+                      float entry_price,
+                      float mark_price,
+                      float quantity,
+                      float liquidation_price,
+                      float unrealised_pnl,
+                      int leverage,
+                      bint is_open)

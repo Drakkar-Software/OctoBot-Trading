@@ -66,6 +66,8 @@ cdef class Order:
     cpdef bint update(self,
             object order_type,
             str symbol,
+            str currency,
+            str market,
             float current_price,
             float quantity,
             float price,

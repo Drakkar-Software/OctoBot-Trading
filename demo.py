@@ -118,8 +118,9 @@ async def orders_callback(exchange, symbol, order, is_closed, is_updated, is_fro
                  f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
 
 
-async def positions_callback(exchange, symbol, position):
-    logging.info(f"POSITIONS : EXCHANGE = {exchange} || SYMBOL = {symbol} || POSITIONS = {position}")
+async def positions_callback(exchange, symbol, position, is_closed, is_updated, is_from_bot):
+    logging.info(f"POSITIONS : EXCHANGE = {exchange} || SYMBOL = {symbol} || POSITIONS = {position}"
+                 f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
 
 
 async def handle_new_exchange(exchange_name, sandboxed=False):

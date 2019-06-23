@@ -30,10 +30,10 @@ class PositionsProducer(Producer):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, positions):
-        await self.perform(positions)
+    async def push(self, positions, is_from_bot=True):
+        await self.perform(positions, is_from_bot=is_from_bot)
 
-    async def perform(self, positions):
+    async def perform(self, positions, is_from_bot=True):
         try:
             for position in positions:
                 if position:
@@ -42,30 +42,32 @@ class PositionsProducer(Producer):
                     if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
                         position_id: str = position[ExchangeConstantsOrderColumns.ID.value]
 
-                        changed: bool = self.channel.exchange_manager.exchange_personal_data.handle_position_update(
-                            position_id,
-                            position)
+                        changed, is_closed, is_updated = self.channel.exchange_manager.exchange_personal_data \
+                            .handle_position_update(position_id, position)
 
                         if changed:
-                            await self.send(symbol, position)
-                            await self.send(symbol, position, True)
+                            await self.send(symbol, position, is_closed, is_updated, is_from_bot)
+                            await self.send(symbol, position, is_closed, is_updated, is_from_bot, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, position, is_wildcard=False):
+    async def send(self, symbol, position, is_closed=False, is_updated=False, is_from_bot=True, is_wildcard=False):
         for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,
-                "position": position
+                "position": position,
+                "is_closed": is_closed,
+                "is_updated": is_updated,
+                "is_from_bot": is_from_bot
             })
 
 
 class PositionsConsumer(Consumer):
-    def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0, symbol=""):   # TODO REMOVE
+    def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0, symbol=""):  # TODO REMOVE
         super().__init__(callback)
         self.filter_size = 0
         self.symbol = symbol
@@ -77,7 +79,9 @@ class PositionsConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(exchange=data["exchange"], symbol=data["symbol"], position=data["position"])
+                await self.callback(exchange=data["exchange"], symbol=data["symbol"],
+                                    position=data["position"], is_closed=data["is_closed"],
+                                    is_updated=data["is_updated"], is_from_bot=data["is_from_bot"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 

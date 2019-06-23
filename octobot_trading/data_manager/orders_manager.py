@@ -75,16 +75,20 @@ class OrdersManager(Initializable):
 
     def _create_order_from_raw(self, raw_order):
         order = Order(self.trader)
-        order.update(**self._parse_order_raw_data(raw_order))
+        order.update(**self._parse_order_from_raw(raw_order))
         return order
 
     def _update_order_from_raw(self, order, raw_order):
-        return order.update(**self._parse_order_raw_data(raw_order))
+        return order.update(**self._parse_order_from_raw(raw_order))
 
-    def _parse_order_raw_data(self, raw_order) -> dict:
+    def _parse_order_from_raw(self, raw_order) -> dict:
+        currency, market = self.exchange_manager.get_exchange_quote_and_base(
+            raw_order[ExchangeConstantsOrderColumns.SYMBOL.value])
         return {
             "order_type": TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value]),
             "symbol": raw_order[ExchangeConstantsOrderColumns.SYMBOL.value],
+            "currency": currency,
+            "market": market,
             "current_price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],
             "quantity": raw_order[ExchangeConstantsOrderColumns.AMOUNT.value],
             "price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],
@@ -101,9 +105,9 @@ class OrdersManager(Initializable):
             order
             for order in self.orders.values()
             if (
-                    (state is None or order[ExchangeConstantsOrderColumns.STATUS.value] == state) and
-                    (symbol is None or (symbol and order[ExchangeConstantsOrderColumns.SYMBOL.value] == symbol)) and
-                    (since is None or (since and order[ExchangeConstantsOrderColumns.TIMESTAMP.value] < since))
+                    (state is None or order.status == state) and
+                    (symbol is None or (symbol and order.symbol == symbol)) and
+                    (since is None or (since and order.timestamp < since))
             )
         ]
         return orders if limit is None else orders[0:limit]
