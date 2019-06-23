@@ -213,6 +213,9 @@ class ExchangeManager(Initializable):
     def get_exchange_symbol(self, symbol):
         return self.exchange.get_pair_from_exchange(symbol)
 
+    def get_exchange_quote_and_base(self, symbol):
+        return self.exchange.get_split_pair_from_exchange(symbol)
+
     def _load_config_symbols_and_time_frames(self):
         client = self.exchange.client
         if client:
@@ -255,10 +258,10 @@ class ExchangeManager(Initializable):
                                   f"OctoBot requires at least one trading pair in configuration to handle an asset. "
                                   f"You can add trading pair(s) for each asset in the configuration section.")
 
-    def get_traded_pairs(self, cryptocurrency=None):
-        if cryptocurrency:
-            if cryptocurrency in self.cryptocurrencies_traded_pairs:
-                return self.cryptocurrencies_traded_pairs[cryptocurrency]
+    def get_traded_pairs(self, crypto_currency=None):
+        if crypto_currency:
+            if crypto_currency in self.cryptocurrencies_traded_pairs:
+                return self.cryptocurrencies_traded_pairs[crypto_currency]
             else:
                 return []
         return self.traded_pairs
@@ -270,20 +273,20 @@ class ExchangeManager(Initializable):
             return False
         return symbol in self.client_symbols
 
-    def _create_wildcard_symbol_list(self, cryptocurrency):
-        return [s for s in (self._is_tradable_with_cryptocurrency(symbol, cryptocurrency)
+    def _create_wildcard_symbol_list(self, crypto_currency):
+        return [s for s in (self._is_tradable_with_cryptocurrency(symbol, crypto_currency)
                             for symbol in self.client_symbols) if s is not None]
 
-    def _add_tradable_symbols(self, cryptocurrency):
+    def _add_tradable_symbols(self, crypto_currency):
         return [
             symbol
-            for symbol in self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_ADD]
-            if self.symbol_exists(symbol) and symbol not in self.cryptocurrencies_traded_pairs[cryptocurrency]
+            for symbol in self.config[CONFIG_CRYPTO_CURRENCIES][crypto_currency][CONFIG_CRYPTO_ADD]
+            if self.symbol_exists(symbol) and symbol not in self.cryptocurrencies_traded_pairs[crypto_currency]
         ]
 
     @staticmethod
-    def _is_tradable_with_cryptocurrency(symbol, cryptocurrency):
-        return symbol if split_symbol(symbol)[1] == cryptocurrency else None
+    def _is_tradable_with_cryptocurrency(symbol, crypto_currency):
+        return symbol if split_symbol(symbol)[1] == crypto_currency else None
 
     # TIME FRAMES
     def _set_config_time_frame(self):

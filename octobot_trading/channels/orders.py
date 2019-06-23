@@ -30,41 +30,49 @@ class OrdersProducer(Producer):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, orders, is_closed=False, is_open_by_bot=True):
-        await self.perform(orders, is_closed=is_closed, is_open_by_bot=is_open_by_bot)
+    async def push(self, orders, is_closed=False, is_from_bot=True):
+        await self.perform(orders, is_closed=is_closed, is_from_bot=is_from_bot)
 
-    async def perform(self, orders, is_closed=False, is_open_by_bot=True):
+    async def perform(self, orders, is_closed=False, is_from_bot=True):
         try:
             for order in orders:
-                symbol: str = order[ExchangeConstantsOrderColumns.SYMBOL.value]
+                symbol: str = self.channel.exchange_manager.get_exchange_symbol(
+                    order[ExchangeConstantsOrderColumns.SYMBOL.value])
                 if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
                     order_id: str = order[ExchangeConstantsOrderColumns.ID.value]
-
+                    is_updated: bool = False
                     if is_closed:
-                        changed: bool = self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(order_id, order)
+                        changed = self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(
+                            order_id,
+                            order)
                     else:
-                        changed: bool = self.channel.exchange_manager.exchange_personal_data.handle_order_update(order_id, order)
+                        changed, is_updated = self.channel.exchange_manager.exchange_personal_data.handle_order_update(
+                            order_id,
+                            order)
 
                     if changed:
-                        await self.send(symbol, order, is_closed)
-                        await self.send(symbol, order, is_closed, True)
+                        await self.send(symbol, order, is_from_bot, is_closed, is_updated)
+                        await self.send(symbol, order, is_from_bot, is_closed, is_updated, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, order, is_closed=False, is_wildcard=False):
+    async def send(self, symbol, order, is_from_bot=True, is_closed=False, is_updated=False, is_wildcard=False):
         for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,
                 "order": order,
-                "is_closed": is_closed
+                "is_closed": is_closed,
+                "is_updated": is_updated,
+                "is_from_bot": is_from_bot
             })
 
 
 class OrdersConsumer(Consumer):
-    def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0, symbol=""):   # TODO REMOVE
+    def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0, symbol=""):  # TODO REMOVE
         super().__init__(callback)
         self.filter_size = 0
         self.symbol = symbol
@@ -76,7 +84,9 @@ class OrdersConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(symbol=data["symbol"], order=data["order"], is_closed=data["is_closed"])
+                await self.callback(exchange=data["exchange"], symbol=data["symbol"],
+                                    order=data["order"], is_updated=data["is_updated"], is_closed=data["is_closed"],
+                                    is_from_bot=data["is_from_bot"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 

@@ -57,7 +57,7 @@ class Trader(Initializable):
             self.simulate = False
 
         self.enabled = self.enabled(self.config)
-        self.notifier = None # TODO
+        self.notifier = None  # TODO
 
     async def initialize_impl(self):
         if self.enabled:
@@ -116,19 +116,19 @@ class Trader(Initializable):
         # else:
         #     order_notifier = linked_to.get_order_notifier()
 
-        order.new(order_type=order_type,
-                  symbol=symbol,
-                  current_price=current_price,
-                  quantity=quantity,
-                  price=price,
-                  stop_price=stop_price,
-                  order_notifier=order_notifier,
-                  order_id=order_id,
-                  status=status,
-                  quantity_filled=quantity_filled,
-                  timestamp=timestamp,
-                  linked_to=linked_to,
-                  linked_portfolio=linked_portfolio)
+        order.update(order_type=order_type,
+                     symbol=symbol,
+                     current_price=current_price,
+                     quantity=quantity,
+                     price=price,
+                     stop_price=stop_price,
+                     order_notifier=order_notifier,
+                     order_id=order_id,
+                     status=status,
+                     quantity_filled=quantity_filled,
+                     timestamp=timestamp,
+                     linked_to=linked_to,
+                     linked_portfolio=linked_portfolio)
 
         return order
 
@@ -430,7 +430,8 @@ class Trader(Initializable):
                             symbol_traded):
                         if symbol_order.order_id not in order_ids:
                             # remove order from order manager
-                            self.exchange_manager.get_exchange_personal_data().orders.remove_order_from_list(symbol_order)
+                            self.exchange_manager.get_exchange_personal_data().orders.remove_order_from_list(
+                                symbol_order)
                             removed_orders += 1
             self.logger.info(f"Orders refreshed: added {added_orders} order(s) and removed {removed_orders} order(s)")
 

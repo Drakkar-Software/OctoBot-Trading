@@ -55,3 +55,41 @@ cdef class ExchangeManager(Initializable):
     cdef public list time_frames
 
     cdef public ExchangeSymbolData get_symbol_data(self, str symbol)
+
+    # private
+    cdef void _load_config_symbols_and_time_frames(self)
+    cdef void _load_constants(self)
+    cdef AbstractWebsocket _search_and_create_websocket(self, websocket_class)
+    cdef void _load_config_symbols_and_time_frames(self)
+    cdef void _set_config_traded_pairs(self)
+    cdef list _create_wildcard_symbol_list(self, str crypto_currency)
+    cdef list _add_tradable_symbols(self, str crypto_currency)
+    cdef void _set_config_time_frame(self)
+    cdef _uniformize_candles_timestamps(self, list candles)
+    cdef void _uniformize_candle_timestamps(self, dict candle)
+    cdef _raise_exchange_load_error(self)
+
+    @staticmethod
+    cdef bint _is_tradable_with_cryptocurrency(str symbol, str crypto_currency)
+
+    # public
+    cpdef bint enabled(self)
+    cpdef str get_exchange_symbol(self, str symbol)
+    cpdef str get_exchange_symbol_id(self, str symbol)
+    cpdef tuple get_exchange_quote_and_base(self, str symbol)
+    cpdef bint need_user_stream(self)
+    cpdef void reset_exchange_symbols_data(self)
+    cpdef void reset_exchange_personal_data(self)
+    cpdef bint did_not_just_try_to_reset_web_socket(self)
+    cpdef void reset_websocket_exchange(self)
+    cpdef bint check_config(self, str exchange_name)
+    cpdef force_disable_web_socket(self, str exchange_name)
+    cpdef check_web_socket_config(self, str exchange_name)
+    cpdef list get_traded_pairs(self, str crypto_currency=*)
+    cpdef bint symbol_exists(self, str symbol)
+    cpdef bint time_frame_exists(self, object time_frame, str symbol=*)
+    cpdef int get_rate_limit(self)
+    cpdef object uniformize_candles_if_necessary(self, object candle_or_candles)
+    cpdef str get_exchange_name(self)
+    cpdef bint should_decrypt_token(self, object logger)
+    cpdef ExchangeSymbolData get_symbol_data(self, str symbol)

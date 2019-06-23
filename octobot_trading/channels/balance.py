@@ -49,6 +49,7 @@ class BalanceProducer(Producer):
     async def send(self, balance):
         for consumer in self.channel.get_consumers():
             await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange.name,
                 "balance": balance
             })
 
@@ -65,7 +66,7 @@ class BalanceConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(balance=data["balance"])
+                await self.callback(exchange=data["exchange"], balance=data["balance"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 

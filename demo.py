@@ -18,8 +18,6 @@ import logging
 import os
 from logging.config import fileConfig
 
-import ccxt
-from octobot_commons.config_util import encrypt
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME
 from octobot_commons.enums import TimeFrames
 
@@ -38,20 +36,25 @@ config = {
                 "BTC/USDT"
             ]
         },
+        "Litecoin": {
+            "pairs": [
+                "LTCM19"
+            ]
+        }
     },
     "exchanges": {
         "bitmex": {
-            "api-key": os.environ['BITMEX-API-KEY'],
-            "api-secret": os.environ['BITMEX-API-SECRET']
+            "api-key": os.getenv('BITMEX-API-KEY'),
+            "api-secret": os.getenv('BITMEX-API-SECRET')
         },
         "binance": {
-            "api-key": os.environ['BINANCE-API-KEY'],
-            "api-secret": os.environ['BINANCE-API-SECRET']
+            "api-key": os.getenv('BINANCE-API-KEY'),
+            "api-secret": os.getenv('BINANCE-API-SECRET')
         },
         "coinbasepro": {
-            "api-key": os.environ['COINBASE-API-KEY'],
-            "api-secret": os.environ['COINBASE-API-SECRET'],
-            "api-password": os.environ['COINBASE-PASSWORD'],
+            "api-key": os.getenv('COINBASE-API-KEY'),
+            "api-secret": os.getenv('COINBASE-API-SECRET'),
+            "api-password": os.getenv('COINBASE-PASSWORD')
         }
     },
     CONFIG_TRADER: {
@@ -82,40 +85,41 @@ config = {
 }
 
 
-async def ticker_callback(symbol, ticker):
-    logging.info(f"TICKER : SYMBOL = {symbol} || TICKER = {ticker}")
+async def ticker_callback(exchange, symbol, ticker):
+    logging.info(f"TICKER : EXCHANGE = {exchange} || SYMBOL = {symbol} || TICKER = {ticker}")
 
 
-async def order_book_callback(symbol, asks, bids):
-    logging.info(f"ORDERBOOK : SYMBOL = {symbol} || ASKS = {asks} || BIDS = {bids}")
+async def order_book_callback(exchange, symbol, asks, bids):
+    logging.info(f"ORDERBOOK : EXCHANGE = {exchange} || SYMBOL = {symbol} || ASKS = {asks} || BIDS = {bids}")
 
 
-async def ohlcv_callback(symbol, time_frame, candle):
-    logging.info(f"OHLCV : SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
+async def ohlcv_callback(exchange, symbol, time_frame, candle):
+    logging.info(f"OHLCV : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
 
 
-async def recent_trades_callback(symbol, recent_trades):
-    logging.info(f"RECENT TRADE : SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
+async def recent_trades_callback(exchange, symbol, recent_trades):
+    logging.info(f"RECENT TRADE : EXCHANGE = {exchange} || SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
 
 
-async def kline_callback(symbol, time_frame, kline):
-    logging.info(f"KLINE : SYMBOL = {symbol} || TIME FRAME = {time_frame} || KLINE = {kline}")
+async def kline_callback(exchange, symbol, time_frame, kline):
+    logging.info(f"KLINE : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || KLINE = {kline}")
 
 
-async def balance_callback(balance):
-    logging.info(f"BALANCE : BALANCE = {balance}")
+async def balance_callback(exchange, balance):
+    logging.info(f"BALANCE : EXCHANGE = {exchange} || BALANCE = {balance}")
 
 
-async def trades_callback(symbol, trade):
-    logging.info(f"TRADES : SYMBOL = {symbol} || TRADE = {trade}")
+async def trades_callback(exchange, symbol, trade):
+    logging.info(f"TRADES : EXCHANGE = {exchange} || SYMBOL = {symbol} || TRADE = {trade}")
 
 
-async def orders_callback(symbol, order, is_closed):
-    logging.info(f"ORDERS : SYMBOL = {symbol} || ORDER = {order} || CLOSED = {is_closed}")
+async def orders_callback(exchange, symbol, order, is_closed, is_updated, is_from_bot):
+    logging.info(f"ORDERS : EXCHANGE = {exchange} || SYMBOL = {symbol} || ORDER = {order} "
+                 f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
 
 
-async def positions_callback(symbol, position):
-    logging.info(f"POSITIONS : SYMBOL = {symbol} || POSITIONS = {position}")
+async def positions_callback(exchange, symbol, position):
+    logging.info(f"POSITIONS : EXCHANGE = {exchange} || SYMBOL = {symbol} || POSITIONS = {position}")
 
 
 async def handle_new_exchange(exchange_name, sandboxed=False):
@@ -147,8 +151,8 @@ async def main():
     fileConfig("logs/logging_config.ini")
     logging.info("starting...")
 
-    # await handle_new_exchange("bitmex", sandboxed=True)
-    await handle_new_exchange("binance")
+    await handle_new_exchange("bitmex", sandboxed=True)
+    # await handle_new_exchange("binance")
     # await handle_new_exchange("coinbasepro")
 
     await asyncio.sleep(10000)

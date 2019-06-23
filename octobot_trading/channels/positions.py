@@ -40,9 +40,15 @@ class PositionsProducer(Producer):
                     symbol: str = self.channel.exchange_manager.get_exchange_symbol(
                         position[ExchangeConstantsPositionColumns.SYMBOL.value])
                     if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
-                        # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)
-                        await self.send(symbol, position)
-                        await self.send(symbol, position, True)
+                        position_id: str = position[ExchangeConstantsOrderColumns.ID.value]
+
+                        changed: bool = self.channel.exchange_manager.exchange_personal_data.handle_position_update(
+                            position_id,
+                            position)
+
+                        if changed:
+                            await self.send(symbol, position)
+                            await self.send(symbol, position, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
@@ -52,6 +58,7 @@ class PositionsProducer(Producer):
     async def send(self, symbol, position, is_wildcard=False):
         for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,
                 "position": position
             })
@@ -70,7 +77,7 @@ class PositionsConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(symbol=data["symbol"], position=data["position"])
+                await self.callback(exchange=data["exchange"], symbol=data["symbol"], position=data["position"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 

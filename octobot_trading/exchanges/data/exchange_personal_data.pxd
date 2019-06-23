@@ -16,6 +16,7 @@
 #  License along with this library.
 from octobot_trading.data_manager.orders_manager cimport OrdersManager
 from octobot_trading.data_manager.portfolio_manager cimport PortfolioManager
+from octobot_trading.data_manager.positions_manager cimport PositionsManager
 from octobot_trading.data_manager.trades_manager cimport TradesManager
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.traders.trader cimport Trader
@@ -33,7 +34,9 @@ cdef class ExchangePersonalData(Initializable):
     cdef public PortfolioManager portfolio_manager
     cdef public TradesManager trades_manager
     cdef public OrdersManager orders_manager
+    cdef public PositionsManager positions_manager
 
     cpdef bint handle_portfolio_update(self, currency, total, available, in_order)
-    cpdef bint handle_order_update(self, str order_id, dict order)
+    cpdef tuple handle_order_update(self, str order_id, dict order)
     cpdef bint handle_trades_update(self, str trade_id, dict trade)
+    cpdef bint handle_position_update(self, position_id, position)

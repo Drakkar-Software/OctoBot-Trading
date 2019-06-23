@@ -40,36 +40,86 @@ class Order:
         self.lock = Lock()
         self.linked_orders = []
 
-    # create the order by setting all the required values
-    def new(self, order_type, symbol, current_price, quantity, price, stop_price, status, order_notifier, order_id,
-            quantity_filled, timestamp=None, linked_to=None, linked_portfolio=None) -> None:
-        self.order_id = order_id
-        self.origin_price = price
-        self.status = status
-        self.created_last_price = current_price
-        self.origin_quantity = quantity
-        self.origin_stop_price = stop_price
-        self.symbol = symbol
-        self.order_type = order_type
-        self.order_notifier = order_notifier
-        self.currency, self.market = split_symbol(symbol)
-        self.filled_quantity = quantity_filled
-        self.linked_to = linked_to
-        self.linked_portfolio = linked_portfolio
+        self.order_id = None
+        self.symbol = None
+        self.currency = None
+        self.market = None
+        self.order_notifier = None
+        self.timestamp = None
+        self.origin_price = None
+        self.created_last_price = None
+        self.origin_quantity = None
+        self.origin_stop_price = None
+        self.order_type = None
+        self.filled_quantity = None
+        self.linked_portfolio = None
+        self.linked_to = None
 
-        if timestamp is None:
-            self.creation_time = time.time()
-        else:
-            # if we have a timestamp, it's a real trader => need to format timestamp if necessary
-            self.creation_time = self.exchange.get_uniform_timestamp(timestamp)
+    def update(self, order_type, symbol, current_price, quantity, price, stop_price, status, order_notifier, order_id,
+               quantity_filled, timestamp=None, linked_to=None, linked_portfolio=None):
+        changed: bool = False
 
-        if status is None:
-            self.status = OrderStatus.OPEN
-        else:
+        if order_id and self.order_id != order_id:
+            self.order_id = order_id
+
+        if symbol and self.symbol != symbol:
+            self.symbol = symbol
+            self.currency, self.market = split_symbol(symbol)
+
+        if order_notifier:
+            self.order_notifier = order_notifier
+
+        if status and self.status != status:
             self.status = status
+            changed = True
+        if not self.status:
+            self.status = OrderStatus.OPEN
+
+        if timestamp and self.timestamp != timestamp:
+            self.timestamp = timestamp
+        if not self.timestamp:
+            if not timestamp:
+                self.creation_time = time.time()
+            else:
+                # if we have a timestamp, it's a real trader => need to format timestamp if necessary
+                self.creation_time = self.exchange.get_uniform_timestamp(timestamp)
+
+        if price and self.origin_price != price:
+            self.origin_price = price
+            changed = True
+
+        if current_price and self.created_last_price != current_price:
+            self.created_last_price = current_price
+            changed = True
+
+        if quantity and self.origin_quantity != quantity:
+            self.origin_quantity = quantity
+            changed = True
+
+        if stop_price and self.origin_stop_price != stop_price:
+            self.origin_stop_price = stop_price
+            changed = True
+
+        if order_type and self.order_type != order_type:
+            self.order_type = order_type
+            changed = True
 
         if self.trader.simulate:
-            self.filled_quantity = quantity
+            if quantity and self.filled_quantity != quantity:
+                self.filled_quantity = quantity
+                changed = True
+        else:
+            if quantity_filled and self.filled_quantity != quantity_filled:
+                self.filled_quantity = quantity_filled
+                changed = True
+
+        if linked_to:
+            self.linked_to = linked_to
+
+        if linked_portfolio:
+            self.linked_portfolio = linked_portfolio
+
+        return changed
 
     async def update_order_status(self, last_prices: list, simulated_time=False):
         """

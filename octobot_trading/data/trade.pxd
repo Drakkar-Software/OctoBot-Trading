@@ -45,5 +45,3 @@ cdef class Trade:
     cdef public float quantity
 
     cdef public bint simulated
-
-cpdef Trade create_trade_from_dict(Trader trader, dict trade_data)

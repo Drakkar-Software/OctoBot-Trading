@@ -256,20 +256,23 @@ class RestExchange(AbstractExchange):
         return all(key in order for key in order_required_fields)
 
     # positions
-    async def get_open_position(self, symbol=None, params={}):
+    async def get_position(self, params={}):
         try:
             if self.is_supporting_position:
-                return await self.client.private_get_position(symbol=symbol, params=params)
+                return await self.client.private_get_position(params=params)
         except (AttributeError, ExchangeNotAvailable):
             self.is_supporting_position = False
 
-    async def get_symbol_open_position(self, symbol=None):
-        return await self.client.get_open_position({
-            'filter': json.dumps({
-                "isOpen": True,
-                "symbol": symbol
+    async def get_open_position(self):
+        # try:
+        if self.is_supporting_position:
+            return await self.get_position(params={
+                'filter': json.dumps({
+                    "isOpen": True
+                })
             })
-        })
+        # except (AttributeError):
+        #     self.is_supporting_position = False
 
     async def get_position_from_id(self, position_id, symbol=None):
         return await self.client.private_get_position(id=position_id, symbol=symbol)
@@ -336,6 +339,10 @@ class RestExchange(AbstractExchange):
 
     def get_pair_from_exchange(self, pair: str) -> str:
         return self.client.find_market(pair)["symbol"]
+
+    def get_split_pair_from_exchange(self, pair: str) -> (str, str):
+        market_data: dict = self.client.find_market(pair)
+        return market_data["base"], market_data["quote"]
 
     def get_exchange_pair(self, pair: str) -> str:
         if pair in self.client.symbols:

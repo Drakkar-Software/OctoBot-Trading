@@ -63,7 +63,7 @@ cdef class Order:
     cdef list last_prices
     cdef public list linked_orders
 
-    cpdef void new(self,
+    cpdef bint update(self,
             object order_type,
             str symbol,
             float current_price,
@@ -77,6 +77,7 @@ cdef class Order:
             object timestamp=*,
             object linked_to=*,
             object linked_portfolio=*)
+
     cpdef bint check_last_prices(self, list last_prices, float price_to_check, bint inferior, bint simulated_time=*)
     cpdef object get_currency_and_market(self)
     cpdef float get_total_fees(self, char * currency)

@@ -43,3 +43,5 @@ cdef class RestExchange(AbstractExchange):
     cpdef get_trade_fee(self, str symbol, object order_type, float quantity, float price, str taker_or_maker=*)
     cpdef dict get_fees(self, str symbol)
     cpdef float get_uniform_timestamp(self, float timestamp)
+    cpdef str get_pair_from_exchange(self, str pair)
+    cpdef tuple get_split_pair_from_exchange(self, str pair)

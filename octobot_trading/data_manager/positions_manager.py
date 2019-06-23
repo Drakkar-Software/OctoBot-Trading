@@ -13,16 +13,51 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from collections import OrderedDict
+
 from octobot_commons.logging.logging_util import get_logger
 
+from octobot_trading.data.position import Position
 from octobot_trading.util.initializable import Initializable
 
 
 class PositionsManager(Initializable):
+    MAX_POSITIONS_COUNT = 2000
+
     def __init__(self, config, trader, exchange_manager):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
 
+        self.positions = OrderedDict()
+
     async def initialize_impl(self):
-        pass
+        self._reset_positions()
+
+    def upsert_position(self, position_id, raw_position):
+        if position_id not in self.positions:
+            self.positions[position_id] = self._create_position_from_raw(raw_position)
+            self._check_positions_size()
+            return True
+        return self._update_position_from_raw(self.positions[position_id], raw_position)
+
+    # private
+    def _check_positions_size(self):
+        if len(self.positions) > self.MAX_POSITIONS_COUNT:
+            self._remove_oldest_positions(int(self.MAX_POSITIONS_COUNT / 2))
+
+    def _create_position_from_raw(self, raw_position):
+        position = Position(self.trader)
+        self._update_position_from_raw(position, raw_position)
+        return position
+
+    def _update_position_from_raw(self, position, raw_position):
+        # TODO
+        return False
+
+    def _reset_positions(self):
+        self.positions = OrderedDict()
+
+    def _remove_oldest_positions(self, nb_to_remove):
+        for _ in range(nb_to_remove):
+            self.positions.popitem(last=False)

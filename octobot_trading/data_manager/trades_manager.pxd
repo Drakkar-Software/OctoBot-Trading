@@ -25,7 +25,7 @@ cdef class TradesManager(Initializable):
 
     cdef void _check_trades_size(self)
     cdef void _reset_trades(self)
+    cdef Trade _create_trade_from_raw(self, dict raw_trade)
+    cdef void _remove_oldest_trades(self, int nb_to_remove)
 
-    cpdef list add_new_trades(self, list trades)
-    cpdef list add_trade(self, dict trade)
-    cpdef void add_trade_instance(self, Trade trade)
+    cpdef bint upsert_trade(self, str trade_id, dict raw_trade)

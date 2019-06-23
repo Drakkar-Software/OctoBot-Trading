@@ -16,6 +16,7 @@
 import asyncio
 
 from octobot_trading.channels.positions import PositionsProducer
+from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
 class PositionsUpdater(PositionsProducer):
@@ -29,12 +30,12 @@ class PositionsUpdater(PositionsProducer):
     async def start(self):
         while not self.should_stop:
             try:
-                for symbol in self.channel.exchange_manager.traded_pairs:
-                    positions: list = await self.channel.exchange_manager.exchange.get_open_position(symbol=symbol)
-                    if positions:
-                        await self.push(positions)
+                positions: list = await self.channel.exchange_manager.exchange.get_open_position()
+                if positions:
+                    await self.push(self._cleanup_positions_dict(positions))
 
             except Exception as e:
+                self.logger.exception(e)
                 self.logger.error(f"Fail to update positions : {e}")
 
             await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
@@ -42,7 +43,9 @@ class PositionsUpdater(PositionsProducer):
     def _cleanup_positions_dict(self, positions):
         for position in positions:
             try:
-                pass  # TODO
+                # If exchange has not position id -> global position foreach symbol
+                if ExchangeConstantsOrderColumns.ID.value not in position:
+                    position[ExchangeConstantsOrderColumns.ID.value] = position[ExchangeConstantsOrderColumns.SYMBOL.value]
             except KeyError as e:
                 self.logger.error(f"Fail to cleanup position dict ({e})")
         return positions

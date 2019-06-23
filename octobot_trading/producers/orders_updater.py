@@ -35,7 +35,7 @@ class OpenOrdersUpdater(OrdersProducer):
                 open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(symbol=symbol)
 
                 if open_orders:
-                    await self.push(self._cleanup_open_orders_dict(open_orders), is_open_by_bot=False)
+                    await self.push(self._cleanup_open_orders_dict(open_orders), is_from_bot=False)
 
                 await asyncio.sleep(self.ORDERS_STARTING_REFRESH_TIME)
         except Exception as e:

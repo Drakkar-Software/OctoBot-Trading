@@ -15,9 +15,9 @@
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.constants import CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.data_manager.orders_manager import OrdersManager
 from octobot_trading.data_manager.portfolio_manager import PortfolioManager
+from octobot_trading.data_manager.positions_manager import PositionsManager
 from octobot_trading.data_manager.trades_manager import TradesManager
 from octobot_trading.util.initializable import Initializable
 
@@ -38,9 +38,11 @@ class ExchangePersonalData(Initializable):
                 self.portfolio_manager = PortfolioManager(self.config, self.trader, self.exchange_manager)
                 self.trades_manager = TradesManager(self.config, self.trader, self.exchange_manager)
                 self.orders_manager = OrdersManager(self.config, self.trader, self.exchange_manager)
+                self.positions_manager = PositionsManager(self.config, self.trader, self.exchange_manager)
                 await self.portfolio_manager.initialize()
                 await self.trades_manager.initialize()
                 await self.orders_manager.initialize()
+                await self.positions_manager.initialize()
             except Exception as e:
                 self.logger.error(f"Error when initializing portfolio: {e}. "
                                   f"{self.exchange.name} trader disabled.")
@@ -51,11 +53,10 @@ class ExchangePersonalData(Initializable):
         try:
             return await self.portfolio_manager.handle_balance_update(balance)
         except AttributeError as e:
-            # self.logger.warning(f"Can't handle balance update : trader does not seem to be initialized {e}")
-            raise e
-        return False
+            self.logger.exception(f"Failed to update balance : {e}")
+            return False
 
-    def handle_order_update(self, order_id, order) -> bool:
+    def handle_order_update(self, order_id, order) -> (bool, bool):
         try:
             return self.orders_manager.upsert_order(order_id, order)
         except Exception as e:
@@ -70,7 +71,18 @@ class ExchangePersonalData(Initializable):
             return False
 
     def handle_trade_update(self, trade_id, trade):
-        pass
+        try:
+            return self.trades_manager.upsert_trade(trade_id, trade)
+        except Exception as e:
+            self.logger.exception(f"Failed to update trade : {e}")
+            return False
+
+    def handle_position_update(self, position_id, position):
+        try:
+            return self.positions_manager.upsert_position(position_id, position)
+        except Exception as e:
+            self.logger.exception(f"Failed to update position : {e}")
+            return False
 
     def get_order_portfolio(self, order):
         return order.linked_portfolio if order.linked_portfolio is not None else self.portfolio

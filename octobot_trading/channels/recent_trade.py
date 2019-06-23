@@ -51,6 +51,7 @@ class RecentTradeProducer(Producer):
     async def send(self, symbol, recent_trades, is_wildcard=False):
         for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,
                 "recent_trades": recent_trades
             })
@@ -68,7 +69,8 @@ class RecentTradeConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(symbol=data["symbol"], recent_trades=data["recent_trades"])
+                await self.callback(exchange=data["exchange"], symbol=data["symbol"],
+                                    recent_trades=data["recent_trades"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 

@@ -27,18 +27,19 @@ cdef class OrdersManager(Initializable):
     cdef Trader trader
     cdef ExchangeManager exchange_manager
 
-    cdef public dict orders
+    cdef public object orders
 
     cdef void _reset_orders(self)
     cdef void _check_orders_size(self)
     cdef Order _create_order_from_raw(self, dict raw_order)
     cdef bint _update_order_from_raw(self, Order order, dict raw_order)
+    cdef dict _parse_order_raw_data(self, dict raw_order)
     cdef void _remove_oldest_orders(self, int nb_to_remove)
     cdef list _select_orders(self, object state=*, str symbol=*, int since=*, int limit=*)
 
     cpdef void update_order_attribute(self, str order_id, str key, object value)
     cpdef Order get_order(self, str order_id)
-    cpdef bint upsert_order(self, str order_id, dict raw_order)
+    cpdef tuple upsert_order(self, str order_id, dict raw_order)
     cpdef bint upsert_order_close(self, str order_id, dict raw_order)
     cpdef list get_all_orders(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_open_orders(self, str symbol=*, int since=*, int limit=*)

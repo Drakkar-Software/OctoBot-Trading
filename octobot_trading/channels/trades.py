@@ -30,28 +30,37 @@ class TradesProducer(Producer):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
 
-    async def push(self, trades):
-        await self.perform(trades)
+    async def push(self, trades, old_trade=False):
+        await self.perform(trades, old_trade=old_trade)
 
-    async def perform(self, trades):
+    async def perform(self, trades, old_trade=False):
         try:
             for trade in trades:
-                symbol: str = trade[ExchangeConstantsOrderColumns.SYMBOL.value]
+                symbol: str = self.channel.exchange_manager.get_exchange_symbol(
+                    trade[ExchangeConstantsOrderColumns.SYMBOL.value])
                 if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
-                    # self.channel.exchange_manager.get_personal_data().upsert_order(order.id, order)
-                    await self.send(symbol, trade)
-                    await self.send(symbol, trade, True)
+                    trade_id: str = trade[ExchangeConstantsOrderColumns.ID.value]
+
+                    added: bool = self.channel.exchange_manager.exchange_personal_data.handle_trade_update(
+                        trade_id,
+                        trade)
+
+                    if added:
+                        await self.send(symbol, trade, old_trade)
+                        await self.send(symbol, trade, old_trade, True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, trade, is_wildcard=False):
+    async def send(self, symbol, trade, old_trade=False, is_wildcard=False):
         for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,
-                "trade": trade
+                "trade": trade,
+                "old_trade": old_trade
             })
 
 
@@ -68,7 +77,8 @@ class TradesConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(symbol=data["symbol"], trade=data["trade"])
+                await self.callback(exchange=data["exchange"], symbol=data["symbol"],
+                                    trade=data["trade"], old_trade=data["old_trade"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 

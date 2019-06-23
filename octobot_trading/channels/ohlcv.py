@@ -54,6 +54,7 @@ class OHLCVProducer(Producer):
         for consumer in self.channel.get_consumers_by_timeframe(symbol=CHANNEL_WILDCARD if is_wildcard else symbol,
                                                                 time_frame=time_frame):
             await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,
                 "time_frame": time_frame,
                 "candle": candle
@@ -72,7 +73,8 @@ class OHLCVConsumer(Consumer):
         while not self.should_stop:
             try:
                 data = await self.queue.get()
-                await self.callback(symbol=data["symbol"], time_frame=data["time_frame"], candle=data["candle"])
+                await self.callback(exchange=data["exchange"], symbol=data["symbol"],
+                                    time_frame=data["time_frame"], candle=data["candle"])
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
 
