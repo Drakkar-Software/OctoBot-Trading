@@ -20,7 +20,7 @@ from octobot_trading.channels.kline import KlineProducer
 
 
 class KlineUpdater(KlineProducer):
-    KLINE_REFRESH_TIME = 6
+    KLINE_REFRESH_TIME = 8
     KLINE_LIMIT = 1
 
     def __init__(self, channel):

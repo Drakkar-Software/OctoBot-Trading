@@ -19,7 +19,7 @@ from octobot_trading.channels.balance import BalanceProducer
 
 
 class BalanceUpdater(BalanceProducer):
-    BALANCE_REFRESH_TIME = 2  # TODO = 300
+    BALANCE_REFRESH_TIME = 666
 
     def __init__(self, channel):
         super().__init__(channel)

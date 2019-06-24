@@ -19,7 +19,7 @@ from octobot_trading.channels.ticker import TickerProducer
 
 
 class TickerUpdater(TickerProducer):
-    TICKER_REFRESH_TIME = 60
+    TICKER_REFRESH_TIME = 64
 
     def __init__(self, channel):
         super().__init__(channel)

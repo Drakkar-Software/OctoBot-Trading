@@ -22,7 +22,7 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 class TradesUpdater(TradesProducer):
     MAX_OLD_TRADES_TO_FETCH = 100
     TRADES_LIMIT = 10
-    TRADES_REFRESH_TIME = 2  # TODO = 200
+    TRADES_REFRESH_TIME = 333
 
     def __init__(self, channel):
         super().__init__(channel)

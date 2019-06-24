@@ -24,6 +24,9 @@ from octobot_trading.channels.ohlcv import OHLCVProducer
 
 class OHLCVUpdater(OHLCVProducer):
     OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
+    OHLCV_OLD_LIMIT = 200  # should be < to candle manager's MAX_CANDLES_COUNT
+    OHLCV_ON_ERROR_TIME = 5
+    OHLCV_ON_FETCHED_HISTORY_TIME = 10
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -37,29 +40,49 @@ class OHLCVUpdater(OHLCVProducer):
 
     async def start(self):
         self.tasks = [
-            asyncio.create_task(self.time_frame_watcher(self.channel.exchange_manager.traded_pairs, time_frame))
+            asyncio.create_task(self._candle_callback(self.channel.exchange_manager.traded_pairs, time_frame))
             for time_frame in self.channel.exchange_manager.time_frames]
 
     """
     Manage timeframe OHLCV data refreshing for all pairs
     """
 
-    async def time_frame_watcher(self, pairs, time_frame):
+    async def _candle_callback(self, pairs, time_frame):
+        last_candle: dict = {}
+        time_frame_sleep: int = TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS
+
+        # fetch history
+        for pair in pairs:
+            candles: list = await self.channel.exchange_manager.exchange \
+                .get_symbol_prices(pair, time_frame, limit=self.OHLCV_OLD_LIMIT)
+
+            await self.push(time_frame, pair, candles[:-1], replace_all=True)
+
+        await asyncio.sleep(self.OHLCV_ON_FETCHED_HISTORY_TIME)
+
         while not self.should_stop:
             try:
                 candles: list = []
                 for pair in pairs:
-                    candles: list = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
-                                                                                                   time_frame,
-                                                                                                   limit=self.OHLCV_LIMIT)
+                    candles: list = await self.channel.exchange_manager.exchange \
+                        .get_symbol_prices(pair, time_frame, limit=self.OHLCV_LIMIT)
+
                     await self.push(time_frame, pair, candles[:-1], partial=True)  # push only completed candles
 
                 if candles:
-                    self.channel.exchange_manager.uniformize_candles_if_necessary(candles[-1])
-                    await asyncio.sleep((candles[-1][PriceIndexes.IND_PRICE_TIME.value] +
-                                         TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS) - time.time())
+                    last_candle = candles[-1]
+                    self.channel.exchange_manager.uniformize_candles_if_necessary(last_candle)
+                else:
+                    last_candle = {}
+
+                if last_candle:
+                    await asyncio.sleep(last_candle[PriceIndexes.IND_PRICE_TIME.value] +
+                                        time_frame_sleep - time.time())
+                else:
+                    await asyncio.sleep(time_frame_sleep)
             except Exception as e:
-                self.logger.error(f"Failed to update ohlcv data in {time_frame} : {e}")
+                self.logger.exception(f"Failed to update ohlcv data in  {time_frame} : {e}")
+                await asyncio.sleep(self.OHLCV_ON_ERROR_TIME)
 
 #     async def force_refresh_data(self, time_frame, symbol):
 #         if not self.backtesting_enabled:

@@ -21,7 +21,7 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 class OpenOrdersUpdater(OrdersProducer):
     ORDERS_STARTING_REFRESH_TIME = 10
-    ORDERS_REFRESH_TIME = 2  # TODO = 10
+    ORDERS_REFRESH_TIME = 18
     ORDERS_UPDATE_LIMIT = 10
 
     def __init__(self, channel):

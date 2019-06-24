@@ -20,7 +20,7 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
 class PositionsUpdater(PositionsProducer):
-    POSITIONS_REFRESH_TIME = 2  # TODO = 10
+    POSITIONS_REFRESH_TIME = 11
 
     def __init__(self, channel):
         super().__init__(channel)
