@@ -29,19 +29,16 @@ class PositionsManager(Initializable):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
-
+        self.positions_initialized = False  # TODO
         self.positions = OrderedDict()
 
     async def initialize_impl(self):
         self._reset_positions()
 
-    def get_all_positions(self, symbol=None, since=None, limit=None):
-        return self._select_positions(symbol=symbol, since=since, limit=limit)
-
-    def get_open_positions(self, symbol=None, since=None, limit=None):
+    def get_open_positions(self, symbol=None, since=-1, limit=-1):
         return self._select_positions(True, symbol, since, limit)
 
-    def get_closed_positions(self, symbol=None, since=None, limit=None):
+    def get_closed_positions(self, symbol=None, since=-1, limit=-1):
         return self._select_positions(False, symbol, since, limit)
 
     def upsert_position(self, position_id, raw_position) -> (bool, bool, bool):
@@ -84,19 +81,20 @@ class PositionsManager(Initializable):
             "mark_price": raw_position[ExchangeConstantsPositionColumns.MARK_PRICE.value]
         }
 
-    def _select_positions(self, is_open=None, symbol=None, since=None, limit=None):
+    def _select_positions(self, is_open=True, symbol=None, since=-1, limit=-1):
         positions = [
             position
             for position in self.positions.values()
             if (
-                    (is_open is None or position.is_open == is_open) and
+                    position.is_open == is_open and
                     (symbol is None or (symbol and position.symbol == symbol)) and
-                    (since is None or (since and position.timestamp < since))
+                    (since == -1 or (since and position.timestamp < since))
             )
         ]
-        return positions if limit is None else positions[0:limit]
+        return positions if limit == -1 else positions[0:limit]
 
     def _reset_positions(self):
+        self.positions_initialized = False
         self.positions = OrderedDict()
 
     def _remove_oldest_positions(self, nb_to_remove):

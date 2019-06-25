@@ -13,15 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from asyncio import CancelledError, Queue
+from asyncio import CancelledError
 
-from octobot_channels import CHANNEL_WILDCARD, CONSUMER_CALLBACK_TYPE
+from octobot_channels import CHANNEL_WILDCARD
+from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelConsumer
-from octobot_channels.consumer import Consumer
-from octobot_channels.producer import Producer
-
+from octobot_trading.channels.exchange_channel import ExchangeChannel
 from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstantsPositionColumns
 
 

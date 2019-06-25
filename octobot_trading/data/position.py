@@ -20,18 +20,18 @@ class Position:
     def __init__(self, trader):
         self.trader = trader
 
-        self.position_id = None
-        self.timestamp = None
-        self.symbol = None
-        self.currency, self.market = None, None
-        self.creation_time = None
-        self.entry_price = None
-        self.mark_price = None
-        self.quantity = None
-        self.liquidation_price = None
-        self.unrealised_pnl = None
-        self.leverage = None
-        self.is_open = None
+        # self.position_id = None
+        # self.timestamp = None
+        # self.symbol = None
+        # self.currency, self.market = None, None
+        # self.creation_time = None
+        # self.entry_price = None
+        # self.mark_price = None
+        # self.quantity = None
+        # self.liquidation_price = None
+        # self.unrealised_pnl = None
+        # self.leverage = None
+        # self.is_open = None
 
     def update(self, position_id, symbol, currency, market,
                timestamp, entry_price, mark_price, quantity,

@@ -63,22 +63,23 @@ cdef class Order:
     cdef list last_prices
     cdef public list linked_orders
 
-    cpdef bint update(self,
-            object order_type,
-            str symbol,
-            str currency,
-            str market,
-            float current_price,
-            float quantity,
-            float price,
-            float stop_price,
-            object status,
-            object order_notifier,
-            str order_id,
-            float quantity_filled,
-            object timestamp=*,
-            object linked_to=*,
-            object linked_portfolio=*)
+    # to use Non-trivial keyword arguments
+    # cpdef bint update(self,
+    #         object order_type,
+    #         str symbol,
+    #         str currency,
+    #         str market,
+    #         float current_price,
+    #         float quantity,
+    #         float price,
+    #         float stop_price,
+    #         object status,
+    #         object order_notifier,
+    #         str order_id,
+    #         float quantity_filled,
+    #         object timestamp=*,
+    #         object linked_to=*,
+    #         object linked_portfolio=*)
 
     cpdef bint check_last_prices(self, list last_prices, float price_to_check, bint inferior, bint simulated_time=*)
     cpdef object get_currency_and_market(self)

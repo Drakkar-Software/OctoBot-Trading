@@ -274,8 +274,9 @@ class ExchangeManager(Initializable):
         return symbol in self.client_symbols
 
     def _create_wildcard_symbol_list(self, crypto_currency):
-        return [s for s in (self._is_tradable_with_cryptocurrency(symbol, crypto_currency)
-                            for symbol in self.client_symbols) if s is not None]
+        return [s for s in [ExchangeManager._is_tradable_with_cryptocurrency(symbol, crypto_currency)
+                            for symbol in self.client_symbols]
+                if s is not None]
 
     def _add_tradable_symbols(self, crypto_currency):
         return [

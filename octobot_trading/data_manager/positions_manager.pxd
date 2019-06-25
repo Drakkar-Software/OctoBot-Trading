@@ -22,7 +22,10 @@ from octobot_trading.util.initializable cimport Initializable
 
 cdef class PositionsManager(Initializable):
     cdef object logger
+
     cdef dict config
+
+    cdef public bint positions_initialized
 
     cdef Trader trader
     cdef ExchangeManager exchange_manager
@@ -37,6 +40,5 @@ cdef class PositionsManager(Initializable):
     cdef list _select_positions(self, bint is_open=*, str symbol=*, int since=*, int limit=*)
 
     cpdef tuple upsert_position(self, str position_id, dict raw_position)
-    cpdef list get_all_positions(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_open_positions(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_closed_positions(self, str symbol=*, int since=*, int limit=*)

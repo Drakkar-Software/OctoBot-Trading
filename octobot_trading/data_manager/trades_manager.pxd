@@ -23,6 +23,8 @@ cdef class TradesManager(Initializable):
 
     cdef public object trades
 
+    cdef public bint trades_initialized
+
     cdef void _check_trades_size(self)
     cdef void _reset_trades(self)
     cdef Trade _create_trade_from_raw(self, dict raw_trade)

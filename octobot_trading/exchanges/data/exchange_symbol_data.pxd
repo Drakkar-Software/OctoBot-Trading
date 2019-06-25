@@ -26,10 +26,6 @@ cdef class ExchangeSymbolData:
     cdef dict symbol_candles
     cdef dict symbol_klines
 
-    cdef public bint are_recent_trades_initialized
-    cdef public bint is_order_book_initialized
-    cdef public bint is_price_ticker_initialized
-
     cdef public OrderBookManager order_book_manager
     cdef public RecentTradesManager recent_trades_manager
     cdef public TickerManager ticker_manager

@@ -29,7 +29,7 @@ class OrdersManager(Initializable):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
-
+        self.orders_initialized = False  # TODO
         self.orders = OrderedDict()
 
     async def initialize_impl(self):
@@ -38,13 +38,13 @@ class OrdersManager(Initializable):
     def update_order_attribute(self, order_id, key, value):
         self.orders[order_id][key] = value
 
-    def get_all_orders(self, symbol=None, since=None, limit=None):
-        return self._select_orders(symbol=symbol, since=since, limit=limit)
+    def get_all_orders(self, symbol=None, since=-1, limit=-1):
+        return self._select_orders(None, symbol=symbol, since=since, limit=limit)
 
-    def get_open_orders(self, symbol=None, since=None, limit=None):
+    def get_open_orders(self, symbol=None, since=-1, limit=-1):
         return self._select_orders(OrderStatus.OPEN.value, symbol, since, limit)
 
-    def get_closed_orders(self, symbol=None, since=None, limit=None):
+    def get_closed_orders(self, symbol=None, since=-1, limit=-1):
         return self._select_orders(OrderStatus.CLOSED.value, symbol, since, limit)
 
     def get_order(self, order_id):
@@ -67,6 +67,7 @@ class OrdersManager(Initializable):
 
     # private methods
     def _reset_orders(self):
+        self.orders_initialized = False
         self.orders = OrderedDict()
 
     def _check_orders_size(self):
@@ -100,17 +101,17 @@ class OrdersManager(Initializable):
             "timestamp": raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value]
         }
 
-    def _select_orders(self, state=None, symbol=None, since=None, limit=None):
+    def _select_orders(self, state=None, symbol=None, since=-1, limit=-1):
         orders = [
             order
             for order in self.orders.values()
             if (
                     (state is None or order.status == state) and
                     (symbol is None or (symbol and order.symbol == symbol)) and
-                    (since is None or (since and order.timestamp < since))
+                    (since == -1 or (since and order.timestamp < since))
             )
         ]
-        return orders if limit is None else orders[0:limit]
+        return orders if limit == -1 else orders[0:limit]
 
     def _remove_oldest_orders(self, nb_to_remove):
         for _ in range(nb_to_remove):

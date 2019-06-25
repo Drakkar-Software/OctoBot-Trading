@@ -54,8 +54,6 @@ cdef class ExchangeManager(Initializable):
     cdef public list traded_pairs
     cdef public list time_frames
 
-    cdef public ExchangeSymbolData get_symbol_data(self, str symbol)
-
     # private
     cdef void _load_config_symbols_and_time_frames(self)
     cdef void _load_constants(self)
@@ -65,12 +63,12 @@ cdef class ExchangeManager(Initializable):
     cdef list _create_wildcard_symbol_list(self, str crypto_currency)
     cdef list _add_tradable_symbols(self, str crypto_currency)
     cdef void _set_config_time_frame(self)
-    cdef _uniformize_candles_timestamps(self, list candles)
+    cdef object _uniformize_candles_timestamps(self, list candles)
     cdef void _uniformize_candle_timestamps(self, dict candle)
-    cdef _raise_exchange_load_error(self)
+    cdef void _raise_exchange_load_error(self)
 
     @staticmethod
-    cdef bint _is_tradable_with_cryptocurrency(str symbol, str crypto_currency)
+    cdef str _is_tradable_with_cryptocurrency(str symbol, str crypto_currency)
 
     # public
     cpdef bint enabled(self)

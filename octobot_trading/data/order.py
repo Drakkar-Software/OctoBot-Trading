@@ -40,20 +40,20 @@ class Order:
         self.lock = Lock()
         self.linked_orders = []
 
-        self.order_id = None
-        self.symbol = None
-        self.currency = None
-        self.market = None
-        self.order_notifier = None
-        self.timestamp = None
-        self.origin_price = None
-        self.created_last_price = None
-        self.origin_quantity = None
-        self.origin_stop_price = None
-        self.order_type = None
-        self.filled_quantity = None
-        self.linked_portfolio = None
-        self.linked_to = None
+        # self.order_id = None
+        # self.symbol = None
+        # self.currency = None
+        # self.market = None
+        # self.order_notifier = None
+        # self.timestamp = None
+        # self.origin_price = None
+        # self.created_last_price = None
+        # self.origin_quantity = None
+        # self.origin_stop_price = None
+        # self.order_type = None
+        # self.filled_quantity = None
+        # self.linked_portfolio = None
+        # self.linked_to = None
 
     def update(self, order_type, symbol, currency, market,
                current_price, quantity, price, stop_price, status,

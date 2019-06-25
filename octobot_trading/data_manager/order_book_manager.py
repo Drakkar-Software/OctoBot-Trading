@@ -22,7 +22,7 @@ class OrderBookManager(Initializable):
     def __init__(self):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
-
+        self.order_book_initialized = False
         self.bids = []
         self.asks = []
 
@@ -30,10 +30,12 @@ class OrderBookManager(Initializable):
         self.reset_order_book()
 
     def reset_order_book(self):
+        self.order_book_initialized = False
         self.bids = []
         self.asks = []
 
     def order_book_update(self, asks, bids):
+        self.order_book_initialized = True
         if asks:
             self.asks = asks
         if bids:

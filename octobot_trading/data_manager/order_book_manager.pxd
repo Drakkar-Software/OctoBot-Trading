@@ -21,6 +21,8 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class OrderBookManager(Initializable):
     cdef object logger
 
+    cdef public bint order_book_initialized
+
     cdef public list bids
     cdef public list asks
 

@@ -24,6 +24,8 @@ cdef class OrdersManager(Initializable):
     cdef object logger
     cdef dict config
 
+    cdef public bint orders_initialized
+
     cdef Trader trader
     cdef ExchangeManager exchange_manager
 
@@ -31,7 +33,7 @@ cdef class OrdersManager(Initializable):
 
     cdef void _reset_orders(self)
     cdef void _check_orders_size(self)
-    cdef Order _create_order_from_raw(self, dict raw_order)
+    cpdef Order _create_order_from_raw(self, dict raw_order)
     cdef bint _update_order_from_raw(self, Order order, dict raw_order)
     cdef dict _parse_order_from_raw(self, dict raw_order)
     cdef void _remove_oldest_orders(self, int nb_to_remove)

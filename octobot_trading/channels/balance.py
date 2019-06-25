@@ -17,14 +17,12 @@
 """
 Handles balance changes
 """
-from asyncio import CancelledError, Queue
+from asyncio import CancelledError
 
-from octobot_channels import CONSUMER_CALLBACK_TYPE
+from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelConsumer
-from octobot_channels.consumer import Consumer
-from octobot_channels.producer import Producer
+from octobot_trading.channels.exchange_channel import ExchangeChannel
 
 
 class BalanceProducer(Producer):

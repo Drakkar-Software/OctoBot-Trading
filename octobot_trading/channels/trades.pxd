@@ -19,8 +19,8 @@ from octobot_trading.channels.exchange_channel cimport ExchangeChannel
 from octobot_channels.producer cimport Producer
 
 
-cdef class OrdersProducer(Producer):
+cdef class TradesProducer(Producer):
     pass
 
-cdef class OrdersChannel(ExchangeChannel):
+cdef class TradesChannel(ExchangeChannel):
     pass

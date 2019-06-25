@@ -40,9 +40,9 @@ class ExchangeChannel(Channel):
 
     def new_consumer(self,
                      callback: CONSUMER_CALLBACK_TYPE,
-                     size: int = 0,
-                     symbol: str = CHANNEL_WILDCARD,
-                     filter_size: bool = False):
+                     size=0,
+                     symbol=CHANNEL_WILDCARD,
+                     filter_size=False):
         self._add_new_consumer_and_run(ExchangeChannelConsumer(callback, size=size, filter_size=filter_size),
                                        symbol=symbol,
                                        with_time_frame=self.WITH_TIME_FRAME)
@@ -108,13 +108,6 @@ class ExchangeChannel(Channel):
 
 
 class ExchangeChannelConsumer(Consumer):
-    def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0, filter_size=0):
-        super().__init__(callback)
-        self.filter_size = filter_size
-        self.should_stop = False
-        self.queue = Queue(size)
-        self.callback = callback
-
     async def consume(self):
         while not self.should_stop:
             try:

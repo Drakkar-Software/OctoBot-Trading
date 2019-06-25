@@ -337,10 +337,10 @@ class RestExchange(AbstractExchange):
         await self.client.close()
         self.logger.info(f"Connection closed.")
 
-    def get_pair_from_exchange(self, pair: str) -> str:
+    def get_pair_from_exchange(self, pair) -> str:
         return self.client.find_market(pair)["symbol"]
 
-    def get_split_pair_from_exchange(self, pair: str) -> (str, str):
+    def get_split_pair_from_exchange(self, pair) -> (str, str):
         market_data: dict = self.client.find_market(pair)
         return market_data["base"], market_data["quote"]
 

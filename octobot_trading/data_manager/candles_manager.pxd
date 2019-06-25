@@ -21,7 +21,9 @@ np.import_array()
 
 cdef class CandlesManager(Initializable):
     cdef object logger
-    
+
+    cdef public bint candles_initialized
+
     cdef np.float64_t[::1] close_candles
     cdef np.float64_t[::1] open_candles
     cdef np.float64_t[::1] high_candles
@@ -36,22 +38,24 @@ cdef class CandlesManager(Initializable):
     cdef int time_candles_index
     cdef int volume_candles_index
 
-    cpdef np.float64_t get_symbol_close_candles(self, object limit=*)
-    cpdef np.float64_t get_symbol_open_candles(self, object limit=*)
-    cpdef np.float64_t get_symbol_high_candles(self, object limit=*)
-    cpdef np.float64_t get_symbol_low_candles(self, object limit=*)
-    cpdef np.float64_t get_symbol_time_candles(self, object limit=*)
-    cpdef np.float64_t get_symbol_volume_candles(self, object limit=*)
+    cpdef np.float64_t get_symbol_close_candles(self, int limit=*)
+    cpdef np.float64_t get_symbol_open_candles(self, int limit=*)
+    cpdef np.float64_t get_symbol_high_candles(self, int limit=*)
+    cpdef np.float64_t get_symbol_low_candles(self, int limit=*)
+    cpdef np.float64_t get_symbol_time_candles(self, int limit=*)
+    cpdef np.float64_t get_symbol_volume_candles(self, int limit=*)
+
     cpdef dict get_symbol_prices(self, object limit=*)
-    cpdef add_old_and_new_candles(self, list candles_data)
-    cpdef add_new_candle(self, dict new_candle_data)
+    cpdef void add_old_and_new_candles(self, list candles_data)
+    cpdef void add_new_candle(self, dict new_candle_data)
     cpdef void replace_all_candles(self, list all_candles_data)
 
     # private
-    cdef _set_all_candles(self, object new_candles_data)
-    cdef _change_current_candle(self)
-    cdef _should_add_new_candle(self, new_open_time)
-    cdef _inc_candle_index(self)
+    cdef void _set_all_candles(self, object new_candles_data)
+    cdef void _change_current_candle(self)
+    cdef bint _should_add_new_candle(self, new_open_time)
+    cdef object _inc_candle_index(self)
+    cdef void _reset_candles(self)
 
     @staticmethod
-    cdef _extract_limited_data(np.float64_t[::1] data, object limit=*)
+    cdef _extract_limited_data(np.float64_t[::1] data, int limit=*, int max_limit=*)

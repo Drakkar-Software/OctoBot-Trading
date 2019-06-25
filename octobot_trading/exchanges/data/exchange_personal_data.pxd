@@ -36,7 +36,7 @@ cdef class ExchangePersonalData(Initializable):
     cdef public OrdersManager orders_manager
     cdef public PositionsManager positions_manager
 
-    cpdef bint handle_portfolio_update(self, currency, total, available, in_order)
+    cpdef bint handle_portfolio_update(self, dict balance)
     cpdef tuple handle_order_update(self, str order_id, dict order)
-    cpdef bint handle_trades_update(self, str trade_id, dict trade)
+    cpdef bint handle_trade_update(self, str trade_id, dict trade)
     cpdef tuple handle_position_update(self, position_id, position)

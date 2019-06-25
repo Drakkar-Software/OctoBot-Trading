@@ -30,7 +30,7 @@ class TradesManager(Initializable):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
-
+        self.trades_initialized = False  # TODO
         self.trades = OrderedDict()
 
     async def initialize_impl(self):
@@ -68,6 +68,7 @@ class TradesManager(Initializable):
         return Trade(order)
 
     def _reset_trades(self):
+        self.trades_initialized = False
         self.trades = OrderedDict()
 
     def _remove_oldest_trades(self, nb_to_remove):

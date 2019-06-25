@@ -42,10 +42,6 @@ class ExchangeSymbolData:
         self.symbol_candles = {}
         self.symbol_klines = {}
 
-        self.are_recent_trades_initialized = False  # TODO to be removed
-        self.is_order_book_initialized = False  # TODO to be removed
-        self.is_price_ticker_initialized = False  # TODO to be removed
-
         self.logger = get_logger(f"{self.__class__.__name__} - {self.symbol}")
 
     # candle functions

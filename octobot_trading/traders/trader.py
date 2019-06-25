@@ -56,11 +56,11 @@ class Trader(Initializable):
         if not hasattr(self, 'simulate'):
             self.simulate = False
 
-        self.enabled = self.enabled(self.config)
+        self.is_enabled = self.enabled(self.config)
         self.notifier = None  # TODO
 
     async def initialize_impl(self):
-        if self.enabled:
+        if self.is_enabled:
             await self.exchange_manager.register_trader(self)
             if self.previous_state_manager is not None:
                 self.load_previous_state_if_any()
@@ -70,7 +70,7 @@ class Trader(Initializable):
         pass
 
     async def launch(self):
-        if self.enabled:
+        if self.is_enabled:
             if not self.simulate:
                 await self.update_open_orders()
                 # self.update_close_orders()

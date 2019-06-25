@@ -21,7 +21,7 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class KlineManager(Initializable):
     cdef object logger
 
-    cdef public dict kline
+    cdef public list kline
 
     cdef void _reset_kline(self)
 
