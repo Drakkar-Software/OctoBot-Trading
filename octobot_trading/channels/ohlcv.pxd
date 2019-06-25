@@ -16,14 +16,10 @@
 #  License along with this library.
 
 from octobot_trading.channels.exchange_channel cimport ExchangeChannel
-from octobot_channels.consumer cimport Consumer
 from octobot_channels.producer cimport Producer
 
 
 cdef class OHLCVProducer(Producer):
-    pass
-
-cdef class OHLCVConsumer(Consumer):
     pass
 
 cdef class OHLCVChannel(ExchangeChannel):

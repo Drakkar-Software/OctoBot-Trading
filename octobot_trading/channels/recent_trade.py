@@ -16,7 +16,7 @@
 from asyncio import CancelledError, Queue
 
 from octobot_channels import CHANNEL_WILDCARD, CONSUMER_CALLBACK_TYPE
-from octobot_trading.channels.exchange_channel import ExchangeChannel
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelConsumer
 from octobot_channels.consumer import Consumer
 from octobot_channels.producer import Producer
 
@@ -57,29 +57,5 @@ class RecentTradeProducer(Producer):
             })
 
 
-class RecentTradeConsumer(Consumer):
-    def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0, filter_size=0):  # TODO REMOVE
-        super().__init__(callback)
-        self.filter_size = 0
-        self.should_stop = False
-        self.queue = Queue()
-        self.callback = callback
-
-    async def consume(self):
-        while not self.should_stop:
-            try:
-                data = await self.queue.get()
-                await self.callback(exchange=data["exchange"], symbol=data["symbol"],
-                                    recent_trades=data["recent_trades"])
-            except Exception as e:
-                self.logger.exception(f"Exception when calling callback : {e}")
-
-
 class RecentTradeChannel(ExchangeChannel):
     FILTER_SIZE = 10
-
-    def new_consumer(self, callback: CONSUMER_CALLBACK_TYPE,
-                     size: int = 0,
-                     symbol: str = CHANNEL_WILDCARD,
-                     filter_size: bool = False):
-        self._add_new_consumer_and_run(RecentTradeConsumer(callback, size=size, filter_size=filter_size), symbol=symbol)

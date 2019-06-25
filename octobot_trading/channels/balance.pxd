@@ -20,14 +20,10 @@ Handles balance changes
 """
 
 from octobot_trading.channels.exchange_channel cimport ExchangeChannel
-from octobot_channels.consumer cimport Consumer
 from octobot_channels.producer cimport Producer
 
 
 cdef class BalanceProducer(Producer):
-    pass
-
-cdef class BalanceConsumer(Consumer):
     pass
 
 cdef class BalanceChannel(ExchangeChannel):

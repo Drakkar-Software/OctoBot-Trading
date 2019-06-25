@@ -14,6 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from asyncio import Queue
+
+from octobot_channels.consumer import Consumer
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_channels.channels.channel import Channel, Channels
@@ -24,6 +27,7 @@ from octobot_channels.channels.channel_instances import ChannelInstances
 
 class ExchangeChannel(Channel):
     FILTER_SIZE = 1
+    WITH_TIME_FRAME = False
 
     def __init__(self, exchange_manager):
         super().__init__()
@@ -34,8 +38,14 @@ class ExchangeChannel(Channel):
         self.filter_send_counter = 0
         self.should_send_filter = False
 
-    def new_consumer(self, callback: CONSUMER_CALLBACK_TYPE, **kwargs):
-        raise NotImplemented("new consumer is not implemented")
+    def new_consumer(self,
+                     callback: CONSUMER_CALLBACK_TYPE,
+                     size: int = 0,
+                     symbol: str = CHANNEL_WILDCARD,
+                     filter_size: bool = False):
+        self._add_new_consumer_and_run(ExchangeChannelConsumer(callback, size=size, filter_size=filter_size),
+                                       symbol=symbol,
+                                       with_time_frame=self.WITH_TIME_FRAME)
 
     def will_send(self):
         self.filter_send_counter += 1
@@ -95,6 +105,22 @@ class ExchangeChannel(Channel):
     def _init_consumer_if_necessary(consumer_list: dict, key: str, is_dict=False) -> None:
         if key not in consumer_list:
             consumer_list[key] = [] if not is_dict else {}
+
+
+class ExchangeChannelConsumer(Consumer):
+    def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0, filter_size=0):
+        super().__init__(callback)
+        self.filter_size = filter_size
+        self.should_stop = False
+        self.queue = Queue(size)
+        self.callback = callback
+
+    async def consume(self):
+        while not self.should_stop:
+            try:
+                await self.callback(**(await self.queue.get()))
+            except Exception as e:
+                self.logger.exception(f"Exception when calling callback : {e}")
 
 
 class ExchangeChannels(Channels):
