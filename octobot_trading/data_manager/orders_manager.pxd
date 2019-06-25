@@ -35,7 +35,6 @@ cdef class OrdersManager(Initializable):
     cdef void _check_orders_size(self)
     cpdef Order _create_order_from_raw(self, dict raw_order)
     cdef bint _update_order_from_raw(self, Order order, dict raw_order)
-    cdef dict _parse_order_from_raw(self, dict raw_order)
     cdef void _remove_oldest_orders(self, int nb_to_remove)
     cdef list _select_orders(self, object state=*, str symbol=*, int since=*, int limit=*)
 
@@ -43,6 +42,7 @@ cdef class OrdersManager(Initializable):
     cpdef Order get_order(self, str order_id)
     cpdef tuple upsert_order(self, str order_id, dict raw_order)
     cpdef bint upsert_order_close(self, str order_id, dict raw_order)
+    cpdef void upsert_order_instance(self, Order order)
     cpdef list get_all_orders(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_open_orders(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_closed_orders(self, str symbol=*, int since=*, int limit=*)

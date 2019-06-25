@@ -20,11 +20,13 @@
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 from octobot_trading.data.portfolio cimport Portfolio
+from octobot_trading.exchanges.exchange_manager import ExchangeManager
+from octobot_trading.traders.trader cimport Trader
 from octobot_trading.util.order_notifier cimport OrderNotifier
 
 cdef class Order:
-    cdef public object trader
-    cdef public object exchange
+    cdef public Trader trader
+    cdef public ExchangeManager exchange_manager
 
     cdef public object side # TradeOrderSide
     cdef public object status # OrderStatus
@@ -67,8 +69,6 @@ cdef class Order:
     # cpdef bint update(self,
     #         object order_type,
     #         str symbol,
-    #         str currency,
-    #         str market,
     #         float current_price,
     #         float quantity,
     #         float price,
@@ -79,10 +79,15 @@ cdef class Order:
     #         float quantity_filled,
     #         object timestamp=*,
     #         object linked_to=*,
-    #         object linked_portfolio=*)
+    #         object linked_portfolio=*,
+    #         object order_type=*)
+
+    cdef void _update_type_from_raw(self, dict raw_order)
+    cdef void _update_taker_maker_from_raw(self)
+    cdef str to_string(self)
 
     cpdef bint check_last_prices(self, list last_prices, float price_to_check, bint inferior, bint simulated_time=*)
-    cpdef object get_currency_and_market(self)
+    cpdef tuple get_currency_and_market(self)
     cpdef float get_total_fees(self, char * currency)
     cpdef bint is_filled(self)
     cpdef bint is_cancelled(self)
@@ -93,3 +98,6 @@ cdef class Order:
     cpdef dict get_computed_fee(self, object forced_value=*)
     cpdef float get_profitability(self)
     cpdef float generate_executed_time(self, bint simulated_time=*)
+    cpdef bint is_self_managed(self)
+    cpdef bint update_from_raw(self, dict raw_order)
+

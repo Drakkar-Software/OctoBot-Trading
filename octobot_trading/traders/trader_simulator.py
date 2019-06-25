@@ -38,7 +38,7 @@ class TraderSimulator(Trader):
     def enabled(config):
         return is_trader_simulator_enabled(config)
 
-    def load_previous_state_if_any(self):
+    def _load_previous_state_if_any(self):
         loaded_previous_state = self.previous_state_manager.has_previous_state(self.exchange_manager)
         if not self.previous_state_manager.should_initialize_data() and loaded_previous_state:
             try:

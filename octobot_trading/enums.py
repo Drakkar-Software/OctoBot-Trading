@@ -42,6 +42,8 @@ class TraderOrderType(Enum):
     SELL_MARKET = 5
     SELL_LIMIT = 6
     TRAILING_STOP = 7
+    TAKE_PROFIT = 8
+    TAKE_PROFIT_LIMIT = 9
 
 
 class ExchangeConstantsTickersColumns(Enum):

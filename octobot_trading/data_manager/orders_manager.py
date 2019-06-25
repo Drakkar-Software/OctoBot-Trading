@@ -18,7 +18,7 @@ from collections import OrderedDict
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.data.order import Order
-from octobot_trading.enums import ExchangeConstantsOrderColumns, OrderStatus, TradeOrderType
+from octobot_trading.enums import OrderStatus
 from octobot_trading.util.initializable import Initializable
 
 
@@ -65,6 +65,14 @@ class OrdersManager(Initializable):
             return True
         return False
 
+    def upsert_order_instance(self, order):
+        if order.order_id not in self.orders:
+            self.orders[order.order_id] = order
+            self._check_orders_size()
+        else:
+            # TODO
+            pass
+
     # private methods
     def _reset_orders(self):
         self.orders_initialized = False
@@ -76,30 +84,11 @@ class OrdersManager(Initializable):
 
     def _create_order_from_raw(self, raw_order):
         order = Order(self.trader)
-        order.update(**self._parse_order_from_raw(raw_order))
+        order.update_from_raw(raw_order)
         return order
 
     def _update_order_from_raw(self, order, raw_order):
-        return order.update(**self._parse_order_from_raw(raw_order))
-
-    def _parse_order_from_raw(self, raw_order) -> dict:
-        currency, market = self.exchange_manager.get_exchange_quote_and_base(
-            raw_order[ExchangeConstantsOrderColumns.SYMBOL.value])
-        return {
-            "order_type": TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value]),
-            "symbol": raw_order[ExchangeConstantsOrderColumns.SYMBOL.value],
-            "currency": currency,
-            "market": market,
-            "current_price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],
-            "quantity": raw_order[ExchangeConstantsOrderColumns.AMOUNT.value],
-            "price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],
-            "stop_price": None,
-            "status": OrderStatus(raw_order[ExchangeConstantsOrderColumns.STATUS.value]),
-            "order_notifier": None,
-            "order_id": raw_order[ExchangeConstantsOrderColumns.ID.value],
-            "quantity_filled": raw_order[ExchangeConstantsOrderColumns.FILLED.value],
-            "timestamp": raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value]
-        }
+        return order.update_from_raw(raw_order)
 
     def _select_orders(self, state=None, symbol=None, since=-1, limit=-1):
         orders = [

@@ -31,3 +31,4 @@ cdef class TradesManager(Initializable):
     cdef void _remove_oldest_trades(self, int nb_to_remove)
 
     cpdef bint upsert_trade(self, str trade_id, dict raw_trade)
+    cpdef void upsert_trade_instance(self, Trade trade)

@@ -15,27 +15,30 @@
 #  License along with this library.
 import time
 
+from octobot_trading.enums import ExchangeConstantsPositionColumns
+
 
 class Position:
     def __init__(self, trader):
         self.trader = trader
+        self.exchange_manager = trader.exchange_manager
 
-        # self.position_id = None
-        # self.timestamp = None
-        # self.symbol = None
-        # self.currency, self.market = None, None
-        # self.creation_time = None
-        # self.entry_price = None
-        # self.mark_price = None
-        # self.quantity = None
-        # self.liquidation_price = None
-        # self.unrealised_pnl = None
-        # self.leverage = None
-        # self.is_open = None
+        self.position_id = None
+        self.timestamp = None
+        self.symbol = None
+        self.currency, self.market = None, None
+        self.creation_time = None
+        self.entry_price = None
+        self.mark_price = None
+        self.quantity = None
+        self.liquidation_price = None
+        self.unrealised_pnl = None
+        self.leverage = None
+        self.is_open = None
 
-    def update(self, position_id, symbol, currency, market,
-               timestamp, entry_price, mark_price, quantity,
-               liquidation_price, unrealised_pnl, leverage, is_open):
+    def _update(self, position_id, symbol, currency, market,
+                timestamp, entry_price, mark_price, quantity,
+                liquidation_price, unrealised_pnl, leverage, is_open):
         changed: bool = False
 
         if position_id and self.position_id != position_id:
@@ -80,3 +83,21 @@ class Position:
             changed = True
 
         return changed
+
+    def update_position_from_raw(self, raw_position):
+        currency, market = self.exchange_manager.get_exchange_quote_and_base(
+            raw_position[ExchangeConstantsPositionColumns.SYMBOL.value])
+        return self._update(**{
+            "symbol": self.exchange_manager.get_exchange_symbol(raw_position[ExchangeConstantsPositionColumns.SYMBOL.value]),
+            "currency": currency,
+            "market": market,
+            "entry_price": raw_position[ExchangeConstantsPositionColumns.ENTRY_PRICE.value],
+            "quantity": raw_position[ExchangeConstantsPositionColumns.QUANTITY.value],
+            "liquidation_price": raw_position[ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value],
+            "position_id": None,
+            "timestamp": raw_position[ExchangeConstantsPositionColumns.TIMESTAMP.value],
+            "unrealised_pnl": raw_position[ExchangeConstantsPositionColumns.UNREALISED_PNL.value],
+            "leverage": raw_position[ExchangeConstantsPositionColumns.LEVERAGE.value],
+            "is_open": raw_position[ExchangeConstantsPositionColumns.IS_OPEN.value],
+            "mark_price": raw_position[ExchangeConstantsPositionColumns.MARK_PRICE.value]
+        })

@@ -20,6 +20,7 @@ from octobot_commons.pretty_printer import PrettyPrinter
 from octobot_trading.constants import REAL_TRADER_STR, CONFIG_TRADER_RISK, CONFIG_TRADING, CONFIG_TRADER_RISK_MIN, \
     CONFIG_TRADER_RISK_MAX
 from octobot_trading.data.order import Order
+from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.data.trade import Trade
 from octobot_trading.enums import OrderStatus, ExchangeConstantsOrderColumns, TraderOrderType, TradeOrderType, \
     TradeOrderSide, ExchangeConstantsMarketPropertyColumns
@@ -36,12 +37,10 @@ class Trader(Initializable):
     NO_HISTORY_MESSAGE = "Starting a fresh new trading session using the current portfolio as a profitability " \
                          "reference."
 
-    def __init__(self, config, exchange_manager, order_refresh_time=None, previous_state_manager=None):
+    def __init__(self, config, exchange_manager, previous_state_manager=None):
         super().__init__()
         self.exchange_manager = exchange_manager
         self.config = config
-        self.order_refresh_time = order_refresh_time
-        self.trading_modes = []
 
         self.set_risk(self.config[CONFIG_TRADING][CONFIG_TRADER_RISK])
 
@@ -57,30 +56,19 @@ class Trader(Initializable):
             self.simulate = False
 
         self.is_enabled = self.enabled(self.config)
+        self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange.name}")
+
         self.notifier = None  # TODO
 
     async def initialize_impl(self):
         if self.is_enabled:
             await self.exchange_manager.register_trader(self)
             if self.previous_state_manager is not None:
-                self.load_previous_state_if_any()
+                self._load_previous_state_if_any()
 
-    def load_previous_state_if_any(self):
+    def _load_previous_state_if_any(self):
         # unused for real trader yet
         pass
-
-    async def launch(self):
-        if self.is_enabled:
-            if not self.simulate:
-                await self.update_open_orders()
-                # self.update_close_orders()
-
-                # can receive current orders updates: start using websocket for orders if available
-                self.exchange_personal_data.init_orders()
-
-            self.logger.debug(f"Enabled on {self.exchange_manager.exchange.name}")
-        else:
-            self.logger.debug(f"Disabled on {self.exchange_manager.exchange.name}")
 
     @staticmethod
     def enabled(config):
@@ -132,12 +120,14 @@ class Trader(Initializable):
 
         return order
 
-    async def create_order(self, order, portfolio, loaded=False):
-        linked_order = None
+    async def create_order(self, order, portfolio: Portfolio = None, loaded: bool = False):
+        if portfolio is None:
+            portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
 
-        new_order = order
-        is_to_keep = True
-        is_already_in_history = False
+        linked_order: Order = None
+        new_order: Order = order
+        is_to_keep: bool = True
+        is_already_in_history: bool = False
 
         # if this order is linked to another (ex : a sell limit order with a stop loss order)
         if new_order.linked_to is not None:
@@ -151,19 +141,17 @@ class Trader(Initializable):
             new_order.is_from_this_octobot = False
             title = "Order loaded"
             is_already_in_history = self.exchange_personal_data.trades.is_in_history(new_order)
-            if is_already_in_history or \
-                    (new_order.get_status() != OrderStatus.OPEN and
-                     new_order.get_status() != OrderStatus.PARTIALLY_FILLED):
+            if is_already_in_history or new_order.status not in [OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]:
                 is_to_keep = False
 
-        self.logger.info(f"{title} : {new_order.get_string_info()} "
+        self.logger.info(f"{title} : {new_order.to_string()} "
                          f"{'' if is_to_keep else ': will be archived in trades history if not already'}")
 
         if is_to_keep:
             # notify order manager of a new open order
-            self.exchange_manager.get_exchange_personal_data().orders.add_order_to_list(new_order)
+            self.exchange_manager.exchange_personal_data.handle_order_instance_update(new_order)
         elif not is_already_in_history:
-            self.exchange_personal_data.trades.add_new_trade_in_history(Trade(self.exchange_manager, new_order))
+            self.exchange_manager.exchange_personal_data.handle_trade_instance_update(Trade(new_order))
 
         # if this order is linked to another
         if linked_order is not None:
@@ -172,31 +160,30 @@ class Trader(Initializable):
         return new_order
 
     async def create_artificial_order(self, order_type, symbol, current_price, quantity, price, linked_portfolio):
-        order = self.create_order_instance(order_type=order_type,
-                                           symbol=symbol,
-                                           current_price=current_price,
-                                           quantity=quantity,
-                                           price=price,
-                                           linked_portfolio=linked_portfolio)
-        async with self.exchange_personal_data.portfolio.get_lock():
-            await self.create_order(order, self.exchange_personal_data.portfolio)
+        await self.create_order(self.create_order_instance(order_type=order_type,
+                                                           symbol=symbol,
+                                                           current_price=current_price,
+                                                           quantity=quantity,
+                                                           price=price,
+                                                           linked_portfolio=linked_portfolio))
 
     async def _create_not_loaded_order(self, order: Order, new_order: Order, portfolio) -> Order:
-        if not self.simulate and not self.check_if_self_managed(new_order.order_type):
-            created_order = await self.exchange_manager.create_order(new_order.order_type,
-                                                                     new_order.symbol,
-                                                                     new_order.origin_quantity,
-                                                                     new_order.origin_price,
-                                                                     new_order.origin_stop_price)
+        if not self.simulate and not new_order.is_self_managed():
+            created_order = await self.exchange_manager.exchange.create_order(new_order.order_type,
+                                                                              new_order.symbol,
+                                                                              new_order.origin_quantity,
+                                                                              new_order.origin_price,
+                                                                              new_order.origin_stop_price)
 
-            self.logger.info(f"Created order on {self.exchange_manager.name}: {created_order}")
+            self.logger.info(f"Created order on {self.exchange_manager.exchange.name}: {created_order}")
 
             # get real order from exchange
-            new_order = self.parse_exchange_order_to_order_instance(created_order)
+            new_order = Order(self)
+            new_order.update_from_raw(created_order)
 
             # rebind order notifier and linked portfolio to new order instance
-            new_order.order_notifier = order.order_notifier
-            new_order.order_notifier.set_order(new_order)
+            # new_order.order_notifier = order.order_notifier TODO
+            # new_order.order_notifier.set_order(new_order)
             new_order.linked_portfolio = portfolio
 
         # update the availability of the currency in the portfolio
@@ -210,20 +197,9 @@ class Trader(Initializable):
                 odr = order
                 await odr.cancel_order()
                 self.logger.info(f"{odr.symbol} {odr.get_name()} at {odr.origin_price}"
-                                 f" (ID : {odr.order_id}) cancelled on {self.get_exchange().name}")
+                                 f" (ID : {odr.order_id}) cancelled on {self.exchange_manager.name}")
 
-                self.exchange_manager.get_exchange_personal_data().orders.remove_order_from_list(order)
-
-    async def cancel_orders_using_description(self, order_descriptions):
-        # use a copy of the list (not the reference)
-        orders_list_copy = copy.copy(self.get_open_orders())
-        removed_count = 0
-        for order_desc in order_descriptions:
-            for order in orders_list_copy:
-                if order.matches_description(order_desc):
-                    await self.cancel_order(order)
-                    removed_count += 1
-        return removed_count
+                self.exchange_manager.exchange_personal_data.orders.remove_order_from_list(order)
 
     # Should be called only if we want to cancel all symbol open orders (no filled)
     async def cancel_open_orders(self, symbol, cancel_loaded_orders=True):
@@ -336,7 +312,7 @@ class Trader(Initializable):
             self.exchange_personal_data.trades.add_new_trade_in_history(Trade(self.exchange_manager, order))
 
             # remove order to open_orders
-            self.exchange_manager.get_exchange_personal_data().orders.remove_order_from_list(order)
+            self.exchange_manager.exchange_personal_data.orders.remove_order_from_list(order)
 
         profitability_activated = order_closed is not None
 
@@ -351,19 +327,6 @@ class Trader(Initializable):
                                        profitability_percent,
                                        profitability_diff,
                                        profitability_activated)
-
-    def get_reference_market(self):
-        return self.get_trades_manager().get_reference()
-
-    def get_open_orders(self, symbol=None):
-        if symbol is None:
-            return self.exchange_manager.get_exchange_personal_data().orders.get_open_orders()
-        else:
-            return [o for o in self.exchange_manager.get_exchange_personal_data().orders.get_open_orders() if
-                    o.get_order_symbol() == symbol]
-
-    def get_recently_closed_orders(self, symbol):
-        return [o for o in self.order_manager.get_recently_closed_orders() if o.get_order_symbol() == symbol]
 
     def update_close_orders(self):
         for symbol in self.exchange_manager.get_exchange_manager().get_traded_pairs():
@@ -381,7 +344,7 @@ class Trader(Initializable):
             orders = await self.exchange_manager.get_open_orders(symbol=symbol_traded, force_rest=True)
             for open_order in orders:
                 order = self.parse_exchange_order_to_order_instance(open_order)
-                if self.exchange_manager.get_exchange_personal_data().orders.should_add_order(order):
+                if self.exchange_manager.exchange_personal_data.orders.should_add_order(order):
                     async with self.exchange_personal_data.portfolio.get_lock():
                         await self.create_order(order, self.exchange_personal_data.portfolio, True)
 
@@ -414,7 +377,7 @@ class Trader(Initializable):
                 # create missing orders
                 for open_order in orders:
                     # do something only if order not already in list
-                    if not self.exchange_manager.get_exchange_personal_data().orders.has_order(open_order["id"]):
+                    if not self.exchange_manager.exchange_personal_data.orders.has_order(open_order["id"]):
                         order = self.parse_exchange_order_to_order_instance(open_order)
                         if portfolio:
                             await self.create_order(order, portfolio, True)
@@ -426,25 +389,14 @@ class Trader(Initializable):
                 if delete_desync_orders:
                     # remove orders that are not online anymore
                     order_ids = [o["id"] for o in orders]
-                    for symbol_order in self.exchange_manager.get_exchange_personal_data().orders.get_orders_with_symbol(
+                    for symbol_order in self.exchange_manager.exchange_personal_data.orders.get_orders_with_symbol(
                             symbol_traded):
                         if symbol_order.order_id not in order_ids:
                             # remove order from order manager
-                            self.exchange_manager.get_exchange_personal_data().orders.remove_order_from_list(
+                            self.exchange_manager.exchange_personal_data.orders.remove_order_from_list(
                                 symbol_order)
                             removed_orders += 1
             self.logger.info(f"Orders refreshed: added {added_orders} order(s) and removed {removed_orders} order(s)")
-
-    def parse_exchange_order_to_order_instance(self, order):
-        return self.create_order_instance(order_type=self.parse_order_type(order),
-                                          symbol=order["symbol"],
-                                          current_price=0,
-                                          quantity=order["amount"],
-                                          quantity_filled=order["filled"],
-                                          order_id=order["id"],
-                                          status=self.parse_status(order),
-                                          price=order["price"],
-                                          timestamp=order["timestamp"])
 
     @staticmethod
     def update_order_with_exchange_order(exchange_order, order):
@@ -460,71 +412,3 @@ class Trader(Initializable):
             order.fee = order.get_computed_fee()
         order.executed_time = order.trader.exchange.get_uniform_timestamp(
             exchange_order[ExchangeConstantsOrderColumns.TIMESTAMP.value])
-
-    @staticmethod
-    def _parse_type(exchange_order):
-        if ExchangeConstantsOrderColumns.TYPE.value in exchange_order:
-            order_type = exchange_order[ExchangeConstantsOrderColumns.TYPE.value]
-            if order_type == ExchangeConstantsOrderColumns.MAKER:
-                return ExchangeConstantsMarketPropertyColumns.MAKER.value
-            else:
-                return ExchangeConstantsMarketPropertyColumns.TAKER.value
-
-    def parse_exchange_order_to_trade_instance(self, exchange_order, order):
-        self.update_order_with_exchange_order(exchange_order, order)
-
-    @staticmethod
-    def parse_status(order):
-        return OrderStatus(order["status"])
-
-    @staticmethod
-    def parse_order_type(order):
-        side = TradeOrderSide(order["side"])
-        order_type = TradeOrderType(order["type"])
-        if side == TradeOrderSide.BUY:
-            if order_type == TradeOrderType.LIMIT:
-                return TraderOrderType.BUY_LIMIT
-            elif order_type == TradeOrderType.MARKET:
-                return TraderOrderType.BUY_MARKET
-        elif side == TradeOrderSide.SELL:
-            if order_type == TradeOrderType.LIMIT:
-                return TraderOrderType.SELL_LIMIT
-            elif order_type == TradeOrderType.MARKET:
-                return TraderOrderType.SELL_MARKET
-
-    def register_trading_mode(self, trading_mode):
-        self.trading_modes.append(trading_mode)
-
-    async def call_order_update_callback(self, order):
-        for trading_mode in self.trading_modes:
-            await trading_mode.order_update_callback(order)
-
-    def get_order_manager(self):
-        # TODO REMOVE
-        # return self.order_manager
-        pass
-
-    def get_trades_manager(self):
-        return self.exchange_personal_data.trades
-
-    def get_simulate(self):
-        return self.simulate
-
-    def get_portfolio(self):
-        return self.exchange_personal_data.portfolio
-
-    def get_previous_state_manager(self):
-        return self.previous_state_manager
-
-    def get_loaded_previous_state(self):
-        return self.loaded_previous_state
-
-    @staticmethod
-    def check_if_self_managed(order_type):
-        # stop losses and take profits are self managed by the bot
-        if order_type in [TraderOrderType.TAKE_PROFIT,
-                          TraderOrderType.TAKE_PROFIT_LIMIT,
-                          TraderOrderType.STOP_LOSS,
-                          TraderOrderType.STOP_LOSS_LIMIT]:
-            return True
-        return False

@@ -25,6 +25,8 @@ from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDE
     KLINE_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING
+from octobot_trading.data.order import Order
+from octobot_trading.enums import TraderOrderType
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.traders.trader import Trader
 
@@ -94,7 +96,8 @@ async def order_book_callback(exchange, symbol, asks, bids):
 
 
 async def ohlcv_callback(exchange, symbol, time_frame, candle):
-    logging.info(f"OHLCV : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
+    logging.info(
+        f"OHLCV : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
 
 
 async def recent_trades_callback(exchange, symbol, recent_trades):
@@ -147,14 +150,25 @@ async def handle_new_exchange(exchange_name, sandboxed=False):
     ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_name).new_consumer(positions_callback)
     ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_name).new_consumer(orders_callback)
 
+    return exchange
+
 
 async def main():
     fileConfig("logs/logging_config.ini")
     logging.info("starting...")
 
-    # await handle_new_exchange("bitmex", sandboxed=True)
-    await handle_new_exchange("binance")
+    bitmex = await handle_new_exchange("bitmex", sandboxed=True)
+    # await handle_new_exchange("binance")
     # await handle_new_exchange("coinbasepro")
+
+    await asyncio.sleep(3)
+
+    limit_buy = bitmex.trader.create_order_instance(order_type=TraderOrderType.BUY_LIMIT,
+                                                    symbol="BTC/USD",
+                                                    quantity=1,
+                                                    current_price=11000,
+                                                    price=1000)
+    await bitmex.trader.create_order(limit_buy)
 
     await asyncio.sleep(10000)
 

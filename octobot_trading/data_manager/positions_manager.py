@@ -18,7 +18,6 @@ from collections import OrderedDict
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.data.position import Position
-from octobot_trading.enums import ExchangeConstantsPositionColumns
 from octobot_trading.util.initializable import Initializable
 
 
@@ -57,29 +56,11 @@ class PositionsManager(Initializable):
 
     def _create_position_from_raw(self, raw_position):
         position = Position(self.trader)
-        position.update(**self._parse_position_from_raw(raw_position))
+        position.update_position_from_raw(raw_position)
         return position
 
     def _update_position_from_raw(self, position, raw_position):
-        return position.update(**self._parse_position_from_raw(raw_position))
-
-    def _parse_position_from_raw(self, raw_position) -> dict:
-        currency, market = self.exchange_manager.get_exchange_quote_and_base(
-            raw_position[ExchangeConstantsPositionColumns.SYMBOL.value])
-        return {
-            "symbol": self.exchange_manager.get_exchange_symbol(raw_position[ExchangeConstantsPositionColumns.SYMBOL.value]),
-            "currency": currency,
-            "market": market,
-            "entry_price": raw_position[ExchangeConstantsPositionColumns.ENTRY_PRICE.value],
-            "quantity": raw_position[ExchangeConstantsPositionColumns.QUANTITY.value],
-            "liquidation_price": raw_position[ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value],
-            "position_id": None,
-            "timestamp": raw_position[ExchangeConstantsPositionColumns.TIMESTAMP.value],
-            "unrealised_pnl": raw_position[ExchangeConstantsPositionColumns.UNREALISED_PNL.value],
-            "leverage": raw_position[ExchangeConstantsPositionColumns.LEVERAGE.value],
-            "is_open": raw_position[ExchangeConstantsPositionColumns.IS_OPEN.value],
-            "mark_price": raw_position[ExchangeConstantsPositionColumns.MARK_PRICE.value]
-        }
+        return position.update_position_from_raw(raw_position)
 
     def _select_positions(self, is_open=True, symbol=None, since=-1, limit=-1):
         positions = [

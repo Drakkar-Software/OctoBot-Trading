@@ -19,10 +19,13 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+from octobot_trading.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 cdef class Position(Initializable):
-    cdef public object trader
+    cdef Trader trader
+    cdef ExchangeManager exchange_manager
 
     cdef public bint is_open
 
@@ -58,3 +61,4 @@ cdef class Position(Initializable):
     #                   float unrealised_pnl,
     #                   int leverage,
     #                   bint is_open)
+    cpdef bint update_position_from_raw(self, Position position, dict raw_position)

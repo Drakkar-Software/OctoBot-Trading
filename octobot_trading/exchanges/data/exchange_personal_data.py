@@ -63,6 +63,13 @@ class ExchangePersonalData(Initializable):
             self.logger.exception(f"Failed to update order : {e}")
             return False
 
+    def handle_order_instance_update(self, order):
+        try:
+            return self.orders_manager.upsert_order_instance(order)
+        except Exception as e:
+            self.logger.exception(f"Failed to update order instance : {e}")
+            return False
+
     def handle_closed_order_update(self, order_id, order) -> bool:
         try:
             return self.orders_manager.upsert_order_close(order_id, order)
@@ -77,11 +84,25 @@ class ExchangePersonalData(Initializable):
             self.logger.exception(f"Failed to update trade : {e}")
             return False
 
+    def handle_trade_instance_update(self, trade):
+        try:
+            return self.trades_manager.upsert_trade_instance(trade)
+        except Exception as e:
+            self.logger.exception(f"Failed to update trade instance : {e}")
+            return False
+
     def handle_position_update(self, position_id, position):
         try:
             return self.positions_manager.upsert_position(position_id, position)
         except Exception as e:
             self.logger.exception(f"Failed to update position : {e}")
+            return False
+
+    def handle_position_instance_update(self, position):
+        try:
+            return self.positions_manager.upsert_position_instance(position)
+        except Exception as e:
+            self.logger.exception(f"Failed to update position instance : {e}")
             return False
 
     def get_order_portfolio(self, order):

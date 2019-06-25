@@ -43,6 +43,11 @@ class TradesManager(Initializable):
             return True
         return False
 
+    def upsert_trade_instance(self, trade):
+        if trade.order_id not in self.trades:
+            self.trades[trade.order_id] = trade
+            self._check_trades_size()
+
     # private
     def _check_trades_size(self):
         if len(self.trades) > self.MAX_TRADES_COUNT:

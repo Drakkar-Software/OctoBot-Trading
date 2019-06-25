@@ -14,6 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.data.order cimport Order
+from octobot_trading.data.position cimport Position
+from octobot_trading.data.trade cimport Trade
 from octobot_trading.data_manager.orders_manager cimport OrdersManager
 from octobot_trading.data_manager.portfolio_manager cimport PortfolioManager
 from octobot_trading.data_manager.positions_manager cimport PositionsManager
@@ -38,5 +41,8 @@ cdef class ExchangePersonalData(Initializable):
 
     cpdef bint handle_portfolio_update(self, dict balance)
     cpdef tuple handle_order_update(self, str order_id, dict order)
+    cpdef void handle_order_instance_update(self, Order order)
     cpdef bint handle_trade_update(self, str trade_id, dict trade)
+    cpdef void handle_trade_instance_update(self, Trade trade)
     cpdef tuple handle_position_update(self, position_id, position)
+    cpdef void handle_position_instance_update(self, Position position)

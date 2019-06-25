@@ -35,7 +35,6 @@ cdef class PositionsManager(Initializable):
     cdef void _reset_positions(self)
     cdef void _check_positions_size(self)
     cdef Position _create_position_from_raw(self, dict raw_position)
-    cdef bint _update_position_from_raw(self, Position position, dict raw_position)
     cdef void _remove_oldest_positions(self, int nb_to_remove)
     cdef list _select_positions(self, bint is_open=*, str symbol=*, int since=*, int limit=*)
 

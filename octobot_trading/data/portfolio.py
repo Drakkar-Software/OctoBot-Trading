@@ -88,29 +88,29 @@ class Portfolio(Initializable):
         currency, market = order.get_currency_and_market()
 
         # update currency
-        if order.get_side() == TradeOrderSide.BUY:
-            new_quantity = order.get_filled_quantity() - order.get_total_fees(currency)
+        if order.side == TradeOrderSide.BUY:
+            new_quantity = order.filled_quantity - order.get_total_fees(currency)
             self._update_portfolio_data(currency, new_quantity, True, True)
         else:
-            new_quantity = -order.get_filled_quantity()
+            new_quantity = -order.filled_quantity
             self._update_portfolio_data(currency, new_quantity, True, False)
 
         # update market
-        if order.get_side() == TradeOrderSide.BUY:
-            new_quantity = -(order.get_filled_quantity() * order.get_filled_price())
+        if order.side == TradeOrderSide.BUY:
+            new_quantity = -(order.filled_quantity * order.filled_price)
             self._update_portfolio_data(market, new_quantity, True, False)
         else:
-            new_quantity = (order.get_filled_quantity() * order.get_filled_price()) - order.get_total_fees(market)
+            new_quantity = (order.filled_quantity * order.filled_price) - order.get_total_fees(market)
             self._update_portfolio_data(market, new_quantity, True, True)
 
         # Only for log purpose
-        if order.get_side() == TradeOrderSide.BUY:
-            currency_portfolio_num = order.get_filled_quantity() - order.get_total_fees(currency)
-            market_portfolio_num = -order.get_filled_quantity() * order.get_filled_price()
+        if order.side == TradeOrderSide.BUY:
+            currency_portfolio_num = order.filled_quantity - order.get_total_fees(currency)
+            market_portfolio_num = -order.filled_quantity * order.filled_price
         else:
-            currency_portfolio_num = -order.get_filled_quantity()
+            currency_portfolio_num = -order.filled_quantity
             market_portfolio_num = \
-                order.get_filled_quantity() * order.get_filled_price() - order.get_total_fees(market)
+                order.filled_quantity * order.filled_price - order.get_total_fees(market)
 
         self.logger.info(f"Portfolio updated | {currency} {currency_portfolio_num} | {market} "
                          f"{market_portfolio_num} | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
@@ -136,13 +136,13 @@ class Portfolio(Initializable):
         currency, market = order.get_currency_and_market()
 
         # when buy order
-        if order.get_side() == TradeOrderSide.BUY:
-            new_quantity = - order.get_origin_quantity() * order.get_origin_price() * factor
+        if order.side == TradeOrderSide.BUY:
+            new_quantity = - order.origin_quantity * order.origin_price * factor
             self._update_portfolio_data(market, new_quantity, False, True)
 
         # when sell order
         else:
-            new_quantity = - order.get_origin_quantity() * factor
+            new_quantity = - order.origin_quantity * factor
             self._update_portfolio_data(currency, new_quantity, False, True)
 
     # Resets available amount with total amount CAREFUL: if no currency is give, resets all the portfolio !
