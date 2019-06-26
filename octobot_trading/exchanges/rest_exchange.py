@@ -195,13 +195,12 @@ class RestExchange(AbstractExchange):
 
     async def cancel_order(self, order_id, symbol=None):
         try:
-            await self.client.cancel_order(order_id, symbol=symbol)
-            return True
+            return await self.client.cancel_order(order_id, symbol=symbol)
         except OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
         except Exception as e:
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
-        return False
+        return None
 
     async def create_order(self, order_type, symbol, quantity, price=None, stop_price=None):
         try:
@@ -221,10 +220,10 @@ class RestExchange(AbstractExchange):
 
         except InsufficientFunds as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
-            raise e
+            self.logger.warning(e)
         except Exception as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.exception(e)
+            self.logger.error(e)
         return None
 
     # todo { 'type': 'trailing-stop' }

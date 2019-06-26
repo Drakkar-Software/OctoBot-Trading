@@ -27,6 +27,7 @@ class PositionsProducer(Producer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
+        self.channel = channel
 
     async def push(self, positions, is_from_bot=True):
         await self.perform(positions, is_from_bot=is_from_bot)
@@ -40,8 +41,8 @@ class PositionsProducer(Producer):
                     if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
                         position_id: str = position[ExchangeConstantsOrderColumns.ID.value]
 
-                        changed, is_closed, is_updated = self.channel.exchange_manager.exchange_personal_data \
-                            .handle_position_update(position_id, position)
+                        changed, is_closed, is_updated = await self.channel.exchange_manager.exchange_personal_data \
+                            .handle_position_update(symbol, position_id, position, should_notify=False)
 
                         if changed:
                             await self.send(symbol, position, is_closed, is_updated, is_from_bot)
@@ -65,4 +66,4 @@ class PositionsProducer(Producer):
 
 
 class PositionsChannel(ExchangeChannel):
-    pass
+    PRODUCER_CLASS = PositionsProducer

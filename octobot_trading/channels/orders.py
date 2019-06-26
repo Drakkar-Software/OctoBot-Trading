@@ -27,6 +27,7 @@ class OrdersProducer(Producer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
+        self.channel = channel
 
     async def push(self, orders, is_closed=False, is_from_bot=True):
         await self.perform(orders, is_closed=is_closed, is_from_bot=is_from_bot)
@@ -40,13 +41,17 @@ class OrdersProducer(Producer):
                     order_id: str = order[ExchangeConstantsOrderColumns.ID.value]
                     is_updated: bool = False
                     if is_closed:
-                        changed = self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(
+                        changed = await self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(
+                            symbol,
                             order_id,
-                            order)
+                            order,
+                            should_notify=False)
                     else:
-                        changed, is_updated = self.channel.exchange_manager.exchange_personal_data.handle_order_update(
+                        changed, is_updated = await self.channel.exchange_manager.exchange_personal_data.handle_order_update(
+                            symbol,
                             order_id,
-                            order)
+                            order,
+                            should_notify=False)
 
                     if changed:
                         await self.send(symbol, order, is_from_bot, is_closed, is_updated)
@@ -70,4 +75,4 @@ class OrdersProducer(Producer):
 
 
 class OrdersChannel(ExchangeChannel):
-    pass
+    PRODUCER_CLASS = OrdersProducer

@@ -25,7 +25,6 @@ from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDE
     KLINE_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING
-from octobot_trading.data.order import Order
 from octobot_trading.enums import TraderOrderType
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.traders.trader import Trader
@@ -36,6 +35,11 @@ config = {
             "pairs": [
                 "BTC/USD",
                 "BTC/USDT"
+            ]
+        },
+        "Ethereum": {
+            "pairs": [
+                "ETH/USDT"
             ]
         },
         "Litecoin": {
@@ -158,17 +162,18 @@ async def main():
     logging.info("starting...")
 
     bitmex = await handle_new_exchange("bitmex", sandboxed=True)
-    # await handle_new_exchange("binance")
-    # await handle_new_exchange("coinbasepro")
+    # binance = await handle_new_exchange("binance")
+    # coinbase = await handle_new_exchange("coinbasepro")
 
     await asyncio.sleep(3)
 
     limit_buy = bitmex.trader.create_order_instance(order_type=TraderOrderType.BUY_LIMIT,
                                                     symbol="BTC/USD",
-                                                    quantity=1,
-                                                    current_price=11000,
-                                                    price=1000)
-    await bitmex.trader.create_order(limit_buy)
+                                                    quantity=20,
+                                                    current_price=12000,
+                                                    price=10000)
+    order = await bitmex.trader.create_order(limit_buy)
+    await bitmex.trader.cancel_order(order)
 
     await asyncio.sleep(10000)
 

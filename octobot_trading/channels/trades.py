@@ -27,6 +27,7 @@ class TradesProducer(Producer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
+        self.channel = channel
 
     async def push(self, trades, old_trade=False):
         await self.perform(trades, old_trade=old_trade)
@@ -39,9 +40,11 @@ class TradesProducer(Producer):
                 if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
                     trade_id: str = trade[ExchangeConstantsOrderColumns.ID.value]
 
-                    added: bool = self.channel.exchange_manager.exchange_personal_data.handle_trade_update(
+                    added: bool = await self.channel.exchange_manager.exchange_personal_data.handle_trade_update(
+                        symbol,
                         trade_id,
-                        trade)
+                        trade,
+                        should_notify=False)
 
                     if added:
                         await self.send(symbol, trade, old_trade)
@@ -63,4 +66,4 @@ class TradesProducer(Producer):
 
 
 class TradesChannel(ExchangeChannel):
-    pass
+    PRODUCER_CLASS = TradesProducer

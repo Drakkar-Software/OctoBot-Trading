@@ -29,13 +29,15 @@ class BalanceProducer(Producer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
+        self.channel = channel
 
     async def push(self, balance, is_delta=False):
         await self.perform(balance, is_delta=is_delta)
 
     async def perform(self, balance, is_delta=False):
         try:
-            changed = await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update(balance)
+            changed = await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update(balance,
+                                                                                                         should_notify=False)
             if changed:
                 await self.send(balance)
         except CancelledError:
@@ -53,4 +55,4 @@ class BalanceProducer(Producer):
 
 
 class BalanceChannel(ExchangeChannel):
-    pass
+    PRODUCER_CLASS = BalanceProducer

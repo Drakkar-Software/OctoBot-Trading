@@ -82,7 +82,7 @@ class OrdersUpdaterSimulator(OrdersUpdater):
             order_filled = False
             try:
                 # ask orders to update their status
-                async with order.get_lock():
+                async with order.lock:
                     order_filled = await self._update_order_status(order,
                                                                    failed_order_updates,
                                                                    last_prices,

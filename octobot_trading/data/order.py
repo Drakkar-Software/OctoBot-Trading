@@ -59,14 +59,15 @@ class Order:
         self.fee = None
         self.filled_price = None
         self.order_profitability = None
+        self.total_cost = None
 
     @classmethod
     def get_name(cls):
         return cls.__name__
 
-    def update(self, symbol, current_price, quantity, price, stop_price, status,
-               order_notifier, order_id, quantity_filled,
-               timestamp=None, linked_to=None, linked_portfolio=None, order_type=None):
+    def update(self, symbol: str, current_price: float, quantity: float, price: float, stop_price: float,
+               status: OrderStatus, order_notifier: object, order_id: str, quantity_filled: float, filled_price: float,
+               fee: dict, total_cost: float, timestamp=None, linked_to=None, linked_portfolio=None, order_type=None):
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -99,6 +100,9 @@ class Order:
             self.origin_price = price
             changed = True
 
+        if fee is None and self.fee != fee:
+            self.fee = self.get_computed_fee()
+
         if current_price and self.created_last_price != current_price:
             self.created_last_price = current_price
             changed = True
@@ -110,6 +114,12 @@ class Order:
         if stop_price and self.origin_stop_price != stop_price:
             self.origin_stop_price = stop_price
             changed = True
+
+        if total_cost and self.total_cost != total_cost:
+            self.total_cost = total_cost
+
+        if filled_price and self.filled_price != filled_price:
+            self.filled_price = filled_price
 
         if self.trader.simulate:
             if quantity and self.filled_quantity != quantity:
@@ -128,6 +138,9 @@ class Order:
 
         if order_type:
             self.order_type = order_type
+
+        if not self.filled_price and self.filled_quantity and self.total_cost:
+            self.filled_price = self.total_cost / self.filled_quantity
 
         return changed
 
@@ -164,11 +177,14 @@ class Order:
         self.status = OrderStatus.CANCELED
         self.canceled_time = time.time()
 
+        cancelled_order = None
+
         # if real order
-        if not self.trader.simulate and not self.trader.check_if_self_managed(self.order_type):
-            await self.exchange_manager.exchange.cancel_order(self.order_id, self.symbol)
+        if not self.trader.simulate and not self.is_self_managed():
+            cancelled_order = await self.exchange_manager.exchange.cancel_order(self.order_id, self.symbol)
 
         await self.trader.notify_order_cancel(self)
+        return cancelled_order
 
     async def cancel_from_exchange(self):
         self.status = OrderStatus.CANCELED
@@ -255,6 +271,9 @@ class Order:
             "order_notifier": None,
             "order_id": raw_order[ExchangeConstantsOrderColumns.ID.value],
             "quantity_filled": raw_order[ExchangeConstantsOrderColumns.FILLED.value],
+            "filled_price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],
+            "total_cost": raw_order[ExchangeConstantsOrderColumns.COST.value],
+            "fee": raw_order[ExchangeConstantsOrderColumns.FEE.value],
             "timestamp": raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value]
         })
 
