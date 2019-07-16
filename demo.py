@@ -28,23 +28,18 @@ from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TR
 from octobot_trading.enums import TraderOrderType
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.traders.trader import Trader
+from octobot_trading.traders.trader_simulator import TraderSimulator
 
 config = {
     "crypto-currencies": {
         "Bitcoin": {
             "pairs": [
-                "BTC/USD",
                 "BTC/USDT"
             ]
         },
         "Ethereum": {
             "pairs": [
                 "ETH/USDT"
-            ]
-        },
-        "Litecoin": {
-            "pairs": [
-                "LTCM19"
             ]
         }
     },
@@ -131,12 +126,17 @@ async def positions_callback(exchange, symbol, position, is_closed, is_updated, 
 
 
 async def handle_new_exchange(exchange_name, sandboxed=False):
-    exchange = ExchangeManager(config, exchange_name, is_simulated=True, is_backtesting=False, rest_only=True)
+    simulation = True
+
+    exchange = ExchangeManager(config, exchange_name, is_simulated=simulation, is_backtesting=False, rest_only=True)
     await exchange.initialize()
 
     # print(dir(ccxt.bitmex()))
 
-    trader = Trader(config, exchange)
+    if simulation:
+        trader = TraderSimulator(config, exchange)
+    else:
+        trader = Trader(config, exchange)
     await trader.initialize()
 
     # set sandbox mode

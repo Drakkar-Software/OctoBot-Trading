@@ -31,4 +31,3 @@ cdef class PortfolioManager(Initializable):
     cdef public Portfolio portfolio
 
     cdef void _reset_portfolio(self)
-    cdef void _set_starting_simulated_portfolio(self)

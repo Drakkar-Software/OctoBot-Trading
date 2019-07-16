@@ -48,12 +48,12 @@ class PortfolioManager(Initializable):
     async def _load_portfolio(self):
         if self.trader.enabled:
             if self.trader.simulate:
-                self._set_starting_simulated_portfolio()
+                await self._set_starting_simulated_portfolio()
             self.logger.info(f"{CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
 
-    def _set_starting_simulated_portfolio(self):
+    async def _set_starting_simulated_portfolio(self):
         # should only be called in trading simulation
-        if self.trader.get_loaded_previous_state():  # TODO
+        if self.trader.loaded_previous_state:  # TODO
             # load portfolio from previous execution
             portfolio_amount_dict = self.trader.get_previous_state_manager().get_previous_state(
                 self.trader.get_exchange(),
@@ -63,10 +63,10 @@ class PortfolioManager(Initializable):
             # load new portfolio from config settings
             portfolio_amount_dict = self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]
         try:
-            self.handle_balance_update(Portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
+            await self.handle_balance_update(Portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
         except Exception as e:
             self.logger.warning(f"Error when loading trading history, will reset history. ({e})")
             self.logger.exception(e)
             self.trader.get_previous_state_manager.reset_trading_history()
-            self.handle_balance_update(Portfolio.get_portfolio_from_amount_dict(
+            await self.handle_balance_update(Portfolio.get_portfolio_from_amount_dict(
                 self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]))

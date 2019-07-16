@@ -46,7 +46,9 @@ class Portfolio(Initializable):
     async def update_portfolio_from_balance(self, balance) -> bool:
         if balance == self.portfolio:
             return False
-        self.portfolio = {currency: {PORTFOLIO_AVAILABLE: balance[currency][CONFIG_PORTFOLIO_FREE],
+        self.portfolio = {currency: {PORTFOLIO_AVAILABLE: [CONFIG_PORTFOLIO_FREE]
+                                     if CONFIG_PORTFOLIO_FREE in balance[currency]
+                                     else balance[currency][PORTFOLIO_AVAILABLE],
                                      PORTFOLIO_TOTAL: balance[currency][CONFIG_PORTFOLIO_TOTAL]}
                           for currency in balance}
         self.logger.info(f"Portfolio updated | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")

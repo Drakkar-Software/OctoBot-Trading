@@ -28,9 +28,9 @@ class TraderSimulator(Trader):
     NO_HISTORY_MESSAGE = "Starting a fresh new trading simulation session using trader simulator initial portfolio " \
                          "in configuration."
 
-    def __init__(self, config, exchange_manager, order_refresh_time=None, previous_state_manager=None):
+    def __init__(self, config, exchange_manager, previous_state_manager=None):
         self.simulate = True
-        super().__init__(config, exchange_manager, order_refresh_time, previous_state_manager)
+        super().__init__(config, exchange_manager, previous_state_manager)
 
         self.trader_type_str = SIMULATOR_TRADER_STR
 

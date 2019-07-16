@@ -159,10 +159,16 @@ class ExchangeManager(Initializable):
 
         # Simulated producers
         if not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting:
-            await BalanceUpdaterSimulator(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+            # Not required
+            # await BalanceUpdaterSimulator(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+
             await CloseOrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
             await OpenOrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-            await TradesUpdaterSimulator(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
+
+            # Not required
+            # await TradesUpdaterSimulator(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
+
+            # TODO
             await PositionsUpdaterSimulator(ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
         if self.is_backtesting:
