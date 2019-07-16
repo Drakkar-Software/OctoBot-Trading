@@ -13,3 +13,25 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+exchanges = {}
+config = {}
+should_display_callbacks_logs = False
+
+
+def set_should_display_callbacks_logs(display_callbacks_logs):
+    global should_display_callbacks_logs
+    should_display_callbacks_logs = display_callbacks_logs
+
+
+def get_should_display_callbacks_logs():
+    return should_display_callbacks_logs
+
+
+def set_config(cli_config):
+    global config
+    config = cli_config
+
+
+def get_config():
+    return config

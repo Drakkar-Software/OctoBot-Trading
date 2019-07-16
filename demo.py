@@ -21,6 +21,9 @@ from logging.config import fileConfig
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME
 from octobot_commons.enums import TimeFrames
 
+import cli
+from cli.cli_app import app
+from cli.cli_tools import handle_new_exchange
 from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, OHLCV_CHANNEL, \
     KLINE_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
@@ -86,83 +89,9 @@ config = {
 }
 
 
-async def ticker_callback(exchange, symbol, ticker):
-    logging.info(f"TICKER : EXCHANGE = {exchange} || SYMBOL = {symbol} || TICKER = {ticker}")
-
-
-async def order_book_callback(exchange, symbol, asks, bids):
-    logging.info(f"ORDERBOOK : EXCHANGE = {exchange} || SYMBOL = {symbol} || ASKS = {asks} || BIDS = {bids}")
-
-
-async def ohlcv_callback(exchange, symbol, time_frame, candle):
-    logging.info(
-        f"OHLCV : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
-
-
-async def recent_trades_callback(exchange, symbol, recent_trades):
-    logging.info(f"RECENT TRADE : EXCHANGE = {exchange} || SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
-
-
-async def kline_callback(exchange, symbol, time_frame, kline):
-    logging.info(f"KLINE : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || KLINE = {kline}")
-
-
-async def balance_callback(exchange, balance):
-    logging.info(f"BALANCE : EXCHANGE = {exchange} || BALANCE = {balance}")
-
-
-async def trades_callback(exchange, symbol, trade):
-    logging.info(f"TRADES : EXCHANGE = {exchange} || SYMBOL = {symbol} || TRADE = {trade}")
-
-
-async def orders_callback(exchange, symbol, order, is_closed, is_updated, is_from_bot):
-    logging.info(f"ORDERS : EXCHANGE = {exchange} || SYMBOL = {symbol} || ORDER = {order} "
-                 f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
-
-
-async def positions_callback(exchange, symbol, position, is_closed, is_updated, is_from_bot):
-    logging.info(f"POSITIONS : EXCHANGE = {exchange} || SYMBOL = {symbol} || POSITIONS = {position}"
-                 f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
-
-
-async def handle_new_exchange(exchange_name, sandboxed=False):
-    simulation = True
-
-    exchange = ExchangeManager(config, exchange_name, is_simulated=simulation, is_backtesting=False, rest_only=True)
-    await exchange.initialize()
-
-    # print(dir(ccxt.bitmex()))
-
-    if simulation:
-        trader = TraderSimulator(config, exchange)
-    else:
-        trader = Trader(config, exchange)
-    await trader.initialize()
-
-    # set sandbox mode
-    exchange.exchange.client.setSandboxMode(sandboxed)
-
-    # consumers
-    ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_name).new_consumer(ticker_callback)
-    ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_name).new_consumer(recent_trades_callback)
-    ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_name).new_consumer(order_book_callback)
-    ExchangeChannels.get_chan(KLINE_CHANNEL, exchange_name).new_consumer(kline_callback)
-    ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_name).new_consumer(ohlcv_callback)
-
-    ExchangeChannels.get_chan(BALANCE_CHANNEL, exchange_name).new_consumer(balance_callback)
-    ExchangeChannels.get_chan(TRADES_CHANNEL, exchange_name).new_consumer(trades_callback)
-    ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_name).new_consumer(positions_callback)
-    ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_name).new_consumer(orders_callback)
-
-    return exchange
-
-
 async def main():
-    fileConfig("logs/logging_config.ini")
-    logging.info("starting...")
-
     # bitmex = await handle_new_exchange("bitmex", sandboxed=True)
-    binance = await handle_new_exchange("binance")
+    binance = await handle_new_exchange(config, "binance")
     # coinbase = await handle_new_exchange("coinbasepro")
 
     await asyncio.sleep(3)
@@ -177,9 +106,11 @@ async def main():
 
     await asyncio.sleep(30)
 
-
 if __name__ == '__main__':
+    fileConfig("logs/logging_config.ini")
+    logging.info("starting...")
+
+    print("** Welcome to OctoBot-Trading command line interface **")
     asyncio.new_event_loop()
-    asyncio.get_event_loop().run_until_complete(main())
-
-
+    cli.set_config(config)
+    app()
