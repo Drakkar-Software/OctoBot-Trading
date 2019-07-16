@@ -73,19 +73,11 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.orders_manager.upsert_order(order_id, order)
             if should_notify:
                 await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(symbol,
-                          order,
-                          is_from_bot=True,
-                          is_closed=False,
-                          is_updated=changed,
-                          is_wildcard=False)
-                await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(order.symbol,
-                          order,
-                          is_from_bot=True,
-                          is_closed=False,
-                          is_updated=changed,
-                          is_wildcard=True)
+                    .send_with_wildcard(symbol=symbol,
+                                        order=order,
+                                        is_from_bot=True,
+                                        is_closed=False,
+                                        is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update order : {e}")
@@ -95,20 +87,12 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.orders_manager.upsert_order_instance(order)
             if should_notify:
-                await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name).get_global_producer()\
-                    .send(order.symbol,
-                          order,
-                          is_from_bot=True,
-                          is_closed=False,
-                          is_updated=changed,
-                          is_wildcard=False)
                 await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(order.symbol,
-                          order,
-                          is_from_bot=True,
-                          is_closed=False,
-                          is_updated=changed,
-                          is_wildcard=True)
+                    .send_with_wildcard(symbol=order.symbol,
+                                        order=order,
+                                        is_from_bot=True,
+                                        is_closed=False,
+                                        is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update order instance : {e}")
@@ -119,19 +103,11 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.orders_manager.upsert_order_close(order_id, order)
             if should_notify:
                 await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(symbol,
-                          order,
-                          is_from_bot=True,
-                          is_closed=True,
-                          is_updated=changed,
-                          is_wildcard=False)
-                await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(symbol,
-                          order,
-                          is_from_bot=True,
-                          is_closed=True,
-                          is_updated=changed,
-                          is_wildcard=True)
+                    .send_with_wildcard(symbol=symbol,
+                                        order=order,
+                                        is_from_bot=True,
+                                        is_closed=True,
+                                        is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update order : {e}")
@@ -142,15 +118,9 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.trades_manager.upsert_trade(trade_id, trade)
             if should_notify:
                 await ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(symbol,
-                          trade,
-                          old_trade=False,
-                          is_wildcard=False)
-                await ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(symbol,
-                          trade,
-                          old_trade=False,
-                          is_wildcard=True)
+                    .send_with_wildcard(symbol=symbol,
+                                        trade=trade,
+                                        old_trade=False)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update trade : {e}")
@@ -161,15 +131,9 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.trades_manager.upsert_trade_instance(trade)
             if should_notify:
                 await ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(trade.symbol,
-                          trade,
-                          old_trade=False,
-                          is_wildcard=False)
-                await ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(trade.symbol,
-                          trade,
-                          old_trade=False,
-                          is_wildcard=True)
+                    .send_with_wildcard(symbol=trade.symbol,
+                                        trade=trade,
+                                        old_trade=False)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update trade instance : {e}")
@@ -180,19 +144,11 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.positions_manager.upsert_position(position_id, position)
             if should_notify:
                 await ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(symbol,
-                          position,
-                          is_closed=False,
-                          is_updated=changed,
-                          is_from_bot=True,
-                          is_wildcard=False)
-                await ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(symbol,
-                          position,
-                          is_closed=False,
-                          is_updated=changed,
-                          is_from_bot=True,
-                          is_wildcard=True)
+                    .send_with_wildcard(symbol=symbol,
+                                        position=position,
+                                        is_closed=False,
+                                        is_updated=changed,
+                                        is_from_bot=True)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update position : {e}")
@@ -203,19 +159,11 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.positions_manager.upsert_position_instance(position)
             if should_notify:
                 await ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(position.symbol,
-                          position,
-                          is_closed=False,
-                          is_updated=changed,
-                          is_from_bot=True,
-                          is_wildcard=False)
-                await ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name).get_global_producer() \
-                    .send(position.symbol,
-                          position,
-                          is_closed=False,
-                          is_updated=changed,
-                          is_from_bot=True,
-                          is_wildcard=True)
+                    .send_with_wildcard(symbol=position.symbol,
+                                        position=position,
+                                        is_closed=False,
+                                        is_updated=changed,
+                                        is_from_bot=True)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update position instance : {e}")

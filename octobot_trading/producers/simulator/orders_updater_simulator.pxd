@@ -14,8 +14,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.producers.orders_updater cimport OrdersUpdater
+from octobot_trading.producers.orders_updater cimport CloseOrdersUpdater
+from octobot_trading.producers.orders_updater cimport OpenOrdersUpdater
 
 
-cdef class OrdersUpdaterSimulator(OrdersUpdater):
+cdef class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     cdef object exchange_personal_data
+
+cdef class CloseOrdersUpdaterSimulator(CloseOrdersUpdater):
+    pass

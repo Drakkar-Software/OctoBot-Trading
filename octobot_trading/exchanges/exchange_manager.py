@@ -45,6 +45,8 @@ from octobot_trading.producers.simulator.balance_updater_simulator import Balanc
 from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
 from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
 from octobot_trading.producers.simulator.order_book_updater_simulator import OrderBookUpdaterSimulator
+from octobot_trading.producers.simulator.orders_updater_simulator import OpenOrdersUpdaterSimulator, \
+    CloseOrdersUpdaterSimulator
 from octobot_trading.producers.simulator.positions_updater_simulator import PositionsUpdaterSimulator
 from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
 from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
@@ -110,7 +112,7 @@ class ExchangeManager(Initializable):
     async def create_exchanges(self):
         self.exchange_type = RestExchange.create_exchange_type(self.exchange_class_string)
 
-        if not self.is_simulated:
+        if not self.is_backtesting:
             # create REST based on ccxt exchange
             self.exchange = RestExchange(self.config, self.exchange_type, self)
             await self.exchange.initialize()

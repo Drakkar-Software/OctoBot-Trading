@@ -131,7 +131,7 @@ async def positions_callback(exchange, symbol, position, is_closed, is_updated, 
 
 
 async def handle_new_exchange(exchange_name, sandboxed=False):
-    exchange = ExchangeManager(config, exchange_name, is_simulated=True, rest_only=True)  # TODO rest_only=False
+    exchange = ExchangeManager(config, exchange_name, is_simulated=True, is_backtesting=False, rest_only=True)
     await exchange.initialize()
 
     # print(dir(ccxt.bitmex()))

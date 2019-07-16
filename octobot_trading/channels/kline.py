@@ -16,13 +16,12 @@
 from asyncio import CancelledError
 
 from octobot_channels import CHANNEL_WILDCARD
-from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer
 
 
-class KlineProducer(Producer):
+class KlineProducer(ExchangeChannelProducer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
@@ -35,8 +34,7 @@ class KlineProducer(Producer):
             if (CHANNEL_WILDCARD in self.channel.consumers and self.channel.consumers[CHANNEL_WILDCARD]) or \
                     (symbol in self.channel.consumers or time_frame in self.channel.consumers[symbol]):
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
-                await self.send(time_frame, symbol, kline)
-                await self.send(time_frame, symbol, kline, True)
+                await self.send_with_wildcard(time_frame=time_frame, symbol=symbol, kline=kline)
         except KeyError:
             pass
         except CancelledError:

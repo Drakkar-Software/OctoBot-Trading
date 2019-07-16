@@ -19,10 +19,10 @@ from octobot_channels import CHANNEL_WILDCARD
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer
 
 
-class OHLCVProducer(Producer):
+class OHLCVProducer(ExchangeChannelProducer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
@@ -41,8 +41,7 @@ class OHLCVProducer(Producer):
                                                                                                   partial=partial)
                 if candle and (partial or replace_all):
                     candle = candle[-1]
-                await self.send(time_frame, symbol, candle)
-                await self.send(time_frame, symbol, candle, True)
+                await self.send_with_wildcard(time_frame=time_frame, symbol=symbol, candle=candle)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

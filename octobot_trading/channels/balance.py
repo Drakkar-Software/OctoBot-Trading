@@ -22,10 +22,10 @@ from asyncio import CancelledError
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer
 
 
-class BalanceProducer(Producer):
+class BalanceProducer(ExchangeChannelProducer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
@@ -46,7 +46,7 @@ class BalanceProducer(Producer):
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, balance):
+    async def send(self, balance, is_wildcard=False):
         for consumer in self.channel.get_consumers():
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,

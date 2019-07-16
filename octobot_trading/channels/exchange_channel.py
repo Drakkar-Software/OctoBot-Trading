@@ -17,6 +17,7 @@
 from asyncio import Queue
 
 from octobot_channels.consumer import Consumer
+from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_channels.channels.channel import Channel, Channels
@@ -128,6 +129,12 @@ class ExchangeChannelConsumer(Consumer):
                 await self.callback(**(await self.queue.get()))
             except Exception as e:
                 self.logger.exception(f"Exception when calling callback : {e}")
+
+
+class ExchangeChannelProducer(Producer):
+    async def send_with_wildcard(self, **kwargs):
+        await self.send(**kwargs)
+        await self.send(**kwargs, is_wildcard=True)
 
 
 class ExchangeChannels(Channels):

@@ -18,10 +18,10 @@ from asyncio import CancelledError
 from octobot_channels import CHANNEL_WILDCARD
 from octobot_channels.producer import Producer
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer
 
 
-class OrderBookProducer(Producer):
+class OrderBookProducer(ExchangeChannelProducer):
     def __init__(self, channel):  # TODO remove
         super().__init__(channel)
         self.channel = channel
@@ -33,8 +33,7 @@ class OrderBookProducer(Producer):
         try:
             if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:  # and symbol_data.order_book_is_initialized()
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_update(asks, bids)
-                await self.send(symbol, asks, bids, False)
-                await self.send(symbol, asks, bids, True)
+                await self.send_with_wildcard(symbol=symbol, asks=asks, bids=bids)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

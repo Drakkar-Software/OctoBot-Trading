@@ -15,17 +15,18 @@
 #  License along with this library.
 import copy
 
-from ccxt import InsufficientFunds
-from octobot_channels.channels import RECENT_TRADES_CHANNEL
+from ccxt.base.errors import InsufficientFunds
+
+from octobot_trading.channels import RECENT_TRADES_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
 
 from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus
 from octobot_trading.producers import MissingOrderException
-from octobot_trading.producers.orders_updater import OrdersUpdater
+from octobot_trading.producers.orders_updater import OpenOrdersUpdater, CloseOrdersUpdater
 
 
-class OrdersUpdaterSimulator(OrdersUpdater):
+class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     SIMULATOR_LAST_PRICES_TO_CHECK = 50
 
     def __init__(self, channel):
@@ -36,47 +37,26 @@ class OrdersUpdaterSimulator(OrdersUpdater):
             self.handle_recent_trade,
             filter_size=True)
 
-    async def handle_recent_trade(self, symbol: str, recent_trade: dict):
-        last_prices = self.channel.exchange_manager.get_symbol_data(symbol=symbol) \
-            .get_symbol_recent_trades(limit=self.SIMULATOR_LAST_PRICES_TO_CHECK)
+    """
+    Recent trade channel consumer callback
+    """
 
-        failed_order_updates = await self._update_orders_status(symbol=symbol, last_prices=last_prices)
+    async def handle_recent_trade(self, exchange: str, symbol: str, recent_trades: list):
+        failed_order_updates = await self._update_orders_status(symbol=symbol, last_prices=recent_trades)
 
         if failed_order_updates:
             self.logger.info(f"Forcing real trader refresh.")
             self.channel.exchange_manager.trader.force_refresh_orders_and_portfolio()
 
-    async def _update_order_status(self,
-                                   order: Order,
-                                   failed_order_updates: list,
-                                   last_prices: list,
-                                   simulated_time: bool = False):
-        order_filled = False
-        try:
-            await order.update_order_status(last_prices, simulated_time=simulated_time)
-
-            if order.get_status() == OrderStatus.FILLED:
-                order_filled = True
-                self.logger.info(f"{order.get_order_symbol()} {order.name} (ID : {order.get_id()})"
-                                 f" filled on {self.channel.exchange.name} "
-                                 f"at {order.get_filled_price()}")
-                await order.close_order()
-        except MissingOrderException as e:
-            self.logger.error(f"Missing exchange order when updating order with id: {e.order_id}. "
-                              f"Will force a real trader refresh. ({e})")
-            failed_order_updates.append(e.order_id)
-        except InsufficientFunds as e:
-            self.logger.error(f"Not enough funds to create order: {e} (updating {order}).")
-        return order_filled
+    """
+    Ask orders to check their status
+    Ask cancellation and filling process if it is required
+    """
 
     async def _update_orders_status(self,
                                     symbol: str,
                                     last_prices: list,
                                     simulated_time: bool = False) -> list:
-        """
-        Ask orders to check their status
-        Ask cancellation and filling process if it is required
-        """
         failed_order_updates = []
         for order in copy.copy(self.exchange_personal_data.orders.get_open_orders(symbol=symbol)):
             order_filled = False
@@ -92,17 +72,42 @@ class OrdersUpdaterSimulator(OrdersUpdater):
             finally:
                 # ensure always call fill callback
                 if order_filled:
-                    await self.channel.exchange_manager.trader.call_order_update_callback(order)
+                    await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.channel.exchange.name).get_global_producer() \
+                        .send_with_wildcard(symbol=order.symbol,
+                                            order=order,
+                                            is_from_bot=True,
+                                            is_closed=True,
+                                            is_updated=False)
         return failed_order_updates
 
-    # Currently called by backtesting
-    # Will be called by Websocket to perform order status update if new data available
-    # TODO : currently blocking, may implement queue if needed
-    async def force_update_order_status(self, blocking=True, simulated_time: bool = False):
-        # if blocking:
-        #     for symbol in self.channel.exchange_manager.traded_pairs:
-        #         return await self._update_orders_status(symbol=symbol, simulated_time=simulated_time)
-        # else:
-        #     raise NotImplementedError("force_update_order_status(blocking=False) not implemented")
-        #  TODO
-        pass
+    """
+    Call order status update
+    """
+
+    async def _update_order_status(self,
+                                   order: Order,
+                                   failed_order_updates: list,
+                                   last_prices: list,
+                                   simulated_time: bool = False):
+        order_filled = False
+        try:
+            await order.update_order_status(last_prices, simulated_time=simulated_time)
+
+            if order.status == OrderStatus.FILLED:
+                order_filled = True
+                self.logger.info(f"{order.symbol} {order.get_name()} (ID : {order.order_id})"
+                                 f" filled on {self.channel.exchange.name} "
+                                 f"at {order.filled_price}")
+                await order.close_order()
+        except MissingOrderException as e:
+            self.logger.error(f"Missing exchange order when updating order with id: {e.order_id}. "
+                              f"Will force a real trader refresh. ({e})")
+            failed_order_updates.append(e.order_id)
+        except InsufficientFunds as e:
+            self.logger.error(f"Not enough funds to create order: {e} (updating {order}).")
+        finally:
+            return order_filled
+
+
+class CloseOrdersUpdaterSimulator(CloseOrdersUpdater):
+    pass

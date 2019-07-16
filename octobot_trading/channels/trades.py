@@ -19,11 +19,11 @@ from octobot_channels import CHANNEL_WILDCARD
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
-class TradesProducer(Producer):
+class TradesProducer(ExchangeChannelProducer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
@@ -47,8 +47,7 @@ class TradesProducer(Producer):
                         should_notify=False)
 
                     if added:
-                        await self.send(symbol, trade, old_trade)
-                        await self.send(symbol, trade, old_trade, True)
+                        await self.send_with_wildcard(symbol=symbol, trade=trade, old_trade=old_trade)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

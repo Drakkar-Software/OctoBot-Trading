@@ -19,11 +19,11 @@ from octobot_channels import CHANNEL_WILDCARD
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer
 from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstantsPositionColumns
 
 
-class PositionsProducer(Producer):
+class PositionsProducer(ExchangeChannelProducer):
     def __init__(self, channel):
         self.logger = get_logger(self.__class__.__name__)
         super().__init__(channel)
@@ -45,8 +45,11 @@ class PositionsProducer(Producer):
                             .handle_position_update(symbol, position_id, position, should_notify=False)
 
                         if changed:
-                            await self.send(symbol, position, is_closed, is_updated, is_from_bot)
-                            await self.send(symbol, position, is_closed, is_updated, is_from_bot, True)
+                            await self.send_with_wildcard(symbol=symbol,
+                                                          position=position,
+                                                          is_closed=is_closed,
+                                                          is_updated=is_updated,
+                                                          is_from_bot=is_from_bot)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

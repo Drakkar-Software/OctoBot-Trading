@@ -42,5 +42,8 @@ cdef class ExchangeChannel(Channel):
 cdef class ExchangeChannelConsumer(Consumer):
     pass
 
+cdef class ExchangeChannelProducer(Producer):
+    pass
+
 cdef class ExchangeChannels(Channels):
     pass
