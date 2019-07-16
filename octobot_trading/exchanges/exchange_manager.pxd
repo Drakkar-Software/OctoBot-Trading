@@ -39,6 +39,7 @@ cdef class ExchangeManager(Initializable):
     cdef public bint ignore_config
     cdef public bint is_ready
     cdef public bint is_simulated
+    cdef public bint is_backtesting
     cdef public bint is_trader_simulated
 
     cdef public AbstractExchange exchange

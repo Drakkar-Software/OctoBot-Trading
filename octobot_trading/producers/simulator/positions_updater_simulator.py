@@ -17,7 +17,7 @@
 from octobot_trading.producers.positions_updater import PositionsUpdater
 
 
-class PositiosUpdaterSimulator(PositionsUpdater):
+class PositionsUpdaterSimulator(PositionsUpdater):
     SIMULATOR_LAST_PRICES_TO_CHECK = 50
 
     def __init__(self, channel):

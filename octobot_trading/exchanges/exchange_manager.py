@@ -41,6 +41,14 @@ from octobot_trading.producers.order_book_updater import OrderBookUpdater
 from octobot_trading.producers.orders_updater import CloseOrdersUpdater, OpenOrdersUpdater
 from octobot_trading.producers.positions_updater import PositionsUpdater
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
+from octobot_trading.producers.simulator.balance_updater_simulator import BalanceUpdaterSimulator
+from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
+from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
+from octobot_trading.producers.simulator.order_book_updater_simulator import OrderBookUpdaterSimulator
+from octobot_trading.producers.simulator.positions_updater_simulator import PositionsUpdaterSimulator
+from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
+from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
+from octobot_trading.producers.simulator.trades_updater_simulator import TradesUpdaterSimulator
 from octobot_trading.producers.ticker_updater import TickerUpdater
 from octobot_trading.producers.trades_updater import TradesUpdater
 from octobot_trading.util import is_trader_simulator_enabled
@@ -50,7 +58,9 @@ from octobot_trading.util.initializable import Initializable
 class ExchangeManager(Initializable):
     WEB_SOCKET_RESET_MIN_INTERVAL = 15
 
-    def __init__(self, config, exchange_class_string, is_simulated=False, rest_only=False, ignore_config=False):
+    def __init__(self, config, exchange_class_string,
+                 is_simulated=False, is_backtesting=False,
+                 rest_only=False, ignore_config=False):
         super().__init__()
         self.config = config
         self.exchange_class_string = exchange_class_string
@@ -59,6 +69,7 @@ class ExchangeManager(Initializable):
         self.logger = get_logger(self.__class__.__name__)
 
         self.is_ready = False
+        self.is_backtesting = is_backtesting
         self.is_simulated = is_simulated
         self.is_trader_simulated = is_trader_simulator_enabled(self.config)
 
@@ -128,21 +139,36 @@ class ExchangeManager(Initializable):
             ExchangeChannels.set_chan(exchange_channel, name=exchange_channel_class.get_name())
             await exchange_channel.start()
 
-    async def _create_exchange_producers(self):  # TODO filter creation
-        await OHLCVUpdater(ExchangeChannels.get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
-        await OrderBookUpdater(ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
-        await RecentTradeUpdater(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
-        await TickerUpdater(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
-        await KlineUpdater(ExchangeChannels.get_chan(KLINE_CHANNEL, self.exchange.name)).run()
+    async def _create_exchange_producers(self):
+        # Real data producers
+        if self.rest_only and not self.is_backtesting:  # TODO or filter creation with WS
+            await OHLCVUpdater(ExchangeChannels.get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
+            await OrderBookUpdater(ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
+            await RecentTradeUpdater(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
+            await TickerUpdater(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
+            await KlineUpdater(ExchangeChannels.get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
-        if self.exchange.is_authenticated:
+        if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting):  # TODO or filter creation with WS
             await BalanceUpdater(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
             await CloseOrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
             await OpenOrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
             await TradesUpdater(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
             await PositionsUpdater(ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
-        else:
-            pass  # TODO use simulator
+
+        # Simulated producers
+        if not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting:
+            await BalanceUpdaterSimulator(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+            await CloseOrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+            await OpenOrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+            await TradesUpdaterSimulator(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
+            await PositionsUpdaterSimulator(ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
+
+        if self.is_backtesting:
+            await OHLCVUpdaterSimulator(ExchangeChannels.get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
+            await OrderBookUpdaterSimulator(ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
+            await RecentTradeUpdaterSimulator(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
+            await TickerUpdaterSimulator(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
+            await KlineUpdaterSimulator(ExchangeChannels.get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
     def _search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():

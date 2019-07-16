@@ -131,7 +131,7 @@ async def positions_callback(exchange, symbol, position, is_closed, is_updated, 
 
 
 async def handle_new_exchange(exchange_name, sandboxed=False):
-    exchange = ExchangeManager(config, exchange_name, rest_only=True)  # TODO rest_only=False
+    exchange = ExchangeManager(config, exchange_name, is_simulated=True, rest_only=True)  # TODO rest_only=False
     await exchange.initialize()
 
     # print(dir(ccxt.bitmex()))
@@ -161,23 +161,25 @@ async def main():
     fileConfig("logs/logging_config.ini")
     logging.info("starting...")
 
-    bitmex = await handle_new_exchange("bitmex", sandboxed=True)
-    # binance = await handle_new_exchange("binance")
+    # bitmex = await handle_new_exchange("bitmex", sandboxed=True)
+    binance = await handle_new_exchange("binance")
     # coinbase = await handle_new_exchange("coinbasepro")
 
     await asyncio.sleep(3)
 
-    limit_buy = bitmex.trader.create_order_instance(order_type=TraderOrderType.BUY_LIMIT,
-                                                    symbol="BTC/USD",
-                                                    quantity=20,
-                                                    current_price=12000,
-                                                    price=10000)
-    order = await bitmex.trader.create_order(limit_buy)
-    await bitmex.trader.cancel_order(order)
+    # limit_buy = bitmex.trader.create_order_instance(order_type=TraderOrderType.BUY_LIMIT,
+    #                                                 symbol="BTC/USD",
+    #                                                 quantity=20,
+    #                                                 current_price=12000,
+    #                                                 price=10000)
+    # order = await bitmex.trader.create_order(limit_buy)
+    # await bitmex.trader.cancel_order(order)
 
-    await asyncio.sleep(10000)
+    await asyncio.sleep(30)
 
 
 if __name__ == '__main__':
     asyncio.new_event_loop()
     asyncio.get_event_loop().run_until_complete(main())
+
+

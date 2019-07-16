@@ -18,4 +18,4 @@ from octobot_trading.producers.balance_updater import BalanceUpdater
 
 
 class BalanceUpdaterSimulator(BalanceUpdater):
-    pass
+    pass  # Nothing to do

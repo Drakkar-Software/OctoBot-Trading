@@ -17,5 +17,5 @@
 from octobot_trading.producers.positions_updater cimport PositionsUpdater
 
 
-cdef class PositiosUpdaterSimulator(PositionsUpdater):
+cdef class PositionsUpdaterSimulator(PositionsUpdater):
     pass
