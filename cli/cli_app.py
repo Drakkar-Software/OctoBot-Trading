@@ -13,31 +13,32 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
+import asyncio
 from threading import Thread
 
 import click
 from click_shell import shell
 
-from cli import exchanges, get_config, set_should_display_callbacks_logs
+from cli import exchanges, get_config, set_should_display_callbacks_logs, get_exchanges, add_exchange, get_exchange
 from cli.cli_tools import create_new_exchange, start_cli_exchange
+from octobot_trading.enums import TraderOrderType
 
 
 @shell(prompt='OctoBot-Trading > ', intro='Starting...')
 def app():
     exchange_name = "binance"
     exchange_factory = create_new_exchange(get_config(), exchange_name,
-                                           is_simulated=False,
+                                           is_simulated=True,
                                            is_rest_only=True,
                                            is_backtesting=False,
                                            is_sandboxed=False)
 
-    exchanges[exchange_name] = {
+    add_exchange(exchange_name, {
         "exchange_factory": exchange_factory,
         "exchange_thread": Thread(target=start_cli_exchange, args=(exchange_factory,))
-    }
+    })
 
-    exchanges[exchange_name]["exchange_thread"].start()
+    get_exchange(exchange_name)["exchange_thread"].start()
 
 
 @app.command()
@@ -48,6 +49,34 @@ def show():
 @app.command()
 def hide():
     set_should_display_callbacks_logs(False)
+
+
+#  create-order --exchange_name binance --symbol BTC/USDT --price 10000 --quantity 1 --order_type buy_limit
+@app.command()
+@click.option("--exchange_name", prompt="Exchange name", help="The name of the exchange to use.", type=str)
+@click.option("--symbol", prompt="Order symbol", help="The order symbol.", type=str)
+@click.option("--price", prompt="Order price", help="The order price.", type=float)
+@click.option("--quantity", prompt="Order quantity", help="The order quantity.", type=float)
+@click.option("--order_type", prompt="Order type", help="The order type.",
+              type=click.Choice([t.value for t in TraderOrderType]))
+def create_order(exchange_name, symbol, price, quantity, order_type):
+    exchange_manager = exchanges[exchange_name]["exchange_factory"].exchange_manager
+
+    created_order = exchange_manager.trader.create_order_instance(order_type=TraderOrderType(order_type),
+                                                                  symbol=symbol,
+                                                                  current_price=price,
+                                                                  quantity=quantity,
+                                                                  price=price)
+    asyncio.get_event_loop().run_until_complete(exchange_manager.trader.create_order(created_order))
+
+
+#  orders --exchange_name binance --symbol BTC/USDT
+@app.command()
+@click.option("--exchange_name", prompt="Exchange name", help="The name of the exchange to use.", type=str)
+@click.option("--symbol", prompt="Order symbol", help="The order symbol.", type=str)
+def orders(exchange_name, symbol):
+    exchange_manager = exchanges[exchange_name]["exchange_factory"].exchange_manager
+    click.echo(exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol))
 
 
 @app.command()

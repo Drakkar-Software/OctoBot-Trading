@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import uuid
 
 from octobot_trading.constants import SIMULATOR_CURRENT_PORTFOLIO, SIMULATOR_TRADER_STR
 
@@ -54,3 +55,6 @@ class TraderSimulator(Trader):
     def _print_previous_state_info(self):
         current_portfolio = self.previous_state_manager.get_previous_state(self.exchange_manager, SIMULATOR_CURRENT_PORTFOLIO)
         self.logger.info(f"Resuming the previous trading session: current portfolio: {current_portfolio}")
+
+    def _parse_order_id(self, order_id):
+        return uuid.uuid4() if order_id is None else order_id

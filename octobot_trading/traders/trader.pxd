@@ -45,6 +45,7 @@ cdef class Trader(Initializable):
 
     # methods
     cdef void _load_previous_state_if_any(self)
+    cdef str _parse_order_id(self, str order_id)
 
     @staticmethod
     cdef bint enabled(dict config)

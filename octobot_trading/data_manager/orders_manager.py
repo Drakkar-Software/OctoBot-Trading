@@ -42,10 +42,10 @@ class OrdersManager(Initializable):
         return self._select_orders(None, symbol=symbol, since=since, limit=limit)
 
     def get_open_orders(self, symbol=None, since=-1, limit=-1):
-        return self._select_orders(OrderStatus.OPEN.value, symbol, since, limit)
+        return self._select_orders(OrderStatus.OPEN, symbol, since, limit)
 
     def get_closed_orders(self, symbol=None, since=-1, limit=-1):
-        return self._select_orders(OrderStatus.CLOSED.value, symbol, since, limit)
+        return self._select_orders(OrderStatus.CLOSED, symbol, since, limit)
 
     def get_order(self, order_id):
         return self.orders[order_id]

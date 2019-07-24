@@ -35,15 +35,15 @@ class OrderStatus(Enum):
 
 
 class TraderOrderType(Enum):
-    BUY_MARKET = 1
-    BUY_LIMIT = 2
-    STOP_LOSS = 3
-    STOP_LOSS_LIMIT = 4
-    SELL_MARKET = 5
-    SELL_LIMIT = 6
-    TRAILING_STOP = 7
-    TAKE_PROFIT = 8
-    TAKE_PROFIT_LIMIT = 9
+    BUY_MARKET = "buy_market"
+    BUY_LIMIT = "buy_limit"
+    STOP_LOSS = "stop_loss"
+    STOP_LOSS_LIMIT = "stop_limit"
+    SELL_MARKET = "sell_market"
+    SELL_LIMIT = "sell_limit"
+    TRAILING_STOP = "trailing_stop"
+    TAKE_PROFIT = "take_profit"
+    TAKE_PROFIT_LIMIT = "take_profit_limit"
 
 
 class ExchangeConstantsTickersColumns(Enum):

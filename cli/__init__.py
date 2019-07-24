@@ -35,3 +35,16 @@ def set_config(cli_config):
 
 def get_config():
     return config
+
+
+def get_exchanges():
+    return exchanges
+
+
+def get_exchange(exchange_name):
+    return exchanges[exchange_name]
+
+
+def add_exchange(exchange_name, exchange):
+    global exchanges
+    exchanges[exchange_name] = exchange

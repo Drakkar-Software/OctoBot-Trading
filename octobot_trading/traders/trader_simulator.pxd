@@ -22,4 +22,4 @@ It is also use to store creation & fill values of the order """
 from octobot_trading.traders.trader cimport Trader
 
 cdef class TraderSimulator(Trader):
-    pass
+    cdef str _parse_order_id(self, str order_id)

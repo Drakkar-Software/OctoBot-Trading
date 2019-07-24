@@ -112,7 +112,7 @@ class Trader(Initializable):
                      price=price,
                      stop_price=stop_price,
                      order_notifier=order_notifier,
-                     order_id=order_id,
+                     order_id=self._parse_order_id(order_id),
                      status=None,
                      quantity_filled=None,
                      filled_price=None,
@@ -421,3 +421,6 @@ class Trader(Initializable):
 
         order.executed_time = order.trader.exchange.get_uniform_timestamp(
             exchange_order[ExchangeConstantsOrderColumns.TIMESTAMP.value])
+
+    def _parse_order_id(self, order_id):
+        return order_id
