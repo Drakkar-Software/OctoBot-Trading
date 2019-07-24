@@ -17,6 +17,7 @@ import asyncio
 import time
 
 from octobot_commons.enums import TimeFramesMinutes, PriceIndexes
+from octobot_commons.logging.logging_util import get_logger
 from octobot_websockets.constants import MINUTE_TO_SECONDS
 
 from octobot_trading.channels.ohlcv import OHLCVProducer
@@ -30,6 +31,7 @@ class OHLCVUpdater(OHLCVProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
+        self.logger = get_logger(f"{self.__class__.__name__}")
         self.should_stop = False
         self.channel = channel
         self.tasks = []
@@ -82,8 +84,10 @@ class OHLCVUpdater(OHLCVProducer):
                         should_sleep_time = time_frame_sleep
 
                     await asyncio.sleep(should_sleep_time)
+                    print(should_sleep_time)
                 else:
                     await asyncio.sleep(time_frame_sleep)
+                    print(time_frame_sleep)
             except Exception as e:
                 self.logger.exception(f"Failed to update ohlcv data in  {time_frame} : {e}")
                 await asyncio.sleep(self.OHLCV_ON_ERROR_TIME)

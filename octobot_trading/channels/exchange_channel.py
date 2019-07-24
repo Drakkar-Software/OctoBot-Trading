@@ -118,6 +118,7 @@ class ExchangeChannel(Channel):
 class ExchangeChannelConsumer(Consumer):
     def __init__(self, callback: CONSUMER_CALLBACK_TYPE, size=0, filter_size=0):  # TODO to be removed
         super().__init__(callback)
+        self.logger = get_logger(f"{self.__class__.__name__}")
         self.filter_size = filter_size
         self.should_stop = False
         self.queue = Queue(maxsize=size)

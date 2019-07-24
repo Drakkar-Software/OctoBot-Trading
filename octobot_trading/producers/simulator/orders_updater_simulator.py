@@ -37,6 +37,9 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
             self.handle_recent_trade,
             filter_size=True)
 
+    async def start(self):
+        pass
+
     """
     Recent trade channel consumer callback
     """
@@ -58,7 +61,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                                     last_prices: list,
                                     simulated_time: bool = False) -> list:
         failed_order_updates = []
-        for order in copy.copy(self.exchange_personal_data.orders.get_open_orders(symbol=symbol)):
+        for order in copy.copy(self.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
             order_filled = False
             try:
                 # ask orders to update their status
@@ -110,4 +113,5 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
 
 
 class CloseOrdersUpdaterSimulator(CloseOrdersUpdater):
-    pass
+    async def start(self):
+        pass

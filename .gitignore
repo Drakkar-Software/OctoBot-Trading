@@ -104,8 +104,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-\.idea/
-
-cython_debug/
-
-logs/
+# OctoBot
+.idea
+cython_debug
+logs
+backtesting/data/*.data

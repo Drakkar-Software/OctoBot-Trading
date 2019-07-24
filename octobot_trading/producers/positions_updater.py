@@ -15,6 +15,8 @@
 #  License along with this library.
 import asyncio
 
+from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.channels.positions import PositionsProducer
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 
@@ -24,6 +26,7 @@ class PositionsUpdater(PositionsProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
+        self.logger = get_logger(f"{self.__class__.__name__}")
         self.should_stop = False
         self.channel = channel
 
