@@ -13,19 +13,31 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
+
 from threading import Thread
 
 import click
 from click_shell import shell
 
 from cli import exchanges, get_config, set_should_display_callbacks_logs
-from cli.cli_tools import create_cli_exchange
+from cli.cli_tools import create_new_exchange, start_cli_exchange
 
 
 @shell(prompt='OctoBot-Trading > ', intro='Starting...')
 def app():
-    pass
+    exchange_name = "binance"
+    exchange_factory = create_new_exchange(get_config(), exchange_name,
+                                           is_simulated=False,
+                                           is_rest_only=True,
+                                           is_backtesting=False,
+                                           is_sandboxed=False)
+
+    exchanges[exchange_name] = {
+        "exchange_factory": exchange_factory,
+        "exchange_thread": Thread(target=start_cli_exchange, args=(exchange_factory,))
+    }
+
+    exchanges[exchange_name]["exchange_thread"].start()
 
 
 @app.command()
@@ -44,8 +56,17 @@ def hide():
 # @click.option("--api_secret", prompt="API secret", help="The api secret of the exchange to use.")
 def connect(exchange_name):
     if exchange_name not in exchanges:
-        exchanges[exchange_name] = Thread(target=create_cli_exchange, args=(get_config(), exchange_name))
-        exchanges[exchange_name].start()
+        exchange_factory = create_new_exchange(get_config(), exchange_name,
+                                               is_simulated=False,
+                                               is_backtesting=False,
+                                               is_sandboxed=False)
+
+        exchanges[exchange_name] = {
+            "exchange_factory": exchange_factory,
+            "exchange_thread": Thread(target=start_cli_exchange, args=(exchange_factory,))
+        }
+
+        exchanges[exchange_name]["exchange_thread"].start()
     else:
         click.echo("Already connected to this exchange", err=True)
         return

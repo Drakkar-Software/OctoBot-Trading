@@ -76,8 +76,12 @@ class OHLCVUpdater(OHLCVProducer):
                     last_candle = {}
 
                 if last_candle:
-                    await asyncio.sleep(last_candle[PriceIndexes.IND_PRICE_TIME.value] +
-                                        time_frame_sleep - time.time())
+                    should_sleep_time = last_candle[PriceIndexes.IND_PRICE_TIME.value] + time_frame_sleep - time.time()
+
+                    if should_sleep_time > time_frame_sleep:
+                        should_sleep_time = time_frame_sleep
+
+                    await asyncio.sleep(should_sleep_time)
                 else:
                     await asyncio.sleep(time_frame_sleep)
             except Exception as e:

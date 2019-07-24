@@ -15,15 +15,12 @@
 #  License along with this library.
 import asyncio
 import logging
-from asyncio import sleep
 
 from cli import get_should_display_callbacks_logs
 from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, KLINE_CHANNEL, \
     OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
-from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.traders.trader import Trader
-from octobot_trading.traders.trader_simulator import TraderSimulator
+from octobot_trading.exchanges.exchange_factory import ExchangeFactory
 
 
 async def ticker_callback(exchange, symbol, ticker):
@@ -75,42 +72,33 @@ async def positions_callback(exchange, symbol, position, is_closed, is_updated, 
                      f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
 
 
-async def handle_new_exchange(config, exchange_name, sandboxed=False):
-    simulation = True
-
-    exchange = ExchangeManager(config, exchange_name, is_simulated=simulation, is_backtesting=False, rest_only=True)
-    await exchange.initialize()
-
-    # print(dir(ccxt.bitmex()))
-
-    if simulation:
-        trader = TraderSimulator(config, exchange)
-    else:
-        trader = Trader(config, exchange)
-    await trader.initialize()
-
-    # set sandbox mode
-    exchange.exchange.client.setSandboxMode(sandboxed)
-
-    # consumers
-    ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_name).new_consumer(ticker_callback)
-    ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_name).new_consumer(recent_trades_callback)
-    ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_name).new_consumer(order_book_callback)
-    ExchangeChannels.get_chan(KLINE_CHANNEL, exchange_name).new_consumer(kline_callback)
-    ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_name).new_consumer(ohlcv_callback)
-
-    ExchangeChannels.get_chan(BALANCE_CHANNEL, exchange_name).new_consumer(balance_callback)
-    ExchangeChannels.get_chan(TRADES_CHANNEL, exchange_name).new_consumer(trades_callback)
-    ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_name).new_consumer(positions_callback)
-    ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_name).new_consumer(orders_callback)
-
-    return exchange
+def create_new_exchange(config, exchange_name, is_simulated, is_rest_only, is_backtesting, is_sandboxed):
+    return ExchangeFactory(config, exchange_name,
+                           is_simulated=is_simulated,
+                           is_backtesting=is_backtesting,
+                           rest_only=is_rest_only,
+                           is_sandboxed=is_sandboxed)
 
 
-def create_cli_exchange(config, exchange_name, sandboxed=False):
+def start_cli_exchange(exchange_factory):
     current_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(current_loop)
-    should_stop = False
-    exchange = current_loop.run_until_complete(handle_new_exchange(config, exchange_name, sandboxed))
-    while not should_stop:
-        current_loop.run_until_complete(sleep(1))
+    current_loop.run_until_complete(start_exchange(exchange_factory))
+
+
+async def start_exchange(exchange_factory):
+    await exchange_factory.create()
+
+    # consumers
+    ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_factory.exchange_name).new_consumer(ticker_callback)
+    ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(recent_trades_callback)
+    ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_factory.exchange_name).new_consumer(order_book_callback)
+    ExchangeChannels.get_chan(KLINE_CHANNEL, exchange_factory.exchange_name).new_consumer(kline_callback)
+    ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_factory.exchange_name).new_consumer(ohlcv_callback)
+
+    ExchangeChannels.get_chan(BALANCE_CHANNEL, exchange_factory.exchange_name).new_consumer(balance_callback)
+    ExchangeChannels.get_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
+    ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
+    ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
+
+    await asyncio.gather(*asyncio.all_tasks(asyncio.get_event_loop()))
