@@ -16,7 +16,7 @@
 import asyncio
 import logging
 
-from cli import get_should_display_callbacks_logs
+from octobot_trading.cli import get_should_display_callbacks_logs
 from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, KLINE_CHANNEL, \
     OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
