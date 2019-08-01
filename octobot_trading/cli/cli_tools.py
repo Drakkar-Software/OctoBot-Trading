@@ -18,9 +18,10 @@ import logging
 
 from octobot_trading.cli import get_should_display_callbacks_logs
 from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, KLINE_CHANNEL, \
-    OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL
+    OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
 from octobot_trading.exchanges.exchange_factory import ExchangeFactory
+from octobot_commons.pretty_printer import PrettyPrinter
 
 
 async def ticker_callback(exchange, symbol, ticker):
@@ -53,6 +54,12 @@ async def kline_callback(exchange, symbol, time_frame, kline):
 async def balance_callback(exchange, balance):
     if get_should_display_callbacks_logs():
         logging.info(f"BALANCE : EXCHANGE = {exchange} || BALANCE = {balance}")
+
+
+async def balance_profitability_callback(exchange, profitability, profitability_percent, market_profitability_percent, initial_portfolio_current_profitability):
+    if get_should_display_callbacks_logs():
+        logging.info(f"BALANCE PROFITABILITY : EXCHANGE = {exchange} || PROFITABILITY = "
+                     f"{PrettyPrinter.portfolio_profitability_pretty_print(profitability, profitability_percent, 'USDT')}")
 
 
 async def trades_callback(exchange, symbol, trade):
@@ -91,12 +98,15 @@ async def start_exchange(exchange_factory):
 
     # consumers
     ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_factory.exchange_name).new_consumer(ticker_callback)
-    ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(recent_trades_callback)
+    ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(
+        recent_trades_callback)
     ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_factory.exchange_name).new_consumer(order_book_callback)
     ExchangeChannels.get_chan(KLINE_CHANNEL, exchange_factory.exchange_name).new_consumer(kline_callback)
     ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_factory.exchange_name).new_consumer(ohlcv_callback)
 
     ExchangeChannels.get_chan(BALANCE_CHANNEL, exchange_factory.exchange_name).new_consumer(balance_callback)
+    ExchangeChannels.get_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_factory.exchange_name).new_consumer(
+        balance_profitability_callback)
     ExchangeChannels.get_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
     ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
     ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)

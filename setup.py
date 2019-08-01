@@ -24,7 +24,6 @@ from octobot_trading import PROJECT_NAME, VERSION
 PACKAGES = find_packages(exclude=["tests"])
 
 packages_list: list = ["octobot_trading.util.initializable",
-                       "octobot_trading.util.order_notifier",
                        "octobot_trading.producers.balance_updater",
                        "octobot_trading.producers.ohlcv_updater",
                        "octobot_trading.producers.order_book_updater",
@@ -47,6 +46,7 @@ packages_list: list = ["octobot_trading.util.initializable",
                        "octobot_trading.data.position",
                        "octobot_trading.data.trade",
                        "octobot_trading.data.portfolio",
+                       "octobot_trading.data.portfolio_profitability",
                        "octobot_trading.data.sub_portfolio",
                        "octobot_trading.data_manager.orders_manager",
                        "octobot_trading.data_manager.positions_manager",

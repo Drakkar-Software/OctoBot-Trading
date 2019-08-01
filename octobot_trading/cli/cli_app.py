@@ -21,7 +21,7 @@ from click_shell import shell
 
 from octobot_trading.cli import exchanges, get_config, set_should_display_callbacks_logs, add_exchange, get_exchange
 from octobot_trading.cli.cli_tools import create_new_exchange, start_cli_exchange
-from octobot_trading.api.orders import get_open_orders
+from octobot_trading.api import OrdersApi
 from octobot_trading.enums import TraderOrderType
 
 
@@ -52,7 +52,7 @@ def hide():
     set_should_display_callbacks_logs(False)
 
 
-#  create-order --exchange_name binance --symbol BTC/USDT --price 10000 --quantity 1 --order_type buy_limit
+#  create_order --exchange_name binance --symbol BTC/USDT --price 11000 --quantity 1 --order_type buy_limit
 @app.command()
 @click.option("--exchange_name", prompt="Exchange name", help="The name of the exchange to use.", type=str)
 @click.option("--symbol", prompt="Order symbol", help="The order symbol.", type=str)
@@ -62,12 +62,12 @@ def hide():
               type=click.Choice([t.value for t in TraderOrderType]))
 def create_order(exchange_name, symbol, price, quantity, order_type):
     asyncio.get_event_loop().run_until_complete(
-        create_order(exchanges[exchange_name]["exchange_factory"].exchange_manager,
-                     order_type=TraderOrderType(order_type),
-                     symbol=symbol,
-                     current_price=price,
-                     quantity=quantity,
-                     price=price))
+        OrdersApi.create_order(exchanges[exchange_name]["exchange_factory"].exchange_manager,
+                               order_type=TraderOrderType(order_type),
+                               symbol=symbol,
+                               current_price=price,
+                               quantity=quantity,
+                               price=price))
 
 
 #  orders --exchange_name binance --symbol BTC/USDT
@@ -76,7 +76,7 @@ def create_order(exchange_name, symbol, price, quantity, order_type):
 @click.option("--symbol", prompt="Order symbol", help="The order symbol.", type=str)
 def orders(exchange_name, symbol):
     exchange_manager = exchanges[exchange_name]["exchange_factory"].exchange_manager
-    click.echo(get_open_orders(exchange_manager, symbol))
+    click.echo(OrdersApi.get_open_orders(exchange_manager, symbol))
 
 
 @app.command()

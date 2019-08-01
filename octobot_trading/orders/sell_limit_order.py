@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import TradeOrderSide, OrderStatus
+from octobot_trading.enums import TradeOrderSide, OrderStatus, ExchangeConstantsMarketPropertyColumns
 from octobot_trading.data.order import Order
 
 
@@ -28,6 +28,7 @@ class SellLimitOrder(Order):
         else:
             # ONLY FOR SIMULATION
             if self.check_last_prices(last_prices, self.origin_price, False, simulated_time):
+                self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
                 self.status = OrderStatus.FILLED
                 self.filled_price = self.origin_price
                 self.filled_quantity = self.origin_quantity

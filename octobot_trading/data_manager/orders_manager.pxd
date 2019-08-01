@@ -43,6 +43,7 @@ cdef class OrdersManager(Initializable):
     cpdef tuple upsert_order(self, str order_id, dict raw_order)
     cpdef bint upsert_order_close(self, str order_id, dict raw_order)
     cpdef void upsert_order_instance(self, Order order)
+    cpdef void remove_order_instance(self, Order order)
     cpdef list get_all_orders(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_open_orders(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_closed_orders(self, str symbol=*, int since=*, int limit=*)

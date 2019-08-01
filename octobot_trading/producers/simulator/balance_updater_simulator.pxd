@@ -14,8 +14,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.producers.balance_updater cimport BalanceProfitabilityUpdater
 from octobot_trading.producers.balance_updater cimport BalanceUpdater
 
 
 cdef class BalanceUpdaterSimulator(BalanceUpdater):
+    pass
+
+cdef class BalanceProfitabilityUpdaterSimulator(BalanceProfitabilityUpdater):
     pass

@@ -14,8 +14,12 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.producers.balance_updater import BalanceUpdater
+from octobot_trading.producers.balance_updater import BalanceUpdater, BalanceProfitabilityUpdater
 
 
 class BalanceUpdaterSimulator(BalanceUpdater):
+    pass  # Nothing to do
+
+
+class BalanceProfitabilityUpdaterSimulator(BalanceProfitabilityUpdater):
     pass  # Nothing to do

@@ -64,13 +64,12 @@ config = {
         "starting-portfolio": {
             "BTC": 10,
             "ETH": 50,
-            "NEO": 100,
             "USDT": 1000
         }
     },
     CONFIG_TRADING: {
         "multi-session-profitability": False,
-        "reference-market": "BTC",
+        "reference-market": "USDT",
         "risk": 0.5
     },
     CONFIG_TIME_FRAME: {

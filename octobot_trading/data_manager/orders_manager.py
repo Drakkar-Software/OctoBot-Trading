@@ -73,6 +73,10 @@ class OrdersManager(Initializable):
             # TODO
             pass
 
+    def remove_order_instance(self, order):
+        if order.order_id in self.orders:
+            self.orders.pop(order.order_id, None)
+
     # private methods
     def _reset_orders(self):
         self.orders_initialized = False

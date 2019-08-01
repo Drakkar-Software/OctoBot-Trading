@@ -24,7 +24,7 @@ from octobot_commons.time_frame_manager import TimeFrameManager
 from octobot_commons.timestamp_util import is_valid_timestamp
 
 from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, \
-    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL
+    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannels
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
@@ -34,14 +34,15 @@ from octobot_trading.exchanges.data.exchange_personal_data import ExchangePerson
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
-from octobot_trading.producers.balance_updater import BalanceUpdater
+from octobot_trading.producers.balance_updater import BalanceUpdater, BalanceProfitabilityUpdater
 from octobot_trading.producers.kline_updater import KlineUpdater
 from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 from octobot_trading.producers.order_book_updater import OrderBookUpdater
 from octobot_trading.producers.orders_updater import CloseOrdersUpdater, OpenOrdersUpdater
 from octobot_trading.producers.positions_updater import PositionsUpdater
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
-from octobot_trading.producers.simulator.balance_updater_simulator import BalanceUpdaterSimulator
+from octobot_trading.producers.simulator.balance_updater_simulator import BalanceUpdaterSimulator, \
+    BalanceProfitabilityUpdaterSimulator
 from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
 from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
 from octobot_trading.producers.simulator.order_book_updater_simulator import OrderBookUpdaterSimulator
@@ -152,6 +153,7 @@ class ExchangeManager(Initializable):
 
         if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting):  # TODO or filter creation with WS
             await BalanceUpdater(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+            await BalanceProfitabilityUpdater(ExchangeChannels.get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
             await CloseOrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
             await OpenOrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
             await TradesUpdater(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
@@ -161,6 +163,7 @@ class ExchangeManager(Initializable):
         if not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting:
             # Not required
             # await BalanceUpdaterSimulator(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+            await BalanceProfitabilityUpdaterSimulator(ExchangeChannels.get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
 
             await CloseOrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
             await OpenOrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()

@@ -15,7 +15,8 @@
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels import BALANCE_CHANNEL, ORDERS_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL
+from octobot_trading.channels import BALANCE_CHANNEL, ORDERS_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, \
+    BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
 from octobot_trading.data_manager.orders_manager import OrdersManager
 from octobot_trading.data_manager.portfolio_manager import PortfolioManager
@@ -67,6 +68,25 @@ class ExchangePersonalData(Initializable):
         except AttributeError as e:
             self.logger.exception(f"Failed to update balance : {e}")
             return False
+
+    async def handle_portfolio_profitability_update(self, balance, ticker, symbol, should_notify: bool = True):
+        try:
+            portfolio_profitability = self.portfolio_manager.portfolio_profitability
+
+            if balance is not None:
+                await portfolio_profitability.handle_balance_update(balance)
+
+            if ticker is not None and symbol is not None:
+                await portfolio_profitability.handle_ticker_update(symbol, ticker)
+
+            if should_notify:
+                await ExchangeChannels.get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name).get_global_producer() \
+                    .send_with_wildcard(profitability=portfolio_profitability.profitability,
+                                        profitability_percent=portfolio_profitability.profitability_percent,
+                                        market_profitability_percent=portfolio_profitability.market_profitability_percent,
+                                        initial_portfolio_current_profitability=portfolio_profitability.initial_portfolio_current_profitability)
+        except Exception as e:
+            self.logger.exception(f"Failed to update portfolio profitability : {e}")
 
     async def handle_order_update(self, symbol, order_id, order, should_notify: bool = True) -> (bool, bool):
         try:

@@ -56,3 +56,40 @@ class BalanceProducer(ExchangeChannelProducer):
 
 class BalanceChannel(ExchangeChannel):
     PRODUCER_CLASS = BalanceProducer
+
+
+class BalanceProfitabilityProducer(ExchangeChannelProducer):
+    def __init__(self, channel):
+        self.logger = get_logger(self.__class__.__name__)
+        super().__init__(channel)
+        self.channel = channel
+
+    async def push(self, balance, ticker):
+        await self.perform(balance, ticker)
+
+    async def perform(self, balance, ticker):
+        try:
+            await self.channel.exchange_manager.exchange_personal_data \
+                .handle_portfolio_profitability_update(balance, ticker, should_notify=True)
+        except CancelledError:
+            self.logger.info("Update tasks cancelled.")
+        except Exception as e:
+            self.logger.error(f"exception when triggering update: {e}")
+            self.logger.exception(e)
+
+    async def send(self, profitability, profitability_percent,
+                   market_profitability_percent,
+                   initial_portfolio_current_profitability,
+                   is_wildcard=False):
+        for consumer in self.channel.get_consumers():
+            await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange.name,
+                "profitability": profitability,
+                "profitability_percent": profitability_percent,
+                "market_profitability_percent": market_profitability_percent,
+                "initial_portfolio_current_profitability": initial_portfolio_current_profitability
+            })
+
+
+class BalanceProfitabilityChannel(ExchangeChannel):
+    PRODUCER_CLASS = BalanceProfitabilityProducer

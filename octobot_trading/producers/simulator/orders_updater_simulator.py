@@ -16,6 +16,7 @@
 import copy
 
 from ccxt.base.errors import InsufficientFunds
+from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels import RECENT_TRADES_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannels
@@ -31,23 +32,25 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
 
     def __init__(self, channel):
         super().__init__(channel)
+        self.logger = get_logger(self.__class__.__name__)
         self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
 
     async def start(self):
-        ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(
-            self.handle_recent_trade,
-            filter_size=True)
+        ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trade)
 
     """
     Recent trade channel consumer callback
     """
 
     async def handle_recent_trade(self, exchange: str, symbol: str, recent_trades: list):
-        failed_order_updates = await self._update_orders_status(symbol=symbol, last_prices=recent_trades)
+        try:
+            failed_order_updates = await self._update_orders_status(symbol=symbol, last_prices=recent_trades)
 
-        if failed_order_updates:
-            self.logger.info(f"Forcing real trader refresh.")
-            self.channel.exchange_manager.trader.force_refresh_orders_and_portfolio()
+            if failed_order_updates:
+                self.logger.info(f"Forcing real trader refresh.")
+                self.channel.exchange_manager.trader.force_refresh_orders_and_portfolio()
+        except Exception as e:
+            self.logger.exception(f"Fail to handle recent trade : {e}")
 
     """
     Ask orders to check their status
@@ -106,6 +109,8 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
             failed_order_updates.append(e.order_id)
         except InsufficientFunds as e:
             self.logger.error(f"Not enough funds to create order: {e} (updating {order}).")
+        except Exception as e:
+            self.logger.exception(f"Fail to update order status : {e} (concerned order : {order}).")
         finally:
             return order_filled
 

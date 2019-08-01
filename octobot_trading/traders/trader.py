@@ -208,7 +208,8 @@ class Trader(Initializable):
                                  f" (ID : {odr.order_id}) cancelled on {self.exchange_manager.exchange.name}")
 
                 if cancelled_order:
-                    await self.exchange_manager.exchange_personal_data.handle_order_update(order.order_id, cancelled_order)
+                    await self.exchange_manager.exchange_personal_data.handle_order_update(order.order_id,
+                                                                                           cancelled_order)
 
     # Should be called only if we want to cancel all symbol open orders (no filled)
     async def cancel_open_orders(self, symbol, cancel_loaded_orders=True):
@@ -287,76 +288,45 @@ class Trader(Initializable):
 
         # If need to cancel the order call the method and no need to update the portfolio (only availability)
         if cancel:
-            order_closed = None
-            orders_canceled = order.linked_orders + [order]
-
             await self.cancel_order(order)
-            _, profitability_percent, profitability_diff = self.get_trades_manager().get_profitability_without_update()
 
         elif cancel_linked_only:
-            order_closed = None
-            orders_canceled = order.linked_orders
-
-            _, profitability_percent, profitability_diff = self.get_trades_manager().get_profitability_without_update()
+            pass  # nothing to do
 
         else:
-            order_closed = order
-            orders_canceled = order.linked_orders
-
             # update portfolio with ended order
             async with self.exchange_personal_data.get_order_portfolio(order).lock:
                 await self.exchange_personal_data.get_order_portfolio(order).update_portfolio_from_order(order)
 
-            profitability, profitability_percent, profitability_diff, _, _ = \
-                await self.get_trades_manager().get_profitability()
-
-            # debug purpose
-            profitability_str = PrettyPrinter.portfolio_profitability_pretty_print(profitability,
-                                                                                   profitability_percent,
-                                                                                   self.get_reference_market())
-
-            self.logger.debug(f"Current portfolio profitability : {profitability_str}")
-
             # add to trade history
-            self.exchange_personal_data.trades.add_new_trade_in_history(Trade(self.exchange_manager, order))
+            self.exchange_personal_data.trades_manager.upsert_trade_instance(Trade(order))
 
             # remove order to open_orders
-            self.exchange_manager.exchange_personal_data.orders.remove_order_from_list(order)
-
-        profitability_activated = order_closed is not None
+            self.exchange_personal_data.orders_manager.remove_order_instance(order)
 
         # update current order list with exchange
-        if not self.simulate:
-            await self.update_open_orders(order.symbol)
-
-        # notification
-        if order.order_notifier:
-            await order.order_notifier.end(order_closed,
-                                           orders_canceled,
-                                           order.get_profitability(),
-                                           profitability_percent,
-                                           profitability_diff,
-                                           profitability_activated)
+        # if not self.simulate:
+        #     await self.update_open_orders(order.symbol)
 
     def update_close_orders(self):
         for symbol in self.exchange_manager.get_exchange_manager().get_traded_pairs():
             for close_order in self.exchange_manager.get_closed_orders(symbol):
                 self.parse_exchange_order_to_trade_instance(close_order, Order(self))
 
-    async def update_open_orders(self, symbol=None):
-        if symbol:
-            symbols = [symbol]
-        else:
-            symbols = self.exchange_manager.get_exchange_manager().get_traded_pairs()
-
-        # get orders from exchange for the specified symbols
-        for symbol_traded in symbols:
-            orders = await self.exchange_manager.get_open_orders(symbol=symbol_traded, force_rest=True)
-            for open_order in orders:
-                order = self.parse_exchange_order_to_order_instance(open_order)
-                if self.exchange_manager.exchange_personal_data.orders.should_add_order(order):
-                    async with self.exchange_personal_data.portfolio.lock:
-                        await self.create_order(order, self.exchange_personal_data.portfolio, True)
+    # async def update_open_orders(self, symbol=None):
+    #     if symbol:
+    #         symbols = [symbol]
+    #     else:
+    #         symbols = self.exchange_manager.get_exchange_manager().get_traded_pairs()
+    #
+    #     # get orders from exchange for the specified symbols
+    #     for symbol_traded in symbols:
+    #         orders = await self.exchange_manager.get_open_orders(symbol=symbol_traded, force_rest=True)
+    #         for open_order in orders:
+    #             order = self.parse_exchange_order_to_order_instance(open_order)
+    #             if self.exchange_manager.exchange_personal_data.orders.should_add_order(order):
+    #                 async with self.exchange_personal_data.portfolio.lock:
+    #                     await self.create_order(order, self.exchange_personal_data.portfolio, True)
 
     async def force_refresh_orders_and_portfolio(self, portfolio=None, delete_desync_orders=True):
         await self.exchange_manager.reset_web_sockets_if_any()

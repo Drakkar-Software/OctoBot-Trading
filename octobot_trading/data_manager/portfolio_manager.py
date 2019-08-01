@@ -18,6 +18,7 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.constants import CONFIG_SIMULATOR, \
     CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING, SIMULATOR_CURRENT_PORTFOLIO
 from octobot_trading.data.portfolio import Portfolio
+from octobot_trading.data.portfolio_profitability import PortfolioProfitabilty
 from octobot_trading.util.initializable import Initializable
 
 
@@ -26,7 +27,9 @@ class PortfolioManager(Initializable):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
+
         self.portfolio = None
+        self.portfolio_profitability = None
 
     async def initialize_impl(self):
         await self._reset_portfolio()
@@ -34,6 +37,8 @@ class PortfolioManager(Initializable):
     async def _reset_portfolio(self):
         self.portfolio = Portfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
         await self._load_portfolio()
+
+        self.portfolio_profitability = PortfolioProfitabilty(self.config, self.trader, self, self.exchange_manager)
 
     async def handle_balance_update(self, balance) -> bool:
         if self.trader.enabled:

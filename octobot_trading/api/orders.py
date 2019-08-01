@@ -17,20 +17,22 @@
 from octobot_trading.enums import TraderOrderType
 
 
-# Orders list
-def get_open_orders(exchange_manager, symbol: str):
-    return exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol)
+class OrdersApi:
+    # Orders list
+    @staticmethod
+    def get_open_orders(exchange_manager, symbol: str):
+        return exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol)
 
-
-# Order creation
-async def create_order(exchange_manager,
-                       order_type: TraderOrderType,
-                       symbol: str,
-                       current_price: float,
-                       quantity: float,
-                       price: float):
-    await exchange_manager.trader.create_order(exchange_manager.trader.create_order_instance(order_type=order_type,
-                                                                                             symbol=symbol,
-                                                                                             current_price=current_price,
-                                                                                             quantity=quantity,
-                                                                                             price=price))
+    # Order creation
+    @staticmethod
+    async def create_order(exchange_manager,
+                           order_type: TraderOrderType,
+                           symbol: str,
+                           current_price: float,
+                           quantity: float,
+                           price: float):
+        await exchange_manager.trader.create_order(exchange_manager.trader.create_order_instance(order_type=order_type,
+                                                                                                 symbol=symbol,
+                                                                                                 current_price=current_price,
+                                                                                                 quantity=quantity,
+                                                                                                 price=price))

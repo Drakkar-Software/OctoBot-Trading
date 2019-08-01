@@ -297,8 +297,7 @@ class RestExchange(AbstractExchange):
             f" stop_price: {stop_price}"
         self.logger.error(f"Failed to create order : {error} ({order_desc})")
 
-    def get_trade_fee(self, symbol, order_type, quantity, price,
-                      taker_or_maker=ExchangeConstantsMarketPropertyColumns.TAKER.value):
+    def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
                                          side=RestExchange._get_side(order_type),

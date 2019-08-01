@@ -15,6 +15,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.channels.balance cimport BalanceProducer
+from octobot_trading.channels.balance cimport BalanceProfitabilityProducer
+from octobot_trading.exchanges.data.exchange_personal_data cimport ExchangePersonalData
 
 cdef class BalanceUpdater(BalanceProducer):
-    pass
+    cdef object logger
+
+cdef class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
+    cdef object logger
+
+    cdef ExchangePersonalData exchange_personal_data

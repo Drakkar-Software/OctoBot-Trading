@@ -17,7 +17,9 @@ import asyncio
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.balance import BalanceProducer
+from octobot_trading.channels import BALANCE_CHANNEL, TICKER_CHANNEL
+from octobot_trading.channels.balance import BalanceProducer, BalanceProfitabilityProducer
+from octobot_trading.channels.exchange_channel import ExchangeChannels
 
 
 class BalanceUpdater(BalanceProducer):
@@ -36,3 +38,36 @@ class BalanceUpdater(BalanceProducer):
                 await asyncio.sleep(self.BALANCE_REFRESH_TIME)
             except Exception as e:
                 self.logger.error(f"Failed to update balance : {e}")
+
+
+class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.logger = get_logger(self.__class__.__name__)
+        self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
+
+    async def start(self):
+        ExchangeChannels.get_chan(BALANCE_CHANNEL, self.channel.exchange.name).new_consumer(
+            self.handle_balance_update)
+        ExchangeChannels.get_chan(TICKER_CHANNEL, self.channel.exchange.name).new_consumer(
+            self.handle_ticker_update)
+
+    """
+    Balance channel consumer callback
+    """
+
+    async def handle_balance_update(self, exchange: str, balance: dict):
+        try:
+            await self.exchange_personal_data.handle_portfolio_profitability_update(balance=balance, ticker=None, symbol=None)
+        except Exception as e:
+            self.logger.exception(f"Fail to handle balance update : {e}")
+
+    """
+    Ticker channel consumer callback
+    """
+
+    async def handle_ticker_update(self, exchange: str, symbol: str, ticker: list):
+        try:
+            await self.exchange_personal_data.handle_portfolio_profitability_update(symbol=symbol, ticker=ticker, balance=None)
+        except Exception as e:
+            self.logger.exception(f"Fail to handle ticker update : {e}")
