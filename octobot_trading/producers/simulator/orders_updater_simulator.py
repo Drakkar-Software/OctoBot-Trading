@@ -76,7 +76,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
             finally:
                 # ensure always call fill callback
                 if order_filled:
-                    await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.channel.exchange.name).get_global_producer() \
+                    await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.channel.exchange.name).get_internal_producer() \
                         .send_with_wildcard(symbol=order.symbol,
                                             order=order,
                                             is_from_bot=True,

@@ -39,7 +39,7 @@ class ExchangeChannel(Channel):
 
         self.filter_send_counter = 0
         self.should_send_filter = False
-        self.global_producer = None
+        self.internal_producer = None
 
     def new_consumer(self,
                      callback: CONSUMER_CALLBACK_TYPE,
@@ -58,10 +58,10 @@ class ExchangeChannel(Channel):
             self.filter_send_counter = 0
             self.should_send_filter = False
 
-    def get_global_producer(self):
-        if not self.global_producer:
-            self.global_producer = self.PRODUCER_CLASS(self)
-        return self.global_producer
+    def get_internal_producer(self):
+        if not self.internal_producer:
+            self.internal_producer = self.PRODUCER_CLASS(self)
+        return self.internal_producer
 
     def get_consumers(self, symbol=None):
         if not symbol:
