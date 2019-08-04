@@ -296,7 +296,7 @@ class Trader(Initializable):
         else:
             # update portfolio with ended order
             async with self.exchange_personal_data.get_order_portfolio(order).lock:
-                await self.exchange_personal_data.get_order_portfolio(order).update_portfolio_from_order(order)
+                await self.exchange_personal_data.handle_portfolio_update_from_order(order)
 
             # add to trade history
             self.exchange_personal_data.trades_manager.upsert_trade_instance(Trade(order))

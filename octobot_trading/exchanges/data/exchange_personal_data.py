@@ -69,6 +69,17 @@ class ExchangePersonalData(Initializable):
             self.logger.exception(f"Failed to update balance : {e}")
             return False
 
+    async def handle_portfolio_update_from_order(self, order, should_notify: bool = True) -> bool:
+        try:
+            changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order)
+            if should_notify:
+                await ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name).\
+                    get_global_producer().send(self.portfolio_manager.portfolio.portfolio)
+            return changed
+        except AttributeError as e:
+            self.logger.exception(f"Failed to update balance : {e}")
+            return False
+
     async def handle_portfolio_profitability_update(self, balance, ticker, symbol, should_notify: bool = True):
         try:
             portfolio_profitability = self.portfolio_manager.portfolio_profitability

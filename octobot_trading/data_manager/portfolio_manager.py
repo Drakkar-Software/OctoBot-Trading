@@ -47,7 +47,9 @@ class PortfolioManager(Initializable):
 
     async def handle_balance_update_from_order(self, order):
         if self.trader.enabled and self.trader.simulate:
-            self.portfolio.update_portfolio_from_order(order)
+            await self.portfolio.update_portfolio_from_order(order)
+            return True
+        return False
 
     # Load simulated portfolio from config if required
     async def _load_portfolio(self):

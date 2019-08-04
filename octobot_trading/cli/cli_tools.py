@@ -56,7 +56,8 @@ async def balance_callback(exchange, balance):
         logging.info(f"BALANCE : EXCHANGE = {exchange} || BALANCE = {balance}")
 
 
-async def balance_profitability_callback(exchange, profitability, profitability_percent, market_profitability_percent, initial_portfolio_current_profitability):
+async def balance_profitability_callback(exchange, profitability, profitability_percent, market_profitability_percent,
+                                         initial_portfolio_current_profitability):
     if get_should_display_callbacks_logs():
         logging.info(f"BALANCE PROFITABILITY : EXCHANGE = {exchange} || PROFITABILITY = "
                      f"{PrettyPrinter.portfolio_profitability_pretty_print(profitability, profitability_percent, 'USDT')}")
@@ -69,8 +70,15 @@ async def trades_callback(exchange, symbol, trade):
 
 async def orders_callback(exchange, symbol, order, is_closed, is_updated, is_from_bot):
     if get_should_display_callbacks_logs():
-        logging.info(f"ORDERS : EXCHANGE = {exchange} || SYMBOL = {symbol} || ORDER = {order} "
-                     f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
+        order_string = f"ORDERS : EXCHANGE = {exchange} || SYMBOL = {symbol} ||"
+        if is_closed:
+            # order_string += PrettyPrinter.trade_pretty_printer(exchange, order)
+            order_string += PrettyPrinter.open_order_pretty_printer(exchange, order)
+        else:
+            order_string += PrettyPrinter.open_order_pretty_printer(exchange, order)
+
+        order_string += f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}"
+        logging.info(order_string)
 
 
 async def positions_callback(exchange, symbol, position, is_closed, is_updated, is_from_bot):

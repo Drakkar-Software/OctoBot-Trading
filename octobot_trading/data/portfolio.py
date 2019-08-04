@@ -47,11 +47,11 @@ class Portfolio(Initializable):
         if balance == self.portfolio:
             return False
         self.portfolio = {currency: {PORTFOLIO_AVAILABLE: [CONFIG_PORTFOLIO_FREE]
-                                     if CONFIG_PORTFOLIO_FREE in balance[currency]
-                                     else balance[currency][PORTFOLIO_AVAILABLE],
+        if CONFIG_PORTFOLIO_FREE in balance[currency]
+        else balance[currency][PORTFOLIO_AVAILABLE],
                                      PORTFOLIO_TOTAL: balance[currency][CONFIG_PORTFOLIO_TOTAL]}
                           for currency in balance}
-        self.logger.info(f"Portfolio updated | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
+        self.logger.debug(f"Portfolio updated | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
         return False
 
     def get_currency_from_given_portfolio(self, currency, portfolio_type=PORTFOLIO_AVAILABLE):
@@ -114,8 +114,8 @@ class Portfolio(Initializable):
             market_portfolio_num = \
                 order.filled_quantity * order.filled_price - order.get_total_fees(market)
 
-        self.logger.info(f"Portfolio updated | {currency} {currency_portfolio_num} | {market} "
-                         f"{market_portfolio_num} | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
+        self.logger.debug(f"Portfolio updated from order | {currency} {currency_portfolio_num} | {market} "
+                          f"{market_portfolio_num} | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
 
     """ update_portfolio_available performs the availability update of the concerned currency in the current portfolio
     It is called when an order is filled, created or canceled to update the "available" filed of the portfolio
