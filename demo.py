@@ -69,7 +69,7 @@ config = {
     },
     CONFIG_TRADING: {
         "multi-session-profitability": False,
-        "reference-market": "USDT",
+        "reference-market": "BTC",
         "risk": 0.5
     },
     CONFIG_TIME_FRAME: {

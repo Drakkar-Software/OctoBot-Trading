@@ -18,6 +18,8 @@ from copy import deepcopy
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol, merge_currencies
 
+from octobot_trading.channels import TICKER_CHANNEL
+from octobot_trading.channels.exchange_channel import ExchangeChannels
 from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import ExchangeConstantsTickersColumns
 from octobot_trading.exchanges.backtesting.collector import backtesting_enabled
@@ -110,7 +112,6 @@ class PortfolioProfitabilty(Initializable):
             return self.profitability_diff != 0
         except KeyError as e:
             self.logger.warning(f"Missing ticker data to calculate profitability")
-            # self.logger.exception(e)
         except Exception as e:
             self.logger.error(str(e))
             self.logger.exception(e)
@@ -238,15 +239,28 @@ class PortfolioProfitabilty(Initializable):
         symbol = merge_currencies(currency, self.reference_market)
         symbol_inverted = merge_currencies(self.reference_market, currency)
 
-        if self.exchange_manager.symbol_exists(symbol):
-            return self.currencies_last_prices[symbol] * quantity
+        try:
+            if self.exchange_manager.symbol_exists(symbol):
+                return self.currencies_last_prices[symbol] * quantity
 
-        elif self.exchange_manager.symbol_exists(symbol_inverted):
-            return quantity / self.currencies_last_prices[symbol_inverted]
+            elif self.exchange_manager.symbol_exists(symbol_inverted):
+                return quantity / self.currencies_last_prices[symbol_inverted]
 
-        else:
-            self._inform_no_matching_symbol(currency)
-            return 0
+            else:
+                self._inform_no_matching_symbol(currency)
+                return 0
+        except KeyError as e:
+            symbols_to_add = []
+            if self.exchange_manager.symbol_exists(symbol):
+                symbols_to_add = [symbol]
+            elif self.exchange_manager.symbol_exists(symbol_inverted):
+                symbols_to_add = [symbol_inverted]
+
+            if symbols_to_add:
+                await ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange_manager.exchange.name)\
+                    .modify(added_pairs=symbols_to_add)
+
+            raise e
 
     def _inform_no_matching_symbol(self, currency, force=False):
         if force or currency not in self.already_informed_no_matching_symbol_currency:

@@ -29,10 +29,14 @@ class TickerUpdater(TickerProducer):
         self.should_stop = False
         self.channel = channel
 
+        self._pairs_to_update = set()
+
     async def start(self):
+        self._pairs_to_update = self.channel.exchange_manager.traded_pairs
+
         while not self.should_stop:
             try:
-                for pair in self.channel.exchange_manager.traded_pairs:
+                for pair in self._pairs_to_update:
                     ticker: dict = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
                     await self.push(pair, self._cleanup_ticker_dict(ticker))
                 await asyncio.sleep(self.TICKER_REFRESH_TIME)
@@ -47,3 +51,12 @@ class TickerUpdater(TickerProducer):
         except KeyError as e:
             self.logger.error(f"Fail to cleanup ticker dict ({e})")
         return ticker
+
+    async def modify(self, added_pairs=None, removed_pairs=None):
+        if added_pairs:
+            self._pairs_to_update += added_pairs
+            self.logger.info(f"Added pairs : {added_pairs}")
+
+        if removed_pairs:
+            self._pairs_to_update -= removed_pairs
+            self.logger.info(f"Removed pairs : {removed_pairs}")
