@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot-Channels
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
