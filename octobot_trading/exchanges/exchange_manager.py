@@ -41,8 +41,7 @@ from octobot_trading.producers.order_book_updater import OrderBookUpdater
 from octobot_trading.producers.orders_updater import CloseOrdersUpdater, OpenOrdersUpdater
 from octobot_trading.producers.positions_updater import PositionsUpdater
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
-from octobot_trading.producers.simulator.balance_updater_simulator import BalanceUpdaterSimulator, \
-    BalanceProfitabilityUpdaterSimulator
+from octobot_trading.producers.simulator.balance_updater_simulator import BalanceProfitabilityUpdaterSimulator
 from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
 from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
 from octobot_trading.producers.simulator.order_book_updater_simulator import OrderBookUpdaterSimulator
@@ -51,7 +50,6 @@ from octobot_trading.producers.simulator.orders_updater_simulator import OpenOrd
 from octobot_trading.producers.simulator.positions_updater_simulator import PositionsUpdaterSimulator
 from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
 from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
-from octobot_trading.producers.simulator.trades_updater_simulator import TradesUpdaterSimulator
 from octobot_trading.producers.ticker_updater import TickerUpdater
 from octobot_trading.producers.trades_updater import TradesUpdater
 from octobot_trading.util import is_trader_simulator_enabled

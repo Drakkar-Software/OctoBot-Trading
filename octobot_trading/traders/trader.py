@@ -15,15 +15,12 @@
 #  License along with this library.
 import copy
 
-from octobot_commons.pretty_printer import PrettyPrinter
-
 from octobot_trading.constants import REAL_TRADER_STR, CONFIG_TRADER_RISK, CONFIG_TRADING, CONFIG_TRADER_RISK_MIN, \
     CONFIG_TRADER_RISK_MAX
 from octobot_trading.data.order import Order
 from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.data.trade import Trade
-from octobot_trading.enums import OrderStatus, ExchangeConstantsOrderColumns, TraderOrderType, TradeOrderType, \
-    TradeOrderSide, ExchangeConstantsMarketPropertyColumns
+from octobot_trading.enums import OrderStatus, ExchangeConstantsOrderColumns
 from octobot_trading.orders import OrderConstants
 from octobot_trading.util.initializable import Initializable
 from octobot_commons.logging.logging_util import get_logger
