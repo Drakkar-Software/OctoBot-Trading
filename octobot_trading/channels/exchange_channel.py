@@ -29,7 +29,6 @@ from octobot_channels.channels.channel_instances import ChannelInstances
 class ExchangeChannel(Channel):
     FILTER_SIZE = 1
     WITH_TIME_FRAME = False
-    PRODUCER_CLASS = None
 
     def __init__(self, exchange_manager):
         super().__init__()
@@ -39,7 +38,6 @@ class ExchangeChannel(Channel):
 
         self.filter_send_counter = 0
         self.should_send_filter = False
-        self.internal_producer = None
 
     def new_consumer(self,
                      callback: CONSUMER_CALLBACK_TYPE,
@@ -57,11 +55,6 @@ class ExchangeChannel(Channel):
         if self.should_send_filter:
             self.filter_send_counter = 0
             self.should_send_filter = False
-
-    def get_internal_producer(self):
-        if not self.internal_producer:
-            self.internal_producer = self.PRODUCER_CLASS(self)
-        return self.internal_producer
 
     def get_consumers(self, symbol=None):
         if not symbol:

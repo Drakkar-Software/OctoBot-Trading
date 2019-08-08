@@ -25,8 +25,6 @@ cdef class ExchangeChannel(Channel):
     cdef public ExchangeManager exchange_manager
     cdef public AbstractExchange exchange
 
-    cdef public Producer global_producer
-
     cdef int filter_send_counter
     cdef bint should_send_filter
 
@@ -34,7 +32,6 @@ cdef class ExchangeChannel(Channel):
 
     cpdef void will_send(self)
     cpdef void has_send(self)
-    cpdef Producer get_global_producer(self)
     cpdef void new_consumer(self, object callback, int size=*, str symbol=*, bint filter_size=*)
     cpdef object get_consumers(self, str symbol=*)
     cpdef list get_consumers_by_timeframe(self, object time_frame, str symbol)
