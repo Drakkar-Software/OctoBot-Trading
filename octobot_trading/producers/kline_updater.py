@@ -27,9 +27,6 @@ class KlineUpdater(KlineProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.logger = get_logger(f"{self.__class__.__name__}")
-        self.should_stop = False
-        self.channel = channel
         self.tasks = []
 
     """

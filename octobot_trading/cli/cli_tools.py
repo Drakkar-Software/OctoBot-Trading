@@ -105,18 +105,18 @@ async def start_exchange(exchange_factory):
     await exchange_factory.create()
 
     # consumers
-    ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_factory.exchange_name).new_consumer(ticker_callback)
-    ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(
+    await ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_factory.exchange_name).new_consumer(ticker_callback)
+    await ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(
         recent_trades_callback)
-    ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_factory.exchange_name).new_consumer(order_book_callback)
-    ExchangeChannels.get_chan(KLINE_CHANNEL, exchange_factory.exchange_name).new_consumer(kline_callback)
-    ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_factory.exchange_name).new_consumer(ohlcv_callback)
+    await ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_factory.exchange_name).new_consumer(order_book_callback)
+    await ExchangeChannels.get_chan(KLINE_CHANNEL, exchange_factory.exchange_name).new_consumer(kline_callback)
+    await ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_factory.exchange_name).new_consumer(ohlcv_callback)
 
-    ExchangeChannels.get_chan(BALANCE_CHANNEL, exchange_factory.exchange_name).new_consumer(balance_callback)
-    ExchangeChannels.get_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_factory.exchange_name).new_consumer(
+    await ExchangeChannels.get_chan(BALANCE_CHANNEL, exchange_factory.exchange_name).new_consumer(balance_callback)
+    await ExchangeChannels.get_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_factory.exchange_name).new_consumer(
         balance_profitability_callback)
-    ExchangeChannels.get_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
-    ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
-    ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
+    await ExchangeChannels.get_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
+    await ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
+    await ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
 
     await asyncio.gather(*asyncio.all_tasks(asyncio.get_event_loop()))

@@ -27,9 +27,6 @@ class BalanceUpdater(BalanceProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.logger = get_logger(f"{self.__class__.__name__}")
-        self.should_stop = False
-        self.channel = channel
 
     async def start(self):
         while not self.should_stop:
@@ -47,9 +44,9 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
 
     async def start(self):
-        ExchangeChannels.get_chan(BALANCE_CHANNEL, self.channel.exchange.name).new_consumer(
+        await ExchangeChannels.get_chan(BALANCE_CHANNEL, self.channel.exchange.name).new_consumer(
             self.handle_balance_update)
-        ExchangeChannels.get_chan(TICKER_CHANNEL, self.channel.exchange.name).new_consumer(
+        await ExchangeChannels.get_chan(TICKER_CHANNEL, self.channel.exchange.name).new_consumer(
             self.handle_ticker_update)
 
     """

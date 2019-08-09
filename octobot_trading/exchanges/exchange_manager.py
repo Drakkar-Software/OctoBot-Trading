@@ -15,6 +15,7 @@
 #  License along with this library.
 import time
 
+from octobot_channels.util import create_all_subclasses_channel
 from octobot_commons.config_util import has_invalid_default_config_value
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME
 from octobot_commons.enums import PriceIndexes
@@ -135,10 +136,7 @@ class ExchangeManager(Initializable):
         self.is_ready = True
 
     async def _create_exchange_channels(self):  # TODO filter creation
-        for exchange_channel_class in ExchangeChannel.__subclasses__():
-            exchange_channel = exchange_channel_class(self)
-            ExchangeChannels.set_chan(exchange_channel, name=exchange_channel_class.get_name())
-            await exchange_channel.start()
+        await create_all_subclasses_channel(ExchangeChannel, ExchangeChannels, exchange_manager=self)
 
     async def _create_exchange_producers(self):
         # Real data producers

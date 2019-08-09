@@ -21,9 +21,14 @@ Handles balance changes
 
 from octobot_trading.channels.exchange_channel cimport ExchangeChannel, ExchangeChannelProducer
 
-
 cdef class BalanceProducer(ExchangeChannelProducer):
     pass
 
 cdef class BalanceChannel(ExchangeChannel):
+    pass
+
+cdef class BalanceProfitabilityProducer(ExchangeChannelProducer):
+    pass
+
+cdef class BalanceProfitabilityChannel(ExchangeChannel):
     pass

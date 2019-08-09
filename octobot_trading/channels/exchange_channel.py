@@ -39,14 +39,14 @@ class ExchangeChannel(Channel):
         self.filter_send_counter = 0
         self.should_send_filter = False
 
-    def new_consumer(self,
-                     callback: CONSUMER_CALLBACK_TYPE,
-                     size=0,
-                     symbol=CHANNEL_WILDCARD,
-                     filter_size=False):
-        self._add_new_consumer_and_run(ExchangeChannelConsumer(callback, size=size, filter_size=filter_size),
-                                       symbol=symbol,
-                                       with_time_frame=self.WITH_TIME_FRAME)
+    async def new_consumer(self,
+                           callback: CONSUMER_CALLBACK_TYPE,
+                           size=0,
+                           symbol=CHANNEL_WILDCARD,
+                           filter_size=False):
+        consumer = ExchangeChannelConsumer(callback, size=size, filter_size=filter_size)
+        await self.__add_new_consumer_and_run(consumer, symbol=symbol, with_time_frame=self.WITH_TIME_FRAME)
+        return consumer
 
     def will_send(self):
         self.filter_send_counter += 1
@@ -57,6 +57,9 @@ class ExchangeChannel(Channel):
             self.should_send_filter = False
 
     def get_consumers(self, symbol=None):
+        if not self.consumers:
+            return self.consumers
+
         if not symbol:
             symbol = CHANNEL_WILDCARD
         try:
@@ -65,7 +68,7 @@ class ExchangeChannel(Channel):
                     for consumer in self.consumers[symbol]
                     if not consumer.filter_size or self.should_send_filter]
         except KeyError:
-            self._init_consumer_if_necessary(self.consumers, symbol)
+            Channel.init_consumer_if_necessary(self.consumers, symbol)
             return self.consumers[symbol]
 
     def get_consumers_by_timeframe(self, time_frame, symbol):
@@ -79,33 +82,28 @@ class ExchangeChannel(Channel):
                     for consumer in self.consumers[symbol][time_frame]
                     if not consumer.filter_size or should_send_filter]
         except KeyError:
-            self._init_consumer_if_necessary(self.consumers, symbol, is_dict=True)
-            self._init_consumer_if_necessary(self.consumers[symbol], time_frame)
+            Channel.init_consumer_if_necessary(self.consumers, symbol, is_dict=True)
+            Channel.init_consumer_if_necessary(self.consumers[symbol], time_frame)
             return self.consumers[symbol][time_frame]
 
-    def _add_new_consumer_and_run(self, consumer, symbol=CHANNEL_WILDCARD, with_time_frame=False):
+    async def __add_new_consumer_and_run(self, consumer, symbol=CHANNEL_WILDCARD, with_time_frame=False):
         if symbol:
             if with_time_frame:
                 # create dict and list if required
-                self._init_consumer_if_necessary(self.consumers, symbol, is_dict=True)
+                Channel.init_consumer_if_necessary(self.consumers, symbol, is_dict=True)
 
                 for time_frame in self.exchange_manager.time_frames:
-                    self._init_consumer_if_necessary(self.consumers[symbol], time_frame)
+                    Channel.init_consumer_if_necessary(self.consumers[symbol], time_frame)
                     self.consumers[symbol][time_frame].append(consumer)
             else:
                 # create dict and list if required
-                self._init_consumer_if_necessary(self.consumers, symbol)
+                Channel.init_consumer_if_necessary(self.consumers, symbol)
 
                 self.consumers[symbol].append(consumer)
         else:
             self.consumers[CHANNEL_WILDCARD] = [consumer]
-        consumer.run()
+        await consumer.run()
         self.logger.info(f"Consumer started for symbol {symbol}")
-
-    @staticmethod
-    def _init_consumer_if_necessary(consumer_list: dict, key: str, is_dict=False) -> None:
-        if key not in consumer_list:
-            consumer_list[key] = [] if not is_dict else {}
 
 
 class ExchangeChannelConsumer(Consumer):
@@ -129,6 +127,12 @@ class ExchangeChannelProducer(Producer):
     async def send_with_wildcard(self, **kwargs):
         await self.send(**kwargs)
         await self.send(**kwargs, is_wildcard=True)
+
+    async def pause(self, **kwargs) -> None:
+        pass
+
+    async def resume(self, **kwargs) -> None:
+        pass
 
 
 class ExchangeChannels(Channels):

@@ -70,8 +70,10 @@ class RestExchange(AbstractExchange):
                     password = ""
                 else:
                     config_exchange = self.config[CONFIG_EXCHANGES][self.name]
-                    key = decrypt(config_exchange[CONFIG_EXCHANGE_KEY])
-                    secret = decrypt(config_exchange[CONFIG_EXCHANGE_SECRET])
+                    key = decrypt(config_exchange[CONFIG_EXCHANGE_KEY]) \
+                        if config_exchange[CONFIG_EXCHANGE_KEY] else None
+                    secret = decrypt(config_exchange[CONFIG_EXCHANGE_SECRET]) \
+                        if config_exchange[CONFIG_EXCHANGE_SECRET] else None
                     password = decrypt(config_exchange[CONFIG_EXCHANGE_PASSWORD]) \
                         if CONFIG_EXCHANGE_PASSWORD in config_exchange else None
                     self.is_authenticated = True

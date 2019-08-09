@@ -36,7 +36,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
         self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
 
     async def start(self):
-        ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trade)
+        await ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trade)
 
     """
     Recent trade channel consumer callback
