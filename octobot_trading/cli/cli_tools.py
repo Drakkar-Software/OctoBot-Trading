@@ -99,6 +99,7 @@ def start_cli_exchange(exchange_factory):
     current_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(current_loop)
     current_loop.run_until_complete(start_exchange(exchange_factory))
+    current_loop.run_until_complete(wait_exchange_tasks())
 
 
 async def start_exchange(exchange_factory):
@@ -119,4 +120,6 @@ async def start_exchange(exchange_factory):
     await ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
     await ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
 
+
+async def wait_exchange_tasks():
     await asyncio.gather(*asyncio.all_tasks(asyncio.get_event_loop()))
