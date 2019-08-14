@@ -27,9 +27,6 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.util import is_trader_enabled, get_pairs
 
 
-# from octobot_trading.util.order_notifier import OrderNotifier
-
-
 class Trader(Initializable):
     NO_HISTORY_MESSAGE = "Starting a fresh new trading session using the current portfolio as a profitability " \
                          "reference."
@@ -52,7 +49,7 @@ class Trader(Initializable):
         if not hasattr(self, 'simulate'):
             self.simulate = False
 
-        self.is_enabled = self.enabled(self.config)
+        self.is_enabled = Trader.enabled(self.config)
         self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange.name}")
 
         self.notifier = None  # TODO
@@ -80,27 +77,23 @@ class Trader(Initializable):
             self.risk = risk
         return self.risk
 
-    def create_order_instance(self, order_type,
+    def create_order_instance(self,
+                              order_type,
                               symbol,
                               current_price,
                               quantity,
-                              price=None,
-                              stop_price=None,
+                              price=0,
+                              stop_price=0,
                               linked_to=None,
+                              status=None,
                               order_id=None,
-                              timestamp=None,
+                              quantity_filled=0,
+                              timestamp=0,
                               linked_portfolio=None):
 
         # create new order instance
         order_class = OrderConstants.TraderOrderTypeClasses[order_type]
         order = order_class(self)
-
-        # manage order notifier
-        if linked_to is None:
-            order_notifier = None
-            # order_notifier = OrderNotifier(self.config, order) TODO
-        else:
-            order_notifier = linked_to.order_notifier
 
         order.update(order_type=order_type,
                      symbol=symbol,
@@ -108,7 +101,6 @@ class Trader(Initializable):
                      quantity=quantity,
                      price=price,
                      stop_price=stop_price,
-                     order_notifier=order_notifier,
                      order_id=self._parse_order_id(order_id),
                      status=None,
                      quantity_filled=None,
@@ -186,9 +178,7 @@ class Trader(Initializable):
             new_order = Order(self)
             new_order.update_from_raw(created_order)
 
-            # rebind order notifier and linked portfolio to new order instance
-            # new_order.order_notifier = order.order_notifier TODO
-            # new_order.order_notifier.set_order(new_order)
+            # rebind linked portfolio to new order instance
             new_order.linked_portfolio = portfolio
 
         # update the availability of the currency in the portfolio
@@ -205,7 +195,8 @@ class Trader(Initializable):
                                  f" (ID : {odr.order_id}) cancelled on {self.exchange_manager.exchange.name}")
 
                 if cancelled_order:
-                    await self.exchange_manager.exchange_personal_data.handle_order_update(order.order_id,
+                    await self.exchange_manager.exchange_personal_data.handle_order_update(order.symbol,
+                                                                                           order.order_id,
                                                                                            cancelled_order)
 
     # Should be called only if we want to cancel all symbol open orders (no filled)

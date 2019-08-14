@@ -41,9 +41,9 @@ cdef class PortfolioProfitabilty(Initializable):
     cdef public float portfolio_current_value
     cdef public float initial_portfolio_current_profitability
 
-    currencies_last_prices
-    origin_crypto_currencies_values
-    current_crypto_currencies_values
+    cdef dict currencies_last_prices
+    cdef dict origin_crypto_currencies_values
+    cdef dict current_crypto_currencies_values
 
     cdef public Portfolio origin_portfolio
 
@@ -52,5 +52,7 @@ cdef class PortfolioProfitabilty(Initializable):
 
     cdef str reference_market
 
-    cpdef float get_currency_portfolio(self, str currency, str portfolio_type=*)
+    cdef dict __only_symbol_currency_filter(self, dict currency_dict)
+    cdef void __init_traded_currencies_without_market_specific(self)
+    cdef void __inform_no_matching_symbol(self, str currency, bint force=*)
 

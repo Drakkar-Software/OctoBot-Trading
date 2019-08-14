@@ -58,9 +58,9 @@ cdef class Trader(Initializable):
                                       float quantity,
                                       float price=*,
                                       float stop_price=*,
-                                      object linked_to=None,
-                                      object status=None,
+                                      object linked_to=*,
+                                      object status=*,
                                       str order_id=*,
                                       float quantity_filled=*,
                                       float timestamp=*,
-                                      object linked_portfolio=None)
+                                      object linked_portfolio=*)

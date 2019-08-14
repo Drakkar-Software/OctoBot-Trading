@@ -41,19 +41,19 @@ class PortfolioManager(Initializable):
         self.portfolio_profitability = PortfolioProfitabilty(self.config, self.trader, self, self.exchange_manager)
 
     async def handle_balance_update(self, balance) -> bool:
-        if self.trader.enabled:
+        if self.trader.is_enabled:
             return await self.portfolio.update_portfolio_from_balance(balance)
         return False
 
     async def handle_balance_update_from_order(self, order):
-        if self.trader.enabled and self.trader.simulate:
+        if self.trader.is_enabled and self.trader.simulate:
             await self.portfolio.update_portfolio_from_order(order)
             return True
         return False
 
     # Load simulated portfolio from config if required
     async def _load_portfolio(self):
-        if self.trader.enabled:
+        if self.trader.is_enabled:
             if self.trader.simulate:
                 await self._set_starting_simulated_portfolio()
             self.logger.info(f"{CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")

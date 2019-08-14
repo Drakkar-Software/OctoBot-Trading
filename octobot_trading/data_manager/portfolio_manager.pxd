@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.data.portfolio cimport Portfolio
-from octobot_trading.data.portfolio_profitability import PortfolioProfitabilty
+from octobot_trading.data.portfolio_profitability cimport PortfolioProfitabilty
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable

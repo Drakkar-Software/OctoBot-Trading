@@ -6,6 +6,8 @@ language: python
 python: 3.7-dev
 install:
   - python3 -m pip install --upgrade --only-binary=Cython -r requirements.txt -r dev_requirements.txt
+  - python3 -m pip install OctoBot-Commons # TODO remove it
+  - python3 -m pip install OctoBot-Channels # TODO remove it
 
 matrix:
   include:
@@ -14,6 +16,7 @@ matrix:
       python: nightly
       language: python
       script:
+        - pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests
         - python3 setup.py install
 
 deploy:

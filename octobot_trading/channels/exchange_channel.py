@@ -137,7 +137,7 @@ class ExchangeChannelProducer(Producer):
 
 class ExchangeChannels(Channels):
     @staticmethod
-    def set_chan(chan: ExchangeChannel, name: str) -> None:
+    def set_chan(chan, name) -> None:
         chan_name = chan.get_name() if name else name
 
         try:

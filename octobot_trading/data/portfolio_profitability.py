@@ -247,7 +247,7 @@ class PortfolioProfitabilty(Initializable):
                 return quantity / self.currencies_last_prices[symbol_inverted]
 
             else:
-                self._inform_no_matching_symbol(currency)
+                self.__inform_no_matching_symbol(currency)
                 return 0
         except KeyError as e:
             symbols_to_add = []
@@ -262,7 +262,7 @@ class PortfolioProfitabilty(Initializable):
 
             raise e
 
-    def _inform_no_matching_symbol(self, currency, force=False):
+    def __inform_no_matching_symbol(self, currency, force=False):
         if force or currency not in self.already_informed_no_matching_symbol_currency:
             self.already_informed_no_matching_symbol_currency.add(currency)
             if not isinstance(self.exchange_manager.exchange, ExchangeSimulator):

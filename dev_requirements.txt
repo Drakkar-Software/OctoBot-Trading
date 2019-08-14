@@ -1,5 +1,13 @@
-pytest==4.6.2
+pytest
+pytest-pep8
+pytest-cov
 pytest-asyncio
+pytest-xdist
+
+coverage
+coveralls
+
+twine
+pip
 setuptools
 wheel
-cython

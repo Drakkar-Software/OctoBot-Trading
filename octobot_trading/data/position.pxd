@@ -47,18 +47,18 @@ cdef class Position(Initializable):
     cdef public float canceled_time
     cdef public float executed_time
 
-    # to use Non-trivial keyword arguments
-    # cpdef bint update(self,
-    #                   str position_id,
-    #                   str symbol,
-    #                   str currency,
-    #                   str market,
-    #                   float timestamp,
-    #                   float entry_price,
-    #                   float mark_price,
-    #                   float quantity,
-    #                   float liquidation_price,
-    #                   float unrealised_pnl,
-    #                   int leverage,
-    #                   bint is_open)
-    cpdef bint update_position_from_raw(self, Position position, dict raw_position)
+    cdef bint __update(self,
+                      str position_id,
+                      str symbol,
+                      str currency,
+                      str market,
+                      float timestamp,
+                      float entry_price,
+                      float mark_price,
+                      float quantity,
+                      float liquidation_price,
+                      float unrealised_pnl,
+                      int leverage,
+                      bint is_open)
+
+    cpdef bint update_position_from_raw(self, dict raw_position)

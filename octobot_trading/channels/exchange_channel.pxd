@@ -28,11 +28,8 @@ cdef class ExchangeChannel(Channel):
     cdef int filter_send_counter
     cdef bint should_send_filter
 
-    cdef void _add_new_consumer_and_run(self, ExchangeChannelConsumer consumer, str symbol =*, bint with_time_frame =*)
-
     cpdef void will_send(self)
     cpdef void has_send(self)
-    cpdef void new_consumer(self, object callback, int size=*, str symbol=*, bint filter_size=*)
     cpdef object get_consumers(self, str symbol=*)
     cpdef list get_consumers_by_timeframe(self, object time_frame, str symbol)
 
@@ -43,4 +40,8 @@ cdef class ExchangeChannelProducer(Producer):
     pass
 
 cdef class ExchangeChannels(Channels):
-    pass
+    @staticmethod
+    cdef void set_chan(ExchangeChannel chan, str name)
+
+    @staticmethod
+    cdef void del_chan(str name)

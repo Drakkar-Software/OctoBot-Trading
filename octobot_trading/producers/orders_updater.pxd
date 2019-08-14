@@ -18,5 +18,8 @@
 from octobot_trading.channels.orders cimport OrdersProducer
 
 
-cdef class OrdersUpdater(OrdersProducer):
+cdef class OpenOrdersUpdater(OrdersProducer):
+    pass
+
+cdef class CloseOrdersUpdater(OrdersProducer):
     pass

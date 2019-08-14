@@ -19,9 +19,7 @@ from octobot_trading.channels.balance cimport BalanceProfitabilityProducer
 from octobot_trading.exchanges.data.exchange_personal_data cimport ExchangePersonalData
 
 cdef class BalanceUpdater(BalanceProducer):
-    cdef object logger
+    pass
 
 cdef class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
-    cdef object logger
-
     cdef ExchangePersonalData exchange_personal_data

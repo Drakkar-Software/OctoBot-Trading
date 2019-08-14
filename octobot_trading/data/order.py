@@ -44,29 +44,28 @@ class Order:
         self.currency = None
         self.market = None
         self.taker_or_maker = None
-        self.order_notifier = None
-        self.timestamp = None
-        self.origin_price = None
-        self.created_last_price = None
-        self.origin_quantity = None
-        self.origin_stop_price = None
+        self.timestamp = 0
+        self.origin_price = 0
+        self.created_last_price = 0
+        self.origin_quantity = 0
+        self.origin_stop_price = 0
         self.order_type = None
         self.side = None
-        self.filled_quantity = None
+        self.filled_quantity = 0
         self.linked_portfolio = None
         self.linked_to = None
-        self.canceled_time = None
+        self.canceled_time = 0
         self.fee = None
-        self.filled_price = None
-        self.order_profitability = None
-        self.total_cost = None
+        self.filled_price = 0
+        self.order_profitability = 0
+        self.total_cost = 0
 
     @classmethod
     def get_name(cls):
         return cls.__name__
 
     def update(self, symbol: str, current_price: float, quantity: float, price: float, stop_price: float,
-               status: OrderStatus, order_notifier: object, order_id: str, quantity_filled: float, filled_price: float,
+               status: OrderStatus, order_id: str, quantity_filled: float, filled_price: float,
                fee: dict, total_cost: float, timestamp=None, linked_to=None, linked_portfolio=None, order_type=None):
         changed: bool = False
 
@@ -76,9 +75,6 @@ class Order:
         if symbol and self.symbol != symbol:
             self.currency, self.market = self.exchange_manager.get_exchange_quote_and_base(symbol)
             self.symbol = symbol
-
-        if order_notifier:
-            self.order_notifier = order_notifier
 
         if status and self.status != status:
             self.status = status
@@ -268,7 +264,6 @@ class Order:
             "price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],
             "stop_price": None,
             "status": OrderStatus(raw_order[ExchangeConstantsOrderColumns.STATUS.value]),
-            "order_notifier": None,
             "order_id": raw_order[ExchangeConstantsOrderColumns.ID.value],
             "quantity_filled": raw_order[ExchangeConstantsOrderColumns.FILLED.value],
             "filled_price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],

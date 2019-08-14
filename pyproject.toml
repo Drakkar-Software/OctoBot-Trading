@@ -1,0 +1,3 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["cython", "OctoBot-Commons", "OctoBot-Channels"]   # PEP 508 specification

@@ -20,9 +20,8 @@
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 from octobot_trading.data.portfolio cimport Portfolio
-from octobot_trading.exchanges.exchange_manager import ExchangeManager
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.traders.trader cimport Trader
-from octobot_trading.util.order_notifier cimport OrderNotifier
 
 cdef class Order:
     cdef public Trader trader
@@ -36,7 +35,6 @@ cdef class Order:
 
     cdef public Order linked_to
     cdef public Portfolio linked_portfolio
-    cdef public OrderNotifier order_notifier
 
     cdef public bint is_simulated
     cdef public bint is_from_this_octobot
@@ -91,10 +89,6 @@ cdef class Order:
     cpdef float get_total_fees(self, char * currency)
     cpdef bint is_filled(self)
     cpdef bint is_cancelled(self)
-    cpdef str get_string_info(self)
-    cpdef str get_description(self)
-    cpdef bint matches_description(self, str description)
-    cpdef object infer_taker_or_maker(self)
     cpdef dict get_computed_fee(self, object forced_value=*)
     cpdef float get_profitability(self)
     cpdef float generate_executed_time(self, bint simulated_time=*)

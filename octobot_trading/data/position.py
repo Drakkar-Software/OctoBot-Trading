@@ -24,21 +24,21 @@ class Position:
         self.exchange_manager = trader.exchange_manager
 
         self.position_id = None
-        self.timestamp = None
+        self.timestamp = 0
         self.symbol = None
         self.currency, self.market = None, None
-        self.creation_time = None
-        self.entry_price = None
-        self.mark_price = None
-        self.quantity = None
-        self.liquidation_price = None
-        self.unrealised_pnl = None
-        self.leverage = None
-        self.is_open = None
+        self.creation_time = 0
+        self.entry_price = 0
+        self.mark_price = 0
+        self.quantity = 0
+        self.liquidation_price = 0
+        self.unrealised_pnl = 0
+        self.leverage = 0
+        self.is_open = True
 
-    def _update(self, position_id, symbol, currency, market,
-                timestamp, entry_price, mark_price, quantity,
-                liquidation_price, unrealised_pnl, leverage, is_open):
+    def __update(self, position_id, symbol, currency, market,
+                 timestamp, entry_price, mark_price, quantity,
+                 liquidation_price, unrealised_pnl, leverage, is_open):
         changed: bool = False
 
         if position_id and self.position_id != position_id:
@@ -87,7 +87,7 @@ class Position:
     def update_position_from_raw(self, raw_position):
         currency, market = self.exchange_manager.get_exchange_quote_and_base(
             raw_position[ExchangeConstantsPositionColumns.SYMBOL.value])
-        return self._update(**{
+        return self.__update(**{
             "symbol": self.exchange_manager.get_exchange_symbol(raw_position[ExchangeConstantsPositionColumns.SYMBOL.value]),
             "currency": currency,
             "market": market,
