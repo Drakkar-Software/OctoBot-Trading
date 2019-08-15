@@ -26,6 +26,14 @@ class TradeOrderType(Enum):
     MARKET = "market"
 
 
+class EvaluatorStates(Enum):
+    SHORT = 1
+    VERY_SHORT = 2
+    LONG = 3
+    VERY_LONG = 4
+    NEUTRAL = 5
+
+
 class OrderStatus(Enum):
     FILLED = "closed"
     OPEN = "open"
