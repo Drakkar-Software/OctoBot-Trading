@@ -64,6 +64,7 @@ class AbstractTradingMode(AbstractTentacle):
             min_strategies_count = config[TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT]
         return min_strategies_count
 
+    # TODO
     # @classmethod
     # def get_required_strategies(cls, trading_mode_config=None):
     #     config = trading_mode_config or cls.get_specific_config()

@@ -30,15 +30,13 @@ class AbstractTradingModeDecider:
         self.state = None
 
     # create real and/or simulating orders in trader instances
-    async def create_final_state_orders(self, evaluator_notification, creator_key):
+    async def create_final_state_orders(self, creator_key):
         # simulated trader
-        await self.create_order_if_possible(evaluator_notification,
-                                            self.symbol_evaluator.get_trader_simulator(self.exchange),
+        await self.create_order_if_possible(self.symbol_evaluator.get_trader_simulator(self.exchange),
                                             creator_key)
 
         # real trader
-        await self.create_order_if_possible(evaluator_notification,
-                                            self.symbol_evaluator.get_trader(self.exchange),
+        await self.create_order_if_possible(self.symbol_evaluator.get_trader(self.exchange),
                                             creator_key)
 
     async def cancel_symbol_open_orders(self):
@@ -100,15 +98,14 @@ class AbstractTradingModeDecider:
         raise NotImplementedError("_create_state not implemented")
 
     # for each trader call the creator to check if order creation is possible and create it
-    async def create_order_if_possible(self, evaluator_notification, trader, creator_key):
+    async def create_order_if_possible(self, trader, creator_key):
         if trader.is_enabled():
             async with trader.get_portfolio().get_lock():
                 pf = trader.get_portfolio()
                 order_creator = self.trading_mode.get_creator(self.symbol, creator_key)
                 if await order_creator.can_create_order(self.symbol, self.exchange, self.state, pf):
-                    new_orders = None
                     try:
-                        new_orders = await order_creator.create_new_order(
+                        _ = await order_creator.create_new_order(
                             self.final_eval,
                             self.symbol,
                             self.exchange,
@@ -120,7 +117,7 @@ class AbstractTradingModeDecider:
                             try:
                                 # second chance: force portfolio update and retry
                                 await trader.force_refresh_orders_and_portfolio(pf)
-                                new_orders = await order_creator.create_new_order(
+                                _ = await order_creator.create_new_order(
                                     self.final_eval,
                                     self.symbol,
                                     self.exchange,
@@ -129,14 +126,6 @@ class AbstractTradingModeDecider:
                                     self.state)
                             except InsufficientFunds as e:
                                 self.logger.error(f"Failed to create order on second attempt : {e})")
-
-                    await self.push_order_notification_if_possible(new_orders, evaluator_notification)
-
-    @staticmethod
-    async def push_order_notification_if_possible(order_list, notification):
-        if order_list:
-            for order in order_list:
-                await order.get_order_notifier().notify(notification)
 
 
 class AbstractTradingModeDeciderWithBot(AbstractTradingModeDecider):

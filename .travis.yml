@@ -5,9 +5,10 @@ os: linux
 language: python
 python: 3.7-dev
 install:
-  - python3 -m pip install --upgrade --only-binary=Cython -r requirements.txt -r dev_requirements.txt
+  - python3 -m pip install --upgrade --only-binary=Cython -r dev_requirements.txt
   - python3 -m pip install OctoBot-Commons # TODO remove it
   - python3 -m pip install OctoBot-Channels # TODO remove it
+  - python3 -m pip install -r requirements.txt # TODO remove it
 
 matrix:
   include:
