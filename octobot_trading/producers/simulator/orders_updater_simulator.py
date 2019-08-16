@@ -19,7 +19,7 @@ from ccxt.base.errors import InsufficientFunds
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels import RECENT_TRADES_CHANNEL, ORDERS_CHANNEL
-from octobot_trading.channels.exchange_channel import ExchangeChannels
+from octobot_trading.channels.exchange_channel import get_chan
 
 from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus
@@ -36,7 +36,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
         self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
 
     async def start(self):
-        await ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trade)
+        await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trade)
 
     """
     Recent trade channel consumer callback
@@ -76,7 +76,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
             finally:
                 # ensure always call fill callback
                 if order_filled:
-                    await ExchangeChannels.get_chan(ORDERS_CHANNEL, self.channel.exchange.name).get_internal_producer() \
+                    await get_chan(ORDERS_CHANNEL, self.channel.exchange.name).get_internal_producer() \
                         .send_with_wildcard(symbol=order.symbol,
                                             order=order,
                                             is_from_bot=True,

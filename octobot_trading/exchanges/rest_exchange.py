@@ -57,11 +57,13 @@ class RestExchange(AbstractExchange):
     def create_exchange_type(exchange_class_string):
         if isinstance(exchange_class_string, str):
             return getattr(ccxt, exchange_class_string)
-        else:
-            return exchange_class_string
+        return exchange_class_string
 
-    # ccxt exchange instance creation
     def _create_client(self):
+        """
+        Exchange instance creation
+        :return:
+        """
         if self.exchange_manager.ignore_config or self.exchange_manager.check_config(self.name):
             try:
                 if self.exchange_manager.ignore_config or not self.exchange_manager.should_decrypt_token(self.logger):
@@ -88,9 +90,15 @@ class RestExchange(AbstractExchange):
             except Exception as e:
                 self.is_authenticated = False
                 self.exchange_manager.handle_token_error(e, self.logger)
-                self.client = self.exchange_type({'verbose': False})
+                self.client = self.exchange_type({
+                    'verbose': False,
+                    'enableRateLimit': True
+                })
         else:
-            self.client = self.exchange_type({'verbose': False})
+            self.client = self.exchange_type({
+                    'verbose': False,
+                    'enableRateLimit': True
+                })
             self.logger.error("configuration issue: missing login information !")
         self.client.logger.setLevel(logging.INFO)
 

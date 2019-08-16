@@ -15,7 +15,7 @@
 #  License along with this library.
 import time
 
-from octobot_channels.util import create_all_subclasses_channel
+from octobot_channels.util import create_all_subclasses_channel, create_channel_instance
 from octobot_commons.config_util import has_invalid_default_config_value
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME
 from octobot_commons.enums import PriceIndexes
@@ -26,7 +26,8 @@ from octobot_commons.timestamp_util import is_valid_timestamp
 
 from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, \
     TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannels
+from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
+from octobot_trading.channels.ticker import TickerChannel
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
     CONFIG_EXCHANGE_KEY
@@ -131,51 +132,51 @@ class ExchangeManager(Initializable):
             self.exchange = ExchangeSimulator(self.config, self.exchange_type, self)
             self._set_config_traded_pairs()
 
-        # create exchange producers if necessaary
+        # create exchange producers if necessary
         await self._create_exchange_producers()
         self.is_ready = True
 
     async def _create_exchange_channels(self):  # TODO filter creation
-        await create_all_subclasses_channel(ExchangeChannel, ExchangeChannels, exchange_manager=self)
+        await create_all_subclasses_channel(ExchangeChannel, set_chan, exchange_manager=self)
 
     async def _create_exchange_producers(self):
         # Real data producers
         if self.rest_only and not self.is_backtesting:  # TODO or filter creation with WS
-            await OHLCVUpdater(ExchangeChannels.get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
-            await OrderBookUpdater(ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
-            await RecentTradeUpdater(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
-            await TickerUpdater(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
-            await KlineUpdater(ExchangeChannels.get_chan(KLINE_CHANNEL, self.exchange.name)).run()
+            await OHLCVUpdater(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
+            await OrderBookUpdater(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
+            await RecentTradeUpdater(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
+            await TickerUpdater(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
+            await KlineUpdater(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
         if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting):  # TODO or filter creation with WS
-            await BalanceUpdater(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
-            await BalanceProfitabilityUpdater(ExchangeChannels.get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
-            await CloseOrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-            await OpenOrdersUpdater(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-            await TradesUpdater(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
-            await PositionsUpdater(ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
+            await BalanceUpdater(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+            await BalanceProfitabilityUpdater(get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
+            await CloseOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+            await OpenOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+            await TradesUpdater(get_chan(TRADES_CHANNEL, self.exchange.name)).run()
+            await PositionsUpdater(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
         # Simulated producers
         if not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting:
             # Not required
-            # await BalanceUpdaterSimulator(ExchangeChannels.get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
-            await BalanceProfitabilityUpdaterSimulator(ExchangeChannels.get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
+            # await BalanceUpdaterSimulator(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+            await BalanceProfitabilityUpdaterSimulator(get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
 
-            await CloseOrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-            await OpenOrdersUpdaterSimulator(ExchangeChannels.get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+            await CloseOrdersUpdaterSimulator(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+            await OpenOrdersUpdaterSimulator(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
 
             # Not required
-            # await TradesUpdaterSimulator(ExchangeChannels.get_chan(TRADES_CHANNEL, self.exchange.name)).run()
+            # await TradesUpdaterSimulator(get_chan(TRADES_CHANNEL, self.exchange.name)).run()
 
             # TODO
-            await PositionsUpdaterSimulator(ExchangeChannels.get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
+            await PositionsUpdaterSimulator(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
         if self.is_backtesting:
-            await OHLCVUpdaterSimulator(ExchangeChannels.get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
-            await OrderBookUpdaterSimulator(ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
-            await RecentTradeUpdaterSimulator(ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
-            await TickerUpdaterSimulator(ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange.name)).run()
-            await KlineUpdaterSimulator(ExchangeChannels.get_chan(KLINE_CHANNEL, self.exchange.name)).run()
+            await OHLCVUpdaterSimulator(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
+            await OrderBookUpdaterSimulator(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
+            await RecentTradeUpdaterSimulator(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
+            await TickerUpdaterSimulator(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
+            await KlineUpdaterSimulator(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
     def _search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():

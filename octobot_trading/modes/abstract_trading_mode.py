@@ -19,7 +19,7 @@ import os
 from octobot_commons.config import load_config
 from octobot_commons.constants import TENTACLES_TRADING_PATH, TENTACLE_DEFAULT_CONFIG
 from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.tentacles_management import AdvancedManager
+from octobot_commons.tentacles_management import get_class
 from octobot_commons.tentacles_management.abstract_tentacle import AbstractTentacle
 
 from octobot_trading.constants import TENTACLES_TRADING_MODE_PATH, TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT, \
@@ -145,7 +145,7 @@ class AbstractTradingMode(AbstractTentacle):
                     all_strategy_instances[all_strategy_classes.index(required_class)]
                 found_strategy_count += 1
             else:
-                subclass = AdvancedManager.get_class(self.config, required_class)
+                subclass = get_class(self.config, required_class)
                 if subclass in all_strategy_classes:
                     self.strategy_instances_by_classes[symbol][required_class] = \
                         all_strategy_instances[all_strategy_classes.index(subclass)]

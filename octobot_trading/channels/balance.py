@@ -19,7 +19,6 @@ Handles balance changes
 """
 from asyncio import CancelledError
 
-from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
@@ -56,6 +55,7 @@ class BalanceProducer(ExchangeChannelProducer):
 
 class BalanceChannel(ExchangeChannel):
     PRODUCER_CLASS = BalanceProducer
+    CONSUMER_CLASS = ExchangeChannelConsumer
 
 
 class BalanceProfitabilityProducer(ExchangeChannelProducer):
@@ -93,3 +93,4 @@ class BalanceProfitabilityProducer(ExchangeChannelProducer):
 
 class BalanceProfitabilityChannel(ExchangeChannel):
     PRODUCER_CLASS = BalanceProfitabilityProducer
+    CONSUMER_CLASS = ExchangeChannelConsumer

@@ -19,7 +19,7 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels import BALANCE_CHANNEL, TICKER_CHANNEL
 from octobot_trading.channels.balance import BalanceProducer, BalanceProfitabilityProducer
-from octobot_trading.channels.exchange_channel import ExchangeChannels
+from octobot_trading.channels.exchange_channel import get_chan
 
 
 class BalanceUpdater(BalanceProducer):
@@ -44,9 +44,9 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
 
     async def start(self):
-        await ExchangeChannels.get_chan(BALANCE_CHANNEL, self.channel.exchange.name).new_consumer(
+        await get_chan(BALANCE_CHANNEL, self.channel.exchange.name).new_consumer(
             self.handle_balance_update)
-        await ExchangeChannels.get_chan(TICKER_CHANNEL, self.channel.exchange.name).new_consumer(
+        await get_chan(TICKER_CHANNEL, self.channel.exchange.name).new_consumer(
             self.handle_ticker_update)
 
     """

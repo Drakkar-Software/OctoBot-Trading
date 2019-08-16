@@ -16,12 +16,13 @@
 import asyncio
 import logging
 
-from octobot_trading.cli import get_should_display_callbacks_logs
+from octobot_commons.pretty_printer import PrettyPrinter
+
 from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, KLINE_CHANNEL, \
     OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
-from octobot_trading.channels.exchange_channel import ExchangeChannels
+from octobot_trading.channels.exchange_channel import get_chan
+from octobot_trading.cli import get_should_display_callbacks_logs
 from octobot_trading.exchanges.exchange_factory import ExchangeFactory
-from octobot_commons.pretty_printer import PrettyPrinter
 
 
 async def ticker_callback(exchange, symbol, ticker):
@@ -106,19 +107,24 @@ async def start_exchange(exchange_factory):
     await exchange_factory.create()
 
     # consumers
-    await ExchangeChannels.get_chan(TICKER_CHANNEL, exchange_factory.exchange_name).new_consumer(ticker_callback)
-    await ExchangeChannels.get_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(
+    await get_chan(TICKER_CHANNEL, exchange_factory.exchange_name).new_consumer(ticker_callback)
+    await get_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(
         recent_trades_callback)
-    await ExchangeChannels.get_chan(ORDER_BOOK_CHANNEL, exchange_factory.exchange_name).new_consumer(order_book_callback)
-    await ExchangeChannels.get_chan(KLINE_CHANNEL, exchange_factory.exchange_name).new_consumer(kline_callback)
-    await ExchangeChannels.get_chan(OHLCV_CHANNEL, exchange_factory.exchange_name).new_consumer(ohlcv_callback)
+    await get_chan(ORDER_BOOK_CHANNEL, exchange_factory.exchange_name).new_consumer(order_book_callback)
+    await get_chan(KLINE_CHANNEL, exchange_factory.exchange_name).new_consumer(kline_callback)
+    await get_chan(OHLCV_CHANNEL, exchange_factory.exchange_name).new_consumer(ohlcv_callback)
 
-    await ExchangeChannels.get_chan(BALANCE_CHANNEL, exchange_factory.exchange_name).new_consumer(balance_callback)
-    await ExchangeChannels.get_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_factory.exchange_name).new_consumer(
+    await get_chan(BALANCE_CHANNEL, exchange_factory.exchange_name).new_consumer(balance_callback)
+    await get_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_factory.exchange_name).new_consumer(
         balance_profitability_callback)
-    await ExchangeChannels.get_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
-    await ExchangeChannels.get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
-    await ExchangeChannels.get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
+    await get_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
+    await get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
+    await get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
+
+    try:
+        await get_chan(TICKER_CHANNEL, exchange_factory.exchange_name).get_internal_producer().send(symbol="BTC/USDT", ticker={}, is_wildcard=True)
+    except Exception as e:
+        logging.exception(e)
 
 
 async def wait_exchange_tasks():

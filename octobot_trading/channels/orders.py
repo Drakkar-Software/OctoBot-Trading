@@ -19,7 +19,7 @@ from octobot_channels import CHANNEL_WILDCARD
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
@@ -37,7 +37,7 @@ class OrdersProducer(ExchangeChannelProducer):
             for order in orders:
                 symbol: str = self.channel.exchange_manager.get_exchange_symbol(
                     order[ExchangeConstantsOrderColumns.SYMBOL.value])
-                if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:
+                if self.channel.get_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_consumers(symbol=symbol):
                     order_id: str = order[ExchangeConstantsOrderColumns.ID.value]
                     is_updated: bool = False
                     if is_closed:
@@ -78,3 +78,4 @@ class OrdersProducer(ExchangeChannelProducer):
 
 class OrdersChannel(ExchangeChannel):
     PRODUCER_CLASS = OrdersProducer
+    CONSUMER_CLASS = ExchangeChannelConsumer

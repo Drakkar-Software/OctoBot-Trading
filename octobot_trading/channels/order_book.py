@@ -18,7 +18,7 @@ from asyncio import CancelledError
 from octobot_channels import CHANNEL_WILDCARD
 from octobot_channels.producer import Producer
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
 
 
 class OrderBookProducer(ExchangeChannelProducer):
@@ -31,7 +31,7 @@ class OrderBookProducer(ExchangeChannelProducer):
 
     async def perform(self, symbol, asks, bids):
         try:
-            if CHANNEL_WILDCARD in self.channel.consumers or symbol in self.channel.consumers:  # and symbol_data.order_book_is_initialized()
+            if self.channel.get_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_consumers(symbol=symbol):  # and symbol_data.order_book_is_initialized()
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_update(asks, bids)
                 await self.send_with_wildcard(symbol=symbol, asks=asks, bids=bids)
         except CancelledError:
@@ -51,4 +51,5 @@ class OrderBookProducer(ExchangeChannelProducer):
 
 
 class OrderBookChannel(ExchangeChannel):
-    pass
+    PRODUCER_CLASS = OrderBookProducer
+    CONSUMER_CLASS = ExchangeChannelConsumer

@@ -19,7 +19,7 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol, merge_currencies
 
 from octobot_trading.channels import TICKER_CHANNEL
-from octobot_trading.channels.exchange_channel import ExchangeChannels
+from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import ExchangeConstantsTickersColumns
 from octobot_trading.exchanges.backtesting.collector import backtesting_enabled
@@ -257,7 +257,7 @@ class PortfolioProfitabilty(Initializable):
                 symbols_to_add = [symbol_inverted]
 
             if symbols_to_add:
-                await ExchangeChannels.get_chan(TICKER_CHANNEL, self.exchange_manager.exchange.name)\
+                await get_chan(TICKER_CHANNEL, self.exchange_manager.exchange.name)\
                     .modify(added_pairs=symbols_to_add)
 
             raise e

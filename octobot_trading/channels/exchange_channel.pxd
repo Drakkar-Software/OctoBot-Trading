@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_channels.channels.channel cimport Channel, Channels
+from octobot_channels.channels.channel cimport Channel
 from octobot_channels.consumer cimport Consumer
 from octobot_channels.producer cimport Producer
 
@@ -39,9 +39,7 @@ cdef class ExchangeChannelConsumer(Consumer):
 cdef class ExchangeChannelProducer(Producer):
     pass
 
-cdef class ExchangeChannels(Channels):
-    @staticmethod
-    cdef void set_chan(ExchangeChannel chan, str name)
 
-    @staticmethod
-    cdef void del_chan(str name)
+cpdef ExchangeChannel get_chan(str chan_name, str exchange_name)
+cpdef void set_chan(ExchangeChannel chan, str name)
+cpdef void del_chan(str name, str exchange_name)

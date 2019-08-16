@@ -19,7 +19,7 @@ from octobot_channels import CHANNEL_WILDCARD
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
 
 
 class OHLCVProducer(ExchangeChannelProducer):
@@ -32,8 +32,8 @@ class OHLCVProducer(ExchangeChannelProducer):
 
     async def perform(self, time_frame, symbol, candle, replace_all=False, partial=False):
         try:
-            if (CHANNEL_WILDCARD in self.channel.consumers and self.channel.consumers[CHANNEL_WILDCARD]) or \
-                    (symbol in self.channel.consumers or time_frame in self.channel.consumers[symbol]):
+            if self.channel.get_consumers(symbol=CHANNEL_WILDCARD) or \
+                    self.channel.get_consumers_by_timeframe(symbol=symbol, time_frame=time_frame):
                 self.channel.exchange_manager.uniformize_candles_if_necessary(candle)
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_candles_update(time_frame,
                                                                                                   candle,
@@ -61,3 +61,5 @@ class OHLCVProducer(ExchangeChannelProducer):
 
 class OHLCVChannel(ExchangeChannel):
     WITH_TIME_FRAME = True
+    PRODUCER_CLASS = OHLCVProducer
+    CONSUMER_CLASS = ExchangeChannelConsumer
