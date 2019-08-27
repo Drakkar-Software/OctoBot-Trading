@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -9,13 +10,12 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+#  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.channels.exchange_channel cimport ExchangeChannelConsumer
 
-LOGGER_TAG = "TradingApi"
 
-from .exchange import *
-from .orders import *
-from .modes import *
+cdef class AbstractTradingModeConsumer(ExchangeChannelConsumer):
+    pass

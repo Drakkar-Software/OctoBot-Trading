@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.api.modes import create_trading_mode, init_trading_mode_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.traders.trader import Trader
 from octobot_trading.traders.trader_simulator import TraderSimulator
@@ -45,6 +46,9 @@ class ExchangeFactory:
         else:
             trader = Trader(self.config, self.exchange_manager)
         await trader.initialize()
+
+        init_trading_mode_config(self.config)
+        await create_trading_mode(self.config, self.exchange_manager)
 
         # set sandbox mode
         self.exchange_manager.exchange.client.setSandboxMode(self.is_sandboxed)

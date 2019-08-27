@@ -26,3 +26,5 @@ ORDERS_CHANNEL = "Orders"
 BALANCE_CHANNEL = "Balance"
 BALANCE_PROFITABILITY_CHANNEL = "BalanceProfitability"
 POSITIONS_CHANNEL = "Positions"
+
+MODE_CHANNEL = "Mode"

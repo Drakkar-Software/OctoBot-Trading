@@ -88,14 +88,6 @@ async def positions_callback(exchange, symbol, position, is_closed, is_updated, 
                      f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
 
 
-def create_new_exchange(config, exchange_name, is_simulated, is_rest_only, is_backtesting, is_sandboxed):
-    return ExchangeFactory(config, exchange_name,
-                           is_simulated=is_simulated,
-                           is_backtesting=is_backtesting,
-                           rest_only=is_rest_only,
-                           is_sandboxed=is_sandboxed)
-
-
 def start_cli_exchange(exchange_factory):
     current_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(current_loop)
@@ -120,11 +112,6 @@ async def start_exchange(exchange_factory):
     await get_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
     await get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
     await get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
-
-    try:
-        await get_chan(TICKER_CHANNEL, exchange_factory.exchange_name).get_internal_producer().send(symbol="BTC/USDT", ticker={}, is_wildcard=True)
-    except Exception as e:
-        logging.exception(e)
 
 
 async def wait_exchange_tasks():

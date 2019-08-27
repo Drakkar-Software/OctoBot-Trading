@@ -17,9 +17,12 @@ from octobot_commons.constants import INIT_EVAL_NOTE
 from octobot_commons.logging.logging_util import get_logger
 from ccxt.async_support import InsufficientFunds
 
+from octobot_trading.channels.exchange_channel import ExchangeChannelProducer
 
-class AbstractTradingModeDecider:
-    def __init__(self, trading_mode, symbol_evaluator, exchange):
+
+class AbstractTradingModeProducer(ExchangeChannelProducer):
+    def __init__(self, trading_mode, symbol_evaluator, exchange, channel):
+        super().__init__(channel)
         self.trading_mode = trading_mode
         self.symbol_evaluator = symbol_evaluator
         self.config = symbol_evaluator.get_config()
@@ -128,7 +131,7 @@ class AbstractTradingModeDecider:
                                 self.logger.error(f"Failed to create order on second attempt : {e})")
 
 
-class AbstractTradingModeDeciderWithBot(AbstractTradingModeDecider):
+class AbstractTradingModeProducerWithBot(AbstractTradingModeProducer):
     def __init__(self, trading_mode, symbol_evaluator, exchange, trader, creators):
         super().__init__(trading_mode, symbol_evaluator, exchange)
         self.trader = trader

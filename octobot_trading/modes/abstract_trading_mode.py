@@ -24,22 +24,17 @@ from octobot_commons.tentacles_management.abstract_tentacle import AbstractTenta
 
 from octobot_trading.constants import TENTACLES_TRADING_MODE_PATH, TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT, \
     TRADING_MODE_REQUIRED_STRATEGIES
-from octobot_trading.enums import OrderStatus
 
 
 class AbstractTradingMode(AbstractTentacle):
-    def __init__(self, config, exchange):
+    def __init__(self, config):
         super().__init__()
-        self.config = config
-        self.exchange = exchange
+        self.config: dict = config
+        self.trading_config = None
+
         self.logger = get_logger(self.get_name())
 
-        self.trading_config = None
-        self.creators = {}
-        self.deciders = {}
-        self.deciders_without_keys = {}
-        self.strategy_instances_by_classes = {}
-        self.symbol_evaluators = {}
+        self.strategy_instances_by_classes: dict = {}
 
     @classmethod
     def get_tentacle_folder(cls) -> str:
@@ -49,16 +44,12 @@ class AbstractTradingMode(AbstractTentacle):
     def get_config_tentacle_type(cls) -> str:
         return TENTACLES_TRADING_MODE_PATH
 
-    # method automatically called when an order is filled, override in subclasses if useful
-    async def order_filled_callback(self, order):
-        pass
-
     @staticmethod
-    def is_backtestable():
+    def is_backtestable() -> bool:
         return True
 
     @classmethod
-    def get_required_strategies_count(cls, config):
+    def get_required_strategies_count(cls, config) -> int:
         min_strategies_count = 1
         if TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT in config:
             min_strategies_count = config[TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT]
@@ -88,53 +79,18 @@ class AbstractTradingMode(AbstractTentacle):
         config = trading_mode_config or cls.get_specific_config()
         if TRADING_MODE_REQUIRED_STRATEGIES in config:
             return config[TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)
-        else:
-            raise Exception(f"'{TRADING_MODE_REQUIRED_STRATEGIES}' is missing in {cls.get_config_file_name()}")
+        raise Exception(f"'{TRADING_MODE_REQUIRED_STRATEGIES}' is missing in {cls.get_config_file_name()}")
 
     @classmethod
     def get_default_strategies(cls):
         config = cls.get_specific_config()
         if TENTACLE_DEFAULT_CONFIG in config:
             return config[TENTACLE_DEFAULT_CONFIG]
-        else:
-            strategies_classes, _ = cls.get_required_strategies_names_and_count(config)
-            return strategies_classes
 
-    def create_deciders(self, symbol, symbol_evaluator) -> None:
-        raise NotImplementedError("create_deciders not implemented")
+        strategies_classes, _ = cls.get_required_strategies_names_and_count(config)
+        return strategies_classes
 
-    def create_creators(self, symbol, symbol_evaluator) -> None:
-        raise NotImplementedError("create_creators not implemented")
-
-    async def order_update_callback(self, order):
-        if order.get_status() == OrderStatus.FILLED:
-            await self.order_filled_callback(order)
-
-    def add_symbol_evaluator(self, symbol_evaluator):
-        new_symbol = symbol_evaluator.get_symbol()
-        self.symbol_evaluators[new_symbol] = symbol_evaluator
-
-        # init maps
-        self.creators[new_symbol] = {}
-        self.deciders[new_symbol] = {}
-        self.deciders_without_keys[new_symbol] = []
-
-        # init strategies
-        self.strategy_instances_by_classes[new_symbol] = {}
-        self._init_strategies_instances(new_symbol, symbol_evaluator.get_strategies_eval_list(self.exchange))
-
-        # create decider and creators
-        try:
-            self.create_creators(new_symbol, symbol_evaluator)
-            self.create_deciders(new_symbol, symbol_evaluator)
-        except Exception as e:
-            self.logger.error(f"Error when initializing trading mode: {e}")
-            self.logger.exception({e})
-
-    def get_strategy_instances_by_classes(self, symbol):
-        return self.strategy_instances_by_classes[symbol]
-
-    def _init_strategies_instances(self, symbol, all_strategy_instances):
+    def __init_strategies_instances(self, symbol, all_strategy_instances):
         all_strategy_classes = [s.__class__ for s in all_strategy_instances]
         required_strategies, required_strategies_min_count = self.get_required_strategies()
         missing_strategies = []
@@ -170,76 +126,14 @@ class AbstractTradingMode(AbstractTentacle):
         if not self.trading_config:
             self.set_default_config()
 
-    def get_trading_config_value(self, key):
-        return self.trading_config[key]
-
     # to implement in subclasses if config is necessary
     def set_default_config(self):
         pass
 
-    def add_decider(self, symbol, decider, decider_key=None):
-        if not decider_key:
-            decider_key = decider.__class__.__name__
-            if decider_key in self.creators[symbol]:
-                to_add_id = 2
-                proposed_decider_key = decider_key + str(to_add_id)
-
-                while proposed_decider_key in self.deciders[symbol]:
-                    to_add_id += 1
-                    proposed_decider_key = decider_key + str(to_add_id)
-
-                decider_key = proposed_decider_key
-
-        self.deciders[symbol][decider_key] = decider
-        self.deciders_without_keys[symbol].append(decider)
-        return decider_key
-
-    def add_creator(self, symbol, creator, creator_key=None):
-        if not creator_key:
-            creator_key = creator.__class__.__name__
-            if creator_key in self.creators[symbol]:
-                to_add_id = 2
-                proposed_creator_key = creator_key + str(to_add_id)
-
-                while proposed_creator_key in self.creators[symbol]:
-                    to_add_id += 1
-                    proposed_creator_key = creator_key + str(to_add_id)
-
-                creator_key = proposed_creator_key
-
-        self.creators[symbol][creator_key] = creator
-        return creator_key
-
     @classmethod
-    def get_parent_trading_mode_classes(cls, higher_parent_class_limit=None):
-        limit_class = higher_parent_class_limit if higher_parent_class_limit else AbstractTradingMode
-
+    def get_parent_trading_mode_classes(cls, higher_parent_class_limit=None) -> list:
         return [
             class_type
             for class_type in cls.mro()
-            if limit_class in class_type.mro()
+            if (higher_parent_class_limit if higher_parent_class_limit else AbstractTradingMode) in class_type.mro()
         ]
-
-    def get_creator(self, symbol, creator_key):
-        return self.creators[symbol][creator_key]
-
-    def get_creators(self, symbol):
-        return self.creators[symbol]
-
-    def get_only_creator_key(self, symbol):
-        return next(iter(self.creators[symbol].keys()))
-
-    def get_only_decider_key(self, symbol, with_keys=False):
-        if with_keys:
-            return next(iter(self.deciders[symbol].keys()))
-        else:
-            return self.deciders_without_keys[symbol][0]
-
-    def get_decider(self, symbol, decider_key):
-        return self.deciders[symbol][decider_key]
-
-    def get_deciders(self, symbol, with_keys=False):
-        if with_keys:
-            return self.deciders[symbol]
-        else:
-            return self.deciders_without_keys[symbol]

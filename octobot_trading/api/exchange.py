@@ -13,9 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges.exchange_factory import ExchangeFactory
 
-LOGGER_TAG = "TradingApi"
 
-from .exchange import *
-from .orders import *
-from .modes import *
+def create_new_exchange(config, exchange_name, is_simulated, is_rest_only, is_backtesting, is_sandboxed):
+    return ExchangeFactory(config, exchange_name,
+                           is_simulated=is_simulated,
+                           is_backtesting=is_backtesting,
+                           rest_only=is_rest_only,
+                           is_sandboxed=is_sandboxed)

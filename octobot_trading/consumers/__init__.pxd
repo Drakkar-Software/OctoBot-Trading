@@ -13,9 +13,3 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-LOGGER_TAG = "TradingApi"
-
-from .exchange import *
-from .orders import *
-from .modes import *

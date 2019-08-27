@@ -15,11 +15,12 @@
 #  License along with this library.
 from octobot_commons.errors import ConfigTradingError
 from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.tentacles_management import get_class_from_string, get_deep_class_from_string, AdvancedManager
+from octobot_commons.tentacles_management import get_class_from_string, get_deep_class_from_string, get_class
 from octobot_commons.constants import CONFIG_TRADING_FILE_PATH
 
-from octobot_trading import modes, AbstractTradingMode
+from octobot_trading import modes
 from octobot_trading.constants import CONFIG_TRADING_TENTACLES
+from octobot_trading.modes import AbstractTradingMode
 
 
 def get_activated_trading_mode(config):
@@ -39,7 +40,7 @@ def get_activated_trading_mode(config):
                 trading_mode_class = get_deep_class_from_string(trading_modes[0], modes)
 
                 if trading_mode_class is not None:
-                    return AdvancedManager.get_class(config, trading_mode_class)
+                    return get_class(config, trading_mode_class)
         except ModuleNotFoundError as e:
             get_logger("get_activated_trading_mode").error(f"Error when loading a trading mode: {e} "
                                                            f"referenced in {CONFIG_TRADING_FILE_PATH} file")

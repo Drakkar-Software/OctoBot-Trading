@@ -19,8 +19,9 @@ from threading import Thread
 import click
 from click_shell import shell
 
+from octobot_trading.api.exchange import create_new_exchange
 from octobot_trading.cli import exchanges, get_config, set_should_display_callbacks_logs, add_exchange, get_exchange
-from octobot_trading.cli.cli_tools import create_new_exchange, start_cli_exchange
+from octobot_trading.cli.cli_tools import start_cli_exchange
 from octobot_trading.api import OrdersApi
 from octobot_trading.enums import TraderOrderType
 
