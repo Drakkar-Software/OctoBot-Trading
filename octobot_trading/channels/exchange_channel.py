@@ -21,17 +21,16 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_channels.channels.channel import Channel
 
-from octobot_channels import CONSUMER_CALLBACK_TYPE, CHANNEL_WILDCARD
+from octobot_channels import CONSUMER_CALLBACK_TYPE, CHANNEL_WILDCARD, InternalConsumer
 from octobot_channels.channels.channel_instances import ChannelInstances
 
 
 class ExchangeChannelConsumer(Consumer):
-    async def consume(self):
-        while not self.should_stop:
-            try:
-                await self.callback(**(await self.queue.get()))
-            except Exception as e:
-                self.logger.exception(f"Exception when calling callback : {e}")
+    pass
+
+
+class ExchangeChannelInternalConsumer(InternalConsumer):
+    pass
 
 
 class ExchangeChannelProducer(Producer):
@@ -66,11 +65,14 @@ class ExchangeChannel(Channel):
 
     async def new_consumer(self,
                            callback: CONSUMER_CALLBACK_TYPE,
+                           consumer_instance: object = None,
                            size=0,
                            symbol=CHANNEL_WILDCARD,
                            filter_size=False):
-        consumer = self.CONSUMER_CLASS(callback, size=size, filter_size=filter_size)
+        consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size,
+                                                                                   filter_size=filter_size)
         await self.__add_new_consumer_and_run(consumer, symbol=symbol, with_time_frame=self.WITH_TIME_FRAME)
+        # await Channel.__check_producers_state(self) TODO
         return consumer
 
     def get_consumers(self, symbol=None):
@@ -137,8 +139,8 @@ def get_chan(chan_name, exchange_name) -> ExchangeChannel:
     try:
         return ChannelInstances.instance().channels[exchange_name][chan_name]
     except KeyError:
-        get_logger(ExchangeChannel.__name__).error(f"Channel {chan_name} not found on {exchange_name}")
-    return None
+        # get_logger(ExchangeChannel.__name__).error(f"Channel {chan_name} not found on {exchange_name}")
+        raise KeyError(f"Channel {chan_name} not found on {exchange_name}")
 
 
 def del_chan(chan_name, exchange_name) -> None:

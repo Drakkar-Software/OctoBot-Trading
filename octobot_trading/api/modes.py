@@ -32,7 +32,8 @@ def init_trading_mode_config(config):
 
 async def create_trading_mode(config, exchange_manager) -> None:
     try:
-        trading_mode = get_activated_trading_mode(config)(config)
+        trading_mode = get_activated_trading_mode(config)(config, exchange_manager)
+        await trading_mode.initialize()
         get_logger(f"{LOGGER_TAG}[{exchange_manager.exchange.name}]")\
             .debug(f"Using {trading_mode.get_name()} trading mode")
     except RuntimeError as e:

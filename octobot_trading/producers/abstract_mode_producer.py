@@ -13,63 +13,42 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_channels.channels import get_chan as get_channel
+from octobot_commons.channels_name import OctoBotEvaluatorsChannelsName
 from octobot_commons.constants import INIT_EVAL_NOTE
 from octobot_commons.logging.logging_util import get_logger
 from ccxt.async_support import InsufficientFunds
 
-from octobot_trading.channels.exchange_channel import ExchangeChannelProducer
+from octobot_trading.channels import ORDER_BOOK_CHANNEL
+from octobot_trading.channels.exchange_channel import ExchangeChannelProducer, get_chan
 
 
 class AbstractTradingModeProducer(ExchangeChannelProducer):
-    def __init__(self, trading_mode, symbol_evaluator, exchange, channel):
+    def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
-        self.trading_mode = trading_mode
-        self.symbol_evaluator = symbol_evaluator
-        self.config = symbol_evaluator.get_config()
-        self.symbol = symbol_evaluator.get_symbol()
-        self.exchange = exchange
         self.logger = get_logger(self.__class__.__name__)
+        self.trading_mode = trading_mode
+        self.config = config
+        self.exchange_manager = exchange_manager
+
         self.final_eval = INIT_EVAL_NOTE
         self.state = None
 
-    # create real and/or simulating orders in trader instances
-    async def create_final_state_orders(self, creator_key):
-        # simulated trader
-        await self.create_order_if_possible(self.symbol_evaluator.get_trader_simulator(self.exchange),
-                                            creator_key)
+    async def initialize(self) -> None:
+        await get_channel(OctoBotEvaluatorsChannelsName.MATRIX.value).new_consumer(self.matrix_callback)
+        await get_chan(ORDER_BOOK_CHANNEL, self.exchange_manager.exchange.name).new_consumer(self.order_book_callback)
 
-        # real trader
-        await self.create_order_if_possible(self.symbol_evaluator.get_trader(self.exchange),
-                                            creator_key)
+    async def order_book_callback(self, exchange, symbol, asks, bids):
+        await self.finalize()
 
-    async def cancel_symbol_open_orders(self):
-        cancel_loaded_orders = self.get_should_cancel_loaded_orders()
+    async def matrix_callback(self, evaluator_name, evaluator_type, eval_note, exchange_name, symbol, time_frame):
+        await self.finalize()
 
-        real_trader = self.symbol_evaluator.get_trader(self.exchange)
-        if real_trader.is_enabled():
-            await real_trader.cancel_open_orders(self.symbol, cancel_loaded_orders)
-
-        trader_simulator = self.symbol_evaluator.get_trader_simulator(self.exchange)
-        if trader_simulator.is_enabled():
-            await trader_simulator.cancel_open_orders(self.symbol, cancel_loaded_orders)
-
-    def activate_deactivate_strategies(self, strategy_list, activate):
-        for strategy in strategy_list:
-            if strategy not in self.trading_mode.get_strategy_instances_by_classes(self.symbol):
-                raise KeyError(f"{strategy} not in trading mode's strategy instances.")
-
-        strategy_instances_list = [self.trading_mode.get_strategy_instances_by_classes(self.symbol)[strategy_class]
-                                   for strategy_class in strategy_list]
-
-        self.symbol_evaluator.activate_deactivate_strategies(strategy_instances_list, self.exchange, activate)
-
-    def get_state(self):
-        return self.state
-
-    def get_final_eval(self):
-        return self.final_eval
-
-    async def finalize(self):
+    async def finalize(self) -> None:
+        """
+        Finalize evaluation
+        :return: None
+        """
         # reset previous note
         self.final_eval = INIT_EVAL_NOTE
 
@@ -80,38 +59,61 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
             self.logger.error(f"Error when finalizing: {e}")
             self.logger.exception(e)
 
-    def get_strategy_evaluation(self, strategy_class):
-        for evaluated_strategies in self.symbol_evaluator.get_strategies_eval_list(self.exchange):
-            if isinstance(evaluated_strategies, strategy_class) or \
-                    evaluated_strategies.has_class_in_parents(strategy_class):
-                return evaluated_strategies.get_eval_note()
+    # def activate_deactivate_strategies(self, strategy_list, activate):
+    #     for strategy in strategy_list:
+    #         if strategy not in self.trading_mode.get_strategy_instances_by_classes(self.symbol):
+    #             raise KeyError(f"{strategy} not in trading mode's strategy instances.")
+    #
+    #     strategy_instances_list = [self.trading_mode.get_strategy_instances_by_classes(self.symbol)[strategy_class]
+    #                                for strategy_class in strategy_list]
+    #
+    #     self.symbol_evaluator.activate_deactivate_strategies(strategy_instances_list, self.exchange_manager, activate)
+    #
+    # def get_strategy_evaluation(self, strategy_class):
+    #     for evaluated_strategies in self.symbol_evaluator.get_strategies_eval_list(self.exchange_manager):
+    #         if isinstance(evaluated_strategies, strategy_class) or \
+    #                 evaluated_strategies.has_class_in_parents(strategy_class):
+    #             return evaluated_strategies.get_eval_note()
 
-    # called by cancel_symbol_open_orders => return true if OctoBot should cancel all orders for a symbol including
-    # orders already existing when OctoBot started up
     @classmethod
     def get_should_cancel_loaded_orders(cls):
+        """
+        Called by cancel_symbol_open_orders => return true if OctoBot should cancel all orders for a symbol including
+        orders already existing when OctoBot started up
+        :return:
+        """
         raise NotImplementedError("get_should_cancel_loaded_orders not implemented")
 
-    # called first by finalize => when any notification appears
     def set_final_eval(self):
+        """
+        Called first by finalize => when any notification appears
+        :return:
+        """
         raise NotImplementedError("_set_final_eval not implemented")
 
-    # called after _set_final_eval by finalize => when any notification appears
     async def create_state(self):
+        """
+        Called after _set_final_eval by finalize => when any notification appears
+        :return:
+        """
         raise NotImplementedError("_create_state not implemented")
 
-    # for each trader call the creator to check if order creation is possible and create it
-    async def create_order_if_possible(self, trader, creator_key):
+    async def create_order_if_possible(self) -> None:
+        """
+        For each trader call the creator to check if order creation is possible and create it
+        :return: None
+        """
+        trader = self.exchange_manager.exchange.trader
         if trader.is_enabled():
             async with trader.get_portfolio().get_lock():
                 pf = trader.get_portfolio()
-                order_creator = self.trading_mode.get_creator(self.symbol, creator_key)
-                if await order_creator.can_create_order(self.symbol, self.exchange, self.state, pf):
+                order_creator = self.trading_mode.get_creator(self.symbol)
+                if await order_creator.can_create_order(self.symbol, self.exchange_manager, self.state, pf):
                     try:
                         _ = await order_creator.create_new_order(
                             self.final_eval,
                             self.symbol,
-                            self.exchange,
+                            self.exchange_manager,
                             trader,
                             pf,
                             self.state)
@@ -123,32 +125,19 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
                                 _ = await order_creator.create_new_order(
                                     self.final_eval,
                                     self.symbol,
-                                    self.exchange,
+                                    self.exchange_manager,
                                     trader,
                                     pf,
                                     self.state)
                             except InsufficientFunds as e:
                                 self.logger.error(f"Failed to create order on second attempt : {e})")
 
+    async def cancel_symbol_open_orders(self) -> None:
+        """
+        Cancel all trader open orders
+        :return: None
+        """
+        cancel_loaded_orders = self.get_should_cancel_loaded_orders()
 
-class AbstractTradingModeProducerWithBot(AbstractTradingModeProducer):
-    def __init__(self, trading_mode, symbol_evaluator, exchange, trader, creators):
-        super().__init__(trading_mode, symbol_evaluator, exchange)
-        self.trader = trader
-        self.creators = creators
-
-    @classmethod
-    def get_should_cancel_loaded_orders(cls):
-        raise NotImplementedError("get_should_cancel_loaded_orders not implemented")
-
-    def set_final_eval(self):
-        raise NotImplementedError("_set_final_eval not implemented")
-
-    def create_state(self):
-        raise NotImplementedError("_create_state not implemented")
-
-    def get_creators(self):
-        return self.creators
-
-    def get_trader(self):
-        return self.trader
+        if self.exchange_manager.exchange.trader.is_enabled():
+            await self.exchange_manager.exchange.trader.cancel_open_orders(self.symbol, cancel_loaded_orders)

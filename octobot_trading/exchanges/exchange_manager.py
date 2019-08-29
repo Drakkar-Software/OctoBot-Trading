@@ -27,7 +27,6 @@ from octobot_commons.timestamp_util import is_valid_timestamp
 from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, \
     TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
-from octobot_trading.channels.ticker import TickerChannel
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
     CONFIG_EXCHANGE_KEY
