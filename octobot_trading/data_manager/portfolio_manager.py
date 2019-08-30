@@ -30,6 +30,7 @@ class PortfolioManager(Initializable):
 
         self.portfolio = None
         self.portfolio_profitability = None
+        self.reference_market = None
 
     async def initialize_impl(self):
         await self._reset_portfolio()
@@ -39,6 +40,7 @@ class PortfolioManager(Initializable):
         await self._load_portfolio()
 
         self.portfolio_profitability = PortfolioProfitabilty(self.config, self.trader, self, self.exchange_manager)
+        self.reference_market = self.portfolio_profitability.reference_market
 
     async def handle_balance_update(self, balance) -> bool:
         if self.trader.is_enabled:

@@ -202,7 +202,7 @@ class Trader(Initializable):
     # Should be called only if we want to cancel all symbol open orders (no filled)
     async def cancel_open_orders(self, symbol, cancel_loaded_orders=True):
         # use a copy of the list (not the reference)
-        for order in copy.copy(self.get_open_orders()):
+        for order in copy.copy(self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders()):
             if order.symbol == symbol and order.status is not OrderStatus.CANCELED:
                 if cancel_loaded_orders or order.is_from_this_octobot:
                     await self.notify_order_close(order, True)

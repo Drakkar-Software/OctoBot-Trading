@@ -25,38 +25,40 @@ from octobot_trading.constants import ORDER_CREATION_LAST_TRADES_TO_USE
 from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.data.sub_portfolio import SubPortfolio
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, EvaluatorStates
-from octobot_trading.util.initializable import Initializable
+from octobot_trading.util.initializable import Initializable, abstractmethod
 
 
 class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
     def __init__(self, trading_mode):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
+
         self.trading_mode = trading_mode
+        self.exchange_manager = trading_mode.exchange_manager
+        self.trader = self.exchange_manager.trader
 
-    async def perform(self, eval_note, symbol, exchange_manager, trader, portfolio, state):
-        raise NotImplementedError("perform not implemented")
+    @abstractmethod
+    async def perform(self, **kwargs):
+        raise NotImplementedError("perform is not implemented")
 
-    @staticmethod
-    async def get_holdings_ratio(trader, portfolio, currency):
-        pf_copy = deepcopy(portfolio.get_portfolio())
-        pf_value = await trader.get_trades_manager().update_portfolio_current_value(pf_copy)
+    async def get_holdings_ratio(self, currency):
+        pf_copy = deepcopy(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio)
+        pf_value = await self.trader.get_trades_manager().update_portfolio_current_value(pf_copy)
         currency_holdings = Portfolio.get_currency_from_given_portfolio(pf_copy, currency,
                                                                         portfolio_type=PORTFOLIO_TOTAL)
-        currency_value = await trader.get_trades_manager().evaluate_value(currency, currency_holdings)
+        currency_value = await self.trader.get_trades_manager().evaluate_value(currency, currency_holdings)
         return currency_value / pf_value if pf_value else 0
 
-    @staticmethod
-    def get_number_of_traded_assets(trader):
-        return len(trader.get_trades_manager().origin_crypto_currencies_values)
+    def get_number_of_traded_assets(self):
+        return len(self.trader.get_trades_manager().origin_crypto_currencies_values)
 
-    @staticmethod
     # Can be overwritten
-    async def can_create_order(symbol, exchange, state, portfolio):
+    async def can_create_order(self, symbol, state):
         currency, market = split_symbol(symbol)
+        portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager
 
         # get symbol min amount when creating order
-        symbol_limit = exchange.get_market_status(symbol)[Ecmsc.LIMITS.value]
+        symbol_limit = self.exchange_manager.exchange.get_market_status(symbol)[Ecmsc.LIMITS.value]
         symbol_min_amount = symbol_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MIN.value]
         order_min_amount = symbol_limit[Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]
 
@@ -74,9 +76,10 @@ class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
         # other cases like neutral state or unfulfilled previous conditions
         return False
 
-    @staticmethod
-    async def get_pre_order_data(exchange, symbol, portfolio):
-        last_prices = await exchange.execute_request_with_retry(exchange.get_recent_trades(symbol))
+    async def get_pre_order_data(self, symbol):
+        portfolio_manager = self.exchange_manager.exchange_personal_data.portfolio_manager
+        last_prices = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+            symbol).recent_trades_manager.recent_trades
 
         used_last_prices = last_prices[-ORDER_CREATION_LAST_TRADES_TO_USE:]  # TODO ticker
 
@@ -86,22 +89,21 @@ class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
 
         currency, market = split_symbol(symbol)
 
-        current_symbol_holding = portfolio.get_currency_portfolio(currency)
-        current_market_quantity = portfolio.get_currency_portfolio(market)
+        current_symbol_holding = portfolio_manager.portfolio.get_currency_portfolio(currency)
+        current_market_quantity = portfolio_manager.portfolio.get_currency_portfolio(market)
 
         market_quantity = current_market_quantity / reference
 
         price = reference
-        symbol_market = exchange.get_market_status(symbol, with_fixer=False)
+        symbol_market = self.exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
         return current_symbol_holding, current_market_quantity, market_quantity, price, symbol_market
 
 
-class AbstractTradingModeConsumerWithBot(AbstractTradingModeConsumer, Initializable):
-    def __init__(self, callback, trading_mode, trader, sub_portfolio_percent):
-        AbstractTradingModeConsumer.__init__(self, callback, trading_mode)
+class AbstractTradingModeConsumerWithBot(AbstractTradingModeConsumer, Initializable):  # TODO
+    def __init__(self, trading_mode, sub_portfolio_percent):
+        AbstractTradingModeConsumer.__init__(self, trading_mode)
         Initializable.__init__(self)
-        self.trader = trader
         self.parent_portfolio = self.trader.get_portfolio()
         self.sub_portfolio = SubPortfolio(self.trading_mode.config, self.trader, self.parent_portfolio,
                                           sub_portfolio_percent)

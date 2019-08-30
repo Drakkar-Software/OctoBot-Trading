@@ -26,6 +26,8 @@ cdef class PortfolioManager(Initializable):
 
     cdef public dict config
 
+    cdef public str reference_market
+
     cdef public ExchangeManager exchange_manager
     cdef public Trader trader
 

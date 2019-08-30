@@ -21,7 +21,7 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_channels.channels.channel import Channel
 
-from octobot_channels import CONSUMER_CALLBACK_TYPE, CHANNEL_WILDCARD, InternalConsumer
+from octobot_channels import CONSUMER_CALLBACK_TYPE, InternalConsumer, CHANNEL_WILDCARD
 from octobot_channels.channels.channel_instances import ChannelInstances
 
 
@@ -64,7 +64,7 @@ class ExchangeChannel(Channel):
         self.should_send_filter = False
 
     async def new_consumer(self,
-                           callback: CONSUMER_CALLBACK_TYPE,
+                           callback: CONSUMER_CALLBACK_TYPE = None,
                            consumer_instance: object = None,
                            size=0,
                            symbol=CHANNEL_WILDCARD,
