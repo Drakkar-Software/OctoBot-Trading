@@ -74,7 +74,7 @@ class ExchangePersonalData(Initializable):
             changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order)
             if should_notify:
                 await get_chan(BALANCE_CHANNEL, self.exchange.name).\
-                    get_global_producer().send(self.portfolio_manager.portfolio.portfolio)
+                    get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
             return changed
         except AttributeError as e:
             self.logger.exception(f"Failed to update balance : {e}")

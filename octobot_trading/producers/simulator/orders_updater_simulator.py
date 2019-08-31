@@ -33,7 +33,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     def __init__(self, channel):
         super().__init__(channel)
         self.logger = get_logger(self.__class__.__name__)
-        self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
+        self.exchange_manager = self.channel.exchange_manager
 
     async def start(self):
         await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trade)
@@ -62,7 +62,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                                     last_prices: list,
                                     simulated_time: bool = False) -> list:
         failed_order_updates = []
-        for order in copy.copy(self.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
+        for order in copy.copy(self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
             order_filled = False
             try:
                 # ask orders to update their status

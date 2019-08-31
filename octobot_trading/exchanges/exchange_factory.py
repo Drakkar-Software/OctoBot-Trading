@@ -20,6 +20,7 @@ from octobot_trading.api.modes import create_trading_mode, init_trading_mode_con
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.traders.trader import Trader
 from octobot_trading.traders.trader_simulator import TraderSimulator
+from octobot_trading.util import is_trader_simulator_enabled, is_trader_enabled
 
 
 class ExchangeFactory:
@@ -54,7 +55,7 @@ class ExchangeFactory:
 
         try:
             # check traders activation
-            if not self.trader.enabled(self.config):
+            if not is_trader_enabled(self.config) and not is_trader_simulator_enabled(self.config):
                 raise ValueError(f"No trader simulator nor real trader activated on {self.exchange_manager.exchange.name}")
 
             # initialize trader
