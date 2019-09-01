@@ -49,7 +49,7 @@ class Trader(Initializable):
         if not hasattr(self, 'simulate'):
             self.simulate = False
 
-        self.is_enabled = Trader.enabled(self.config)
+        self.is_enabled = self.enabled(self.config)
         self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange.name}")
 
         self.notifier = None  # TODO
