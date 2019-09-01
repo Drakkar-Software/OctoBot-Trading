@@ -2,7 +2,8 @@ import pytest
 from octobot_commons.constants import CONFIG_TIME_FRAME, CONFIG_ENABLED_OPTION
 from octobot_commons.enums import TimeFrames
 
-from octobot_trading.cli.cli_tools import create_new_exchange, start_cli_exchange, start_exchange
+from octobot_trading.api import create_new_exchange
+from octobot_trading.cli.cli_tools import start_exchange
 from octobot_trading.constants import CONFIG_TRADING, CONFIG_TRADER, CONFIG_SIMULATOR
 
 config = {
@@ -51,4 +52,4 @@ async def test_create_exchange():
                                            is_rest_only=True,
                                            is_backtesting=False,
                                            is_sandboxed=False)
-    await start_exchange(exchange_factory)
+    # await start_exchange(exchange_factory)
