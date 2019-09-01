@@ -57,7 +57,7 @@ class OrdersManager(Initializable):
             return True, False
         return self._update_order_from_raw(self.orders[order_id], raw_order), True
 
-    def upsert_order_close(self, order_id, raw_order):
+    def upsert_order_close(self, order_id, raw_order) -> bool:
         if order_id in self.orders:
             self._update_order_from_raw(self.orders[order_id], raw_order)
             # TODO order -> trade
@@ -65,13 +65,13 @@ class OrdersManager(Initializable):
             return True
         return False
 
-    def upsert_order_instance(self, order):
+    def upsert_order_instance(self, order) -> bool:
         if order.order_id not in self.orders:
             self.orders[order.order_id] = order
             self._check_orders_size()
-        else:
-            # TODO
-            pass
+            return True
+        # TODO
+        return False
 
     def remove_order_instance(self, order):
         if order.order_id in self.orders:

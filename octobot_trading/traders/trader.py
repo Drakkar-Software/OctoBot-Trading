@@ -141,7 +141,7 @@ class Trader(Initializable):
             if is_already_in_history or new_order.status not in [OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]:
                 is_to_keep = False
 
-        self.logger.info(f"{title} : {new_order.to_string()} "
+        self.logger.debug(f"{title} : {new_order.to_string()} "
                          f"{'' if is_to_keep else ': will be archived in trades history if not already'}")
 
         if is_to_keep:

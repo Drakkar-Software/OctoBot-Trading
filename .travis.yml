@@ -5,7 +5,8 @@ os: linux
 language: python
 python: 3.7-dev
 install:
-  - python3 -m pip install --upgrade --only-binary=Cython -r dev_requirements.txt
+  - python3 -m pip install --upgrade -r dev_requirements.txt
+  - python3 -m pip install --upgrade --only-binary=Cython Cython
   - python3 -m pip install OctoBot-Commons # TODO remove it
   - python3 -m pip install OctoBot-Channels # TODO remove it
   - python3 -m pip install -r requirements.txt # TODO remove it
@@ -14,8 +15,8 @@ matrix:
   include:
     - name: "Linux - Python 3 nightly"
       os: linux
-      python: nightly
       language: python
+      python: 3.7-dev
       script:
         - pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests
         - python3 setup.py install

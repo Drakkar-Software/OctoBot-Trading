@@ -32,8 +32,8 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.logger = get_logger(self.__class__.__name__)
         self.exchange_manager = self.channel.exchange_manager
+        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
 
     async def start(self):
         await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trade)
@@ -62,7 +62,8 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                                     last_prices: list,
                                     simulated_time: bool = False) -> list:
         failed_order_updates = []
-        for order in copy.copy(self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
+        for order in copy.copy(
+                self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
             order_filled = False
             try:
                 # ask orders to update their status
@@ -99,9 +100,9 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
 
             if order.status == OrderStatus.FILLED:
                 order_filled = True
-                self.logger.info(f"{order.symbol} {order.get_name()} (ID : {order.order_id})"
-                                 f" filled on {self.channel.exchange.name} "
-                                 f"at {order.filled_price}")
+                self.logger.debug(f"{order.symbol} {order.get_name()} (ID : {order.order_id})"
+                                  f" filled on {self.channel.exchange.name} "
+                                  f"at {order.filled_price}")
                 await order.close_order()
         except MissingOrderException as e:
             self.logger.error(f"Missing exchange order when updating order with id: {e.order_id}. "

@@ -15,13 +15,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_channels.consumer import Consumer
+from octobot_channels.consumer import Consumer, InternalConsumer
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_channels.channels.channel import Channel
 
-from octobot_channels import CONSUMER_CALLBACK_TYPE, InternalConsumer, CHANNEL_WILDCARD
+from octobot_channels import CONSUMER_CALLBACK_TYPE, CHANNEL_WILDCARD
 from octobot_channels.channels.channel_instances import ChannelInstances
 
 
@@ -117,7 +117,7 @@ class ExchangeChannel(Channel):
         else:
             self.consumers[CHANNEL_WILDCARD] = [consumer]
         await consumer.run()
-        self.logger.info(f"Consumer started for symbol {symbol}")
+        self.logger.debug(f"Consumer started for symbol {symbol}")
 
 
 def set_chan(chan, name) -> None:
