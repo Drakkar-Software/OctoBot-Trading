@@ -13,6 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.singleton.singleton_class import Singleton
 
-PROJECT_NAME = "OctoBot-Trading"
-VERSION = "1.3.1"  # major.minor.revision
+
+class ExchangeConfiguration:
+    def __init__(self, exchange_manager):
+        self.exchange_manager = exchange_manager
+        self.exchange_name = exchange_manager.exchange.name
+        self.symbols = exchange_manager.traded_pairs
+        self.time_frames = exchange_manager.time_frames
+
+
+class Exchanges(Singleton):
+    def __init__(self):
+        self.exchanges = {}
+
+    def add_exchange(self, exchange_manager) -> None:
+        self.exchanges[exchange_manager.exchange.name] = ExchangeConfiguration(exchange_manager)
+
+    def get_exchange(self, exchange_name) -> ExchangeConfiguration:
+        return self.exchanges[exchange_name]

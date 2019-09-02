@@ -18,6 +18,7 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.api.modes import create_trading_mode, init_trading_mode_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
+from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.traders.trader import Trader
 from octobot_trading.traders.trader_simulator import TraderSimulator
 from octobot_trading.util import is_trader_simulator_enabled, is_trader_enabled
@@ -64,6 +65,9 @@ class ExchangeFactory:
 
             init_trading_mode_config(self.config)
             await create_trading_mode(self.config, self.exchange_manager)
+
+            # add to global exchanges
+            Exchanges.instance().add_exchange(self.exchange_manager)
         except Exception as e:
             self.logger.error(f"An error occurred when creating trader or initializing trading mode : ")
             raise e
