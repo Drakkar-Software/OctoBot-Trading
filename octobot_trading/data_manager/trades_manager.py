@@ -30,11 +30,12 @@ class TradesManager(Initializable):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
-        self.trades_initialized = False  # TODO
+        self.trades_initialized = False
         self.trades = OrderedDict()
 
     async def initialize_impl(self):
         self._reset_trades()
+        self.trades_initialized = True
 
     def upsert_trade(self, trade_id, raw_trade):
         if trade_id not in self.trades:

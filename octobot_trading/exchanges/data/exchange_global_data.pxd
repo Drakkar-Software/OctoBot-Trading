@@ -14,25 +14,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.trade cimport Trade
+from octobot_trading.data_manager.time_manager cimport TimeManager
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.util.initializable cimport Initializable
 
+cdef class ExchangeGlobalData(Initializable):
+    cdef public object logger
+    cdef public object exchange
 
-cdef class TradesManager(Initializable):
-    cdef object logger
-    cdef object exchange_manager
-    cdef object trader
+    cdef public dict config
 
-    cdef public object trades
+    cdef public ExchangeManager exchange_manager
 
-    cdef dict config
+    cdef public TimeManager time_manager
 
-    cdef public bint trades_initialized
-
-    cdef void _check_trades_size(self)
-    cdef void _reset_trades(self)
-    cdef Trade _create_trade_from_raw(self, dict raw_trade)
-    cdef void _remove_oldest_trades(self, int nb_to_remove)
-
-    cpdef bint upsert_trade(self, str trade_id, dict raw_trade)
-    cpdef void upsert_trade_instance(self, Trade trade)

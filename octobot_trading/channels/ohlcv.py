@@ -23,17 +23,13 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeC
 
 
 class OHLCVProducer(ExchangeChannelProducer):
-    def __init__(self, channel):
-        self.logger = get_logger(self.__class__.__name__)
-        super().__init__(channel)
-
     async def push(self, time_frame, symbol, candle, replace_all=False, partial=False):
         await self.perform(time_frame, symbol, candle, replace_all, partial)
 
     async def perform(self, time_frame, symbol, candle, replace_all=False, partial=False):
         try:
-            if self.channel.get_consumers(symbol=CHANNEL_WILDCARD) or \
-                    self.channel.get_consumers_by_timeframe(symbol=symbol, time_frame=time_frame):
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+                    self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
                 self.channel.exchange_manager.uniformize_candles_if_necessary(candle)
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_candles_update(time_frame,
                                                                                                   candle,
@@ -49,7 +45,7 @@ class OHLCVProducer(ExchangeChannelProducer):
             self.logger.exception(e)
 
     async def send(self, time_frame, symbol, candle, is_wildcard=False):
-        for consumer in self.channel.get_consumers_by_timeframe(symbol=CHANNEL_WILDCARD if is_wildcard else symbol,
+        for consumer in self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol,
                                                                 time_frame=time_frame):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,

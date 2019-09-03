@@ -25,11 +25,6 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeC
 
 
 class BalanceProducer(ExchangeChannelProducer):
-    def __init__(self, channel):
-        self.logger = get_logger(self.__class__.__name__)
-        super().__init__(channel)
-        self.channel = channel
-
     async def push(self, balance, is_delta=False):
         await self.perform(balance, is_delta=is_delta)
 
@@ -46,7 +41,7 @@ class BalanceProducer(ExchangeChannelProducer):
             self.logger.exception(e)
 
     async def send(self, balance, is_wildcard=False):
-        for consumer in self.channel.get_consumers():
+        for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "balance": balance
@@ -59,11 +54,6 @@ class BalanceChannel(ExchangeChannel):
 
 
 class BalanceProfitabilityProducer(ExchangeChannelProducer):
-    def __init__(self, channel):
-        self.logger = get_logger(self.__class__.__name__)
-        super().__init__(channel)
-        self.channel = channel
-
     async def push(self, balance, ticker):
         await self.perform(balance, ticker)
 
@@ -81,7 +71,7 @@ class BalanceProfitabilityProducer(ExchangeChannelProducer):
                    market_profitability_percent,
                    initial_portfolio_current_profitability,
                    is_wildcard=False):
-        for consumer in self.channel.get_consumers():
+        for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "profitability": profitability,

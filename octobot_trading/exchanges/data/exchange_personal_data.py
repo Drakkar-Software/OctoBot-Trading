@@ -54,8 +54,8 @@ class ExchangePersonalData(Initializable):
                 await self.orders_manager.initialize()
                 await self.positions_manager.initialize()
             except Exception as e:
-                self.logger.error(f"Error when initializing portfolio: {e}. "
-                                  f"{self.exchange.name} trader disabled.")
+                self.logger.error(f"Error when initializing : {e}. "
+                                  f"{self.exchange.name} personal data disabled.")
                 self.logger.exception(e)
 
     # updates

@@ -25,12 +25,6 @@ class RecentTradeUpdater(RecentTradeProducer):
     RECENT_TRADE_REFRESH_TIME = 5
     RECENT_TRADE_LIMIT = 20  # should be < to RecentTradesManager's MAX_TRADES_COUNT
 
-    def __init__(self, channel):  # TODO to be removed
-        super().__init__(channel)
-        self.should_stop = False
-        self.logger = get_logger(self.__class__.__name__)
-        self.channel = channel
-
     async def start(self):
         while not self.should_stop:
             try:

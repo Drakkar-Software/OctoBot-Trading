@@ -26,12 +26,6 @@ class OpenOrdersUpdater(OrdersProducer):
     ORDERS_REFRESH_TIME = 18
     ORDERS_UPDATE_LIMIT = 10
 
-    def __init__(self, channel):
-        super().__init__(channel)
-        self.logger = get_logger(self.__class__.__name__)
-        self.should_stop = False
-        self.channel = channel
-
     async def initialize(self):
         try:
             for symbol in self.channel.exchange_manager.traded_pairs:
@@ -73,10 +67,6 @@ class OpenOrdersUpdater(OrdersProducer):
 class CloseOrdersUpdater(OrdersProducer):
     ORDERS_REFRESH_TIME = 2  # TODO = 10
     ORDERS_UPDATE_LIMIT = 10
-
-    def __init__(self, channel):
-        super().__init__(channel)
-
 
     async def start(self):
         while not self.should_stop:

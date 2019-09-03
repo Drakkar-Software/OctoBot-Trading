@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_channels.channels.channel cimport Channel
-from octobot_channels.consumer cimport Consumer, InternalConsumer
+from octobot_channels.consumer cimport Consumer, InternalConsumer, SupervisedConsumer
 from octobot_channels.producer cimport Producer
 
 from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
@@ -28,8 +28,7 @@ cdef class ExchangeChannel(Channel):
     cdef int filter_send_counter
     cdef bint should_send_filter
 
-    cpdef object get_consumers(self, str symbol=*)
-    cpdef list get_consumers_by_timeframe(self, object time_frame, str symbol)
+    cpdef object get_filtered_consumers(self, str symbol=*, str time_frame=*)
 
 cdef class ExchangeChannelConsumer(Consumer):
     pass
@@ -38,6 +37,9 @@ cdef class ExchangeChannelProducer(Producer):
     pass
 
 cdef class ExchangeChannelInternalConsumer(InternalConsumer):
+    pass
+
+cdef class ExchangeChannelSupervisedConsumer(SupervisedConsumer):
     pass
 
 cpdef ExchangeChannel get_chan(str chan_name, str exchange_name)

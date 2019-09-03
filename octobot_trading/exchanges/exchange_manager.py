@@ -25,12 +25,14 @@ from octobot_commons.time_frame_manager import TimeFrameManager
 from octobot_commons.timestamp_util import is_valid_timestamp
 
 from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, \
-    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
+    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL, \
+    TIME_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
     CONFIG_EXCHANGE_KEY
 from octobot_trading.exchanges.backtesting.exchange_simulator import ExchangeSimulator
+from octobot_trading.exchanges.data.exchange_global_data import ExchangeGlobalData
 from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.rest_exchange import RestExchange
@@ -52,6 +54,7 @@ from octobot_trading.producers.simulator.positions_updater_simulator import Posi
 from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
 from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
 from octobot_trading.producers.ticker_updater import TickerUpdater
+from octobot_trading.producers.time_updater import TimeUpdater
 from octobot_trading.producers.trades_updater import TradesUpdater
 from octobot_trading.util import is_trader_simulator_enabled
 from octobot_trading.util.initializable import Initializable
@@ -85,6 +88,7 @@ class ExchangeManager(Initializable):
         self.traded_pairs = []
         self.time_frames = []
 
+        self.exchange_global_data = ExchangeGlobalData(self)
         self.exchange_personal_data = ExchangePersonalData(self)
         self.exchange_symbols_data = ExchangeSymbolsData(self)
 
@@ -171,6 +175,7 @@ class ExchangeManager(Initializable):
             await PositionsUpdaterSimulator(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
         if self.is_backtesting:
+            await TimeUpdater(get_chan(TIME_CHANNEL, self.exchange.name)).run()
             await OHLCVUpdaterSimulator(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
             await OrderBookUpdaterSimulator(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
             await RecentTradeUpdaterSimulator(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()

@@ -24,10 +24,6 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 class PositionsUpdater(PositionsProducer):
     POSITIONS_REFRESH_TIME = 11
 
-    def __init__(self, channel):
-        super().__init__(channel)
-
-
     async def start(self):
         while not self.should_stop:
             try:

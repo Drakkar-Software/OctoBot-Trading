@@ -16,6 +16,7 @@
 #  License along with this library.
 
 from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
+from octobot_trading.exchanges.data.exchange_global_data cimport ExchangeGlobalData
 from octobot_trading.exchanges.data.exchange_personal_data cimport ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbol_data cimport ExchangeSymbolData
 from octobot_trading.exchanges.data.exchange_symbols_data cimport ExchangeSymbolsData
@@ -44,6 +45,7 @@ cdef class ExchangeManager(Initializable):
 
     cdef public AbstractExchange exchange
     cdef public AbstractWebsocket exchange_web_socket
+    cdef public ExchangeGlobalData exchange_global_data
     cdef public ExchangePersonalData exchange_personal_data
     cdef public ExchangeSymbolsData exchange_symbols_data
     # exchange_consumers_manager

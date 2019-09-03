@@ -22,16 +22,12 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeC
 
 
 class TickerProducer(ExchangeChannelProducer):
-    def __init__(self, channel):  # TODO remove
-        super().__init__(channel)
-        self.channel = channel
-
     async def push(self, symbol, ticker):
         await self.perform(symbol, ticker)
 
     async def perform(self, symbol, ticker):
         try:
-            if self.channel.get_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_consumers(symbol=symbol):  # and price_ticker_is_initialized
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):  # and price_ticker_is_initialized
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_ticker_update(ticker)
                 await self.send_with_wildcard(symbol=symbol, ticker=ticker)
         except CancelledError:
@@ -41,7 +37,7 @@ class TickerProducer(ExchangeChannelProducer):
             self.logger.exception(e)
 
     async def send(self, symbol, ticker, is_wildcard=False):
-        for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
+        for consumer in self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,

@@ -13,33 +13,25 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.logging.logging_util import get_logger
 
-from .balance import *
-from .exchange_channel import *
-from .kline import *
-from .mode import *
-from .ohlcv import *
-from .order_book import *
-from .orders import *
-from .positions import *
-from .recent_trade import *
-from .ticker import *
-from .trades import *
+from octobot_trading.util.initializable import Initializable
 
-# Exchange public data
-TICKER_CHANNEL = "Ticker"
-RECENT_TRADES_CHANNEL = "RecentTrade"
-ORDER_BOOK_CHANNEL = "OrderBook"
-KLINE_CHANNEL = "Kline"
-OHLCV_CHANNEL = "OHLCV"
 
-# Exchange personal data
-TRADES_CHANNEL = "Trades"
-ORDERS_CHANNEL = "Orders"
-BALANCE_CHANNEL = "Balance"
-BALANCE_PROFITABILITY_CHANNEL = "BalanceProfitability"
-POSITIONS_CHANNEL = "Positions"
+class TimeManager(Initializable):
+    def __init__(self, config, exchange_manager):
+        super().__init__()
+        self.logger = get_logger(self.__class__.__name__)
+        self.config, self.exchange_manager = config, exchange_manager
+        self.time_initialized = False  # TODO
+        self.timestamp = None
 
-# Internal
-MODE_CHANNEL = "Mode"
-TIME_CHANNEL = "Time"
+    async def initialize_impl(self):
+        self._reset_time()
+        self.time_initialized = True
+
+    def _reset_time(self):
+        self.timestamp = 0
+
+    def set_timestamp(self, timestamp):
+        self.timestamp = timestamp

@@ -22,16 +22,12 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeC
 
 
 class RecentTradeProducer(ExchangeChannelProducer):
-    def __init__(self, channel):  # TODO remove
-        super().__init__(channel)
-        self.channel = channel
-
     async def push(self, symbol, recent_trades, replace_all=False, partial=False):
         await self.perform(symbol, recent_trades, replace_all=replace_all, partial=partial)
 
     async def perform(self, symbol, recent_trades, replace_all=False, partial=False):
         try:
-            if self.channel.get_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_consumers(symbol=symbol):
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
                 recent_trades = self.channel.exchange_manager.get_symbol_data(symbol).handle_recent_trade_update(
                     recent_trades,
                     replace_all=replace_all,
@@ -46,7 +42,7 @@ class RecentTradeProducer(ExchangeChannelProducer):
             self.logger.exception(e)
 
     async def send(self, symbol, recent_trades, is_wildcard=False):
-        for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
+        for consumer in self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,

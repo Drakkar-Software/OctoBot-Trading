@@ -88,6 +88,11 @@ async def positions_callback(exchange, symbol, position, is_closed, is_updated, 
                      f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
 
 
+async def time_callback(exchange, timestamp):
+    if get_should_display_callbacks_logs():
+        logging.info(f"TIME : EXCHANGE = {exchange} || TIMESTAMP = {timestamp}")
+
+
 def start_cli_exchange(exchange_factory):
     current_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(current_loop)

@@ -26,10 +26,6 @@ class TradesUpdater(TradesProducer):
     TRADES_LIMIT = 10
     TRADES_REFRESH_TIME = 333
 
-    def __init__(self, channel):
-        super().__init__(channel)
-
-
     async def init_old_trades(self):
         try:
             for symbol in self.channel.exchange_manager.traded_pairs:

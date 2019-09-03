@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_channels.consumer import Consumer, InternalConsumer
+from octobot_channels.consumer import Consumer, InternalConsumer, SupervisedConsumer
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
@@ -33,9 +33,13 @@ class ExchangeChannelInternalConsumer(InternalConsumer):
     pass
 
 
+class ExchangeChannelSupervisedConsumer(SupervisedConsumer):
+    pass
+
+
 class ExchangeChannelProducer(Producer):
     async def send(self, **kwargs) -> None:
-        for consumer in self.channel.get_consumers():
+        for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put(kwargs)
 
     async def send_with_wildcard(self, **kwargs):
@@ -54,6 +58,9 @@ class ExchangeChannel(Channel):
     CONSUMER_CLASS = ExchangeChannelConsumer
     WITH_TIME_FRAME = False
 
+    SYMBOL_KEY = "symbol"
+    TIME_FRAME_KEY = "time_frame"
+
     def __init__(self, exchange_manager):
         super().__init__()
         self.logger = get_logger(f"{self.__class__.__name__}[{exchange_manager.exchange.name}]")
@@ -65,57 +72,43 @@ class ExchangeChannel(Channel):
 
     async def new_consumer(self,
                            callback: CONSUMER_CALLBACK_TYPE = None,
+                           consumer_filters: dict = None,
                            consumer_instance: object = None,
                            size=0,
-                           symbol=CHANNEL_WILDCARD,
-                           filter_size=False):
+                           filter_size=False,
+                           symbol=CHANNEL_WILDCARD):
         consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size,
                                                                                    filter_size=filter_size)
         await self.__add_new_consumer_and_run(consumer, symbol=symbol, with_time_frame=self.WITH_TIME_FRAME)
-        # await Channel.__check_producers_state(self) TODO
+        await self.__check_producers_state()
         return consumer
 
-    def get_consumers(self, symbol=None):
-        if not self.consumers:
-            return self.consumers
+    async def __check_producers_state(self) -> None:  # TODO useless (bc copy of Channel.__check_producers_state)
+        if not self.get_filtered_consumers() and not self.is_paused:
+            self.is_paused = True
+            for producer in self.get_producers():
+                await producer.pause()
+        elif self.get_filtered_consumers() and self.is_paused:
+            self.is_paused = False
+            for producer in self.get_producers():
+                await producer.resume()
 
-        if not symbol:
-            symbol = CHANNEL_WILDCARD
-        try:
-            return [consumer for consumer in self.consumers[symbol]]
-        except KeyError:
-            Channel.init_consumer_if_necessary(self.consumers, symbol)
-            return self.consumers[symbol]
-
-    def get_consumers_by_timeframe(self, time_frame, symbol):
-        if not self.consumers:
-            return self.consumers
-
-        if not symbol:
-            symbol = CHANNEL_WILDCARD
-        try:
-            return [consumer for consumer in self.consumers[symbol][time_frame]]
-        except KeyError:
-            Channel.init_consumer_if_necessary(self.consumers, symbol, is_dict=True)
-            Channel.init_consumer_if_necessary(self.consumers[symbol], time_frame)
-            return self.consumers[symbol][time_frame]
+    def get_filtered_consumers(self, symbol=CHANNEL_WILDCARD, time_frame=CHANNEL_WILDCARD):
+        return self.get_consumer_from_filters({
+            self.SYMBOL_KEY: symbol,
+            self.TIME_FRAME_KEY: time_frame
+        })
 
     async def __add_new_consumer_and_run(self, consumer, symbol=CHANNEL_WILDCARD, with_time_frame=False):
         if symbol:
-            if with_time_frame:
-                # create dict and list if required
-                Channel.init_consumer_if_necessary(self.consumers, symbol, is_dict=True)
+            symbol = CHANNEL_WILDCARD
 
-                for time_frame in self.exchange_manager.time_frames:
-                    Channel.init_consumer_if_necessary(self.consumers[symbol], time_frame)
-                    self.consumers[symbol][time_frame].append(consumer)
-            else:
-                # create dict and list if required
-                Channel.init_consumer_if_necessary(self.consumers, symbol)
+        consumer_filters: dict = {
+            self.SYMBOL_KEY: symbol,
+            self.TIME_FRAME_KEY: CHANNEL_WILDCARD if with_time_frame else None
+        }
 
-                self.consumers[symbol].append(consumer)
-        else:
-            self.consumers[CHANNEL_WILDCARD] = [consumer]
+        self.add_new_consumer(consumer, consumer_filters)
         await consumer.run()
         self.logger.debug(f"Consumer started for symbol {symbol}")
 

@@ -24,11 +24,6 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstan
 
 
 class PositionsProducer(ExchangeChannelProducer):
-    def __init__(self, channel):
-        self.logger = get_logger(self.__class__.__name__)
-        super().__init__(channel)
-        self.channel = channel
-
     async def push(self, positions, is_from_bot=True):
         await self.perform(positions, is_from_bot=is_from_bot)
 
@@ -38,7 +33,7 @@ class PositionsProducer(ExchangeChannelProducer):
                 if position:
                     symbol: str = self.channel.exchange_manager.get_exchange_symbol(
                         position[ExchangeConstantsPositionColumns.SYMBOL.value])
-                    if self.channel.get_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_consumers(symbol=symbol):
+                    if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
                         position_id: str = position[ExchangeConstantsOrderColumns.ID.value]
 
                         changed, is_closed, is_updated = await self.channel.exchange_manager.exchange_personal_data \
@@ -57,7 +52,7 @@ class PositionsProducer(ExchangeChannelProducer):
             self.logger.exception(e)
 
     async def send(self, symbol, position, is_closed=False, is_updated=False, is_from_bot=True, is_wildcard=False):
-        for consumer in self.channel.get_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
+        for consumer in self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,
