@@ -1,6 +1,7 @@
 scipy
 numpy
 # Drakkar-Software requirements
+OctoBot-Backtesting
 OctoBot-Channels
 OctoBot-Commons
 OctoBot-Websockets

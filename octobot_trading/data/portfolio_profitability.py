@@ -22,8 +22,7 @@ from octobot_trading.channels import TICKER_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import ExchangeConstantsTickersColumns
-from octobot_trading.exchanges.backtesting.collector import backtesting_enabled
-from octobot_trading.exchanges.backtesting.exchange_simulator import ExchangeSimulator
+from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.util import get_reference_market
 from octobot_trading.util.initializable import Initializable
 
@@ -161,8 +160,7 @@ class PortfolioProfitabilty(Initializable):
     async def __init_origin_portfolio_and_currencies_value(self, force_ignore_history=False):
         # previous_state_manager = self.trader.get_previous_state_manager()
         previous_state_manager = None  # TODO
-        if backtesting_enabled(self.config) or force_ignore_history or \
-                previous_state_manager is None or previous_state_manager.should_initialize_data():
+        if force_ignore_history or previous_state_manager is None or previous_state_manager.should_initialize_data():
             await self.__init_origin_portfolio_and_currencies_value_from_scratch(previous_state_manager)
         else:
             await self._init_origin_portfolio_and_currencies_value_from_previous_executions(previous_state_manager)

@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.enums import TimeFrames, PriceIndexes
+
 from octobot_trading.channels import TIME_CHANNEL, get_chan
 from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 
@@ -22,7 +24,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         await get_chan(TIME_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_timestamp)
 
     async def handle_timestamp(self, exchange: str, timestamp: int):
-        print(timestamp)
+        await self.push(TimeFrames.ONE_HOUR, "BTC/USDT", [[timestamp, 1, 1, 1, 1, 1]], partial=True)
 
 #     async def force_refresh_data(self, time_frame, symbol):
 #         if not self.backtesting_enabled:

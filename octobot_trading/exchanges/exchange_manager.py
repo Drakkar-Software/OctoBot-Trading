@@ -15,7 +15,7 @@
 #  License along with this library.
 import time
 
-from octobot_channels.util import create_all_subclasses_channel, create_channel_instance
+from octobot_channels.util import create_all_subclasses_channel
 from octobot_commons.config_util import has_invalid_default_config_value
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME
 from octobot_commons.enums import PriceIndexes
@@ -31,7 +31,7 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan,
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
     CONFIG_EXCHANGE_KEY
-from octobot_trading.exchanges.backtesting.exchange_simulator import ExchangeSimulator
+from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.data.exchange_global_data import ExchangeGlobalData
 from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
@@ -45,14 +45,9 @@ from octobot_trading.producers.orders_updater import CloseOrdersUpdater, OpenOrd
 from octobot_trading.producers.positions_updater import PositionsUpdater
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
 from octobot_trading.producers.simulator.balance_updater_simulator import BalanceProfitabilityUpdaterSimulator
-from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
 from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
-from octobot_trading.producers.simulator.order_book_updater_simulator import OrderBookUpdaterSimulator
 from octobot_trading.producers.simulator.orders_updater_simulator import OpenOrdersUpdaterSimulator, \
     CloseOrdersUpdaterSimulator
-from octobot_trading.producers.simulator.positions_updater_simulator import PositionsUpdaterSimulator
-from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
-from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
 from octobot_trading.producers.ticker_updater import TickerUpdater
 from octobot_trading.producers.time_updater import TimeUpdater
 from octobot_trading.producers.trades_updater import TradesUpdater
@@ -183,10 +178,10 @@ class ExchangeManager(Initializable):
         if self.is_backtesting:
             await TimeUpdater(get_chan(TIME_CHANNEL, self.exchange.name)).run()
             await OHLCVUpdaterSimulator(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
-            await OrderBookUpdaterSimulator(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
-            await RecentTradeUpdaterSimulator(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
-            await TickerUpdaterSimulator(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
-            await KlineUpdaterSimulator(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
+            # await OrderBookUpdaterSimulator(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
+            # await RecentTradeUpdaterSimulator(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
+            # await TickerUpdaterSimulator(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
+            # await KlineUpdaterSimulator(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
     def _search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():

@@ -25,14 +25,14 @@ class TimeProducer(ExchangeChannelProducer):
     async def perform(self, timestamp):
         try:
             await self.channel.exchange_manager.exchange_global_data.handle_time_update(timestamp)
-            await self.send_with_wildcard(timestamp=timestamp)
+            await self.send(timestamp=timestamp)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering time update: {e}")
             self.logger.exception(e)
 
-    async def send(self, timestamp, is_wildcard=False):
+    async def send(self, timestamp):
         for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,

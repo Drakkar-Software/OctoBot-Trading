@@ -15,29 +15,21 @@
 #  License along with this library.
 
 import copy
-import time
 
 from octobot_commons.data_util import DataUtil
-from octobot_commons.enums import PriceIndexes, TimeFrames, TimeFramesMinutes
+from octobot_commons.enums import PriceIndexes, TimeFrames
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
 from octobot_commons.time_frame_manager import TimeFrameManager
 
-from octobot_trading.constants import CONFIG_BACKTESTING, BACKTESTING_DATA_OHLCV, BACKTESTING_DATA_TRADES, \
-    CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES_MAKER, \
-    CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW, ORDER_CREATION_LAST_TRADES_TO_USE, \
-    SIMULATOR_LAST_PRICES_TO_CHECK, CONFIG_BACKTESTING_DATA_FILES, BACKTESTING_FILE_PATH
-from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstantsTickersColumns, \
-    ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, TraderOrderType, FeePropertyColumns
+from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, \
+    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW, \
+    ORDER_CREATION_LAST_TRADES_TO_USE, SIMULATOR_LAST_PRICES_TO_CHECK
+from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
+    TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
-from octobot_trading.exchanges.backtesting.backtesting import Backtesting
-from octobot_trading.exchanges.backtesting.collector import backtesting_enabled, BacktestingEndedException, \
-    NoCandleDataForThisSymbolException, NoCandleDataForThisTimeFrameException
-from octobot_trading.exchanges.backtesting.collector.data_file_manager import interpret_file_name
-from octobot_trading.exchanges.backtesting.collector.data_parser import DataCollectorParser
 from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
 from octobot_trading.util import get_symbols
-from octobot_trading.util.backtesting_util import initialize_backtesting
 
 
 class ExchangeSimulator(AbstractExchange):
@@ -52,13 +44,13 @@ class ExchangeSimulator(AbstractExchange):
 
         self.symbols = None
         self.data = None
-        self._set_symbol_list()
+        self.__set_symbol_list()
 
         self.config_time_frames = TimeFrameManager.get_config_time_frame(self.config)
 
         # set exchange manager attributes
         self.exchange_manager.client_symbols = self.symbols
-        self.exchange_manager.client_time_frames = self._get_available_timeframes()
+        self.exchange_manager.client_time_frames = self.__get_available_timeframes()
         self.exchange_manager.time_frames = self.config_time_frames
 
         self.time_frame_get_times = {}
@@ -77,10 +69,13 @@ class ExchangeSimulator(AbstractExchange):
         self.RECENT_TRADES_TO_CREATE = max(SIMULATOR_LAST_PRICES_TO_CHECK, ORDER_CREATION_LAST_TRADES_TO_USE)
 
         self.backtesting = Backtesting(self.config, self)
-        self._prepare()
+        self.__prepare()
         self.initializing = False
 
-    def _get_available_timeframes(self):
+    def get_name(self):
+        return self.__class__.__name__ + str(self.symbols)
+
+    def __get_available_timeframes(self):
         client_timeframes = {}
         for symbol in self.symbols:
             client_timeframes[symbol] = [tf.value
@@ -89,7 +84,7 @@ class ExchangeSimulator(AbstractExchange):
         return client_timeframes
 
     # todo merge multiple file with the same symbol
-    def _set_symbol_list(self):
+    def __set_symbol_list(self):
         self.symbols = []
         self.data = {}
         symbols_appended = {}
@@ -109,9 +104,9 @@ class ExchangeSimulator(AbstractExchange):
                             symbols_appended[symbol] = int(timestamp)
                             self.symbols.append(symbol)
                             data = DataCollectorParser.parse(BACKTESTING_FILE_PATH, file)
-                            self.data[symbol] = self._fix_timestamps(data)
+                            self.data[symbol] = self.__fix_timestamps(data)
 
-    def _fix_timestamps(self, data):
+    def __fix_timestamps(self, data):
         for time_frame in data[BACKTESTING_DATA_OHLCV]:
             need_to_uniform_timestamps = self.exchange_manager.need_to_uniformize_timestamp(
                 data[BACKTESTING_DATA_OHLCV][time_frame][0][PriceIndexes.IND_PRICE_TIME.value])
@@ -121,7 +116,7 @@ class ExchangeSimulator(AbstractExchange):
                         self.get_uniform_timestamp(data_list[PriceIndexes.IND_PRICE_TIME.value])
         return data
 
-    def _prepare(self):
+    def __prepare(self):
         # create get times and init offsets
         for symbol in self.symbols:
             self.time_frame_get_times[symbol] = {}
@@ -137,9 +132,6 @@ class ExchangeSimulator(AbstractExchange):
     def get_trades(self, symbol):
         return self.data[symbol][BACKTESTING_DATA_TRADES]
 
-    def handles_trades_history(self, symbol):
-        return self.get_trades(symbol)
-
     def symbol_exists(self, symbol):
         return symbol in self.symbols
 
@@ -150,82 +142,8 @@ class ExchangeSimulator(AbstractExchange):
         return time_frame in self.get_ohlcv(symbol) \
                and len(self.get_ohlcv(symbol)[time_frame]) >= self.DEFAULT_LIMIT + self.MIN_LIMIT
 
-    def get_name(self):
-        return self.__class__.__name__ + str(self.symbols)
-
-    def should_update_data(self, time_frame, symbol):
-        smallest_time_frame = TimeFrameManager.find_min_time_frame(self.config_time_frames)
-        if smallest_time_frame == time_frame:
-            # always True: refresh smallest timeframe systematically when possible
-            return True
-        else:
-            smallest_time_frame_sec = TimeFramesMinutes[smallest_time_frame]
-            try:
-                smallest_time_frame_timestamp = self._get_current_timestamp(smallest_time_frame, symbol, 1)
-                wanted_time_frame_timestamp = self._get_current_timestamp(time_frame, symbol)
-
-                return wanted_time_frame_timestamp <= smallest_time_frame_timestamp + (smallest_time_frame_sec / 2)
-            except IndexError:
-                return False
-
-    def _get_current_timestamp(self, time_frame, symbol, backwards=0):
-        time_frame_index = self._get_candle_index(time_frame.value, symbol)
-        if time_frame_index - backwards > 0:
-            time_frame_index = time_frame_index - backwards
-        return self.get_ohlcv(symbol)[time_frame.value][time_frame_index][PriceIndexes.IND_PRICE_TIME.value]
-
-    # Will use the One Minute time frame
-    def _create_ticker(self, symbol, index):
-        if self.DEFAULT_TIME_FRAME_TICKERS_CREATOR.value in self.get_ohlcv(symbol):
-            nb_candles = len(self.get_ohlcv(symbol)[self.DEFAULT_TIME_FRAME_TICKERS_CREATOR.value])
-            if index >= nb_candles:
-                tf = self.get_ohlcv(symbol)[self.DEFAULT_TIME_FRAME_TICKERS_CREATOR.value][-1]
-                self.logger.warning(f"Impossible to simulate price ticker for {symbol} at candle index {index} "
-                                    f"(only {nb_candles} candles are available). "
-                                    f"Creating ticker using the last available candle.")
-            else:
-                tf = self.get_ohlcv(symbol)[self.DEFAULT_TIME_FRAME_TICKERS_CREATOR.value][index]
-            return tf[PriceIndexes.IND_PRICE_CLOSE.value]
-        else:
-            raise NoCandleDataForThisTimeFrameException(
-                f"No candle data for {self.DEFAULT_TIME_FRAME_TICKERS_CREATOR.value} time frame for {symbol}.")
-
-    def _fetch_recent_trades(self, symbol, timeframe, index):
-        time_frame = self.get_ohlcv(symbol)[timeframe.value][index]
-        start_timestamp = time_frame[PriceIndexes.IND_PRICE_TIME.value] \
-            if backtesting_enabled(self.config) else time.time()
-
-        if not self.handles_trades_history(symbol) or not backtesting_enabled(self.config):
-            return self._generate_trades(time_frame, start_timestamp)
-        else:
-            end_timestamp = self.get_ohlcv(symbol)[timeframe.value][index + 1][PriceIndexes.IND_PRICE_TIME.value] \
-                if len(self.get_ohlcv(symbol)[timeframe.value]) > index + 1 else -1
-            return self.select_trades(start_timestamp, end_timestamp, symbol)
-
-    def select_trades(self, start_timestamp, end_timestamp, symbol):
-        trades = self.get_trades(symbol)
-        current_trades = [trade for trade in trades
-                          if (self.get_uniform_timestamp(trade[ExchangeConstantsOrderColumns.TIMESTAMP.value])
-                              >= start_timestamp
-                              and (self.get_uniform_timestamp(trade[ExchangeConstantsOrderColumns.TIMESTAMP.value])
-                                   <= end_timestamp
-                                   or end_timestamp == -1))
-                          ]
-        return [{
-            "price": float(trade_dict[ExchangeConstantsOrderColumns.PRICE.value]),
-            "timestamp": self.get_uniform_timestamp(trade_dict[ExchangeConstantsOrderColumns.TIMESTAMP.value])
-        } for trade_dict in current_trades]
-
-    def _generate_trades(self, time_frame, timestamp):
-        return [
-            {
-                "price": time_frame[PriceIndexes.IND_PRICE_CLOSE.value],
-                "timestamp": timestamp
-            }
-            for _ in range(0, self.RECENT_TRADES_TO_CREATE - 1)]
-
     @staticmethod
-    def _extract_from_indexes(array, max_index, symbol, factor=1):
+    def __extract_from_indexes(array, max_index, symbol, factor=1):
         max_limit = len(array)
         max_index *= factor
 
@@ -235,7 +153,7 @@ class ExchangeSimulator(AbstractExchange):
         else:
             return array[:max_index]
 
-    def _get_candle_index(self, time_frame, symbol):
+    def __get_candle_index(self, time_frame, symbol):
         if symbol not in self.data or time_frame not in self.get_ohlcv(symbol):
             self.logger.error("get_candle_index(self, timeframe, symbol) called with unset "
                               f"time_frames_offset[symbol][timeframe] for symbol: {symbol} and timeframe: {time_frame}."
@@ -244,26 +162,26 @@ class ExchangeSimulator(AbstractExchange):
                               "interested in")
         return self.time_frames_offset[symbol][time_frame] + self.time_frame_get_times[symbol][time_frame]
 
-    def _extract_data_with_limit(self, symbol, time_frame):
+    def __extract_data_with_limit(self, symbol, time_frame):
         to_use_time_frame = time_frame.value or \
                             TimeFrameManager.find_min_time_frame(self.time_frames_offset[symbol].keys()).value
-        return ExchangeSimulator._extract_from_indexes(self.get_ohlcv(symbol)[to_use_time_frame],
-                                                       self._get_candle_index(to_use_time_frame, symbol),
-                                                       symbol)
+        return ExchangeSimulator.__extract_from_indexes(self.get_ohlcv(symbol)[to_use_time_frame],
+                                                        self.__get_candle_index(to_use_time_frame, symbol),
+                                                        symbol)
 
-    def _ensure_available_data(self, symbol):
+    def __ensure_available_data(self, symbol):
         if symbol not in self.data:
             raise NoCandleDataForThisSymbolException(f"No candles data for {symbol} symbol.")
 
     def get_candles_exact(self, symbol, time_frame, min_index, max_index, return_list=True):
-        self._ensure_available_data(symbol)
+        self.__ensure_available_data(symbol)
         candles = self.get_ohlcv(symbol)[time_frame.value][min_index:max_index]
         self.get_symbol_data(symbol).handle_candles_update(time_frame, candles, replace_all=True)
         return self.get_symbol_data(symbol).get_symbol_prices(time_frame, None, return_list)
 
     async def get_symbol_prices(self, symbol, time_frame, limit=None, return_list=True):
-        self._ensure_available_data(symbol)
-        candles = self._extract_data_with_limit(symbol, time_frame)
+        self.__ensure_available_data(symbol)
+        candles = self.__extract_data_with_limit(symbol, time_frame)
         if time_frame is not None:
             self.time_frame_get_times[symbol][time_frame.value] += 1
             # if it's at least the second iteration: only use the last candle, otherwise use all
@@ -282,22 +200,6 @@ class ExchangeSimulator(AbstractExchange):
             return self.time_frames_offset[symbol].keys()
         else:
             return [self.DEFAULT_TIME_FRAME_RECENT_TRADE_CREATOR]
-
-    async def get_recent_trades(self, symbol, limit=50):
-        self._ensure_available_data(symbol)
-        time_frame_to_use = TimeFrameManager.find_min_time_frame(self._get_used_time_frames(symbol))
-        index = 0
-        if symbol in self.time_frames_offset and time_frame_to_use.value in self.time_frames_offset[symbol] \
-                and time_frame_to_use.value in self.time_frame_get_times[symbol]:
-            # -2 because take into account the +1 in self.time_frame_get_times and the fact that it's an index
-            index = self.time_frames_offset[symbol][time_frame_to_use.value] \
-                    + self.time_frame_get_times[symbol][time_frame_to_use.value] \
-                    - 2
-        trades = self._fetch_recent_trades(
-            symbol, time_frame_to_use,
-            index
-        )
-        self.get_symbol_data(symbol).update_recent_trades(trades)
 
     def _find_min_time_frame_to_consider(self, time_frames, symbol):
         time_frames_to_consider = copy.copy(time_frames)
@@ -365,29 +267,6 @@ class ExchangeSimulator(AbstractExchange):
                     progresses.append(current / nb_max)
             return int(DataUtil.mean(progresses) * 100)
 
-    async def get_price_ticker(self, symbol):
-        self._ensure_available_data(symbol)
-        result = {
-            "symbol": symbol,
-            ExchangeConstantsTickersColumns.LAST.value: self._create_ticker(
-                symbol,
-                self.time_frame_get_times[symbol][self.DEFAULT_TIME_FRAME_TICKERS_CREATOR.value])
-        }
-        self.get_symbol_data(symbol).update_symbol_ticker(result)
-
-    async def get_last_price_ticker(self, symbol):
-        ticker = await self.get_price_ticker(symbol)
-        return ticker[ExchangeConstantsTickersColumns.LAST.value]
-
-    async def get_all_currencies_price_ticker(self):
-        return {
-            symbol: {
-                "symbol": symbol,
-                ExchangeConstantsTickersColumns.LAST.value: await self.get_price_ticker(symbol)
-            }
-            for symbol in self.symbols
-        }
-
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
         return {
             # number of decimal digits "after the dot"
@@ -414,9 +293,6 @@ class ExchangeSimulator(AbstractExchange):
 
     async def end_backtesting(self, symbol):
         await self.backtesting.end(symbol)
-
-    async def stop(self):
-        pass
 
     def get_uniform_timestamp(self, timestamp):
         return timestamp / 1000

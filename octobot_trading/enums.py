@@ -199,22 +199,3 @@ class FeePropertyColumns(Enum):
     CURRENCY = "currency"  # currency the fee is paid in
     RATE = "rate"  # multiplier applied to compute fee
     COST = "cost"  # fee amount
-
-
-class BacktestingDataFormats(Enum):
-    REGULAR_COLLECTOR_DATA = 0
-    KAIKO_DATA = 1
-
-
-class BacktestingDataFormatKeys(Enum):
-    SYMBOL = "symbol"
-    EXCHANGE = "exchange"
-    DATE = "date"
-    CANDLES = "candles"
-    TYPE = "type"
-
-
-class BacktestingReportFormat(Enum):
-    SYMBOL_REPORT = "symbol_report"
-    BOT_REPORT = "bot_report"
-    SYMBOLS_WITH_TF = "symbols_with_time_frames_frames"
