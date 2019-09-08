@@ -64,13 +64,17 @@ class ExchangeManager(Initializable):
     WEB_SOCKET_RESET_MIN_INTERVAL = 15
 
     def __init__(self, config, exchange_class_string,
-                 is_simulated=False, is_backtesting=False,
-                 rest_only=False, ignore_config=False):
+                 is_simulated=False,
+                 is_backtesting=False,
+                 rest_only=False,
+                 ignore_config=False,
+                 backtesting_files=None):
         super().__init__()
         self.config = config
         self.exchange_class_string = exchange_class_string
         self.rest_only = rest_only
         self.ignore_config = ignore_config
+        self.backtesting_files = backtesting_files
         self.logger = get_logger(self.__class__.__name__)
 
         self.is_ready = False
@@ -98,6 +102,7 @@ class ExchangeManager(Initializable):
     async def register_trader(self, trader):
         self.trader = trader
         await self.exchange_personal_data.initialize()
+        await self.exchange_global_data.initialize()
 
     def _load_constants(self):
         self._load_config_symbols_and_time_frames()
@@ -132,8 +137,9 @@ class ExchangeManager(Initializable):
 
         # if simulated : create exchange simulator instance
         else:
-            self.exchange = ExchangeSimulator(self.config, self.exchange_type, self)
+            self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
             self._set_config_traded_pairs()
+            await self._create_exchange_channels()
 
         # create exchange producers if necessary
         await self._create_exchange_producers()
@@ -172,7 +178,7 @@ class ExchangeManager(Initializable):
             # await TradesUpdaterSimulator(get_chan(TRADES_CHANNEL, self.exchange.name)).run()
 
             # TODO
-            await PositionsUpdaterSimulator(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
+            # await PositionsUpdaterSimulator(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
         if self.is_backtesting:
             await TimeUpdater(get_chan(TIME_CHANNEL, self.exchange.name)).run()

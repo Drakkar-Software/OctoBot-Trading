@@ -32,8 +32,9 @@ def app():
     exchange_factory = create_new_exchange(get_config(), exchange_name,
                                            is_simulated=True,
                                            is_rest_only=True,
-                                           is_backtesting=False,
-                                           is_sandboxed=False)
+                                           is_backtesting=True,
+                                           is_sandboxed=False,
+                                           backtesting_files=["binance_BTC_USDT_20190718_204715.data"])
 
     add_exchange(exchange_name, {
         "exchange_factory": exchange_factory,

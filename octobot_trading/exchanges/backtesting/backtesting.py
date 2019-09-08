@@ -166,7 +166,7 @@ class Backtesting:
     def _init_symbols_to_test(self):
         for crypto_currency_data in self.config[CONFIG_CRYPTO_CURRENCIES].values():
             for symbol in crypto_currency_data[CONFIG_CRYPTO_PAIRS]:
-                if symbol in self.exchange_simulator.get_symbols():
+                if symbol in self.exchange_simulator.symbols:
                     self.symbols_to_test.add(symbol)
 
     @staticmethod

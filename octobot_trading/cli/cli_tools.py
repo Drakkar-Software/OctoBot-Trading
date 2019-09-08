@@ -19,7 +19,8 @@ import logging
 from octobot_commons.pretty_printer import PrettyPrinter
 
 from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, KLINE_CHANNEL, \
-    OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
+    OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL, \
+    TIME_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.cli import get_should_display_callbacks_logs
 from octobot_trading.exchanges.exchange_factory import ExchangeFactory
@@ -117,6 +118,7 @@ async def start_exchange(exchange_factory):
     await get_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
     await get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
     await get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
+    await get_chan(TIME_CHANNEL, exchange_factory.exchange_name).new_consumer(time_callback)
 
 
 async def wait_exchange_tasks():

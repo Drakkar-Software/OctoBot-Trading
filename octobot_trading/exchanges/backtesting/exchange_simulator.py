@@ -19,14 +19,14 @@ import time
 
 from octobot_commons.data_util import DataUtil
 from octobot_commons.enums import PriceIndexes, TimeFrames, TimeFramesMinutes
+from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
 from octobot_commons.time_frame_manager import TimeFrameManager
-from octobot_commons.number_util import round_into_str_with_max_digits
 
 from octobot_trading.constants import CONFIG_BACKTESTING, BACKTESTING_DATA_OHLCV, BACKTESTING_DATA_TRADES, \
     CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES_MAKER, \
     CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW, ORDER_CREATION_LAST_TRADES_TO_USE, \
-    SIMULATOR_LAST_PRICES_TO_CHECK
+    SIMULATOR_LAST_PRICES_TO_CHECK, CONFIG_BACKTESTING_DATA_FILES, BACKTESTING_FILE_PATH
 from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstantsTickersColumns, \
     ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
@@ -37,19 +37,22 @@ from octobot_trading.exchanges.backtesting.collector.data_file_manager import in
 from octobot_trading.exchanges.backtesting.collector.data_parser import DataCollectorParser
 from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
 from octobot_trading.util import get_symbols
+from octobot_trading.util.backtesting_util import initialize_backtesting
 
 
 class ExchangeSimulator(AbstractExchange):
-    def __init__(self, config, exchange_type, exchange_manager, config_backtesting_data_files_path):
+    def __init__(self, config, exchange_type, exchange_manager, config_backtesting_data_files):
         super().__init__(config, exchange_type, exchange_manager)
         self.initializing = True
+
+        initialize_backtesting(config, config_backtesting_data_files)
 
         if CONFIG_BACKTESTING not in self.config:
             raise Exception("Backtesting config not found")
 
         self.symbols = None
         self.data = None
-        self._set_symbol_list(config_backtesting_data_files_path)
+        self._set_symbol_list()
 
         self.config_time_frames = TimeFrameManager.get_config_time_frame(self.config)
 
@@ -85,21 +88,15 @@ class ExchangeSimulator(AbstractExchange):
                                          if tf.value in self.get_ohlcv(symbol)]
         return client_timeframes
 
-    def get_symbol_data(self, symbol):
-        return self.exchange_manager.get_symbol_data(symbol)
-
-    def get_personal_data(self):
-        return self.exchange_manager.get_exchange_personal_data()
-
     # todo merge multiple file with the same symbol
-    def _set_symbol_list(self, config_backtesting_data_files_path):
+    def _set_symbol_list(self):
         self.symbols = []
         self.data = {}
         symbols_appended = {}
         relevant_symbols = set(get_symbols(self.config))
 
         # parse files
-        for file in self.config[CONFIG_BACKTESTING][config_backtesting_data_files_path]:
+        for file in self.config[CONFIG_BACKTESTING][CONFIG_BACKTESTING_DATA_FILES]:
             exchange_name, symbol, timestamp, data_type = interpret_file_name(file)
             if symbol is not None and symbol in relevant_symbols:
                 if exchange_name is not None and timestamp is not None and data_type is not None:
@@ -111,7 +108,7 @@ class ExchangeSimulator(AbstractExchange):
                         if symbols_appended[symbol] < int(timestamp):
                             symbols_appended[symbol] = int(timestamp)
                             self.symbols.append(symbol)
-                            data = DataCollectorParser.parse(file)
+                            data = DataCollectorParser.parse(BACKTESTING_FILE_PATH, file)
                             self.data[symbol] = self._fix_timestamps(data)
 
     def _fix_timestamps(self, data):
@@ -418,34 +415,6 @@ class ExchangeSimulator(AbstractExchange):
     async def end_backtesting(self, symbol):
         await self.backtesting.end(symbol)
 
-    # Unimplemented methods from AbstractExchange
-    async def cancel_order(self, order_id, symbol=None):
-        return True
-
-    async def create_order(self, order_type, symbol, quantity, price=None, stop_price=None):
-        pass
-
-    async def get_all_orders(self, symbol=None, since=None, limit=None):
-        return []
-
-    async def get_balance(self):
-        return None
-
-    async def get_closed_orders(self, symbol=None, since=None, limit=None):
-        return []
-
-    async def get_my_recent_trades(self, symbol=None, since=None, limit=None):
-        return []
-
-    async def get_open_orders(self, symbol=None, since=None, limit=None, force_rest=False):
-        return []
-
-    async def get_order(self, order_id, symbol=None):
-        raise NotImplementedError("get_order not implemented")
-
-    async def get_order_book(self, symbol, limit=30):
-        raise NotImplementedError("get_order_book not implemented")
-
     async def stop(self):
         pass
 
@@ -501,3 +470,6 @@ class ExchangeSimulator(AbstractExchange):
             FeePropertyColumns.RATE.value: rate,
             FeePropertyColumns.COST.value: cost
         }
+
+    def is_authenticated(self) -> bool:
+        return False

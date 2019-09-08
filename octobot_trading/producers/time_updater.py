@@ -13,10 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+import time
 
 from octobot_trading.channels.time import TimeProducer
 
 
 class TimeUpdater(TimeProducer):
-    async def start(self):  # TODO
-        pass
+    TIME_INTERVAL = 0.1
+
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.current_timestamp = time.time()
+
+    async def start(self):
+        while not self.should_stop:
+            try:
+                await self.push(timestamp=self.current_timestamp)
+                self.current_timestamp += self.TIME_INTERVAL
+            except Exception as e:
+                self.logger.exception(f"Fail to update time : {e}")

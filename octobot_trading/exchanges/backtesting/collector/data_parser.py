@@ -26,9 +26,9 @@ from octobot_trading.exchanges.backtesting.collector.data_file_manager import re
 
 class DataCollectorParser:
     @staticmethod
-    def parse(collector_path: str, file: str) -> dict:
-        if os.path.isfile(os.path.join(collector_path, file)):
-            file_content = DataCollectorParser._get_file_content(os.path.join(collector_path, file))
+    def parse(file_path: str, file: str) -> dict:
+        if os.path.isfile(os.path.join(file_path, file)):
+            file_content = DataCollectorParser._get_file_content(os.path.join(file_path, file))
         else:
             file_content = DataCollectorParser._get_file_content(file)
         return file_content

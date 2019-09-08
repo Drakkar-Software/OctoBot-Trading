@@ -29,7 +29,8 @@ class ExchangeFactory:
                  is_simulated=False,
                  is_backtesting=False,
                  rest_only=False,
-                 is_sandboxed=False):
+                 is_sandboxed=False,
+                 backtesting_files=None):
         self.logger = get_logger(self.__class__.__name__)
         self.config = config
         self.exchange_name = exchange_name
@@ -37,11 +38,13 @@ class ExchangeFactory:
         self.is_backtesting = is_backtesting
         self.rest_only = rest_only
         self.is_sandboxed = is_sandboxed
+        self.backtesting_files = backtesting_files
         self.exchange_manager = ExchangeManager(config,
                                                 exchange_name,
                                                 is_simulated=is_simulated,
                                                 is_backtesting=is_backtesting,
-                                                rest_only=rest_only)
+                                                rest_only=rest_only,
+                                                backtesting_files=backtesting_files)
 
         self.trader: Trader = None
 
@@ -49,10 +52,13 @@ class ExchangeFactory:
         await self.exchange_manager.initialize()
 
         # set sandbox mode
-        self.exchange_manager.exchange.client.setSandboxMode(self.is_sandboxed)
+        if not self.is_backtesting:
+            self.exchange_manager.exchange.client.setSandboxMode(self.is_sandboxed)
 
-        self.trader = Trader(self.config, self.exchange_manager) if not self.is_simulated \
-            else TraderSimulator(self.config, self.exchange_manager)
+        if not self.is_simulated:
+            self.trader = Trader(self.config, self.exchange_manager)
+        else:
+            self.trader = TraderSimulator(self.config, self.exchange_manager)
 
         try:
             # check traders activation
