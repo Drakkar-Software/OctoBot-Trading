@@ -109,5 +109,4 @@ venv.bak/
 cython_debug
 logs
 backtesting/data/*.data
-
 tentacles/

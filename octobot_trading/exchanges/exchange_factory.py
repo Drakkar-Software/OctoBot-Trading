@@ -48,6 +48,9 @@ class ExchangeFactory:
 
         self.trader: Trader = None
 
+    async def create_basic(self):
+        await self.exchange_manager.initialize()
+
     async def create(self):
         await self.exchange_manager.initialize()
 
