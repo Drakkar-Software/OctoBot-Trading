@@ -24,7 +24,7 @@ class TimeManager(Initializable):
         self.logger = get_logger(self.__class__.__name__)
         self.config, self.exchange_manager = config, exchange_manager
         self.time_initialized = False  # TODO
-        self.timestamp = None
+        self.timestamp = 0
 
     async def initialize_impl(self):
         self._reset_time()

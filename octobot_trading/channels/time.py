@@ -15,7 +15,7 @@
 #  License along with this library.
 from asyncio import CancelledError
 
-from octobot_trading.channels import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelSupervisedConsumer
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelSupervisedConsumer
 
 
 class TimeProducer(ExchangeChannelProducer):

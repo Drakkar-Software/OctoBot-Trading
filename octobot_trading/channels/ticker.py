@@ -16,7 +16,6 @@
 from asyncio import CancelledError
 
 from octobot_channels import CHANNEL_WILDCARD
-from octobot_channels.producer import Producer
 
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
 

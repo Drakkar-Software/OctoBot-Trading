@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
-from octobot_trading.exchanges.backtesting.backtesting cimport Backtesting
+# from octobot_trading.exchanges.backtesting.backtesting cimport Backtesting
 
 cdef class ExchangeSimulator(AbstractExchange):
     cdef public bint initializing
@@ -37,36 +37,36 @@ cdef class ExchangeSimulator(AbstractExchange):
     cdef public object DEFAULT_TIME_FRAME_RECENT_TRADE_CREATOR
     cdef public object DEFAULT_TIME_FRAME_TICKERS_CREATOR
 
-    cdef public Backtesting backtesting
+    # cdef public Backtesting backtesting
 
     # private
-    cdef dict _get_available_timeframes(self)
-    cdef void _set_symbol_list(self, str config_backtesting_data_files_path)
-    cdef dict _fix_timestamps(self, dict data)
-    cdef void _prepare(self)
-    cdef float _get_current_timestamp(self, object time_frame, str symbol, int backwards=*)
-    cdef dict _create_ticker(self, str symbol, int index)
-    cdef list _fetch_recent_trades(self, str symbol, object timeframe, int index)
-    cdef list _generate_trades(self, object time_frame, float timestamp)
-    cdef int _get_candle_index(self, object time_frame, str symbol)
-    cdef list _extract_data_with_limit(self, str symbol, object time_frame)
-    cdef void _ensure_available_data(self, str symbol)
+    # cdef dict _get_available_timeframes(self)
+    # cdef void _set_symbol_list(self, str config_backtesting_data_files_path)
+    # cdef dict _fix_timestamps(self, dict data)
+    # cdef void _prepare(self)
+    # cdef float _get_current_timestamp(self, object time_frame, str symbol, int backwards=*)
+    # cdef dict _create_ticker(self, str symbol, int index)
+    # cdef list _fetch_recent_trades(self, str symbol, object timeframe, int index)
+    # cdef list _generate_trades(self, object time_frame, float timestamp)
+    # cdef int _get_candle_index(self, object time_frame, str symbol)
+    # cdef list _extract_data_with_limit(self, str symbol, object time_frame)
+    # cdef void _ensure_available_data(self, str symbol)
     cdef dict get_candles_exact(self, str symbol, object time_frame, int min_index, int max_index, bint return_list=*)
     cdef dict get_full_candles_data(self, str symbol, object time_frame)
     cdef list _get_used_time_frames(self, str symbol)
     cdef object _find_min_time_frame_to_consider(self, list time_frames, str symbol)
 
-    @staticmethod
-    cdef list _extract_from_indexes(list array, int max_index, str symbol, int factor=*)
+    # @staticmethod
+    # cdef list _extract_from_indexes(list array, int max_index, str symbol, int factor=*)
 
-    cpdef dict get_ohlcv(self, str symbol)
-    cpdef dict get_trades(self, str symbol)
-    cpdef handles_trades_history(self, str symbol)
+    # cpdef dict get_ohlcv(self, str symbol)
+    # cpdef dict get_trades(self, str symbol)
+    # cpdef handles_trades_history(self, str symbol)
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame)
     cpdef bint has_data_for_time_frame(self, str symbol, object time_frame)
     cpdef str get_name(self)
-    cpdef bint should_update_data(self, object time_frame, str symbol)
+    # cpdef bint should_update_data(self, object time_frame, str symbol)
     cpdef void init_candles_offset(self, list time_frames, str symbol)
     cpdef object get_min_time_frame(self, str symbol)
     cpdef int get_progress(self)

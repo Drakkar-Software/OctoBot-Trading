@@ -37,10 +37,10 @@ class ExchangeSimulator(AbstractExchange):
         super().__init__(config, exchange_type, exchange_manager)
         self.initializing = True
 
-        initialize_backtesting(config, config_backtesting_data_files)
-
-        if CONFIG_BACKTESTING not in self.config:
-            raise Exception("Backtesting config not found")
+        # initialize_backtesting(config, config_backtesting_data_files)
+        #
+        # if CONFIG_BACKTESTING not in self.config:
+        #     raise Exception("Backtesting config not found")
 
         self.symbols = None
         self.data = None
@@ -68,7 +68,7 @@ class ExchangeSimulator(AbstractExchange):
         self.DEFAULT_TIME_FRAME_TICKERS_CREATOR = self.MIN_ENABLED_TIME_FRAME
         self.RECENT_TRADES_TO_CREATE = max(SIMULATOR_LAST_PRICES_TO_CHECK, ORDER_CREATION_LAST_TRADES_TO_USE)
 
-        self.backtesting = Backtesting(self.config, self)
+        # self.backtesting = Backtesting(self.config, self)
         self.__prepare()
         self.initializing = False
 
@@ -84,37 +84,37 @@ class ExchangeSimulator(AbstractExchange):
         return client_timeframes
 
     # todo merge multiple file with the same symbol
-    def __set_symbol_list(self):
-        self.symbols = []
-        self.data = {}
-        symbols_appended = {}
-        relevant_symbols = set(get_symbols(self.config))
+    # def __set_symbol_list(self):
+    #     self.symbols = []
+    #     self.data = {}
+    #     symbols_appended = {}
+    #     relevant_symbols = set(get_symbols(self.config))
+    #
+    #     # parse files
+    #     for file in self.config[CONFIG_BACKTESTING][CONFIG_BACKTESTING_DATA_FILES]:
+    #         exchange_name, symbol, timestamp, data_type = interpret_file_name(file)
+    #         if symbol is not None and symbol in relevant_symbols:
+    #             if exchange_name is not None and timestamp is not None and data_type is not None:
+    #
+    #                 # check if symbol data already in symbols
+    #                 # TODO check exchanges ?
+    #                 if symbol not in symbols_appended:
+    #                     symbols_appended[symbol] = 0
+    #                     if symbols_appended[symbol] < int(timestamp):
+    #                         symbols_appended[symbol] = int(timestamp)
+    #                         self.symbols.append(symbol)
+    #                         data = DataCollectorParser.parse(BACKTESTING_FILE_PATH, file)
+    #                         self.data[symbol] = self.__fix_timestamps(data)
 
-        # parse files
-        for file in self.config[CONFIG_BACKTESTING][CONFIG_BACKTESTING_DATA_FILES]:
-            exchange_name, symbol, timestamp, data_type = interpret_file_name(file)
-            if symbol is not None and symbol in relevant_symbols:
-                if exchange_name is not None and timestamp is not None and data_type is not None:
-
-                    # check if symbol data already in symbols
-                    # TODO check exchanges ?
-                    if symbol not in symbols_appended:
-                        symbols_appended[symbol] = 0
-                        if symbols_appended[symbol] < int(timestamp):
-                            symbols_appended[symbol] = int(timestamp)
-                            self.symbols.append(symbol)
-                            data = DataCollectorParser.parse(BACKTESTING_FILE_PATH, file)
-                            self.data[symbol] = self.__fix_timestamps(data)
-
-    def __fix_timestamps(self, data):
-        for time_frame in data[BACKTESTING_DATA_OHLCV]:
-            need_to_uniform_timestamps = self.exchange_manager.need_to_uniformize_timestamp(
-                data[BACKTESTING_DATA_OHLCV][time_frame][0][PriceIndexes.IND_PRICE_TIME.value])
-            for data_list in data[BACKTESTING_DATA_OHLCV][time_frame]:
-                if need_to_uniform_timestamps:
-                    data_list[PriceIndexes.IND_PRICE_TIME.value] = \
-                        self.get_uniform_timestamp(data_list[PriceIndexes.IND_PRICE_TIME.value])
-        return data
+    # def __fix_timestamps(self, data):
+    #     for time_frame in data[BACKTESTING_DATA_OHLCV]:
+    #         need_to_uniform_timestamps = self.exchange_manager.need_to_uniformize_timestamp(
+    #             data[BACKTESTING_DATA_OHLCV][time_frame][0][PriceIndexes.IND_PRICE_TIME.value])
+    #         for data_list in data[BACKTESTING_DATA_OHLCV][time_frame]:
+    #             if need_to_uniform_timestamps:
+    #                 data_list[PriceIndexes.IND_PRICE_TIME.value] = \
+    #                     self.get_uniform_timestamp(data_list[PriceIndexes.IND_PRICE_TIME.value])
+    #     return data
 
     def __prepare(self):
         # create get times and init offsets
@@ -124,13 +124,13 @@ class ExchangeSimulator(AbstractExchange):
                 self.time_frame_get_times[symbol][time_frame.value] = 0
                 self.time_frames_offset = {}
 
-    # returns price (ohlcv) data for a given symbol
-    def get_ohlcv(self, symbol):
-        return self.data[symbol][BACKTESTING_DATA_OHLCV]
-
-    # returns trades data for a given symbol
-    def get_trades(self, symbol):
-        return self.data[symbol][BACKTESTING_DATA_TRADES]
+    # # returns price (ohlcv) data for a given symbol
+    # def get_ohlcv(self, symbol):
+    #     return self.data[symbol][BACKTESTING_DATA_OHLCV]
+    #
+    # # returns trades data for a given symbol
+    # def get_trades(self, symbol):
+    #     return self.data[symbol][BACKTESTING_DATA_TRADES]
 
     def symbol_exists(self, symbol):
         return symbol in self.symbols
@@ -147,11 +147,11 @@ class ExchangeSimulator(AbstractExchange):
         max_limit = len(array)
         max_index *= factor
 
-        if max_index > max_limit:
-            raise BacktestingEndedException(symbol)
+        # if max_index > max_limit:
+        #     raise BacktestingEndedException(symbol)
 
-        else:
-            return array[:max_index]
+        # else:
+        #     return array[:max_index]
 
     def __get_candle_index(self, time_frame, symbol):
         if symbol not in self.data or time_frame not in self.get_ohlcv(symbol):
@@ -170,8 +170,9 @@ class ExchangeSimulator(AbstractExchange):
                                                         symbol)
 
     def __ensure_available_data(self, symbol):
-        if symbol not in self.data:
-            raise NoCandleDataForThisSymbolException(f"No candles data for {symbol} symbol.")
+        # if symbol not in self.data:
+        #     raise NoCandleDataForThisSymbolException(f"No candles data for {symbol} symbol.")
+        pass
 
     def get_candles_exact(self, symbol, time_frame, min_index, max_index, return_list=True):
         self.__ensure_available_data(symbol)
@@ -215,8 +216,8 @@ class ExchangeSimulator(AbstractExchange):
                 [PriceIndexes.IND_PRICE_TIME.value]
         else:
             self.logger.error(f"No data for the timeframes: {time_frames} in loaded backtesting file.")
-            if backtesting_enabled(self.config):
-                self.backtesting.end(symbol)
+            # if backtesting_enabled(self.config):
+            #     self.backtesting.end(symbol)
 
     """
     Used to set self.time_frames_offset: will set offsets for all the given timeframes to keep data consistent 
