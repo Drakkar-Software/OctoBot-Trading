@@ -36,7 +36,10 @@ class Trader(Initializable):
         self.exchange_manager = exchange_manager
         self.config = config
 
-        self.set_risk(self.config[CONFIG_TRADING][CONFIG_TRADER_RISK])
+        try:
+            self.set_risk(self.config[CONFIG_TRADING][CONFIG_TRADER_RISK])
+        except KeyError:
+            self.set_risk(0)
 
         # logging
         self.trader_type_str = REAL_TRADER_STR

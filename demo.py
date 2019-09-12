@@ -22,10 +22,11 @@ from octobot_commons.enums import TimeFrames
 
 from octobot_trading import cli
 from octobot_trading.cli.cli_app import app
-from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING
+from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING, CONFIG_EXCHANGES, \
+    CONFIG_CRYPTO_CURRENCIES
 
 config = {
-    "crypto-currencies": {
+    CONFIG_CRYPTO_CURRENCIES: {
         "Bitcoin": {
             "pairs": [
                 "BTC/USDT"
@@ -37,7 +38,7 @@ config = {
             ]
         }
     },
-    "exchanges": {
+    CONFIG_EXCHANGES: {
         "bitmex": {
             "api-key": os.getenv('BITMEX-API-KEY'),
             "api-secret": os.getenv('BITMEX-API-SECRET')
