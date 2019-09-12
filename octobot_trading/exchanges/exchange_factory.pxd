@@ -28,3 +28,4 @@ cdef class ExchangeFactory:
     cdef bint is_backtesting
     cdef bint is_sandboxed
     cdef bint rest_only
+    cdef bint is_collecting

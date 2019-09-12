@@ -63,6 +63,7 @@ class ExchangeManager(Initializable):
                  is_backtesting=False,
                  rest_only=False,
                  ignore_config=False,
+                 is_collecting=False,
                  backtesting_files=None):
         super().__init__()
         self.config = config
@@ -75,6 +76,7 @@ class ExchangeManager(Initializable):
         self.is_ready = False
         self.is_backtesting = is_backtesting
         self.is_simulated = is_simulated
+        self.is_collecting = is_collecting
         self.is_trader_simulated = is_trader_simulator_enabled(self.config)
 
         self.trader = None
@@ -152,7 +154,7 @@ class ExchangeManager(Initializable):
             await TickerUpdater(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
             await KlineUpdater(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
-        if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting):  # TODO or filter creation with WS
+        if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting or self.is_collecting):  # TODO or filter creation with WS
             await BalanceUpdater(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
             await BalanceProfitabilityUpdater(get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
             await CloseOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
@@ -161,7 +163,7 @@ class ExchangeManager(Initializable):
             await PositionsUpdater(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
         # Simulated producers
-        if not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting:
+        if (not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting) and not self.is_collecting:
             # Not required
             # await BalanceUpdaterSimulator(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
             await BalanceProfitabilityUpdaterSimulator(get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()

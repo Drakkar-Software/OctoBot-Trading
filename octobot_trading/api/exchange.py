@@ -17,11 +17,16 @@ from octobot_trading.exchanges.exchange_factory import ExchangeFactory
 
 
 def create_new_exchange(config, exchange_name,
-                        is_simulated, is_rest_only, is_backtesting, is_sandboxed,
-                        backtesting_files):
+                        is_simulated=False,
+                        is_rest_only=False,
+                        is_backtesting=False,
+                        is_sandboxed=False,
+                        is_collecting=False,
+                        backtesting_files=None):
     return ExchangeFactory(config, exchange_name,
                            is_simulated=is_simulated,
                            is_backtesting=is_backtesting,
                            rest_only=is_rest_only,
                            is_sandboxed=is_sandboxed,
+                           is_collecting=is_collecting,
                            backtesting_files=backtesting_files)

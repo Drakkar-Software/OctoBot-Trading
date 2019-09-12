@@ -29,12 +29,7 @@ from octobot_trading.enums import TraderOrderType
 @shell(prompt='OctoBot-Trading > ', intro='Starting...')
 def app():
     exchange_name = "binance"
-    exchange_factory = create_new_exchange(get_config(), exchange_name,
-                                           is_simulated=True,
-                                           is_rest_only=True,
-                                           is_backtesting=False,
-                                           is_sandboxed=False,
-                                           backtesting_files=["binance_BTC_USDT_20190718_204715.data"])
+    exchange_factory = create_new_exchange(get_config(), exchange_name, is_simulated=True, is_rest_only=True)
 
     add_exchange(exchange_name, {
         "exchange_factory": exchange_factory,
@@ -87,10 +82,7 @@ def orders(exchange_name, symbol):
 # @click.option("--api_secret", prompt="API secret", help="The api secret of the exchange to use.")
 def connect(exchange_name):
     if exchange_name not in exchanges:
-        exchange_factory = create_new_exchange(get_config(), exchange_name,
-                                               is_simulated=False,
-                                               is_backtesting=False,
-                                               is_sandboxed=False)
+        exchange_factory = create_new_exchange(get_config(), exchange_name)
 
         exchanges[exchange_name] = {
             "exchange_factory": exchange_factory,
