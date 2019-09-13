@@ -19,8 +19,6 @@ Handles balance changes
 """
 from asyncio import CancelledError
 
-from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
 
 

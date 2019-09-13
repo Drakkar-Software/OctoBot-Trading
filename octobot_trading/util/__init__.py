@@ -22,11 +22,21 @@ from octobot_trading.constants import CONFIG_TRADER, CONFIG_SIMULATOR, CONFIG_TR
 
 
 def is_trader_enabled(config):
-    return config[CONFIG_TRADER][CONFIG_ENABLED_OPTION]
+    return __is_trader_enabled(config, CONFIG_TRADER)
 
 
 def is_trader_simulator_enabled(config):
-    return config[CONFIG_SIMULATOR][CONFIG_ENABLED_OPTION]
+    return __is_trader_enabled(config, CONFIG_SIMULATOR)
+
+
+def __is_trader_enabled(config, trader_key):
+    try:
+        return config[trader_key][CONFIG_ENABLED_OPTION]
+    except KeyError:
+        if trader_key not in config:
+            config[trader_key] = {}
+        config[trader_key][CONFIG_ENABLED_OPTION] = False
+        return False
 
 
 def get_symbols(config):
