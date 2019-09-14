@@ -13,9 +13,32 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import json
 
+from octobot_trading.channels import get_chan, TIME_CHANNEL
 from octobot_trading.producers.order_book_updater import OrderBookUpdater
 
 
 class OrderBookUpdaterSimulator(OrderBookUpdater):
-    pass
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.exchange_data_importer = self.channel.exchange_manager.exchange.exchange_importer
+        self.exchange_name = self.channel.exchange_manager.exchange.name
+        self.last_timestamp_pushed = 0
+
+    async def start(self):
+        await get_chan(TIME_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_timestamp)
+
+    async def handle_timestamp(self, exchange: str, timestamp: int):
+        try:
+            # TODO foreach symbol
+            order_book_data = self.exchange_data_importer.get_order_book_from_timestamps(
+                exchange_name=self.exchange_name,
+                symbol="BTC/USDT",
+                inferior_timestamp=timestamp,
+                limit=1)[0]
+            if order_book_data[0] > self.last_timestamp_pushed:
+                self.last_timestamp_pushed = order_book_data[0]
+                await self.push(order_book_data[-3], json.loads(order_book_data[-1]), json.loads(order_book_data[-2]))
+        except IndexError as e:
+            self.logger.warning(f"Failed to access order_book_data : {e}")

@@ -25,6 +25,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
     def __init__(self, channel):
         super().__init__(channel)
         self.exchange_data_importer = self.channel.exchange_manager.exchange.exchange_importer
+        self.exchange_name = self.channel.exchange_manager.exchange.name
         self.last_timestamp_pushed = 0
 
     async def start(self):
@@ -32,12 +33,13 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
 
     async def handle_timestamp(self, exchange: str, timestamp: int):
         try:
-            ohlcv_data = self.exchange_data_importer.get_ohlcv_from_timestamps(exchange_name=exchange,
+            # TODO foreach symbol and time_frame
+            ohlcv_data = self.exchange_data_importer.get_ohlcv_from_timestamps(exchange_name=self.exchange_name,
                                                                                symbol="BTC/USDT",
                                                                                inferior_timestamp=timestamp,
                                                                                limit=1)[0]
             if ohlcv_data[0] > self.last_timestamp_pushed:
                 self.last_timestamp_pushed = ohlcv_data[0]
                 await self.push(TimeFrames(ohlcv_data[-2]), ohlcv_data[-3], [json.loads(ohlcv_data[-1])], partial=True)
-        except IndexError:
-            pass
+        except IndexError as e:
+            self.logger.warning(f"Failed to access ohlcv_data : {e}")

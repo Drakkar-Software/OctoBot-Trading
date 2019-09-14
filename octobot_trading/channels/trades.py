@@ -25,6 +25,7 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 class TradesProducer(ExchangeChannelProducer):
     async def push(self, trades, old_trade=False):
+        # TODO add symbol param
         await self.perform(trades, old_trade=old_trade)
 
     async def perform(self, trades, old_trade=False):

@@ -31,7 +31,7 @@ class TickerUpdater(TickerProducer):
         self._pairs_to_update = self.channel.exchange_manager.traded_pairs
 
         while not self.should_stop:
-            try:
+            try:  # TODO
                 # for pair in self._pairs_to_update:
                 #     ticker: dict = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
                 #     await self.push(pair, self._cleanup_ticker_dict(ticker))
