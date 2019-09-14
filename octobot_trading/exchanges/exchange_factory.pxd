@@ -16,11 +16,18 @@
 #  License along with this library.
 
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+from octobot_trading.traders.trader cimport Trader
 
 cdef class ExchangeFactory:
     cdef public ExchangeManager exchange_manager
 
     cdef dict config
+
+    cdef object logger
+
+    cdef Trader trader
+
+    cdef list backtesting_files
 
     cdef public str exchange_name
 

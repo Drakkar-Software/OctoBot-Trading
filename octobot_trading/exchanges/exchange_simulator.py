@@ -50,7 +50,7 @@ class ExchangeSimulator(AbstractExchange):
         self.data = None
         # self.__set_symbol_list()
 
-        self.config_time_frames = TimeFrameManager.get_config_time_frame(self.config)
+        self.config_time_frames = list(TimeFrameManager.get_config_time_frame(self.config))
 
         # set exchange manager attributes
         self.exchange_manager.client_symbols = self.symbols

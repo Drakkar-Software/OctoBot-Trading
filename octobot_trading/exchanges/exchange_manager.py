@@ -15,7 +15,7 @@
 #  License along with this library.
 import time
 
-from octobot_channels.util import create_all_subclasses_channel
+from octobot_channels.util.channel_creator import create_all_subclasses_channel
 from octobot_commons.config_util import has_invalid_default_config_value
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME
 from octobot_commons.enums import PriceIndexes
