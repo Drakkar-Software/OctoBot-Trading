@@ -31,6 +31,7 @@ class ExchangeFactory:
                  rest_only=False,
                  is_sandboxed=False,
                  is_collecting=False,
+                 exchange_only=False,
                  backtesting_files=None):
         self.logger = get_logger(self.__class__.__name__)
         self.config = config
@@ -41,12 +42,14 @@ class ExchangeFactory:
         self.is_sandboxed = is_sandboxed
         self.is_collecting = is_collecting
         self.backtesting_files = backtesting_files
+        self.exchange_only = exchange_only
         self.exchange_manager = ExchangeManager(config,
                                                 exchange_name,
                                                 is_simulated=is_simulated,
                                                 is_backtesting=is_backtesting,
                                                 rest_only=rest_only,
                                                 is_collecting=is_collecting,
+                                                exchange_only=exchange_only,
                                                 backtesting_files=backtesting_files)
 
         self.trader: Trader = None

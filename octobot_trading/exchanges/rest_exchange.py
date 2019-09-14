@@ -43,7 +43,7 @@ class RestExchange(AbstractExchange):
         super().__init__(config, exchange_type, exchange_manager)
         # We will need to create the rest client and fetch exchange config
         self.is_authenticated = False
-        self._create_client()
+        self.__create_client()
 
         self.is_supporting_position = True
 
@@ -59,7 +59,7 @@ class RestExchange(AbstractExchange):
             return getattr(ccxt, exchange_class_string)
         return exchange_class_string
 
-    def _create_client(self):
+    def __create_client(self):
         """
         Exchange instance creation
         :return:
@@ -229,10 +229,10 @@ class RestExchange(AbstractExchange):
             return created_order
 
         except InsufficientFunds as e:
-            self._log_error(e, order_type, symbol, quantity, price, stop_price)
+            self.__log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(e)
         except Exception as e:
-            self._log_error(e, order_type, symbol, quantity, price, stop_price)
+            self.__log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.error(e)
         return None
 
@@ -302,7 +302,7 @@ class RestExchange(AbstractExchange):
     async def get_position_status(self, position_id, symbol=None, params={}):
         return await self.client.get_position_status(id=position_id, symbol=symbol, params=params)
 
-    def _log_error(self, error, order_type, symbol, quantity, price, stop_price):
+    def __log_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
             f" stop_price: {stop_price}"
         self.logger.error(f"Failed to create order : {error} ({order_desc})")
@@ -310,7 +310,7 @@ class RestExchange(AbstractExchange):
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
-                                         side=RestExchange._get_side(order_type),
+                                         side=RestExchange.__get_side(order_type),
                                          amount=quantity,
                                          price=price,
                                          takerOrMaker=taker_or_maker)
@@ -362,6 +362,6 @@ class RestExchange(AbstractExchange):
             raise ValueError(f'{pair} is not supported')
 
     @staticmethod
-    def _get_side(order_type):
+    def __get_side(order_type):
         return TradeOrderSide.BUY.value if order_type in (TraderOrderType.BUY_LIMIT, TraderOrderType.BUY_MARKET) \
             else TradeOrderSide.SELL.value

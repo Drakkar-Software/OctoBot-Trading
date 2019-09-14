@@ -22,6 +22,7 @@ def create_new_exchange(config, exchange_name,
                         is_backtesting=False,
                         is_sandboxed=False,
                         is_collecting=False,
+                        exchange_only=False,
                         backtesting_files=None):
     return ExchangeFactory(config, exchange_name,
                            is_simulated=is_simulated,
@@ -29,4 +30,5 @@ def create_new_exchange(config, exchange_name,
                            rest_only=is_rest_only,
                            is_sandboxed=is_sandboxed,
                            is_collecting=is_collecting,
+                           exchange_only=exchange_only,
                            backtesting_files=backtesting_files)

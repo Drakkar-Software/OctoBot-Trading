@@ -14,11 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import copy
-
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
 from octobot_commons.data_util import DataUtil
-from octobot_commons.enums import PriceIndexes, TimeFrames
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
 from octobot_commons.time_frame_manager import TimeFrameManager
@@ -30,8 +27,6 @@ from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
-from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
-from octobot_trading.util import get_symbols
 
 
 class ExchangeSimulator(AbstractExchange):
@@ -77,8 +72,11 @@ class ExchangeSimulator(AbstractExchange):
 
     async def modify_channels(self):
         # TODO foreach files
-        await get_chan(TIME_CHANNEL, self.exchange_manager.exchange.name) \
-            .modify(minimum_timestamp=self.exchange_importer.get_minimum_timestamp())
+        minimum_timestamp, maximum_timestamp = self.exchange_importer.get_data_timestamp_interval()
+
+        await get_chan(TIME_CHANNEL, self.exchange_manager.exchange.name).modify(
+            minimum_timestamp=minimum_timestamp,
+            maximum_timestamp=maximum_timestamp)
 
     def get_name(self):
         return self.__class__.__name__ + str(self.symbols)

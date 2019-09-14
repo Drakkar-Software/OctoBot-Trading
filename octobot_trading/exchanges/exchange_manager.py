@@ -68,6 +68,7 @@ class ExchangeManager(Initializable):
                  rest_only=False,
                  ignore_config=False,
                  is_collecting=False,
+                 exchange_only=False,
                  backtesting_files=None):
         super().__init__()
         self.config = config
@@ -81,6 +82,7 @@ class ExchangeManager(Initializable):
         self.is_backtesting = is_backtesting
         self.is_simulated = is_simulated
         self.is_collecting = is_collecting
+        self.exchange_only = exchange_only
         self.is_trader_simulated = is_trader_simulator_enabled(self.config)
 
         self.trader = None
@@ -100,15 +102,19 @@ class ExchangeManager(Initializable):
     async def initialize_impl(self):
         await self.create_exchanges()
 
+    async def stop(self):
+        if self.exchange is not None:
+            await self.exchange.stop()
+
     async def register_trader(self, trader):
         self.trader = trader
         await self.exchange_personal_data.initialize()
         await self.exchange_global_data.initialize()
 
-    def _load_constants(self):
-        self._load_config_symbols_and_time_frames()
-        self._set_config_time_frame()
-        self._set_config_traded_pairs()
+    def __load_constants(self):
+        self.__load_config_symbols_and_time_frames()
+        self.__set_config_time_frame()
+        self.__set_config_traded_pairs()
 
     def need_user_stream(self):
         return self.config[CONFIG_TRADER][CONFIG_ENABLED_OPTION]
@@ -127,34 +133,37 @@ class ExchangeManager(Initializable):
             self.exchange = RestExchange(self.config, self.exchange_type, self)
             await self.exchange.initialize()
 
-            self._load_constants()
-            await self._create_exchange_channels()
+            self.__load_constants()
+
+            if not self.exchange_only:
+                await self.__create_exchange_channels()
 
             # create Websocket exchange if possible
             if not self.rest_only:
                 # search for websocket
                 if self.check_web_socket_config(self.exchange.name):
-                    self.exchange_web_socket = self._search_and_create_websocket(AbstractWebsocket)
+                    self.exchange_web_socket = self.__search_and_create_websocket(AbstractWebsocket)
 
         # if simulated : create exchange simulator instance
         else:
             self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
             await self.exchange.initialize()
-            self._set_config_traded_pairs()
-            await self._create_exchange_channels()
+            self.__set_config_traded_pairs()
+            await self.__create_exchange_channels()
 
-        # create exchange producers if necessary
-        await self._create_exchange_producers()
+        if not self.exchange_only:
+            # create exchange producers if necessary
+            await self.__create_exchange_producers()
 
         if self.is_backtesting:
             await self.exchange.modify_channels()
 
         self.is_ready = True
 
-    async def _create_exchange_channels(self):  # TODO filter creation
+    async def __create_exchange_channels(self):  # TODO filter creation
         await create_all_subclasses_channel(ExchangeChannel, set_chan, exchange_manager=self)
 
-    async def _create_exchange_producers(self):
+    async def __create_exchange_producers(self):
         # Real data producers
         if self.rest_only and not self.is_backtesting:  # TODO or filter creation with WS
             await OHLCVUpdater(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
@@ -194,7 +203,7 @@ class ExchangeManager(Initializable):
             await TickerUpdaterSimulator(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
             await KlineUpdaterSimulator(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
-    def _search_and_create_websocket(self, websocket_class):
+    def __search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():
             # add websocket exchange if available
             if socket_manager.has_name(self.exchange.name):
@@ -266,17 +275,17 @@ class ExchangeManager(Initializable):
     def get_exchange_quote_and_base(self, symbol):
         return self.exchange.get_split_pair_from_exchange(symbol)
 
-    def _load_config_symbols_and_time_frames(self):
+    def __load_config_symbols_and_time_frames(self):
         client = self.exchange.client
         if client:
             self.client_symbols = client.symbols
             self.client_time_frames[CONFIG_WILDCARD] = client.timeframes if hasattr(client, "timeframes") else {}
         else:
             self.logger.error("Failed to load client from REST exchange")
-            self._raise_exchange_load_error()
+            self.__raise_exchange_load_error()
 
     # SYMBOLS
-    def _set_config_traded_pairs(self):
+    def __set_config_traded_pairs(self):
         self.cryptocurrencies_traded_pairs = {}
         for cryptocurrency in self.config[CONFIG_CRYPTO_CURRENCIES]:
             if self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS]:
@@ -290,12 +299,12 @@ class ExchangeManager(Initializable):
                                               f"{symbol} trading pair.")
 
                 else:
-                    self.cryptocurrencies_traded_pairs[cryptocurrency] = self._create_wildcard_symbol_list(
+                    self.cryptocurrencies_traded_pairs[cryptocurrency] = self.__create_wildcard_symbol_list(
                         self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_QUOTE])
 
                     # additionnal pairs
                     if CONFIG_CRYPTO_ADD in self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency]:
-                        self.cryptocurrencies_traded_pairs[cryptocurrency] += self._add_tradable_symbols(cryptocurrency)
+                        self.cryptocurrencies_traded_pairs[cryptocurrency] += self.__add_tradable_symbols(cryptocurrency)
 
                 # add to global traded pairs
                 if not self.cryptocurrencies_traded_pairs[cryptocurrency]:
@@ -323,12 +332,12 @@ class ExchangeManager(Initializable):
             return False
         return symbol in self.client_symbols
 
-    def _create_wildcard_symbol_list(self, crypto_currency):
-        return [s for s in [ExchangeManager._is_tradable_with_cryptocurrency(symbol, crypto_currency)
+    def __create_wildcard_symbol_list(self, crypto_currency):
+        return [s for s in [ExchangeManager.__is_tradable_with_cryptocurrency(symbol, crypto_currency)
                             for symbol in self.client_symbols]
                 if s is not None]
 
-    def _add_tradable_symbols(self, crypto_currency):
+    def __add_tradable_symbols(self, crypto_currency):
         return [
             symbol
             for symbol in self.config[CONFIG_CRYPTO_CURRENCIES][crypto_currency][CONFIG_CRYPTO_ADD]
@@ -336,11 +345,11 @@ class ExchangeManager(Initializable):
         ]
 
     @staticmethod
-    def _is_tradable_with_cryptocurrency(symbol, crypto_currency):
+    def __is_tradable_with_cryptocurrency(symbol, crypto_currency):
         return symbol if split_symbol(symbol)[1] == crypto_currency else None
 
     # TIME FRAMES
-    def _set_config_time_frame(self):
+    def __set_config_time_frame(self):
         for time_frame in TimeFrameManager.get_config_time_frame(self.config):
             if self.time_frame_exists(time_frame.value):
                 self.time_frames.append(time_frame)
@@ -370,22 +379,22 @@ class ExchangeManager(Initializable):
         if candle_or_candles:  # TODO improve
             if isinstance(candle_or_candles[0], list):
                 if self.need_to_uniformize_timestamp(candle_or_candles[0][PriceIndexes.IND_PRICE_TIME.value]):
-                    self._uniformize_candles_timestamps(candle_or_candles)
+                    self.__uniformize_candles_timestamps(candle_or_candles)
             else:
                 if self.need_to_uniformize_timestamp(candle_or_candles[PriceIndexes.IND_PRICE_TIME.value]):
-                    self._uniformize_candle_timestamps(candle_or_candles)
+                    self.__uniformize_candle_timestamps(candle_or_candles)
             return candle_or_candles
 
-    def _uniformize_candles_timestamps(self, candles):
+    def __uniformize_candles_timestamps(self, candles):
         for candle in candles:
-            self._uniformize_candle_timestamps(candle)
+            self.__uniformize_candle_timestamps(candle)
 
-    def _uniformize_candle_timestamps(self, candle):
+    def __uniformize_candle_timestamps(self, candle):
         candle[PriceIndexes.IND_PRICE_TIME.value] = \
             self.exchange.get_uniform_timestamp(candle[PriceIndexes.IND_PRICE_TIME.value])
 
     # Exceptions
-    def _raise_exchange_load_error(self):
+    def __raise_exchange_load_error(self):
         raise Exception(f"{self.exchange} - Failed to load exchange instances")
 
     def get_exchange_name(self):

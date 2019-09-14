@@ -29,14 +29,14 @@ cdef class RestExchange(AbstractExchange):
     cdef object all_currencies_price_ticker
 
     # private
-    cdef void _create_client(self)
-    cdef void _log_error(self, str error, object order_type, str symbol, float quantity, float price, float stop_price)
+    cdef void __create_client(self)
+    cdef void __log_error(self, str error, object order_type, str symbol, float quantity, float price, float stop_price)
 
     # @staticmethod TODO
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
 
     @staticmethod
-    cdef str _get_side(object order_type)
+    cdef str __get_side(object order_type)
 
     # public
     cpdef get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
