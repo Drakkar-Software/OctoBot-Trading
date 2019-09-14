@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import json
+
 from octobot_commons.enums import TimeFrames, PriceIndexes
 
 from octobot_trading.channels import TIME_CHANNEL, get_chan
@@ -20,31 +22,22 @@ from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 
 
 class OHLCVUpdaterSimulator(OHLCVUpdater):
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.exchange_data_importer = self.channel.exchange_manager.exchange.exchange_importer
+        self.last_timestamp_pushed = 0
+
     async def start(self):
         await get_chan(TIME_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_timestamp)
 
     async def handle_timestamp(self, exchange: str, timestamp: int):
-        await self.push(TimeFrames.ONE_HOUR, "BTC/USDT", [[timestamp, 1, 1, 1, 1, 1]], partial=True)
-
-#     async def force_refresh_data(self, time_frame, symbol):
-#         if not self.backtesting_enabled:
-#             await self._refresh_time_frame_data(time_frame, symbol, self.ohlcv_producers[symbol][time_frame])
-#
-#     # backtesting
-#     def _init_backtesting_if_necessary(self, time_frames):
-#         # test if we need to initialize backtesting features
-#         if self.backtesting_enabled:
-#             for symbol in self.updated_traded_pairs:
-#                 self.simulator.get_exchange().init_candles_offset(time_frames, symbol)
-#
-#     # currently used only during backtesting, will force refresh of each supervised task
-#     async def update_backtesting_order_status(self):
-#         order_manager = self.simulator.get_trader().get_order_manager()
-#         await order_manager.force_update_order_status(simulated_time=True)
-#
-#     async def trigger_symbols_finalize(self):
-#         sort_symbol_evaluators = sorted(self.symbol_evaluators,
-#                                         key=lambda s: abs(s.get_average_strategy_eval(self.simulator)),
-#                                         reverse=True)
-#         for symbol_evaluator in sort_symbol_evaluators:
-#             await symbol_evaluator.finalize(self.simulator)
+        try:
+            ohlcv_data = self.exchange_data_importer.get_ohlcv_from_timestamps(exchange_name=exchange,
+                                                                               symbol="BTC/USDT",
+                                                                               inferior_timestamp=timestamp,
+                                                                               limit=1)[0]
+            if ohlcv_data[0] > self.last_timestamp_pushed:
+                self.last_timestamp_pushed = ohlcv_data[0]
+                await self.push(TimeFrames(ohlcv_data[-2]), ohlcv_data[-3], [json.loads(ohlcv_data[-1])], partial=True)
+        except IndexError:
+            pass

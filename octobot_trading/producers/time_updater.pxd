@@ -17,4 +17,4 @@
 from octobot_trading.channels.time cimport TimeProducer
 
 cdef class TimeUpdater(TimeProducer):
-    pass
+    cdef void set_minimum_timestamp(self, float minimum_timestamp)

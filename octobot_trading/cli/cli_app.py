@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import os
 from threading import Thread
 
 import click
@@ -29,7 +30,9 @@ from octobot_trading.enums import TraderOrderType
 @shell(prompt='OctoBot-Trading > ', intro='Starting...')
 def app():
     exchange_name = "binance"
-    exchange_factory = create_new_exchange(get_config(), exchange_name, is_simulated=True, is_rest_only=True)
+    exchange_factory = create_new_exchange(get_config(), exchange_name,
+                                           is_simulated=True, is_rest_only=True, is_backtesting=True,
+                                           backtesting_files=[os.getenv('BACKTESTING-FILE')])
 
     add_exchange(exchange_name, {
         "exchange_factory": exchange_factory,

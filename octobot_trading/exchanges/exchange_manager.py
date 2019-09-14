@@ -135,11 +135,16 @@ class ExchangeManager(Initializable):
         # if simulated : create exchange simulator instance
         else:
             self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
+            await self.exchange.initialize()
             self._set_config_traded_pairs()
             await self._create_exchange_channels()
 
         # create exchange producers if necessary
         await self._create_exchange_producers()
+
+        if self.is_backtesting:
+            await self.exchange.modify_channels()
+
         self.is_ready = True
 
     async def _create_exchange_channels(self):  # TODO filter creation
