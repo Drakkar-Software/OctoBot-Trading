@@ -13,9 +13,33 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import json
 
+from octobot_trading.channels import TIME_CHANNEL
+from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
 
 
 class RecentTradeUpdaterSimulator(RecentTradeUpdater):
-    pass
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.exchange_data_importer = self.channel.exchange_manager.exchange.backtesting.importers[0]  # TODO TEMP
+        self.exchange_name = self.channel.exchange_manager.exchange.name
+        self.last_timestamp_pushed = 0
+
+    async def start(self):
+        await get_chan(TIME_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_timestamp)
+
+    async def handle_timestamp(self, exchange: str, timestamp: int):
+        try:
+            # TODO foreach symbol
+            recent_trades_data = self.exchange_data_importer.get_recent_trades_from_timestamps(
+                exchange_name=self.exchange_name,
+                symbol="BTC/USDT",
+                inferior_timestamp=timestamp,
+                limit=1)[0]
+            if recent_trades_data[0] > self.last_timestamp_pushed:
+                self.last_timestamp_pushed = recent_trades_data[0]
+                await self.push(recent_trades_data[-3], json.loads(recent_trades_data[-1]))
+        except IndexError as e:
+            self.logger.warning(f"Failed to access recent_trades_data : {e}")

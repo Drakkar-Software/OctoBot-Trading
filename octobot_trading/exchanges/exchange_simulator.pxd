@@ -14,31 +14,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_backtesting.importers.exchanges.exchange_importer cimport ExchangeDataImporter
+from octobot_backtesting.backtesting cimport Backtesting
 from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
 
 cdef class ExchangeSimulator(AbstractExchange):
     cdef public bint initializing
 
     cdef public list symbols
-    cdef public list config_time_frames
+    cdef public list time_frames
     cdef public list backtesting_data_files
 
-    cdef public dict data
-    cdef public dict time_frame_get_times
-    cdef public dict time_frames_offset
-    cdef public dict min_time_frame_to_consider
-
-    cdef public int DEFAULT_LIMIT
-    cdef public int MIN_LIMIT
-    cdef public int RECENT_TRADES_TO_CREATE
-    cdef public int recent_trades_multiplier_factor
-
-    cdef public ExchangeDataImporter exchange_importer
-
-    cdef public object MIN_ENABLED_TIME_FRAME
-    cdef public object DEFAULT_TIME_FRAME_RECENT_TRADE_CREATOR
-    cdef public object DEFAULT_TIME_FRAME_TICKERS_CREATOR
+    cdef public Backtesting backtesting
 
     # cdef public Backtesting backtesting
 

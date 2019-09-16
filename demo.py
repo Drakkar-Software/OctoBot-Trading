@@ -16,12 +16,16 @@
 import logging
 import os
 from logging.config import fileConfig
+from threading import Thread
 
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME
 from octobot_commons.enums import TimeFrames
 
 from octobot_trading import cli
+from octobot_trading.api import create_new_exchange
+from octobot_trading.cli import add_exchange, get_exchange
 from octobot_trading.cli.cli_app import app
+from octobot_trading.cli.cli_tools import start_cli_exchange
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING, CONFIG_EXCHANGES, \
     CONFIG_CRYPTO_CURRENCIES
 
@@ -86,4 +90,15 @@ if __name__ == '__main__':
     print("** Welcome to OctoBot-Trading command line interface **")
     cli.set_config(config)
     cli.set_should_display_callbacks_logs(True)
-    app()
+
+    exchange_name = "binance"
+    exchange_factory = create_new_exchange(config, exchange_name,
+                                           is_simulated=True, is_rest_only=True, is_backtesting=True,
+                                           backtesting_files=[os.getenv('BACKTESTING-FILE')])
+
+    add_exchange(exchange_name, {
+        "exchange_factory": exchange_factory,
+        "exchange_thread": Thread(target=start_cli_exchange, args=(exchange_factory,))
+    })
+
+    get_exchange(exchange_name)["exchange_thread"].start()

@@ -22,7 +22,7 @@ from octobot_trading.producers.ticker_updater import TickerUpdater
 class TickerUpdaterSimulator(TickerUpdater):
     def __init__(self, channel):
         super().__init__(channel)
-        self.exchange_data_importer = self.channel.exchange_manager.exchange.exchange_importer
+        self.exchange_data_importer = self.channel.exchange_manager.exchange.backtesting.importers[0]  # TODO TEMP
         self.exchange_name = self.channel.exchange_manager.exchange.name
         self.last_timestamp_pushed = 0
 

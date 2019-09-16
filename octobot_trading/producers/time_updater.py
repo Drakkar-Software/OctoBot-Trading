@@ -19,7 +19,7 @@ from octobot_trading.channels.time import TimeProducer
 
 
 class TimeUpdater(TimeProducer):
-    TIME_INTERVAL = 1
+    TIME_INTERVAL = 1000000
     DEFAULT_FINISH_TIME_DELTA = 1000
 
     def __init__(self, channel):
@@ -27,6 +27,7 @@ class TimeUpdater(TimeProducer):
         self.starting_timestamp = None
         self.finishing_timestamp = None
         self.current_timestamp = None
+        self.starting_time = None
 
     def set_minimum_timestamp(self, minimum_timestamp):
         if self.starting_timestamp is None or self.starting_timestamp > minimum_timestamp:
@@ -46,6 +47,7 @@ class TimeUpdater(TimeProducer):
             self.finishing_timestamp = self.starting_timestamp + self.DEFAULT_FINISH_TIME_DELTA
 
         self.current_timestamp = self.starting_timestamp
+        self.starting_time = time.time()
 
         while not self.should_stop:
             try:
@@ -54,7 +56,8 @@ class TimeUpdater(TimeProducer):
                 await self.wait_for_processing()
 
                 if self.current_timestamp >= self.finishing_timestamp:
-                    self.logger.exception("Maximum timestamp hit, stopping...")
+                    self.logger.warning("Maximum timestamp hit, stopping...")
+                    self.logger.warning(f"Last {time.time() - self.starting_time}s")
                     await self.stop()
             except Exception as e:
                 self.logger.exception(f"Fail to update time : {e}")

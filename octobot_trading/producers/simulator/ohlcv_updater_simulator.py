@@ -24,7 +24,7 @@ from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 class OHLCVUpdaterSimulator(OHLCVUpdater):
     def __init__(self, channel):
         super().__init__(channel)
-        self.exchange_data_importer = self.channel.exchange_manager.exchange.exchange_importer
+        self.exchange_data_importer = self.channel.exchange_manager.exchange.backtesting.importers[0]  # TODO TEMP
         self.exchange_name = self.channel.exchange_manager.exchange.name
         self.last_timestamp_pushed = 0
 

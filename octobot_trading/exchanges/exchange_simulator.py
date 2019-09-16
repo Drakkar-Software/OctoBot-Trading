@@ -13,17 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
-from octobot_commons.data_util import DataUtil
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
-from octobot_commons.time_frame_manager import TimeFrameManager
-from octobot_trading.channels import get_chan, TIME_CHANNEL
 
+from octobot_backtesting.api.backtesting import initialize_backtesting
+from octobot_trading.channels import get_chan, TIME_CHANNEL
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, \
-    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW, \
-    ORDER_CREATION_LAST_TRADES_TO_USE, SIMULATOR_LAST_PRICES_TO_CHECK
+    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
@@ -36,43 +32,25 @@ class ExchangeSimulator(AbstractExchange):
 
         # if CONFIG_BACKTESTING not in self.config:
         #     raise Exception("Backtesting config not found")
+        self.backtesting = None
 
-        self.exchange_importer = ExchangeDataImporter(self.config,
-                                                      self.backtesting_data_files[-1])  # TODO foreach files
-        self.exchange_importer.initialize()
+        self.symbols = []
+        self.time_frames = []
 
-        self.symbols = None
-        self.data = None
-        # self.__set_symbol_list()
+    async def initialize_impl(self):
+        self.backtesting = await initialize_backtesting(self.config, self.backtesting_data_files)
 
-        self.config_time_frames = list(TimeFrameManager.get_config_time_frame(self.config))
+        # TODO replace importers[0]
+        self.symbols = self.backtesting.importers[0].symbols
+        self.time_frames = self.backtesting.importers[0].time_frames
 
         # set exchange manager attributes
         self.exchange_manager.client_symbols = self.symbols
-        # self.exchange_manager.client_time_frames = self.__get_available_timeframes()
-        self.exchange_manager.time_frames = self.config_time_frames
-
-        self.time_frame_get_times = {}
-        self.time_frames_offset = {}
-        self.min_time_frame_to_consider = {}
-
-        self.DEFAULT_LIMIT = 100
-        self.MIN_LIMIT = 30
-
-        # used to force price movement
-        self.recent_trades_multiplier_factor = 1
-
-        self.MIN_ENABLED_TIME_FRAME = TimeFrameManager.find_min_time_frame(self.config_time_frames)
-        self.DEFAULT_TIME_FRAME_RECENT_TRADE_CREATOR = self.MIN_ENABLED_TIME_FRAME
-        self.DEFAULT_TIME_FRAME_TICKERS_CREATOR = self.MIN_ENABLED_TIME_FRAME
-        self.RECENT_TRADES_TO_CREATE = max(SIMULATOR_LAST_PRICES_TO_CHECK, ORDER_CREATION_LAST_TRADES_TO_USE)
-
-    async def initialize_impl(self):
-        pass
+        self.exchange_manager.time_frames = self.time_frames
 
     async def modify_channels(self):
-        # TODO foreach files
-        minimum_timestamp, maximum_timestamp = self.exchange_importer.get_data_timestamp_interval()
+        # TODO replace importers[0]
+        minimum_timestamp, maximum_timestamp = self.backtesting.importers[0].get_data_timestamp_interval()
 
         await get_chan(TIME_CHANNEL, self.exchange_manager.exchange.name).modify(
             minimum_timestamp=minimum_timestamp,
@@ -85,14 +63,15 @@ class ExchangeSimulator(AbstractExchange):
         return symbol in self.symbols
 
     def time_frame_exists(self, time_frame):
-        return time_frame in self.time_frame_get_times
+        return time_frame in self.time_frames
 
     def get_progress(self):  # TODO
-        if not self.min_time_frame_to_consider:
-            return 0
-        else:
-            progresses = []
-            return int(DataUtil.mean(progresses) * 100)
+        # if not self.min_time_frame_to_consider:
+        #     return 0
+        # else:
+        #     progresses = []
+        #     return int(DataUtil.mean(progresses) * 100)
+        pass
 
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
         return {
