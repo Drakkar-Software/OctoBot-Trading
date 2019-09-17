@@ -16,14 +16,15 @@
 import asyncio
 import logging
 
+from octobot_channels.channels.channel import get_chan
+
+from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_commons.pretty_printer import PrettyPrinter
 
 from octobot_trading.channels import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, KLINE_CHANNEL, \
-    OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL, \
-    TIME_CHANNEL
-from octobot_trading.channels.exchange_channel import get_chan
+    OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
+from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
 from octobot_trading.cli import get_should_display_callbacks_logs
-from octobot_trading.exchanges.exchange_factory import ExchangeFactory
 
 
 async def ticker_callback(exchange, symbol, ticker):
@@ -89,9 +90,9 @@ async def positions_callback(exchange, symbol, position, is_closed, is_updated, 
                      f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
 
 
-async def time_callback(exchange, timestamp):
+async def time_callback(timestamp):
     if get_should_display_callbacks_logs():
-        logging.info(f"TIME : EXCHANGE = {exchange} || TIMESTAMP = {timestamp}")
+        logging.info(f"TIME : TIMESTAMP = {timestamp}")
 
 
 def start_cli_exchange(exchange_factory):
@@ -109,20 +110,20 @@ async def start_exchange(exchange_factory):
     await exchange_factory.create()
 
     # consumers
-    await get_chan(TICKER_CHANNEL, exchange_factory.exchange_name).new_consumer(ticker_callback)
-    await get_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(
+    await get_trading_chan(TICKER_CHANNEL, exchange_factory.exchange_name).new_consumer(ticker_callback)
+    await get_trading_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(
         recent_trades_callback)
-    await get_chan(ORDER_BOOK_CHANNEL, exchange_factory.exchange_name).new_consumer(order_book_callback)
-    await get_chan(KLINE_CHANNEL, exchange_factory.exchange_name).new_consumer(kline_callback)
-    await get_chan(OHLCV_CHANNEL, exchange_factory.exchange_name).new_consumer(ohlcv_callback)
+    await get_trading_chan(ORDER_BOOK_CHANNEL, exchange_factory.exchange_name).new_consumer(order_book_callback)
+    await get_trading_chan(KLINE_CHANNEL, exchange_factory.exchange_name).new_consumer(kline_callback)
+    await get_trading_chan(OHLCV_CHANNEL, exchange_factory.exchange_name).new_consumer(ohlcv_callback)
 
-    await get_chan(BALANCE_CHANNEL, exchange_factory.exchange_name).new_consumer(balance_callback)
-    await get_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_factory.exchange_name).new_consumer(
+    await get_trading_chan(BALANCE_CHANNEL, exchange_factory.exchange_name).new_consumer(balance_callback)
+    await get_trading_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_factory.exchange_name).new_consumer(
         balance_profitability_callback)
-    await get_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
-    await get_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
-    await get_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
-    await get_chan(TIME_CHANNEL, exchange_factory.exchange_name).new_consumer(time_callback)
+    await get_trading_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
+    await get_trading_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
+    await get_trading_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
+    await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(time_callback)
 
 
 async def wait_exchange_tasks():

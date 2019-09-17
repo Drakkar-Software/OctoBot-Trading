@@ -15,7 +15,9 @@
 #  License along with this library.
 import json
 
-from octobot_trading.channels import get_chan, TIME_CHANNEL
+from octobot_channels.channels.channel import get_chan
+from octobot_commons.channels_name import OctoBotBacktestingChannelsName
+
 from octobot_trading.producers.order_book_updater import OrderBookUpdater
 
 
@@ -27,9 +29,9 @@ class OrderBookUpdaterSimulator(OrderBookUpdater):
         self.last_timestamp_pushed = 0
 
     async def start(self):
-        await get_chan(TIME_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_timestamp)
+        await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(self.handle_timestamp)
 
-    async def handle_timestamp(self, exchange: str, timestamp: int):
+    async def handle_timestamp(self, timestamp: int):
         try:
             # TODO foreach symbol
             order_book_data = self.exchange_data_importer.get_order_book_from_timestamps(

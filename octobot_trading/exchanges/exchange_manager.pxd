@@ -38,7 +38,7 @@ cdef class ExchangeManager(Initializable):
 
     cdef public list backtesting_files
 
-    cdef public bint  rest_only
+    cdef public bint rest_only
     cdef public bint ignore_config
     cdef public bint is_ready
     cdef public bint is_simulated

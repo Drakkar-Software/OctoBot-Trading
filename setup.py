@@ -34,7 +34,6 @@ packages_list: list = ["octobot_trading.util.initializable",
                        "octobot_trading.producers.positions_updater",
                        "octobot_trading.producers.recent_trade_updater",
                        "octobot_trading.producers.ticker_updater",
-                       "octobot_trading.producers.time_updater",
                        "octobot_trading.producers.trades_updater",
                        "octobot_trading.producers.simulator.balance_updater_simulator",
                        "octobot_trading.producers.simulator.ohlcv_updater_simulator",
@@ -59,7 +58,6 @@ packages_list: list = ["octobot_trading.util.initializable",
                        "octobot_trading.data_manager.candles_manager",
                        "octobot_trading.data_manager.order_book_manager",
                        "octobot_trading.data_manager.ticker_manager",
-                       "octobot_trading.data_manager.time_manager",
                        "octobot_trading.data_manager.recent_trades_manager",
                        "octobot_trading.orders.buy_limit_order",
                        "octobot_trading.orders.buy_market_order",
@@ -95,8 +93,7 @@ packages_list: list = ["octobot_trading.util.initializable",
                        "octobot_trading.channels.positions",
                        "octobot_trading.channels.recent_trade",
                        "octobot_trading.channels.ticker",
-                       "octobot_trading.channels.trades",
-                       "octobot_trading.channels.time"]
+                       "octobot_trading.channels.trades"]
 
 ext_modules: list = [
     Extension(package, [f"{package.replace('.', '/')}.py"])

@@ -13,11 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_channels.channels.channel import get_chan
+from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
 
 from octobot_backtesting.api.backtesting import initialize_backtesting
-from octobot_trading.channels import get_chan, TIME_CHANNEL
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, \
     CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
@@ -52,7 +53,7 @@ class ExchangeSimulator(AbstractExchange):
         # TODO replace importers[0]
         minimum_timestamp, maximum_timestamp = self.backtesting.importers[0].get_data_timestamp_interval()
 
-        await get_chan(TIME_CHANNEL, self.exchange_manager.exchange.name).modify(
+        await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).modify(
             minimum_timestamp=minimum_timestamp,
             maximum_timestamp=maximum_timestamp)
 

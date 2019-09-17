@@ -25,8 +25,7 @@ from octobot_commons.time_frame_manager import TimeFrameManager
 from octobot_commons.timestamp_util import is_valid_timestamp
 
 from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, \
-    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL, \
-    TIME_CHANNEL
+    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
@@ -53,7 +52,6 @@ from octobot_trading.producers.simulator.orders_updater_simulator import OpenOrd
 from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
 from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
 from octobot_trading.producers.ticker_updater import TickerUpdater
-from octobot_trading.producers.time_updater import TimeUpdater
 from octobot_trading.producers.trades_updater import TradesUpdater
 from octobot_trading.util import is_trader_simulator_enabled
 from octobot_trading.util.initializable import Initializable
@@ -87,6 +85,10 @@ class ExchangeManager(Initializable):
 
         self.trader = None
         self.exchange = None
+
+        self.exchange_web_socket = None
+        self.exchange_type = None
+        self.last_web_socket_reset = -1
 
         self.client_symbols = []
         self.client_time_frames = {}
@@ -196,7 +198,6 @@ class ExchangeManager(Initializable):
             # await PositionsUpdaterSimulator(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
         if self.is_backtesting:
-            await TimeUpdater(get_chan(TIME_CHANNEL, self.exchange.name)).run()
             await OHLCVUpdaterSimulator(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
             await OrderBookUpdaterSimulator(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
             await RecentTradeUpdaterSimulator(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
@@ -223,7 +224,7 @@ class ExchangeManager(Initializable):
         return None
 
     def did_not_just_try_to_reset_web_socket(self):
-        if self.last_web_socket_reset is None:
+        if self.last_web_socket_reset is None or self.last_web_socket_reset == -1:
             return True
         else:
             return time.time() - self.last_web_socket_reset > self.WEB_SOCKET_RESET_MIN_INTERVAL

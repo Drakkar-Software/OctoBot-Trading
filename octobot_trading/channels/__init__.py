@@ -42,4 +42,3 @@ POSITIONS_CHANNEL = "Positions"
 
 # Internal
 MODE_CHANNEL = "Mode"
-TIME_CHANNEL = "Time"

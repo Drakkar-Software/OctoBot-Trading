@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data_manager.time_manager cimport TimeManager
+from octobot_backtesting.data_manager.time_manager cimport TimeManager
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.util.initializable cimport Initializable
 

@@ -15,8 +15,9 @@
 #  License along with this library.
 import json
 
+from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_commons.enums import TimeFrames
-from octobot_trading.channels import get_chan, TIME_CHANNEL
+from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.producers.kline_updater import KlineUpdater
 
 
@@ -28,9 +29,9 @@ class KlineUpdaterSimulator(KlineUpdater):
         self.last_timestamp_pushed = 0
 
     async def start(self):
-        await get_chan(TIME_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_timestamp)
+        await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(self.handle_timestamp)
 
-    async def handle_timestamp(self, exchange: str, timestamp: int):
+    async def handle_timestamp(self, timestamp: int):
         try:
             # TODO foreach symbol and time_frame
             kline_data = self.exchange_data_importer.get_kline_from_timestamps(exchange_name=self.exchange_name,
