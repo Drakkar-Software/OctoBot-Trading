@@ -27,10 +27,12 @@ class KlineUpdaterSimulator(KlineUpdater):
         super().__init__(channel)
         self.exchange_data_importer = importer
         self.exchange_name = self.channel.exchange_manager.exchange.name
+
         self.last_timestamp_pushed = 0
+        self.time_consumer = None
 
     async def start(self):
-        await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(self.handle_timestamp)
+        await self.resume()
 
     async def handle_timestamp(self, timestamp: int):
         try:
@@ -45,3 +47,12 @@ class KlineUpdaterSimulator(KlineUpdater):
                 await self.push(TimeFrames(kline_data[-2]), kline_data[3], json.loads(kline_data[-1]))
         except IndexError as e:
             self.logger.warning(f"Failed to access kline_data : {e}")
+
+    async def pause(self, **kwargs) -> None:
+        if self.time_consumer is not None:
+            await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
+
+    async def resume(self, **kwargs) -> None:
+        if self.time_consumer is None and not self.channel.is_paused:
+            self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
+                self.handle_timestamp)

@@ -14,6 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_channels.consumer cimport Consumer
+
 from octobot_backtesting.importers.exchanges.exchange_importer cimport ExchangeDataImporter
 
 from octobot_trading.producers.ticker_updater cimport TickerUpdater
@@ -21,5 +23,9 @@ from octobot_trading.producers.ticker_updater cimport TickerUpdater
 
 cdef class TickerUpdaterSimulator(TickerUpdater):
     cdef ExchangeDataImporter exchange_data_importer
+
     cdef str exchange_name
+
     cdef float last_timestamp_pushed
+
+    cdef Consumer time_consumer
