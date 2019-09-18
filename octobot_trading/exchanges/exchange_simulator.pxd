@@ -23,15 +23,12 @@ cdef class ExchangeSimulator(AbstractExchange):
     cdef public list symbols
     cdef public list time_frames
     cdef public list backtesting_data_files
+    cdef public list exchange_importers
 
     cdef public Backtesting backtesting
 
-    # cdef public Backtesting backtesting
-
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame)
-    cpdef str get_name(self)
-    cpdef int get_progress(self)
     cpdef dict get_market_status(self, str symbol, float price_example=*, bint with_fixer=*)
     cpdef get_uniform_timestamp(self, float timestamp)
     cpdef dict get_fees(self, str symbol=*)

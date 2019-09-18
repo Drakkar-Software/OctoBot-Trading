@@ -13,6 +13,19 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
+
+from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
+from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
+from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
+
+from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
+
+from octobot_trading.producers.simulator.order_book_updater_simulator import OrderBookUpdaterSimulator
+
+from octobot_trading.channels import OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, \
+    KLINE_CHANNEL
+
 from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_commons.number_util import round_into_str_with_max_digits
@@ -24,16 +37,16 @@ from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
+from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
 
 
 class ExchangeSimulator(AbstractExchange):
     def __init__(self, config, exchange_type, exchange_manager, backtesting_data_files):
         super().__init__(config, exchange_type, exchange_manager)
         self.backtesting_data_files = backtesting_data_files
-
-        # if CONFIG_BACKTESTING not in self.config:
-        #     raise Exception("Backtesting config not found")
         self.backtesting = None
+
+        self.exchange_importers = []
 
         self.symbols = []
         self.time_frames = []
@@ -41,38 +54,46 @@ class ExchangeSimulator(AbstractExchange):
     async def initialize_impl(self):
         self.backtesting = await initialize_backtesting(self.config, self.backtesting_data_files)
 
-        # TODO replace importers[0]
-        self.symbols = self.backtesting.importers[0].symbols
-        self.time_frames = self.backtesting.importers[0].time_frames
+        self.exchange_importers = self.backtesting.get_importers(ExchangeDataImporter)
+
+        # load symbols and time frames
+        for importer in self.exchange_importers:
+            self.symbols += importer.symbols
+            self.time_frames += importer.time_frames
+
+        # remove duplicates
+        self.symbols = list(set(self.symbols))
+        self.time_frames = list(set(self.time_frames))
 
         # set exchange manager attributes
         self.exchange_manager.client_symbols = self.symbols
         self.exchange_manager.time_frames = self.time_frames
 
     async def modify_channels(self):
-        # TODO replace importers[0]
-        minimum_timestamp, maximum_timestamp = self.backtesting.importers[0].get_data_timestamp_interval()
+        # set mininmum and maximum timestamp according to all importers data
+        timestamps = [importer.get_data_timestamp_interval()
+                      for importer in self.exchange_importers]  # [(min, max) ... ]
 
         await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).modify(
-            minimum_timestamp=minimum_timestamp,
-            maximum_timestamp=maximum_timestamp)
+            minimum_timestamp=min(timestamps)[0],
+            maximum_timestamp=max(timestamps)[1])
 
-    def get_name(self):
-        return self.__class__.__name__ + str(self.symbols)
+    async def create_backtesting_exchange_producers(self):
+        for importer in self.exchange_importers:
+            await OHLCVUpdaterSimulator(get_trading_chan(OHLCV_CHANNEL, self.name), importer).run()
+            await OrderBookUpdaterSimulator(get_trading_chan(ORDER_BOOK_CHANNEL, self.name), importer).run()
+            await RecentTradeUpdaterSimulator(get_trading_chan(RECENT_TRADES_CHANNEL, self.name), importer).run()
+            await TickerUpdaterSimulator(get_trading_chan(TICKER_CHANNEL, self.name), importer).run()
+            await KlineUpdaterSimulator(get_trading_chan(KLINE_CHANNEL, self.name), importer).run()
+
+    async def stop(self):
+        pass  # TODO
 
     def symbol_exists(self, symbol):
         return symbol in self.symbols
 
     def time_frame_exists(self, time_frame):
         return time_frame in self.time_frames
-
-    def get_progress(self):  # TODO
-        # if not self.min_time_frame_to_consider:
-        #     return 0
-        # else:
-        #     progresses = []
-        #     return int(DataUtil.mean(progresses) * 100)
-        pass
 
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
         return {

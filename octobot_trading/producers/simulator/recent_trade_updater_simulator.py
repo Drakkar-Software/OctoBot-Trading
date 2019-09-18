@@ -22,9 +22,9 @@ from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
 
 
 class RecentTradeUpdaterSimulator(RecentTradeUpdater):
-    def __init__(self, channel):
+    def __init__(self, channel, importer):
         super().__init__(channel)
-        self.exchange_data_importer = self.channel.exchange_manager.exchange.backtesting.importers[0]  # TODO TEMP
+        self.exchange_data_importer = importer
         self.exchange_name = self.channel.exchange_manager.exchange.name
         self.last_timestamp_pushed = 0
 

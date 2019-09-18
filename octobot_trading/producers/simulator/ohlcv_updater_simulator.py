@@ -24,9 +24,9 @@ from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 
 
 class OHLCVUpdaterSimulator(OHLCVUpdater):
-    def __init__(self, channel):
+    def __init__(self, channel, importer):
         super().__init__(channel)
-        self.exchange_data_importer = self.channel.exchange_manager.exchange.backtesting.importers[0]  # TODO TEMP
+        self.exchange_data_importer = importer
         self.exchange_name = self.channel.exchange_manager.exchange.name
         self.last_timestamp_pushed = 0
 
@@ -38,6 +38,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
             # TODO foreach symbol and time_frame
             ohlcv_data = self.exchange_data_importer.get_ohlcv_from_timestamps(exchange_name=self.exchange_name,
                                                                                symbol="BTC/USDT",
+                                                                               time_frame="1h",
                                                                                inferior_timestamp=timestamp,
                                                                                limit=1)[0]
             if ohlcv_data[0] > self.last_timestamp_pushed:

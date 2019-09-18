@@ -15,16 +15,17 @@
 #  License along with this library.
 import json
 
+from octobot_channels.channels.channel import get_chan
+
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_commons.enums import TimeFrames
-from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.producers.kline_updater import KlineUpdater
 
 
 class KlineUpdaterSimulator(KlineUpdater):
-    def __init__(self, channel):
+    def __init__(self, channel, importer):
         super().__init__(channel)
-        self.exchange_data_importer = self.channel.exchange_manager.exchange.backtesting.importers[0]  # TODO TEMP
+        self.exchange_data_importer = importer
         self.exchange_name = self.channel.exchange_manager.exchange.name
         self.last_timestamp_pushed = 0
 
@@ -36,6 +37,7 @@ class KlineUpdaterSimulator(KlineUpdater):
             # TODO foreach symbol and time_frame
             kline_data = self.exchange_data_importer.get_kline_from_timestamps(exchange_name=self.exchange_name,
                                                                                symbol="BTC/USDT",
+                                                                               time_frame="1h",
                                                                                inferior_timestamp=timestamp,
                                                                                limit=1)[0]
             if kline_data[0] > self.last_timestamp_pushed:

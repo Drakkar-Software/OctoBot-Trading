@@ -52,7 +52,6 @@ cdef class ExchangeManager(Initializable):
     cdef public ExchangeGlobalData exchange_global_data
     cdef public ExchangePersonalData exchange_personal_data
     cdef public ExchangeSymbolsData exchange_symbols_data
-    # exchange_consumers_manager
 
     cdef public dict client_time_frames
     cdef public dict cryptocurrencies_traded_pairs
