@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from ccxt.async_support import InsufficientFunds
-from octobot_channels.channels import get_chan as get_channel
+from octobot_channels.channels.channel import get_chan as get_channel
 from octobot_commons.channels_name import OctoBotEvaluatorsChannelsName
 from octobot_commons.constants import INIT_EVAL_NOTE
 from octobot_commons.logging.logging_util import get_logger
