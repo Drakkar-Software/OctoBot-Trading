@@ -4,6 +4,12 @@ sudo: enabled
 os: linux
 language: python
 python: 3.7-dev
+env:
+  global:
+    - GH_REPO=Drakkar-Software/OctoBot-Trading
+    - DEPLOY_BRANCH=master
+    - PACKAGE_FOLDER=octobot_trading
+
 install:
   - python3 -m pip install --upgrade -r dev_requirements.txt
   - python3 -m pip install --upgrade --only-binary=Cython Cython
@@ -14,25 +20,49 @@ install:
 
 matrix:
   include:
-    - name: "Linux - Python 3 nightly"
+    - name: "Linux - Python 3 nightly - Cython compilation"
+      stage: build
       os: linux
+      python: nightly
       language: python
-      python: 3.7-dev
+      script:
+        - python3 setup.py build_ext --inplace
+
+    - name: "Linux - Python 3 nightly - Python sources"
+      stage: test
+      os: linux
+      python: nightly
+      language: python
       script:
         - pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests
-        - python3 setup.py install
+      after_success:
+        - if [ $TRAVIS_PULL_REQUEST == "false" ]; then coveralls; fi
 
-deploy:
-  - provider: pypi
-    user:
-      secure: b1ifu/VDUZ7127YXANbkpYiX1lkb3hZtNXU+hHI9G57Ci3XiJSZRH6LLSHc/xxRYSuUjsQuHWMFa/AYCD3kk1ZB0uSNND+zG9orQ20SOhSzyCcw+sKyGKV0MZL1PbR5TqEt7PrGZ2h18rnXJ3zm/b3K75jIEnqf+dcKb9SC1ycrh9fOs2KWmWMnBMAeFagwyaiJ8fKZvq3IVKHw/EZuoVSGiDk+1Ha+ZOM/vQByG1Oeg0ueX9LTFAw4lpzI1aVdBawWpayMGo2JeNTSEsOyQYmKGkwg84muMRUh20rKJyVt7mZlso+0hZk/UT140WjFre8MPW+09HEIG5BQ8h5tguR78BXRVJRi2NRwzLDo0uSycja3f2rJWYzcuzp1ALe/msmtipxnT/vSxDIKkwMl60K6q/dYQ1HPaHzQQGwMVqNfNcHV/vLZfxeBwq74ls3zSkgd0RHBh31g9I1Auapsju6/ocjVHx7+63dNn0pVnMHZVj2OLwdnBHB59ZqCeGzMm2xsUWLIhLcW2wtE4mzOUjRII6IohnZNH4tvJbxuo1esNrK647b+Yn6O7CnZjTdQ3KwnDQlBzCb1moOvP/OpIxEx4lomJxK/GoOVqg+bAEt65NNvoSkbOk9CE7SgB0dkHAoAqlSSwobg14wrInlnn9+IdByDfJATgCxiri5ZDlY0=
-    password:
-      secure: lqQtLCDTy2VmOwJGGjyeGcrffYWvUJXvweUQw1mS1ufgvycdCXvFR1oLD7Ub27r+ww739pDgzc0KJRbyhhwimV/Bymrjmfy+JFGUC4L2jOUsQbYBxhUoens4p3RqIWIsZjciAcVMs2LeUcLl8risbml2XVruz1oVMskEVvwFon3Alaak1bhtOiZMWTQ3XzI31EAqlc2dmlVlhQ+5E6eVxxf3B86u+r3tpRgOd3TkZBTOtUZxfKLrQFc3/Odz/2XIi/zl5VfnBLuXA2ZahLZ8/Vhj+cHvQpKW78Ck56xnNLmt1B5EWAkzK8Sa//iSCJMiyT//rzELj/bPSF7WUjSl2qzoQfO5Eh098qlYp0otPsJZ9njFtKoDpDSiSn4XcgDfzWEwGPqRFEFaUClDgci38aW9l+TkIk7audnMCdG8cfw1zBPhBQsIBmXP5JqudRyGvmKQyxvWgR99PsRbbE99Mt/j9hxFARieINy98JmEzx2vsn5HFyCc4FZxMF/nQotFW5bdyCjpRP+MS+RsPtaGCB/0DbB/YVemwd6kGpxuSfDUXkSHuBx0EQl8w1/+sEm9Jm+9IpNw1/Pjm2tW7M9sfjpzyFErDagSOg8hxR7lKZ3RPPb9yhmRg8GBAtKP4orN207nEL2kWSmnzyMAi3tyX7odzxEXvtg+zcDB1Cj/ISM=
-    skip_existing: true
-    skip_cleanup: true
-    distributions: "sdist"
-    on:
-      repo: Drakkar-Software/OctoBot-Trading
-      branch: master
-      tags: true
-      condition: $TRAVIS_OS_NAME = 'linux'
+    - name: "Linux - Python 3 nightly - Installed"
+      stage: test
+      os: linux
+      python: nightly
+      language: python
+      script:
+        - python3 setup.py install
+        - rm -rf $PACKAGE_FOLDER
+        - pytest tests
+
+    - name: "Linux - Python 3 nightly - Deploy"
+      stage: deploy
+      script:
+        - ls
+      deploy:
+        - provider: pypi
+          user:
+            secure: b1ifu/VDUZ7127YXANbkpYiX1lkb3hZtNXU+hHI9G57Ci3XiJSZRH6LLSHc/xxRYSuUjsQuHWMFa/AYCD3kk1ZB0uSNND+zG9orQ20SOhSzyCcw+sKyGKV0MZL1PbR5TqEt7PrGZ2h18rnXJ3zm/b3K75jIEnqf+dcKb9SC1ycrh9fOs2KWmWMnBMAeFagwyaiJ8fKZvq3IVKHw/EZuoVSGiDk+1Ha+ZOM/vQByG1Oeg0ueX9LTFAw4lpzI1aVdBawWpayMGo2JeNTSEsOyQYmKGkwg84muMRUh20rKJyVt7mZlso+0hZk/UT140WjFre8MPW+09HEIG5BQ8h5tguR78BXRVJRi2NRwzLDo0uSycja3f2rJWYzcuzp1ALe/msmtipxnT/vSxDIKkwMl60K6q/dYQ1HPaHzQQGwMVqNfNcHV/vLZfxeBwq74ls3zSkgd0RHBh31g9I1Auapsju6/ocjVHx7+63dNn0pVnMHZVj2OLwdnBHB59ZqCeGzMm2xsUWLIhLcW2wtE4mzOUjRII6IohnZNH4tvJbxuo1esNrK647b+Yn6O7CnZjTdQ3KwnDQlBzCb1moOvP/OpIxEx4lomJxK/GoOVqg+bAEt65NNvoSkbOk9CE7SgB0dkHAoAqlSSwobg14wrInlnn9+IdByDfJATgCxiri5ZDlY0=
+          password:
+            secure: lqQtLCDTy2VmOwJGGjyeGcrffYWvUJXvweUQw1mS1ufgvycdCXvFR1oLD7Ub27r+ww739pDgzc0KJRbyhhwimV/Bymrjmfy+JFGUC4L2jOUsQbYBxhUoens4p3RqIWIsZjciAcVMs2LeUcLl8risbml2XVruz1oVMskEVvwFon3Alaak1bhtOiZMWTQ3XzI31EAqlc2dmlVlhQ+5E6eVxxf3B86u+r3tpRgOd3TkZBTOtUZxfKLrQFc3/Odz/2XIi/zl5VfnBLuXA2ZahLZ8/Vhj+cHvQpKW78Ck56xnNLmt1B5EWAkzK8Sa//iSCJMiyT//rzELj/bPSF7WUjSl2qzoQfO5Eh098qlYp0otPsJZ9njFtKoDpDSiSn4XcgDfzWEwGPqRFEFaUClDgci38aW9l+TkIk7audnMCdG8cfw1zBPhBQsIBmXP5JqudRyGvmKQyxvWgR99PsRbbE99Mt/j9hxFARieINy98JmEzx2vsn5HFyCc4FZxMF/nQotFW5bdyCjpRP+MS+RsPtaGCB/0DbB/YVemwd6kGpxuSfDUXkSHuBx0EQl8w1/+sEm9Jm+9IpNw1/Pjm2tW7M9sfjpzyFErDagSOg8hxR7lKZ3RPPb9yhmRg8GBAtKP4orN207nEL2kWSmnzyMAi3tyX7odzxEXvtg+zcDB1Cj/ISM=
+          skip_existing: true
+          skip_cleanup: true
+          distributions: "sdist"
+          on:
+            repo: $GH_REPO
+            branch: $DEPLOY_BRANCH
+            tags: true
+            condition: $TRAVIS_OS_NAME = 'linux'
