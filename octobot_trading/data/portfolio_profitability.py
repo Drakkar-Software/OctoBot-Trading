@@ -15,6 +15,7 @@
 #  License along with this library.
 from copy import deepcopy
 
+from octobot_commons.constants import PORTFOLIO_TOTAL
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol, merge_currencies
 
@@ -92,7 +93,7 @@ class PortfolioProfitabilty(Initializable):
             if not self.origin_portfolio:
                 await self.__init_origin_portfolio_and_currencies_value()
 
-            initial_portfolio_current_value = await self._get_origin_portfolio_current_value()
+            initial_portfolio_current_value = await self.__get_origin_portfolio_current_value()
 
             self.profitability = self.portfolio_current_value - self.portfolio_origin_value
 
@@ -136,8 +137,7 @@ class PortfolioProfitabilty(Initializable):
     async def get_current_holdings_values(self):
         holdings = await self.get_current_crypto_currencies_values()
 
-        current_portfolio = deepcopy(self.portfolio_manager.portfolio.get_portfolio())
-        return {currency: await self._get_currency_value(current_portfolio, currency, holdings)
+        return {currency: await self.__get_currency_value(self.portfolio_manager.portfolio.portfolio, currency, holdings)
                 for currency in holdings.keys()}
 
     def __only_symbol_currency_filter(self, currency_dict):
@@ -154,8 +154,8 @@ class PortfolioProfitabilty(Initializable):
                     self.traded_currencies_without_market_specific.add(symbol)
 
     async def update_portfolio_and_currencies_current_value(self):
-        current_portfolio = deepcopy(self.portfolio_manager.portfolio.portfolio)
-        self.portfolio_current_value = await self.update_portfolio_current_value(current_portfolio)
+        self.portfolio_current_value = await self.update_portfolio_current_value(
+            self.portfolio_manager.portfolio.portfolio)
 
     async def __init_origin_portfolio_and_currencies_value(self, force_ignore_history=False):
         # previous_state_manager = self.trader.get_previous_state_manager()
@@ -163,10 +163,10 @@ class PortfolioProfitabilty(Initializable):
         if force_ignore_history or previous_state_manager is None or previous_state_manager.should_initialize_data():
             await self.__init_origin_portfolio_and_currencies_value_from_scratch(previous_state_manager)
         else:
-            await self._init_origin_portfolio_and_currencies_value_from_previous_executions(previous_state_manager)
+            await self.__init_origin_portfolio_and_currencies_value_from_previous_executions(previous_state_manager)
 
     async def __init_origin_portfolio_and_currencies_value_from_scratch(self, previous_state_manager):
-        self.origin_crypto_currencies_values = await self._evaluate_config_crypto_currencies_values()
+        self.origin_crypto_currencies_values = await self.__evaluate_config_crypto_currencies_values()
         self.origin_portfolio = deepcopy(self.portfolio_manager.portfolio.portfolio)
 
         self.portfolio_origin_value = \
@@ -191,7 +191,7 @@ class PortfolioProfitabilty(Initializable):
         #             reference_market=self.reference_market
         #         )
 
-    async def _init_origin_portfolio_and_currencies_value_from_previous_executions(self, previous_state_manager):
+    async def __init_origin_portfolio_and_currencies_value_from_previous_executions(self, previous_state_manager):
         pass
 
     #     try:
@@ -214,18 +214,18 @@ class PortfolioProfitabilty(Initializable):
     #         previous_state_manager.reset_trading_history()
     #         await self._init_origin_portfolio_and_currencies_value(force_ignore_history=True)
 
-    async def _get_origin_portfolio_current_value(self, refresh_values=False):
+    async def __get_origin_portfolio_current_value(self, refresh_values=False):
         if refresh_values:
-            self.current_crypto_currencies_values = await self._evaluate_config_crypto_currencies_values()
+            self.current_crypto_currencies_values = await self.__evaluate_config_crypto_currencies_values()
         return await self.update_portfolio_current_value(self.origin_portfolio,
                                                          currencies_values=self.current_crypto_currencies_values)
 
     async def update_portfolio_current_value(self, portfolio, currencies_values=None):
         values = currencies_values
         if values is None:
-            self.current_crypto_currencies_values = await self._evaluate_config_crypto_currencies_values()
+            self.current_crypto_currencies_values = await self.__evaluate_config_crypto_currencies_values()
             values = self.current_crypto_currencies_values
-        return await self._evaluate_portfolio_value(portfolio, values)
+        return await self.__evaluate_portfolio_value(portfolio, values)
 
     """ try_get_value_of_currency will try to obtain the current value of the currency quantity
     in the reference currency.
@@ -233,7 +233,7 @@ class PortfolioProfitabilty(Initializable):
     Returns the value found of this currency quantity, if not found returns 0.   
     """
 
-    async def _try_get_value_of_currency(self, currency, quantity):
+    async def __try_get_value_of_currency(self, currency, quantity):
         symbol = merge_currencies(currency, self.reference_market)
         symbol_inverted = merge_currencies(self.reference_market, currency)
 
@@ -244,9 +244,8 @@ class PortfolioProfitabilty(Initializable):
             elif self.exchange_manager.symbol_exists(symbol_inverted):
                 return quantity / self.currencies_last_prices[symbol_inverted]
 
-            else:
-                self.__inform_no_matching_symbol(currency)
-                return 0
+            self.__inform_no_matching_symbol(currency)
+            return 0
         except KeyError as e:
             symbols_to_add = []
             if self.exchange_manager.symbol_exists(symbol):
@@ -255,8 +254,7 @@ class PortfolioProfitabilty(Initializable):
                 symbols_to_add = [symbol_inverted]
 
             if symbols_to_add:
-                await get_chan(TICKER_CHANNEL, self.exchange_manager.exchange.name)\
-                    .modify(added_pairs=symbols_to_add)
+                await get_chan(TICKER_CHANNEL, self.exchange_manager.exchange.name).modify(added_pairs=symbols_to_add)
 
             raise e
 
@@ -269,7 +267,7 @@ class PortfolioProfitabilty(Initializable):
             else:
                 self.logger.info(f"Can't find matching symbol for {currency} and {self.reference_market}")
 
-    async def _evaluate_config_crypto_currencies_values(self):
+    async def __evaluate_config_crypto_currencies_values(self):
         values_dict = {}
         evaluated_currencies = set()
         for cryptocurrency in self.config[CONFIG_CRYPTO_CURRENCIES]:
@@ -288,13 +286,13 @@ class PortfolioProfitabilty(Initializable):
     Returns the calculated quantity value in reference (attribute) currency
     """
 
-    async def _evaluate_portfolio_value(self, portfolio, currencies_values=None):
+    async def __evaluate_portfolio_value(self, portfolio, currencies_values=None):
         return sum([
-            await self._get_currency_value(portfolio, currency, currencies_values)
+            await self.__get_currency_value(portfolio, currency, currencies_values)
             for currency in portfolio
         ])
 
-    async def _get_currency_value(self, portfolio, currency, currencies_values=None):
+    async def __get_currency_value(self, portfolio, currency, currencies_values=None):
         if currency in portfolio and portfolio[currency][CONFIG_PORTFOLIO_TOTAL] != 0:
             if currencies_values and currency in currencies_values:
                 return currencies_values[currency] * portfolio[currency][CONFIG_PORTFOLIO_TOTAL]
@@ -308,4 +306,10 @@ class PortfolioProfitabilty(Initializable):
         if currency == self.reference_market:
             return quantity
         else:
-            return await self._try_get_value_of_currency(currency, quantity)
+            return await self.__try_get_value_of_currency(currency, quantity)
+
+    async def holdings_ratio(self, currency):
+        currency_holdings: float = self.portfolio_manager.portfolio.get_currency_from_given_portfolio(currency,
+                                                                                                      PORTFOLIO_TOTAL)
+        currency_value: float = await self.evaluate_value(currency, currency_holdings)
+        return currency_value / self.portfolio_current_value if self.portfolio_current_value else 0

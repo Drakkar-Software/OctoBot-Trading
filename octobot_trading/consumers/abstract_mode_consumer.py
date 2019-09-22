@@ -37,25 +37,24 @@ class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
         self.exchange_manager = trading_mode.exchange_manager
         self.trader = self.exchange_manager.trader
 
+        # shortcuts
+        self.exchange_personal_data = self.exchange_manager.exchange_personal_data
+        self.exchange_portfolio_manager = self.exchange_personal_data.portfolio_manager
+
     # @abstractmethod
     # async def internal_callback(self, **kwargs):
     #     raise NotImplementedError("internal_callback is not implemented")
 
     async def get_holdings_ratio(self, currency):
-        pf_copy = deepcopy(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio)
-        pf_value = await self.trader.get_trades_manager().update_portfolio_current_value(pf_copy)
-        currency_holdings = Portfolio.get_currency_from_given_portfolio(pf_copy, currency,
-                                                                        portfolio_type=PORTFOLIO_TOTAL)
-        currency_value = await self.trader.get_trades_manager().evaluate_value(currency, currency_holdings)
-        return currency_value / pf_value if pf_value else 0
+        return await self.exchange_portfolio_manager.portfolio_profitability.holdings_ratio(currency)
 
     def get_number_of_traded_assets(self):
-        return len(self.trader.get_trades_manager().origin_crypto_currencies_values)
+        return len(self.exchange_portfolio_manager.portfolio_profitability.origin_crypto_currencies_values)
 
     # Can be overwritten
     async def can_create_order(self, symbol, state):
         currency, market = split_symbol(symbol)
-        portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager
+        portfolio = self.exchange_portfolio_manager
 
         # get symbol min amount when creating order
         symbol_limit = self.exchange_manager.exchange.get_market_status(symbol)[Ecmsc.LIMITS.value]
@@ -77,9 +76,11 @@ class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
         return False
 
     async def get_pre_order_data(self, symbol):
-        portfolio_manager = self.exchange_manager.exchange_personal_data.portfolio_manager
         last_prices = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
             symbol).recent_trades_manager.recent_trades
+
+        if len(last_prices) < ORDER_CREATION_LAST_TRADES_TO_USE:
+            raise ValueError(f"Not enough last prices of {symbol} to calculate reference price")
 
         used_last_prices = last_prices[-ORDER_CREATION_LAST_TRADES_TO_USE:]  # TODO ticker
 
@@ -89,15 +90,14 @@ class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
 
         currency, market = split_symbol(symbol)
 
-        current_symbol_holding = portfolio_manager.portfolio.get_currency_portfolio(currency)
-        current_market_quantity = portfolio_manager.portfolio.get_currency_portfolio(market)
+        current_symbol_holding = self.exchange_portfolio_manager.portfolio.get_currency_portfolio(currency)
+        current_market_quantity = self.exchange_portfolio_manager.portfolio.get_currency_portfolio(market)
 
         market_quantity = current_market_quantity / reference
 
-        price = reference
         symbol_market = self.exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
-        return current_symbol_holding, current_market_quantity, market_quantity, price, symbol_market
+        return current_symbol_holding, current_market_quantity, market_quantity, reference, symbol_market
 
 
 class AbstractTradingModeConsumerWithBot(AbstractTradingModeConsumer, Initializable):  # TODO

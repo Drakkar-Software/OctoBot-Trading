@@ -39,7 +39,8 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         except KeyError:
             self.logger.error(f"Can't connect matrix channel on {self.exchange_manager.exchange.name}")
 
-        await get_chan(RECENT_TRADES_CHANNEL, self.exchange_manager.exchange.name).new_consumer(self.recent_trades_callback)
+        await get_chan(RECENT_TRADES_CHANNEL, self.exchange_manager.exchange.name).new_consumer(
+            self.recent_trades_callback)
 
     async def recent_trades_callback(self, exchange, symbol, recent_trades):
         await self.finalize(symbol=symbol)
@@ -68,10 +69,10 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         """
         raise NotImplementedError("set_final_eval not implemented")
 
-    async def submit_trading_evaluation(self, symbol=None, final_note=INIT_EVAL_NOTE):
-        await super().send_with_wildcard(trading_mode_name=self.trading_mode.get_name(),
-                                         symbol=symbol,
-                                         final_note=final_note)
+    async def submit_trading_evaluation(self, symbol, final_note=INIT_EVAL_NOTE):
+        await super().send(trading_mode_name=self.trading_mode.get_name(),
+                           symbol=symbol,
+                           final_note=final_note)
 
     # def activate_deactivate_strategies(self, strategy_list, activate):
     #     for strategy in strategy_list:
