@@ -37,9 +37,9 @@ class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
         self.exchange_manager = trading_mode.exchange_manager
         self.trader = self.exchange_manager.trader
 
-    @abstractmethod
-    async def perform(self, **kwargs):
-        raise NotImplementedError("perform is not implemented")
+    # @abstractmethod
+    # async def internal_callback(self, **kwargs):
+    #     raise NotImplementedError("internal_callback is not implemented")
 
     async def get_holdings_ratio(self, currency):
         pf_copy = deepcopy(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio)

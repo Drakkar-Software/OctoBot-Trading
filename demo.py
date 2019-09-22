@@ -20,7 +20,7 @@ from logging.config import fileConfig
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME
 from octobot_commons.enums import TimeFrames
 from octobot_trading import cli
-from octobot_trading.api import create_new_exchange
+from octobot_trading.api.exchange import create_new_exchange
 from octobot_trading.cli import add_exchange
 from octobot_trading.cli.cli_tools import start_cli_exchange
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING, CONFIG_EXCHANGES, \

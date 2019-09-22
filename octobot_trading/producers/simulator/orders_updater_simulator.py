@@ -44,7 +44,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
 
     async def handle_recent_trade(self, exchange: str, symbol: str, recent_trades: list):
         try:
-            failed_order_updates = await self._update_orders_status(symbol=symbol, last_prices=recent_trades)
+            failed_order_updates = await self.__update_orders_status(symbol=symbol, last_prices=recent_trades)
 
             if failed_order_updates:
                 self.logger.info(f"Forcing real trader refresh.")
@@ -57,10 +57,10 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     Ask cancellation and filling process if it is required
     """
 
-    async def _update_orders_status(self,
-                                    symbol: str,
-                                    last_prices: list,
-                                    simulated_time: bool = False) -> list:
+    async def __update_orders_status(self,
+                                     symbol: str,
+                                     last_prices: list,
+                                     simulated_time: bool = False) -> list:
         failed_order_updates = []
         for order in copy.copy(
                 self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
