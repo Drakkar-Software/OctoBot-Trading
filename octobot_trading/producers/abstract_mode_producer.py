@@ -31,38 +31,46 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         self.config = config
         self.exchange_manager = exchange_manager
 
+        # shortcut
+        self.exchange_name = self.exchange_manager.exchange.name
+
         self.final_eval = INIT_EVAL_NOTE
 
     async def start(self) -> None:
         try:
             await get_channel(OctoBotEvaluatorsChannelsName.MATRIX.value).new_consumer(self.matrix_callback)
         except KeyError:
-            self.logger.error(f"Can't connect matrix channel on {self.exchange_manager.exchange.name}")
+            self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
 
         await get_chan(RECENT_TRADES_CHANNEL, self.exchange_manager.exchange.name).new_consumer(
             self.recent_trades_callback)
 
     async def recent_trades_callback(self, exchange, symbol, recent_trades):
-        await self.finalize(symbol=symbol)
+        await self.finalize(exchange_name=exchange, symbol=symbol)
 
-    async def matrix_callback(self, evaluator_name, evaluator_type, eval_note, exchange_name, symbol, time_frame):
-        await self.finalize(symbol=symbol)
+    async def matrix_callback(self, evaluator_name, evaluator_type,
+                              eval_note, eval_note_type, exchange_name, symbol, time_frame):
+        await self.finalize(exchange_name=exchange_name, symbol=symbol, time_frame=time_frame)
 
-    async def finalize(self, symbol) -> None:
+    async def finalize(self, exchange_name, symbol, time_frame=None) -> None:
         """
         Finalize evaluation
         :return: None
         """
+        if exchange_name != self.exchange_name:
+            # Do nothing if not its exchange
+            return
+
         # reset previous note
         self.final_eval = INIT_EVAL_NOTE
 
         try:
-            await self.set_final_eval(symbol=symbol)
+            await self.set_final_eval(symbol=symbol, time_frame=time_frame)
         except Exception as e:
             self.logger.error(f"Error when finalizing: {e}")
             self.logger.exception(e)
 
-    async def set_final_eval(self, symbol):
+    async def set_final_eval(self, symbol, time_frame):
         """
         Called to calculate the final note or state => when any notification appears
         :return:

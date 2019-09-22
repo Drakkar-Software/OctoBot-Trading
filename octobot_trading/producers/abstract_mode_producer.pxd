@@ -18,4 +18,11 @@ from octobot_trading.channels.exchange_channel cimport ExchangeChannelProducer
 
 
 cdef class AbstractTradingModeProducer(ExchangeChannelProducer):
-    pass
+    cdef public object logger
+    cdef public object trading_mode
+    cdef public object config
+    cdef public object exchange_manager
+
+    cdef public str exchange_name = exchange_manager.exchange.name
+
+    cdef public float final_eval
