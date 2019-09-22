@@ -43,15 +43,15 @@ class TradesProducer(ExchangeChannelProducer):
                         should_notify=False)
 
                     if added:
-                        await self.send_with_wildcard(symbol=symbol, trade=trade, old_trade=old_trade)
+                        await self.send(symbol=symbol, trade=trade, old_trade=old_trade)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, trade, old_trade=False, is_wildcard=False):
-        for consumer in self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
+    async def send(self, symbol, trade, old_trade=False):
+        for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,

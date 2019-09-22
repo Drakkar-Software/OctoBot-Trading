@@ -37,16 +37,15 @@ class OHLCVProducer(ExchangeChannelProducer):
                                                                                                   partial=partial)
                 if candle and (partial or replace_all):
                     candle = candle[-1]
-                await self.send_with_wildcard(time_frame=time_frame, symbol=symbol, candle=candle)
+                await self.send(time_frame=time_frame, symbol=symbol, candle=candle)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, time_frame, symbol, candle, is_wildcard=False):
-        for consumer in self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol,
-                                                                time_frame=time_frame):
+    async def send(self, time_frame, symbol, candle):
+        for consumer in self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,

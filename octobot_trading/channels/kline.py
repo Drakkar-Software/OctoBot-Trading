@@ -30,7 +30,7 @@ class KlineProducer(ExchangeChannelProducer):
             if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
-                await self.send_with_wildcard(time_frame=time_frame, symbol=symbol, kline=kline)
+                await self.send(time_frame=time_frame, symbol=symbol, kline=kline)
         except KeyError:
             pass
         except CancelledError:
@@ -39,9 +39,8 @@ class KlineProducer(ExchangeChannelProducer):
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, time_frame, symbol, kline, is_wildcard=False):
-        for consumer in self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol,
-                                                            time_frame=time_frame):
+    async def send(self, time_frame, symbol, kline):
+        for consumer in self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,

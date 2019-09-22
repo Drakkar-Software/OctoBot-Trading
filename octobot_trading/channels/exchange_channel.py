@@ -42,10 +42,6 @@ class ExchangeChannelProducer(Producer):
         for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put(kwargs)
 
-    async def send_with_wildcard(self, **kwargs):
-        await self.send(**kwargs)
-        await self.send(**kwargs, is_wildcard=True)
-
     async def pause(self, **kwargs) -> None:
         pass
 

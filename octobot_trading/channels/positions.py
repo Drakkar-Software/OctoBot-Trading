@@ -33,26 +33,27 @@ class PositionsProducer(ExchangeChannelProducer):
                 if position:
                     symbol: str = self.channel.exchange_manager.get_exchange_symbol(
                         position[ExchangeConstantsPositionColumns.SYMBOL.value])
-                    if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
+                    if self.channel.get_filtered_consumers(
+                            symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
                         position_id: str = position[ExchangeConstantsOrderColumns.ID.value]
 
                         changed, is_closed, is_updated = await self.channel.exchange_manager.exchange_personal_data \
                             .handle_position_update(symbol, position_id, position, should_notify=False)
 
                         if changed:
-                            await self.send_with_wildcard(symbol=symbol,
-                                                          position=position,
-                                                          is_closed=is_closed,
-                                                          is_updated=is_updated,
-                                                          is_from_bot=is_from_bot)
+                            await self.send(symbol=symbol,
+                                            position=position,
+                                            is_closed=is_closed,
+                                            is_updated=is_updated,
+                                            is_from_bot=is_from_bot)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, position, is_closed=False, is_updated=False, is_from_bot=True, is_wildcard=False):
-        for consumer in self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD if is_wildcard else symbol):
+    async def send(self, symbol, position, is_closed=False, is_updated=False, is_from_bot=True):
+        for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,

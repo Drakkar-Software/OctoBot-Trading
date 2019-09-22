@@ -38,7 +38,7 @@ class BalanceProducer(ExchangeChannelProducer):
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, balance, is_wildcard=False):
+    async def send(self, balance):
         for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
@@ -67,8 +67,7 @@ class BalanceProfitabilityProducer(ExchangeChannelProducer):
 
     async def send(self, profitability, profitability_percent,
                    market_profitability_percent,
-                   initial_portfolio_current_profitability,
-                   is_wildcard=False):
+                   initial_portfolio_current_profitability):
         for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
