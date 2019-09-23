@@ -63,7 +63,7 @@ cdef class ExchangeManager(Initializable):
     # private
     cdef void __load_config_symbols_and_time_frames(self)
     cdef void __load_constants(self)
-    cdef AbstractWebsocket __search_and_create_websocket(self, websocket_class)
+    # cdef AbstractWebsocket __search_and_create_websocket(self, websocket_class)
     cdef void __load_config_symbols_and_time_frames(self)
     cdef void __set_config_traded_pairs(self)
     cdef list __create_wildcard_symbol_list(self, str crypto_currency)

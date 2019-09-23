@@ -40,21 +40,21 @@ cdef class OctoBotWebSocketClient(AbstractWebsocket):
     cdef public bint is_handling_funding
 
     # private
-    cdef bint _is_feed_available(self, Feed feed)
-    cdef void _add_feed_and_run_if_required(self, list feed, object callback)
-    cdef void _create_octobot_feed_feeds(self)
+    cdef bint __is_feed_available(self, Feed feed)
+    cdef void __add_feed_and_run_if_required(self, list feed, object callback)
+    cdef void __create_octobot_feed_feeds(self)
 
     @staticmethod
-    cdef object _convert_seconds_to_time_frame(int time_frame_seconds)
+    cdef object __convert_seconds_to_time_frame(int time_frame_seconds)
 
     @staticmethod
-    cdef int _convert_time_frame_minutes_to_seconds(object time_frame)
+    cdef int __convert_time_frame_minutes_to_seconds(object time_frame)
 
     # public
-    cpdef void init_web_sockets(self, list time_frames, list trader_pairs)
-    cpdef void add_recent_trade_feed(self)
-    cpdef void add_order_book_feed(self)
-    cpdef void add_tickers_feed(self)
+    # cpdef void init_web_sockets(self, list time_frames, list trader_pairs)
+    # cpdef void add_recent_trade_feed(self)
+    # cpdef void add_order_book_feed(self)
+    # cpdef void add_tickers_feed(self)
     cpdef void start_sockets(self)
     cpdef void close_and_restart_sockets(self)
     cpdef void stop_sockets(self)

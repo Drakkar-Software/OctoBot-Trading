@@ -95,6 +95,7 @@ class OHLCVCallBack(OHLCVProducer):
             for symbol in data:
                 asyncio.run_coroutine_threadsafe(self.push(symbol=symbol,
                                                            time_frame=self.time_frame,
-                                                           candle=data[symbol]), asyncio.get_event_loop())
+                                                           candle=data[symbol],
+                                                           partial=True), asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Callaback failed : {e}")

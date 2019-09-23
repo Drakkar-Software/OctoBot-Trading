@@ -138,7 +138,7 @@ class ExchangeManager(Initializable):
             if not self.rest_only:
                 # search for websocket
                 if self.check_web_socket_config(self.exchange.name):
-                    self.exchange_web_socket = self.__search_and_create_websocket(AbstractWebsocket)
+                    self.exchange_web_socket = await self.__search_and_create_websocket(AbstractWebsocket)
 
         # if simulated : create exchange simulator instance
         else:
@@ -196,7 +196,7 @@ class ExchangeManager(Initializable):
             # TODO
             # await PositionsUpdaterSimulator(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
-    def __search_and_create_websocket(self, websocket_class):
+    async def __search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():
             # add websocket exchange if available
             if socket_manager.has_name(self.exchange.name):
@@ -204,7 +204,7 @@ class ExchangeManager(Initializable):
 
                 # init websocket
                 try:
-                    exchange_web_socket.init_web_sockets(self.time_frames, self.traded_pairs)
+                    await exchange_web_socket.init_web_sockets(self.time_frames, self.traded_pairs)
 
                     # start the websocket
                     exchange_web_socket.start_sockets()

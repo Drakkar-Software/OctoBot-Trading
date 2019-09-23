@@ -123,7 +123,11 @@ async def start_exchange(exchange_factory):
     await get_trading_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
     await get_trading_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
     await get_trading_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
-    await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(time_callback)
+
+    try:
+        await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(time_callback)
+    except KeyError:
+        pass
 
 
 async def wait_exchange_tasks():
