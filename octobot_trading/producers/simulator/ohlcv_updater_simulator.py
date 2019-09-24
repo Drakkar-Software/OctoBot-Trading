@@ -38,11 +38,11 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
     async def handle_timestamp(self, timestamp: int):
         try:
             # TODO foreach symbol and time_frame
-            ohlcv_data = self.exchange_data_importer.get_ohlcv_from_timestamps(exchange_name=self.exchange_name,
-                                                                               symbol="BTC/USDT",
-                                                                               time_frame="1h",
-                                                                               inferior_timestamp=timestamp,
-                                                                               limit=1)[0]
+            ohlcv_data = (await self.exchange_data_importer.get_ohlcv_from_timestamps(exchange_name=self.exchange_name,
+                                                                                      symbol="BTC/USDT",
+                                                                                      time_frame="1h",
+                                                                                      inferior_timestamp=timestamp,
+                                                                                      limit=1))[0]
             if ohlcv_data[0] > self.last_timestamp_pushed:
                 self.last_timestamp_pushed = ohlcv_data[0]
                 await self.push(TimeFrames(ohlcv_data[-2]), ohlcv_data[-3], [json.loads(ohlcv_data[-1])], partial=True)

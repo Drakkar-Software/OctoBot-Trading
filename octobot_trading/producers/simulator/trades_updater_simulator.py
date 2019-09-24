@@ -34,11 +34,11 @@ class TradesUpdaterSimulator(TradesUpdater):
     async def handle_timestamp(self, timestamp: int):
         try:
             # TODO foreach symbol
-            recent_trades_data = self.exchange_data_importer.get_recent_trades_from_timestamps(
+            recent_trades_data = (await self.exchange_data_importer.get_recent_trades_from_timestamps(
                 exchange_name=self.exchange_name,
                 symbol="BTC/USDT",
                 inferior_timestamp=timestamp,
-                limit=1)[0]
+                limit=1))[0]
 
             if recent_trades_data[0] > self.last_timestamp_pushed:
                 self.last_timestamp_pushed = recent_trades_data[0]

@@ -37,11 +37,11 @@ class KlineUpdaterSimulator(KlineUpdater):
     async def handle_timestamp(self, timestamp: int):
         try:
             # TODO foreach symbol and time_frame
-            kline_data = self.exchange_data_importer.get_kline_from_timestamps(exchange_name=self.exchange_name,
-                                                                               symbol="BTC/USDT",
-                                                                               time_frame="1h",
-                                                                               inferior_timestamp=timestamp,
-                                                                               limit=1)[0]
+            kline_data = (await self.exchange_data_importer.get_kline_from_timestamps(exchange_name=self.exchange_name,
+                                                                                      symbol="BTC/USDT",
+                                                                                      time_frame="1h",
+                                                                                      inferior_timestamp=timestamp,
+                                                                                      limit=1))[0]
             if kline_data[0] > self.last_timestamp_pushed:
                 self.last_timestamp_pushed = kline_data[0]
                 await self.push(TimeFrames(kline_data[-2]), kline_data[3], json.loads(kline_data[-1]))

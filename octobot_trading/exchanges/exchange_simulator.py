@@ -71,7 +71,7 @@ class ExchangeSimulator(AbstractExchange):
 
     async def modify_channels(self):
         # set mininmum and maximum timestamp according to all importers data
-        timestamps = [importer.get_data_timestamp_interval()
+        timestamps = [await importer.get_data_timestamp_interval()
                       for importer in self.exchange_importers]  # [(min, max) ... ]
 
         await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).modify(
