@@ -37,7 +37,7 @@ class OHLCVProducer(ExchangeChannelProducer):
                                                                                                   partial=partial)
                 if candle and (partial or replace_all):
                     candle = candle[-1]
-                await self.send(time_frame=time_frame, symbol=symbol, candle=candle)
+                await self.send(time_frame=time_frame.value, symbol=symbol, candle=candle)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

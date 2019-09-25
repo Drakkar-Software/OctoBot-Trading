@@ -67,8 +67,8 @@ class Trader(Initializable):
         # unused for real trader yet
         pass
 
-    @staticmethod
-    def enabled(config):
+    @classmethod
+    def enabled(cls, config):
         return is_trader_enabled(config)
 
     def set_risk(self, risk):

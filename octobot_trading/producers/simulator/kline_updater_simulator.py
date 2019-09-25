@@ -48,11 +48,11 @@ class KlineUpdaterSimulator(KlineUpdater):
         except IndexError as e:
             self.logger.warning(f"Failed to access kline_data : {e}")
 
-    async def pause(self, **kwargs) -> None:
+    async def pause(self):
         if self.time_consumer is not None:
             await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
 
-    async def resume(self, **kwargs) -> None:
+    async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:
             self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
                 self.handle_timestamp)

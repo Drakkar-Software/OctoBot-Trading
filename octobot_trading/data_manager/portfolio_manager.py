@@ -33,11 +33,11 @@ class PortfolioManager(Initializable):
         self.reference_market = None
 
     async def initialize_impl(self):
-        await self._reset_portfolio()
+        await self.__reset_portfolio()
 
-    async def _reset_portfolio(self):
+    async def __reset_portfolio(self):
         self.portfolio = Portfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
-        await self._load_portfolio()
+        await self.__load_portfolio()
 
         self.portfolio_profitability = PortfolioProfitabilty(self.config, self.trader, self, self.exchange_manager)
         self.reference_market = self.portfolio_profitability.reference_market
@@ -54,13 +54,13 @@ class PortfolioManager(Initializable):
         return False
 
     # Load simulated portfolio from config if required
-    async def _load_portfolio(self):
+    async def __load_portfolio(self):
         if self.trader.is_enabled:
             if self.trader.simulate:
-                await self._set_starting_simulated_portfolio()
+                await self.__set_starting_simulated_portfolio()
             self.logger.info(f"{CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
 
-    async def _set_starting_simulated_portfolio(self):
+    async def __set_starting_simulated_portfolio(self):
         # should only be called in trading simulation
         if self.trader.loaded_previous_state:  # TODO
             # load portfolio from previous execution

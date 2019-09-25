@@ -42,10 +42,10 @@ class ExchangeChannelProducer(Producer):
         for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put(kwargs)
 
-    async def pause(self, **kwargs) -> None:
+    async def pause(self) -> None:
         pass
 
-    async def resume(self, **kwargs) -> None:
+    async def resume(self) -> None:
         pass
 
 

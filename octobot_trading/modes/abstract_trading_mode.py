@@ -15,15 +15,12 @@
 #  License along with this library.
 
 import os
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta
 
 from octobot_commons.config import load_config
 from octobot_commons.constants import TENTACLES_TRADING_PATH, TENTACLE_DEFAULT_CONFIG
-from octobot_commons.errors import TentacleNotFound
 from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.tentacles_management import get_class, get_deep_class_from_string
 from octobot_commons.tentacles_management.abstract_tentacle import AbstractTentacle
-
 from octobot_trading.constants import TENTACLES_TRADING_MODE_PATH, TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT, \
     TRADING_MODE_REQUIRED_STRATEGIES
 
@@ -41,6 +38,9 @@ class AbstractTradingMode(AbstractTentacle):
 
         self.strategy_instances_by_classes: dict = {}
 
+    def get_name(self) -> str:
+        return self.__class__.__name__
+
     @classmethod
     def get_tentacle_folder(cls) -> str:
         return TENTACLES_TRADING_PATH
@@ -57,11 +57,9 @@ class AbstractTradingMode(AbstractTentacle):
         await self.create_producers()
         await self.create_consumers()
 
-    @abstractmethod
     async def create_producers(self) -> None:
         raise NotImplementedError("create_producers not implemented")
 
-    @abstractmethod
     async def create_consumers(self) -> None:
         raise NotImplementedError("create_consumers not implemented")
 
@@ -80,7 +78,7 @@ class AbstractTradingMode(AbstractTentacle):
         pass
 
     @classmethod
-    def get_parent_trading_mode_classes(cls, higher_parent_class_limit=None) -> list:
+    def get_parent_trading_mode_classes(cls, higher_parent_class_limit=None):
         return [
             class_type
             for class_type in cls.mro()
@@ -92,7 +90,7 @@ class AbstractTradingMode(AbstractTentacle):
     """
 
     @classmethod
-    def get_required_strategies_names_and_count(cls, trading_mode_config=None) -> (list, int):
+    def get_required_strategies_names_and_count(cls, trading_mode_config=None):
         config = trading_mode_config or cls.get_specific_config()
         if TRADING_MODE_REQUIRED_STRATEGIES in config:
             return config[TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)
@@ -108,7 +106,7 @@ class AbstractTradingMode(AbstractTentacle):
         return strategies_classes
 
     @classmethod
-    def get_required_strategies_count(cls, config) -> int:
+    def get_required_strategies_count(cls, config):
         min_strategies_count = 1
         if TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT in config:
             min_strategies_count = config[TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT]

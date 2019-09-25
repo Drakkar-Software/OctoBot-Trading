@@ -70,7 +70,7 @@ cdef class ExchangeManager(Initializable):
     cdef list __add_tradable_symbols(self, str crypto_currency)
     cdef void __set_config_time_frame(self)
     cdef object __uniformize_candles_timestamps(self, list candles)
-    cdef void __uniformize_candle_timestamps(self, dict candle)
+    cdef void __uniformize_candle_timestamps(self, list candle)
     cdef void __raise_exchange_load_error(self)
 
     @staticmethod

@@ -47,9 +47,6 @@ cdef class Trader(Initializable):
     cdef void _load_previous_state_if_any(self)
     cdef str _parse_order_id(self, str order_id)
 
-    @staticmethod
-    cdef bint enabled(dict config)
-
     cpdef float set_risk(self, float risk)
     cpdef Order create_order_instance(self,
                                       object order_type,

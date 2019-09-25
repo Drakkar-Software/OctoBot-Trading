@@ -32,10 +32,11 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.exchange_manager = self.channel.exchange_manager
-        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
+        self.exchange_manager = None
 
     async def start(self):
+        self.exchange_manager = self.channel.exchange_manager
+        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
         await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trade)
 
     """

@@ -13,12 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.constants import CONFIG_TRADING_FILE_PATH
 from octobot_commons.errors import ConfigTradingError
 from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.tentacles_management import get_class_from_string, get_deep_class_from_string, get_class
-from octobot_commons.constants import CONFIG_TRADING_FILE_PATH
-
-from octobot_trading import modes
+from octobot_commons.tentacles_management import get_class, get_class_from_parent_subclasses
 from octobot_trading.constants import CONFIG_TRADING_TENTACLES
 from octobot_trading.modes import AbstractTradingMode
 
@@ -28,8 +26,7 @@ def get_activated_trading_mode(config):
         try:
             trading_modes = [class_str
                              for class_str, activated in config[CONFIG_TRADING_TENTACLES].items()
-                             if activated and get_class_from_string(class_str, AbstractTradingMode,
-                                                                    modes, error_when_not_found=True)]
+                             if activated and get_class_from_parent_subclasses(class_str, AbstractTradingMode)]
 
             if len(trading_modes) > 1:
                 raise ConfigTradingError(
@@ -37,7 +34,7 @@ def get_activated_trading_mode(config):
                     f"please activate only one")
 
             elif trading_modes:
-                trading_mode_class = get_deep_class_from_string(trading_modes[0], modes)
+                trading_mode_class = get_class_from_parent_subclasses(trading_modes[0], AbstractTradingMode)
 
                 if trading_mode_class is not None:
                     return get_class(config, trading_mode_class)

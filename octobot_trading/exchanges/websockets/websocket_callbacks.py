@@ -21,7 +21,7 @@ from octobot_trading.channels.recent_trade import RecentTradeProducer
 from octobot_trading.channels.ticker import TickerProducer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.enums import ExchangeConstantsOrderColumns as ECOC
+from octobot_trading.enums import ExchangeConstantsOrderColumns as ECOC, ExchangeConstantsTickersColumns
 
 
 class OrderBookCallBack(OrderBookProducer):
@@ -52,10 +52,10 @@ class RecentTradesCallBack(RecentTradeProducer):
     async def recent_trades_callback(self, _, pair, side, amount, price, timestamp):
         try:
             asyncio.run_coroutine_threadsafe(self.push(symbol=pair, recent_trades=[{ECOC.SYMBOL.value: pair,
-                                                                                   ECOC.SIDE.value: side,
-                                                                                   ECOC.AMOUNT.value: amount,
-                                                                                   ECOC.PRICE.value: price,
-                                                                                   ECOC.TIMESTAMP.value: timestamp}]),
+                                                                                    ECOC.SIDE.value: side,
+                                                                                    ECOC.AMOUNT.value: amount,
+                                                                                    ECOC.PRICE.value: price,
+                                                                                    ECOC.TIMESTAMP.value: timestamp}]),
                                              asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Callaback failed : {e}")
@@ -72,11 +72,12 @@ class TickersCallBack(TickerProducer):
     async def tickers_callback(self, _, pair, bid, ask, last, timestamp):
         try:
             asyncio.run_coroutine_threadsafe(self.push(symbol=pair,
-                                                       ticker=(pair,
-                                                               bid,
-                                                               ask,
-                                                               last,
-                                                               timestamp)), asyncio.get_event_loop())
+                                                       ticker={ExchangeConstantsTickersColumns.SYMBOL.value: pair,
+                                                               ExchangeConstantsTickersColumns.BID.value: bid,
+                                                               ExchangeConstantsTickersColumns.ASK.value: ask,
+                                                               ExchangeConstantsTickersColumns.LAST.value: last,
+                                                               ExchangeConstantsTickersColumns.TIMESTAMP.value: timestamp}),
+                                             asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Callaback failed : {e}")
 

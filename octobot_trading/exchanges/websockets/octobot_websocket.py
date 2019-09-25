@@ -15,22 +15,19 @@
 #  License along with this library.
 import asyncio
 from concurrent.futures.thread import ThreadPoolExecutor
+
 from octobot_commons.enums import TimeFramesMinutes
 
 from octobot_trading.channels import RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, TICKER_CHANNEL
+from octobot_websockets.api.feed_creator import get_feed_from_name
 from octobot_websockets.callback import TradeCallback, BookCallback, TickerCallback
 from octobot_websockets.constants import MINUTE_TO_SECONDS
-from octobot_websockets.feeds.bitmex import Bitmex
 from octobot_websockets.feeds.feed import Feeds
 
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.exchanges.websockets.websocket_callbacks import RecentTradesCallBack, OrderBookCallBack, \
     TickersCallBack
-
-WEBSOCKET_CLASSES = {
-    "bitmex": Bitmex,
-}
 
 
 class OctoBotWebSocketClient(AbstractWebsocket):
@@ -60,7 +57,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         self.callbacks = {}
 
     async def init_web_sockets(self, time_frames, trader_pairs):
-        self.exchange_class = self._get_octobot_feed_class(self.exchange_manager.exchange.name)
+        self.exchange_class = get_feed_from_name(self.exchange_manager.exchange.name)
         self.trader_pairs = trader_pairs
         self.time_frames = time_frames
 
@@ -146,13 +143,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
 
     @classmethod
     def has_name(cls, name: str):
-        return cls._get_octobot_feed_class(name) is not None
-
-    @classmethod
-    def _get_octobot_feed_class(cls, name):
-        if name in WEBSOCKET_CLASSES:
-            return WEBSOCKET_CLASSES[name]
-        return None
+        return get_feed_from_name(name) is not None
 
     def start_sockets(self):
         is_websocket_running = False
