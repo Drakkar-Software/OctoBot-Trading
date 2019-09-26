@@ -33,7 +33,7 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
     async def start(self):
         await self.resume()
 
-    async def handle_timestamp(self, timestamp: int):
+    async def handle_timestamp(self, timestamp):
         try:
             # TODO foreach symbol
             recent_trades_data = (await self.exchange_data_importer.get_recent_trades_from_timestamps(

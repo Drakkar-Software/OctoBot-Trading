@@ -30,12 +30,14 @@ config = {
     CONFIG_CRYPTO_CURRENCIES: {
         "Bitcoin": {
             "pairs": [
-                "BTC/USDT"
+                "BTC/USDT",
+                "BTC/USD"
             ]
         },
         "Ethereum": {
             "pairs": [
-                "ETH/USDT"
+                "ETH/USDT",
+                "ETH/USD"
             ]
         }
     },

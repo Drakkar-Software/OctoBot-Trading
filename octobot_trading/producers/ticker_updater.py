@@ -25,7 +25,7 @@ class TickerUpdater(TickerProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self._pairs_to_update = set()
+        self._pairs_to_update = []
 
     async def start(self):
         self._pairs_to_update = self.channel.exchange_manager.traded_pairs

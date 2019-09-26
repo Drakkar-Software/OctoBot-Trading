@@ -23,14 +23,12 @@ from octobot_trading.data.order cimport Order
 from octobot_trading.util.initializable cimport Initializable
 
 cdef class Portfolio(Initializable):
-    cdef object config
-    cdef object trader
-    cdef object exchange_manager
     cdef object logger
     cdef public object lock
 
+    cdef public str exchange_name
+
     cdef public bint is_simulated
-    cdef public bint is_enabled
 
     cdef public dict portfolio
 

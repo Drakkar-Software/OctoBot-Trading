@@ -31,7 +31,7 @@ class TradesUpdaterSimulator(TradesUpdater):
     async def start(self):
         await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(self.handle_timestamp)
 
-    async def handle_timestamp(self, timestamp: int):
+    async def handle_timestamp(self, timestamp):
         try:
             # TODO foreach symbol
             recent_trades_data = (await self.exchange_data_importer.get_recent_trades_from_timestamps(

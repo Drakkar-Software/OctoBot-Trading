@@ -33,7 +33,7 @@ class OrderBookUpdaterSimulator(OrderBookUpdater):
     async def start(self):
         await self.resume()
 
-    async def handle_timestamp(self, timestamp: int):
+    async def handle_timestamp(self, timestamp):
         try:
             # TODO foreach symbol
             order_book_data = (await self.exchange_data_importer.get_order_book_from_timestamps(

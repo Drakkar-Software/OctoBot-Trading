@@ -35,6 +35,9 @@ This class also manage the availability of each currency in the portfolio:
 class Portfolio(Initializable):
     def __init__(self, exchange_name, is_simulated=False):
         super().__init__()
+        self.exchange_name = exchange_name
+        self.is_simulated = is_simulated
+
         self.portfolio = {}
         self.logger = get_logger(
             f"{self.__class__.__name__}{'Simulator' if is_simulated else ''}[{exchange_name}]")
@@ -42,6 +45,12 @@ class Portfolio(Initializable):
 
     async def initialize_impl(self):
         self.portfolio = {}
+
+    async def copy(self):
+        pf: Portfolio = Portfolio(self.exchange_name, self.is_simulated)
+        await pf.initialize()
+        pf.portfolio: dict = self.portfolio.copy()
+        return pf
 
     async def update_portfolio_from_balance(self, balance) -> bool:
         if balance == self.portfolio:

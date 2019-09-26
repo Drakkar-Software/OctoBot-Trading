@@ -38,8 +38,9 @@ class AbstractTradingMode(AbstractTentacle):
 
         self.strategy_instances_by_classes: dict = {}
 
-    def get_name(self) -> str:
-        return self.__class__.__name__
+    @classmethod
+    def get_name(cls) -> str:
+        return __class__.__name__
 
     @classmethod
     def get_tentacle_folder(cls) -> str:

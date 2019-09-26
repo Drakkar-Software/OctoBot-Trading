@@ -34,7 +34,7 @@ class KlineUpdaterSimulator(KlineUpdater):
     async def start(self):
         await self.resume()
 
-    async def handle_timestamp(self, timestamp: int):
+    async def handle_timestamp(self, timestamp):
         try:
             # TODO foreach symbol and time_frame
             kline_data = (await self.exchange_data_importer.get_kline_from_timestamps(exchange_name=self.exchange_name,

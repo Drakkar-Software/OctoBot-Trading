@@ -55,7 +55,6 @@ class ExchangeSimulator(AbstractExchange):
         self.backtesting = await initialize_backtesting(self.config, self.backtesting_data_files)
 
         self.exchange_importers = self.backtesting.get_importers(ExchangeDataImporter)
-
         # load symbols and time frames
         for importer in self.exchange_importers:
             self.symbols += importer.symbols

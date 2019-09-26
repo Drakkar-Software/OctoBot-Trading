@@ -38,15 +38,14 @@ class OHLCVUpdater(OHLCVProducer):
 
     async def start(self):
         self.tasks = [
-            asyncio.create_task(self._candle_callback(self.channel.exchange_manager.traded_pairs, time_frame))
+            asyncio.create_task(self.__candle_callback(self.channel.exchange_manager.traded_pairs, time_frame))
             for time_frame in self.channel.exchange_manager.time_frames]
 
     """
     Manage timeframe OHLCV data refreshing for all pairs
     """
 
-    async def _candle_callback(self, pairs, time_frame):
-        last_candle: dict = {}
+    async def __candle_callback(self, pairs, time_frame):
         time_frame_sleep: int = TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS
 
         # fetch history
@@ -68,10 +67,10 @@ class OHLCVUpdater(OHLCVProducer):
                     await self.push(time_frame, pair, candles[:-1], partial=True)  # push only completed candles
 
                 if candles:
-                    last_candle = candles[-1]
+                    last_candle: list = candles[-1]
                     self.channel.exchange_manager.uniformize_candles_if_necessary(last_candle)
                 else:
-                    last_candle = {}
+                    last_candle: list = []
 
                 if last_candle:
                     should_sleep_time = last_candle[PriceIndexes.IND_PRICE_TIME.value] + time_frame_sleep - time.time()

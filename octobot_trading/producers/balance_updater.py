@@ -60,7 +60,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
     Ticker channel consumer callback
     """
 
-    async def handle_ticker_update(self, exchange: str, symbol: str, ticker: list):
+    async def handle_ticker_update(self, exchange: str, symbol: str, ticker: dict):
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(symbol=symbol, ticker=ticker, balance=None)
         except Exception as e:

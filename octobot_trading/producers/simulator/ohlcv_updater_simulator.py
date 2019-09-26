@@ -35,7 +35,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
     async def start(self):
         await self.resume()
 
-    async def handle_timestamp(self, timestamp: int):
+    async def handle_timestamp(self, timestamp):
         try:
             # TODO foreach symbol and time_frame
             ohlcv_data = (await self.exchange_data_importer.get_ohlcv_from_timestamps(exchange_name=self.exchange_name,
