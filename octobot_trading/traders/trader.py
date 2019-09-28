@@ -31,7 +31,7 @@ class Trader(Initializable):
     NO_HISTORY_MESSAGE = "Starting a fresh new trading session using the current portfolio as a profitability " \
                          "reference."
 
-    def __init__(self, config, exchange_manager, previous_state_manager=None):
+    def __init__(self, config, exchange_manager):
         super().__init__()
         self.exchange_manager = exchange_manager
         self.config = config
@@ -44,8 +44,6 @@ class Trader(Initializable):
         # logging
         self.trader_type_str = REAL_TRADER_STR
         self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
-        self.previous_state_manager = previous_state_manager
-        self.loaded_previous_state = False
 
         self.exchange_personal_data = self.exchange_manager.exchange_personal_data
 
@@ -55,17 +53,9 @@ class Trader(Initializable):
         self.is_enabled = self.__class__.enabled(self.config)
         self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange.name}")
 
-        self.notifier = None  # TODO
-
     async def initialize_impl(self):
         if self.is_enabled:
             await self.exchange_manager.register_trader(self)
-            if self.previous_state_manager is not None:
-                self._load_previous_state_if_any()
-
-    def _load_previous_state_if_any(self):
-        # unused for real trader yet
-        pass
 
     @classmethod
     def enabled(cls, config):
@@ -104,7 +94,7 @@ class Trader(Initializable):
                      quantity=quantity,
                      price=price,
                      stop_price=stop_price,
-                     order_id=self._parse_order_id(order_id),
+                     order_id=self.__parse_order_id(order_id),
                      status=None,
                      quantity_filled=None,
                      filled_price=None,
@@ -222,7 +212,7 @@ class Trader(Initializable):
             if order.status is not OrderStatus.CANCELED:
                 await self.notify_order_close(order, True)
 
-    # async def sell_everything(self, symbol, inverted):
+    # async def sell_everything(self, symbol, inverted): TODO
     #     created_orders = []
     #     order_type = TraderOrderType.BUY_MARKET if inverted else TraderOrderType.SELL_MARKET
     #     async with self.exchange_personal_data.portfolio.lock:
@@ -383,5 +373,5 @@ class Trader(Initializable):
         order.executed_time = order.trader.exchange.get_uniform_timestamp(
             exchange_order[ExchangeConstantsOrderColumns.TIMESTAMP.value])
 
-    def _parse_order_id(self, order_id):
+    def __parse_order_id(self, order_id):
         return order_id

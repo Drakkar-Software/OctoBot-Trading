@@ -29,9 +29,9 @@ class TraderSimulator(Trader):
     NO_HISTORY_MESSAGE = "Starting a fresh new trading simulation session using trader simulator initial portfolio " \
                          "in configuration."
 
-    def __init__(self, config, exchange_manager, previous_state_manager=None):
+    def __init__(self, config, exchange_manager):
         self.simulate = True
-        super().__init__(config, exchange_manager, previous_state_manager)
+        super().__init__(config, exchange_manager)
 
         self.trader_type_str = SIMULATOR_TRADER_STR
 
@@ -39,22 +39,5 @@ class TraderSimulator(Trader):
     def enabled(config):
         return is_trader_simulator_enabled(config)
 
-    def _load_previous_state_if_any(self):
-        loaded_previous_state = self.previous_state_manager.has_previous_state(self.exchange_manager)
-        if not self.previous_state_manager.should_initialize_data() and loaded_previous_state:
-            try:
-                self._print_previous_state_info()
-                self.loaded_previous_state = True
-            except Exception as e:
-                self.logger.warning(f"Error when loading trading history, will reset history. ({e})")
-                self.logger.exception(e)
-                self.previous_state_manager.reset_trading_history()
-        else:
-            self.logger.info(self.NO_HISTORY_MESSAGE)
-
-    def _print_previous_state_info(self):
-        current_portfolio = self.previous_state_manager.get_previous_state(self.exchange_manager, SIMULATOR_CURRENT_PORTFOLIO)
-        self.logger.info(f"Resuming the previous trading session: current portfolio: {current_portfolio}")
-
-    def _parse_order_id(self, order_id):
-        return uuid.uuid4() if order_id is None else order_id
+    def __parse_order_id(self, order_id):
+        return str(uuid.uuid4()) if order_id is None else order_id

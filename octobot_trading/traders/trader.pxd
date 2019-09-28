@@ -34,18 +34,14 @@ cdef class Trader(Initializable):
 
     cdef public bint simulate
     cdef public bint is_enabled
-    cdef public bint loaded_previous_state
 
-    cdef public object notifier
     cdef public object logger
-    cdef public object previous_state_manager
 
     cdef public ExchangeManager exchange_manager
     cdef public ExchangePersonalData exchange_personal_data
 
     # methods
-    cdef void _load_previous_state_if_any(self)
-    cdef str _parse_order_id(self, str order_id)
+    cdef str __parse_order_id(self, str order_id)
 
     cpdef float set_risk(self, float risk)
     cpdef Order create_order_instance(self,
