@@ -254,9 +254,9 @@ class Order:
 
     def update_from_raw(self, raw_order):
         if self.side is None or self.order_type is None:
-            self._update_type_from_raw(raw_order)
+            self.__update_type_from_raw(raw_order)
             if self.taker_or_maker is None:
-                self._update_taker_maker_from_raw()
+                self.__update_taker_maker_from_raw()
 
         return self.update(**{
             "symbol": raw_order[ExchangeConstantsOrderColumns.SYMBOL.value],
@@ -273,7 +273,7 @@ class Order:
             "timestamp": raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value]
         })
 
-    def _update_type_from_raw(self, raw_order):
+    def __update_type_from_raw(self, raw_order):
         self.side: TradeOrderSide = TradeOrderSide(raw_order[ExchangeConstantsOrderColumns.SIDE.value])
         order_type: TradeOrderType = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
         if self.side == TradeOrderSide.BUY:
@@ -287,7 +287,7 @@ class Order:
             elif order_type == TradeOrderType.MARKET:
                 self.order_type = TraderOrderType.SELL_MARKET
 
-    def _update_taker_maker_from_raw(self):
+    def __update_taker_maker_from_raw(self):
         if self.order_type in [TraderOrderType.SELL_MARKET, TraderOrderType.BUY_MARKET, TraderOrderType.STOP_LOSS]:
             # always true
             self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value

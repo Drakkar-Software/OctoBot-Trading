@@ -80,13 +80,13 @@ cdef class Order:
             object linked_portfolio=*,
             object order_type=*)
 
-    cdef void _update_type_from_raw(self, dict raw_order)
-    cdef void _update_taker_maker_from_raw(self)
+    cdef void __update_type_from_raw(self, dict raw_order)
+    cdef void __update_taker_maker_from_raw(self)
     cdef str to_string(self)
 
     cpdef bint check_last_prices(self, list last_prices, float price_to_check, bint inferior, bint simulated_time=*)
     cpdef tuple get_currency_and_market(self)
-    cpdef float get_total_fees(self, char * currency)
+    cpdef float get_total_fees(self, str currency)
     cpdef bint is_filled(self)
     cpdef bint is_cancelled(self)
     cpdef dict get_computed_fee(self, object forced_value=*)

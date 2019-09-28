@@ -80,10 +80,10 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                 if order_filled:
                     await get_chan(ORDERS_CHANNEL, self.channel.exchange.name).get_internal_producer() \
                         .send(symbol=order.symbol,
-                                            order=order,
-                                            is_from_bot=True,
-                                            is_closed=True,
-                                            is_updated=False)
+                              order=order,
+                              is_from_bot=True,
+                              is_closed=True,
+                              is_updated=False)
         return failed_order_updates
 
     """
