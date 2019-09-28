@@ -54,6 +54,7 @@ class TickerUpdater(TickerProducer):
     async def modify(self, added_pairs=None, removed_pairs=None):
         if added_pairs:
             self._pairs_to_update += added_pairs
+            self._pairs_to_update = list(set(self._pairs_to_update))
             self.logger.info(f"Added pairs : {added_pairs}")
 
         if removed_pairs:
