@@ -15,8 +15,6 @@
 #  License along with this library
 
 # Strings
-from octobot_commons.enums import TimeFrames
-
 CURRENT_PORTFOLIO_STRING = "Current Portfolio :"
 CONFIG_PORTFOLIO_INFO = "info"
 CONFIG_PORTFOLIO_FREE = "free"

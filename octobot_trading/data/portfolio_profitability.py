@@ -59,10 +59,6 @@ class PortfolioProfitabilty(Initializable):
         # is market only => not used to compute market average profitability
         self.traded_currencies_without_market_specific = set()
 
-        # buffer of currencies containing currencies that have already been logged as without matching symbol
-        # (used not to spam logs)
-        self.already_informed_no_matching_symbol_currency = set()
-
         self.reference_market = get_reference_market(self.config)
 
     async def initialize_impl(self):
@@ -218,13 +214,11 @@ class PortfolioProfitabilty(Initializable):
             raise e
 
     def __inform_no_matching_symbol(self, currency, force=False):
-        if force or currency not in self.already_informed_no_matching_symbol_currency:
-            self.already_informed_no_matching_symbol_currency.add(currency)
-            if not isinstance(self.exchange_manager.exchange, ExchangeSimulator):
-                # do not log warning in backtesting or tests
-                self.logger.warning(f"Can't find matching symbol for {currency} and {self.reference_market}")
-            else:
-                self.logger.info(f"Can't find matching symbol for {currency} and {self.reference_market}")
+        if not isinstance(self.exchange_manager.exchange, ExchangeSimulator):
+            # do not log warning in backtesting or tests
+            self.logger.warning(f"Can't find matching symbol for {currency} and {self.reference_market}")
+        else:
+            self.logger.info(f"Can't find matching symbol for {currency} and {self.reference_market}")
 
     async def __evaluate_config_crypto_currencies_values(self):
         values_dict = {}
