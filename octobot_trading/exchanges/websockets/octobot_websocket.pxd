@@ -14,7 +14,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_websockets.feeds.feed cimport Feed
 from octobot_trading.exchanges.websockets.abstract_websocket cimport AbstractWebsocket
 
 
@@ -40,8 +39,8 @@ cdef class OctoBotWebSocketClient(AbstractWebsocket):
     cdef public bint is_handling_funding
 
     # private
-    cdef bint __is_feed_available(self, Feed feed)
-    cdef void __add_feed_and_run_if_required(self, list feed, object callback)
+    cdef bint __is_feed_available(self, object feed)
+    cdef void __add_feed_and_run_if_required(self, object feed, object callback)
     cdef void __create_octobot_feed_feeds(self)
 
     @staticmethod

@@ -52,9 +52,10 @@ class RecentTradesManager(Initializable):
             if recent_trade not in self.recent_trades:
                 self.recent_trades.append(recent_trade)
                 self.__check_recent_trades_size()
-                return recent_trade
+                return [recent_trade]
         except ValueError as e:
             self.logger.error(f"Impossible to add new recent trade ({recent_trade} : {e})")
+        return []
 
     def __reset_recent_trades(self):
         self.recent_trades_initialized = False

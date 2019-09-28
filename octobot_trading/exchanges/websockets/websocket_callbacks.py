@@ -51,11 +51,11 @@ class RecentTradesCallBack(RecentTradeProducer):
 
     async def recent_trades_callback(self, _, pair, side, amount, price, timestamp):
         try:
-            asyncio.run_coroutine_threadsafe(self.push(symbol=pair, recent_trades=[{ECOC.SYMBOL.value: pair,
-                                                                                    ECOC.SIDE.value: side,
-                                                                                    ECOC.AMOUNT.value: amount,
-                                                                                    ECOC.PRICE.value: price,
-                                                                                    ECOC.TIMESTAMP.value: timestamp}]),
+            asyncio.run_coroutine_threadsafe(self.push(symbol=pair, recent_trades={ECOC.SYMBOL.value: pair,
+                                                                                   ECOC.SIDE.value: side,
+                                                                                   ECOC.AMOUNT.value: amount,
+                                                                                   ECOC.PRICE.value: price,
+                                                                                   ECOC.TIMESTAMP.value: timestamp}),
                                              asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Callback failed : {e}")

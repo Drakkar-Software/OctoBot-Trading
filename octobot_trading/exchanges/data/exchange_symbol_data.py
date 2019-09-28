@@ -74,7 +74,9 @@ class ExchangeSymbolData:
         elif replace_all:
             return self.recent_trades_manager.set_all_recent_trades(recent_trades)
         # TODO check if initialized
-        return self.recent_trades_manager.add_recent_trade(recent_trades[-1])
+
+        # recent trades should be a dict
+        return self.recent_trades_manager.add_recent_trade(recent_trades)
 
     def handle_order_book_update(self, asks, bids, is_delta=False):
         if is_delta:
