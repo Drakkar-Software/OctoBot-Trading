@@ -38,7 +38,7 @@ class OrderBookCallBack(OrderBookProducer):
                                                        asks=asks,
                                                        bids=bids), asyncio.get_event_loop())
         except Exception as e:
-            self.logger.error(f"Callaback failed : {e}")
+            self.logger.error(f"Callback failed : {e}")
 
 
 class RecentTradesCallBack(RecentTradeProducer):
@@ -58,7 +58,7 @@ class RecentTradesCallBack(RecentTradeProducer):
                                                                                     ECOC.TIMESTAMP.value: timestamp}]),
                                              asyncio.get_event_loop())
         except Exception as e:
-            self.logger.error(f"Callaback failed : {e}")
+            self.logger.error(f"Callback failed : {e}")
 
 
 class TickersCallBack(TickerProducer):
@@ -79,7 +79,7 @@ class TickersCallBack(TickerProducer):
                                                                ExchangeConstantsTickersColumns.TIMESTAMP.value: timestamp}),
                                              asyncio.get_event_loop())
         except Exception as e:
-            self.logger.error(f"Callaback failed : {e}")
+            self.logger.error(f"Callback failed : {e}")
 
 
 class OHLCVCallBack(OHLCVProducer):
@@ -99,4 +99,4 @@ class OHLCVCallBack(OHLCVProducer):
                                                            candle=data[symbol],
                                                            partial=True), asyncio.get_event_loop())
         except Exception as e:
-            self.logger.error(f"Callaback failed : {e}")
+            self.logger.error(f"Callback failed : {e}")

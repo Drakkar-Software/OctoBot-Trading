@@ -27,8 +27,7 @@ from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_
     TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
-    CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGE_WEB_SOCKET, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, \
-    CONFIG_EXCHANGE_KEY
+    CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY
 from octobot_trading.exchanges.data.exchange_global_data import ExchangeGlobalData
 from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
@@ -49,6 +48,7 @@ from octobot_trading.producers.ticker_updater import TickerUpdater
 from octobot_trading.producers.trades_updater import TradesUpdater
 from octobot_trading.util import is_trader_simulator_enabled
 from octobot_trading.util.initializable import Initializable
+from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
 
 
 class ExchangeManager(Initializable):
@@ -76,6 +76,7 @@ class ExchangeManager(Initializable):
         self.is_collecting = is_collecting
         self.exchange_only = exchange_only
         self.is_trader_simulated = is_trader_simulator_enabled(self.config)
+        self.has_websocket = False
 
         self.trader = None
         self.exchange = None
@@ -166,14 +167,15 @@ class ExchangeManager(Initializable):
 
     async def __create_exchange_producers(self):
         # Real data producers
-        if self.rest_only and not self.is_backtesting:  # TODO or filter creation with WS
+        if (self.rest_only or not self.has_websocket) and not self.is_backtesting:  # TODO or filter creation with WS
             await OHLCVUpdater(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
             await OrderBookUpdater(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
             await RecentTradeUpdater(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
             await TickerUpdater(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
             await KlineUpdater(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
 
-        if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting or self.is_collecting):  # TODO or filter creation with WS
+        if self.exchange.is_authenticated and not (
+                self.is_simulated or self.is_backtesting or self.is_collecting):  # TODO or filter creation with WS
             await BalanceUpdater(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
             await BalanceProfitabilityUpdater(get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
             await CloseOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
@@ -185,7 +187,9 @@ class ExchangeManager(Initializable):
         if (not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting) and not self.is_collecting:
             # Not required
             # await BalanceUpdaterSimulator(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
-            await BalanceProfitabilityUpdaterSimulator(get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
+
+            await BalanceProfitabilityUpdaterSimulator(
+                get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
 
             await CloseOrdersUpdaterSimulator(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
             await OpenOrdersUpdaterSimulator(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
@@ -208,6 +212,9 @@ class ExchangeManager(Initializable):
 
                     # start the websocket
                     exchange_web_socket.start_sockets()
+
+                    self.has_websocket = True  # TODO check status
+                    self.logger.info(f"{socket_manager.get_name()} connected to {self.exchange.name}")
 
                     return exchange_web_socket
                 except Exception as e:
@@ -297,7 +304,8 @@ class ExchangeManager(Initializable):
 
                     # additionnal pairs
                     if CONFIG_CRYPTO_ADD in self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency]:
-                        self.cryptocurrencies_traded_pairs[cryptocurrency] += self.__add_tradable_symbols(cryptocurrency)
+                        self.cryptocurrencies_traded_pairs[cryptocurrency] += self.__add_tradable_symbols(
+                            cryptocurrency)
 
                 # add to global traded pairs
                 if not self.cryptocurrencies_traded_pairs[cryptocurrency]:

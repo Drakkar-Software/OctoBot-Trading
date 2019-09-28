@@ -20,10 +20,10 @@ import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
 from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, ArgumentsRequired
 from octobot_commons.config_util import decrypt
+from octobot_commons.constants import MSECONDS_TO_MINUTE
 
 from octobot_commons.dict_util import get_value_or_default
 from octobot_commons.enums import TimeFramesMinutes
-from octobot_websockets.constants import MSECONDS_TO_MINUTE
 
 from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_KEY, CONFIG_EXCHANGE_SECRET, \
     CONFIG_EXCHANGE_PASSWORD, CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_USED, \

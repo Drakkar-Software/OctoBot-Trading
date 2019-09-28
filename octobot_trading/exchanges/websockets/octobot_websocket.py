@@ -16,12 +16,12 @@
 import asyncio
 from concurrent.futures.thread import ThreadPoolExecutor
 
+from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes
 
 from octobot_trading.channels import RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, TICKER_CHANNEL
 from octobot_websockets.api.feed_creator import get_feed_from_name
 from octobot_websockets.callback import TradeCallback, BookCallback, TickerCallback
-from octobot_websockets.constants import MINUTE_TO_SECONDS
 from octobot_websockets.feeds.feed import Feeds
 
 from octobot_trading.channels.exchange_channel import get_chan
@@ -139,7 +139,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
 
     @classmethod
     def get_name(cls):
-        return "octobot_feed"
+        return cls.__name__
 
     @classmethod
     def has_name(cls, name: str):
