@@ -75,12 +75,12 @@ class Trader(Initializable):
                               symbol,
                               current_price,
                               quantity,
-                              price=0,
-                              stop_price=0,
+                              price=0.0,
+                              stop_price=0.0,
                               linked_to=None,
-                              status=None,
+                              status=OrderStatus.OPEN,
                               order_id=None,
-                              quantity_filled=0,
+                              quantity_filled=0.0,
                               timestamp=0,
                               linked_portfolio=None):
 
@@ -95,12 +95,9 @@ class Trader(Initializable):
                      price=price,
                      stop_price=stop_price,
                      order_id=self.__parse_order_id(order_id),
-                     status=None,
-                     quantity_filled=None,
-                     filled_price=None,
-                     fee=None,
-                     total_cost=None,
                      timestamp=timestamp,
+                     status=status,
+                     quantity_filled=quantity_filled,
                      linked_to=linked_to,
                      linked_portfolio=linked_portfolio)
 
@@ -135,7 +132,7 @@ class Trader(Initializable):
                 is_to_keep = False
 
         self.logger.debug(f"{title} : {new_order.to_string()} "
-                         f"{'' if is_to_keep else ': will be archived in trades history if not already'}")
+                          f"{'' if is_to_keep else ': will be archived in trades history if not already'}")
 
         if is_to_keep:
             # notify order manager of a new open order

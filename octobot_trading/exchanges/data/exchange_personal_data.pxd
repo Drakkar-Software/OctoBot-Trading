@@ -39,11 +39,4 @@ cdef class ExchangePersonalData(Initializable):
     cdef public OrdersManager orders_manager
     cdef public PositionsManager positions_manager
 
-    cpdef bint handle_portfolio_update(self, dict balance, bint should_notify=*)
-    cpdef tuple handle_order_update(self, str symbol, str order_id, dict order, bint should_notify=*)
-    cpdef void handle_order_instance_update(self, Order order, bint should_notify=*)
-    cpdef bint handle_closed_order_update(self, str symbol, str order_id, dict order, bint should_notify=*)
-    cpdef bint handle_trade_update(self, str symbol, str trade_id, dict trade, bint should_notify=*)
-    cpdef void handle_trade_instance_update(self, Trade trade, bint should_notify=*)
-    cpdef tuple handle_position_update(self, str symbol, position_id, position, bint should_notify=*)
-    cpdef void handle_position_instance_update(self, Position position, bint should_notify=*)
+    cpdef object get_order_portfolio(self, Order order)

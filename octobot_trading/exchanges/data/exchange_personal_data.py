@@ -120,10 +120,10 @@ class ExchangePersonalData(Initializable):
             if should_notify:
                 await get_chan(ORDERS_CHANNEL, self.exchange.name).get_internal_producer() \
                     .send(symbol=order.symbol,
-                                        order=order,
-                                        is_from_bot=True,
-                                        is_closed=False,
-                                        is_updated=changed)
+                          order=order,
+                          is_from_bot=True,
+                          is_closed=False,
+                          is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update order instance : {e}")
@@ -135,10 +135,10 @@ class ExchangePersonalData(Initializable):
             if should_notify:
                 await get_chan(ORDERS_CHANNEL, self.exchange.name).get_internal_producer() \
                     .send(symbol=symbol,
-                                        order=order,
-                                        is_from_bot=True,
-                                        is_closed=True,
-                                        is_updated=changed)
+                          order=order,
+                          is_from_bot=True,
+                          is_closed=True,
+                          is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update order : {e}")
@@ -150,8 +150,8 @@ class ExchangePersonalData(Initializable):
             if should_notify:
                 await get_chan(TRADES_CHANNEL, self.exchange.name).get_internal_producer() \
                     .send(symbol=symbol,
-                                        trade=trade,
-                                        old_trade=False)
+                          trade=trade,
+                          old_trade=False)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update trade : {e}")
@@ -163,8 +163,8 @@ class ExchangePersonalData(Initializable):
             if should_notify:
                 await get_chan(TRADES_CHANNEL, self.exchange.name).get_internal_producer() \
                     .send(symbol=trade.symbol,
-                                        trade=trade,
-                                        old_trade=False)
+                          trade=trade,
+                          old_trade=False)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update trade instance : {e}")
@@ -176,10 +176,10 @@ class ExchangePersonalData(Initializable):
             if should_notify:
                 await get_chan(POSITIONS_CHANNEL, self.exchange.name).get_internal_producer() \
                     .send(symbol=symbol,
-                                        position=position,
-                                        is_closed=False,
-                                        is_updated=changed,
-                                        is_from_bot=True)
+                          position=position,
+                          is_closed=False,
+                          is_updated=changed,
+                          is_from_bot=True)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update position : {e}")
@@ -191,10 +191,10 @@ class ExchangePersonalData(Initializable):
             if should_notify:
                 await get_chan(POSITIONS_CHANNEL, self.exchange.name).get_internal_producer() \
                     .send(symbol=position.symbol,
-                                        position=position,
-                                        is_closed=False,
-                                        is_updated=changed,
-                                        is_from_bot=True)
+                          position=position,
+                          is_closed=False,
+                          is_updated=changed,
+                          is_from_bot=True)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update position instance : {e}")

@@ -64,9 +64,10 @@ class Order:
     def get_name(cls):
         return cls.__name__
 
-    def update(self, symbol: str, current_price: float, quantity: float, price: float, stop_price: float,
-               status: OrderStatus, order_id: str, quantity_filled: float, filled_price: float,
-               fee: dict, total_cost: float, timestamp=None, linked_to=None, linked_portfolio=None, order_type=None):
+    def update(self, symbol, order_id="", status=OrderStatus.OPEN,
+               current_price=0.0, quantity=0.0, price=0.0, stop_price=0.0,
+               quantity_filled=0.0, filled_price=0.0, fee=0.0, total_cost=0.0,
+               timestamp=None, linked_to=None, linked_portfolio=None, order_type=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
