@@ -22,10 +22,10 @@ cdef class RecentTradesManager(Initializable):
 
     cdef public bint recent_trades_initialized
 
-    cdef list recent_trades
+    cdef public list recent_trades
 
-    cdef void _check_recent_trades_size(self)
-    cdef void _reset_recent_trades(self)
+    cdef void __check_recent_trades_size(self)
+    cdef void __reset_recent_trades(self)
 
     cpdef list set_all_recent_trades(self, list recent_trades)
     cpdef list add_new_trades(self, list recent_trades)
