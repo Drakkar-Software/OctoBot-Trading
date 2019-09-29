@@ -34,17 +34,18 @@ class KlineUpdaterSimulator(KlineUpdater):
     async def start(self):
         await self.resume()
 
-    async def handle_timestamp(self, timestamp):
+    async def handle_timestamp(self, timestamp, **kwargs):
         try:
-            # TODO foreach symbol and time_frame
-            kline_data = (await self.exchange_data_importer.get_kline_from_timestamps(exchange_name=self.exchange_name,
-                                                                                      symbol="BTC/USDT",
-                                                                                      time_frame="1h",
-                                                                                      inferior_timestamp=timestamp,
-                                                                                      limit=1))[0]
-            if kline_data[0] > self.last_timestamp_pushed:
-                self.last_timestamp_pushed = kline_data[0]
-                await self.push(TimeFrames(kline_data[-2]), kline_data[3], json.loads(kline_data[-1]))
+            for time_frame in self.channel.exchange_manager.time_frames:
+                for pair in self.channel.exchange_manager.traded_pairs:
+                    kline_data = (await self.exchange_data_importer.get_kline_from_timestamps(exchange_name=self.exchange_name,
+                                                                                              symbol=pair,
+                                                                                              time_frame=time_frame,
+                                                                                              inferior_timestamp=timestamp,
+                                                                                              limit=1))[0]
+                    if kline_data[0] > self.last_timestamp_pushed:
+                        self.last_timestamp_pushed = kline_data[0]
+                        await self.push(time_frame, pair, json.loads(kline_data[-1]))
         except IndexError as e:
             self.logger.warning(f"Failed to access kline_data : {e}")
 

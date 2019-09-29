@@ -93,7 +93,7 @@ if __name__ == '__main__':
     exchange_name = "binance"
     exchange_factory = create_new_exchange(config, exchange_name,
                                            is_simulated=True, is_rest_only=True, is_backtesting=True,
-                                           backtesting_files=[os.getenv('BACKTESTING-FILE')])
+                                           backtesting_files=[os.getenv('BACKTESTING_FILE')])
 
     add_exchange(exchange_name, {
         "exchange_factory": exchange_factory,

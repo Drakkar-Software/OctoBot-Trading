@@ -33,17 +33,17 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
     async def start(self):
         await self.resume()
 
-    async def handle_timestamp(self, timestamp):
+    async def handle_timestamp(self, timestamp, **kwargs):
         try:
-            # TODO foreach symbol
-            recent_trades_data = (await self.exchange_data_importer.get_recent_trades_from_timestamps(
-                exchange_name=self.exchange_name,
-                symbol="BTC/USDT",
-                inferior_timestamp=timestamp,
-                limit=1))[0]
-            if recent_trades_data[0] > self.last_timestamp_pushed:
-                self.last_timestamp_pushed = recent_trades_data[0]
-                await self.push(recent_trades_data[-3], json.loads(recent_trades_data[-1]))
+            for pair in self.channel.exchange_manager.traded_pairs:
+                recent_trades_data = (await self.exchange_data_importer.get_recent_trades_from_timestamps(
+                    exchange_name=self.exchange_name,
+                    symbol=pair,
+                    inferior_timestamp=timestamp,
+                    limit=1))[0]
+                if recent_trades_data[0] > self.last_timestamp_pushed:
+                    self.last_timestamp_pushed = recent_trades_data[0]
+                    await self.push(pair, json.loads(recent_trades_data[-1]))
         except IndexError as e:
             self.logger.warning(f"Failed to access recent_trades_data : {e}")
 

@@ -138,7 +138,7 @@ setup(
     test_suite="tests",
     zip_safe=False,
     data_files=[],
-    setup_requires=REQUIRED,
+    setup_requires=REQUIRED if not CYTHON_DEBUG else [],
     install_requires=[],
     ext_modules=cythonize(ext_modules, gdb_debug=CYTHON_DEBUG),
     python_requires=REQUIRES_PYTHON,

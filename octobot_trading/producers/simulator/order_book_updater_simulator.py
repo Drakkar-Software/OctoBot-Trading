@@ -33,17 +33,17 @@ class OrderBookUpdaterSimulator(OrderBookUpdater):
     async def start(self):
         await self.resume()
 
-    async def handle_timestamp(self, timestamp):
+    async def handle_timestamp(self, timestamp, **kwargs):
         try:
-            # TODO foreach symbol
-            order_book_data = (await self.exchange_data_importer.get_order_book_from_timestamps(
-                exchange_name=self.exchange_name,
-                symbol="BTC/USDT",
-                inferior_timestamp=timestamp,
-                limit=1))[0]
-            if order_book_data[0] > self.last_timestamp_pushed:
-                self.last_timestamp_pushed = order_book_data[0]
-                await self.push(order_book_data[-3], json.loads(order_book_data[-1]), json.loads(order_book_data[-2]))
+            for pair in self.channel.exchange_manager.traded_pairs:
+                order_book_data = (await self.exchange_data_importer.get_order_book_from_timestamps(
+                    exchange_name=self.exchange_name,
+                    symbol=pair,
+                    inferior_timestamp=timestamp,
+                    limit=1))[0]
+                if order_book_data[0] > self.last_timestamp_pushed:
+                    self.last_timestamp_pushed = order_book_data[0]
+                    await self.push(pair, json.loads(order_book_data[-1]), json.loads(order_book_data[-2]))
         except IndexError as e:
             self.logger.warning(f"Failed to access order_book_data : {e}")
 

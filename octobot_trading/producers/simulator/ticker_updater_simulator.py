@@ -33,16 +33,16 @@ class TickerUpdaterSimulator(TickerUpdater):
     async def start(self):
         await self.resume()
 
-    async def handle_timestamp(self, timestamp):
+    async def handle_timestamp(self, timestamp, **kwargs):
         try:
-            # TODO foreach symbol
-            ticker_data = (await self.exchange_data_importer.get_ticker_from_timestamps(exchange_name=self.exchange_name,
-                                                                                        symbol="BTC/USDT",
-                                                                                        inferior_timestamp=timestamp,
-                                                                                        limit=1))[0]
-            if ticker_data[0] > self.last_timestamp_pushed:
-                self.last_timestamp_pushed = ticker_data[0]
-                await self.push(ticker_data[-3], json.loads(ticker_data[-1]))
+            for pair in self.channel.exchange_manager.traded_pairs:
+                ticker_data = (await self.exchange_data_importer.get_ticker_from_timestamps(exchange_name=self.exchange_name,
+                                                                                            symbol=pair,
+                                                                                            inferior_timestamp=timestamp,
+                                                                                            limit=1))[0]
+                if ticker_data[0] > self.last_timestamp_pushed:
+                    self.last_timestamp_pushed = ticker_data[0]
+                    await self.push(pair, json.loads(ticker_data[-1]))
         except IndexError as e:
             self.logger.warning(f"Failed to access ticker_data : {e}")
 
