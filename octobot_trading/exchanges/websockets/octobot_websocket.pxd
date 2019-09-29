@@ -37,6 +37,7 @@ cdef class OctoBotWebSocketClient(AbstractWebsocket):
     cdef public bint is_handling_order_book
     cdef public bint is_handling_recent_trades
     cdef public bint is_handling_funding
+    cdef public bint is_websocket_running
 
     # private
     cdef bint __is_feed_available(self, object feed)

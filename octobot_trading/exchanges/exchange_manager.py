@@ -213,7 +213,7 @@ class ExchangeManager(Initializable):
                     # start the websocket
                     exchange_web_socket.start_sockets()
 
-                    self.has_websocket = True  # TODO check status
+                    self.has_websocket = exchange_web_socket.is_websocket_running
                     self.logger.info(f"{socket_manager.get_name()} connected to {self.exchange.name}")
 
                     return exchange_web_socket

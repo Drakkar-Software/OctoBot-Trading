@@ -19,30 +19,30 @@ cdef class ExchangeMarketStatusFixer:
     cdef public object market_status
     cdef public float price_example
 
-    cdef void _fix_market_status_precision(self)
-    cdef void _fix_market_status_limits(self)
-    cdef void _fix_market_status_limits_from_current_data(self, dict market_limit)
-    cdef object _calculate_amount(self)
-    cdef void _fix_market_status_limits_with_price(self)
-    cdef float _get_price_precision(self)
-    cdef void _fix_market_status_precision_with_price(self)
-    cdef void _fix_market_status_precision_with_specific(self)
-    cdef void _fix_market_status_limits_with_specific(self)
+    cdef void __fix_market_status_precision(self)
+    cdef void __fix_market_status_limits(self)
+    cdef void __fix_market_status_limits_from_current_data(self, dict market_limit)
+    cdef object __calculate_amount(self)
+    cdef void __fix_market_status_limits_with_price(self)
+    cdef float __get_price_precision(self)
+    cdef void __fix_market_status_precision_with_price(self)
+    cdef void __fix_market_status_precision_with_specific(self)
+    cdef void __fix_market_status_limits_with_specific(self)
 
     @staticmethod
-    cdef object _get_markets_limit(dict market_limit)
+    cdef object __get_markets_limit(dict market_limit)
 
     @staticmethod
-    cdef void _calculate_costs(dict market_limit)
+    cdef void __calculate_costs(dict market_limit)
 
     @staticmethod
-    cdef void _calculate_prices(dict market_limit)
+    cdef void __calculate_prices(dict market_limit)
 
     @staticmethod
-    cdef void _calculate_amounts(dict market_limit)
+    cdef void __calculate_amounts(dict market_limit)
 
     @staticmethod
-    cdef bint _check_market_status_limits(market_limit)
+    cdef bint __check_market_status_limits(market_limit)
 
     @staticmethod
-    cdef bint _check_market_status_values(market_limit, bint zero_valid=*)
+    cdef bint __check_market_status_values(market_limit, bint zero_valid=*)

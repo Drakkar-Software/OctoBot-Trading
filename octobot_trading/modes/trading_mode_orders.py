@@ -37,7 +37,7 @@ def adapt_quantity(symbol_market, quantity):
 
 def trunc_with_n_decimal_digits(value, digits):
     # force exact representation
-    return float("{0:.{1}f}".format(math.trunc(value * 10 ** digits) / (10 ** digits), digits))
+    return float("{0:.{1}f}".format(math.trunc(value * 10 ** digits) / (10 ** digits), digits if digits > 1 else 1))
 
 
 def adapt_order_quantity_because_quantity(limiting_value, max_value, quantity_to_adapt, price, symbol_market):
@@ -236,7 +236,7 @@ def check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, f
 
     if not fixed_symbol_data:
         # case 2: try fixing data from exchanges
-        fixed_data = ExchangeMarketStatusFixer(symbol_market, price).get_market_status()
+        fixed_data = ExchangeMarketStatusFixer(symbol_market, price).market_status
         return check_and_adapt_order_details_if_necessary(quantity, price, fixed_data,
                                                           fixed_symbol_data=True)
     else:

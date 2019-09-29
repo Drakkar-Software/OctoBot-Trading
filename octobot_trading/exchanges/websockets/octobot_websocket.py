@@ -56,6 +56,8 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         self.channels = []
         self.callbacks = {}
 
+        self.is_websocket_running = False
+
     async def init_web_sockets(self, time_frames, trader_pairs):
         self.exchange_class = get_feed_from_name(self.exchange_manager.exchange.name)
         self.trader_pairs = trader_pairs
@@ -114,7 +116,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
     def __is_feed_available(self, feed):
         try:
             feed_available = self.exchange_class.get_feeds()[feed]
-            return feed_available is not Feeds.UNSUPPORTED
+            return feed_available is not Feeds.UNSUPPORTED.value
         except (KeyError, ValueError):
             return False
 
@@ -146,19 +148,20 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         return get_feed_from_name(name) is not None
 
     def start_sockets(self):
-        is_websocket_running = False
-
         if self.is_handling_order_book or \
                 self.is_handling_price_ticker or \
                 self.is_handling_funding or \
                 self.is_handling_ohlcv or \
                 self.is_handling_recent_trades:
-            self.octobot_websockets_executors = ThreadPoolExecutor(max_workers=len(self.octobot_websockets))
-            for websocket in self.octobot_websockets:
-                asyncio.get_event_loop().run_in_executor(self.octobot_websockets_executors, websocket.start)
-            is_websocket_running = True
+            try:
+                self.octobot_websockets_executors = ThreadPoolExecutor(max_workers=len(self.octobot_websockets))
+                for websocket in self.octobot_websockets:
+                    asyncio.get_event_loop().run_in_executor(self.octobot_websockets_executors, websocket.start)
+                self.is_websocket_running = True
+            except ValueError as e:
+                self.logger.error(f"Failed to start websocket on {self.exchange_name} : {e}")
 
-        if not is_websocket_running:
+        if not self.is_websocket_running:
             self.logger.error(f"{self.exchange_manager.exchange.name.title()}'s "
                               f"websocket is not handling anything, it will not be started, ")
 
