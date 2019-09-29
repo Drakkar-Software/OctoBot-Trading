@@ -40,6 +40,9 @@ class OrderBookCallBack(OrderBookProducer):
         except Exception as e:
             self.logger.error(f"Callback failed : {e}")
 
+    async def modify(self, **kwargs) -> None:
+        pass
+
 
 class RecentTradesCallBack(RecentTradeProducer):
     def __init__(self, parent, channel):
@@ -59,6 +62,9 @@ class RecentTradesCallBack(RecentTradeProducer):
                                              asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Callback failed : {e}")
+
+    async def modify(self, **kwargs) -> None:
+        pass
 
 
 class TickersCallBack(TickerProducer):
@@ -81,6 +87,9 @@ class TickersCallBack(TickerProducer):
         except Exception as e:
             self.logger.error(f"Callback failed : {e}")
 
+    async def modify(self, **kwargs) -> None:
+        pass
+
 
 class OHLCVCallBack(OHLCVProducer):
     def __init__(self, parent, channel, time_frame):
@@ -100,3 +109,6 @@ class OHLCVCallBack(OHLCVProducer):
                                                            partial=True), asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Callback failed : {e}")
+
+    async def modify(self, **kwargs) -> None:
+        pass
