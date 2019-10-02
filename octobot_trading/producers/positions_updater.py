@@ -15,10 +15,9 @@
 #  License along with this library.
 import asyncio
 
+from ccxt.base.errors import NotSupported
+
 from octobot_trading.channels import POSITIONS_CHANNEL
-
-from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.channels.positions import PositionsProducer
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 
@@ -33,7 +32,9 @@ class PositionsUpdater(PositionsProducer):
                 positions: list = await self.channel.exchange_manager.exchange.get_open_position()
                 if positions:
                     await self.push(self._cleanup_positions_dict(positions))
-
+            except NotSupported:
+                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                await self.pause()
             except Exception as e:
                 self.logger.exception(e)
                 self.logger.error(f"Fail to update positions : {e}")

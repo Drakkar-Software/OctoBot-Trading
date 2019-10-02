@@ -15,10 +15,9 @@
 #  License along with this library.
 import asyncio
 
+from ccxt.base.errors import NotSupported
+
 from octobot_trading.channels import ORDER_BOOK_CHANNEL
-
-from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.channels.order_book import OrderBookProducer
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns
 
@@ -36,5 +35,8 @@ class OrderBookUpdater(OrderBookProducer):
                                  order_book[ExchangeConstantsOrderBookInfoColumns.BIDS.value]
                     await self.push(pair, asks, bids)
                 await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
+            except NotSupported:
+                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                await self.stop()
             except Exception as e:
                 self.logger.exception(f"Fail to update order book : {e}")

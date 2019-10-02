@@ -15,10 +15,9 @@
 #  License along with this library.
 import asyncio
 
+from ccxt.base.errors import NotSupported
+
 from octobot_trading.channels import TICKER_CHANNEL
-
-from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.channels.ticker import TickerProducer
 
 
@@ -42,6 +41,9 @@ class TickerUpdater(TickerProducer):
                         await self.push(pair, ticker)
 
                 await asyncio.sleep(self.TICKER_REFRESH_TIME)
+            except NotSupported:
+                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                await self.pause()
             except Exception as e:
                 self.logger.exception(f"Fail to update ticker : {e}")
 

@@ -338,11 +338,13 @@ class ExchangeManager(Initializable):
         self.time_frames = TimeFrameManager.sort_time_frames(self.time_frames, reverse=True)
 
     def time_frame_exists(self, time_frame, symbol=None):
-        if CONFIG_WILDCARD in self.client_time_frames or symbol is None:
+        if CONFIG_WILDCARD in self.client_time_frames and not self.client_time_frames[CONFIG_WILDCARD]:
+            return False
+        elif CONFIG_WILDCARD in self.client_time_frames or symbol is None:
             return time_frame in self.client_time_frames[CONFIG_WILDCARD]
-        else:
-            # should only happen in backtesting (or with an exchange with different timeframes per symbol)
-            return time_frame in self.client_time_frames[symbol]
+
+        # should only happen in backtesting (or with an exchange with different timeframes per symbol)
+        return time_frame in self.client_time_frames[symbol]
 
     def get_rate_limit(self):
         return self.exchange_type.rateLimit / 1000

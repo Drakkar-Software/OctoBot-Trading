@@ -15,8 +15,9 @@
 #  License along with this library.
 import asyncio
 
-from octobot_commons.logging.logging_util import get_logger
+from ccxt.base.errors import NotSupported
 
+from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.channels import BALANCE_CHANNEL, TICKER_CHANNEL
 from octobot_trading.channels.balance import BalanceProducer, BalanceProfitabilityProducer
 from octobot_trading.channels.exchange_channel import get_chan
@@ -31,6 +32,9 @@ class BalanceUpdater(BalanceProducer):
             try:
                 await self.push((await self.channel.exchange_manager.exchange.get_balance()))
                 await asyncio.sleep(self.BALANCE_REFRESH_TIME)
+            except NotSupported:
+                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                await self.pause()
             except Exception as e:
                 self.logger.error(f"Failed to update balance : {e}")
 

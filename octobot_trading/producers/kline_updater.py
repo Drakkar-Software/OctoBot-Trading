@@ -16,10 +16,9 @@
 import asyncio
 import time
 
+from ccxt.base.errors import NotSupported
+
 from octobot_trading.channels import KLINE_CHANNEL
-
-from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.channels.kline import KlineProducer
 
 
@@ -59,5 +58,8 @@ class KlineUpdater(KlineProducer):
 
                 if candle:
                     await asyncio.sleep(self.KLINE_REFRESH_TIME - (time.time() - started_time))
+            except NotSupported:
+                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                await self.pause()
             except Exception as e:
                 self.logger.error(f"Failed to update kline data in {time_frame} : {e}")

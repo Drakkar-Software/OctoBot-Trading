@@ -15,10 +15,9 @@
 #  License along with this library.
 import asyncio
 
+from ccxt.base.errors import NotSupported
+
 from octobot_trading.channels import RECENT_TRADES_CHANNEL
-
-from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.channels.recent_trade import RecentTradeProducer
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 
@@ -38,6 +37,9 @@ class RecentTradeUpdater(RecentTradeProducer):
                                     self._cleanup_trades_dict(recent_trades),
                                     partial=True)
                 await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
+            except NotSupported:
+                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                await self.pause()
             except Exception as e:
                 self.logger.exception(f"Fail to update recent trades : {e}")
 

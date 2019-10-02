@@ -16,11 +16,11 @@
 import asyncio
 import time
 
-from octobot_trading.channels import OHLCV_CHANNEL
+from ccxt.base.errors import NotSupported
 
 from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes, PriceIndexes
-
+from octobot_trading.channels import OHLCV_CHANNEL
 from octobot_trading.channels.ohlcv import OHLCVProducer
 
 
@@ -84,6 +84,10 @@ class OHLCVUpdater(OHLCVProducer):
                     await asyncio.sleep(should_sleep_time)
                 else:
                     await asyncio.sleep(time_frame_sleep)
+            except NotSupported:
+                self.logger.warning(
+                    f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                await self.pause()
             except Exception as e:
                 self.logger.exception(f"Failed to update ohlcv data in  {time_frame} : {e}")
                 await asyncio.sleep(self.OHLCV_ON_ERROR_TIME)

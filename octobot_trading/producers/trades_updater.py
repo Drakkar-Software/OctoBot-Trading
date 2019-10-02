@@ -16,9 +16,6 @@
 import asyncio
 
 from octobot_trading.channels import TRADES_CHANNEL
-
-from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.channels.trades import TradesProducer
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 
@@ -40,6 +37,9 @@ class TradesUpdater(TradesProducer):
                     await self.push(self._cleanup_trades_dict(trades))
 
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
+        except NotSupported:
+            self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+            await self.pause()
         except Exception as e:
             self.logger.error(f"Fail to initialize old trades : {e}")
 
