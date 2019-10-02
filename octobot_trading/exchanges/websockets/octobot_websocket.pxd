@@ -40,7 +40,6 @@ cdef class OctoBotWebSocketClient(AbstractWebsocket):
     cdef public bint is_websocket_running
 
     # private
-    cdef bint __is_feed_available(self, object feed)
     cdef void __add_feed_and_run_if_required(self, object feed, object callback)
     cdef void __create_octobot_feed_feeds(self)
 
@@ -55,6 +54,7 @@ cdef class OctoBotWebSocketClient(AbstractWebsocket):
     # cpdef void add_recent_trade_feed(self)
     # cpdef void add_order_book_feed(self)
     # cpdef void add_tickers_feed(self)
+    cpdef bint is_feed_available(self, object feed)
     cpdef void start_sockets(self)
     cpdef void close_and_restart_sockets(self)
     cpdef void stop_sockets(self)

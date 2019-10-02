@@ -76,7 +76,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
 
     # Feeds
     async def add_recent_trade_feed(self):
-        if self.__is_feed_available(Feeds.TRADES):
+        if self.is_feed_available(Feeds.TRADES):
             recent_trade_callback = RecentTradesCallBack(self,
                                                          get_chan(RECENT_TRADES_CHANNEL,
                                                                   self.exchange_name))
@@ -90,7 +90,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
                                 f"websocket is not handling recent trades")
 
     async def add_order_book_feed(self):
-        if self.__is_feed_available(Feeds.L2_BOOK):
+        if self.is_feed_available(Feeds.L2_BOOK):
             order_book_callback = OrderBookCallBack(self, get_chan(ORDER_BOOK_CHANNEL,
                                                                    self.exchange_name))
 
@@ -102,7 +102,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
                                 f"websocket is not handling order book")
 
     async def add_tickers_feed(self):
-        if self.__is_feed_available(Feeds.TICKER):
+        if self.is_feed_available(Feeds.TICKER):
             tickers_callback = TickersCallBack(self, get_chan(TICKER_CHANNEL, self.exchange_name))
 
             self.__add_feed_and_run_if_required(Feeds.TICKER, TickerCallback(tickers_callback.tickers_callback))
@@ -113,7 +113,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
             self.logger.warning(f"{self.exchange_manager.exchange.name}'s "
                                 f"websocket is not handling tickers")
 
-    def __is_feed_available(self, feed):
+    def is_feed_available(self, feed):
         try:
             feed_available = self.exchange_class.get_feeds()[feed]
             return feed_available is not Feeds.UNSUPPORTED.value

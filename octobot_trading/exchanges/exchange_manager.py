@@ -33,6 +33,7 @@ from octobot_trading.exchanges.data.exchange_personal_data import ExchangePerson
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.rest_exchange import RestExchange
+from octobot_trading.exchanges.websockets import WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.producers.balance_updater import BalanceUpdater, BalanceProfitabilityUpdater
 from octobot_trading.producers.kline_updater import KlineUpdater
@@ -139,7 +140,7 @@ class ExchangeManager(Initializable):
             if not self.rest_only:
                 # search for websocket
                 if self.check_web_socket_config(self.exchange.name):
-                    self.exchange_web_socket = await self.__search_and_create_websocket(AbstractWebsocket)
+                    await self.__search_and_create_websocket(AbstractWebsocket)
 
         # if simulated : create exchange simulator instance
         else:
@@ -162,26 +163,42 @@ class ExchangeManager(Initializable):
 
         self.is_ready = True
 
-    async def __create_exchange_channels(self):  # TODO filter creation
+    async def __create_exchange_channels(self):  # TODO filter creation --> not required if pause is managed
         await create_all_subclasses_channel(ExchangeChannel, set_chan, exchange_manager=self)
 
     async def __create_exchange_producers(self):
         # Real data producers
-        if (self.rest_only or not self.has_websocket) and not self.is_backtesting:  # TODO or filter creation with WS
-            await OHLCVUpdater(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
-            await OrderBookUpdater(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
-            await RecentTradeUpdater(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
-            await TickerUpdater(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
-            await KlineUpdater(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
+        if not self.is_backtesting:
+            if not self.__is_managed_by_websocket(OHLCV_CHANNEL):
+                await OHLCVUpdater(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
 
-        if self.exchange.is_authenticated and not (
-                self.is_simulated or self.is_backtesting or self.is_collecting):  # TODO or filter creation with WS
-            await BalanceUpdater(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+            if not self.__is_managed_by_websocket(ORDER_BOOK_CHANNEL):
+                await OrderBookUpdater(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
+
+            if not self.__is_managed_by_websocket(RECENT_TRADES_CHANNEL):
+                await RecentTradeUpdater(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
+
+            if not self.__is_managed_by_websocket(TICKER_CHANNEL):
+                await TickerUpdater(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
+
+            if not self.__is_managed_by_websocket(KLINE_CHANNEL):
+                await KlineUpdater(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
+
+        if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting or self.is_collecting):
+            if not self.__is_managed_by_websocket(BALANCE_CHANNEL):
+                await BalanceUpdater(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
+
+            if not self.__is_managed_by_websocket(ORDERS_CHANNEL):
+                await CloseOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+                await OpenOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
+
+            if not self.__is_managed_by_websocket(TRADES_CHANNEL):
+                await TradesUpdater(get_chan(TRADES_CHANNEL, self.exchange.name)).run()
+
+            if not self.__is_managed_by_websocket(POSITIONS_CHANNEL):
+                await PositionsUpdater(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
+
             await BalanceProfitabilityUpdater(get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
-            await CloseOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-            await OpenOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-            await TradesUpdater(get_chan(TRADES_CHANNEL, self.exchange.name)).run()
-            await PositionsUpdater(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
         # Simulated producers
         if (not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting) and not self.is_collecting:
@@ -200,27 +217,31 @@ class ExchangeManager(Initializable):
             # TODO
             # await PositionsUpdaterSimulator(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
 
+    def __is_managed_by_websocket(self, channel):  # TODO improve checker
+        return not self.rest_only and self.has_websocket and \
+               any(self.exchange_web_socket.is_feed_available(feed)
+                   for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel])
+
     async def __search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():
             # add websocket exchange if available
             if socket_manager.has_name(self.exchange.name):
-                exchange_web_socket = socket_manager.get_websocket_client(self.config, self)
+                self.exchange_web_socket = socket_manager.get_websocket_client(self.config, self)
 
                 # init websocket
                 try:
-                    await exchange_web_socket.init_web_sockets(self.time_frames, self.traded_pairs)
+                    await self.exchange_web_socket.init_web_sockets(self.time_frames, self.traded_pairs)
 
                     # start the websocket
-                    exchange_web_socket.start_sockets()
+                    self.exchange_web_socket.start_sockets()
 
-                    self.has_websocket = exchange_web_socket.is_websocket_running
+                    self.has_websocket = self.exchange_web_socket.is_websocket_running
                     self.logger.info(f"{socket_manager.get_name()} connected to {self.exchange.name}")
-
-                    return exchange_web_socket
                 except Exception as e:
                     self.logger.error(f"Fail to init websocket for {websocket_class} : {e}")
+                    self.exchange_web_socket = None
+                    self.has_websocket = False
                     raise e
-        return None
 
     def did_not_just_try_to_reset_web_socket(self):
         if self.last_web_socket_reset is None or self.last_web_socket_reset == -1:

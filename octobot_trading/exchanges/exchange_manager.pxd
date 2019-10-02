@@ -73,6 +73,7 @@ cdef class ExchangeManager(Initializable):
     cdef object __uniformize_candles_timestamps(self, list candles)
     cdef void __uniformize_candle_timestamps(self, list candle)
     cdef void __raise_exchange_load_error(self)
+    cdef bint __is_managed_by_websocket(self, object channel)
 
     @staticmethod
     cdef str __is_tradable_with_cryptocurrency(str symbol, str crypto_currency)
