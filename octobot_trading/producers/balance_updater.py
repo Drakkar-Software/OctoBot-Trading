@@ -24,6 +24,7 @@ from octobot_trading.channels.exchange_channel import get_chan
 
 class BalanceUpdater(BalanceProducer):
     BALANCE_REFRESH_TIME = 666
+    CHANNEL_NAME = BALANCE_CHANNEL
 
     async def start(self):
         while not self.should_stop:
@@ -35,6 +36,8 @@ class BalanceUpdater(BalanceProducer):
 
 
 class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
+    CHANNEL_NAME = BALANCE_CHANNEL
+
     def __init__(self, channel):
         super().__init__(channel)
         self.logger = get_logger(self.__class__.__name__)

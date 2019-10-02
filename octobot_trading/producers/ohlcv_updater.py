@@ -16,6 +16,8 @@
 import asyncio
 import time
 
+from octobot_trading.channels import OHLCV_CHANNEL
+
 from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes, PriceIndexes
 
@@ -23,6 +25,7 @@ from octobot_trading.channels.ohlcv import OHLCVProducer
 
 
 class OHLCVUpdater(OHLCVProducer):
+    CHANNEL_NAME = OHLCV_CHANNEL
     OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_OLD_LIMIT = 200  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_ON_ERROR_TIME = 5

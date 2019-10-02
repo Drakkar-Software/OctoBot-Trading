@@ -15,6 +15,8 @@
 #  License along with this library.
 import asyncio
 
+from octobot_trading.channels import POSITIONS_CHANNEL
+
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.positions import PositionsProducer
@@ -22,6 +24,7 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
 class PositionsUpdater(PositionsProducer):
+    CHANNEL_NAME = POSITIONS_CHANNEL
     POSITIONS_REFRESH_TIME = 11
 
     async def start(self):

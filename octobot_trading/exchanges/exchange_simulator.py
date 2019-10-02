@@ -13,31 +13,19 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_backtesting.api.backtesting import initialize_backtesting
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
-
-from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
-from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
-from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
-
-from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
-
-from octobot_trading.producers.simulator.order_book_updater_simulator import OrderBookUpdaterSimulator
-
-from octobot_trading.channels import OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, \
-    KLINE_CHANNEL
-
 from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
-
-from octobot_backtesting.api.backtesting import initialize_backtesting
+from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, \
     CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
-from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
+from octobot_trading.producers.simulator import UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS
 
 
 class ExchangeSimulator(AbstractExchange):
@@ -79,11 +67,8 @@ class ExchangeSimulator(AbstractExchange):
 
     async def create_backtesting_exchange_producers(self):
         for importer in self.exchange_importers:
-            await OHLCVUpdaterSimulator(get_trading_chan(OHLCV_CHANNEL, self.name), importer).run()
-            await OrderBookUpdaterSimulator(get_trading_chan(ORDER_BOOK_CHANNEL, self.name), importer).run()
-            await RecentTradeUpdaterSimulator(get_trading_chan(RECENT_TRADES_CHANNEL, self.name), importer).run()
-            await TickerUpdaterSimulator(get_trading_chan(TICKER_CHANNEL, self.name), importer).run()
-            await KlineUpdaterSimulator(get_trading_chan(KLINE_CHANNEL, self.name), importer).run()
+            for updater in UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
+                await updater(get_trading_chan(updater.CHANNEL_NAME, self.name), importer).run()
 
     async def stop(self):
         pass  # TODO

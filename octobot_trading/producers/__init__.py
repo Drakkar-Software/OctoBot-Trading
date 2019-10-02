@@ -13,9 +13,26 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.producers.orders_updater import OpenOrdersUpdater, CloseOrdersUpdater
+
+from octobot_trading.producers.trades_updater import TradesUpdater
+
+from octobot_trading.producers.positions_updater import PositionsUpdater
+
+from octobot_trading.producers.balance_updater import BalanceProfitabilityUpdater, BalanceUpdater
+from octobot_trading.producers.kline_updater import KlineUpdater
+from octobot_trading.producers.ticker_updater import TickerUpdater
+from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
+from octobot_trading.producers.order_book_updater import OrderBookUpdater
+from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 
 
 class MissingOrderException(Exception):
 
     def __init__(self, order_id):
         self.order_id = order_id
+
+
+UNAUTHENTICATED_UPDATER_PRODUCERS = [OHLCVUpdater, OrderBookUpdater, RecentTradeUpdater, TickerUpdater, KlineUpdater]
+AUTHENTICATED_UPDATER_PRODUCERS = [BalanceUpdater, CloseOrdersUpdater, OpenOrdersUpdater, TradesUpdater,
+                                   PositionsUpdater, BalanceProfitabilityUpdater]

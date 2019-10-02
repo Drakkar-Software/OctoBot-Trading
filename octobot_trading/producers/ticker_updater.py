@@ -15,12 +15,15 @@
 #  License along with this library.
 import asyncio
 
+from octobot_trading.channels import TICKER_CHANNEL
+
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.ticker import TickerProducer
 
 
 class TickerUpdater(TickerProducer):
+    CHANNEL_NAME = TICKER_CHANNEL
     TICKER_REFRESH_TIME = 64
 
     def __init__(self, channel):

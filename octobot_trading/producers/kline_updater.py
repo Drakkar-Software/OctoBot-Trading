@@ -16,12 +16,15 @@
 import asyncio
 import time
 
+from octobot_trading.channels import KLINE_CHANNEL
+
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.kline import KlineProducer
 
 
 class KlineUpdater(KlineProducer):
+    CHANNEL_NAME = KLINE_CHANNEL
     KLINE_REFRESH_TIME = 8
     KLINE_LIMIT = 1
 

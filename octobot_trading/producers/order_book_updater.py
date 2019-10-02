@@ -15,6 +15,8 @@
 #  License along with this library.
 import asyncio
 
+from octobot_trading.channels import ORDER_BOOK_CHANNEL
+
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.order_book import OrderBookProducer
@@ -22,6 +24,7 @@ from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns
 
 
 class OrderBookUpdater(OrderBookProducer):
+    CHANNEL_NAME = ORDER_BOOK_CHANNEL
     ORDER_BOOK_REFRESH_TIME = 5
 
     async def start(self):

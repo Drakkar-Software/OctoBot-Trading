@@ -15,6 +15,8 @@
 #  License along with this library.
 import asyncio
 
+from octobot_trading.channels import ORDERS_CHANNEL
+
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.orders import OrdersProducer
@@ -22,6 +24,7 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
 class OpenOrdersUpdater(OrdersProducer):
+    CHANNEL_NAME = ORDERS_CHANNEL
     ORDERS_STARTING_REFRESH_TIME = 10
     ORDERS_REFRESH_TIME = 18
     ORDERS_UPDATE_LIMIT = 10
@@ -65,6 +68,7 @@ class OpenOrdersUpdater(OrdersProducer):
 
 
 class CloseOrdersUpdater(OrdersProducer):
+    CHANNEL_NAME = ORDERS_CHANNEL
     ORDERS_REFRESH_TIME = 2  # TODO = 10
     ORDERS_UPDATE_LIMIT = 10
 

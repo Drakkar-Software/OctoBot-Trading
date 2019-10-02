@@ -23,8 +23,6 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol
 from octobot_commons.time_frame_manager import TimeFrameManager
 from octobot_commons.timestamp_util import is_valid_timestamp
-from octobot_trading.channels import BALANCE_CHANNEL, OHLCV_CHANNEL, ORDER_BOOK_CHANNEL, RECENT_TRADES_CHANNEL, \
-    TICKER_CHANNEL, ORDERS_CHANNEL, KLINE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
     CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY
@@ -35,18 +33,8 @@ from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets import WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
-from octobot_trading.producers.balance_updater import BalanceUpdater, BalanceProfitabilityUpdater
-from octobot_trading.producers.kline_updater import KlineUpdater
-from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
-from octobot_trading.producers.order_book_updater import OrderBookUpdater
-from octobot_trading.producers.orders_updater import CloseOrdersUpdater, OpenOrdersUpdater
-from octobot_trading.producers.positions_updater import PositionsUpdater
-from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
-from octobot_trading.producers.simulator.balance_updater_simulator import BalanceProfitabilityUpdaterSimulator
-from octobot_trading.producers.simulator.orders_updater_simulator import OpenOrdersUpdaterSimulator, \
-    CloseOrdersUpdaterSimulator
-from octobot_trading.producers.ticker_updater import TickerUpdater
-from octobot_trading.producers.trades_updater import TradesUpdater
+from octobot_trading.producers import UNAUTHENTICATED_UPDATER_PRODUCERS, AUTHENTICATED_UPDATER_PRODUCERS
+from octobot_trading.producers.simulator import AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS
 from octobot_trading.util import is_trader_simulator_enabled
 from octobot_trading.util.initializable import Initializable
 from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
@@ -169,53 +157,19 @@ class ExchangeManager(Initializable):
     async def __create_exchange_producers(self):
         # Real data producers
         if not self.is_backtesting:
-            if not self.__is_managed_by_websocket(OHLCV_CHANNEL):
-                await OHLCVUpdater(get_chan(OHLCV_CHANNEL, self.exchange.name)).run()
-
-            if not self.__is_managed_by_websocket(ORDER_BOOK_CHANNEL):
-                await OrderBookUpdater(get_chan(ORDER_BOOK_CHANNEL, self.exchange.name)).run()
-
-            if not self.__is_managed_by_websocket(RECENT_TRADES_CHANNEL):
-                await RecentTradeUpdater(get_chan(RECENT_TRADES_CHANNEL, self.exchange.name)).run()
-
-            if not self.__is_managed_by_websocket(TICKER_CHANNEL):
-                await TickerUpdater(get_chan(TICKER_CHANNEL, self.exchange.name)).run()
-
-            if not self.__is_managed_by_websocket(KLINE_CHANNEL):
-                await KlineUpdater(get_chan(KLINE_CHANNEL, self.exchange.name)).run()
+            for updater in UNAUTHENTICATED_UPDATER_PRODUCERS:
+                if not self.__is_managed_by_websocket(updater.CHANNEL_NAME):
+                    await updater(get_chan(updater.CHANNEL_NAME, self.exchange.name)).run()
 
         if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting or self.is_collecting):
-            if not self.__is_managed_by_websocket(BALANCE_CHANNEL):
-                await BalanceUpdater(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
-
-            if not self.__is_managed_by_websocket(ORDERS_CHANNEL):
-                await CloseOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-                await OpenOrdersUpdater(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-
-            if not self.__is_managed_by_websocket(TRADES_CHANNEL):
-                await TradesUpdater(get_chan(TRADES_CHANNEL, self.exchange.name)).run()
-
-            if not self.__is_managed_by_websocket(POSITIONS_CHANNEL):
-                await PositionsUpdater(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
-
-            await BalanceProfitabilityUpdater(get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
+            for updater in AUTHENTICATED_UPDATER_PRODUCERS:
+                if not self.__is_managed_by_websocket(updater.CHANNEL_NAME):
+                    await updater(get_chan(updater.CHANNEL_NAME, self.exchange.name)).run()
 
         # Simulated producers
         if (not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting) and not self.is_collecting:
-            # Not required
-            # await BalanceUpdaterSimulator(get_chan(BALANCE_CHANNEL, self.exchange.name)).run()
-
-            await BalanceProfitabilityUpdaterSimulator(
-                get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name)).run()
-
-            await CloseOrdersUpdaterSimulator(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-            await OpenOrdersUpdaterSimulator(get_chan(ORDERS_CHANNEL, self.exchange.name)).run()
-
-            # Not required
-            # await TradesUpdaterSimulator(get_chan(TRADES_CHANNEL, self.exchange.name)).run()
-
-            # TODO
-            # await PositionsUpdaterSimulator(get_chan(POSITIONS_CHANNEL, self.exchange.name)).run()
+            for updater in AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
+                await updater(get_chan(updater.CHANNEL_NAME, self.exchange.name)).run()
 
     def __is_managed_by_websocket(self, channel):  # TODO improve checker
         return not self.rest_only and self.has_websocket and \

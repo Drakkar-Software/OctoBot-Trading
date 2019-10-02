@@ -15,6 +15,8 @@
 #  License along with this library.
 import asyncio
 
+from octobot_trading.channels import RECENT_TRADES_CHANNEL
+
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.recent_trade import RecentTradeProducer
@@ -22,6 +24,7 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
 class RecentTradeUpdater(RecentTradeProducer):
+    CHANNEL_NAME = RECENT_TRADES_CHANNEL
     RECENT_TRADE_REFRESH_TIME = 5
     RECENT_TRADE_LIMIT = 20  # should be < to RecentTradesManager's MAX_TRADES_COUNT
 
