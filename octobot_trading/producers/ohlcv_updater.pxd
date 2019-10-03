@@ -20,3 +20,5 @@ from octobot_trading.channels.ohlcv cimport OHLCVProducer
 
 cdef class OHLCVUpdater(OHLCVProducer):
     cdef list tasks
+
+    cdef bint is_initialized

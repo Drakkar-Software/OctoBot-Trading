@@ -27,8 +27,22 @@ class RecentTradeUpdater(RecentTradeProducer):
     RECENT_TRADE_REFRESH_TIME = 5
     RECENT_TRADE_LIMIT = 20  # should be < to RecentTradesManager's MAX_TRADES_COUNT
 
+    async def init_recent_trades(self):
+        try:
+            for pair in self.channel.exchange_manager.traded_pairs:
+                recent_trades = await self.channel.exchange_manager.exchange.get_recent_trades(pair,
+                                                                                               limit=self.RECENT_TRADE_LIMIT)
+                await self.push(pair,
+                                self._cleanup_trades_dict(recent_trades),
+                                partial=True)
+            await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
+        except Exception as e:
+            self.logger.exception(f"Fail to initialize recent trades : {e}")
+
     async def start(self):
-        while not self.should_stop:
+        await self.init_recent_trades()
+
+        while not self.should_stop and not self.channel.is_paused:
             try:
                 for pair in self.channel.exchange_manager.traded_pairs:
                     recent_trades = await self.channel.exchange_manager.exchange.get_recent_trades(pair,
@@ -58,3 +72,7 @@ class RecentTradeUpdater(RecentTradeProducer):
         except KeyError as e:
             self.logger.error(f"Fail to cleanup recent trades dict ({e})")
         return recent_trades
+
+    async def resume(self) -> None:
+        await super().resume()
+        await self.run()

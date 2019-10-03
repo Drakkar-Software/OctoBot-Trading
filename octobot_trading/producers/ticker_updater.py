@@ -27,14 +27,12 @@ class TickerUpdater(TickerProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self._pairs_to_update = []
+        self._added_pairs = []
 
     async def start(self):
-        self._pairs_to_update = self.channel.exchange_manager.traded_pairs
-
-        while not self.should_stop:
+        while not self.should_stop and not self.channel.is_paused:
             try:
-                for pair in self._pairs_to_update:
+                for pair in self.__get_pairs_to_update():
                     ticker: dict = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
 
                     if ticker:
@@ -56,12 +54,20 @@ class TickerUpdater(TickerProducer):
             self.logger.error(f"Fail to cleanup ticker dict ({e})")
         return ticker
 
+    def __get_pairs_to_update(self):
+        return self.channel.exchange_manager.traded_pairs + self._added_pairs
+
     async def modify(self, added_pairs=None, removed_pairs=None):
         if added_pairs:
-            self._pairs_to_update += added_pairs
-            self._pairs_to_update = list(set(self._pairs_to_update))
+            self._added_pairs += [pair
+                                  for pair in added_pairs
+                                  if pair not in self.__get_pairs_to_update()]
             self.logger.info(f"Added pairs : {added_pairs}")
 
         if removed_pairs:
-            self._pairs_to_update -= removed_pairs
+            self._added_pairs -= removed_pairs
             self.logger.info(f"Removed pairs : {removed_pairs}")
+
+    async def resume(self) -> None:
+        await super().resume()
+        await self.run()

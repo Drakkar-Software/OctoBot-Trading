@@ -27,7 +27,7 @@ class PositionsUpdater(PositionsProducer):
     POSITIONS_REFRESH_TIME = 11
 
     async def start(self):
-        while not self.should_stop:
+        while not self.should_stop and not self.channel.is_paused:
             try:
                 positions: list = await self.channel.exchange_manager.exchange.get_open_position()
                 if positions:
@@ -50,3 +50,7 @@ class PositionsUpdater(PositionsProducer):
             except KeyError as e:
                 self.logger.error(f"Fail to cleanup position dict ({e})")
         return positions
+
+    async def resume(self) -> None:
+        await super().resume()
+        await self.run()

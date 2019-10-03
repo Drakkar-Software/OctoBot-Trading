@@ -15,6 +15,8 @@
 #  License along with this library.
 import asyncio
 
+from ccxt.base.errors import NotSupported
+
 from octobot_trading.channels import TRADES_CHANNEL
 from octobot_trading.channels.trades import TradesProducer
 from octobot_trading.enums import ExchangeConstantsOrderColumns
@@ -47,7 +49,7 @@ class TradesUpdater(TradesProducer):
         await self.init_old_trades()
 
         # Code bellow shouldn't be necessary
-        # while not self.should_stop:
+        # while not self.should_stop and not self.channel.is_paused:
         #     try:
         #         for symbol in self.channel.exchange_manager.traded_pairs:
         #             trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
@@ -68,3 +70,7 @@ class TradesUpdater(TradesProducer):
             except KeyError as e:
                 self.logger.error(f"Fail to cleanup trade dict ({e})")
         return trades
+
+    async def resume(self) -> None:
+        await super().resume()
+        await self.run()

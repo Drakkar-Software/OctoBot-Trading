@@ -28,7 +28,7 @@ class BalanceUpdater(BalanceProducer):
     CHANNEL_NAME = BALANCE_CHANNEL
 
     async def start(self):
-        while not self.should_stop:
+        while not self.should_stop and not self.channel.is_paused:
             try:
                 await self.push((await self.channel.exchange_manager.exchange.get_balance()))
                 await asyncio.sleep(self.BALANCE_REFRESH_TIME)
@@ -37,6 +37,10 @@ class BalanceUpdater(BalanceProducer):
                 await self.pause()
             except Exception as e:
                 self.logger.error(f"Failed to update balance : {e}")
+
+    async def resume(self) -> None:
+        await super().resume()
+        await self.run()
 
 
 class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):

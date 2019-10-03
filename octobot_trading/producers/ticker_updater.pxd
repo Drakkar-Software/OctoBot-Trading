@@ -19,6 +19,7 @@ from octobot_trading.channels.ticker cimport TickerProducer
 
 
 cdef class TickerUpdater(TickerProducer):
-    cdef list _pairs_to_update
+    cdef list _added_pairs
 
     cdef dict _cleanup_ticker_dict(self, dict ticker)
+    cdef list __get_pairs_to_update(self)

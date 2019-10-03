@@ -43,10 +43,16 @@ class ExchangeChannelProducer(Producer):
             await consumer.queue.put(kwargs)
 
     async def pause(self) -> None:
-        pass
+        self.logger.debug("Pausing...")
+        # Triggers itself if not already paused
+        if not self.channel.is_paused:
+            self.channel.is_paused = True
 
     async def resume(self) -> None:
-        pass
+        self.logger.debug("Resuming...")
+        # Triggers itself if not already resumed
+        if self.channel.is_paused:
+            self.channel.is_paused = False
 
 
 class ExchangeChannel(Channel):

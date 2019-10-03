@@ -4,14 +4,18 @@ sudo: enabled
 os: linux
 language: python
 python: 3.7-dev
+cache: pip
 env:
   global:
     - GH_REPO=Drakkar-Software/OctoBot-Trading
     - DEPLOY_BRANCH=master
     - PACKAGE_FOLDER=octobot_trading
 
+before_install:
+    - sudo apt-get -y install liblapack-dev libblas-dev gfortran # fix scipy liblas error
+
 install:
-  - python3 -m pip install --upgrade -r dev_requirements.txt
+  - python3 -m pip install --upgrade --only-binary=scipy -r dev_requirements.txt
   - python3 -m pip install --upgrade --only-binary=Cython Cython
   - python3 -m pip install OctoBot-Commons # TODO remove it
   - python3 -m pip install OctoBot-Channels # TODO remove it
@@ -20,28 +24,28 @@ install:
 
 matrix:
   include:
-    - name: "Linux - Python 3 nightly - Cython compilation"
+    - name: "Linux - Python 3.7-dev - Cython compilation"
       stage: build
       os: linux
-      python: nightly
+      python: 3.7-dev
       language: python
       script:
         - python3 setup.py build_ext --inplace
 
-    - name: "Linux - Python 3 nightly - Python sources"
+    - name: "Linux - Python 3.7-dev - Python sources"
       stage: test
       os: linux
-      python: nightly
+      python: 3.7-dev
       language: python
       script:
         - pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests
       after_success:
         - if [ $TRAVIS_PULL_REQUEST == "false" ]; then coveralls; fi
 
-    - name: "Linux - Python 3 nightly - Installed"
+    - name: "Linux - Python 3.7-dev - Installed"
       stage: test
       os: linux
-      python: nightly
+      python: 3.7-dev
       language: python
       script:
         - python3 setup.py install

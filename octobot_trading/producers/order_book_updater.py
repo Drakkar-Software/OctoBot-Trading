@@ -27,7 +27,7 @@ class OrderBookUpdater(OrderBookProducer):
     ORDER_BOOK_REFRESH_TIME = 5
 
     async def start(self):
-        while not self.should_stop:
+        while not self.should_stop and not self.channel.is_paused:
             try:
                 for pair in self.channel.exchange_manager.traded_pairs:
                     order_book = await self.channel.exchange_manager.exchange.get_order_book(pair)
@@ -37,6 +37,10 @@ class OrderBookUpdater(OrderBookProducer):
                 await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
-                await self.stop()
+                await self.pause()
             except Exception as e:
                 self.logger.exception(f"Fail to update order book : {e}")
+
+    async def resume(self) -> None:
+        await super().resume()
+        await self.run()

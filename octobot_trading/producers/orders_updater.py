@@ -42,7 +42,7 @@ class OpenOrdersUpdater(OrdersProducer):
 
     async def start(self):
         # await self.initialize()
-        while not self.should_stop:
+        while not self.should_stop and not self.channel.is_paused:
             try:
                 for symbol in self.channel.exchange_manager.traded_pairs:
                     open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
@@ -74,7 +74,7 @@ class CloseOrdersUpdater(OrdersProducer):
     ORDERS_UPDATE_LIMIT = 10
 
     async def start(self):
-        while not self.should_stop:
+        while not self.should_stop and not self.channel.is_paused:
             try:
                 for symbol in self.channel.exchange_manager.traded_pairs:
                     close_orders: list = await self.channel.exchange_manager.exchange.get_closed_orders(
@@ -98,3 +98,7 @@ class CloseOrdersUpdater(OrdersProducer):
             except KeyError as e:
                 self.logger.error(f"Fail to cleanup close order dict ({e})")
         return close_orders
+
+    async def resume(self) -> None:
+        await super().resume()
+        await self.run()
