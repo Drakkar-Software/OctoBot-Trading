@@ -38,7 +38,10 @@ class KlineUpdater(KlineProducer):
     async def start(self):
         self.tasks = [
             asyncio.create_task(self.time_frame_watcher(time_frame))
-            for time_frame in self.channel.exchange_manager.time_frames]
+            for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames]
+
+    def __create_time_frame_kline_task(self, time_frame):
+        self.tasks += asyncio.create_task(self.time_frame_watcher(time_frame))
 
     """
     Manage timeframe OHLCV data refreshing for all pairs
@@ -49,7 +52,7 @@ class KlineUpdater(KlineProducer):
             try:
                 candle: list = []
                 started_time = time.time()
-                for pair in self.channel.exchange_manager.traded_pairs:
+                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     candle = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
                                                                                             time_frame,
                                                                                             limit=self.KLINE_LIMIT)
@@ -64,8 +67,15 @@ class KlineUpdater(KlineProducer):
             except Exception as e:
                 self.logger.error(f"Failed to update kline data in {time_frame} : {e}")
 
+    # async def config_callback(self, exchange, cryptocurrency, symbols, time_frames):
+    #     if time_frames:
+    #         for time_frame in time_frames:
+    #             self.__create_time_frame_kline_task(time_frame)
+    #             self.logger.info(f"global_data_callback: added {time_frame}")
+
     async def resume(self) -> None:
         await super().resume()
-        for task in self.tasks:
-            task.cancel()
-        await self.run()
+        if not self.is_running and self.tasks:
+            for task in self.tasks:
+                task.cancel()
+            await self.run()

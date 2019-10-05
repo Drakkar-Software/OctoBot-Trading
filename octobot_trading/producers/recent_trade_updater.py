@@ -29,11 +29,11 @@ class RecentTradeUpdater(RecentTradeProducer):
 
     async def init_recent_trades(self):
         try:
-            for pair in self.channel.exchange_manager.traded_pairs:
+            for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                 recent_trades = await self.channel.exchange_manager.exchange.get_recent_trades(pair,
                                                                                                limit=self.RECENT_TRADE_LIMIT)
                 await self.push(pair,
-                                self._cleanup_trades_dict(recent_trades),
+                                self.__cleanup_trades_dict(recent_trades),
                                 partial=True)
             await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
         except Exception as e:
@@ -44,11 +44,11 @@ class RecentTradeUpdater(RecentTradeProducer):
 
         while not self.should_stop and not self.channel.is_paused:
             try:
-                for pair in self.channel.exchange_manager.traded_pairs:
+                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     recent_trades = await self.channel.exchange_manager.exchange.get_recent_trades(pair,
                                                                                                    limit=self.RECENT_TRADE_LIMIT)
                     await self.push(pair,
-                                    self._cleanup_trades_dict(recent_trades),
+                                    self.__cleanup_trades_dict(recent_trades),
                                     partial=True)
                 await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
             except NotSupported:
@@ -57,7 +57,7 @@ class RecentTradeUpdater(RecentTradeProducer):
             except Exception as e:
                 self.logger.exception(f"Fail to update recent trades : {e}")
 
-    def _cleanup_trades_dict(self, recent_trades):
+    def __cleanup_trades_dict(self, recent_trades):
         try:
             for trade in recent_trades:
                 trade.pop(ExchangeConstantsOrderColumns.INFO.value)
@@ -75,4 +75,5 @@ class RecentTradeUpdater(RecentTradeProducer):
 
     async def resume(self) -> None:
         await super().resume()
-        await self.run()
+        if not self.is_running:
+            await self.run()

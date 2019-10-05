@@ -144,7 +144,7 @@ class PortfolioProfitabilty(Initializable):
 
     def __init_traded_currencies_without_market_specific(self):
         for cryptocurrency in self.config[CONFIG_CRYPTO_CURRENCIES]:
-            for pair in self.exchange_manager.get_traded_pairs(cryptocurrency):
+            for pair in self.exchange_manager.exchange_config.get_traded_pairs(cryptocurrency):
                 symbol, _ = split_symbol(pair)
                 if symbol not in self.traded_currencies_without_market_specific:
                     self.traded_currencies_without_market_specific.add(symbol)
@@ -224,7 +224,7 @@ class PortfolioProfitabilty(Initializable):
         values_dict = {}
         evaluated_currencies = set()
         for cryptocurrency in self.config[CONFIG_CRYPTO_CURRENCIES]:
-            pairs = self.exchange_manager.get_traded_pairs(cryptocurrency)
+            pairs = self.exchange_manager.exchange_config.get_traded_pairs(cryptocurrency)
             if pairs:
                 currency, market = split_symbol(pairs[0])
                 if currency not in evaluated_currencies:

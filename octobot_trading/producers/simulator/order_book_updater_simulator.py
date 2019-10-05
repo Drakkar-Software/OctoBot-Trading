@@ -35,7 +35,7 @@ class OrderBookUpdaterSimulator(OrderBookUpdater):
 
     async def handle_timestamp(self, timestamp, **kwargs):
         try:
-            for pair in self.channel.exchange_manager.traded_pairs:
+            for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                 order_book_data = (await self.exchange_data_importer.get_order_book_from_timestamps(
                     exchange_name=self.exchange_name,
                     symbol=pair,

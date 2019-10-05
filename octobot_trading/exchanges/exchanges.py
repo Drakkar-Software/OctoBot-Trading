@@ -20,8 +20,8 @@ class ExchangeConfiguration:
     def __init__(self, exchange_manager):
         self.exchange_manager = exchange_manager
         self.exchange_name = exchange_manager.exchange.name
-        self.symbols = exchange_manager.traded_pairs
-        self.time_frames = exchange_manager.time_frames
+        self.symbols = exchange_manager.exchange_config.traded_symbol_pairs
+        self.time_frames = exchange_manager.exchange_config.traded_time_frames
 
 
 class Exchanges(Singleton):

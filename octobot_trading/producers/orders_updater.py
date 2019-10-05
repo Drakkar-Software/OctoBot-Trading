@@ -30,7 +30,7 @@ class OpenOrdersUpdater(OrdersProducer):
 
     async def initialize(self):
         try:
-            for symbol in self.channel.exchange_manager.traded_pairs:
+            for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                 open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(symbol=symbol)
 
                 if open_orders:
@@ -44,7 +44,7 @@ class OpenOrdersUpdater(OrdersProducer):
         # await self.initialize()
         while not self.should_stop and not self.channel.is_paused:
             try:
-                for symbol in self.channel.exchange_manager.traded_pairs:
+                for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(
                         symbol=symbol,
                         limit=self.ORDERS_UPDATE_LIMIT)
@@ -67,6 +67,11 @@ class OpenOrdersUpdater(OrdersProducer):
                 self.logger.error(f"Fail to cleanup open order dict ({e})")
         return open_orders
 
+    async def resume(self) -> None:
+        await super().resume()
+        if not self.is_running:
+            await self.run()
+
 
 class CloseOrdersUpdater(OrdersProducer):
     CHANNEL_NAME = ORDERS_CHANNEL
@@ -76,7 +81,7 @@ class CloseOrdersUpdater(OrdersProducer):
     async def start(self):
         while not self.should_stop and not self.channel.is_paused:
             try:
-                for symbol in self.channel.exchange_manager.traded_pairs:
+                for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     close_orders: list = await self.channel.exchange_manager.exchange.get_closed_orders(
                         symbol=symbol,
                         limit=self.ORDERS_UPDATE_LIMIT)
@@ -101,4 +106,5 @@ class CloseOrdersUpdater(OrdersProducer):
 
     async def resume(self) -> None:
         await super().resume()
-        await self.run()
+        if not self.is_running:
+            await self.run()

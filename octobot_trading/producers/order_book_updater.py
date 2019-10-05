@@ -29,7 +29,7 @@ class OrderBookUpdater(OrderBookProducer):
     async def start(self):
         while not self.should_stop and not self.channel.is_paused:
             try:
-                for pair in self.channel.exchange_manager.traded_pairs:
+                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     order_book = await self.channel.exchange_manager.exchange.get_order_book(pair)
                     asks, bids = order_book[ExchangeConstantsOrderBookInfoColumns.ASKS.value], \
                                  order_book[ExchangeConstantsOrderBookInfoColumns.BIDS.value]
@@ -43,4 +43,5 @@ class OrderBookUpdater(OrderBookProducer):
 
     async def resume(self) -> None:
         await super().resume()
-        await self.run()
+        if not self.is_running:
+            await self.run()

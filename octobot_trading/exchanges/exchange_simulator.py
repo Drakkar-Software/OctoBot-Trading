@@ -54,7 +54,7 @@ class ExchangeSimulator(AbstractExchange):
 
         # set exchange manager attributes
         self.exchange_manager.client_symbols = self.symbols
-        self.exchange_manager.time_frames = self.time_frames
+        self.exchange_manager.exchange_config.traded_time_frames = self.time_frames
 
     async def modify_channels(self):
         # set mininmum and maximum timestamp according to all importers data

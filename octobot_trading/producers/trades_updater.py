@@ -30,7 +30,7 @@ class TradesUpdater(TradesProducer):
 
     async def init_old_trades(self):
         try:
-            for symbol in self.channel.exchange_manager.traded_pairs:
+            for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                 trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
                     symbol=symbol,
                     limit=self.MAX_OLD_TRADES_TO_FETCH)
@@ -51,7 +51,7 @@ class TradesUpdater(TradesProducer):
         # Code bellow shouldn't be necessary
         # while not self.should_stop and not self.channel.is_paused:
         #     try:
-        #         for symbol in self.channel.exchange_manager.traded_pairs:
+        #         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
         #             trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
         #                 symbol=symbol,
         #                 limit=self.TRADES_LIMIT)
@@ -73,4 +73,5 @@ class TradesUpdater(TradesProducer):
 
     async def resume(self) -> None:
         await super().resume()
-        await self.run()
+        if not self.is_running:
+            await self.run()

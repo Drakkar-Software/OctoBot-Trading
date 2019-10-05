@@ -11,3 +11,4 @@ twine
 pip
 setuptools
 wheel
+cython

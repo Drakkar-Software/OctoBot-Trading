@@ -55,7 +55,7 @@ class TickerUpdater(TickerProducer):
         return ticker
 
     def __get_pairs_to_update(self):
-        return self.channel.exchange_manager.traded_pairs + self._added_pairs
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self._added_pairs
 
     async def modify(self, added_pairs=None, removed_pairs=None):
         if added_pairs:
@@ -68,6 +68,11 @@ class TickerUpdater(TickerProducer):
             self._added_pairs -= removed_pairs
             self.logger.info(f"Removed pairs : {removed_pairs}")
 
+    # async def config_callback(self, exchange, cryptocurrency, symbols, time_frames):
+    #     if symbols:
+    #         await self.modify(added_pairs=symbols)
+
     async def resume(self) -> None:
         await super().resume()
-        await self.run()
+        if not self.is_running:
+            await self.run()

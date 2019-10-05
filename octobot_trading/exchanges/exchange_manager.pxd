@@ -16,7 +16,7 @@
 #  License along with this library.
 
 from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
-from octobot_trading.exchanges.data.exchange_global_data cimport ExchangeGlobalData
+from octobot_trading.exchanges.data.exchange_config_data cimport ExchangeConfig
 from octobot_trading.exchanges.data.exchange_personal_data cimport ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbol_data cimport ExchangeSymbolData
 from octobot_trading.exchanges.data.exchange_symbols_data cimport ExchangeSymbolsData
@@ -50,26 +50,19 @@ cdef class ExchangeManager(Initializable):
 
     cdef public AbstractExchange exchange
     cdef public AbstractWebsocket exchange_web_socket
-    cdef public ExchangeGlobalData exchange_global_data
+    cdef public ExchangeConfig exchange_config
     cdef public ExchangePersonalData exchange_personal_data
     cdef public ExchangeSymbolsData exchange_symbols_data
 
     cdef public dict client_time_frames
-    cdef public dict cryptocurrencies_traded_pairs
-
     cdef public list client_symbols
-    cdef public list traded_pairs
-    cdef public list time_frames
 
     # private
     cdef void __load_config_symbols_and_time_frames(self)
     cdef void __load_constants(self)
     # cdef AbstractWebsocket __search_and_create_websocket(self, websocket_class)
     cdef void __load_config_symbols_and_time_frames(self)
-    cdef void __set_config_traded_pairs(self)
     cdef list __create_wildcard_symbol_list(self, str crypto_currency)
-    cdef list __add_tradable_symbols(self, str crypto_currency)
-    cdef void __set_config_time_frame(self)
     cdef object __uniformize_candles_timestamps(self, list candles)
     cdef void __uniformize_candle_timestamps(self, list candle)
     cdef void __raise_exchange_load_error(self)
@@ -91,7 +84,6 @@ cdef class ExchangeManager(Initializable):
     cpdef bint check_config(self, str exchange_name)
     cpdef force_disable_web_socket(self, str exchange_name)
     cpdef check_web_socket_config(self, str exchange_name)
-    cpdef list get_traded_pairs(self, str crypto_currency=*)
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame, str symbol=*)
     cpdef int get_rate_limit(self)

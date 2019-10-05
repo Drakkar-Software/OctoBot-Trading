@@ -17,16 +17,14 @@ import time
 
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
 from octobot_commons.config_util import has_invalid_default_config_value
-from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME
+from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD
 from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol
-from octobot_commons.time_frame_manager import TimeFrameManager
 from octobot_commons.timestamp_util import is_valid_timestamp
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
-from octobot_trading.constants import CONFIG_TRADER, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, \
-    CONFIG_CRYPTO_QUOTE, CONFIG_CRYPTO_ADD, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY
-from octobot_trading.exchanges.data.exchange_global_data import ExchangeGlobalData
+from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY
+from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
 from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
@@ -77,11 +75,7 @@ class ExchangeManager(Initializable):
         self.client_symbols = []
         self.client_time_frames = {}
 
-        self.cryptocurrencies_traded_pairs = {}
-        self.traded_pairs = []
-        self.time_frames = []
-
-        self.exchange_global_data = ExchangeGlobalData(self)
+        self.exchange_config = ExchangeConfig(self)
         self.exchange_personal_data = ExchangePersonalData(self)
         self.exchange_symbols_data = ExchangeSymbolsData(self)
 
@@ -95,12 +89,12 @@ class ExchangeManager(Initializable):
     async def register_trader(self, trader):
         self.trader = trader
         await self.exchange_personal_data.initialize()
-        await self.exchange_global_data.initialize()
+        await self.exchange_config.initialize()
 
     def __load_constants(self):
         self.__load_config_symbols_and_time_frames()
-        self.__set_config_time_frame()
-        self.__set_config_traded_pairs()
+        self.exchange_config.set_config_time_frame()
+        self.exchange_config.set_config_traded_pairs()
 
     def need_user_stream(self):
         return self.config[CONFIG_TRADER][CONFIG_ENABLED_OPTION]
@@ -134,7 +128,7 @@ class ExchangeManager(Initializable):
         else:
             self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
             await self.exchange.initialize()
-            self.__set_config_traded_pairs()
+            self.exchange_config.set_config_traded_pairs()
             await self.__create_exchange_channels()
 
         if not self.exchange_only:
@@ -173,8 +167,8 @@ class ExchangeManager(Initializable):
 
     def __is_managed_by_websocket(self, channel):  # TODO improve checker
         return not self.rest_only and self.has_websocket and \
-               any(self.exchange_web_socket.is_feed_available(feed)
-                   for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel])
+               any([self.exchange_web_socket.is_feed_available(feed)
+                   for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
 
     async def __search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():
@@ -184,7 +178,8 @@ class ExchangeManager(Initializable):
 
                 # init websocket
                 try:
-                    await self.exchange_web_socket.init_web_sockets(self.time_frames, self.traded_pairs)
+                    await self.exchange_web_socket.init_web_sockets(self.exchange_config.traded_time_frames,
+                                                                    self.exchange_config.traded_symbol_pairs)
 
                     # start the websocket
                     self.exchange_web_socket.start_sockets()
@@ -260,47 +255,6 @@ class ExchangeManager(Initializable):
             self.__raise_exchange_load_error()
 
     # SYMBOLS
-    def __set_config_traded_pairs(self):
-        self.cryptocurrencies_traded_pairs = {}
-        for cryptocurrency in self.config[CONFIG_CRYPTO_CURRENCIES]:
-            if self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS]:
-                if self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS] != CONFIG_WILDCARD:
-                    self.cryptocurrencies_traded_pairs[cryptocurrency] = []
-                    for symbol in self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS]:
-                        if self.symbol_exists(symbol):
-                            self.cryptocurrencies_traded_pairs[cryptocurrency].append(symbol)
-                        else:
-                            self.logger.error(f"{self.exchange.name} is not supporting the "
-                                              f"{symbol} trading pair.")
-
-                else:
-                    self.cryptocurrencies_traded_pairs[cryptocurrency] = self.__create_wildcard_symbol_list(
-                        self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_QUOTE])
-
-                    # additionnal pairs
-                    if CONFIG_CRYPTO_ADD in self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency]:
-                        self.cryptocurrencies_traded_pairs[cryptocurrency] += self.__add_tradable_symbols(
-                            cryptocurrency)
-
-                # add to global traded pairs
-                if not self.cryptocurrencies_traded_pairs[cryptocurrency]:
-                    self.logger.error(f"{self.exchange.name} is not supporting any {cryptocurrency} trading pair "
-                                      f"from current configuration.")
-                self.traded_pairs += self.cryptocurrencies_traded_pairs[cryptocurrency]
-            else:
-                self.logger.error(f"Current configuration for {cryptocurrency} is not including any trading pair, "
-                                  f"this asset can't be traded and related orders won't be loaded. "
-                                  f"OctoBot requires at least one trading pair in configuration to handle an asset. "
-                                  f"You can add trading pair(s) for each asset in the configuration section.")
-
-    def get_traded_pairs(self, crypto_currency=None):
-        if crypto_currency:
-            if crypto_currency in self.cryptocurrencies_traded_pairs:
-                return self.cryptocurrencies_traded_pairs[crypto_currency]
-            else:
-                return []
-        return self.traded_pairs
-
     def symbol_exists(self, symbol):
         if self.client_symbols is None:
             self.logger.error(f"Failed to load available symbols from REST exchange, impossible to check if "
@@ -313,30 +267,11 @@ class ExchangeManager(Initializable):
                             for symbol in self.client_symbols]
                 if s is not None]
 
-    def __add_tradable_symbols(self, crypto_currency):
-        return [
-            symbol
-            for symbol in self.config[CONFIG_CRYPTO_CURRENCIES][crypto_currency][CONFIG_CRYPTO_ADD]
-            if self.symbol_exists(symbol) and symbol not in self.cryptocurrencies_traded_pairs[crypto_currency]
-        ]
-
     @staticmethod
     def __is_tradable_with_cryptocurrency(symbol, crypto_currency):
         return symbol if split_symbol(symbol)[1] == crypto_currency else None
 
     # TIME FRAMES
-    def __set_config_time_frame(self):
-        for time_frame in TimeFrameManager.get_config_time_frame(self.config):
-            if self.time_frame_exists(time_frame.value):
-                self.time_frames.append(time_frame)
-        # add shortest timeframe for realtime evaluators
-        client_shortest_time_frame = TimeFrameManager.find_min_time_frame(
-            self.client_time_frames[CONFIG_WILDCARD], MIN_EVAL_TIME_FRAME)
-        if client_shortest_time_frame not in self.time_frames:
-            self.time_frames.append(client_shortest_time_frame)
-
-        self.time_frames = TimeFrameManager.sort_time_frames(self.time_frames, reverse=True)
-
     def time_frame_exists(self, time_frame, symbol=None):
         if CONFIG_WILDCARD in self.client_time_frames and not self.client_time_frames[CONFIG_WILDCARD]:
             return False

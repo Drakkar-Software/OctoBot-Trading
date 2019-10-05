@@ -53,4 +53,5 @@ class PositionsUpdater(PositionsProducer):
 
     async def resume(self) -> None:
         await super().resume()
-        await self.run()
+        if not self.is_running:
+            await self.run()

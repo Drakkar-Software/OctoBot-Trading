@@ -287,7 +287,7 @@ class Trader(Initializable):
         #     await self.update_open_orders(order.symbol)
 
     def update_close_orders(self):
-        for symbol in self.exchange_manager.get_exchange_manager().get_traded_pairs():
+        for symbol in self.exchange_manager.exchange_config.get_traded_pairs():
             for close_order in self.exchange_manager.get_closed_orders(symbol):
                 self.parse_exchange_order_to_trade_instance(close_order, Order(self))
 
@@ -295,7 +295,7 @@ class Trader(Initializable):
     #     if symbol:
     #         symbols = [symbol]
     #     else:
-    #         symbols = self.exchange_manager.get_exchange_manager().get_traded_pairs()
+    #         symbols = self.exchange_manager.exchange_config.get_traded_pairs()
     #
     #     # get orders from exchange for the specified symbols
     #     for symbol_traded in symbols:
@@ -324,7 +324,7 @@ class Trader(Initializable):
         # useless in simulation mode
         if not self.simulate:
             self.logger.info(f"Triggered forced {self.exchange_manager.name} trader orders refresh")
-            symbols = self.exchange_manager.get_exchange_manager().get_traded_pairs()
+            symbols = self.exchange_manager.exchange_config.get_traded_pairs()
             added_orders = 0
             removed_orders = 0
 

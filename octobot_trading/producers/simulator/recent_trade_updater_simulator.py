@@ -35,7 +35,7 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
 
     async def handle_timestamp(self, timestamp, **kwargs):
         try:
-            for pair in self.channel.exchange_manager.traded_pairs:
+            for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                 recent_trades_data = (await self.exchange_data_importer.get_recent_trades_from_timestamps(
                     exchange_name=self.exchange_name,
                     symbol=pair,

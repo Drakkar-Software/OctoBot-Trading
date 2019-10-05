@@ -42,15 +42,23 @@ class OHLCVUpdater(OHLCVProducer):
 
     async def start(self):
         if not self.is_initialized:
-            for time_frame in self.channel.exchange_manager.time_frames:
-                for pair in self.channel.exchange_manager.traded_pairs:
+            for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
+                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     await self.__initialize_candles(time_frame, pair)
         self.is_initialized = True
-
+        self.logger.debug("Candle history loaded")
         self.tasks = [
             asyncio.create_task(self.__candle_callback(time_frame, pair))
-            for time_frame in self.channel.exchange_manager.time_frames
-            for pair in self.channel.exchange_manager.traded_pairs]
+            for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames
+            for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs]
+
+    def __create_time_frame_candle_task(self, time_frame):
+        self.tasks += [asyncio.create_task(self.__candle_callback(time_frame, pair, should_initialize=True))
+                       for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs]
+
+    def __create_pair_candle_task(self, pair):
+        self.tasks += [asyncio.create_task(self.__candle_callback(time_frame, pair, should_initialize=True))
+                       for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames]
 
     """
     Manage timeframe OHLCV data refreshing for all pairs
@@ -62,9 +70,12 @@ class OHLCVUpdater(OHLCVProducer):
             .get_symbol_prices(pair, time_frame, limit=self.OHLCV_OLD_LIMIT)
         await self.push(time_frame, pair, candles[:-1], replace_all=True)
 
-    async def __candle_callback(self, time_frame, pair):
+    async def __candle_callback(self, time_frame, pair, should_initialize=False):
         time_frame_sleep: int = TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS
         last_candle_timestamp: float = 0
+
+        if should_initialize:
+            await self.__initialize_candles(time_frame, pair)
 
         while not self.should_stop and not self.channel.is_paused:
             try:
@@ -104,8 +115,20 @@ class OHLCVUpdater(OHLCVProducer):
                 self.logger.exception(f"Failed to update ohlcv data for {pair} on {time_frame} : {e}")
                 await asyncio.sleep(self.OHLCV_ON_ERROR_TIME)
 
-    # async def resume(self) -> None: TODO
-    #     await super().resume()
-    #     for task in self.tasks:
-    #         task.cancel()
-    #     await self.run()
+    async def resume(self) -> None:
+        await super().resume()
+        if not self.is_running and self.tasks:
+            for task in self.tasks:
+                task.cancel()
+            await self.run()
+
+    # async def config_callback(self, exchange, cryptocurrency, symbols, time_frames):
+    #     if symbols:
+    #         for pair in symbols:
+    #             self.__create_pair_candle_task(pair)
+    #             self.logger.info(f"global_data_callback: added {pair}")
+    #
+    #     if time_frames:
+    #         for time_frame in time_frames:
+    #             self.__create_time_frame_candle_task(time_frame)
+    #             self.logger.info(f"global_data_callback: added {time_frame}")
