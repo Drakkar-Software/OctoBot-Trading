@@ -15,6 +15,7 @@
 #  License along with this library.
 import json
 
+from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
 
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
@@ -42,7 +43,11 @@ class TickerUpdaterSimulator(TickerUpdater):
                                                                                             limit=1))[0]
                 if ticker_data[0] > self.last_timestamp_pushed:
                     self.last_timestamp_pushed = ticker_data[0]
-                    await self.push(pair, json.loads(ticker_data[-1]))
+                    await self.push(pair, ticker_data[-1])
+        except DataBaseNotExists as e:
+            self.logger.warning(f"Not enough data : {e}")
+            await self.pause()
+            await self.stop()
         except IndexError as e:
             self.logger.warning(f"Failed to access ticker_data : {e}")
 

@@ -42,6 +42,6 @@ class TradesUpdaterSimulator(TradesUpdater):
 
             if recent_trades_data[0] > self.last_timestamp_pushed:
                 self.last_timestamp_pushed = recent_trades_data[0]
-                await self.push(json.loads(recent_trades_data[-1]))
+                await self.push(recent_trades_data[-1])
         except IndexError as e:
             self.logger.warning(f"Failed to access recent_trades_data : {e}")

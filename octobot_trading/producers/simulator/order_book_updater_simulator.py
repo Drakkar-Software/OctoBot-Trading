@@ -15,6 +15,7 @@
 #  License along with this library.
 import json
 
+from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 
@@ -43,7 +44,11 @@ class OrderBookUpdaterSimulator(OrderBookUpdater):
                     limit=1))[0]
                 if order_book_data[0] > self.last_timestamp_pushed:
                     self.last_timestamp_pushed = order_book_data[0]
-                    await self.push(pair, json.loads(order_book_data[-1]), json.loads(order_book_data[-2]))
+                    await self.push(pair, order_book_data[-1], order_book_data[-2])
+        except DataBaseNotExists as e:
+            self.logger.warning(f"Not enough data : {e}")
+            await self.pause()
+            await self.stop()
         except IndexError as e:
             self.logger.warning(f"Failed to access order_book_data : {e}")
 

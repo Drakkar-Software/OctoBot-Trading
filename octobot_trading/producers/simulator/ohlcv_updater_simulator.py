@@ -15,6 +15,7 @@
 #  License along with this library.
 import json
 
+from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 
@@ -39,14 +40,19 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         try:
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                    ohlcv_data = (await self.exchange_data_importer.get_ohlcv_from_timestamps(exchange_name=self.exchange_name,
-                                                                                              symbol=pair,
-                                                                                              time_frame=time_frame,
-                                                                                              inferior_timestamp=timestamp,
-                                                                                              limit=1))[0]
-                    if ohlcv_data[0] > self.last_timestamp_pushed:
-                        self.last_timestamp_pushed = ohlcv_data[0]
-                        await self.push(time_frame, pair, [json.loads(ohlcv_data[-1])], partial=True)
+                    ohlcv_data = await self.exchange_data_importer.get_ohlcv_from_timestamps(
+                        exchange_name=self.exchange_name,
+                        symbol=pair,
+                        time_frame=time_frame,
+                        inferior_timestamp=timestamp,
+                        limit=1)
+                    if ohlcv_data and ohlcv_data[0][0] > self.last_timestamp_pushed:
+                        self.last_timestamp_pushed = ohlcv_data[0][0]
+                        await self.push(time_frame, pair, [ohlcv_data[0][-1]], partial=True)
+        except DataBaseNotExists as e:
+            self.logger.warning(f"Not enough data : {e}")
+            await self.pause()
+            await self.stop()
         except IndexError as e:
             self.logger.warning(f"Failed to access ohlcv_data : {e}")
 
