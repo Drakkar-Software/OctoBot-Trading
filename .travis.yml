@@ -16,11 +16,7 @@ before_install:
 
 install:
   - python3 -m pip install --upgrade --only-binary=scipy -r dev_requirements.txt
-  - python3 -m pip install --upgrade --only-binary=Cython Cython
-  - python3 -m pip install OctoBot-Commons # TODO remove it
-  - python3 -m pip install OctoBot-Channels # TODO remove it
-  - python3 -m pip install OctoBot-Backtesting # TODO remove it
-  - python3 -m pip install -r requirements.txt # TODO remove it
+  - travis_wait 30 python3 -m pip install --upgrade -r requirements.txt
 
 matrix:
   include:

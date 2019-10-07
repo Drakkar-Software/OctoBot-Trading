@@ -12,9 +12,6 @@ cache:
 
 install:
   - "%PYTHON%\\python.exe -m pip install --upgrade pip"
-  - "%PYTHON%\\python.exe -m pip install Cython"
-  - "%PYTHON%\\python.exe -m pip install OctoBot-Commons"
-  - "%PYTHON%\\python.exe -m pip install OctoBot-Channels"
   - "%PYTHON%\\python.exe -m pip install -r requirements.txt -r dev_requirements.txt"
 
 build: off
