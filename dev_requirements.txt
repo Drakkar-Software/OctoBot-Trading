@@ -11,4 +11,5 @@ twine
 pip
 setuptools
 wheel
-cython
+
+pur

@@ -17,12 +17,13 @@
 import os
 
 from setuptools import dist
-dist.Distribution().fetch_build_eggs(['Cython>=0.15.1', 'numpy>=1.10'])
+dist.Distribution().fetch_build_eggs(['Cython>=0.29.13', 'numpy>=1.17.2'])
+
+import numpy as np
 
 try:
     from Cython.Distutils import build_ext
     from Cython.Build import cythonize
-    import numpy as np
 except ImportError:
     # create closure for deferred import
     def cythonize(*args, **kwargs):
