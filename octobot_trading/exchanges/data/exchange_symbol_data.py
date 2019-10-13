@@ -103,23 +103,3 @@ class ExchangeSymbolData:
                 return
 
         symbol_klines.kline_update(kline)
-
-    '''
-    Called by non-trade classes
-    '''
-
-    # candle functions
-    def get_candle_data(self, time_frame):
-        if time_frame in self.symbol_candles:
-            return self.symbol_candles[time_frame]
-        elif time_frame is None:
-            return self.symbol_candles[next(iter(self.symbol_candles))]
-        return None
-
-    def get_symbol_prices(self, time_frame, limit=None, return_list=False):
-        try:
-            return self.get_candle_data(time_frame).get_symbol_prices(limit, return_list)
-        except AttributeError:
-            # if get_candle_data returned None: no candles on this timeframe
-            self.logger.error(f"Trying retrieve candle data on {time_frame}: no candle for this time frame.")
-            return None

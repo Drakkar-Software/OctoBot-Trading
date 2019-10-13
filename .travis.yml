@@ -68,7 +68,7 @@ matrix:
             tags: true
             condition: $TRAVIS_OS_NAME = 'linux'
         - provider: script
-          script: travis_wait 20 docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/octobot-pypi-deploy:i686 "i686" "cp37-cp37m" "cp37"
+          script: docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/octobot-pypi-deploy:i686 "i686" "cp37-cp37m" "cp37"
           skip_cleanup: true
           on:
             repo: "$GH_REPO"
@@ -76,7 +76,7 @@ matrix:
             tags: true
             condition: "$TRAVIS_OS_NAME = 'linux'"
         - provider: script
-          script: travis_wait 20 docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/octobot-pypi-deploy:x86_x64 "x86_64" "cp37-cp37m" "cp37"
+          script: docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/octobot-pypi-deploy:x86_64 "x86_64" "cp37-cp37m" "cp37"
           skip_cleanup: true
           on:
             repo: "$GH_REPO"
