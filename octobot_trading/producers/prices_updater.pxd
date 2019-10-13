@@ -14,7 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.producers.trades_updater cimport TradesUpdater
 
-cdef class TradesUpdaterSimulator(TradesUpdater):
+from octobot_trading.channels.trades cimport TradesProducer
+from octobot_trading.exchanges.data.exchange_symbol_data cimport ExchangeSymbolData
+
+cdef class TradesUpdater(TradesProducer):
     pass

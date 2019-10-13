@@ -13,13 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-from octobot_trading.producers.balance_updater import BalanceUpdater, BalanceProfitabilityUpdater
-
-
-class BalanceUpdaterSimulator(BalanceUpdater):
-    pass  # Nothing to do
+from octobot_commons.logging.logging_util import get_logger
+from octobot_trading.util.initializable import Initializable
 
 
-class BalanceProfitabilityUpdaterSimulator(BalanceProfitabilityUpdater):
-    pass  # Nothing to do
+class PricesManager(Initializable):
+    def __init__(self):
+        super().__init__()
+        self.logger = get_logger(self.__class__.__name__)
+        self.mark_price = 0
+        self.prices_initialized = False
+
+    async def initialize_impl(self):
+        self.__reset_prices()
+
+    def set_mark_price(self, mark_price):
+        self.mark_price = mark_price
+        self.prices_initialized = True
+
+    def __reset_prices(self):
+        self.mark_price = 0

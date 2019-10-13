@@ -14,12 +14,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.producers.balance_updater cimport BalanceProfitabilityUpdater
-from octobot_trading.producers.balance_updater cimport BalanceUpdater
+
+from octobot_trading.channels.exchange_channel cimport ExchangeChannel, ExchangeChannelProducer
 
 
-cdef class BalanceUpdaterSimulator(BalanceUpdater):
+cdef class MarkPriceProducer(ExchangeChannelProducer):
     pass
 
-cdef class BalanceProfitabilityUpdaterSimulator(BalanceProfitabilityUpdater):
+cdef class MarkPriceChannel(ExchangeChannel):
     pass

@@ -18,10 +18,7 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol
 
 from octobot_trading.channels.exchange_channel import ExchangeChannelInternalConsumer
-from octobot_trading.constants import ORDER_CREATION_LAST_TRADES_TO_USE
-from octobot_trading.data.sub_portfolio import SubPortfolio
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, EvaluatorStates
-from octobot_trading.util.initializable import Initializable
 
 
 class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
@@ -72,28 +69,23 @@ class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
         return False
 
     async def get_pre_order_data(self, symbol):
-        last_prices = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-            symbol).recent_trades_manager.recent_trades
+        mark_price = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+            symbol).prices_manager.mark_price
 
-        if len(last_prices) < ORDER_CREATION_LAST_TRADES_TO_USE:
-            raise ValueError(f"Not enough last prices of {symbol} to calculate reference price")
-
-        used_last_prices = last_prices[-ORDER_CREATION_LAST_TRADES_TO_USE:]  # TODO ticker
-
-        reference_sum = sum([float(last_price["price"]) for last_price in used_last_prices])
-
-        reference = reference_sum / len(used_last_prices)
+        if not self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol)\
+                .prices_manager.prices_initialized:
+            raise ValueError(f"Mark price is not available")
 
         currency, market = split_symbol(symbol)
 
         current_symbol_holding = self.exchange_portfolio_manager.portfolio.get_currency_portfolio(currency)
         current_market_quantity = self.exchange_portfolio_manager.portfolio.get_currency_portfolio(market)
 
-        market_quantity = current_market_quantity / reference
+        market_quantity = current_market_quantity / mark_price
 
         symbol_market = self.exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
-        return current_symbol_holding, current_market_quantity, market_quantity, reference, symbol_market
+        return current_symbol_holding, current_market_quantity, market_quantity, mark_price, symbol_market
 
 
 # class AbstractTradingModeConsumerWithBot(AbstractTradingModeConsumer, Initializable):  # TODO

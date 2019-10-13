@@ -20,36 +20,30 @@ from octobot_channels import CHANNEL_WILDCARD
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
 
 
-class RecentTradeProducer(ExchangeChannelProducer):
-    async def push(self, symbol, recent_trades, replace_all=False, partial=False):
-        await self.perform(symbol, recent_trades, replace_all=replace_all, partial=partial)
+class MarkPriceProducer(ExchangeChannelProducer):
+    async def push(self, symbol, mark_price):
+        await self.perform(symbol, mark_price)
 
-    async def perform(self, symbol, recent_trades, replace_all=False, partial=False):
+    async def perform(self, symbol, mark_price):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
-                recent_trades = self.channel.exchange_manager.get_symbol_data(symbol).handle_recent_trade_update(
-                    recent_trades,
-                    replace_all=replace_all,
-                    partial=partial)
-
-                if recent_trades:
-                    await self.send(symbol=symbol, recent_trades=recent_trades)
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):  # and symbol_data.order_book_is_initialized()
+                self.channel.exchange_manager.get_symbol_data(symbol).handle_mark_price_update(mark_price)
+                await self.send(symbol=symbol, mark_price=mark_price)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.error(f"exception when triggering update: {e}")
             self.logger.exception(e)
 
-    async def send(self, symbol, recent_trades):
+    async def send(self, symbol, mark_price):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
                 "symbol": symbol,
-                "recent_trades": recent_trades
+                "mark_price": mark_price
             })
 
 
-class RecentTradeChannel(ExchangeChannel):
-    FILTER_SIZE = 10
-    PRODUCER_CLASS = RecentTradeProducer
+class MarkPriceChannel(ExchangeChannel):
+    PRODUCER_CLASS = MarkPriceProducer
     CONSUMER_CLASS = ExchangeChannelConsumer

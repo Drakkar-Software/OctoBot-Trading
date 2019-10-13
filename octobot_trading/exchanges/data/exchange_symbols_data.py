@@ -31,5 +31,5 @@ class ExchangeSymbolsData:
         try:
             return self.exchange_symbol_data[symbol]
         except KeyError:
-            self.exchange_symbol_data[symbol] = ExchangeSymbolData(symbol)
+            self.exchange_symbol_data[symbol] = ExchangeSymbolData(self.exchange_manager, symbol)
             return self.exchange_symbol_data[symbol]

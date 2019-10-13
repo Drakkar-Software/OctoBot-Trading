@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -9,20 +10,21 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+#  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.util.initializable cimport Initializable
 
-from .balance import *
-from .exchange_channel import *
-from .kline import *
-from .mode import *
-from .ohlcv import *
-from .order_book import *
-from .orders import *
-from .positions import *
-from .price import *
-from .recent_trade import *
-from .ticker import *
-from .trades import *
+
+cdef class PricesManager(Initializable):
+    cdef object logger
+
+    cdef public bint prices_initialized
+
+    cdef public float mark_price
+
+    cdef void __reset_prices(self)
+
+    cpdef list set_mark_price(self, float mark_price)
+

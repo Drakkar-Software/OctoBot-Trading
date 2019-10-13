@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.data_manager.order_book_manager cimport OrderBookManager
+from octobot_trading.data_manager.prices_manager cimport PricesManager
 from octobot_trading.data_manager.recent_trades_manager cimport RecentTradesManager
 from octobot_trading.data_manager.ticker_manager cimport TickerManager
 
@@ -22,11 +23,13 @@ cdef class ExchangeSymbolData:
     cdef public str symbol
 
     cdef object logger
+    cdef object exchange_manager
 
     cdef dict symbol_candles
     cdef dict symbol_klines
 
     cdef public OrderBookManager order_book_manager
+    cdef public PricesManager prices_manager
     cdef public RecentTradesManager recent_trades_manager
     cdef public TickerManager ticker_manager
 

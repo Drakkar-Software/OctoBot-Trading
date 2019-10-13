@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.producers.simulator.balance_updater_simulator import BalanceProfitabilityUpdaterSimulator
+from octobot_trading.producers.balance_updater import BalanceProfitabilityUpdater
 from octobot_trading.producers.simulator.positions_updater_simulator import PositionsUpdaterSimulator
 from octobot_trading.producers.simulator.orders_updater_simulator import CloseOrdersUpdaterSimulator, \
     OpenOrdersUpdaterSimulator
@@ -27,7 +27,6 @@ UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [OHLCVUpdaterSimulator, OrderBookU
                                                RecentTradeUpdaterSimulator, TickerUpdaterSimulator,
                                                KlineUpdaterSimulator]
 
-# BalanceUpdaterSimulator and TradesUpdaterSimulator  are not required
 # TODO PositionsUpdaterSimulator
 AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [CloseOrdersUpdaterSimulator, OpenOrdersUpdaterSimulator,
-                                             BalanceProfitabilityUpdaterSimulator]
+                                             BalanceProfitabilityUpdater]

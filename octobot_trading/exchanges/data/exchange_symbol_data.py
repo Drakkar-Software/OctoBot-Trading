@@ -14,16 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import time
-
-import numpy as np
-from octobot_commons.enums import PriceIndexes, TimeFramesMinutes
-
 from octobot_commons.logging.logging_util import get_logger
 
+from octobot_trading.channels.exchange_channel import get_chan
+from octobot_trading.constants import MARK_PRICE_CHANNEL
 from octobot_trading.data_manager.candles_manager import CandlesManager
 from octobot_trading.data_manager.kline_manager import KlineManager
 from octobot_trading.data_manager.order_book_manager import OrderBookManager
+from octobot_trading.data_manager.prices_manager import PricesManager
 from octobot_trading.data_manager.recent_trades_manager import RecentTradesManager
 from octobot_trading.data_manager.ticker_manager import TickerManager
 
@@ -32,10 +30,12 @@ class ExchangeSymbolData:
     MAX_ORDER_BOOK_ORDER_COUNT = 100
     MAX_RECENT_TRADES_COUNT = 100
 
-    def __init__(self, symbol):
+    def __init__(self, exchange_manager, symbol):
         self.symbol = symbol
+        self.exchange_manager = exchange_manager
 
         self.order_book_manager = OrderBookManager()
+        self.prices_manager = PricesManager()
         self.recent_trades_manager = RecentTradesManager()
         self.ticker_manager = TickerManager()
 
@@ -77,6 +77,13 @@ class ExchangeSymbolData:
 
         # recent trades should be a dict
         return self.recent_trades_manager.add_recent_trade(recent_trades)
+
+    async def handle_mark_price_update(self, mark_price, should_notify: bool = True):
+        self.prices_manager.set_mark_price(mark_price)
+
+        if should_notify:
+            await get_chan(MARK_PRICE_CHANNEL, self.exchange_manager.exchange.name).get_internal_producer() \
+                .send(symbol=self.symbol, mark_price=mark_price)
 
     def handle_order_book_update(self, asks, bids, is_delta=False):
         if is_delta:
