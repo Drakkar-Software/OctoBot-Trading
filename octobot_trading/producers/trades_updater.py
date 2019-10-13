@@ -17,7 +17,7 @@ import asyncio
 
 from ccxt.base.errors import NotSupported
 
-from octobot_trading.channels import TRADES_CHANNEL
+from octobot_trading.constants import TRADES_CHANNEL
 from octobot_trading.channels.trades import TradesProducer
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 

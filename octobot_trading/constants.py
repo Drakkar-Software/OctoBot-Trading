@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
 
+from octobot_websockets.constants import Feeds
+
 # Strings
 CURRENT_PORTFOLIO_STRING = "Current Portfolio :"
 CONFIG_PORTFOLIO_INFO = "info"
@@ -71,3 +73,34 @@ CONFIG_DEFAULT_SIMULATOR_FEES = 0
 
 ORDER_CREATION_LAST_TRADES_TO_USE = 10
 SIMULATOR_LAST_PRICES_TO_CHECK = 50
+
+#  Channels
+# Exchange public data
+TICKER_CHANNEL = "Ticker"
+RECENT_TRADES_CHANNEL = "RecentTrade"
+ORDER_BOOK_CHANNEL = "OrderBook"
+KLINE_CHANNEL = "Kline"
+OHLCV_CHANNEL = "OHLCV"
+
+# Exchange personal data
+TRADES_CHANNEL = "Trades"
+ORDERS_CHANNEL = "Orders"
+BALANCE_CHANNEL = "Balance"
+BALANCE_PROFITABILITY_CHANNEL = "BalanceProfitability"
+POSITIONS_CHANNEL = "Positions"
+
+# Internal
+MODE_CHANNEL = "Mode"
+
+# Websockets
+WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
+    TICKER_CHANNEL: [Feeds.TICKER],
+    RECENT_TRADES_CHANNEL: [Feeds.TRADES],
+    ORDER_BOOK_CHANNEL: [Feeds.L2_BOOK, Feeds.L3_BOOK],
+    KLINE_CHANNEL: [Feeds.KLINE],
+    OHLCV_CHANNEL: [Feeds.CANDLE],
+    TRADES_CHANNEL: [Feeds.TRADE],
+    ORDERS_CHANNEL: [Feeds.ORDERS],
+    BALANCE_CHANNEL: [Feeds.PORTFOLIO],
+    POSITIONS_CHANNEL: [Feeds.POSITION]
+}

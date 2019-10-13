@@ -18,7 +18,7 @@ import asyncio
 from ccxt.base.errors import NotSupported
 
 from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.channels import BALANCE_CHANNEL, TICKER_CHANNEL
+from octobot_trading.constants import BALANCE_CHANNEL, TICKER_CHANNEL
 from octobot_trading.channels.balance import BalanceProducer, BalanceProfitabilityProducer
 from octobot_trading.channels.exchange_channel import get_chan
 

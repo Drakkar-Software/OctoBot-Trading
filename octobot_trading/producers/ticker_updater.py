@@ -17,7 +17,7 @@ import asyncio
 
 from ccxt.base.errors import NotSupported
 
-from octobot_trading.channels import TICKER_CHANNEL
+from octobot_trading.constants import TICKER_CHANNEL
 from octobot_trading.channels.ticker import TickerProducer
 
 

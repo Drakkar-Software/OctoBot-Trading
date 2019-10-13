@@ -18,7 +18,7 @@ import copy
 from ccxt.base.errors import InsufficientFunds
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels import RECENT_TRADES_CHANNEL, ORDERS_CHANNEL
+from octobot_trading.constants import RECENT_TRADES_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan
 
 from octobot_trading.data.order import Order

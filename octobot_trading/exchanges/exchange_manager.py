@@ -23,13 +23,13 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol
 from octobot_commons.timestamp_util import is_valid_timestamp
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
-from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY
+from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
+    WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
 from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
 from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.rest_exchange import RestExchange
-from octobot_trading.exchanges.websockets import WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.producers import UNAUTHENTICATED_UPDATER_PRODUCERS, AUTHENTICATED_UPDATER_PRODUCERS
 from octobot_trading.producers.simulator import AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS

@@ -15,7 +15,7 @@
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels import BALANCE_CHANNEL, ORDERS_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, \
+from octobot_trading.constants import BALANCE_CHANNEL, ORDERS_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, \
     BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.data_manager.orders_manager import OrdersManager

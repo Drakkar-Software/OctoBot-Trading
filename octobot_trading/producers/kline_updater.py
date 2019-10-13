@@ -18,7 +18,7 @@ import time
 
 from ccxt.base.errors import NotSupported
 
-from octobot_trading.channels import KLINE_CHANNEL
+from octobot_trading.constants import KLINE_CHANNEL
 from octobot_trading.channels.kline import KlineProducer
 
 

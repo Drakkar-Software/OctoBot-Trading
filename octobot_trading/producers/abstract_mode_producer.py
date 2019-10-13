@@ -19,7 +19,7 @@ from octobot_commons.channels_name import OctoBotEvaluatorsChannelsName
 from octobot_commons.constants import INIT_EVAL_NOTE
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels import RECENT_TRADES_CHANNEL
+from octobot_trading.constants import RECENT_TRADES_CHANNEL
 from octobot_trading.channels.exchange_channel import ExchangeChannelProducer, get_chan
 
 

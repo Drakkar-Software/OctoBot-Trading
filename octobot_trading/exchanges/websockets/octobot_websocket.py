@@ -19,7 +19,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes
 
-from octobot_trading.channels import RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, TICKER_CHANNEL
+from octobot_trading.constants import RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, TICKER_CHANNEL
 from octobot_websockets.api.feed_creator import get_feed_from_name
 from octobot_websockets.callback import TradeCallback, BookCallback, TickerCallback
 from octobot_websockets.feeds.feed import Feeds

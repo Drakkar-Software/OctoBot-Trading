@@ -20,7 +20,7 @@ from ccxt.base.errors import NotSupported
 
 from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes, PriceIndexes
-from octobot_trading.channels import OHLCV_CHANNEL
+from octobot_trading.constants import OHLCV_CHANNEL
 from octobot_trading.channels.ohlcv import OHLCVProducer
 
 

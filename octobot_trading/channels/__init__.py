@@ -25,20 +25,3 @@ from .positions import *
 from .recent_trade import *
 from .ticker import *
 from .trades import *
-
-# Exchange public data
-TICKER_CHANNEL = "Ticker"
-RECENT_TRADES_CHANNEL = "RecentTrade"
-ORDER_BOOK_CHANNEL = "OrderBook"
-KLINE_CHANNEL = "Kline"
-OHLCV_CHANNEL = "OHLCV"
-
-# Exchange personal data
-TRADES_CHANNEL = "Trades"
-ORDERS_CHANNEL = "Orders"
-BALANCE_CHANNEL = "Balance"
-BALANCE_PROFITABILITY_CHANNEL = "BalanceProfitability"
-POSITIONS_CHANNEL = "Positions"
-
-# Internal
-MODE_CHANNEL = "Mode"
