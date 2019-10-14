@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol
@@ -69,11 +70,10 @@ class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
         return False
 
     async def get_pre_order_data(self, symbol):
-        mark_price = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-            symbol).prices_manager.mark_price
-
-        if not self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol)\
-                .prices_manager.prices_initialized:
+        try:
+            mark_price = await self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol)\
+                    .prices_manager.get_mark_price()
+        except asyncio.TimeoutError:
             raise ValueError(f"Mark price is not available")
 
         currency, market = split_symbol(symbol)

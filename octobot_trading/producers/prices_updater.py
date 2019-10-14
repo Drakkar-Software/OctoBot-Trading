@@ -41,8 +41,7 @@ class MarkPriceUpdater(MarkPriceProducer):
             mark_price = sum([float(last_price[ExchangeConstantsOrderColumns.PRICE.value])
                               for last_price in recent_trades]) / len(recent_trades)
 
-            await self.channel.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol).\
-                handle_mark_price_update(mark_price)
+            await self.push(symbol, mark_price)
         except Exception as e:
             self.logger.exception(f"Fail to handle recent trades update : {e}")
 
@@ -52,8 +51,7 @@ class MarkPriceUpdater(MarkPriceProducer):
 
     async def handle_ticker_update(self, exchange: str, symbol: str, ticker: dict):
         try:
-            await self.channel.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol)\
-                .handle_mark_price_update(ticker[ExchangeConstantsTickersColumns.CLOSE.value])
+            await self.push(symbol, ticker[ExchangeConstantsTickersColumns.CLOSE.value])
         except Exception as e:
             self.logger.exception(f"Fail to handle ticker update : {e}")
 

@@ -20,7 +20,7 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class PricesManager(Initializable):
     cdef object logger
 
-    cdef public bint prices_initialized
+    cdef public object prices_initialized_event
 
     cdef public float mark_price
 

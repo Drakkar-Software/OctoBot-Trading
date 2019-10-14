@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.data_manager.candles_manager cimport CandlesManager
 from octobot_trading.data_manager.order_book_manager cimport OrderBookManager
 from octobot_trading.data_manager.prices_manager cimport PricesManager
 from octobot_trading.data_manager.recent_trades_manager cimport RecentTradesManager
@@ -35,4 +36,7 @@ cdef class ExchangeSymbolData:
 
     cpdef list handle_recent_trade_update(self, object recent_trades, bint replace_all=*, bint partial=*) # recent trades can be list or dict
     cpdef void handle_order_book_update(self, list asks, list bids, bint is_delta=*)
+    cpdef void handle_mark_price_update(self, float mark_price)
     cpdef void handle_ticker_update(self, dict ticker)
+    cpdef CandlesManager get_candle_data(self, object time_frame)
+    cpdef dict get_symbol_prices(self, object time_frame, object limit=*, bint return_list=*)

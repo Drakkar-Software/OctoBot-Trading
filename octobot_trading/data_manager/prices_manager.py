@@ -13,23 +13,31 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from asyncio import Event, wait_for
+
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.util.initializable import Initializable
 
 
 class PricesManager(Initializable):
+    MARK_PRICE_TIMEOUT = 60
+
     def __init__(self):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.mark_price = 0
-        self.prices_initialized = False
+        self.prices_initialized_event = Event()
 
     async def initialize_impl(self):
         self.__reset_prices()
 
     def set_mark_price(self, mark_price):
         self.mark_price = mark_price
-        self.prices_initialized = True
+        self.prices_initialized_event.set()
+
+    async def get_mark_price(self):
+        await wait_for(self.prices_initialized_event.wait(), self.MARK_PRICE_TIMEOUT)
+        return self.mark_price
 
     def __reset_prices(self):
         self.mark_price = 0

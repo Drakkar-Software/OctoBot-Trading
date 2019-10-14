@@ -16,8 +16,6 @@
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.constants import MARK_PRICE_CHANNEL
 from octobot_trading.data_manager.candles_manager import CandlesManager
 from octobot_trading.data_manager.kline_manager import KlineManager
 from octobot_trading.data_manager.order_book_manager import OrderBookManager
@@ -78,12 +76,8 @@ class ExchangeSymbolData:
         # recent trades should be a dict
         return self.recent_trades_manager.add_recent_trade(recent_trades)
 
-    async def handle_mark_price_update(self, mark_price, should_notify: bool = True):
+    def handle_mark_price_update(self, mark_price):
         self.prices_manager.set_mark_price(mark_price)
-
-        if should_notify:
-            await get_chan(MARK_PRICE_CHANNEL, self.exchange_manager.exchange.name).get_internal_producer() \
-                .send(symbol=self.symbol, mark_price=mark_price)
 
     def handle_order_book_update(self, asks, bids, is_delta=False):
         if is_delta:
@@ -121,34 +115,6 @@ class ExchangeSymbolData:
         elif time_frame is None:
             return self.symbol_candles[next(iter(self.symbol_candles))]
         return None
-
-    def get_available_time_frames(self):
-        return self.symbol_candles.keys()
-
-    # ticker functions
-    def get_symbol_ticker(self):
-        return self.ticker_manager  # TODO
-
-    # order book functions
-    def get_symbol_order_book(self):
-        return self.order_book_manager  # TODO
-
-    # recent trade functions
-    def get_symbol_recent_trades(self, limit=None):
-        if limit:
-            return self.recent_trades_manager[-limit:]  # TODO
-        else:
-            return self.recent_trades_manager  # TODO
-
-    def candles_are_initialized(self, time_frame):
-        if time_frame in self.symbol_candles and self.symbol_candles[time_frame].is_initialized:
-            return True
-        elif time_frame is None:
-            return True
-        return False
-
-    def ticker_is_initialized(self) -> bool:
-        return True if self.symbol_ticker is not None else False
 
     def get_symbol_prices(self, time_frame, limit=None, return_list=False):
         try:

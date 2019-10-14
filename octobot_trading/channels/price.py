@@ -26,9 +26,14 @@ class MarkPriceProducer(ExchangeChannelProducer):
 
     async def perform(self, symbol, mark_price):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):  # and symbol_data.order_book_is_initialized()
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
+                    symbol=symbol):  # and symbol_data.order_book_is_initialized()
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_mark_price_update(mark_price)
-                await self.send(symbol=symbol, mark_price=mark_price)
+
+                # mark_price attribute access required to send calculation result
+                await self.send(symbol=symbol,
+                                mark_price=self.channel.exchange_manager.get_symbol_data(
+                                    symbol).prices_manager.mark_price)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

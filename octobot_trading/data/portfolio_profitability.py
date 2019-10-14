@@ -153,15 +153,7 @@ class PortfolioProfitabilty(Initializable):
         self.portfolio_current_value = await self.update_portfolio_current_value(
             self.portfolio_manager.portfolio.portfolio)
 
-    async def __init_origin_portfolio_and_currencies_value(self, force_ignore_history=False):
-        # previous_state_manager = self.trader.get_previous_state_manager()
-        previous_state_manager = None  # TODO
-        if force_ignore_history or previous_state_manager is None or previous_state_manager.should_initialize_data():
-            await self.__init_origin_portfolio_and_currencies_value_from_scratch(previous_state_manager)
-        else:
-            await self.__init_origin_portfolio_and_currencies_value_from_previous_executions(previous_state_manager)
-
-    async def __init_origin_portfolio_and_currencies_value_from_scratch(self, previous_state_manager):
+    async def __init_origin_portfolio_and_currencies_value(self):
         self.origin_crypto_currencies_values = await self.__evaluate_config_crypto_currencies_values()
         self.origin_portfolio = await self.portfolio_manager.portfolio.copy()
 
