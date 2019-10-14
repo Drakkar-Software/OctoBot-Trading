@@ -15,7 +15,7 @@
 #  License along with this library.
 from asyncio import CancelledError
 
-from octobot_channels import CHANNEL_WILDCARD
+from octobot_channels.constants import CHANNEL_WILDCARD
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
