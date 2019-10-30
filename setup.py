@@ -17,7 +17,7 @@
 import os
 
 from setuptools import dist
-dist.Distribution().fetch_build_eggs(['Cython>=0.29.13', 'numpy>=1.17.2'])
+dist.Distribution().fetch_build_eggs(['Cython>=0.29.13', 'numpy>=1.17.3'])
 
 import numpy as np
 
@@ -116,7 +116,7 @@ packages_list: list = ["octobot_trading.util.initializable",
                        "octobot_trading.channels.trades"]
 
 ext_modules: list = [
-    Extension(package, [f"{package.replace('.', '/')}.py"])
+    Extension(package, [f"{package.replace('.', '/')}.py"], include_dirs=[np.get_include()])
     for package in packages_list]
 
 # long description from README file
@@ -152,5 +152,9 @@ setup(
         'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Cython',
+        'Operating System :: OS Independent',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX'
     ],
 )

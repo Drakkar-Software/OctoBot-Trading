@@ -4,21 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.3] - 2019-14-09
+## [1.4.4] - 2019-10-30
+## Added
+- OSX support
+
+## [1.4.3] - 2019-09-14
 ## Added
 - Price Channel
 - Price Manager
 - Mark price updater (price reference for a symbol)
 
-## [1.4.2] - 2019-13-09
+## [1.4.2] - 2019-09-13
 ## Changed
 - Moved __init__ constants declaration to constants
 
-## [1.4.1] - 2019-10-09
+## [1.4.1] - 2019-09-10
 ## Added
 - PyPi manylinux deployment
 
-## [1.4.0] - 2019-10-08
+## [1.4.0] - 2019-09-10
 ### Added
 - Simulator for backtesting support
 - Pause and resume management for updaters
