@@ -37,18 +37,23 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         await self.resume()
 
     async def handle_timestamp(self, timestamp, **kwargs):
+        if self.last_timestamp_pushed == 0:
+            self.last_timestamp_pushed = timestamp
+
         try:
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                    ohlcv_data = await self.exchange_data_importer.get_ohlcv_from_timestamps(
+                    ohlcv_data: list = await self.exchange_data_importer.get_ohlcv_from_timestamps(
                         exchange_name=self.exchange_name,
                         symbol=pair,
                         time_frame=time_frame,
-                        inferior_timestamp=timestamp,
-                        limit=1)
-                    if ohlcv_data and ohlcv_data[0][0] > self.last_timestamp_pushed:
-                        self.last_timestamp_pushed = ohlcv_data[0][0]
-                        await self.push(time_frame, pair, [ohlcv_data[0][-1]], partial=True)
+                        inferior_timestamp=self.last_timestamp_pushed,
+                        superior_timestamp=timestamp)
+
+                    if ohlcv_data:
+                        await self.push(time_frame, pair, [ohlcv[-1] for ohlcv in ohlcv_data], partial=True)
+
+            self.last_timestamp_pushed = timestamp
         except DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
