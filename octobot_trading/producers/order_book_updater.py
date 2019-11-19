@@ -31,9 +31,12 @@ class OrderBookUpdater(OrderBookProducer):
             try:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     order_book = await self.channel.exchange_manager.exchange.get_order_book(pair)
-                    asks, bids = order_book[ExchangeConstantsOrderBookInfoColumns.ASKS.value], \
-                                 order_book[ExchangeConstantsOrderBookInfoColumns.BIDS.value]
-                    await self.push(pair, asks, bids)
+                    try:
+                        asks, bids = order_book[ExchangeConstantsOrderBookInfoColumns.ASKS.value], \
+                                     order_book[ExchangeConstantsOrderBookInfoColumns.BIDS.value]
+                        await self.push(pair, asks, bids)
+                    except TypeError:
+                        pass
                 await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")

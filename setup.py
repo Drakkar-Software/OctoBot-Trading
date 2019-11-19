@@ -41,7 +41,7 @@ from octobot_trading import PROJECT_NAME, VERSION
 
 PACKAGES = find_packages(exclude=["tests"])
 
-packages_list: list = ["octobot_trading.util.initializable",
+packages_list = ["octobot_trading.util.initializable",
                        "octobot_trading.consumers.abstract_mode_consumer",
                        "octobot_trading.producers.balance_updater",
                        "octobot_trading.producers.ohlcv_updater",
@@ -115,7 +115,7 @@ packages_list: list = ["octobot_trading.util.initializable",
                        "octobot_trading.channels.ticker",
                        "octobot_trading.channels.trades"]
 
-ext_modules: list = [
+ext_modules = [
     Extension(package, [f"{package.replace('.', '/')}.py"], include_dirs=[np.get_include()])
     for package in packages_list]
 

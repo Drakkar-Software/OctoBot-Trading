@@ -136,17 +136,29 @@ class RestExchange(AbstractExchange):
             raise e
 
     async def get_symbol_prices(self, symbol, time_frame, limit=None):
-        if limit:
-            since = self.client.milliseconds() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * limit
-            return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, since=since)
-        return await self.client.fetch_ohlcv(symbol, time_frame.value)
+        try:
+            if limit:
+                since = self.client.milliseconds() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * limit
+                return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, since=since)
+            return await self.client.fetch_ohlcv(symbol, time_frame.value)
+        except BaseError as e:
+            self.logger.error(f"Failed to get_symbol_prices {e}")
+            return None
 
     # return up to ten bidasks on each side of the order book stack
     async def get_order_book(self, symbol, limit=5):
-        return await self.client.fetch_order_book(symbol, limit)
+        try:
+            return await self.client.fetch_order_book(symbol, limit)
+        except BaseError as e:
+            self.logger.error(f"Failed to get_order_book {e}")
+            return None
 
     async def get_recent_trades(self, symbol, limit=50):
-        return await self.client.fetch_trades(symbol, limit=limit)
+        try:
+            return await self.client.fetch_trades(symbol, limit=limit)
+        except BaseError as e:
+            self.logger.error(f"Failed to get_recent_trades {e}")
+            return None
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
     async def get_price_ticker(self, symbol):
@@ -154,6 +166,7 @@ class RestExchange(AbstractExchange):
             return await self.client.fetch_ticker(symbol)
         except BaseError as e:
             self.logger.error(f"Failed to get_price_ticker {e}")
+            return None
 
     async def get_all_currencies_price_ticker(self):
         try:

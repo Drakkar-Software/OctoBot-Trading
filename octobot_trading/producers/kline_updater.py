@@ -56,8 +56,11 @@ class KlineUpdater(KlineProducer):
                     candle = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
                                                                                             time_frame,
                                                                                             limit=self.KLINE_LIMIT)
-                    candle = candle[0]
-                    await self.push(time_frame, pair, candle)
+                    try:
+                        candle = candle[0]
+                        await self.push(time_frame, pair, candle)
+                    except TypeError:
+                        pass
 
                 if candle:
                     await asyncio.sleep(self.KLINE_REFRESH_TIME - (time.time() - started_time))

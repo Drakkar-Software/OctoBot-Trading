@@ -12,7 +12,7 @@ cache:
 
 install:
   - "%PYTHON%\\python.exe -m pip install --upgrade pip"
-  - "%PYTHON%\\python.exe -m pip install -r requirements.txt -r dev_requirements.txt"
+  - "%PYTHON%\\python.exe -m pip install --prefer-binary -r requirements.txt -r dev_requirements.txt"
 
 build: off
 
