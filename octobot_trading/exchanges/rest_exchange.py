@@ -105,9 +105,9 @@ class RestExchange(AbstractExchange):
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         try:
             if with_fixer:
-                return ExchangeMarketStatusFixer(self.client.find_market(symbol), price_example).market_status
+                return ExchangeMarketStatusFixer(self.client.market(symbol), price_example).market_status
             else:
-                return self.client.find_market(symbol)
+                return self.client.market(symbol)
         except Exception as e:
             self.logger.error(f"Fail to get market status of {symbol}: {e}")
             return {}
@@ -330,7 +330,7 @@ class RestExchange(AbstractExchange):
 
     def get_fees(self, symbol):
         try:
-            market_status = self.client.find_market(symbol)
+            market_status = self.client.market(symbol)
             return {
                 ExchangeConstantsMarketPropertyColumns.TAKER.value:
                     get_value_or_default(market_status, ExchangeConstantsMarketPropertyColumns.TAKER.value,
@@ -359,16 +359,16 @@ class RestExchange(AbstractExchange):
         self.logger.info(f"Connection closed.")
 
     def get_pair_from_exchange(self, pair) -> str:
-        return self.client.find_market(pair)["symbol"]
+        return self.client.market(pair)["symbol"]
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
-        market_data: dict = self.client.find_market(pair)
+        market_data: dict = self.client.market(pair)
         return market_data["base"], market_data["quote"]
 
     def get_exchange_pair(self, pair: str) -> str:
         if pair in self.client.symbols:
             try:
-                return self.client.find_market(pair)["id"]
+                return self.client.market(pair)["id"]
             except KeyError:
                 raise KeyError(f'{pair} is not supported')
         else:
