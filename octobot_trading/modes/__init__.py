@@ -19,4 +19,4 @@ from .abstract_trading_mode import *
 try:
     from tentacles.Trading.Mode import *
 except ModuleNotFoundError as e:
-    get_logger().error(f"tentacles folder not found raised a ModuleNotFoundError exception : {e}")
+    get_logger("Trading").error(f"tentacles folder not found raised a ModuleNotFoundError exception : {e}")

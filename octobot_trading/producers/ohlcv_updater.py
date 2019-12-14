@@ -106,6 +106,7 @@ class OHLCVUpdater(OHLCVProducer):
 
                     await asyncio.sleep(should_sleep_time)
                 else:
+                    # TODO think about asyncio.call_at or call_later
                     await asyncio.sleep(time_frame_sleep)
             except NotSupported:
                 self.logger.warning(
