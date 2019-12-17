@@ -70,22 +70,22 @@ class CandlesManager(Initializable):
 
     # getters
     def get_symbol_close_candles(self, limit=-1):
-        return CandlesManager.__extract_limited_data(self.close_candles, limit, max_limit=self.close_candles_index)
+        return self.__extract_limited_data(self.close_candles, limit, max_limit=self.close_candles_index)
 
     def get_symbol_open_candles(self, limit=-1):
-        return CandlesManager.__extract_limited_data(self.open_candles, limit, max_limit=self.open_candles_index)
+        return self.__extract_limited_data(self.open_candles, limit, max_limit=self.open_candles_index)
 
     def get_symbol_high_candles(self, limit=-1):
-        return CandlesManager.__extract_limited_data(self.high_candles, limit, max_limit=self.high_candles_index)
+        return self.__extract_limited_data(self.high_candles, limit, max_limit=self.high_candles_index)
 
     def get_symbol_low_candles(self, limit=-1):
-        return CandlesManager.__extract_limited_data(self.low_candles, limit, max_limit=self.low_candles_index)
+        return self.__extract_limited_data(self.low_candles, limit, max_limit=self.low_candles_index)
 
     def get_symbol_time_candles(self, limit=-1):
-        return CandlesManager.__extract_limited_data(self.time_candles, limit, max_limit=self.time_candles_index)
+        return self.__extract_limited_data(self.time_candles, limit, max_limit=self.time_candles_index)
 
     def get_symbol_volume_candles(self, limit=-1):
-        return CandlesManager.__extract_limited_data(self.volume_candles, limit, max_limit=self.volume_candles_index)
+        return self.__extract_limited_data(self.volume_candles, limit, max_limit=self.volume_candles_index)
 
     def get_symbol_prices(self, limit=-1):
         return {
@@ -169,8 +169,7 @@ class CandlesManager(Initializable):
             self.time_candles_index = -1
             self.volume_candles_index = -1
 
-    @staticmethod
-    def __extract_limited_data(data, limit=-1, max_limit=-1):
+    def __extract_limited_data(self, data, limit=-1, max_limit=-1):
         if limit == -1:
             return data
 

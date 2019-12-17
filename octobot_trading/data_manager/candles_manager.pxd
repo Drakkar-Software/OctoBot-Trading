@@ -56,6 +56,4 @@ cdef class CandlesManager(Initializable):
     cdef bint __should_add_new_candle(self, new_open_time)
     cdef object __inc_candle_index(self)
     cdef void __reset_candles(self)
-
-    @staticmethod
-    cdef np.float64_t[::1] __extract_limited_data(np.float64_t[::1] data, int limit=*, int max_limit=*)
+    cdef np.float64_t[::1] __extract_limited_data(self, np.float64_t[::1] data, int limit=*, int max_limit=*)
