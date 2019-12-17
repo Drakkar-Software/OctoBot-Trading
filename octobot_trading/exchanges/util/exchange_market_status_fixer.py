@@ -57,7 +57,7 @@ class ExchangeMarketStatusFixer:
 
         market_precision = self.market_status[Ecmsc.PRECISION.value]
 
-        if not ExchangeMarketStatusFixer.__check_market_status_values(market_precision.values(), zero_valid=True):
+        if not self.__check_market_status_values(market_precision.values(), zero_valid=True):
             if self.price_example is not None:
                 self.__fix_market_status_precision_with_price()
 
@@ -89,22 +89,21 @@ class ExchangeMarketStatusFixer:
             }
 
         # if some data is missing
-        if not ExchangeMarketStatusFixer.__check_market_status_limits(market_limit):
+        if not self.__check_market_status_limits(market_limit):
             self.__fix_market_status_limits_from_current_data(market_limit)
 
-            if self.market_status_specific and not ExchangeMarketStatusFixer.__check_market_status_limits(market_limit):
+            if self.market_status_specific and not self.__check_market_status_limits(market_limit):
                 self.__fix_market_status_limits_with_specific()
 
-            if self.price_example is not None and not ExchangeMarketStatusFixer.__check_market_status_limits(market_limit):
+            if self.price_example is not None and not self.__check_market_status_limits(market_limit):
                 self.__fix_market_status_limits_with_price()
 
-    @staticmethod
-    def __check_market_status_limits(market_limit):
-        return all([ExchangeMarketStatusFixer.__check_market_status_values(market_limit[key].values())
+    def __check_market_status_limits(self, market_limit):
+        return all([self.__check_market_status_values(market_limit[key].values())
                     for key in market_limit])
 
-    @staticmethod
-    def __check_market_status_values(values, zero_valid=False):
+
+    def __check_market_status_values(self, values, zero_valid=False):
         return all([ExchangeMarketStatusFixer.is_ms_valid(value, zero_valid=zero_valid) for value in values])
 
     @staticmethod
@@ -113,29 +112,27 @@ class ExchangeMarketStatusFixer:
 
     def __fix_market_status_limits_from_current_data(self, market_limit):
         # calculate cost
-        if not (ExchangeMarketStatusFixer.__check_market_status_values(market_limit[Ecmsc.LIMITS_COST.value].values())):
-            ExchangeMarketStatusFixer.__calculate_costs(market_limit)
+        if not (self.__check_market_status_values(market_limit[Ecmsc.LIMITS_COST.value].values())):
+            self.__calculate_costs(market_limit)
 
         # calculate amounts
-        if not (ExchangeMarketStatusFixer.__check_market_status_values(market_limit[Ecmsc.LIMITS_AMOUNT.value].values())):
-            ExchangeMarketStatusFixer.__calculate_amounts(market_limit)
+        if not (self.__check_market_status_values(market_limit[Ecmsc.LIMITS_AMOUNT.value].values())):
+            self.__calculate_amounts(market_limit)
 
         # calculate prices
-        if not (ExchangeMarketStatusFixer.__check_market_status_values(market_limit[Ecmsc.LIMITS_PRICE.value].values())):
-            ExchangeMarketStatusFixer.__calculate_prices(market_limit)
+        if not (self.__check_market_status_values(market_limit[Ecmsc.LIMITS_PRICE.value].values())):
+            self.__calculate_prices(market_limit)
 
-        if not self.is_ms_valid(market_limit[Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]):
+        if not ExchangeMarketStatusFixer.is_ms_valid(market_limit[Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]):
             market_limit[Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] = 0
 
-    @staticmethod
-    def __get_markets_limit(market_limit):
+    def __get_markets_limit(self, market_limit):
         return market_limit[Ecmsc.LIMITS_COST.value] if Ecmsc.LIMITS_COST.value in market_limit else None, \
                market_limit[Ecmsc.LIMITS_PRICE.value] if Ecmsc.LIMITS_PRICE.value in market_limit else None, \
                market_limit[Ecmsc.LIMITS_AMOUNT.value] if Ecmsc.LIMITS_AMOUNT.value in market_limit else None
 
-    @staticmethod
-    def __calculate_costs(market_limit):
-        limit_cost, limit_price, limit_amount = ExchangeMarketStatusFixer.__get_markets_limit(market_limit)
+    def __calculate_costs(self, market_limit):
+        limit_cost, limit_price, limit_amount = self.__get_markets_limit(market_limit)
 
         if Ecmsc.LIMITS_AMOUNT_MAX.value in limit_amount and Ecmsc.LIMITS_PRICE_MAX.value in limit_price:
             if ExchangeMarketStatusFixer.is_ms_valid(limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value]) \
@@ -151,9 +148,8 @@ class ExchangeMarketStatusFixer:
                 limit_cost[Ecmsc.LIMITS_COST_MIN.value] = limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value] * \
                                                           limit_price[Ecmsc.LIMITS_PRICE_MIN.value]
 
-    @staticmethod
-    def __calculate_prices(market_limit):
-        limit_cost, limit_price, limit_amount = ExchangeMarketStatusFixer.__get_markets_limit(market_limit)
+    def __calculate_prices(self, market_limit):
+        limit_cost, limit_price, limit_amount = self.__get_markets_limit(market_limit)
 
         if Ecmsc.LIMITS_COST_MAX.value in limit_cost and Ecmsc.LIMITS_AMOUNT_MAX.value in limit_amount:
             if ExchangeMarketStatusFixer.is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MAX.value]) \
@@ -169,9 +165,8 @@ class ExchangeMarketStatusFixer:
                 limit_price[Ecmsc.LIMITS_PRICE_MIN.value] = limit_cost[Ecmsc.LIMITS_COST_MIN.value] / \
                                                             limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value]
 
-    @staticmethod
-    def __calculate_amounts(market_limit):
-        limit_cost, limit_price, limit_amount = ExchangeMarketStatusFixer.__get_markets_limit(market_limit)
+    def __calculate_amounts(self, market_limit):
+        limit_cost, limit_price, limit_amount = self.__get_markets_limit(market_limit)
 
         if Ecmsc.LIMITS_COST_MAX.value in limit_cost and Ecmsc.LIMITS_PRICE_MAX.value in limit_price:
             if ExchangeMarketStatusFixer.is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MAX.value]) \
@@ -246,29 +241,29 @@ class ExchangeMarketStatusFixer:
                 for filter_dict in filters:
                     if Ecmsic.FILTER_TYPE.value in filter_dict:
                         if filter_dict[Ecmsic.FILTER_TYPE.value] == Ecmsic.PRICE_FILTER.value:
-                            if self.is_ms_valid(float(filter_dict[Ecmsic.MAX_PRICE.value])) \
-                                    and not self.is_ms_valid(
+                            if ExchangeMarketStatusFixer.is_ms_valid(float(filter_dict[Ecmsic.MAX_PRICE.value])) \
+                                    and not ExchangeMarketStatusFixer.is_ms_valid(
                                         market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MAX.value]):
                                 market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MAX.value] = \
                                     float(filter_dict[Ecmsic.MAX_PRICE.value])
 
-                            if self.is_ms_valid(float(filter_dict[Ecmsic.MIN_PRICE.value])) \
-                                    and not self.is_ms_valid(
+                            if ExchangeMarketStatusFixer.is_ms_valid(float(filter_dict[Ecmsic.MIN_PRICE.value])) \
+                                    and not ExchangeMarketStatusFixer.is_ms_valid(
                                         market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value]):
                                 market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] = \
                                     float(filter_dict[Ecmsic.MIN_PRICE.value])
                         elif filter_dict[Ecmsic.FILTER_TYPE.value] == Ecmsic.LOT_SIZE.value:
-                            if self.is_ms_valid(float(filter_dict[Ecmsic.MAX_QTY.value])) \
-                                    and not self.is_ms_valid(
+                            if ExchangeMarketStatusFixer.is_ms_valid(float(filter_dict[Ecmsic.MAX_QTY.value])) \
+                                    and not ExchangeMarketStatusFixer.is_ms_valid(
                                         market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MAX.value]):
                                 market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MAX.value] = \
                                     float(filter_dict[Ecmsic.MAX_QTY.value])
 
-                            if self.is_ms_valid(float(filter_dict[Ecmsic.MIN_QTY.value])) \
-                                    and not self.is_ms_valid(
+                            if ExchangeMarketStatusFixer.is_ms_valid(float(filter_dict[Ecmsic.MIN_QTY.value])) \
+                                    and not ExchangeMarketStatusFixer.is_ms_valid(
                                         market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MIN.value]):
                                 market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MIN.value] = \
                                     float(filter_dict[Ecmsic.MIN_QTY.value])
-                ExchangeMarketStatusFixer.__calculate_costs(market_limit)
+                self.__calculate_costs(market_limit)
         except Exception:
             pass

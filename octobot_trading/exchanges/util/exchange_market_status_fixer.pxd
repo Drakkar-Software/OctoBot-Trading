@@ -18,6 +18,7 @@
 cdef class ExchangeMarketStatusFixer:
     cdef public object market_status
     cdef public float price_example
+    cdef public object market_status_specific
 
     cdef void __fix_market_status_precision(self)
     cdef void __fix_market_status_limits(self)
@@ -29,20 +30,9 @@ cdef class ExchangeMarketStatusFixer:
     cdef void __fix_market_status_precision_with_specific(self)
     cdef void __fix_market_status_limits_with_specific(self)
 
-    @staticmethod
-    cdef object __get_markets_limit(dict market_limit)
-
-    @staticmethod
-    cdef void __calculate_costs(dict market_limit)
-
-    @staticmethod
-    cdef void __calculate_prices(dict market_limit)
-
-    @staticmethod
-    cdef void __calculate_amounts(dict market_limit)
-
-    @staticmethod
-    cdef bint __check_market_status_limits(market_limit)
-
-    @staticmethod
-    cdef bint __check_market_status_values(market_limit, bint zero_valid=*)
+    cdef object __get_markets_limit(self, dict market_limit)
+    cdef void __calculate_costs(self, dict market_limit)
+    cdef void __calculate_prices(self, dict market_limit)
+    cdef void __calculate_amounts(self, dict market_limit)
+    cdef bint __check_market_status_limits(self, market_limit)
+    cdef bint __check_market_status_values(self, market_limit, bint zero_valid=*)
