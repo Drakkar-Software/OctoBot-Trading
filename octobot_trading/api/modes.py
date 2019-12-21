@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.constants import CONFIG_TRADING_FILE_PATH
 from octobot_commons.errors import ConfigTradingError
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.tentacles_management import create_classes_list
@@ -25,8 +24,8 @@ from octobot_trading.modes import AbstractTradingMode
 from octobot_trading.util.trading_config_util import get_activated_trading_mode
 
 
-def init_trading_mode_config(config):
-    reload_tentacle_config(config, CONFIG_TRADING_TENTACLES, CONFIG_TRADING_FILE_PATH, ConfigTradingError)
+def init_trading_mode_config(config, trading_tentacles_path):
+    reload_tentacle_config(config, CONFIG_TRADING_TENTACLES, trading_tentacles_path, ConfigTradingError)
     create_classes_list(config, AbstractTradingMode)
 
 

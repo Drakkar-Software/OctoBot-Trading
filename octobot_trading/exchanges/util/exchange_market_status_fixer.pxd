@@ -15,6 +15,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+cpdef bint is_ms_valid(object value, bint zero_valid=*)
+
+cdef void calculate_costs(dict market_limit)
+cdef void calculate_prices(dict market_limit)
+cdef void calculate_amounts(dict market_limit)
+cdef object get_markets_limit(dict market_limit)
+cdef void fix_market_status_limits_from_current_data(dict market_limit)
+cdef bint check_market_status_limits(market_limit)
+cdef bint check_market_status_values(market_limit, bint zero_valid=*)
+
 cdef class ExchangeMarketStatusFixer:
     cdef public object market_status
     cdef public float price_example
@@ -22,17 +32,9 @@ cdef class ExchangeMarketStatusFixer:
 
     cdef void __fix_market_status_precision(self)
     cdef void __fix_market_status_limits(self)
-    cdef void __fix_market_status_limits_from_current_data(self, dict market_limit)
     cdef object __calculate_amount(self)
     cdef void __fix_market_status_limits_with_price(self)
     cdef float __get_price_precision(self)
     cdef void __fix_market_status_precision_with_price(self)
     cdef void __fix_market_status_precision_with_specific(self)
     cdef void __fix_market_status_limits_with_specific(self)
-
-    cdef object __get_markets_limit(self, dict market_limit)
-    cdef void __calculate_costs(self, dict market_limit)
-    cdef void __calculate_prices(self, dict market_limit)
-    cdef void __calculate_amounts(self, dict market_limit)
-    cdef bint __check_market_status_limits(self, market_limit)
-    cdef bint __check_market_status_values(self, market_limit, bint zero_valid=*)

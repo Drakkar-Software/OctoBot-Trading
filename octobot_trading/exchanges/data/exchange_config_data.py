@@ -13,9 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.time_frame_manager import get_config_time_frame, find_min_time_frame, sort_time_frames
+
 from octobot_commons.constants import CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME, CONFIG_TIME_FRAME
 from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.time_frame_manager import TimeFrameManager
 from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, CONFIG_CRYPTO_ADD, \
     CONFIG_CRYPTO_QUOTE
 
@@ -98,16 +99,16 @@ class ExchangeConfig(Initializable):
                                   f"You can add trading pair(s) for each asset in the configuration section.")
 
     def __set_config_time_frame(self):
-        for time_frame in TimeFrameManager.get_config_time_frame(self.config):
+        for time_frame in get_config_time_frame(self.config):
             if self.exchange_manager.time_frame_exists(time_frame.value):
                 self.traded_time_frames.append(time_frame)
         # add shortest timeframe for realtime evaluators
-        client_shortest_time_frame = TimeFrameManager.find_min_time_frame(
+        client_shortest_time_frame = find_min_time_frame(
             self.exchange_manager.client_time_frames[CONFIG_WILDCARD], MIN_EVAL_TIME_FRAME)
         if client_shortest_time_frame not in self.traded_time_frames:
             self.traded_time_frames.append(client_shortest_time_frame)
 
-        self.traded_time_frames = TimeFrameManager.sort_time_frames(self.traded_time_frames, reverse=True)
+        self.traded_time_frames = sort_time_frames(self.traded_time_frames, reverse=True)
 
     def __add_tradable_symbols_from_config(self, crypto_currency):
         return [

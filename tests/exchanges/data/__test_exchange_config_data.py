@@ -1,0 +1,103 @@
+#  Drakkar-Software OctoBot-Trading
+#  Copyright (c) Drakkar-Software, All rights reserved.
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 3.0 of the License, or (at your option) any later version.
+#
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library.
+import pytest
+
+from octobot_commons.tests.test_config import load_test_config
+from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES
+from octobot_trading.exchanges.exchange_manager import ExchangeManager
+from tests.util import reset_exchanges_list, delete_all_channels
+
+pytestmark = pytest.mark.asyncio
+
+
+class TestExchangeConfig:
+    EXCHANGE_NAME = "binance"
+
+    @staticmethod
+    async def init_default(config=None):
+        if not config:
+            config = load_test_config()
+
+        reset_exchanges_list()
+        delete_all_channels(TestExchangeConfig.EXCHANGE_NAME)
+
+        exchange_manager = ExchangeManager(config, TestExchangeConfig.EXCHANGE_NAME)
+
+        await exchange_manager.initialize()
+        return config, exchange_manager.exchange_config
+
+    async def test_traded_pairs(self):
+        config = load_test_config()
+        config[CONFIG_CRYPTO_CURRENCIES] = {
+            "Neo": {
+                "pairs": ["NEO/BTC"]
+            },
+            "Ethereum": {
+                "pairs": ["ETH/USDT"]
+            },
+            "Icon": {
+                "pairs": ["ICX/BTC"]
+            }
+        }
+
+        _, exchange_config = await self.init_default(config=config)
+
+        assert exchange_config.traded_cryptocurrencies_pairs == {
+            "Ethereum": ["ETH/USDT"],
+            "Icon": ["ICX/BTC"],
+            "Neo": ["NEO/BTC"]
+        }
+
+    async def test_traded_pairs_with_wildcard(self):
+        config = load_test_config()
+        config[CONFIG_CRYPTO_CURRENCIES] = {
+            "Bitcoin": {
+                "pairs": "*",
+                "quote": "BTC"
+            }
+        }
+        _, exchange_config = await self.init_default(config=config)
+
+        assert "ICX/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+        assert "NEO/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+        assert "VEN/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+        assert "XLM/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+        assert "ONT/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+        assert "BTC/USDT" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+        assert "ETH/USDT" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+        assert "NEO/BNB" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+
+    # TODO
+    # async def test_traded_pairs_with_add(self):
+    #     config = load_test_config()
+    #     config[CONFIG_CRYPTO_CURRENCIES] = {
+    #         "Bitcoin": {
+    #             "pairs": "*",
+    #             "quote": "BTC",
+    #             "add": ["BTC/USDT"]
+    #         }
+    #     }
+    #
+    #     _, exchange_config = await self.init_default(config=config)
+    #
+    #     assert "ICX/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+    #     assert "NEO/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+    #     assert "VEN/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+    #     assert "XLM/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+    #     assert "ONT/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+    #     assert "BTC/USDT" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+    #     assert "ETH/USDT" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+    #     assert "NEO/BNB" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]

@@ -14,6 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.constants import CONFIG_TRADING_FILE_PATH
+
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.api.modes import create_trading_mode, init_trading_mode_config
@@ -57,7 +59,7 @@ class ExchangeFactory:
     async def create_basic(self):
         await self.exchange_manager.initialize()
 
-    async def create(self):
+    async def create(self, trading_tentacles_path=CONFIG_TRADING_FILE_PATH):
         await self.exchange_manager.initialize()
 
         # set sandbox mode
@@ -78,7 +80,7 @@ class ExchangeFactory:
             await self.trader.initialize()
             self.exchange_manager.trader = self.trader
 
-            init_trading_mode_config(self.config)
+            init_trading_mode_config(self.config, trading_tentacles_path)
             await create_trading_mode(self.config, self.exchange_manager)
 
             # add to global exchanges

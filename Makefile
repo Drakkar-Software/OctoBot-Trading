@@ -31,11 +31,11 @@ clean:
 
 .PHONY: debug
 debug:
-	gdb -ex r --args $(PYTHON) start.py
+	gdb -ex r --args $(PYTHON) demo.py
 
 .PHONY: run
 run: build
-	$(PYTHON) start.py
+	$(PYTHON) demo.py
 
 # Suffix rules
 .PRECIOUS: %.c

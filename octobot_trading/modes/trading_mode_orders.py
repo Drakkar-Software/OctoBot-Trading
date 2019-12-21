@@ -19,7 +19,7 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.constants import CURRENCY_DEFAULT_MAX_PRICE_DIGITS
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
-from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
+from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer, is_ms_valid
 
 
 def adapt_price(symbol_market, price):
@@ -93,7 +93,7 @@ def is_valid(element, key):
     :param key:
     :return:
     """
-    return key in element and ExchangeMarketStatusFixer.is_ms_valid(element[key])
+    return key in element and is_ms_valid(element[key])
 
 
 def get_min_max_amounts(symbol_market, default_value=None):

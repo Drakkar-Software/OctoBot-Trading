@@ -140,7 +140,6 @@ def get_chan(chan_name, exchange_name) -> ExchangeChannel:
 
 def del_chan(chan_name, exchange_name) -> None:
     try:
-        if chan_name in ChannelInstances.instance().channels[exchange_name]:
-            ChannelInstances.instance().channels[exchange_name].pop(chan_name, None)
+        ChannelInstances.instance().channels[exchange_name].pop(chan_name, None)
     except KeyError:
-        pass
+        get_logger(ExchangeChannel.__name__).warning(f"Can't del chan {chan_name} on {exchange_name}")
