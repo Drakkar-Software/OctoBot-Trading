@@ -23,7 +23,7 @@ from octobot_commons.errors import ConfigTradingError
 from octobot_commons.tests.test_config import load_test_config, TEST_CONFIG_FOLDER
 from octobot_trading.api.exchange import create_new_exchange
 from octobot_trading.exchanges.exchanges import Exchanges
-from tests.util import reset_exchanges_list, delete_all_channels
+from tests.tests_util import reset_exchanges_list, delete_all_channels
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

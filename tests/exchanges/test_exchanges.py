@@ -18,7 +18,7 @@ import pytest
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
-from tests.util import reset_exchanges_list, delete_all_channels
+from tests.tests_util import reset_exchanges_list, delete_all_channels
 
 pytestmark = pytest.mark.asyncio
 

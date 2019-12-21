@@ -13,3 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.channels_name import OctoBotTradingChannelsName
+from octobot_trading.channels import del_chan, ChannelInstances
+
+from octobot_trading.exchanges.exchanges import Exchanges
+
+
+def reset_exchanges_list() -> None:
+    # reset Exchanges instances
+    Exchanges.instance().exchanges = {}
+
+
+def delete_all_channels(exchange_name: str) -> None:
+    for channel_name in OctoBotTradingChannelsName:
+        del_chan(channel_name.value, exchange_name)
