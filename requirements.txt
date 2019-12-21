@@ -3,7 +3,7 @@ cython==0.29.14
 numpy==1.17.3
 
 # Drakkar-Software requirements
-OctoBot-Backtesting==1.3.2, <1.4
+OctoBot-Backtesting>=1.3.2, <1.4
 OctoBot-Channels>=1.3.17, <1.4
 OctoBot-Commons>=1.2.0, <1.3
 OctoBot-Websockets>=1.1.7, <1.2
