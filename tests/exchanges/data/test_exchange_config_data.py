@@ -18,7 +18,6 @@ import pytest
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from tests.tests_util import reset_exchanges_list, delete_all_channels
 
 pytestmark = pytest.mark.asyncio
 
@@ -31,13 +30,10 @@ class TestExchangeConfig:
         if not config:
             config = load_test_config()
 
-        reset_exchanges_list()
-        delete_all_channels(TestExchangeConfig.EXCHANGE_NAME)
-
         exchange_manager = ExchangeManager(config, TestExchangeConfig.EXCHANGE_NAME)
 
         await exchange_manager.initialize()
-        return config, exchange_manager.exchange_config
+        return config, exchange_manager
 
     async def test_traded_pairs(self):
         config = load_test_config()
@@ -53,13 +49,14 @@ class TestExchangeConfig:
             }
         }
 
-        _, exchange_config = await self.init_default(config=config)
+        _, exchange_manager = await self.init_default(config=config)
 
-        assert exchange_config.traded_crypto_currencies_pairs == {
+        assert exchange_manager.exchange_config.traded_crypto_currencies_pairs == {
             "Ethereum": ["ETH/USDT"],
             "Icon": ["ICX/BTC"],
             "Neo": ["NEO/BTC"]
         }
+        await exchange_manager.stop()
 
     async def test_traded_pairs_with_wildcard(self):
         config = load_test_config()
@@ -69,16 +66,17 @@ class TestExchangeConfig:
                 "quote": "BTC"
             }
         }
-        _, exchange_config = await self.init_default(config=config)
+        _, exchange_manager = await self.init_default(config=config)
 
-        assert "ICX/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "NEO/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "VEN/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "XLM/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "ONT/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "BTC/USDT" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "ETH/USDT" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "NEO/BNB" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ICX/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "NEO/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "VEN/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "XLM/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ONT/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "BTC/USDT" not in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ETH/USDT" not in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "NEO/BNB" not in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        await exchange_manager.stop()
 
     async def test_traded_pairs_with_add(self):
         config = load_test_config()
@@ -90,13 +88,14 @@ class TestExchangeConfig:
             }
         }
 
-        _, exchange_config = await self.init_default(config=config)
+        _, exchange_manager = await self.init_default(config=config)
 
-        assert "ICX/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "NEO/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "VEN/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "XLM/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "ONT/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "BTC/USDT" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "ETH/USDT" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
-        assert "NEO/BNB" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ICX/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "NEO/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "VEN/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "XLM/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ONT/BTC" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "BTC/USDT" in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ETH/USDT" not in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "NEO/BNB" not in exchange_manager.exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        await exchange_manager.stop()
