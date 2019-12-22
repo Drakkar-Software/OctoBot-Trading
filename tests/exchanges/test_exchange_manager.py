@@ -27,6 +27,7 @@ from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.rest_exchange import RestExchange
+from tests.tests_util import reset_exchanges_list, delete_all_channels
 
 pytestmark = pytest.mark.asyncio
 
@@ -38,6 +39,9 @@ class TestExchangeManager:
     async def init_default(config=None, simulated=True):
         if not config:
             config = load_test_config()
+
+        reset_exchanges_list()
+        delete_all_channels(TestExchangeManager.EXCHANGE_NAME)
 
         exchange_manager = ExchangeManager(config,
                                            TestExchangeManager.EXCHANGE_NAME,
@@ -57,7 +61,7 @@ class TestExchangeManager:
 
         assert exchange_manager.config is config
 
-        assert isinstance(exchange_manager.exchange, ExchangeSimulator)
+        assert isinstance(exchange_manager.exchange, RestExchange)
 
         # real
         config, exchange_manager = await self.init_default(simulated=False)

@@ -58,18 +58,18 @@ cdef class ExchangeManager(Initializable):
     cdef public list client_symbols
 
     # private
-    cdef void __load_config_symbols_and_time_frames(self)
-    cdef void __load_constants(self)
-    # cdef AbstractWebsocket __search_and_create_websocket(self, websocket_class)
-    cdef void __load_config_symbols_and_time_frames(self)
-    cdef list __create_wildcard_symbol_list(self, str crypto_currency)
-    cdef object __uniformize_candles_timestamps(self, list candles)
-    cdef void __uniformize_candle_timestamps(self, list candle)
-    cdef void __raise_exchange_load_error(self)
-    cdef bint __is_managed_by_websocket(self, object channel)
+    cdef void _load_config_symbols_and_time_frames(self)
+    cdef void _load_constants(self)
+    # cdef AbstractWebsocket _search_and_create_websocket(self, websocket_class)
+    cdef void _load_config_symbols_and_time_frames(self)
+    cdef list _create_wildcard_symbol_list(self, str crypto_currency)
+    cdef object _uniformize_candles_timestamps(self, list candles)
+    cdef void _uniformize_candle_timestamps(self, list candle)
+    cdef void _raise_exchange_load_error(self)
+    cdef bint _is_managed_by_websocket(self, object channel)
 
     @staticmethod
-    cdef str __is_tradable_with_cryptocurrency(str symbol, str crypto_currency)
+    cdef str _is_tradable_with_cryptocurrency(str symbol, str crypto_currency)
 
     # public
     cpdef bint enabled(self)

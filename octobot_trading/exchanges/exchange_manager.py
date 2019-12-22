@@ -91,8 +91,8 @@ class ExchangeManager(Initializable):
         await self.exchange_personal_data.initialize()
         await self.exchange_config.initialize()
 
-    def __load_constants(self):
-        self.__load_config_symbols_and_time_frames()
+    def _load_constants(self):
+        self._load_config_symbols_and_time_frames()
         self.exchange_config.set_config_time_frame()
         self.exchange_config.set_config_traded_pairs()
 
@@ -113,27 +113,27 @@ class ExchangeManager(Initializable):
             self.exchange = RestExchange(self.config, self.exchange_type, self)
             await self.exchange.initialize()
 
-            self.__load_constants()
+            self._load_constants()
 
             if not self.exchange_only:
-                await self.__create_exchange_channels()
+                await self._create_exchange_channels()
 
             # create Websocket exchange if possible
             if not self.rest_only:
                 # search for websocket
                 if self.check_web_socket_config(self.exchange.name):
-                    await self.__search_and_create_websocket(AbstractWebsocket)
+                    await self._search_and_create_websocket(AbstractWebsocket)
 
         # if simulated : create exchange simulator instance
         else:
             self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
             await self.exchange.initialize()
             self.exchange_config.set_config_traded_pairs()
-            await self.__create_exchange_channels()
+            await self._create_exchange_channels()
 
         if not self.exchange_only:
             # create exchange producers if necessary
-            await self.__create_exchange_producers()
+            await self._create_exchange_producers()
 
         if self.is_backtesting:
             try:
@@ -145,19 +145,19 @@ class ExchangeManager(Initializable):
 
         self.is_ready = True
 
-    async def __create_exchange_channels(self):  # TODO filter creation --> not required if pause is managed
+    async def _create_exchange_channels(self):  # TODO filter creation --> not required if pause is managed
         await create_all_subclasses_channel(ExchangeChannel, set_chan, exchange_manager=self)
 
-    async def __create_exchange_producers(self):
+    async def _create_exchange_producers(self):
         # Real data producers
         if not self.is_backtesting:
             for updater in UNAUTHENTICATED_UPDATER_PRODUCERS:
-                if not self.__is_managed_by_websocket(updater.CHANNEL_NAME):
+                if not self._is_managed_by_websocket(updater.CHANNEL_NAME):
                     await updater(get_chan(updater.CHANNEL_NAME, self.exchange.name)).run()
 
         if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting or self.is_collecting):
             for updater in AUTHENTICATED_UPDATER_PRODUCERS:
-                if not self.__is_managed_by_websocket(updater.CHANNEL_NAME):
+                if not self._is_managed_by_websocket(updater.CHANNEL_NAME):
                     await updater(get_chan(updater.CHANNEL_NAME, self.exchange.name)).run()
 
         # Simulated producers
@@ -165,12 +165,12 @@ class ExchangeManager(Initializable):
             for updater in AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
                 await updater(get_chan(updater.CHANNEL_NAME, self.exchange.name)).run()
 
-    def __is_managed_by_websocket(self, channel):  # TODO improve checker
+    def _is_managed_by_websocket(self, channel):  # TODO improve checker
         return not self.rest_only and self.has_websocket and \
                any([self.exchange_web_socket.is_feed_available(feed)
                    for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
 
-    async def __search_and_create_websocket(self, websocket_class):
+    async def _search_and_create_websocket(self, websocket_class):
         for socket_manager in websocket_class.__subclasses__():
             # add websocket exchange if available
             if socket_manager.has_name(self.exchange.name):
@@ -245,14 +245,14 @@ class ExchangeManager(Initializable):
     def get_exchange_quote_and_base(self, symbol):
         return self.exchange.get_split_pair_from_exchange(symbol)
 
-    def __load_config_symbols_and_time_frames(self):
+    def _load_config_symbols_and_time_frames(self):
         client = self.exchange.client
         if client:
             self.client_symbols = client.symbols
             self.client_time_frames[CONFIG_WILDCARD] = client.timeframes if hasattr(client, "timeframes") else {}
         else:
             self.logger.error("Failed to load client from REST exchange")
-            self.__raise_exchange_load_error()
+            self._raise_exchange_load_error()
 
     # SYMBOLS
     def symbol_exists(self, symbol):
@@ -262,13 +262,13 @@ class ExchangeManager(Initializable):
             return False
         return symbol in self.client_symbols
 
-    def __create_wildcard_symbol_list(self, crypto_currency):
-        return [s for s in [ExchangeManager.__is_tradable_with_cryptocurrency(symbol, crypto_currency)
+    def _create_wildcard_symbol_list(self, crypto_currency):
+        return [s for s in [ExchangeManager._is_tradable_with_cryptocurrency(symbol, crypto_currency)
                             for symbol in self.client_symbols]
                 if s is not None]
 
     @staticmethod
-    def __is_tradable_with_cryptocurrency(symbol, crypto_currency):
+    def _is_tradable_with_cryptocurrency(symbol, crypto_currency):
         return symbol if split_symbol(symbol)[1] == crypto_currency else None
 
     # TIME FRAMES
@@ -292,22 +292,22 @@ class ExchangeManager(Initializable):
         if candle_or_candles:  # TODO improve
             if isinstance(candle_or_candles[0], list):
                 if self.need_to_uniformize_timestamp(candle_or_candles[0][PriceIndexes.IND_PRICE_TIME.value]):
-                    self.__uniformize_candles_timestamps(candle_or_candles)
+                    self._uniformize_candles_timestamps(candle_or_candles)
             else:
                 if self.need_to_uniformize_timestamp(candle_or_candles[PriceIndexes.IND_PRICE_TIME.value]):
-                    self.__uniformize_candle_timestamps(candle_or_candles)
+                    self._uniformize_candle_timestamps(candle_or_candles)
             return candle_or_candles
 
-    def __uniformize_candles_timestamps(self, candles):
+    def _uniformize_candles_timestamps(self, candles):
         for candle in candles:
-            self.__uniformize_candle_timestamps(candle)
+            self._uniformize_candle_timestamps(candle)
 
-    def __uniformize_candle_timestamps(self, candle):
+    def _uniformize_candle_timestamps(self, candle):
         candle[PriceIndexes.IND_PRICE_TIME.value] = \
             self.exchange.get_uniform_timestamp(candle[PriceIndexes.IND_PRICE_TIME.value])
 
     # Exceptions
-    def __raise_exchange_load_error(self):
+    def _raise_exchange_load_error(self):
         raise Exception(f"{self.exchange} - Failed to load exchange instances")
 
     def get_exchange_name(self):
