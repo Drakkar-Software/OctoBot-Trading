@@ -18,13 +18,13 @@ from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.util.initializable cimport Initializable
 
 cdef class ExchangeConfig(Initializable):
-    cdef public object logger
+    cdef object _logger
 
-    cdef public dict traded_cryptocurrencies_pairs
+    cdef public dict traded_crypto_currencies_pairs
+    cdef public dict config
+
     cdef public list traded_symbol_pairs
     cdef public list traded_time_frames
-
-    cdef public dict config
 
     cdef public ExchangeManager exchange_manager
 
@@ -32,8 +32,11 @@ cdef class ExchangeConfig(Initializable):
     cpdef void set_config_traded_pairs(self)
     cpdef list get_traded_pairs(self, str crypto_currency=*)
 
-    cdef void __set_config_time_frame(self)
-    cdef void __set_config_traded_pairs(self)
-    cdef list __add_tradable_symbols_from_config(self, str crypto_currency)
-    cdef object __add_tradable_symbols(self, str crypto_currency, list symbols)
-    cdef list __add_tradable_time_frames(self, list time_frames)
+    @staticmethod
+    cdef str _is_tradable_with_crypto_currency(str symbol, str crypto_currency)
+
+    cdef void _set_config_time_frame(self)
+    cdef void _set_config_traded_pairs(self)
+    cdef list _add_tradable_symbols_from_config(self, str crypto_currency)
+    cdef object _add_tradable_symbols(self, str crypto_currency, list symbols)
+    cdef list _add_tradable_time_frames(self, list time_frames)
