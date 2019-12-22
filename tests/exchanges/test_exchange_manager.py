@@ -14,21 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import ccxt
 import pytest
 
 from octobot_commons.tests.test_config import load_test_config
-
-from octobot_trading.api.exchange import create_new_exchange
-from octobot_trading.cli.cli_tools import start_exchange
+from octobot_trading.exchanges.exchange_manager import ExchangeManager
+from octobot_trading.exchanges.rest_exchange import RestExchange
 
 # All test coroutines will be treated as marked.
-from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES
-from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
-from octobot_trading.exchanges.rest_exchange import RestExchange
-from tests.tests_util import reset_exchanges_list, delete_all_channels
-
 pytestmark = pytest.mark.asyncio
 
 
@@ -39,9 +31,6 @@ class TestExchangeManager:
     async def init_default(config=None, simulated=True):
         if not config:
             config = load_test_config()
-
-        reset_exchanges_list()
-        delete_all_channels(TestExchangeManager.EXCHANGE_NAME)
 
         exchange_manager = ExchangeManager(config,
                                            TestExchangeManager.EXCHANGE_NAME,
@@ -62,6 +51,7 @@ class TestExchangeManager:
         assert exchange_manager.config is config
 
         assert isinstance(exchange_manager.exchange, RestExchange)
+        await exchange_manager.stop()
 
         # real
         config, exchange_manager = await self.init_default(simulated=False)
@@ -72,8 +62,10 @@ class TestExchangeManager:
         assert exchange_manager.config is config
 
         assert isinstance(exchange_manager.exchange, RestExchange)
+        await exchange_manager.stop()
 
     async def test_ready(self):
         _, exchange_manager = await self.init_default()
 
         assert exchange_manager.is_ready
+        await exchange_manager.stop()

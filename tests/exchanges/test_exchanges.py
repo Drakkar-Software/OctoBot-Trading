@@ -18,23 +18,17 @@ import pytest
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
-from tests.tests_util import reset_exchanges_list, delete_all_channels
 
 pytestmark = pytest.mark.asyncio
 
 
 class TestExchanges:
     @staticmethod
-    async def init_default(exchanges):
-        reset_exchanges_list()
-
-        for exchange in exchanges:
-            delete_all_channels(exchange)
-
+    async def init_default():
         return load_test_config()
 
     async def test_add_exchange(self):
-        config = await self.init_default(["binance", "bitmex", "poloniex"])
+        config = await self.init_default()
 
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
@@ -53,8 +47,12 @@ class TestExchanges:
         assert "poloniex" in Exchanges.instance().exchanges
         assert "test" not in Exchanges.instance().exchanges
 
+        await exchange_manager_binance.stop()
+        await exchange_manager_bitmex.stop()
+        await exchange_manager_poloniex.stop()
+
     async def test_get_exchange(self):
-        config = await self.init_default(["binance", "bitmex", "poloniex"])
+        config = await self.init_default()
 
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
@@ -74,3 +72,36 @@ class TestExchanges:
 
         with pytest.raises(KeyError):
             assert Exchanges.instance().get_exchange("test")
+
+        await exchange_manager_binance.stop()
+        await exchange_manager_bitmex.stop()
+        await exchange_manager_poloniex.stop()
+
+    async def test_del_exchange(self):
+        config = await self.init_default()
+
+        exchange_manager_binance = ExchangeManager(config, "binance")
+        await exchange_manager_binance.initialize()
+        Exchanges.instance().add_exchange(exchange_manager_binance)
+
+        exchange_manager_bitmex = ExchangeManager(config, "bitmex")
+        await exchange_manager_bitmex.initialize()
+        Exchanges.instance().add_exchange(exchange_manager_bitmex)
+
+        exchange_manager_poloniex = ExchangeManager(config, "poloniex")
+        await exchange_manager_poloniex.initialize()
+        Exchanges.instance().add_exchange(exchange_manager_poloniex)
+
+        Exchanges.instance().del_exchange("binance")
+        assert "binance" not in Exchanges.instance().exchanges
+        Exchanges.instance().del_exchange("bitmex")
+        assert "bitmex" not in Exchanges.instance().exchanges
+        Exchanges.instance().del_exchange("poloniex")
+        assert "poloniex" not in Exchanges.instance().exchanges
+
+        Exchanges.instance().del_exchange("test")  # should not raise
+
+        assert Exchanges.instance().exchanges == {}
+        await exchange_manager_binance.stop()
+        await exchange_manager_bitmex.stop()
+        await exchange_manager_poloniex.stop()

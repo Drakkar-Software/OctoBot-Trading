@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from copy import copy
+
 import time
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
 from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
@@ -22,13 +24,15 @@ from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD
 from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.timestamp_util import is_valid_timestamp
-from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
+from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan, get_exchange_channels, \
+    del_chan
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
     WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
 from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
 from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
+from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.producers import UNAUTHENTICATED_UPDATER_PRODUCERS, AUTHENTICATED_UPDATER_PRODUCERS
@@ -81,6 +85,12 @@ class ExchangeManager(Initializable):
     async def stop(self):
         if self.exchange is not None:
             await self.exchange.stop()
+            Exchanges.instance().del_exchange(self.exchange.name)
+            await self.stop_exchange_channels()
+
+    async def stop_exchange_channels(self):
+        for channel_name in copy(get_exchange_channels(self.exchange.name)).keys():
+            del_chan(channel_name, self.exchange.name)
 
     async def register_trader(self, trader):
         self.trader = trader
