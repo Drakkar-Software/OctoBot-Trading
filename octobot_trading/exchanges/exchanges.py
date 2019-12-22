@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.logging.logging_util import get_logger
+
 from octobot_commons.singleton.singleton_class import Singleton
 
 
@@ -33,3 +35,9 @@ class Exchanges(Singleton):
 
     def get_exchange(self, exchange_name) -> ExchangeConfiguration:
         return self.exchanges[exchange_name]
+
+    def del_exchange(self, exchange_name) -> None:
+        try:
+            self.exchanges.pop(exchange_name, None)
+        except KeyError:
+            get_logger(self.__class__.__name__).warning(f"Can't del exchange {exchange_name}")

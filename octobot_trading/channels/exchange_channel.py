@@ -130,6 +130,13 @@ def set_chan(chan, name) -> None:
         raise ValueError(f"Channel {chan_name} already exists.")
 
 
+def get_exchange_channels(exchange_name) -> dict:
+    try:
+        return ChannelInstances.instance().channels[exchange_name]
+    except KeyError:
+        raise KeyError(f"Channels not found on {exchange_name}")
+
+
 def get_chan(chan_name, exchange_name) -> ExchangeChannel:
     try:
         return ChannelInstances.instance().channels[exchange_name][chan_name]
