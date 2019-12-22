@@ -14,13 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import time
-
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
+from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
+
 from octobot_commons.config_util import has_invalid_default_config_value
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD
 from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.symbol_util import split_symbol
 from octobot_commons.timestamp_util import is_valid_timestamp
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
@@ -35,12 +35,9 @@ from octobot_trading.producers import UNAUTHENTICATED_UPDATER_PRODUCERS, AUTHENT
 from octobot_trading.producers.simulator import AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS
 from octobot_trading.util import is_trader_simulator_enabled
 from octobot_trading.util.initializable import Initializable
-from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
 
 
 class ExchangeManager(Initializable):
-    WEB_SOCKET_RESET_MIN_INTERVAL = 15
-
     def __init__(self, config, exchange_class_string,
                  is_simulated=False,
                  is_backtesting=False,
@@ -55,7 +52,7 @@ class ExchangeManager(Initializable):
         self.rest_only = rest_only
         self.ignore_config = ignore_config
         self.backtesting_files = backtesting_files
-        self.logger = get_logger(self.__class__.__name__)
+        self._logger = get_logger(self.__class__.__name__)
 
         self.is_ready = False
         self.is_backtesting = is_backtesting
@@ -70,7 +67,6 @@ class ExchangeManager(Initializable):
 
         self.exchange_web_socket = None
         self.exchange_type = None
-        self.last_web_socket_reset = -1
 
         self.client_symbols = []
         self.client_time_frames = {}
@@ -109,41 +105,50 @@ class ExchangeManager(Initializable):
         self.exchange_type = RestExchange.create_exchange_type(self.exchange_class_string)
 
         if not self.is_backtesting:
-            # create REST based on ccxt exchange
-            self.exchange = RestExchange(self.config, self.exchange_type, self)
-            await self.exchange.initialize()
-
-            self._load_constants()
-
-            if not self.exchange_only:
-                await self._create_exchange_channels()
-
-            # create Websocket exchange if possible
-            if not self.rest_only:
-                # search for websocket
-                if self.check_web_socket_config(self.exchange.name):
-                    await self._search_and_create_websocket(AbstractWebsocket)
-
-        # if simulated : create exchange simulator instance
+            # real : create a rest or websocket exchange instance
+            await self._create_real_exchange()
         else:
-            self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
-            await self.exchange.initialize()
-            self.exchange_config.set_config_traded_pairs()
-            await self._create_exchange_channels()
+            # simulated : create exchange simulator instance
+            await self._create_simulated_exchange()
 
         if not self.exchange_only:
             # create exchange producers if necessary
             await self._create_exchange_producers()
 
         if self.is_backtesting:
-            try:
-                await self.exchange.modify_channels()
-                await self.exchange.create_backtesting_exchange_producers()
-            except ValueError:
-                self.logger.error("Not enough exchange data to calculate backtesting duration")
-                await self.stop()
+            await self._init_simulated_exchange()
 
         self.is_ready = True
+
+    async def _create_real_exchange(self):
+        # create REST based on ccxt exchange
+        self.exchange = RestExchange(self.config, self.exchange_type, self)
+        await self.exchange.initialize()
+
+        self._load_constants()
+
+        if not self.exchange_only:
+            await self._create_exchange_channels()
+
+        # create Websocket exchange if possible
+        if not self.rest_only:
+            # search for websocket
+            if self.check_web_socket_config(self.exchange.name):
+                await self._search_and_create_websocket(AbstractWebsocket)
+
+    async def _create_simulated_exchange(self):
+        self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
+        await self.exchange.initialize()
+        self.exchange_config.set_config_traded_pairs()
+        await self._create_exchange_channels()
+
+    async def _init_simulated_exchange(self):
+        try:
+            await self.exchange.modify_channels()
+            await self.exchange.create_backtesting_exchange_producers()
+        except ValueError:
+            self._logger.error("Not enough exchange data to calculate backtesting duration")
+            await self.stop()
 
     async def _create_exchange_channels(self):  # TODO filter creation --> not required if pause is managed
         await create_all_subclasses_channel(ExchangeChannel, set_chan, exchange_manager=self)
@@ -185,33 +190,12 @@ class ExchangeManager(Initializable):
                     self.exchange_web_socket.start_sockets()
 
                     self.has_websocket = self.exchange_web_socket.is_websocket_running
-                    self.logger.info(f"{socket_manager.get_name()} connected to {self.exchange.name}")
+                    self._logger.info(f"{socket_manager.get_name()} connected to {self.exchange.name}")
                 except Exception as e:
-                    self.logger.error(f"Fail to init websocket for {websocket_class} : {e}")
+                    self._logger.error(f"Fail to init websocket for {websocket_class} : {e}")
                     self.exchange_web_socket = None
                     self.has_websocket = False
                     raise e
-
-    def did_not_just_try_to_reset_web_socket(self):
-        if self.last_web_socket_reset is None or self.last_web_socket_reset == -1:
-            return True
-        else:
-            return time.time() - self.last_web_socket_reset > self.WEB_SOCKET_RESET_MIN_INTERVAL
-
-    def reset_websocket_exchange(self):
-        if self.did_not_just_try_to_reset_web_socket():
-            # set web socket reset time
-            self.last_web_socket_reset = time.time()
-
-            # clear databases
-            # self.reset_symbols_data()
-            self.reset_exchange_personal_data()
-
-            # close and restart websockets
-            if self.websocket_available():
-                self.exchange_web_socket.close_and_restart_sockets()
-
-            # databases will be filled at the next calls similarly to bot startup process
 
     # Exchange configuration functions
     def check_config(self, exchange_name):
@@ -233,7 +217,7 @@ class ExchangeManager(Initializable):
         if self.is_simulated or self.exchange.name in self.config[CONFIG_EXCHANGES]:
             return True
         else:
-            self.logger.warning(f"Exchange {self.exchange.name} is currently disabled")
+            self._logger.warning(f"Exchange {self.exchange.name} is currently disabled")
             return False
 
     def get_exchange_symbol_id(self, symbol):
@@ -251,25 +235,16 @@ class ExchangeManager(Initializable):
             self.client_symbols = client.symbols
             self.client_time_frames[CONFIG_WILDCARD] = client.timeframes if hasattr(client, "timeframes") else {}
         else:
-            self.logger.error("Failed to load client from REST exchange")
+            self._logger.error("Failed to load client from REST exchange")
             self._raise_exchange_load_error()
 
     # SYMBOLS
     def symbol_exists(self, symbol):
         if self.client_symbols is None:
-            self.logger.error(f"Failed to load available symbols from REST exchange, impossible to check if "
+            self._logger.error(f"Failed to load available symbols from REST exchange, impossible to check if "
                               f"{symbol} exists on {self.exchange.name}")
             return False
         return symbol in self.client_symbols
-
-    def _create_wildcard_symbol_list(self, crypto_currency):
-        return [s for s in [ExchangeManager._is_tradable_with_cryptocurrency(symbol, crypto_currency)
-                            for symbol in self.client_symbols]
-                if s is not None]
-
-    @staticmethod
-    def _is_tradable_with_cryptocurrency(symbol, crypto_currency):
-        return symbol if split_symbol(symbol)[1] == crypto_currency else None
 
     # TIME FRAMES
     def time_frame_exists(self, time_frame, symbol=None):
