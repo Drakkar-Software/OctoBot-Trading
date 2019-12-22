@@ -55,7 +55,7 @@ class TestExchangeConfig:
 
         _, exchange_config = await self.init_default(config=config)
 
-        assert exchange_config.traded_cryptocurrencies_pairs == {
+        assert exchange_config.traded_crypto_currencies_pairs == {
             "Ethereum": ["ETH/USDT"],
             "Icon": ["ICX/BTC"],
             "Neo": ["NEO/BTC"]
@@ -71,33 +71,32 @@ class TestExchangeConfig:
         }
         _, exchange_config = await self.init_default(config=config)
 
-        assert "ICX/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-        assert "NEO/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-        assert "VEN/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-        assert "XLM/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-        assert "ONT/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-        assert "BTC/USDT" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-        assert "ETH/USDT" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-        assert "NEO/BNB" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+        assert "ICX/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "NEO/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "VEN/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "XLM/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ONT/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "BTC/USDT" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ETH/USDT" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "NEO/BNB" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
 
-    # TODO
-    # async def test_traded_pairs_with_add(self):
-    #     config = load_test_config()
-    #     config[CONFIG_CRYPTO_CURRENCIES] = {
-    #         "Bitcoin": {
-    #             "pairs": "*",
-    #             "quote": "BTC",
-    #             "add": ["BTC/USDT"]
-    #         }
-    #     }
-    #
-    #     _, exchange_config = await self.init_default(config=config)
-    #
-    #     assert "ICX/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-    #     assert "NEO/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-    #     assert "VEN/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-    #     assert "XLM/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-    #     assert "ONT/BTC" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-    #     assert "BTC/USDT" in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-    #     assert "ETH/USDT" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
-    #     assert "NEO/BNB" not in exchange_config.traded_cryptocurrencies_pairs["Bitcoin"]
+    async def test_traded_pairs_with_add(self):
+        config = load_test_config()
+        config[CONFIG_CRYPTO_CURRENCIES] = {
+            "Bitcoin": {
+                "pairs": "*",
+                "quote": "BTC",
+                "add": ["BTC/USDT"]
+            }
+        }
+
+        _, exchange_config = await self.init_default(config=config)
+
+        assert "ICX/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "NEO/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "VEN/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "XLM/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ONT/BTC" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "BTC/USDT" in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "ETH/USDT" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
+        assert "NEO/BNB" not in exchange_config.traded_crypto_currencies_pairs["Bitcoin"]
