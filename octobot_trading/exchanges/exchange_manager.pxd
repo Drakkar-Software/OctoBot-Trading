@@ -28,9 +28,7 @@ cdef class ExchangeManager(Initializable):
     cdef public dict config
 
     cdef public object exchange_type
-    cdef public object logger
-
-    cdef public float last_web_socket_reset
+    cdef object _logger
 
     cdef public Trader trader
 
@@ -60,16 +58,11 @@ cdef class ExchangeManager(Initializable):
     # private
     cdef void _load_config_symbols_and_time_frames(self)
     cdef void _load_constants(self)
-    # cdef AbstractWebsocket _search_and_create_websocket(self, websocket_class)
     cdef void _load_config_symbols_and_time_frames(self)
-    cdef list _create_wildcard_symbol_list(self, str crypto_currency)
     cdef object _uniformize_candles_timestamps(self, list candles)
     cdef void _uniformize_candle_timestamps(self, list candle)
     cdef void _raise_exchange_load_error(self)
     cdef bint _is_managed_by_websocket(self, object channel)
-
-    @staticmethod
-    cdef str _is_tradable_with_cryptocurrency(str symbol, str crypto_currency)
 
     # public
     cpdef bint enabled(self)
@@ -79,8 +72,6 @@ cdef class ExchangeManager(Initializable):
     cpdef bint need_user_stream(self)
     cpdef void reset_exchange_symbols_data(self)
     cpdef void reset_exchange_personal_data(self)
-    cpdef bint did_not_just_try_to_reset_web_socket(self)
-    cpdef void reset_websocket_exchange(self)
     cpdef bint check_config(self, str exchange_name)
     cpdef force_disable_web_socket(self, str exchange_name)
     cpdef check_web_socket_config(self, str exchange_name)
