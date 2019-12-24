@@ -18,11 +18,13 @@ import time
 from asyncio import Lock
 
 import math
+from octobot_commons.dict_util import get_value_or_default
+
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
-    ExchangeConstantsOrderColumns as ECOC, TradeOrderType, ExchangeConstantsOrderColumns
+    ExchangeConstantsOrderColumns as ECOC, ExchangeConstantsOrderColumns, TradeOrderType
 
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
@@ -36,10 +38,12 @@ class Order:
         self.exchange_manager = trader.exchange_manager
         self.status = OrderStatus.OPEN
         self.creation_time = time.time()
+        self.executed_time = 0
         self.lock = Lock()
         self.linked_orders = []
 
-        self.order_id = None
+        self.order_id = trader.parse_order_id(None)
+
         self.symbol = None
         self.currency = None
         self.market = None
@@ -97,8 +101,8 @@ class Order:
             self.origin_price = price
             changed = True
 
-        if fee is None and self.fee != fee:
-            self.fee = self.get_computed_fee()
+        if (fee is not None and self.fee != fee) or quantity_filled is not None:
+            self.fee = fee if fee is not None else self.get_computed_fee()
 
         if current_price and self.created_last_price != current_price:
             self.created_last_price = current_price
@@ -119,8 +123,12 @@ class Order:
             self.filled_price = filled_price
 
         if self.trader.simulate:
-            if quantity and self.filled_quantity != quantity:
+            if quantity and not self.filled_quantity:
                 self.filled_quantity = quantity
+                changed = True
+
+            if quantity_filled and self.filled_quantity != quantity_filled:
+                self.filled_quantity = quantity_filled
                 changed = True
         else:
             if quantity_filled and self.filled_quantity != quantity_filled:
@@ -138,6 +146,8 @@ class Order:
 
         if not self.filled_price and self.filled_quantity and self.total_cost:
             self.filled_price = self.total_cost / self.filled_quantity
+            if timestamp is not None:
+                self.executed_time = self.trader.exchange_manager.exchange.get_uniform_timestamp(timestamp)
 
         return changed
 
@@ -238,7 +248,7 @@ class Order:
             await self.cancel_from_exchange()
 
     def generate_executed_time(self, simulated_time=False):
-        if not simulated_time or not self.last_prices:
+        if not simulated_time or not self.last_prices:  # TODO
             return time.time()
         else:
             return self.last_prices[-1][ECOC.TIMESTAMP.value]
@@ -254,38 +264,67 @@ class Order:
 
     def update_from_raw(self, raw_order):
         if self.side is None or self.order_type is None:
-            self.__update_type_from_raw(raw_order)
-            if self.taker_or_maker is None:
-                self.__update_taker_maker_from_raw()
+            try:
+                self.__update_type_from_raw(raw_order)
+                if self.taker_or_maker is None:
+                    self.__update_taker_maker_from_raw()
+            except KeyError:
+                pass
 
         return self.update(**{
-            "symbol": raw_order[ExchangeConstantsOrderColumns.SYMBOL.value],
-            "current_price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],
-            "quantity": raw_order[ExchangeConstantsOrderColumns.AMOUNT.value],
-            "price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],
+            "symbol": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.SYMBOL.value, None),
+            "current_price": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, None),
+            "quantity": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.AMOUNT.value, None),
+            "price": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, None),
             "stop_price": None,
-            "status": OrderStatus(raw_order[ExchangeConstantsOrderColumns.STATUS.value]),
-            "order_id": raw_order[ExchangeConstantsOrderColumns.ID.value],
-            "quantity_filled": raw_order[ExchangeConstantsOrderColumns.FILLED.value],
-            "filled_price": raw_order[ExchangeConstantsOrderColumns.PRICE.value],
-            "total_cost": raw_order[ExchangeConstantsOrderColumns.COST.value],
-            "fee": raw_order[ExchangeConstantsOrderColumns.FEE.value],
-            "timestamp": raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value]
+            "status": Order.parse_order_status(raw_order),
+            "order_id": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.ID.value, None),
+            "quantity_filled": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.FILLED.value, None),
+            "filled_price": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, None),
+            "total_cost": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.COST.value, None),
+            "fee": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.FEE.value, None),
+            "timestamp": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
         })
 
-    def __update_type_from_raw(self, raw_order):
-        self.side: TradeOrderSide = TradeOrderSide(raw_order[ExchangeConstantsOrderColumns.SIDE.value])
+    @staticmethod
+    def parse_order_type(raw_order):
+        side: TradeOrderSide = TradeOrderSide(raw_order[ExchangeConstantsOrderColumns.SIDE.value])
         order_type: TradeOrderType = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
-        if self.side == TradeOrderSide.BUY:
+
+        if side == TradeOrderSide.BUY:
             if order_type == TradeOrderType.LIMIT:
-                self.order_type = TraderOrderType.BUY_LIMIT
+                order_type = TraderOrderType.BUY_LIMIT
             elif order_type == TradeOrderType.MARKET:
-                self.order_type = TraderOrderType.BUY_MARKET
-        elif self.side == TradeOrderSide.SELL:
+                order_type = TraderOrderType.BUY_MARKET
+        elif side == TradeOrderSide.SELL:
             if order_type == TradeOrderType.LIMIT:
-                self.order_type = TraderOrderType.SELL_LIMIT
+                order_type = TraderOrderType.SELL_LIMIT
             elif order_type == TradeOrderType.MARKET:
-                self.order_type = TraderOrderType.SELL_MARKET
+                order_type = TraderOrderType.SELL_MARKET
+        return side, order_type
+
+    @staticmethod
+    def parse_order_status(raw_order):
+        try:
+            return OrderStatus(raw_order[ExchangeConstantsOrderColumns.STATUS.value])
+        except KeyError:
+            return None
+
+    def update_order_from_raw(self, raw_order):
+        self.status = Order.parse_order_status(raw_order)
+        self.total_cost = raw_order[ExchangeConstantsOrderColumns.COST.value]
+        self.filled_quantity = raw_order[ExchangeConstantsOrderColumns.FILLED.value]
+        self.filled_price = raw_order[ExchangeConstantsOrderColumns.PRICE.value]
+        if not self.filled_price and self.filled_quantity:
+            self.filled_price = self.total_cost / self.filled_quantity
+        self.taker_or_maker = Order.parse_order_type(raw_order)
+        self.fee = raw_order[ExchangeConstantsOrderColumns.FEE.value]
+
+        self.executed_time = self.trader.exchange.get_uniform_timestamp(
+            raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value])
+
+    def __update_type_from_raw(self, raw_order):
+        self.side, self.order_type = Order.parse_order_type(raw_order)
 
     def __update_taker_maker_from_raw(self):
         if self.order_type in [TraderOrderType.SELL_MARKET, TraderOrderType.BUY_MARKET, TraderOrderType.STOP_LOSS]:
