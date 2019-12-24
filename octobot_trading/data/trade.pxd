@@ -20,28 +20,41 @@
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 from octobot_trading.data.order cimport Order
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.traders.trader cimport Trader
 
 cdef class Trade:
-    cdef public str currency
-    cdef public str order_id
-    cdef public str symbol
-    cdef public str market
+    cdef public Trader trader
+    cdef public ExchangeManager exchange_manager
 
-    cdef public Order order
-    cdef public object final_status # OrderStatus
     cdef public object side # TradeOrderSide
-    cdef public object order_type # TraderOrderType
-    cdef public object exchange
+    cdef public object status # OrderStatus
+    cdef public object trade_type # TraderOrderType
 
-    cdef public float filled_time
+    cdef public str symbol
+    cdef public str currency
+    cdef public str market
+    cdef public str trade_id
+
+    cdef public double origin_price
+    cdef public double origin_stop_price
+    cdef public double origin_quantity
+    cdef public double market_total_fees
+    cdef public double executed_quantity
+    cdef public double executed_price
+    cdef public double total_cost
+    cdef public double created_last_price
+    cdef public double order_profitability
+
+    cdef public float timestamp
     cdef public float creation_time
-
-    cdef public dict fee
-
     cdef public float canceled_time
-    cdef public float price
-    cdef public float cost
-    cdef public float quantity
+    cdef public float executed_time
 
-    cdef public bint simulated
+    cdef public dict fee # Dict[str, Union[str, float]]
+
+    cpdef void update_from_order(self,
+                                 Order order,
+                                 float canceled_time=*,
+                                 float creation_time=*,
+                                 float executed_time=*)
