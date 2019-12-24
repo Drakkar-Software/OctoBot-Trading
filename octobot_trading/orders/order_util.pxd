@@ -10,21 +10,11 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General License for more details.
+#  Lesser General Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.channels.exchange_channel cimport ExchangeChannelInternalConsumer
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 
-cdef class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
-    cdef object _logger
-
-    cdef public object trading_mode
-
-    cdef public ExchangeManager exchange_manager
-
-    @staticmethod
-    cdef check_factor(min_val, max_val, factor)
-
-    cpdef int get_number_of_traded_assets(self)
+cpdef bint is_valid(object element, object key)
+cpdef object get_min_max_amounts(dict symbol_market, object default_value=*)
+cpdef bint check_cost(float total_order_price, object min_cost)
