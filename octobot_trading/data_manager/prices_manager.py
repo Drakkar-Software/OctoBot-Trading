@@ -35,9 +35,13 @@ class PricesManager(Initializable):
         self.mark_price = mark_price
         self.prices_initialized_event.set()
 
-    async def get_mark_price(self):
-        await wait_for(self.prices_initialized_event.wait(), self.MARK_PRICE_TIMEOUT)
+    async def get_mark_price(self, timeout=MARK_PRICE_TIMEOUT):
+        await wait_for(self.prices_initialized_event.wait(), timeout)
         return self.mark_price
 
     def __reset_prices(self):
         self.mark_price = 0
+
+    @staticmethod
+    def calculate_mark_price_from_recent_trade_prices(recent_trade_prices):
+        return sum(recent_trade_prices) / len(recent_trade_prices)

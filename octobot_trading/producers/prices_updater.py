@@ -18,7 +18,9 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.price import MarkPriceProducer
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL
+from octobot_trading.data_manager.prices_manager import PricesManager
 from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsOrderColumns
+from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
 
 
 class MarkPriceUpdater(MarkPriceProducer):
@@ -38,8 +40,9 @@ class MarkPriceUpdater(MarkPriceProducer):
 
     async def handle_recent_trades_update(self, exchange: str, symbol: str, recent_trades: list):
         try:
-            mark_price = sum([float(last_price[ExchangeConstantsOrderColumns.PRICE.value])
-                              for last_price in recent_trades]) / len(recent_trades)
+            mark_price = PricesManager.calculate_mark_price_from_recent_trade_prices(
+                [float(last_price[ExchangeConstantsOrderColumns.PRICE.value])
+                 for last_price in recent_trades])
 
             await self.push(symbol, mark_price)
         except Exception as e:
@@ -54,4 +57,3 @@ class MarkPriceUpdater(MarkPriceProducer):
             await self.push(symbol, ticker[ExchangeConstantsTickersColumns.CLOSE.value])
         except Exception as e:
             self.logger.exception(f"Fail to handle ticker update : {e}")
-
