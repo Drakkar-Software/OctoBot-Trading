@@ -17,7 +17,7 @@
 from asyncio import Lock
 
 from octobot_trading.util.initializable import Initializable
-from octobot_trading.orders import OrderConstants
+from octobot_trading.orders.order_factory import OrderConstants
 
 from octobot_trading.constants import CURRENT_PORTFOLIO_STRING, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import TradeOrderSide, TraderOrderType
