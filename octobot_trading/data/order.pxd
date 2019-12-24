@@ -95,3 +95,8 @@ cdef class Order:
     cpdef bint is_self_managed(self)
     cpdef bint update_from_raw(self, dict raw_order)
 
+    @staticmethod
+    cdef object parse_order_status(dict raw_order)
+
+    @staticmethod
+    cdef tuple parse_order_type(dict raw_order)
