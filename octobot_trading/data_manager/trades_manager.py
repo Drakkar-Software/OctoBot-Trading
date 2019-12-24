@@ -20,6 +20,7 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.data.order import Order
 from octobot_trading.data.trade import Trade
 from octobot_trading.enums import ExchangeConstantsOrderColumns, FeePropertyColumns
+from octobot_trading.trades.trade_factory import create_trade_instance_from_raw
 from octobot_trading.util.initializable import Initializable
 
 
@@ -39,7 +40,7 @@ class TradesManager(Initializable):
 
     def upsert_trade(self, trade_id, raw_trade):
         if trade_id not in self.trades:
-            self.trades[trade_id] = self._create_trade_from_raw(raw_trade)
+            self.trades[trade_id] = create_trade_instance_from_raw(self.trader, raw_trade)
             self._check_trades_size()
             return True
         return False
@@ -68,25 +69,6 @@ class TradesManager(Initializable):
     def _check_trades_size(self):
         if len(self.trades) > self.MAX_TRADES_COUNT:
             self._remove_oldest_trades(int(self.MAX_TRADES_COUNT / 2))
-
-    def _create_trade_from_raw(self, raw_trade):
-        order = Order(self.trader)
-        order.order_id = raw_trade[ExchangeConstantsOrderColumns.ID.value]
-        order.origin_price = raw_trade[ExchangeConstantsOrderColumns.PRICE.value]
-        order.origin_quantity = raw_trade[ExchangeConstantsOrderColumns.AMOUNT.value]
-        order.symbol = raw_trade[ExchangeConstantsOrderColumns.SYMBOL.value]
-        order.currency, order.market = self.exchange_manager.get_exchange_quote_and_base(
-            raw_trade[ExchangeConstantsOrderColumns.SYMBOL.value])
-        order.filled_quantity = raw_trade[ExchangeConstantsOrderColumns.AMOUNT.value]
-        order.filled_quantity = None  # TODO
-        order.filled_price = None  # TODO
-        order.total_cost = None  # TODO
-        order.order_type = None  # TODO
-        order.fee = None  # TODO
-        order.side = None  # TODO
-        order.canceled_time = None  # TODO
-        order.executed_time = None  # TODO
-        return Trade(order)
 
     def _reset_trades(self):
         self.trades_initialized = False
