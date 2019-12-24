@@ -39,5 +39,5 @@ class TraderSimulator(Trader):
     def enabled(config):
         return is_trader_simulator_enabled(config)
 
-    def __parse_order_id(self, order_id):
+    def parse_order_id(self, order_id):
         return str(uuid.uuid4()) if order_id is None else order_id

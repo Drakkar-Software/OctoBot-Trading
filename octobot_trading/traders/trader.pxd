@@ -19,8 +19,6 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
-from octobot_trading.data.order cimport Order
-from octobot_trading.exchanges.data.exchange_personal_data cimport ExchangePersonalData
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.util.initializable cimport Initializable
 
@@ -38,22 +36,8 @@ cdef class Trader(Initializable):
     cdef public object logger
 
     cdef public ExchangeManager exchange_manager
-    cdef public ExchangePersonalData exchange_personal_data
 
     # methods
-    cdef str __parse_order_id(self, str order_id)
+    cpdef str parse_order_id(self, str order_id)
 
     cpdef float set_risk(self, float risk)
-    cpdef Order create_order_instance(self,
-                                      object order_type,
-                                      str symbol,
-                                      float current_price,
-                                      float quantity,
-                                      float price=*,
-                                      float stop_price=*,
-                                      object linked_to=*,
-                                      object status=*,
-                                      str order_id=*,
-                                      float quantity_filled=*,
-                                      float timestamp=*,
-                                      object linked_portfolio=*)

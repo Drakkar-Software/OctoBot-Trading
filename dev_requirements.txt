@@ -4,6 +4,8 @@ pytest-cov
 pytest-asyncio
 pytest-xdist
 
+asyncmock
+
 coverage
 coveralls
 
