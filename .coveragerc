@@ -1,0 +1,7 @@
+[run]
+omit =
+    tests/*
+    tentacles/*
+    logs/*
+    backtesting/*
+    demo.py
