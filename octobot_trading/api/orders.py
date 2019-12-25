@@ -14,7 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.api import LOGGER_TAG
+from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.enums import TraderOrderType
+
+LOGGER = get_logger(LOGGER_TAG)
 
 
 class OrdersApi:
@@ -36,3 +40,23 @@ class OrdersApi:
                                                                                                  current_price=current_price,
                                                                                                  quantity=quantity,
                                                                                                  price=price))
+
+
+def get_open_orders(exchange_manager):
+    return exchange_manager.exchange_personal_data.orders_manager.get_open_orders()
+
+
+async def cancel_all_open_orders(exchange_manager):
+    return await exchange_manager.trader.cancel_all_open_orders()
+
+
+async def cancel_all_open_orders_with_currency(exchange_manager, currency):
+    return await exchange_manager.trader.cancel_all_open_orders_with_currency(currency)
+
+
+async def cancel_order_from_description(exchange_manager, order_description):
+    LOGGER.error("from cancel_order_from_description: "
+                 "exchange_manager.trader.cancel_order_from_description is not implemented yet")
+    # TODO: uncomment when implemented
+    # return await exchange_manager.trader.cancel_order_from_description(order_description)
+    return 0
