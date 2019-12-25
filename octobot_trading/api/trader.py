@@ -1,0 +1,59 @@
+#  Drakkar-Software OctoBot-Trading
+#  Copyright (c) Drakkar-Software, All rights reserved.
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 3.0 of the License, or (at your option) any later version.
+#
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library.
+from octobot_trading.api import LOGGER_TAG
+from octobot_commons.logging.logging_util import get_logger
+
+LOGGER = get_logger(LOGGER_TAG)
+
+
+def is_trader_enabled_in_config(exchange_manager):
+    return exchange_manager.trader.enabled(exchange_manager.trader.config)
+
+
+def is_trader_enabled(exchange_manager):
+    return exchange_manager.trader.is_enabled
+
+
+def set_trading_enabled(exchange_manager, enabled):
+    exchange_manager.trader.is_enabled = enabled
+
+
+def is_trader_simulated(exchange_manager):
+    return exchange_manager.is_trader_simulated
+
+
+def get_trader_risk(exchange_manager):
+    return exchange_manager.trader.risk
+
+
+def set_trader_risk(exchange_manager, risk):
+    return exchange_manager.trader.set_risk(risk)
+
+
+async def sell_all_everything_for_reference_market(exchange_manager):
+    LOGGER.error("from sell_all_everything_for_reference_market: "
+                 "exchange_manager.trader.sell_all_currencies is not implemented yet")
+    # TODO: uncomment when implemented
+    # return await exchange_manager.trader.sell_all_currencies()
+
+
+async def sell_currency_for_reference_market(exchange_manager, currency):
+    LOGGER.error("from sell_currency_for_reference_market: "
+                 "exchange_manager.trader.sell_all is not implemented yet")
+    # TODO: uncomment when implemented
+    # return await exchange_manager.trader.sell_all_currencies(currency)
+
+

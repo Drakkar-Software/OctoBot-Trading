@@ -49,6 +49,16 @@ class TradesManager(Initializable):
             self.trades[trade.order_id] = trade
             self._check_trades_size()
 
+    def get_total_paid_fees(self):
+        total_fees = {}
+        for trade in self.trades.values():
+            if trade.fee is not None:
+                # TODO: fill in total_fees dict: fees amount by currency
+                pass
+            else:
+                self.logger.warning(f"Trade without any registered fee: {trade}")
+        return total_fees
+
     # private
     def _check_trades_size(self):
         if len(self.trades) > self.MAX_TRADES_COUNT:

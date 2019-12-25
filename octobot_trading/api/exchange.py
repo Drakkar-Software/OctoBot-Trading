@@ -32,3 +32,15 @@ def create_new_exchange(config, exchange_name,
                            is_collecting=is_collecting,
                            exchange_only=exchange_only,
                            backtesting_files=backtesting_files)
+
+
+def get_trading_pairs(exchange_manager):
+    return exchange_manager.exchange_config.traded_symbol_pairs
+
+
+def get_exchange_name(exchange_manager):
+    return exchange_manager.get_exchange_name()
+
+
+async def force_refresh_orders_and_portfolio(exchange_manager):
+    return await exchange_manager.trader.force_refresh_orders_and_portfolio()
