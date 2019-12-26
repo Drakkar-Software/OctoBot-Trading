@@ -15,13 +15,13 @@
 #  License along with this library.
 from copy import deepcopy
 
-from octobot_commons.constants import PORTFOLIO_TOTAL
+from octobot_commons.constants import PORTFOLIO_TOTAL, CONFIG_CRYPTO_CURRENCIES
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol, merge_currencies
 
 from octobot_trading.constants import TICKER_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES, CONFIG_PORTFOLIO_TOTAL
+from octobot_trading.constants import CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import ExchangeConstantsTickersColumns
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.util import get_reference_market

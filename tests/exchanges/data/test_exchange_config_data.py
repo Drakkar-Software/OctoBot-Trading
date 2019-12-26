@@ -16,7 +16,7 @@
 import pytest
 
 from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES
+from octobot_commons.constants import CONFIG_CRYPTO_CURRENCIES
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 
 pytestmark = pytest.mark.asyncio

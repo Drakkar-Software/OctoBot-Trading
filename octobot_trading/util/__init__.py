@@ -13,12 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
-from octobot_commons.constants import CONFIG_ENABLED_OPTION
+from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS
 from octobot_commons.dict_util import get_value_or_default
 from octobot_commons.symbol_util import split_symbol
 
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_SIMULATOR, CONFIG_TRADING, CONFIG_TRADER_REFERENCE_MARKET, \
-    DEFAULT_REFERENCE_MARKET, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS
+    DEFAULT_REFERENCE_MARKET
 
 
 def is_trader_enabled(config):

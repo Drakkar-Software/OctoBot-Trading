@@ -17,10 +17,10 @@ from octobot_commons.symbol_util import split_symbol
 
 from octobot_commons.time_frame_manager import get_config_time_frame, find_min_time_frame, sort_time_frames
 
-from octobot_commons.constants import CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME, CONFIG_TIME_FRAME
+
+from octobot_commons.constants import CONFIG_WILDCARD, MIN_EVAL_TIME_FRAME, CONFIG_TIME_FRAME, \
+    CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, CONFIG_CRYPTO_ADD, CONFIG_CRYPTO_QUOTE
 from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.constants import CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS, CONFIG_CRYPTO_ADD, \
-    CONFIG_CRYPTO_QUOTE
 
 from octobot_trading.util.initializable import Initializable
 
