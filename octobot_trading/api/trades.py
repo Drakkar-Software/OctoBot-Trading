@@ -15,14 +15,14 @@
 #  License along with this library.
 
 
-def get_trade_history(exchange_manager, symbol=None):
+def get_trade_history(exchange_manager, symbol=None) -> list:
     if symbol is None:
-        return exchange_manager.exchange_personal_data.trades_manager.values()
+        return exchange_manager.exchange_personal_data.trades_manager.trades.values()
     else:
         return [trade
-                for trade in exchange_manager.exchange_personal_data.trades_manager.values()
+                for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values()
                 if trade.symbol == symbol]
 
 
-def get_total_paid_trading_fees(exchange_manager):
+def get_total_paid_trading_fees(exchange_manager) -> dict:
     return exchange_manager.exchange_personal_data.trades_manager.get_total_paid_fees()

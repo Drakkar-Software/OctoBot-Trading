@@ -15,7 +15,7 @@
 #  License along with this library.
 
 
-def get_profitability_stats(exchange_manager):
+def get_profitability_stats(exchange_manager) -> tuple:
     port_profit = exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability
     return port_profit.profitability, \
         port_profit.profitability_percent, \
@@ -24,14 +24,14 @@ def get_profitability_stats(exchange_manager):
         port_profit.initial_portfolio_current_profitability
 
 
-def get_origin_portfolio_value(exchange_manager):
+def get_origin_portfolio_value(exchange_manager) -> float:
     return exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability.portfolio_origin_value
 
 
-def get_current_portfolio_value(exchange_manager):
+def get_current_portfolio_value(exchange_manager) -> float:
     return exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability.portfolio_current_value
 
 
-def get_current_holdings_values(exchange_manager):
+def get_current_holdings_values(exchange_manager) -> float:
     return exchange_manager.exchange_personal_data.portfolio_manager.\
         portfolio_profitability.get_current_holdings_values()

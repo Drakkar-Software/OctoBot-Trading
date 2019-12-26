@@ -154,6 +154,13 @@ class Trader(Initializable):
                                                                                            order.order_id,
                                                                                            cancelled_order)
 
+    async def cancel_order_with_id(self, order_id):
+        try:
+            await self.cancel_order(self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id))
+            return True
+        except KeyError:
+            return False
+
     # Should be called only if we want to cancel all symbol open orders (no filled)
     async def cancel_open_orders(self, symbol, cancel_loaded_orders=True):
         # use a copy of the list (not the reference)

@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from typing import KeysView
+
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_commons.singleton.singleton_class import Singleton
@@ -62,3 +64,6 @@ class Exchanges(Singleton):
         except KeyError:
             get_logger(self.__class__.__name__).warning(f"Can't del exchange {exchange_name} "
                                                         f"with id {exchange_manager_id}")
+
+    def get_exchange_names(self) -> KeysView:
+        return self.exchanges.keys()
