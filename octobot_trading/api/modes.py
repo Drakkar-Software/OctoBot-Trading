@@ -21,7 +21,7 @@ from octobot_commons.tentacles_management.config_manager import reload_tentacle_
 from octobot_trading.api import LOGGER_TAG
 from octobot_trading.constants import CONFIG_TRADING_TENTACLES
 from octobot_trading.modes import AbstractTradingMode
-from octobot_trading.util.trading_config_util import get_activated_trading_mode
+from octobot_trading.util.trading_config_util import get_activated_trading_mode as util_get_activated_trading_mode
 
 
 def init_trading_mode_config(config, trading_tentacles_path):
@@ -29,9 +29,13 @@ def init_trading_mode_config(config, trading_tentacles_path):
     create_classes_list(config, AbstractTradingMode)
 
 
+def get_activated_trading_mode(config):
+    return util_get_activated_trading_mode(config)
+
+
 async def create_trading_mode(config, exchange_manager) -> None:
     try:
-        trading_mode = get_activated_trading_mode(config)(config, exchange_manager)
+        trading_mode = util_get_activated_trading_mode(config)(config, exchange_manager)
         await trading_mode.initialize()
         get_logger(f"{LOGGER_TAG}[{exchange_manager.exchange.name}]")\
             .debug(f"Using {trading_mode.get_name()} trading mode")
