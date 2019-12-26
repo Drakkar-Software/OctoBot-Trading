@@ -18,13 +18,12 @@ import logging
 
 import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
-from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, ArgumentsRequired
+from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol
+
 from octobot_commons.config_util import decrypt
 from octobot_commons.constants import MSECONDS_TO_MINUTE
-
 from octobot_commons.dict_util import get_value_or_default
 from octobot_commons.enums import TimeFramesMinutes
-
 from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_KEY, CONFIG_EXCHANGE_SECRET, \
     CONFIG_EXCHANGE_PASSWORD, CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_USED, \
     CONFIG_PORTFOLIO_TOTAL
@@ -359,11 +358,19 @@ class RestExchange(AbstractExchange):
         self.logger.info(f"Connection closed.")
 
     def get_pair_from_exchange(self, pair) -> str:
-        return self.client.market(pair)["symbol"]
+        try:
+            return self.client.market(pair)["symbol"]
+        except ccxt.base.errors.BadSymbol:
+            self.logger.error(f"Failed to get market of {pair}")
+            return None
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
-        market_data: dict = self.client.market(pair)
-        return market_data["base"], market_data["quote"]
+        try:
+            market_data: dict = self.client.market(pair)
+            return market_data["base"], market_data["quote"]
+        except BadSymbol:
+            self.logger.error(f"Failed to get market of {pair}")
+            return None, None
 
     def get_exchange_pair(self, pair: str) -> str:
         if pair in self.client.symbols:

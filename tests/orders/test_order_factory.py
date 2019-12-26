@@ -16,7 +16,7 @@
 import pytest
 from octobot_commons.tests.test_config import load_test_config
 
-from octobot_trading.data.order import Order
+from octobot_trading.data.order import Order, parse_order_type
 from octobot_trading.enums import TradeOrderSide, TradeOrderType, TraderOrderType
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.traders.trader_simulator import TraderSimulator
@@ -60,18 +60,18 @@ class TestOrderFactory:
             "side": TradeOrderSide.BUY,
             "type": TradeOrderType.LIMIT
         }
-        assert Order.parse_order_type(ccxt_order_buy_limit) == (TradeOrderSide.BUY, TraderOrderType.BUY_LIMIT)
+        assert parse_order_type(ccxt_order_buy_limit) == (TradeOrderSide.BUY, TraderOrderType.BUY_LIMIT)
 
         ccxt_order_sell_market = {
             "side": TradeOrderSide.SELL,
             "type": TradeOrderType.MARKET
         }
-        assert Order.parse_order_type(ccxt_order_sell_market) == (TradeOrderSide.SELL, TraderOrderType.SELL_MARKET)
+        assert parse_order_type(ccxt_order_sell_market) == (TradeOrderSide.SELL, TraderOrderType.SELL_MARKET)
 
         ccxt_order_sell_limit = {
             "side": TradeOrderSide.SELL,
             "type": TradeOrderType.LIMIT
         }
-        assert Order.parse_order_type(ccxt_order_sell_limit) == (TradeOrderSide.SELL, TraderOrderType.SELL_LIMIT)
+        assert parse_order_type(ccxt_order_sell_limit) == (TradeOrderSide.SELL, TraderOrderType.SELL_LIMIT)
 
         await self.stop(exchange_manager)

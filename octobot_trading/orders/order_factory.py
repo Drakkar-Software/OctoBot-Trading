@@ -13,13 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.order import Order
+from octobot_trading.data.order import parse_order_type
 from octobot_trading.enums import OrderStatus
-from octobot_trading.orders import OrderConstants
+from octobot_trading.orders.types import TraderOrderTypeClasses
 
 
 def create_order_from_raw(trader, raw_order):
-    _, order_type = Order.parse_order_type(raw_order)
+    _, order_type = parse_order_type(raw_order)
     return create_order_from_type(trader, order_type)
 
 
@@ -30,7 +30,7 @@ def create_order_instance_from_raw(trader, raw_order):
 
 
 def create_order_from_type(trader, order_type):
-    return OrderConstants.TraderOrderTypeClasses[order_type](trader)
+    return TraderOrderTypeClasses[order_type](trader)
 
 
 def create_order_instance(trader,
@@ -43,7 +43,6 @@ def create_order_instance(trader,
                           linked_to=None,
                           status=OrderStatus.OPEN,
                           order_id=None,
-                          fee=0.0,
                           filled_price=0.0,
                           quantity_filled=0.0,
                           total_cost=0.0,
@@ -62,7 +61,7 @@ def create_order_instance(trader,
                  status=status,
                  filled_price=filled_price,
                  quantity_filled=quantity_filled,
-                 fee=fee,
+                 fee=None,
                  total_cost=total_cost,
                  linked_to=linked_to,
                  linked_portfolio=linked_portfolio)

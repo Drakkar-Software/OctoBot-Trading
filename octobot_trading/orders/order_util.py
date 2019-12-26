@@ -22,7 +22,6 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 from octobot_trading.exchanges.util.exchange_market_status_fixer import is_ms_valid
-from octobot_trading.producers import MarkPriceUpdater
 
 
 def is_valid(element, key):

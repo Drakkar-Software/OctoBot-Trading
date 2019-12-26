@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -13,6 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.orders.order_factory import *
-from octobot_trading.orders.order_util import *
-from octobot_trading.orders.order_adapter import *
+
+from octobot_trading.data.order cimport Order
+
+
+cdef class TrailingStopOrder(Order):
+    pass

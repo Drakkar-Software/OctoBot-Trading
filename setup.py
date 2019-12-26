@@ -79,16 +79,16 @@ packages_list = ["octobot_trading.util.initializable",
                  "octobot_trading.data_manager.order_book_manager",
                  "octobot_trading.data_manager.ticker_manager",
                  "octobot_trading.data_manager.recent_trades_manager",
-                 "octobot_trading.orders.buy_limit_order",
-                 "octobot_trading.orders.buy_market_order",
+                 "octobot_trading.orders.types.buy_limit_order",
+                 "octobot_trading.orders.types.buy_market_order",
                  "octobot_trading.orders.order_adapter",
                  "octobot_trading.orders.order_factory",
                  "octobot_trading.orders.order_util",
-                 "octobot_trading.orders.sell_limit_order",
-                 "octobot_trading.orders.sell_market_order",
-                 "octobot_trading.orders.stop_loss_limit_order",
-                 "octobot_trading.orders.trailing_stop_order",
-                 "octobot_trading.orders.stop_loss_order",
+                 "octobot_trading.orders.types.sell_limit_order",
+                 "octobot_trading.orders.types.sell_market_order",
+                 "octobot_trading.orders.types.stop_loss_limit_order",
+                 "octobot_trading.orders.types.trailing_stop_order",
+                 "octobot_trading.orders.types.stop_loss_order",
                  "octobot_trading.modes.abstract_trading_mode",
                  "octobot_trading.traders.trader",
                  "octobot_trading.traders.trader_simulator",
@@ -131,6 +131,10 @@ REQUIRED = open('requirements.txt').readlines()
 REQUIRES_PYTHON = '>=3.7'
 CYTHON_DEBUG = False if not os.getenv('CYTHON_DEBUG') else os.getenv('CYTHON_DEBUG')
 
+if CYTHON_DEBUG:
+    from Cython.Compiler.Options import get_directive_defaults
+    get_directive_defaults()['cache_builtins'] = False
+
 setup(
     name=PROJECT_NAME,
     version=VERSION,
@@ -148,7 +152,7 @@ setup(
     test_suite="tests",
     zip_safe=False,
     data_files=[],
-    setup_requires=REQUIRED if not CYTHON_DEBUG else [],
+    setup_requires=REQUIRED,
     install_requires=REQUIRED,
     ext_modules=cythonize(ext_modules, gdb_debug=CYTHON_DEBUG),
     python_requires=REQUIRES_PYTHON,
