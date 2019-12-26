@@ -13,6 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.orders.order_factory import *
-from octobot_trading.orders.order_util import *
-from octobot_trading.orders.order_adapter import *
+
+cdef class OrderConstants:
+    pass

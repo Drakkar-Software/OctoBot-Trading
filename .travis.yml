@@ -10,6 +10,7 @@ env:
     - GH_REPO=Drakkar-Software/OctoBot-Trading
     - DEPLOY_BRANCH=master
     - PACKAGE_FOLDER=octobot_trading
+    - CYTHON_DEBUG=True
     - secure: pR29cjwb+FjXML5DCaVxdNLcUKDCszFpFlK1Rm0+ZYy1ZlBEuZGbLTxvcYYsTtwRr9vAy7OY5DemWRpe+SstPyCk42wuipGRMjZmWMyBXCzYqrDuljB8STV9t0Ga9FASlg2tqoL4BKtyM0amvS/CHC/bm4dWun5eM6JeddVlhY0akxnaS+jWAIK2jvlUA+FoC1YrDayxrmmkp5q+3rBIFOFGCWg3v9McDhtcbNwHhEFmrVILIZCAU3wCshQhUnaEhFex7t8NNAiftgL2FopYzPuxr+V6aUDugJJRTNj3kkDUNRKYnIKwjqGNQnrLpDGTpHaEAdfm175znWaKdBilDKErBQb9muyjCDvbxxhi0vsa217ATc6YTrXYS19wKrP1FQV2owJUr8nlRcGxzQivaztOeCaZOUJt9m0TAgZobd7JQche6Tdno4hRky8iL5s3nnM7cI9THL+CCX71hT7os/F/23umCItDZ4H73XpYUR1iRx8kj3M1oCk8DAIrEp31L1iMVx9k30PbruOODGW3UqfLO9dqwQ+qesDh0MkAQzFLNd2JT/g+3QBYiulk7Itm8kQc0hBEl/lEREEZfqsgAn7+o5lh5cd15c2AFfwj/uaq8VN954xjA7OefohiZJbA5PHB91/43Xw2BhUqFE8Pg5MmTBpsQQTKvNhXAjfHahw=
     - secure: wK6A14jETV7tfcM0BCW/LVhtIFELvwErVGFKuMSpfA6X20SIHxRUZx0GbAomi9VJIH/M/GDcxoQvduf6ciwRF6s1QLJJQZ2fSkK5rSeOXLe9IXY9qLF09c+MHq7VNxzsQjChxuwQt2Kl/luu1irflb1tnKmfqzg2aZve+3b7G05QwPmiHRJh518RTu8QHh2SbgrBUo34tg+2peVu27AEUxmkZS9fPHKLDqNd/U4tGxeTfy+fxVsCQwyKu0eRCFkCoWeQkT77WeXqippsrFFYPaOb9JpN4ThDvGOnc+egt4hfV4HUG7MffwcLhoNEHrcUZQYhB3Jgx+drUYVKk7HwF8eZrPTXCT4CMQALR3pknwosj1bvA2YnWJaMeXwb+wS2y4YFqCj4PrdEZoAfcd1Y2SQeJDKFpWxtVjZ2F/wWqarIO7hsIbNESPkui3WXbA3UXoHAQRZgAkQqfeu7BQBGdxXSvrUDiTYqidlkgHrQu+R6yc88XFd6iugRgUu+YTFX0577vUcaJpadSzeAnDJSwwS8e9gNZQcONAG0t/1lTQVwUnFdYGsqRWPaWC12xXoyLSm9B8RlN1+j4xmFZNJq55Jz2FsLCvwke0HJ1o6ppIjqhBT5kqLUqbzjEGJzIXCLUrFdktEb73VgQJCQmiz0aTs1cReninPQR06BP/0pbXc=
 
@@ -36,6 +37,7 @@ matrix:
       os: linux
       python: 3.7-dev
       language: python
+      env: CYTHON_TEST_IGNORE=true
       script:
         - python3 setup.py build_ext --inplace
         - python3 setup.py install

@@ -70,7 +70,7 @@ class Order:
 
     def update(self, symbol, order_id="", status=OrderStatus.OPEN,
                current_price=0.0, quantity=0.0, price=0.0, stop_price=0.0,
-               quantity_filled=0.0, filled_price=0.0, fee=0.0, total_cost=0.0,
+               quantity_filled=0.0, filled_price=0.0, fee=None, total_cost=0.0,
                timestamp=None, linked_to=None, linked_portfolio=None, order_type=None) -> bool:
         changed: bool = False
 
@@ -101,8 +101,9 @@ class Order:
             self.origin_price = price
             changed = True
 
-        if (fee is not None and self.fee != fee) or quantity_filled is not None:
-            self.fee = fee if fee is not None else self.get_computed_fee()
+        # TODO
+        # if fee is not None and self.fee != fee and self.filled_quantity is not None:
+        #     self.fee = self.get_computed_fee()
 
         if current_price and self.created_last_price != current_price:
             self.created_last_price = current_price
@@ -148,7 +149,6 @@ class Order:
             self.filled_price = self.total_cost / self.filled_quantity
             if timestamp is not None:
                 self.executed_time = self.trader.exchange_manager.exchange.get_uniform_timestamp(timestamp)
-
         return changed
 
     async def update_order_status(self, last_prices: list, simulated_time=False):
@@ -271,60 +271,36 @@ class Order:
             except KeyError:
                 pass
 
-        return self.update(**{
-            "symbol": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.SYMBOL.value, None),
-            "current_price": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, None),
-            "quantity": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.AMOUNT.value, None),
-            "price": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, None),
-            "stop_price": None,
-            "status": Order.parse_order_status(raw_order),
-            "order_id": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.ID.value, None),
-            "quantity_filled": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.FILLED.value, None),
-            "filled_price": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, None),
-            "total_cost": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.COST.value, None),
-            "fee": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.FEE.value, None),
-            "timestamp": get_value_or_default(raw_order, ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
-        })
-
-    @staticmethod
-    def parse_order_type(raw_order):
-        side: TradeOrderSide = TradeOrderSide(raw_order[ExchangeConstantsOrderColumns.SIDE.value])
-        order_type: TradeOrderType = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
-
-        if side == TradeOrderSide.BUY:
-            if order_type == TradeOrderType.LIMIT:
-                order_type = TraderOrderType.BUY_LIMIT
-            elif order_type == TradeOrderType.MARKET:
-                order_type = TraderOrderType.BUY_MARKET
-        elif side == TradeOrderSide.SELL:
-            if order_type == TradeOrderType.LIMIT:
-                order_type = TraderOrderType.SELL_LIMIT
-            elif order_type == TradeOrderType.MARKET:
-                order_type = TraderOrderType.SELL_MARKET
-        return side, order_type
-
-    @staticmethod
-    def parse_order_status(raw_order):
-        try:
-            return OrderStatus(raw_order[ExchangeConstantsOrderColumns.STATUS.value])
-        except KeyError:
-            return None
+        return self.update(
+            symbol=str(get_value_or_default(raw_order, ExchangeConstantsOrderColumns.SYMBOL.value, None)),
+            current_price=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            quantity=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.AMOUNT.value, 0.0),
+            price=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            status=parse_order_status(raw_order),
+            order_id=str(get_value_or_default(raw_order, ExchangeConstantsOrderColumns.ID.value, None)),
+            quantity_filled=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.FILLED.value, 0.0),
+            filled_price=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            total_cost=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.COST.value, 0.0),
+            fee=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.FEE.value, None),
+            timestamp=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
+        )
 
     def update_order_from_raw(self, raw_order):
-        self.status = Order.parse_order_status(raw_order)
+        self.status = parse_order_status(raw_order)
         self.total_cost = raw_order[ExchangeConstantsOrderColumns.COST.value]
         self.filled_quantity = raw_order[ExchangeConstantsOrderColumns.FILLED.value]
         self.filled_price = raw_order[ExchangeConstantsOrderColumns.PRICE.value]
         if not self.filled_price and self.filled_quantity:
             self.filled_price = self.total_cost / self.filled_quantity
-        self.taker_or_maker = Order.parse_order_type(raw_order)
+
+        self.taker_or_maker = parse_order_type(raw_order)
         self.fee = raw_order[ExchangeConstantsOrderColumns.FEE.value]
 
         self.executed_time = self.trader.exchange.get_uniform_timestamp(
             raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value])
 
     def __update_type_from_raw(self, raw_order):
-        self.side, self.order_type = Order.parse_order_type(raw_order)
+        self.side, self.order_type = parse_order_type(raw_order)
 
     def __update_taker_maker_from_raw(self):
         if self.order_type in [TraderOrderType.SELL_MARKET, TraderOrderType.BUY_MARKET, TraderOrderType.STOP_LOSS]:
@@ -337,7 +313,51 @@ class Order:
 
     def to_string(self):
         return (f"{self.symbol} | "
-                f"{self.order_type.name} | "
+                f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
                 f"Price : {self.origin_price} | "
                 f"Quantity : {self.origin_quantity} | "
-                f"Status : {self.status.name}")
+                f"Status : {self.status.name if self.status is not None else 'Unknown'}")
+
+
+def parse_order_type(raw_order):
+    try:
+        side: TradeOrderSide = TradeOrderSide(raw_order[ExchangeConstantsOrderColumns.SIDE.value])
+        order_type: TradeOrderType = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
+
+        if side == TradeOrderSide.BUY:
+            if order_type == TradeOrderType.LIMIT or order_type == TradeOrderType.LIMIT_MAKER:
+                order_type = TraderOrderType.BUY_LIMIT
+            elif order_type == TradeOrderType.MARKET:
+                order_type = TraderOrderType.BUY_MARKET
+            else:
+                order_type = _get_sell_and_buy_types(order_type)
+        elif side == TradeOrderSide.SELL:
+            if order_type == TradeOrderType.LIMIT or order_type == TradeOrderType.LIMIT_MAKER:
+                order_type = TraderOrderType.SELL_LIMIT
+            elif order_type == TradeOrderType.MARKET:
+                order_type = TraderOrderType.SELL_MARKET
+            else:
+                order_type = _get_sell_and_buy_types(order_type)
+        return side, order_type
+    except KeyError:
+        get_logger(Order.__class__.__name__).error("Failed to parse order type")
+        return None, None
+
+
+def _get_sell_and_buy_types(order_type):
+    if order_type == TradeOrderType.STOP_LOSS:
+        return TraderOrderType.STOP_LOSS
+    elif order_type == TradeOrderType.STOP_LOSS_LIMIT:
+        return TraderOrderType.STOP_LOSS_LIMIT
+    elif order_type == TradeOrderType.TAKE_PROFIT:
+        return TraderOrderType.TAKE_PROFIT
+    elif order_type == TradeOrderType.TAKE_PROFIT_LIMIT:
+        return TraderOrderType.TAKE_PROFIT_LIMIT
+    return None
+
+
+def parse_order_status(raw_order):
+    try:
+        return OrderStatus(raw_order[ExchangeConstantsOrderColumns.STATUS.value])
+    except KeyError:
+        return KeyError("Could not parse new order status")

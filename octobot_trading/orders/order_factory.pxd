@@ -36,7 +36,6 @@ cpdef Order create_order_instance(Trader trader,
                                   str order_id=*,
                                   float filled_price=*,
                                   float quantity_filled=*,
-                                  float fee=*,
                                   float total_cost=*,
                                   float timestamp=*,
                                   object linked_portfolio=*)

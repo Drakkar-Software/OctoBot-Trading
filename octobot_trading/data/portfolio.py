@@ -16,8 +16,8 @@
 
 from asyncio import Lock
 
+from octobot_trading.orders import TraderOrderTypeClasses
 from octobot_trading.util.initializable import Initializable
-from octobot_trading.orders.order_factory import OrderConstants
 
 from octobot_trading.constants import CURRENT_PORTFOLIO_STRING, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import TradeOrderSide, TraderOrderType
@@ -139,8 +139,8 @@ class Portfolio(Initializable):
     # Check if the order has impact on availability
     def _check_available_should_update(self, order):
         # stop losses and take profits aren't using available portfolio
-        return order.__class__ not in [OrderConstants.TraderOrderTypeClasses[TraderOrderType.STOP_LOSS],
-                                       OrderConstants.TraderOrderTypeClasses[TraderOrderType.STOP_LOSS_LIMIT]]
+        return order.__class__ not in [TraderOrderTypeClasses[TraderOrderType.STOP_LOSS],
+                                       TraderOrderTypeClasses[TraderOrderType.STOP_LOSS_LIMIT]]
 
     # Realise portfolio availability update
     def _update_portfolio_available(self, order, factor=1):

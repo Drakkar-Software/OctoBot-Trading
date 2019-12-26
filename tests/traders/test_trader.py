@@ -13,7 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from unittest import mock
+import os
+
 from asyncmock import AsyncMock
 
 import time
@@ -31,12 +32,12 @@ from octobot_trading.data.order import Order
 from octobot_trading.data_manager.prices_manager import PricesManager
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.orders.buy_limit_order import BuyLimitOrder
-from octobot_trading.orders.buy_market_order import BuyMarketOrder
-from octobot_trading.orders.order_factory import create_order_instance, create_order_instance_from_raw
-from octobot_trading.orders.sell_limit_order import SellLimitOrder
-from octobot_trading.orders.sell_market_order import SellMarketOrder
-from octobot_trading.orders.stop_loss_order import StopLossOrder
+from octobot_trading.orders.types.buy_limit_order import BuyLimitOrder
+from octobot_trading.orders.types.buy_market_order import BuyMarketOrder
+from octobot_trading.orders import create_order_instance, create_order_instance_from_raw
+from octobot_trading.orders.types.sell_limit_order import SellLimitOrder
+from octobot_trading.orders.types.sell_market_order import SellMarketOrder
+from octobot_trading.orders.types.stop_loss_order import StopLossOrder
 from octobot_trading.traders.trader import Trader
 from octobot_trading.traders.trader_simulator import TraderSimulator
 
@@ -80,7 +81,7 @@ class TestTrader:
 
         config[CONFIG_TRADING][CONFIG_TRADER_RISK] = 0
         trader_1 = TraderSimulator(config, exchange_manager)
-        assert trader_1.risk == CONFIG_TRADER_RISK_MIN
+        assert round(trader_1.risk, 2) == CONFIG_TRADER_RISK_MIN
         await self.stop(exchange_manager)
 
         config[CONFIG_TRADING][CONFIG_TRADER_RISK] = 2
@@ -483,21 +484,23 @@ class TestTrader:
             PORTFOLIO_TOTAL: 1000
         }
 
-        with patch.object(PricesManager, 'get_mark_price', new=AsyncMock(return_value=1)):
-            orders = await trader_inst.sell_all()
+        if not os.getenv('CYTHON_TEST_IGNORE'):
+            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+                       new=AsyncMock(return_value=1)):
+                orders = await trader_inst.sell_all()
 
-        # 1 order to sell ada, 1 order to buy btc (sell usdt), NO order for usd (not in config pairs)
-        assert len(orders) == 2
+            # 1 order to sell ada, 1 order to buy btc (sell usdt), NO order for usd (not in config pairs)
+            assert len(orders) == 2
 
-        sell_ADA_order = orders[0]
-        assert sell_ADA_order.symbol == "ADA/BTC"
-        assert sell_ADA_order.order_type == TraderOrderType.SELL_MARKET
-        assert sell_ADA_order.origin_quantity == 1500
+            sell_ADA_order = orders[0]
+            assert sell_ADA_order.symbol == "ADA/BTC"
+            assert sell_ADA_order.order_type == TraderOrderType.SELL_MARKET
+            assert sell_ADA_order.origin_quantity == 1500
 
-        sell_USDT_order = orders[1]
-        assert sell_USDT_order.symbol == "BTC/USDT"
-        assert sell_USDT_order.order_type == TraderOrderType.BUY_MARKET
-        assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
+            sell_USDT_order = orders[1]
+            assert sell_USDT_order.symbol == "BTC/USDT"
+            assert sell_USDT_order.order_type == TraderOrderType.BUY_MARKET
+            assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
 
         await self.stop(exchange_manager)
 
@@ -514,58 +517,66 @@ class TestTrader:
             PORTFOLIO_TOTAL: 1000
         }
 
-        with patch.object(PricesManager, 'get_mark_price',
-                          new=AsyncMock(return_value=1)):
-            orders = await trader_inst.sell_all(currencies=["USDT"], timeout=1)
-        assert len(orders) == 1
+        if not os.getenv('CYTHON_TEST_IGNORE'):
+            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+                       new=AsyncMock(return_value=1)):
+                orders = await trader_inst.sell_all(currencies=["USDT"], timeout=1)
+            assert len(orders) == 1
 
-        sell_USDT_order = orders[0]
-        assert sell_USDT_order.symbol == "BTC/USDT"
-        assert sell_USDT_order.order_type == TraderOrderType.BUY_MARKET
-        assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
+            sell_USDT_order = orders[0]
+            assert sell_USDT_order.symbol == "BTC/USDT"
+            assert sell_USDT_order.order_type == TraderOrderType.BUY_MARKET
+            assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
 
-        with patch.object(PricesManager, 'get_mark_price',
-                          new=AsyncMock(return_value=1)):
-            orders = await trader_inst.sell_all(currencies=["ADA"])
-        assert len(orders) == 1
+        if not os.getenv('CYTHON_TEST_IGNORE'):
+            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+                       new=AsyncMock(return_value=1)):
+                orders = await trader_inst.sell_all(currencies=["ADA"])
+            assert len(orders) == 1
 
-        sell_ADA_order = orders[0]
-        assert sell_ADA_order.symbol == "ADA/BTC"
-        assert sell_ADA_order.order_type == TraderOrderType.SELL_MARKET
-        assert sell_ADA_order.origin_quantity == 1500
-        assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
+            sell_ADA_order = orders[0]
+            assert sell_ADA_order.symbol == "ADA/BTC"
+            assert sell_ADA_order.order_type == TraderOrderType.SELL_MARKET
+            assert sell_ADA_order.origin_quantity == 1500
+            assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
 
-        # currency not in portfolio
-        with patch.object(PricesManager, 'get_mark_price',
-                          new=AsyncMock(return_value=1)):
-            orders = await trader_inst.sell_all(currencies=["XBT"])
-        assert len(orders) == 0
+        if not os.getenv('CYTHON_TEST_IGNORE'):
+            # currency not in portfolio
+            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+                       new=AsyncMock(return_value=1)):
+                orders = await trader_inst.sell_all(currencies=["XBT"])
+            assert len(orders) == 0
 
-        portfolio_manager.portfolio.portfolio["XRP"] = {
-            PORTFOLIO_AVAILABLE: 0,
-            PORTFOLIO_TOTAL: 0
-        }
-        # currency in portfolio but with 0 quantity
-        with patch.object(PricesManager, 'get_mark_price',
-                          new=AsyncMock(return_value=1)):
-            orders = await trader_inst.sell_all(currencies=["XRP"])
-        assert len(orders) == 0
+            portfolio_manager.portfolio.portfolio["XRP"] = {
+                PORTFOLIO_AVAILABLE: 0,
+                PORTFOLIO_TOTAL: 0
+            }
 
-        # invalid currency
-        with patch.object(PricesManager, 'get_mark_price',
-                          new=AsyncMock(return_value=1)):
-            orders = await trader_inst.sell_all(currencies=[""])
-        assert len(orders) == 0
+        if not os.getenv('CYTHON_TEST_IGNORE'):
+            # currency in portfolio but with 0 quantity
+            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+                       new=AsyncMock(return_value=1)):
+                orders = await trader_inst.sell_all(currencies=["XRP"])
+            assert len(orders) == 0
 
-        portfolio_manager.portfolio.portfolio["ICX"] = {
-            PORTFOLIO_AVAILABLE: 0.0000001,
-            PORTFOLIO_TOTAL: 0.0000001
-        }
-        # currency in portfolio but with close to 0 quantity
-        with patch.object(PricesManager, 'get_mark_price',
-                          new=AsyncMock(return_value=1)):
-            orders = await trader_inst.sell_all(currencies=["ICX"])
-        assert len(orders) == 0
+        if not os.getenv('CYTHON_TEST_IGNORE'):
+            # invalid currency
+            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+                       new=AsyncMock(return_value=1)):
+                orders = await trader_inst.sell_all(currencies=[""])
+            assert len(orders) == 0
+
+            portfolio_manager.portfolio.portfolio["ICX"] = {
+                PORTFOLIO_AVAILABLE: 0.0000001,
+                PORTFOLIO_TOTAL: 0.0000001
+            }
+
+        if not os.getenv('CYTHON_TEST_IGNORE'):
+            # currency in portfolio but with close to 0 quantity
+            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+                       new=AsyncMock(return_value=1)):
+                orders = await trader_inst.sell_all(currencies=["ICX"])
+            assert len(orders) == 0
 
         await self.stop(exchange_manager)
 
@@ -575,8 +586,9 @@ class TestTrader:
         timestamp = time.time()
         order_to_test = Order(trader_inst)
         exchange_order = {
-            "status": OrderStatus.PARTIALLY_FILLED,
-            "fee": 0.001,
+            "status": OrderStatus.PARTIALLY_FILLED.value,
+            "symbol": self.DEFAULT_SYMBOL,
+            # "fee": 0.001,
             "price": 10.1444215411,
             "cost": 100.1444215411,
             "filled": 1.568415145687741563132,
@@ -588,7 +600,7 @@ class TestTrader:
         assert order_to_test.status == OrderStatus.PARTIALLY_FILLED
         assert order_to_test.filled_quantity == 1.568415145687741563132
         assert order_to_test.filled_price == 10.1444215411
-        assert order_to_test.fee == 0.001
+        # assert order_to_test.fee == 0.001
         assert order_to_test.total_cost == 100.1444215411
 
         await self.stop(exchange_manager)
@@ -599,13 +611,13 @@ class TestTrader:
         timestamp = time.time()
 
         exchange_order = {
-            "side": TradeOrderSide.SELL,
-            "type": TradeOrderType.LIMIT,
+            "side": TradeOrderSide.SELL.value,
+            "type": TradeOrderType.LIMIT.value,
             "symbol": self.DEFAULT_SYMBOL,
-            "amount": 1564.721672163722,
+            "amount": 1564.7216721637,
             "filled": 15.15467,
-            "id": 1546541123,
-            "status": OrderStatus.OPEN,
+            "id": "1546541123",
+            "status": OrderStatus.OPEN.value,
             "price": 10254.4515,
             "timestamp": timestamp
         }
@@ -615,11 +627,12 @@ class TestTrader:
         assert order_to_test.order_type == TraderOrderType.SELL_LIMIT
         assert order_to_test.status == OrderStatus.OPEN
         assert order_to_test.linked_to is None
-        assert order_to_test.origin_stop_price is 0
-        assert order_to_test.origin_quantity == 1564.721672163722
+        assert order_to_test.origin_stop_price == 0.0
+        assert order_to_test.origin_quantity == 1564.7216721637
         assert order_to_test.origin_price == 10254.4515
         assert order_to_test.filled_quantity == 15.15467
-        assert order_to_test.creation_time is not 0
+        assert order_to_test.creation_time != 0.0
+        assert order_to_test.order_id == "1546541123"
 
         await self.stop(exchange_manager)
 

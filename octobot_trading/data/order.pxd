@@ -13,7 +13,7 @@
 #  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
-#  License along with this library.
+#  License adouble with this library.
 
 
 """ Order class will represent an open order in the specified exchange
@@ -44,19 +44,20 @@ cdef class Order:
     cdef public str market
     cdef public str order_id
 
-    cdef public float origin_price
-    cdef public float origin_stop_price
-    cdef public float origin_quantity
-    cdef public float market_total_fees
-    cdef public float filled_quantity
-    cdef public float filled_price
-    cdef public float total_cost
+    cdef public double origin_price
+    cdef public double origin_stop_price
+    cdef public double origin_quantity
+    cdef public double market_total_fees
+    cdef public double filled_quantity
+    cdef public double filled_price
+    cdef public double total_cost
+    cdef public double created_last_price
+    cdef public double order_profitability
+
     cdef public float timestamp
     cdef public float creation_time
     cdef public float canceled_time
     cdef public float executed_time
-    cdef public float created_last_price
-    cdef public float order_profitability
 
     cdef public dict fee # Dict[str, Union[str, float]]
 
@@ -67,14 +68,14 @@ cdef class Order:
             str symbol,
             str order_id=*,
             object status=*,
-            float current_price=*,
-            float quantity=*,
-            float price=*,
-            float stop_price=*,
-            float quantity_filled=*,
-            float filled_price=*,
-            float fee=*,
-            float total_cost=*,
+            double current_price=*,
+            double quantity=*,
+            double price=*,
+            double stop_price=*,
+            double quantity_filled=*,
+            double filled_price=*,
+            dict fee=*,
+            double total_cost=*,
             object timestamp=*,
             object linked_to=*,
             object linked_portfolio=*,
@@ -82,21 +83,21 @@ cdef class Order:
 
     cdef void __update_type_from_raw(self, dict raw_order)
     cdef void __update_taker_maker_from_raw(self)
-    cdef str to_string(self)
 
-    cpdef bint check_last_prices(self, list last_prices, float price_to_check, bint inferior, bint simulated_time=*)
+    cpdef str to_string(self)
+    cpdef bint check_last_prices(self, list last_prices, double price_to_check, bint inferior, bint simulated_time=*)
     cpdef tuple get_currency_and_market(self)
-    cpdef float get_total_fees(self, str currency)
+    cpdef double get_total_fees(self, str currency)
     cpdef bint is_filled(self)
     cpdef bint is_cancelled(self)
     cpdef dict get_computed_fee(self, object forced_value=*)
-    cpdef float get_profitability(self)
+    cpdef double get_profitability(self)
     cpdef float generate_executed_time(self, bint simulated_time=*)
     cpdef bint is_self_managed(self)
     cpdef bint update_from_raw(self, dict raw_order)
 
-    @staticmethod
-    cdef object parse_order_status(dict raw_order)
+cpdef object parse_order_status(dict raw_order)
 
-    @staticmethod
-    cdef tuple parse_order_type(dict raw_order)
+cdef object _get_sell_and_buy_types(object order_type)
+
+cpdef tuple parse_order_type(dict raw_order)
