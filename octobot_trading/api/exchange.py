@@ -13,6 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges.exchange_manager import ExchangeManager
+
+from octobot_trading.exchanges.exchanges import Exchanges
+
 from octobot_trading.exchanges.exchange_factory import ExchangeFactory
 
 
@@ -23,7 +27,7 @@ def create_new_exchange(config, exchange_name,
                         is_sandboxed=False,
                         is_collecting=False,
                         exchange_only=False,
-                        backtesting_files=None):
+                        backtesting_files=None) -> ExchangeFactory:
     return ExchangeFactory(config, exchange_name,
                            is_simulated=is_simulated,
                            is_backtesting=is_backtesting,
@@ -34,12 +38,20 @@ def create_new_exchange(config, exchange_name,
                            backtesting_files=backtesting_files)
 
 
-def get_trading_pairs(exchange_manager):
-    return exchange_manager.exchange_config.traded_symbol_pairs
+def get_exchange_manager_from_exchange_name(exchange_name) -> ExchangeManager:
+    return Exchanges.instance().get_exchange(exchange_name).exchange_manager
 
 
-def get_exchange_name(exchange_manager):
+def get_exchange_names() -> list:
+    return Exchanges.instance().get_exchange_names()
+
+
+def get_exchange_name(exchange_manager) -> str:
     return exchange_manager.get_exchange_name()
+
+
+def get_trading_pairs(exchange_manager) -> list:
+    return exchange_manager.exchange_config.traded_symbol_pairs
 
 
 async def force_refresh_orders_and_portfolio(exchange_manager):

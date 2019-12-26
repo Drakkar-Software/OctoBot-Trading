@@ -24,12 +24,12 @@ from octobot_trading.modes import AbstractTradingMode
 from octobot_trading.util.trading_config_util import get_activated_trading_mode as util_get_activated_trading_mode
 
 
-def init_trading_mode_config(config, trading_tentacles_path):
+def init_trading_mode_config(config, trading_tentacles_path) -> None:
     reload_tentacle_config(config, CONFIG_TRADING_TENTACLES, trading_tentacles_path, ConfigTradingError)
     create_classes_list(config, AbstractTradingMode)
 
 
-def get_activated_trading_mode(config):
+def get_activated_trading_mode(config) -> AbstractTradingMode:
     return util_get_activated_trading_mode(config)
 
 

@@ -19,41 +19,43 @@ from octobot_commons.logging.logging_util import get_logger
 LOGGER = get_logger(LOGGER_TAG)
 
 
-def is_trader_enabled_in_config(exchange_manager):
+def is_trader_enabled_in_config(exchange_manager) -> bool:
     return exchange_manager.trader.enabled(exchange_manager.trader.config)
 
 
-def is_trader_enabled(exchange_manager):
+def is_trader_enabled(exchange_manager) -> bool:
     return exchange_manager.trader.is_enabled
 
 
-def set_trading_enabled(exchange_manager, enabled):
+def set_trading_enabled(exchange_manager, enabled) -> None:
     exchange_manager.trader.is_enabled = enabled
 
 
-def is_trader_simulated(exchange_manager):
+def is_trader_simulated(exchange_manager) -> bool:
     return exchange_manager.is_trader_simulated
 
 
-def get_trader_risk(exchange_manager):
+def get_trader_risk(exchange_manager) -> float:
     return exchange_manager.trader.risk
 
 
-def set_trader_risk(exchange_manager, risk):
+def set_trader_risk(exchange_manager, risk) -> float:
     return exchange_manager.trader.set_risk(risk)
 
 
-async def sell_all_everything_for_reference_market(exchange_manager):
+async def sell_all_everything_for_reference_market(exchange_manager) -> int:
     LOGGER.error("from sell_all_everything_for_reference_market: "
                  "exchange_manager.trader.sell_all_currencies is not implemented yet")
     # TODO: uncomment when implemented
     # return await exchange_manager.trader.sell_all_currencies()
+    return 0
 
 
-async def sell_currency_for_reference_market(exchange_manager, currency):
+async def sell_currency_for_reference_market(exchange_manager, currency) -> int:
     LOGGER.error("from sell_currency_for_reference_market: "
                  "exchange_manager.trader.sell_all is not implemented yet")
     # TODO: uncomment when implemented
     # return await exchange_manager.trader.sell_all_currencies(currency)
+    return 0
 
 
