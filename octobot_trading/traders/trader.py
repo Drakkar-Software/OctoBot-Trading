@@ -177,7 +177,7 @@ class Trader(Initializable):
 
     async def cancel_all_open_orders(self):
         # use a copy of the list (not the reference)
-        for order in copy.copy(self.exchange_manager.order_manager.get_open_orders()):
+        for order in copy.copy(self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders()):
             if order.status is not OrderStatus.CANCELED:
                 await self.notify_order_close(order, True)
 
@@ -261,7 +261,9 @@ class Trader(Initializable):
 
     # TODO : should use updater methods
     async def force_refresh_orders_and_portfolio(self, portfolio=None, delete_desync_orders=True):
-        pass
+        # await self.exchange_manager.reset_web_sockets_if_any()    # Might now be useless (auto reconnect), to confirm
+        await self.force_refresh_orders(portfolio, delete_desync_orders=delete_desync_orders)
+        await self.force_refresh_portfolio(portfolio)
 
     #     await self.exchange_manager.reset_web_sockets_if_any()
     #     await self.force_refresh_orders(portfolio, delete_desync_orders=delete_desync_orders)

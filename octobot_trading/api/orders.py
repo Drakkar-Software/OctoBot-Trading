@@ -57,4 +57,8 @@ async def cancel_all_open_orders_with_currency(exchange_manager, currency) -> No
 
 
 async def cancel_order_with_id(exchange_manager, order_id) -> bool:
-    await exchange_manager.trader.cancel_order_with_id(order_id)
+    return await exchange_manager.trader.cancel_order_with_id(order_id)
+
+
+def get_order_exchange_name(order) -> str:
+    return order.exchange_manager.get_exchange_name()
