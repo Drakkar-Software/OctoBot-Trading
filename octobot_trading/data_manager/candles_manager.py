@@ -170,42 +170,11 @@ class CandlesManager(Initializable):
 
     def __extract_limited_data(self, data, limit=-1, max_limit=-1):
         if limit == -1:
-            return data
+            if max_limit == -1:
+                return data
+            return data[:max_limit]
 
         if max_limit == -1:
             return data[-min(limit, len(data)):]
         else:
             return data[max_limit - limit:max_limit]
-
-    # def _sanitize_last_candle(self, close_candle_data, high_candle_data, low_candle_data):
-    #     close_last_candle = close_candle_data[-1]
-    #     if low_candle_data[self.low_candles_index] > close_last_candle:
-    #         low_candle_data[self.low_candles_index] = close_last_candle
-    #     if high_candle_data[self.high_candles_index] < close_last_candle:
-    #         high_candle_data[self.high_candles_index] = close_last_candle
-
-    # @staticmethod
-    # def _set_last_candle(list_updated, array_to_update):
-    #     if array_to_update is not None:
-    #         array_to_update[-1] = list_updated[-1]
-
-    # def _update_arrays(self):
-    #     if self.time_candles_array is None or self.time_candles_array[-1] != self.time_candles[-1]:
-    #         self.close_candles_array = self.convert_to_array(self.close_candles)
-    #         self.open_candles_array = self.convert_to_array(self.open_candles)
-    #         self.high_candles_array = self.convert_to_array(self.high_candles)
-    #         self.low_candles_array = self.convert_to_array(self.low_candles)
-    #         self.time_candles_array = self.convert_to_array(self.time_candles)
-    #         self.volume_candles_array = self.convert_to_array(self.volume_candles)
-    #
-    #         # used only when a new candle was created during the previous execution
-    #         if self.time_candles_array[-1] != self.time_candles[-1]:
-    #             self._update_arrays()
-    #     else:
-    #         self._set_last_candle(self.close_candles, self.close_candles_array)
-    #         self._set_last_candle(self.high_candles, self.high_candles_array)
-    #         self._set_last_candle(self.low_candles, self.low_candles_array)
-    #         self._set_last_candle(self.volume_candles, self.volume_candles_array)
-    #
-    #         # used only when a new update was preformed during the previous execution
-    #         self._sanitize_last_candle(self.close_candles_array, self.high_candles_array, self.low_candles_array)
