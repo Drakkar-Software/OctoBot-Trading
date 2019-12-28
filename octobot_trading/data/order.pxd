@@ -13,7 +13,7 @@
 #  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
-#  License adouble with this library.
+#  License along with this library.
 
 
 """ Order class will represent an open order in the specified exchange
