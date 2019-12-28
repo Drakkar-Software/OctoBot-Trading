@@ -40,7 +40,7 @@ class AbstractTradingMode(AbstractTentacle):
 
     @classmethod
     def get_name(cls) -> str:
-        return __class__.__name__
+        return cls.__name__
 
     @classmethod
     def get_tentacle_folder(cls) -> str:
