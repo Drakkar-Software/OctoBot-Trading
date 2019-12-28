@@ -33,6 +33,10 @@ def get_activated_trading_mode(config) -> AbstractTradingMode:
     return util_get_activated_trading_mode(config)
 
 
+def get_trading_config(config) -> dict:
+    return config[CONFIG_TRADING_TENTACLES]
+
+
 async def create_trading_mode(config, exchange_manager) -> None:
     try:
         trading_mode = util_get_activated_trading_mode(config)(config, exchange_manager)
