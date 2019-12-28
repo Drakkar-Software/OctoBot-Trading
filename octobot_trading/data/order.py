@@ -293,7 +293,8 @@ class Order:
         if not self.filled_price and self.filled_quantity:
             self.filled_price = self.total_cost / self.filled_quantity
 
-        self.taker_or_maker = parse_order_type(raw_order)
+        self.__update_taker_maker_from_raw()
+
         self.fee = raw_order[ExchangeConstantsOrderColumns.FEE.value]
 
         self.executed_time = self.trader.exchange.get_uniform_timestamp(
