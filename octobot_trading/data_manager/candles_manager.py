@@ -61,12 +61,12 @@ class CandlesManager(Initializable):
         self.time_candles_index = 0
         self.volume_candles_index = 0
 
-        self.close_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
-        self.open_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
-        self.high_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
-        self.low_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
-        self.time_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
-        self.volume_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=-1, dtype=np.float64)
+        self.close_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.open_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.high_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.low_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.time_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.volume_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
 
     # getters
     def get_symbol_close_candles(self, limit=-1):
@@ -119,17 +119,16 @@ class CandlesManager(Initializable):
 
     def add_new_candle(self, new_candle_data: Dict):
         if self.__should_add_new_candle(new_candle_data[PriceIndexes.IND_PRICE_TIME.value]):
-            self.__inc_candle_index()
-
-        try:
-            self.close_candles[self.close_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_CLOSE.value]
-            self.open_candles[self.open_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_OPEN.value]
-            self.high_candles[self.high_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_HIGH.value]
-            self.low_candles[self.low_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_LOW.value]
-            self.time_candles[self.time_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_TIME.value]
-            self.volume_candles[self.volume_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_VOL.value]
-        except IndexError as e:
-            self.logger.error(f"Fail to add new candle {new_candle_data} : {e}")
+            try:
+                self.close_candles[self.close_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_CLOSE.value]
+                self.open_candles[self.open_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_OPEN.value]
+                self.high_candles[self.high_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_HIGH.value]
+                self.low_candles[self.low_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_LOW.value]
+                self.time_candles[self.time_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_TIME.value]
+                self.volume_candles[self.volume_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_VOL.value]
+                self.__inc_candle_index()
+            except IndexError as e:
+                self.logger.error(f"Fail to add new candle {new_candle_data} : {e}")
 
     # private
     def __set_all_candles(self, new_candles_data: Union[List, Dict]):
