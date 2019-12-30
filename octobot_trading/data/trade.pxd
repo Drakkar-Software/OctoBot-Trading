@@ -30,6 +30,7 @@ cdef class Trade:
     cdef public object side # TradeOrderSide
     cdef public object status # OrderStatus
     cdef public object trade_type # TraderOrderType
+    cdef public object taker_or_maker # ExchangeConstantsMarketPropertyColumns
 
     cdef public str symbol
     cdef public str currency
@@ -37,13 +38,11 @@ cdef class Trade:
     cdef public str trade_id
 
     cdef public double origin_price
-    cdef public double origin_stop_price
     cdef public double origin_quantity
     cdef public double market_total_fees
     cdef public double executed_quantity
     cdef public double executed_price
     cdef public double total_cost
-    cdef public double created_last_price
     cdef public double order_profitability
 
     cdef public float timestamp
