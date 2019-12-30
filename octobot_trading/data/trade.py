@@ -36,9 +36,7 @@ class Trade:
         self.taker_or_maker = None
         self.timestamp = 0
         self.origin_price = 0
-        self.created_last_price = 0
         self.origin_quantity = 0
-        self.origin_stop_price = 0
         self.trade_type = None
         self.side = None
         self.executed_quantity = 0
@@ -51,6 +49,7 @@ class Trade:
 
     def update_from_order(self, order, creation_time=0, canceled_time=0, executed_time=0):
         self.currency, self.market = order.get_currency_and_market()
+        self.taker_or_maker = order.taker_or_maker
         self.executed_quantity = order.filled_quantity
         self.executed_price = order.filled_price
         self.origin_price = order.origin_price
