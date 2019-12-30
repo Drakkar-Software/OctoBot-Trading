@@ -269,7 +269,7 @@ class Order:
                 if self.taker_or_maker is None:
                     self.__update_taker_maker_from_raw()
             except KeyError:
-                pass
+                get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
         return self.update(
             symbol=str(get_value_or_default(raw_order, ExchangeConstantsOrderColumns.SYMBOL.value, None)),
