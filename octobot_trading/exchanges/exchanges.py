@@ -22,6 +22,7 @@ class ExchangeConfiguration:
     def __init__(self, exchange_manager):
         self.exchange_manager = exchange_manager
         self.exchange_name = exchange_manager.exchange.name
+        self.id = exchange_manager.id
         self.symbols = exchange_manager.exchange_config.traded_symbol_pairs
         self.time_frames = exchange_manager.exchange_config.traded_time_frames
 
@@ -31,13 +32,26 @@ class Exchanges(Singleton):
         self.exchanges = {}
 
     def add_exchange(self, exchange_manager) -> None:
-        self.exchanges[exchange_manager.exchange.name] = ExchangeConfiguration(exchange_manager)
+        if exchange_manager.exchange.name not in self.exchanges:
+            self.exchanges[exchange_manager.exchange.name] = {}
 
-    def get_exchange(self, exchange_name) -> ExchangeConfiguration:
+        self.exchanges[exchange_manager.exchange.name][exchange_manager.id] = ExchangeConfiguration(exchange_manager)
+
+    def get_exchange(self, exchange_name, exchange_manager_id) -> ExchangeConfiguration:
+        return self.exchanges[exchange_name][exchange_manager_id]
+
+    def get_exchanges(self, exchange_name) -> dict:
         return self.exchanges[exchange_name]
 
-    def del_exchange(self, exchange_name) -> None:
+    def get_exchanges_list(self, exchange_name) -> list:
+        return list(self.exchanges[exchange_name].values())
+
+    def del_exchange(self, exchange_name, exchange_manager_id) -> None:
         try:
-            self.exchanges.pop(exchange_name, None)
+            self.exchanges[exchange_name].pop(exchange_manager_id, None)
+
+            if not self.exchanges[exchange_name]:
+                self.exchanges.pop(exchange_name, None)
         except KeyError:
-            get_logger(self.__class__.__name__).warning(f"Can't del exchange {exchange_name}")
+            get_logger(self.__class__.__name__).warning(f"Can't del exchange {exchange_name} "
+                                                        f"with id {exchange_manager_id}")
