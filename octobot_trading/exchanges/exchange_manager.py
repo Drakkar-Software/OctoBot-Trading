@@ -13,9 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import uuid
 from copy import copy
 
-import time
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
 from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
 
@@ -51,6 +51,7 @@ class ExchangeManager(Initializable):
                  exchange_only=False,
                  backtesting_files=None):
         super().__init__()
+        self.id = str(uuid.uuid4())
         self.config = config
         self.exchange_class_string = exchange_class_string
         self.rest_only = rest_only
@@ -85,7 +86,7 @@ class ExchangeManager(Initializable):
     async def stop(self):
         if self.exchange is not None:
             await self.exchange.stop()
-            Exchanges.instance().del_exchange(self.exchange.name)
+            Exchanges.instance().del_exchange(self.exchange.name, self.id)
             await self.stop_exchange_channels()
 
     async def stop_exchange_channels(self):

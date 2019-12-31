@@ -66,12 +66,12 @@ class TestExchanges:
         await exchange_manager_poloniex.initialize()
         Exchanges.instance().add_exchange(exchange_manager_poloniex)
 
-        assert Exchanges.instance().get_exchange("binance").exchange_manager is exchange_manager_binance
-        assert Exchanges.instance().get_exchange("bitmex").exchange_manager is exchange_manager_bitmex
-        assert Exchanges.instance().get_exchange("poloniex").exchange_manager is exchange_manager_poloniex
+        assert Exchanges.instance().get_exchanges_list("binance")[0].exchange_manager is exchange_manager_binance
+        assert Exchanges.instance().get_exchanges_list("bitmex")[0].exchange_manager is exchange_manager_bitmex
+        assert Exchanges.instance().get_exchanges_list("poloniex")[0].exchange_manager is exchange_manager_poloniex
 
         with pytest.raises(KeyError):
-            assert Exchanges.instance().get_exchange("test")
+            assert Exchanges.instance().get_exchanges_list("test")
 
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
@@ -92,14 +92,14 @@ class TestExchanges:
         await exchange_manager_poloniex.initialize()
         Exchanges.instance().add_exchange(exchange_manager_poloniex)
 
-        Exchanges.instance().del_exchange("binance")
+        Exchanges.instance().del_exchange("binance", exchange_manager_binance.id)
         assert "binance" not in Exchanges.instance().exchanges
-        Exchanges.instance().del_exchange("bitmex")
+        Exchanges.instance().del_exchange("bitmex", exchange_manager_bitmex.id)
         assert "bitmex" not in Exchanges.instance().exchanges
-        Exchanges.instance().del_exchange("poloniex")
+        Exchanges.instance().del_exchange("poloniex", exchange_manager_poloniex.id)
         assert "poloniex" not in Exchanges.instance().exchanges
 
-        Exchanges.instance().del_exchange("test")  # should not raise
+        Exchanges.instance().del_exchange("test", "")  # should not raise
 
         assert Exchanges.instance().exchanges == {}
         await exchange_manager_binance.stop()

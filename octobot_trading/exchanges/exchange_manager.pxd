@@ -25,6 +25,7 @@ from octobot_trading.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 cdef class ExchangeManager(Initializable):
+    cdef public str id
     cdef public dict config
 
     cdef public object exchange_type
