@@ -18,15 +18,21 @@ from octobot_commons.tentacles_management.abstract_tentacle cimport AbstractTent
 
 cdef class AbstractTradingMode(AbstractTentacle):
     cdef public dict config
-    cdef public dict strategy_instances_by_classes
 
     cdef public object exchange_manager
     cdef public object trading_config
 
+    cdef public bint enabled
+
+    cdef public str cryptocurrency
+    cdef public str symbol
+    cdef public str time_frame
+
     cpdef void load_config(self)
     cpdef void set_default_config(self)
 
-    cpdef tuple get_required_strategies_names_and_count(cls, object trading_mode_config=*)
     cpdef list get_parent_trading_mode_classes(cls, object higher_parent_class_limit=*)
-    cpdef object get_default_strategies(cls)
-    cpdef int get_required_strategies_count(cls, dict config)
+
+    cpdef bint get_is_cryptocurrency_wildcard(cls)
+    cpdef bint get_is_symbol_wildcard(cls)
+    cpdef bint get_is_time_frame_wildcard(cls)

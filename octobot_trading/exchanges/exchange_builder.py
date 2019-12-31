@@ -17,7 +17,7 @@
 from octobot_commons.constants import CONFIG_TRADING_FILE_PATH
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.api.modes import init_trading_mode_config, create_trading_mode
+from octobot_trading.api.modes import init_trading_mode_config, create_trading_modes
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.traders.trader import Trader
@@ -80,7 +80,7 @@ class ExchangeBuilder:
     async def _build_modes(self):
         try:
             init_trading_mode_config(self.config, self._trading_tentacles_path)
-            await create_trading_mode(self.config, self.exchange_manager)
+            await create_trading_modes(self.config, self.exchange_manager)
         except Exception as e:
             self.logger.error(f"An error occurred when initializing trading mode : ")
             raise e
