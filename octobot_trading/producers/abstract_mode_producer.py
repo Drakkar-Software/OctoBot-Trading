@@ -16,12 +16,15 @@
 from ccxt.async_support import InsufficientFunds
 from octobot_channels.channels.channel import get_chan as get_channel
 from octobot_commons.channels_name import OctoBotEvaluatorsChannelsName
-from octobot_commons.constants import INIT_EVAL_NOTE
+from octobot_commons.constants import INIT_EVAL_NOTE, CONFIG_WILDCARD
 from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.channels.exchange_channel import ExchangeChannelProducer
+
+from octobot_trading.channels.mode import ModeChannelProducer
+from octobot_trading.enums import EvaluatorStates
+from octobot_trading.exchanges.exchanges import Exchanges
 
 
-class AbstractTradingModeProducer(ExchangeChannelProducer):
+class AbstractTradingModeProducer(ModeChannelProducer):
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
         self.logger = get_logger(self.__class__.__name__)
@@ -36,7 +39,13 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
 
     async def start(self) -> None:
         try:
-            await get_channel(OctoBotEvaluatorsChannelsName.MATRIX.value).new_consumer(self.matrix_callback)
+            await get_channel(OctoBotEvaluatorsChannelsName.MATRIX.value).new_consumer(
+                callback=self.matrix_callback,
+                matrix_id=Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
+                                                            self.exchange_manager.id).matrix_id,
+                cryptocurrency=self.trading_mode.cryptocurrency if self.trading_mode.cryptocurrency else CONFIG_WILDCARD,
+                symbol=self.trading_mode.symbol if self.trading_mode.symbol else CONFIG_WILDCARD,
+                time_frame=self.trading_mode.time_frame if self.trading_mode.time_frame else CONFIG_WILDCARD)
         except KeyError:
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
 
@@ -77,27 +86,15 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         """
         raise NotImplementedError("set_final_eval not implemented")
 
-    async def submit_trading_evaluation(self, cryptocurrency, symbol, final_note=INIT_EVAL_NOTE):
-        await super().send(trading_mode_name=self.trading_mode.get_name(),
-                           cryptocurrency=cryptocurrency,
-                           symbol=symbol,
-                           final_note=final_note)
-
-    # def activate_deactivate_strategies(self, strategy_list, activate):
-    #     for strategy in strategy_list:
-    #         if strategy not in self.trading_mode.get_strategy_instances_by_classes(self.symbol):
-    #             raise KeyError(f"{strategy} not in trading mode's strategy instances.")
-    #
-    #     strategy_instances_list = [self.trading_mode.get_strategy_instances_by_classes(self.symbol)[strategy_class]
-    #                                for strategy_class in strategy_list]
-    #
-    #     self.symbol_evaluator.activate_deactivate_strategies(strategy_instances_list, self.exchange_manager, activate)
-    #
-    # def get_strategy_evaluation(self, strategy_class):
-    #     for evaluated_strategies in self.symbol_evaluator.get_strategies_eval_list(self.exchange_manager):
-    #         if isinstance(evaluated_strategies, strategy_class) or \
-    #                 evaluated_strategies.has_class_in_parents(strategy_class):
-    #             return evaluated_strategies.get_eval_note()
+    async def submit_trading_evaluation(self, cryptocurrency, symbol, time_frame,
+                                        final_note=INIT_EVAL_NOTE,
+                                        state=EvaluatorStates.NEUTRAL):
+        await self.send(trading_mode_name=self.trading_mode.get_name(),
+                        cryptocurrency=cryptocurrency,
+                        symbol=symbol,
+                        time_frame=time_frame,
+                        final_note=final_note,
+                        state=state)
 
     @classmethod
     def get_should_cancel_loaded_orders(cls):

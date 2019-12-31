@@ -16,11 +16,11 @@
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol
 
-from octobot_trading.channels.exchange_channel import ExchangeChannelInternalConsumer
+from octobot_trading.channels.mode import ModeChannelConsumer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, EvaluatorStates
 
 
-class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
+class AbstractTradingModeConsumer(ModeChannelConsumer):
     def __init__(self, trading_mode):
         super().__init__()
         self._logger = get_logger(self.__class__.__name__)
@@ -77,27 +77,3 @@ class AbstractTradingModeConsumer(ExchangeChannelInternalConsumer):
     def get_number_of_traded_assets(self):
         return len(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability
                    .origin_crypto_currencies_values)
-
-# class AbstractTradingModeConsumerWithBot(AbstractTradingModeConsumer, Initializable):  # TODO
-#     def __init__(self, trading_mode, sub_portfolio_percent):
-#         AbstractTradingModeConsumer.__init__(self, trading_mode)
-#         Initializable.__init__(self)
-#         self.parent_portfolio = self.trader.get_portfolio()
-#         self.sub_portfolio = SubPortfolio(self.trading_mode.config, self.trader, self.parent_portfolio,
-#                                           sub_portfolio_percent)
-#
-#     async def initialize_impl(self):
-#         await self.sub_portfolio.initialize()
-#
-#     def create_new_order(self, eval_note, symbol, exchange, trader, portfolio, state):
-#         raise NotImplementedError("create_new_order not implemented")
-#
-#     # Can be overwritten
-#     async def can_create_order(self, symbol, exchange, state, portfolio):
-#         return await super().can_create_order(symbol, exchange, state, self.get_portfolio())
-#
-#     # force portfolio update
-#     def get_portfolio(self, force_update=False):
-#         if force_update:
-#             self.sub_portfolio.update_from_parent()
-#         return self.sub_portfolio

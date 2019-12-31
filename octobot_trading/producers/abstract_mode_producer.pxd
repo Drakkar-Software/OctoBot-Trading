@@ -14,10 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.channels.exchange_channel cimport ExchangeChannelProducer
+from octobot_trading.channels.mode cimport ModeChannelProducer
 
-
-cdef class AbstractTradingModeProducer(ExchangeChannelProducer):
+cdef class AbstractTradingModeProducer(ModeChannelProducer):
     cdef public object trading_mode
     cdef public object config
     cdef public object exchange_manager

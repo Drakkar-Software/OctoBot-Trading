@@ -16,7 +16,14 @@
 #  License along with this library.
 
 from octobot_trading.channels.exchange_channel cimport ExchangeChannel
+from octobot_trading.channels.exchange_channel cimport ExchangeChannelInternalConsumer, ExchangeChannelProducer
 
+
+cdef class ModeChannelConsumer(ExchangeChannelInternalConsumer):
+    pass
+
+cdef class ModeChannelProducer(ExchangeChannelProducer):
+    pass
 
 cdef class ModeChannel(ExchangeChannel):
-    pass
+    cpdef object get_filtered_consumers(self, str trading_mode_name=*, str cryptocurrency=*, str symbol=*, str time_frame=*)
