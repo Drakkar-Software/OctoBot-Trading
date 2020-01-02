@@ -14,9 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.data_manager.candles_manager import CandlesManager
-
 from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
-
 from octobot_commons.enums import TimeFrames
 
 
