@@ -30,7 +30,6 @@ cdef class Order:
     cdef public object side # TradeOrderSide
     cdef public object status # OrderStatus
     cdef public object order_type # TraderOrderType
-    cdef public object taker_or_maker # ExchangeConstantsMarketPropertyColumns
     cdef public object lock # Lock
 
     cdef public Order linked_to
@@ -42,6 +41,7 @@ cdef class Order:
     cdef public str symbol
     cdef public str currency
     cdef public str market
+    cdef public str taker_or_maker
     cdef public str order_id
 
     cdef public double origin_price
