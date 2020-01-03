@@ -23,5 +23,5 @@ cdef class OHLCVUpdater(OHLCVProducer):
 
     cdef bint is_initialized
 
-    cdef void __create_time_frame_candle_task(self, object time_frame)
-    cdef void __create_pair_candle_task(self, str pair)
+    cdef void _create_time_frame_candle_task(self, object time_frame)
+    cdef void _create_pair_candle_task(self, str pair)
