@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import copy
+import time
 
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.constants import REAL_TRADER_STR, CONFIG_TRADER_RISK, CONFIG_TRADING, CONFIG_TRADER_RISK_MIN, \
@@ -23,6 +24,7 @@ from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.data.trade import Trade
 from octobot_trading.enums import OrderStatus, TraderOrderType
 from octobot_trading.orders import check_and_adapt_order_details_if_necessary, get_pre_order_data, create_order_instance
+from octobot_trading.trades.trade_factory import create_trade_from_order
 from octobot_trading.util import is_trader_enabled, get_pairs, get_market_pair
 from octobot_trading.util.initializable import Initializable
 
@@ -242,6 +244,11 @@ class Trader(Initializable):
         if cancel:
             await self.cancel_order(order)
 
+            self.exchange_manager.exchange_personal_data.trades_manager.upsert_trade_instance(
+                create_trade_from_order(order,
+                                        close_status=OrderStatus.CANCELED,
+                                        canceled_time=time.time()))
+
         elif cancel_linked_only:
             pass  # nothing to do
 
@@ -251,7 +258,10 @@ class Trader(Initializable):
                 await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
 
             # add to trade history
-            self.exchange_manager.exchange_personal_data.trades_manager.upsert_trade_instance(Trade(order))
+            self.exchange_manager.exchange_personal_data.trades_manager.upsert_trade_instance(
+                create_trade_from_order(order,
+                                        close_status=OrderStatus.CLOSED,
+                                        executed_time=time.time()))
 
             # remove order to open_orders
             self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
