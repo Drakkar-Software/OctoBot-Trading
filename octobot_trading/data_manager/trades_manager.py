@@ -46,8 +46,8 @@ class TradesManager(Initializable):
         return False
 
     def upsert_trade_instance(self, trade):
-        if trade.order_id not in self.trades:
-            self.trades[trade.order_id] = trade
+        if trade.trade_id not in self.trades:
+            self.trades[trade.trade_id] = trade
             self._check_trades_size()
 
     def get_total_paid_fees(self):
