@@ -44,18 +44,8 @@ def set_trader_risk(exchange_manager, risk) -> float:
 
 
 async def sell_all_everything_for_reference_market(exchange_manager) -> list:
-    LOGGER.error("from sell_all_everything_for_reference_market: "
-                 "exchange_manager.trader.sell_all_currencies is not implemented yet")
-    # TODO: uncomment when implemented
-    # return await exchange_manager.trader.sell_all_currencies()
-    return []
+    return await exchange_manager.trader.sell_all()
 
 
 async def sell_currency_for_reference_market(exchange_manager, currency) -> list:
-    LOGGER.error("from sell_currency_for_reference_market: "
-                 "exchange_manager.trader.sell_all is not implemented yet")
-    # TODO: uncomment when implemented
-    # return await exchange_manager.trader.sell_all_currencies(currency)
-    return []
-
-
+    return await exchange_manager.trader.sell_all([currency])
