@@ -181,7 +181,7 @@ class Trader(Initializable):
             if order.status is not OrderStatus.CANCELED:
                 await self.notify_order_close(order, True)
 
-    async def sell_everything(self, symbol, inverted, timeout=None):
+    async def _sell_everything(self, symbol, inverted, timeout=None):
         created_orders = []
         order_type = TraderOrderType.BUY_MARKET if inverted else TraderOrderType.SELL_MARKET
         async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
@@ -207,21 +207,21 @@ class Trader(Initializable):
                                             self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio))
         return created_orders
 
-    async def sell_all(self, currencies=None, timeout=None):
+    async def sell_all(self, currencies_to_sell=None, timeout=None):
         orders = []
         currency_list = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
 
-        if not currencies:
+        if not currencies_to_sell:
             currencies = currency_list
         else:
             currencies = [currency
-                          for currency in currencies
+                          for currency in currencies_to_sell
                           if currency in currency_list]
 
         for currency in currencies:
             symbol, inverted = get_market_pair(self.config, currency)
             if symbol:
-                orders += await self.sell_everything(symbol, inverted, timeout=timeout)
+                orders += await self._sell_everything(symbol, inverted, timeout=timeout)
         return orders
 
     async def notify_order_cancel(self, order):
