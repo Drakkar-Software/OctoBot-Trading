@@ -19,7 +19,7 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.data.order import Order
 from octobot_trading.data.trade import Trade
-from octobot_trading.enums import ExchangeConstantsOrderColumns
+from octobot_trading.enums import ExchangeConstantsOrderColumns, FeePropertyColumns
 from octobot_trading.util.initializable import Initializable
 
 
@@ -53,7 +53,12 @@ class TradesManager(Initializable):
         total_fees = {}
         for trade in self.trades.values():
             if trade.fee is not None:
-                # TODO: fill in total_fees dict: fees amount by currency
+                fee_cost = trade.fee[FeePropertyColumns.COST.value]
+                fee_currency = trade.fee[FeePropertyColumns.CURRENCY.value]
+                if fee_currency in total_fees:
+                    total_fees[fee_currency] += fee_cost
+                else:
+                    total_fees[fee_currency] = fee_cost
                 pass
             else:
                 self.logger.warning(f"Trade without any registered fee: {trade}")
