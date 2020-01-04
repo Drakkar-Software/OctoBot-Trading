@@ -99,20 +99,23 @@ class ExchangePersonalData(Initializable):
         except Exception as e:
             self.logger.exception(f"Failed to update portfolio profitability : {e}")
 
-    async def handle_order_update(self, symbol, order_id, order, should_notify: bool = True) -> (bool, bool):
+    async def handle_order_update(self, symbol, order_id, order, should_notify: bool = True,
+                                  skip_upsert: bool = False) -> (bool, bool):
         try:
-            changed: bool = self.orders_manager.upsert_order(order_id, order)
+            changed: (bool, bool) = (False, False)
+            if not skip_upsert:
+                changed = self.orders_manager.upsert_order(order_id, order)
             if should_notify:
                 await get_chan(ORDERS_CHANNEL, self.exchange.name).get_internal_producer() \
-                    .send_(symbol=symbol,
-                           order=order,
-                           is_from_bot=True,
-                           is_closed=False,
-                           is_updated=changed)
+                    .send(symbol=symbol,
+                          order=order,
+                          is_from_bot=True,
+                          is_closed=False,
+                          is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(f"Failed to update order : {e}")
-            return False
+            return False, False
 
     async def handle_order_instance_update(self, order, should_notify: bool = True):
         try:
