@@ -149,10 +149,13 @@ class Trader(Initializable):
                 self.logger.info(f"{odr.symbol} {odr.get_name()} at {odr.origin_price}"
                                  f" (ID : {odr.order_id}) cancelled on {self.exchange_manager.exchange.name}")
 
-                if cancelled_order:
-                    await self.exchange_manager.exchange_personal_data.handle_order_update(order.symbol,
-                                                                                           order.order_id,
-                                                                                           cancelled_order)
+                # skip_upsert when cancelled_order is None (nothing to update because simulated order)
+                skip_upsert = cancelled_order is None
+                cancelled_order = odr if skip_upsert else cancelled_order
+                await self.exchange_manager.exchange_personal_data.handle_order_update(order.symbol,
+                                                                                       order.order_id,
+                                                                                       cancelled_order,
+                                                                                       skip_upsert=skip_upsert)
 
     async def cancel_order_with_id(self, order_id):
         try:
