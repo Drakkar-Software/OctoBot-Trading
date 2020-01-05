@@ -135,7 +135,7 @@ class TestTradeFactory:
 
         exec_time = time.time()
         trade = create_trade_from_order(order, executed_time=exec_time)
-        assert trade.executed_time == exec_time
+        assert(exec_time - 50 <= trade.executed_time <= exec_time + 50)
 
         await self.stop(exchange_manager)
 
@@ -152,7 +152,7 @@ class TestTradeFactory:
 
         assert trade.symbol == "ETH/USDT"
         assert trade.trade_type == TraderOrderType.SELL_MARKET
-        assert trade.executed_quantity == 1.2
+        assert round(trade.executed_quantity, 3) == 1.2
         assert trade.total_cost == 10
 
         await self.stop(exchange_manager)

@@ -23,7 +23,9 @@ from octobot_trading.data.order import Order
 from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.data.trade import Trade
 from octobot_trading.enums import OrderStatus, TraderOrderType
-from octobot_trading.orders import check_and_adapt_order_details_if_necessary, get_pre_order_data, create_order_instance
+from octobot_trading.orders.order_adapter import check_and_adapt_order_details_if_necessary
+from octobot_trading.orders.order_factory import create_order_instance
+from octobot_trading.orders.order_util import get_pre_order_data
 from octobot_trading.trades.trade_factory import create_trade_from_order
 from octobot_trading.util import is_trader_enabled, get_pairs, get_market_pair
 from octobot_trading.util.initializable import Initializable
@@ -98,7 +100,8 @@ class Trader(Initializable):
             # notify order manager of a new open order
             await self.exchange_manager.exchange_personal_data.handle_order_instance_update(new_order)
         else:
-            await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(Trade(new_order))
+            await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
+                create_trade_from_order(new_order))
 
         # if this order is linked to another
         if linked_order is not None:

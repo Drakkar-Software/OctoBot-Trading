@@ -13,28 +13,24 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import copy
 import os
 
-from asyncmock import AsyncMock
-
-import time
-
-import copy
 import pytest
+import time
+from asyncmock import AsyncMock
 from mock import patch
 
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
-
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_TRADER_RISK, CONFIG_TRADING, CONFIG_TRADER_RISK_MIN, \
     CONFIG_TRADER_RISK_MAX
 from octobot_trading.data.order import Order
-from octobot_trading.data_manager.prices_manager import PricesManager
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
+from octobot_trading.orders.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.orders.types.buy_limit_order import BuyLimitOrder
 from octobot_trading.orders.types.buy_market_order import BuyMarketOrder
-from octobot_trading.orders import create_order_instance, create_order_instance_from_raw
 from octobot_trading.orders.types.sell_limit_order import SellLimitOrder
 from octobot_trading.orders.types.sell_market_order import SellMarketOrder
 from octobot_trading.orders.types.stop_loss_order import StopLossOrder

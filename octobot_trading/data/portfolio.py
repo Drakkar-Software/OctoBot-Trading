@@ -17,7 +17,7 @@
 from asyncio import Lock
 from copy import deepcopy
 
-from octobot_trading.orders import TraderOrderTypeClasses
+from octobot_trading.orders.types import TraderOrderTypeClasses
 from octobot_trading.util.initializable import Initializable
 
 from octobot_trading.constants import CURRENT_PORTFOLIO_STRING, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL
