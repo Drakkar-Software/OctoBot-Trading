@@ -43,6 +43,7 @@ class KlineProducer(ExchangeChannelProducer):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
+                "exchange_id": self.channel.exchange_manager.id,
                 "symbol": symbol,
                 "time_frame": time_frame,
                 "kline": kline
