@@ -34,5 +34,6 @@ cdef class Exchanges(Singleton):
     cpdef void add_exchange(self, ExchangeManager exchange_manager)
     cpdef ExchangeConfiguration get_exchange(self, str exchange_name, str exchange_manager_id)
     cpdef dict get_exchanges(self, str exchange_name)
+    cpdef list get_all_exchanges(self)
     cpdef list get_exchanges_list(self, str exchange_name)
     cpdef void del_exchange(self, str exchange_name, str exchange_manager_id)

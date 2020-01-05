@@ -40,6 +40,12 @@ class Exchanges(Singleton):
     def get_exchange(self, exchange_name, exchange_manager_id) -> ExchangeConfiguration:
         return self.exchanges[exchange_name][exchange_manager_id]
 
+    def get_all_exchanges(self):
+        exchanges_list: list = []
+        for exchange_name in self.exchanges.keys():
+            exchanges_list += self.get_exchanges_list(exchange_name)
+        return exchanges_list
+
     def get_exchanges(self, exchange_name) -> dict:
         return self.exchanges[exchange_name]
 
