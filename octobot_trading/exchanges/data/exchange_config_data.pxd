@@ -20,7 +20,7 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class ExchangeConfig(Initializable):
     cdef object _logger
 
-    cdef public dict traded_crypto_currencies_pairs
+    cdef public dict traded_cryptocurrencies
     cdef public dict config
 
     cdef public list traded_symbol_pairs
@@ -30,14 +30,14 @@ cdef class ExchangeConfig(Initializable):
 
     cpdef void set_config_time_frame(self)
     cpdef void set_config_traded_pairs(self)
-    cpdef list get_traded_pairs(self, str crypto_currency=*)
+    cpdef list get_traded_pairs(self, str cryptocurrency=*)
 
     @staticmethod
-    cdef str _is_tradable_with_crypto_currency(str symbol, str crypto_currency)
+    cdef str _is_tradable_with_cryptocurrency(str symbol, str cryptocurrency)
 
     cdef void _set_config_time_frame(self)
     cdef void _set_config_traded_pairs(self)
-    cdef list _add_tradable_symbols_from_config(self, str crypto_currency)
-    cdef object _add_tradable_symbols(self, str crypto_currency, list symbols)
+    cdef list _add_tradable_symbols_from_config(self, str cryptocurrency)
+    cdef object _add_tradable_symbols(self, str cryptocurrency, list symbols)
     cdef list _add_tradable_time_frames(self, list time_frames)
-    cdef list _create_wildcard_symbol_list(self, str crypto_currency)
+    cdef list _create_wildcard_symbol_list(self, str cryptocurrency)

@@ -24,6 +24,7 @@ cdef class ExchangeConfiguration(object):
     cdef public str exchange_name
     cdef public str id
 
+    cdef public list cryptocurrencies
     cdef public list symbols
     cdef public list time_frames
 
