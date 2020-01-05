@@ -264,9 +264,11 @@ class Trader(Initializable):
 
     # TODO : should use updater methods
     async def force_refresh_orders_and_portfolio(self, portfolio=None, delete_desync_orders=True):
+        # TODO: implement when available
+        self.logger.error("force_refresh_orders_and_portfolio is not implemented yet in 0.4")
         # await self.exchange_manager.reset_web_sockets_if_any()    # Might now be useless (auto reconnect), to confirm
-        await self.force_refresh_orders(portfolio, delete_desync_orders=delete_desync_orders)
-        await self.force_refresh_portfolio(portfolio)
+        # await self.force_refresh_orders(portfolio, delete_desync_orders=delete_desync_orders)
+        # await self.force_refresh_portfolio(portfolio)
 
     #     await self.exchange_manager.reset_web_sockets_if_any()
     #     await self.force_refresh_orders(portfolio, delete_desync_orders=delete_desync_orders)
