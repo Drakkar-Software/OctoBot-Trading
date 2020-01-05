@@ -27,51 +27,51 @@ from octobot_trading.channels.exchange_channel import get_chan as get_trading_ch
 from octobot_trading.cli import get_should_display_callbacks_logs
 
 
-async def ticker_callback(exchange, symbol, ticker):
+async def ticker_callback(exchange: str, exchange_id: str, symbol: str,  ticker):
     if get_should_display_callbacks_logs():
         logging.info(f"TICKER : EXCHANGE = {exchange} || SYMBOL = {symbol} || TICKER = {ticker}")
 
 
-async def order_book_callback(exchange, symbol, asks, bids):
+async def order_book_callback(exchange: str, exchange_id: str, symbol: str,  asks, bids):
     if get_should_display_callbacks_logs():
         logging.info(f"ORDERBOOK : EXCHANGE = {exchange} || SYMBOL = {symbol} || ASKS = {asks} || BIDS = {bids}")
 
 
-async def ohlcv_callback(exchange, symbol, time_frame, candle):
+async def ohlcv_callback(exchange: str, exchange_id: str, symbol: str,  time_frame, candle):
     if get_should_display_callbacks_logs():
         logging.info(
             f"OHLCV : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
 
 
-async def recent_trades_callback(exchange, symbol, recent_trades):
+async def recent_trades_callback(exchange: str, exchange_id: str, symbol: str,  recent_trades):
     if get_should_display_callbacks_logs():
         logging.info(f"RECENT TRADE : EXCHANGE = {exchange} || SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
 
 
-async def kline_callback(exchange, symbol, time_frame, kline):
+async def kline_callback(exchange: str, exchange_id: str, symbol: str, time_frame, kline):
     if get_should_display_callbacks_logs():
         logging.info(
             f"KLINE : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || KLINE = {kline}")
 
 
-async def balance_callback(exchange, balance):
+async def balance_callback(exchange: str, exchange_id: str, balance):
     if get_should_display_callbacks_logs():
         logging.info(f"BALANCE : EXCHANGE = {exchange} || BALANCE = {balance}")
 
 
-async def balance_profitability_callback(exchange, profitability, profitability_percent, market_profitability_percent,
-                                         initial_portfolio_current_profitability):
+async def balance_profitability_callback(exchange: str, exchange_id: str, profitability, profitability_percent,
+                                         market_profitability_percent, initial_portfolio_current_profitability):
     if get_should_display_callbacks_logs():
         logging.info(f"BALANCE PROFITABILITY : EXCHANGE = {exchange} || PROFITABILITY = "
                      f"{PrettyPrinter.portfolio_profitability_pretty_print(profitability, profitability_percent, 'USDT')}")
 
 
-async def trades_callback(exchange, symbol, trade):
+async def trades_callback(exchange: str, exchange_id: str, symbol: str,  trade):
     if get_should_display_callbacks_logs():
         logging.info(f"TRADES : EXCHANGE = {exchange} || SYMBOL = {symbol} || TRADE = {trade}")
 
 
-async def orders_callback(exchange, symbol, order, is_closed, is_updated, is_from_bot):
+async def orders_callback(exchange: str, exchange_id: str, symbol: str,  order, is_closed, is_updated, is_from_bot):
     if get_should_display_callbacks_logs():
         order_string = f"ORDERS : EXCHANGE = {exchange} || SYMBOL = {symbol} ||"
         if is_closed:
@@ -84,7 +84,7 @@ async def orders_callback(exchange, symbol, order, is_closed, is_updated, is_fro
         logging.info(order_string)
 
 
-async def positions_callback(exchange, symbol, position, is_closed, is_updated, is_from_bot):
+async def positions_callback(exchange: str, exchange_id: str, symbol: str,  position, is_closed, is_updated, is_from_bot):
     if get_should_display_callbacks_logs():
         logging.info(f"POSITIONS : EXCHANGE = {exchange} || SYMBOL = {symbol} || POSITIONS = {position}"
                      f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")

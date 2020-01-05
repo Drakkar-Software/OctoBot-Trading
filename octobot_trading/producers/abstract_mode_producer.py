@@ -45,7 +45,7 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         await get_chan(RECENT_TRADES_CHANNEL, self.exchange_manager.exchange.name).new_consumer(
             self.recent_trades_callback)
 
-    async def recent_trades_callback(self, exchange, symbol, recent_trades):
+    async def recent_trades_callback(self, exchange: str, exchange_id: str, symbol: str, recent_trades):
         await self.finalize(exchange_name=exchange, symbol=symbol)
 
     async def matrix_callback(self, evaluator_name, evaluator_type,

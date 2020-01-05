@@ -54,13 +54,13 @@ class ExchangeConfig(Initializable):
                 return []
         return self.traded_symbol_pairs
 
-    async def handle_symbol_update(self, exchange: str, crypto_currency: str, symbols: list) -> tuple:
+    async def handle_symbol_update(self, exchange: str, exchange_id: str, crypto_currency: str, symbols: list) -> tuple:
         try:
             return self._add_tradable_symbols(crypto_currency, symbols)
         except Exception as e:
             self._logger.exception(f"Fail to handle symbol update : {e}")
 
-    async def handle_time_frame_update(self, exchange: str, time_frames: list) -> list:
+    async def handle_time_frame_update(self, exchange: str, exchange_id: str, time_frames: list) -> list:
         try:
             return self._add_tradable_time_frames(time_frames)
         except Exception as e:
