@@ -20,12 +20,10 @@
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 from octobot_trading.data.portfolio cimport Portfolio
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.traders.trader cimport Trader
 
 cdef class Order:
-    cdef public Trader trader
-    cdef public ExchangeManager exchange_manager
+    cdef public object trader
+    cdef public object exchange_manager
 
     cdef public object side # TradeOrderSide
     cdef public object status # OrderStatus

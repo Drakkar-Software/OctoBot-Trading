@@ -43,7 +43,7 @@ cdef class Trade:
     cdef public double executed_quantity
     cdef public double executed_price
     cdef public double total_cost
-    cdef public double order_profitability
+    cdef public double trade_profitability
 
     cdef public float timestamp
     cdef public float creation_time

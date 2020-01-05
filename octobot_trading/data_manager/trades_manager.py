@@ -17,9 +17,7 @@ from collections import OrderedDict
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.data.order import Order
-from octobot_trading.data.trade import Trade
-from octobot_trading.enums import ExchangeConstantsOrderColumns, FeePropertyColumns
+from octobot_trading.enums import FeePropertyColumns
 from octobot_trading.trades.trade_factory import create_trade_instance_from_raw
 from octobot_trading.util.initializable import Initializable
 
