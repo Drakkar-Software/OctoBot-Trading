@@ -23,6 +23,7 @@ class ExchangeConfiguration:
         self.exchange_manager = exchange_manager
         self.exchange_name = exchange_manager.exchange.name
         self.id = exchange_manager.id
+        self.cryptocurrencies = list(exchange_manager.exchange_config.traded_cryptocurrencies.keys())
         self.symbols = exchange_manager.exchange_config.traded_symbol_pairs
         self.time_frames = exchange_manager.exchange_config.traded_time_frames
 
