@@ -57,5 +57,9 @@ def get_trading_pairs(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_symbol_pairs
 
 
+def get_watched_timeframes(exchange_manager) -> list:
+    return exchange_manager.exchange_config.traded_time_frames
+
+
 async def force_refresh_orders_and_portfolio(exchange_manager):
     return await exchange_manager.trader.force_refresh_orders_and_portfolio()
