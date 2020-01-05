@@ -43,7 +43,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     Recent trade channel consumer callback
     """
 
-    async def handle_recent_trade(self, exchange: str, symbol: str, recent_trades: list):
+    async def handle_recent_trade(self, exchange: str, exchange_id: str, symbol: str, recent_trades: list):
         try:
             failed_order_updates = await self.__update_orders_status(symbol=symbol, last_prices=recent_trades)
 

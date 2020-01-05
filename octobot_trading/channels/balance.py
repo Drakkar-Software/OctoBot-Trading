@@ -42,6 +42,7 @@ class BalanceProducer(ExchangeChannelProducer):
         for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
+                "exchange_id": self.channel.exchange_manager.id,
                 "balance": balance
             })
 
@@ -71,6 +72,7 @@ class BalanceProfitabilityProducer(ExchangeChannelProducer):
         for consumer in self.channel.get_filtered_consumers():
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange.name,
+                "exchange_id": self.channel.exchange_manager.id,
                 "profitability": profitability,
                 "profitability_percent": profitability_percent,
                 "market_profitability_percent": market_profitability_percent,

@@ -62,7 +62,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
     Balance channel consumer callback
     """
 
-    async def handle_balance_update(self, exchange: str, balance: dict):
+    async def handle_balance_update(self, exchange: str, exchange_id: str, balance: dict):
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(balance=balance, ticker=None, symbol=None)
         except Exception as e:
@@ -72,7 +72,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
     Ticker channel consumer callback
     """
 
-    async def handle_ticker_update(self, exchange: str, symbol: str, ticker: dict):
+    async def handle_ticker_update(self, exchange: str, exchange_id: str, symbol: str, ticker: dict):
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(symbol=symbol, ticker=ticker, balance=None)
         except Exception as e:

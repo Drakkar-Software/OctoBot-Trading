@@ -38,7 +38,7 @@ class MarkPriceUpdater(MarkPriceProducer):
     Recent trades channel consumer callback
     """
 
-    async def handle_recent_trades_update(self, exchange: str, symbol: str, recent_trades: list):
+    async def handle_recent_trades_update(self, exchange: str, exchange_id: str, symbol: str, recent_trades: list):
         try:
             mark_price = PricesManager.calculate_mark_price_from_recent_trade_prices(
                 [float(last_price[ExchangeConstantsOrderColumns.PRICE.value])
@@ -52,7 +52,7 @@ class MarkPriceUpdater(MarkPriceProducer):
     Ticker channel consumer callback
     """
 
-    async def handle_ticker_update(self, exchange: str, symbol: str, ticker: dict):
+    async def handle_ticker_update(self, exchange: str, exchange_id: str, symbol: str, ticker: dict):
         try:
             await self.push(symbol, ticker[ExchangeConstantsTickersColumns.CLOSE.value])
         except Exception as e:
