@@ -81,11 +81,11 @@ class ExchangeChannel(Channel):
                            symbol=CHANNEL_WILDCARD):
         consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size,
                                                                                    filter_size=filter_size)
-        await self.__add_new_consumer_and_run(consumer, symbol=symbol, with_time_frame=self.WITH_TIME_FRAME)
-        await self.__check_producers_state()
+        await self._add_new_consumer_and_run(consumer, symbol=symbol, with_time_frame=self.WITH_TIME_FRAME)
+        await self._check_producers_state()
         return consumer
 
-    async def __check_producers_state(self) -> None:  # TODO useless (bc copy of Channel.__check_producers_state)
+    async def _check_producers_state(self) -> None:  # TODO useless (bc copy of Channel.__check_producers_state)
         if not self.get_filtered_consumers() and not self.is_paused:
             self.is_paused = True
             for producer in self.get_producers():
@@ -101,7 +101,7 @@ class ExchangeChannel(Channel):
             self.TIME_FRAME_KEY: time_frame
         })
 
-    async def __add_new_consumer_and_run(self, consumer, symbol=CHANNEL_WILDCARD, with_time_frame=False):
+    async def _add_new_consumer_and_run(self, consumer, symbol=CHANNEL_WILDCARD, with_time_frame=False):
         if symbol:
             symbol = CHANNEL_WILDCARD
 
