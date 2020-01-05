@@ -105,3 +105,27 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+
+    async def test_get_all_exchanges(self):
+        config = await self.init_default()
+
+        exchange_manager_binance = ExchangeManager(config, "binance")
+        await exchange_manager_binance.initialize()
+        Exchanges.instance().add_exchange(exchange_manager_binance)
+
+        exchange_manager_bitmex = ExchangeManager(config, "bitmex")
+        await exchange_manager_bitmex.initialize()
+        Exchanges.instance().add_exchange(exchange_manager_bitmex)
+
+        exchange_manager_poloniex = ExchangeManager(config, "poloniex")
+        await exchange_manager_poloniex.initialize()
+        Exchanges.instance().add_exchange(exchange_manager_poloniex)
+
+        exchanges = Exchanges.instance().get_all_exchanges()
+        assert exchanges[0].exchange_manager is exchange_manager_binance
+        assert exchanges[1].exchange_manager is exchange_manager_bitmex
+        assert exchanges[2].exchange_manager is exchange_manager_poloniex
+
+        await exchange_manager_binance.stop()
+        await exchange_manager_bitmex.stop()
+        await exchange_manager_poloniex.stop()
