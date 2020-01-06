@@ -16,7 +16,6 @@
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.exchanges.exchange_factory import ExchangeFactory
-from octobot_trading.channels.exchange_channel import get_chan, ExchangeChannel
 
 
 def create_new_exchange(config, exchange_name,
@@ -43,10 +42,6 @@ def get_exchange_manager_from_exchange_name(exchange_name) -> ExchangeManager:
 
 def get_exchange_names() -> list:
     return Exchanges.instance().get_exchange_names()
-
-
-def get_exchange_channel(chan_name, exchange_name) -> ExchangeChannel:
-    return get_chan(chan_name, exchange_name)
 
 
 def get_exchange_name(exchange_manager) -> str:
