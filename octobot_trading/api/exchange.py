@@ -36,8 +36,25 @@ def create_new_exchange(config, exchange_name,
                            backtesting_files=backtesting_files)
 
 
-def get_exchange_manager_from_exchange_name(exchange_name) -> ExchangeManager:
-    return Exchanges.instance().get_exchange(exchange_name).exchange_manager
+def get_exchange_configurations_from_exchange_name(exchange_name) -> dict:
+    return Exchanges.instance().get_exchanges(exchange_name)
+
+
+def get_exchange_manager_from_exchange_name_and_id(exchange_name, exchange_id) -> ExchangeManager:
+    return Exchanges.instance().get_exchange(exchange_name, exchange_id).exchange_manager
+
+
+# prefer get_exchange_manager_from_exchange_name_and_id when possible
+def get_exchange_manager_from_exchange_id(exchange_id) -> ExchangeManager:
+    for exchange_configs in Exchanges.instance().exchanges.values():
+        for exchange_config in exchange_configs.values():
+            if exchange_config.exchange_manager.id == exchange_id:
+                return exchange_config.exchange_manager
+    raise KeyError(f"No exchange manager with id: {exchange_id}")
+
+
+def get_exchange_manager_id(exchange_manager) -> str:
+    return exchange_manager.id
 
 
 def get_exchange_names() -> list:
