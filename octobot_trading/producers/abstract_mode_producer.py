@@ -49,10 +49,11 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         await self.finalize(exchange_name=exchange, symbol=symbol)
 
     async def matrix_callback(self, evaluator_name, evaluator_type,
-                              eval_note, eval_note_type, exchange_name, symbol, time_frame):
-        await self.finalize(exchange_name=exchange_name, symbol=symbol, time_frame=time_frame)
+                              eval_note, eval_note_type, exchange_name, cryptocurrency, symbol, time_frame):
+        await self.finalize(exchange_name=exchange_name, cryptocurrency=cryptocurrency,
+                            symbol=symbol, time_frame=time_frame)
 
-    async def finalize(self, exchange_name, symbol, time_frame=None) -> None:
+    async def finalize(self, exchange_name, cryptocurrency, symbol, time_frame=None) -> None:
         """
         Finalize evaluation
         :return: None
@@ -65,20 +66,21 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         self.final_eval = INIT_EVAL_NOTE
 
         try:
-            await self.set_final_eval(symbol=symbol, time_frame=time_frame)
+            await self.set_final_eval(cryptocurrency=cryptocurrency, symbol=symbol, time_frame=time_frame)
         except Exception as e:
             self.logger.error(f"Error when finalizing: {e}")
             self.logger.exception(e)
 
-    async def set_final_eval(self, symbol, time_frame):
+    async def set_final_eval(self, cryptocurrency, symbol, time_frame):
         """
         Called to calculate the final note or state => when any notification appears
         :return:
         """
         raise NotImplementedError("set_final_eval not implemented")
 
-    async def submit_trading_evaluation(self, symbol, final_note=INIT_EVAL_NOTE):
+    async def submit_trading_evaluation(self, cryptocurrency, symbol, final_note=INIT_EVAL_NOTE):
         await super().send(trading_mode_name=self.trading_mode.get_name(),
+                           cryptocurrency=cryptocurrency,
                            symbol=symbol,
                            final_note=final_note)
 
