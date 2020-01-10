@@ -42,12 +42,6 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         except KeyError:
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
 
-        await get_chan(RECENT_TRADES_CHANNEL, self.exchange_manager.exchange.name).new_consumer(
-            self.recent_trades_callback)
-
-    async def recent_trades_callback(self, exchange: str, exchange_id: str, symbol: str, recent_trades):
-        await self.finalize(exchange_name=exchange, symbol=symbol)
-
     async def matrix_callback(self, evaluator_name, evaluator_type,
                               eval_note, eval_note_type, exchange_name, cryptocurrency, symbol, time_frame):
         await self.finalize(exchange_name=exchange_name, cryptocurrency=cryptocurrency,
