@@ -53,6 +53,10 @@ def get_exchange_manager_from_exchange_id(exchange_id) -> ExchangeManager:
     raise KeyError(f"No exchange manager with id: {exchange_id}")
 
 
+def get_exchange_managers_from_exchange_ids(exchange_ids) -> list:
+    return [get_exchange_manager_from_exchange_id(manager_id) for manager_id in exchange_ids]
+
+
 def get_exchange_manager_id(exchange_manager) -> str:
     return exchange_manager.id
 
