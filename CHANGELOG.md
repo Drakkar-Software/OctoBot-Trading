@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.14] - 2020-01-12
+### Added
+- Cryptocurrency management in evaluators
+- APIs for exchanges, trading modes, orders, portfolio, profitability, symbol data, trader, trades
+- get_total_paid_fees in trades manager
+- cancel_order_with_id in trader
+
+### Updated
+- handle_order_update now always notifies orders channel
+
+### Fixed
+- get_name from trading modes
+
 ## [1.4.13] - 2020-01-05
 ### Added
 - Exchange ID in ExchangeChannels notifications
