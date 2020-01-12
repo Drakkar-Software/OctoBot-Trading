@@ -520,7 +520,7 @@ class TestTrader:
         if not os.getenv('CYTHON_TEST_IGNORE'):
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
-                orders = await trader_inst.sell_all(currencies=["USDT"], timeout=1)
+                orders = await trader_inst.sell_all(currencies_to_sell=["USDT"], timeout=1)
             assert len(orders) == 1
 
             sell_USDT_order = orders[0]
@@ -531,7 +531,7 @@ class TestTrader:
         if not os.getenv('CYTHON_TEST_IGNORE'):
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
-                orders = await trader_inst.sell_all(currencies=["ADA"])
+                orders = await trader_inst.sell_all(currencies_to_sell=["ADA"])
             assert len(orders) == 1
 
             sell_ADA_order = orders[0]
@@ -544,7 +544,7 @@ class TestTrader:
             # currency not in portfolio
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
-                orders = await trader_inst.sell_all(currencies=["XBT"])
+                orders = await trader_inst.sell_all(currencies_to_sell=["XBT"])
             assert len(orders) == 0
 
             portfolio_manager.portfolio.portfolio["XRP"] = {
@@ -556,14 +556,14 @@ class TestTrader:
             # currency in portfolio but with 0 quantity
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
-                orders = await trader_inst.sell_all(currencies=["XRP"])
+                orders = await trader_inst.sell_all(currencies_to_sell=["XRP"])
             assert len(orders) == 0
 
         if not os.getenv('CYTHON_TEST_IGNORE'):
             # invalid currency
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
-                orders = await trader_inst.sell_all(currencies=[""])
+                orders = await trader_inst.sell_all(currencies_to_sell=[""])
             assert len(orders) == 0
 
             portfolio_manager.portfolio.portfolio["ICX"] = {
@@ -575,7 +575,7 @@ class TestTrader:
             # currency in portfolio but with close to 0 quantity
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
-                orders = await trader_inst.sell_all(currencies=["ICX"])
+                orders = await trader_inst.sell_all(currencies_to_sell=["ICX"])
             assert len(orders) == 0
 
         await self.stop(exchange_manager)
