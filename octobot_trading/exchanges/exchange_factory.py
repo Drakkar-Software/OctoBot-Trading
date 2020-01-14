@@ -31,6 +31,7 @@ class ExchangeFactory:
                  is_simulated=False,
                  is_backtesting=False,
                  rest_only=False,
+                 ignore_config=False,
                  is_sandboxed=False,
                  is_collecting=False,
                  exchange_only=False,
@@ -41,6 +42,7 @@ class ExchangeFactory:
         self.is_simulated = is_simulated
         self.is_backtesting = is_backtesting
         self.rest_only = rest_only
+        self.ignore_config = ignore_config
         self.is_sandboxed = is_sandboxed
         self.is_collecting = is_collecting
         self.backtesting_files = backtesting_files
@@ -50,6 +52,7 @@ class ExchangeFactory:
                                                 is_simulated=is_simulated,
                                                 is_backtesting=is_backtesting,
                                                 rest_only=rest_only,
+                                                ignore_config=ignore_config,
                                                 is_collecting=is_collecting,
                                                 exchange_only=exchange_only,
                                                 backtesting_files=backtesting_files)
