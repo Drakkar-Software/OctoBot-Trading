@@ -79,7 +79,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         if self.is_feed_available(Feeds.TRADES):
             recent_trade_callback = RecentTradesCallBack(self,
                                                          get_chan(RECENT_TRADES_CHANNEL,
-                                                                  self.exchange_name))
+                                                                  self.exchange_manager.id))
 
             self.__add_feed_and_run_if_required(Feeds.TRADES,
                                                 TradeCallback(recent_trade_callback.recent_trades_callback))
@@ -92,7 +92,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
     async def add_order_book_feed(self):
         if self.is_feed_available(Feeds.L2_BOOK):
             order_book_callback = OrderBookCallBack(self, get_chan(ORDER_BOOK_CHANNEL,
-                                                                   self.exchange_name))
+                                                                   self.exchange_manager.id))
 
             self.__add_feed_and_run_if_required(Feeds.L2_BOOK, BookCallback(order_book_callback.l2_order_book_callback))
             await order_book_callback.run()
@@ -103,7 +103,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
 
     async def add_tickers_feed(self):
         if self.is_feed_available(Feeds.TICKER):
-            tickers_callback = TickersCallBack(self, get_chan(TICKER_CHANNEL, self.exchange_name))
+            tickers_callback = TickersCallBack(self, get_chan(TICKER_CHANNEL, self.exchange_manager.id))
 
             self.__add_feed_and_run_if_required(Feeds.TICKER, TickerCallback(tickers_callback.tickers_callback))
             await tickers_callback.run()

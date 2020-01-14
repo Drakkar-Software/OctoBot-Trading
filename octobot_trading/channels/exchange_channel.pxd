@@ -42,7 +42,7 @@ cdef class ExchangeChannelInternalConsumer(InternalConsumer):
 cdef class ExchangeChannelSupervisedConsumer(SupervisedConsumer):
     pass
 
-cpdef ExchangeChannel get_chan(str chan_name, str exchange_name)
-cpdef dict get_exchange_channels(str exchange_name)
+cpdef ExchangeChannel get_chan(str chan_name, str exchange_id)
+cpdef dict get_exchange_channels(str exchange_id)
 cpdef void set_chan(ExchangeChannel chan, str name)
-cpdef void del_chan(str name, str exchange_name)
+cpdef void del_chan(str name, str exchange_id)

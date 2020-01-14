@@ -37,7 +37,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     async def start(self):
         self.exchange_manager = self.channel.exchange_manager
         self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
-        await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trade)
+        await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_recent_trade)
 
     """
     Recent trade channel consumer callback
@@ -78,7 +78,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
             finally:
                 # ensure always call fill callback
                 if order_filled:
-                    await get_chan(ORDERS_CHANNEL, self.channel.exchange.name).get_internal_producer() \
+                    await get_chan(ORDERS_CHANNEL, self.channel.exchange_manager.id).get_internal_producer() \
                         .send(symbol=order.symbol,
                               order=order,
                               is_from_bot=True,

@@ -119,10 +119,10 @@ def set_chan(chan, name) -> None:
     chan_name = chan.get_name() if name else name
 
     try:
-        exchange_chan = ChannelInstances.instance().channels[chan.exchange_manager.exchange.name]
+        exchange_chan = ChannelInstances.instance().channels[chan.exchange_manager.id]
     except KeyError:
-        ChannelInstances.instance().channels[chan.exchange_manager.exchange.name] = {}
-        exchange_chan = ChannelInstances.instance().channels[chan.exchange_manager.exchange.name]
+        ChannelInstances.instance().channels[chan.exchange_manager.id] = {}
+        exchange_chan = ChannelInstances.instance().channels[chan.exchange_manager.id]
 
     if chan_name not in exchange_chan:
         exchange_chan[chan_name] = chan
@@ -130,23 +130,24 @@ def set_chan(chan, name) -> None:
         raise ValueError(f"Channel {chan_name} already exists.")
 
 
-def get_exchange_channels(exchange_name) -> dict:
+def get_exchange_channels(exchange_id) -> dict:
     try:
-        return ChannelInstances.instance().channels[exchange_name]
+        return ChannelInstances.instance().channels[exchange_id]
     except KeyError:
-        raise KeyError(f"Channels not found on {exchange_name}")
+        raise KeyError(f"Channels not found on exchange with id: {exchange_id}")
 
 
-def get_chan(chan_name, exchange_name) -> ExchangeChannel:
+def get_chan(chan_name, exchange_id) -> ExchangeChannel:
     try:
-        return ChannelInstances.instance().channels[exchange_name][chan_name]
+        return ChannelInstances.instance().channels[exchange_id][chan_name]
     except KeyError:
-        # get_logger(ExchangeChannel.__name__).error(f"Channel {chan_name} not found on {exchange_name}")
-        raise KeyError(f"Channel {chan_name} not found on {exchange_name}")
+        # get_logger(ExchangeChannel.__name__).error(f"Channel {chan_name} not found on exchange with id: "
+        #                                            f"{exchange_id}")
+        raise KeyError(f"Channel {chan_name} not found on exchange with id: {exchange_id}")
 
 
-def del_chan(chan_name, exchange_name) -> None:
+def del_chan(chan_name, exchange_id) -> None:
     try:
-        ChannelInstances.instance().channels[exchange_name].pop(chan_name, None)
+        ChannelInstances.instance().channels[exchange_id].pop(chan_name, None)
     except KeyError:
-        get_logger(ExchangeChannel.__name__).warning(f"Can't del chan {chan_name} on {exchange_name}")
+        get_logger(ExchangeChannel.__name__).warning(f"Can't del chan {chan_name} on exchange with id: {exchange_id}")

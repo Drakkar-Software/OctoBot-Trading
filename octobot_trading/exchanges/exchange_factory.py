@@ -63,6 +63,8 @@ class ExchangeFactory:
 
     async def create_basic(self):
         await self.exchange_manager.initialize()
+        # add to global exchanges
+        Exchanges.instance().add_exchange(self.exchange_manager)
 
     async def create(self, trading_tentacles_path=CONFIG_TRADING_FILE_PATH):
         await self.exchange_manager.initialize()

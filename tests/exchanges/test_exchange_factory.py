@@ -104,6 +104,6 @@ class TestExchangeFactory:
 
         assert exchange_factory.exchange_manager.config is config
 
-        with pytest.raises(KeyError):
-            assert Exchanges.instance().get_exchanges(TestExchangeFactory.EXCHANGE_NAME)
+        assert Exchanges.instance().get_exchanges_list(TestExchangeFactory.EXCHANGE_NAME)[0].exchange_manager \
+            == exchange_factory.exchange_manager
         await exchange_factory.exchange_manager.stop()

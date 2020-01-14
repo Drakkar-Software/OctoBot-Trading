@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.api.exchange import get_exchange_names
+from octobot_trading.api.exchange import get_exchange_ids
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.orders import OrdersChannel
 from octobot_trading.data.order import Order
@@ -68,6 +68,6 @@ def get_order_exchange_name(order) -> str:
 
 async def subscribe_to_order_channels(callback):
     order_channel_name = OrdersChannel.get_name()
-    for exchange_name in get_exchange_names():
-        channel = get_chan(order_channel_name, exchange_name)
+    for exchange_id in get_exchange_ids():
+        channel = get_chan(order_channel_name, exchange_id)
         await channel.new_consumer(callback)

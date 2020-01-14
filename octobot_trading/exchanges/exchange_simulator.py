@@ -68,7 +68,7 @@ class ExchangeSimulator(AbstractExchange):
     async def create_backtesting_exchange_producers(self):
         for importer in self.exchange_importers:
             for updater in UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
-                await updater(get_trading_chan(updater.CHANNEL_NAME, self.name), importer).run()
+                await updater(get_trading_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
 
     async def stop(self):
         pass  # TODO

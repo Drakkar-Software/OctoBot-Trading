@@ -63,7 +63,10 @@ class ExchangeManager(Initializable):
         self.is_backtesting = is_backtesting
         self.is_simulated = is_simulated
         self.is_collecting = is_collecting
+
+        # exchange_only is True when exchange channels are not required (therefore not created)
         self.exchange_only = exchange_only
+
         self.is_trader_simulated = is_trader_simulator_enabled(self.config)
         self.has_websocket = False
 
@@ -87,12 +90,13 @@ class ExchangeManager(Initializable):
         if self.exchange is not None:
             await self.exchange.stop()
             Exchanges.instance().del_exchange(self.exchange.name, self.id)
-            await self.stop_exchange_channels()
+            if not self.exchange_only:
+                await self.stop_exchange_channels()
 
     async def stop_exchange_channels(self):
-        for channel_name in copy(get_exchange_channels(self.exchange.name)).keys():
-            await get_chan(channel_name, self.exchange.name).stop()
-            del_chan(channel_name, self.exchange.name)
+        for channel_name in copy(get_exchange_channels(self.id)).keys():
+            await get_chan(channel_name, self.id).stop()
+            del_chan(channel_name, self.id)
 
     async def register_trader(self, trader):
         self.trader = trader
@@ -170,17 +174,17 @@ class ExchangeManager(Initializable):
         if not self.is_backtesting:
             for updater in UNAUTHENTICATED_UPDATER_PRODUCERS:
                 if not self._is_managed_by_websocket(updater.CHANNEL_NAME):
-                    await updater(get_chan(updater.CHANNEL_NAME, self.exchange.name)).run()
+                    await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
         if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting or self.is_collecting):
             for updater in AUTHENTICATED_UPDATER_PRODUCERS:
                 if not self._is_managed_by_websocket(updater.CHANNEL_NAME):
-                    await updater(get_chan(updater.CHANNEL_NAME, self.exchange.name)).run()
+                    await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
         # Simulated producers
         if (not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting) and not self.is_collecting:
             for updater in AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
-                await updater(get_chan(updater.CHANNEL_NAME, self.exchange.name)).run()
+                await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
     def _is_managed_by_websocket(self, channel):  # TODO improve checker
         return not self.rest_only and self.has_websocket and \
