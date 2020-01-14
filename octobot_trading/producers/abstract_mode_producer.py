@@ -42,12 +42,16 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         except KeyError:
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
 
-    async def matrix_callback(self, evaluator_name, evaluator_type,
+    async def matrix_callback(self, matrix_id, evaluator_name, evaluator_type,
                               eval_note, eval_note_type, exchange_name, cryptocurrency, symbol, time_frame):
-        await self.finalize(exchange_name=exchange_name, cryptocurrency=cryptocurrency,
+        await self.finalize(exchange_name=exchange_name, matrix_id=matrix_id, cryptocurrency=cryptocurrency,
                             symbol=symbol, time_frame=time_frame)
 
-    async def finalize(self, exchange_name, cryptocurrency, symbol, time_frame=None) -> None:
+    async def finalize(self, exchange_name: str,
+                       matrix_id: str,
+                       cryptocurrency: str = None,
+                       symbol: str = None,
+                       time_frame=None) -> None:
         """
         Finalize evaluation
         :return: None
@@ -60,12 +64,15 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         self.final_eval = INIT_EVAL_NOTE
 
         try:
-            await self.set_final_eval(cryptocurrency=cryptocurrency, symbol=symbol, time_frame=time_frame)
+            await self.set_final_eval(matrix_id=matrix_id,
+                                      cryptocurrency=cryptocurrency,
+                                      symbol=symbol,
+                                      time_frame=time_frame)
         except Exception as e:
             self.logger.error(f"Error when finalizing: {e}")
             self.logger.exception(e)
 
-    async def set_final_eval(self, cryptocurrency, symbol, time_frame):
+    async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
         """
         Called to calculate the final note or state => when any notification appears
         :return:
