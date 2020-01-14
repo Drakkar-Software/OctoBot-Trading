@@ -201,7 +201,7 @@ class PortfolioProfitabilty(Initializable):
                 symbols_to_add = [symbol_inverted]
 
             if symbols_to_add:
-                await get_chan(TICKER_CHANNEL, self.exchange_manager.exchange.name).modify(added_pairs=symbols_to_add)
+                await get_chan(TICKER_CHANNEL, self.exchange_manager.id).modify(added_pairs=symbols_to_add)
 
             raise e
 

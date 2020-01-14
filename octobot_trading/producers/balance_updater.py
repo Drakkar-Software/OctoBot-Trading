@@ -53,9 +53,9 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
 
     async def start(self):
-        await get_chan(BALANCE_CHANNEL, self.channel.exchange.name).new_consumer(
+        await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).new_consumer(
             self.handle_balance_update)
-        await get_chan(TICKER_CHANNEL, self.channel.exchange.name).new_consumer(
+        await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id).new_consumer(
             self.handle_ticker_update)
 
     """

@@ -63,7 +63,7 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = await self.portfolio_manager.handle_balance_update(balance)
             if should_notify:
-                await get_chan(BALANCE_CHANNEL, self.exchange.name).get_internal_producer().send(balance)
+                await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer().send(balance)
             return changed
         except AttributeError as e:
             self.logger.exception(f"Failed to update balance : {e}")
@@ -73,7 +73,7 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order)
             if should_notify:
-                await get_chan(BALANCE_CHANNEL, self.exchange.name). \
+                await get_chan(BALANCE_CHANNEL, self.exchange_manager.id). \
                     get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
             return changed
         except AttributeError as e:
@@ -91,7 +91,7 @@ class ExchangePersonalData(Initializable):
                 await portfolio_profitability.handle_ticker_update(symbol, ticker)
 
             if should_notify:
-                await get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange.name).get_internal_producer() \
+                await get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(profitability=portfolio_profitability.profitability,
                           profitability_percent=portfolio_profitability.profitability_percent,
                           market_profitability_percent=portfolio_profitability.market_profitability_percent,
@@ -106,7 +106,7 @@ class ExchangePersonalData(Initializable):
             if not skip_upsert:
                 changed = self.orders_manager.upsert_order(order_id, order)
             if should_notify:
-                await get_chan(ORDERS_CHANNEL, self.exchange.name).get_internal_producer() \
+                await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=symbol,
                           order=order,
                           is_from_bot=True,
@@ -121,7 +121,7 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.orders_manager.upsert_order_instance(order)
             if should_notify:
-                await get_chan(ORDERS_CHANNEL, self.exchange.name).get_internal_producer() \
+                await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=order.symbol,
                           order=order,
                           is_from_bot=True,
@@ -136,7 +136,7 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.orders_manager.upsert_order_close(order_id, order)
             if should_notify:
-                await get_chan(ORDERS_CHANNEL, self.exchange.name).get_internal_producer() \
+                await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=symbol,
                           order=order,
                           is_from_bot=True,
@@ -151,7 +151,7 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.trades_manager.upsert_trade(trade_id, trade)
             if should_notify:
-                await get_chan(TRADES_CHANNEL, self.exchange.name).get_internal_producer() \
+                await get_chan(TRADES_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=symbol,
                           trade=trade,
                           old_trade=False)
@@ -164,7 +164,7 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.trades_manager.upsert_trade_instance(trade)
             if should_notify:
-                await get_chan(TRADES_CHANNEL, self.exchange.name).get_internal_producer() \
+                await get_chan(TRADES_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=trade.symbol,
                           trade=trade,
                           old_trade=False)
@@ -177,7 +177,7 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.positions_manager.upsert_position(position_id, position)
             if should_notify:
-                await get_chan(POSITIONS_CHANNEL, self.exchange.name).get_internal_producer() \
+                await get_chan(POSITIONS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=symbol,
                           position=position,
                           is_closed=False,
@@ -192,7 +192,7 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.positions_manager.upsert_position_instance(position)
             if should_notify:
-                await get_chan(POSITIONS_CHANNEL, self.exchange.name).get_internal_producer() \
+                await get_chan(POSITIONS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=position.symbol,
                           position=position,
                           is_closed=False,

@@ -20,7 +20,6 @@ from octobot_trading.channels.price import MarkPriceProducer
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL
 from octobot_trading.data_manager.prices_manager import PricesManager
 from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsOrderColumns
-from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
 
 
 class MarkPriceUpdater(MarkPriceProducer):
@@ -31,8 +30,9 @@ class MarkPriceUpdater(MarkPriceProducer):
         self.logger = get_logger(self.__class__.__name__)
 
     async def start(self):
-        await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_recent_trades_update)
-        await get_chan(TICKER_CHANNEL, self.channel.exchange.name).new_consumer(self.handle_ticker_update)
+        await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id)\
+            .new_consumer(self.handle_recent_trades_update)
+        await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_ticker_update)
 
     """
     Recent trades channel consumer callback

@@ -67,6 +67,10 @@ def get_exchange_names() -> list:
     return Exchanges.instance().get_exchange_names()
 
 
+def get_exchange_ids() -> list:
+    return Exchanges.instance().get_exchange_ids()
+
+
 def get_exchange_name(exchange_manager) -> str:
     return exchange_manager.get_exchange_name()
 

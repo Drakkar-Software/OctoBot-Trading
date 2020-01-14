@@ -110,19 +110,20 @@ async def start_exchange(exchange_factory):
     await exchange_factory.create()
 
     # consumers
-    await get_trading_chan(TICKER_CHANNEL, exchange_factory.exchange_name).new_consumer(ticker_callback)
-    await get_trading_chan(RECENT_TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(
+    exchange_id = exchange_factory.exchange_manager.id
+    await get_trading_chan(TICKER_CHANNEL, exchange_id).new_consumer(ticker_callback)
+    await get_trading_chan(RECENT_TRADES_CHANNEL, exchange_id).new_consumer(
         recent_trades_callback)
-    await get_trading_chan(ORDER_BOOK_CHANNEL, exchange_factory.exchange_name).new_consumer(order_book_callback)
-    await get_trading_chan(KLINE_CHANNEL, exchange_factory.exchange_name).new_consumer(kline_callback)
-    await get_trading_chan(OHLCV_CHANNEL, exchange_factory.exchange_name).new_consumer(ohlcv_callback)
+    await get_trading_chan(ORDER_BOOK_CHANNEL, exchange_id).new_consumer(order_book_callback)
+    await get_trading_chan(KLINE_CHANNEL, exchange_id).new_consumer(kline_callback)
+    await get_trading_chan(OHLCV_CHANNEL, exchange_id).new_consumer(ohlcv_callback)
 
-    await get_trading_chan(BALANCE_CHANNEL, exchange_factory.exchange_name).new_consumer(balance_callback)
-    await get_trading_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_factory.exchange_name).new_consumer(
+    await get_trading_chan(BALANCE_CHANNEL, exchange_id).new_consumer(balance_callback)
+    await get_trading_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_id).new_consumer(
         balance_profitability_callback)
-    await get_trading_chan(TRADES_CHANNEL, exchange_factory.exchange_name).new_consumer(trades_callback)
-    await get_trading_chan(POSITIONS_CHANNEL, exchange_factory.exchange_name).new_consumer(positions_callback)
-    await get_trading_chan(ORDERS_CHANNEL, exchange_factory.exchange_name).new_consumer(orders_callback)
+    await get_trading_chan(TRADES_CHANNEL, exchange_id).new_consumer(trades_callback)
+    await get_trading_chan(POSITIONS_CHANNEL, exchange_id).new_consumer(positions_callback)
+    await get_trading_chan(ORDERS_CHANNEL, exchange_id).new_consumer(orders_callback)
 
     try:
         await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(time_callback)

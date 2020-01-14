@@ -67,3 +67,8 @@ class Exchanges(Singleton):
 
     def get_exchange_names(self) -> KeysView:
         return self.exchanges.keys()
+
+    def get_exchange_ids(self) -> list:
+        return [exchange_id
+                for exchange_managers in self.exchanges.values()
+                for exchange_id in exchange_managers.keys()]
