@@ -26,6 +26,7 @@ def create_new_exchange(config, exchange_name,
                         ignore_config=False,
                         is_collecting=False,
                         exchange_only=False,
+                        matrix_id=None,
                         backtesting_files=None) -> ExchangeFactory:
     return ExchangeFactory(config, exchange_name,
                            is_simulated=is_simulated,
@@ -35,6 +36,7 @@ def create_new_exchange(config, exchange_name,
                            is_sandboxed=is_sandboxed,
                            is_collecting=is_collecting,
                            exchange_only=exchange_only,
+                           matrix_id=matrix_id,
                            backtesting_files=backtesting_files)
 
 
@@ -61,6 +63,13 @@ def get_exchange_managers_from_exchange_ids(exchange_ids) -> list:
 
 def get_exchange_manager_id(exchange_manager) -> str:
     return exchange_manager.id
+
+
+def get_exchange_id_from_matrix_id(exchange_name, matrix_id) -> str:
+    for exchange_configuration in get_exchange_configurations_from_exchange_name(exchange_name).values():
+        if exchange_configuration.matrix_id == matrix_id:
+            return get_exchange_manager_id(exchange_configuration.exchange_manager)
+    return None
 
 
 def get_exchange_names() -> list:
