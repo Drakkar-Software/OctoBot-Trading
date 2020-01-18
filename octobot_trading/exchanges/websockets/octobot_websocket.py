@@ -36,7 +36,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.exchange_manager = exchange_manager
-        self.exchange_name = exchange_manager.exchange.name
+        self.exchange_name = exchange_manager.exchange_name
         self.octobot_websockets = []
         self.octobot_websockets_t = []
         self.octobot_websockets_executors = None
@@ -59,7 +59,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         self.is_websocket_running = False
 
     async def init_web_sockets(self, time_frames, trader_pairs):
-        self.exchange_class = get_feed_from_name(self.exchange_manager.exchange.name)
+        self.exchange_class = get_feed_from_name(self.exchange_manager.exchange_name)
         self.trader_pairs = trader_pairs
         self.time_frames = time_frames
 
@@ -71,7 +71,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
             # ensure feeds are added
             self.__create_octobot_feed_feeds()
         else:
-            self.logger.warning(f"{self.exchange_manager.exchange.name.title()}'s "
+            self.logger.warning(f"{self.exchange_manager.exchange_name.title()}'s "
                                 f"websocket has no symbol to feed")
 
     # Feeds
@@ -110,7 +110,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
 
             self.is_handling_price_ticker = True
         else:
-            self.logger.warning(f"{self.exchange_manager.exchange.name}'s "
+            self.logger.warning(f"{self.exchange_manager.exchange_name}'s "
                                 f"websocket is not handling tickers")
 
     def is_feed_available(self, feed):
@@ -162,7 +162,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
                 self.logger.error(f"Failed to start websocket on {self.exchange_name} : {e}")
 
         if not self.is_websocket_running:
-            self.logger.error(f"{self.exchange_manager.exchange.name.title()}'s "
+            self.logger.error(f"{self.exchange_manager.exchange_name.title()}'s "
                               f"websocket is not handling anything, it will not be started, ")
 
     def close_and_restart_sockets(self):

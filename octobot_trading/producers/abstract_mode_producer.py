@@ -30,7 +30,7 @@ class AbstractTradingModeProducer(ExchangeChannelProducer):
         self.exchange_manager = exchange_manager
 
         # shortcut
-        self.exchange_name = self.exchange_manager.exchange.name
+        self.exchange_name = self.exchange_manager.exchange_name
 
         self.final_eval = INIT_EVAL_NOTE
 

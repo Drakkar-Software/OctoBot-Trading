@@ -26,7 +26,7 @@ class OrderBookUpdaterSimulator(OrderBookUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer
-        self.exchange_name = self.channel.exchange_manager.exchange.name
+        self.exchange_name = self.channel.exchange_manager.exchange_name
 
         self.last_timestamp_pushed = 0
         self.time_consumer = None

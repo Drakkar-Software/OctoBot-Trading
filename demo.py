@@ -20,7 +20,7 @@ from logging.config import fileConfig
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME, CONFIG_CRYPTO_CURRENCIES
 from octobot_commons.enums import TimeFrames
 from octobot_trading import cli
-from octobot_trading.api.exchange import create_new_exchange
+from octobot_trading.api.exchange import create_exchange_builder
 from octobot_trading.cli import add_exchange
 from octobot_trading.cli.cli_tools import start_cli_exchange
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING, CONFIG_EXCHANGES
@@ -91,13 +91,11 @@ if __name__ == '__main__':
     cli.set_should_display_callbacks_logs(True)
 
     exchange_name = "binance"
-    exchange_factory = create_new_exchange(config, exchange_name,
-                                           is_simulated=True, is_rest_only=True, is_backtesting=False,
-                                           backtesting_files=[os.getenv('BACKTESTING_FILE')])
+    exchange_builder = create_exchange_builder(config, exchange_name).is_simulated().is_rest_only()
 
     add_exchange(exchange_name, {
-        "exchange_factory": exchange_factory,
+        "exchange_builder": exchange_builder,
         "exchange_thread": None
     })
 
-    start_cli_exchange(exchange_factory)
+    start_cli_exchange(exchange_builder)

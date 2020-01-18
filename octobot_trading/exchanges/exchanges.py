@@ -23,7 +23,7 @@ from octobot_commons.singleton.singleton_class import Singleton
 class ExchangeConfiguration:
     def __init__(self, exchange_manager, matrix_id):
         self.exchange_manager = exchange_manager
-        self.exchange_name = exchange_manager.exchange.name
+        self.exchange_name = exchange_manager.exchange_name
         self.id = exchange_manager.id
         self.matrix_id = matrix_id
         self.cryptocurrencies = list(exchange_manager.exchange_config.traded_cryptocurrencies.keys())
@@ -36,10 +36,10 @@ class Exchanges(Singleton):
         self.exchanges = {}
 
     def add_exchange(self, exchange_manager, matrix_id) -> None:
-        if exchange_manager.exchange.name not in self.exchanges:
-            self.exchanges[exchange_manager.exchange.name] = {}
+        if exchange_manager.exchange_name not in self.exchanges:
+            self.exchanges[exchange_manager.exchange_name] = {}
 
-        self.exchanges[exchange_manager.exchange.name][exchange_manager.id] = ExchangeConfiguration(exchange_manager,
+        self.exchanges[exchange_manager.exchange_name][exchange_manager.id] = ExchangeConfiguration(exchange_manager,
                                                                                                     matrix_id)
 
     def get_exchange(self, exchange_name, exchange_manager_id) -> ExchangeConfiguration:

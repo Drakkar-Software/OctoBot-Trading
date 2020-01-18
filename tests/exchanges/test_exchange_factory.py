@@ -21,7 +21,7 @@ import pytest
 from octobot_commons.constants import CONFIG_TRADING_FILE, TENTACLES_TRADING_PATH, TENTACLES_PATH
 from octobot_commons.errors import ConfigTradingError
 from octobot_commons.tests.test_config import load_test_config, TEST_CONFIG_FOLDER
-from octobot_trading.api.exchange import create_new_exchange
+from octobot_trading.api.exchange import create_exchange_builder
 from octobot_trading.exchanges.exchanges import Exchanges
 
 # All test coroutines will be treated as marked.
@@ -48,62 +48,58 @@ class TestExchangeFactory:
     EXCHANGE_NAME = "binance"
 
     @staticmethod
-    async def init_default(simulated=True, rest_only=True, backtesting=False, sandboxed=False):
+    async def init_default():
         config = load_test_config()
 
-        exchange_factory = create_new_exchange(config,
-                                               TestExchangeFactory.EXCHANGE_NAME,
-                                               is_simulated=simulated,
-                                               is_rest_only=rest_only,
-                                               is_backtesting=backtesting,
-                                               is_sandboxed=sandboxed)
+        exchange_builder = create_exchange_builder(config, TestExchangeFactory.EXCHANGE_NAME) \
+            .is_simulated() \
+            .is_rest_only()
 
-        return config, exchange_factory
+        return config, exchange_builder
 
     async def test_create_without_trading_config(self):
-        config, exchange_factory = await self.init_default()
+        config, exchange_builder = await self.init_default()
 
         with pytest.raises(ConfigTradingError):
-            await exchange_factory.create()
-        await exchange_factory.exchange_manager.stop()
+            exchange_manager = await exchange_builder.build()
+        await exchange_builder.exchange_manager.stop()
 
     async def test_create_without_activated_trading_mode_config(self):
         create_test_tentacles_config()
-        config, exchange_factory = await self.init_default()
+        config, exchange_builder = await self.init_default()
 
         with pytest.raises(ConfigTradingError):
-            await exchange_factory.create()
+            await exchange_builder.build()
 
         remove_test_tentacles_config()
-        await exchange_factory.exchange_manager.stop()
+        await exchange_builder.exchange_manager.stop()
 
     async def test_create(self):
         create_test_tentacles_config()
 
-        config, exchange_factory = await self.init_default()
+        config, exchange_builder = await self.init_default()
 
         # TODO wait for tentacles installation
-        # await exchange_factory.create(trading_tentacles_path=TEST_TRADING_TENTACLES_CONFIG_PATH)
+        # await exchange_builder.create(trading_tentacles_path=TEST_TRADING_TENTACLES_CONFIG_PATH)
         #
-        # assert exchange_factory.exchange_manager is not None
-        # assert exchange_factory.exchange_name is TestExchangeFactory.EXCHANGE_NAME
+        # assert exchange_builder.exchange_manager is not None
+        # assert exchange_builder.exchange_name is TestExchangeFactory.EXCHANGE_NAME
         #
-        # assert exchange_factory.exchange_manager.config is config
+        # assert exchange_builder.exchange_manager.config is config
         #
         # assert Exchanges.instance().get_exchange(TestExchangeFactory.EXCHANGE_NAME)
 
         remove_test_tentacles_config()
-        await exchange_factory.exchange_manager.stop()
+        await exchange_builder.exchange_manager.stop()
 
     async def test_create_basic(self):
-        config, exchange_factory = await self.init_default()
-        await exchange_factory.create_basic()
+        config, exchange_builder = await self.init_default()
+        exchange_builder.disable_trading_mode()
+        exchange_manager = await exchange_builder.build()
 
-        assert exchange_factory.exchange_manager is not None
-        assert exchange_factory.exchange_name is TestExchangeFactory.EXCHANGE_NAME
+        assert exchange_manager is not None
+        assert exchange_manager.exchange_name is TestExchangeFactory.EXCHANGE_NAME
 
-        assert exchange_factory.exchange_manager.config is config
+        assert exchange_manager.config is config
 
-        assert Exchanges.instance().get_exchanges_list(TestExchangeFactory.EXCHANGE_NAME)[0].exchange_manager \
-            == exchange_factory.exchange_manager
-        await exchange_factory.exchange_manager.stop()
+        await exchange_manager.stop()

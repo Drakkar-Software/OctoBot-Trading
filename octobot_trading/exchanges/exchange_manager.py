@@ -42,30 +42,25 @@ from octobot_trading.util.initializable import Initializable
 
 
 class ExchangeManager(Initializable):
-    def __init__(self, config, exchange_class_string,
-                 is_simulated=False,
-                 is_backtesting=False,
-                 rest_only=False,
-                 ignore_config=False,
-                 is_collecting=False,
-                 exchange_only=False,
-                 backtesting_files=None):
+    def __init__(self, config, exchange_class_string):
         super().__init__()
         self.id = str(uuid.uuid4())
         self.config = config
         self.exchange_class_string = exchange_class_string
-        self.rest_only = rest_only
-        self.ignore_config = ignore_config
-        self.backtesting_files = backtesting_files
+        self.exchange_name = exchange_class_string
         self._logger = get_logger(self.__class__.__name__)
 
         self.is_ready = False
-        self.is_backtesting = is_backtesting
-        self.is_simulated = is_simulated
-        self.is_collecting = is_collecting
+        self.is_simulated: bool = False
+        self.is_backtesting: bool = False
+        self.rest_only: bool = False
+        self.ignore_config: bool = False
+        self.is_collecting: bool = False
 
         # exchange_only is True when exchange channels are not required (therefore not created)
-        self.exchange_only = exchange_only
+        self.exchange_only: bool = False
+
+        self.backtesting_files: list = None
 
         self.is_trader_simulated = is_trader_simulator_enabled(self.config)
         self.has_websocket = False
@@ -134,6 +129,7 @@ class ExchangeManager(Initializable):
         if self.is_backtesting:
             await self._init_simulated_exchange()
 
+        self.exchange_name = self.exchange.name
         self.is_ready = True
 
     async def _create_real_exchange(self):

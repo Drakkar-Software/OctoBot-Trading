@@ -15,29 +15,11 @@
 #  License along with this library.
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
-from octobot_trading.exchanges.exchange_factory import ExchangeFactory
+from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
 
 
-def create_new_exchange(config, exchange_name,
-                        is_simulated=False,
-                        is_rest_only=False,
-                        is_backtesting=False,
-                        is_sandboxed=False,
-                        ignore_config=False,
-                        is_collecting=False,
-                        exchange_only=False,
-                        matrix_id=None,
-                        backtesting_files=None) -> ExchangeFactory:
-    return ExchangeFactory(config, exchange_name,
-                           is_simulated=is_simulated,
-                           is_backtesting=is_backtesting,
-                           rest_only=is_rest_only,
-                           ignore_config=ignore_config,
-                           is_sandboxed=is_sandboxed,
-                           is_collecting=is_collecting,
-                           exchange_only=exchange_only,
-                           matrix_id=matrix_id,
-                           backtesting_files=backtesting_files)
+def create_exchange_builder(config, exchange_name) -> ExchangeBuilder:
+    return ExchangeBuilder(config, exchange_name)
 
 
 def get_exchange_configurations_from_exchange_name(exchange_name) -> dict:

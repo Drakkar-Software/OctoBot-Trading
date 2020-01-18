@@ -44,13 +44,13 @@ class Trader(Initializable):
 
         # logging
         self.trader_type_str = REAL_TRADER_STR
-        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
+        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange_name}]")
 
         if not hasattr(self, 'simulate'):
             self.simulate = False
 
         self.is_enabled = self.__class__.enabled(self.config)
-        self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange.name}")
+        self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange_name}")
 
     async def initialize_impl(self):
         if self.is_enabled:
@@ -127,7 +127,7 @@ class Trader(Initializable):
                                                                               new_order.origin_price,
                                                                               new_order.origin_stop_price)
 
-            self.logger.info(f"Created order on {self.exchange_manager.exchange.name}: {created_order}")
+            self.logger.info(f"Created order on {self.exchange_manager.exchange_name}: {created_order}")
 
             # get real order from exchange
             new_order = Order(self)
@@ -147,7 +147,7 @@ class Trader(Initializable):
                 odr = order
                 cancelled_order = await odr.cancel_order()
                 self.logger.info(f"{odr.symbol} {odr.get_name()} at {odr.origin_price}"
-                                 f" (ID : {odr.order_id}) cancelled on {self.exchange_manager.exchange.name}")
+                                 f" (ID : {odr.order_id}) cancelled on {self.exchange_manager.exchange_name}")
 
                 # skip_upsert when cancelled_order is None (nothing to update because simulated order)
                 skip_upsert = cancelled_order is None

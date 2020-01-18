@@ -33,7 +33,7 @@ class PositionsUpdater(PositionsProducer):
                 if positions:
                     await self.push(self._cleanup_positions_dict(positions))
             except NotSupported:
-                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
                 self.logger.exception(e)
