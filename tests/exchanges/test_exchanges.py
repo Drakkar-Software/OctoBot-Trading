@@ -32,15 +32,15 @@ class TestExchanges:
 
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_binance)
+        Exchanges.instance().add_exchange(exchange_manager_binance, "")
 
         exchange_manager_bitmex = ExchangeManager(config, "bitmex")
         await exchange_manager_bitmex.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_bitmex)
+        Exchanges.instance().add_exchange(exchange_manager_bitmex, "")
 
         exchange_manager_poloniex = ExchangeManager(config, "poloniex")
         await exchange_manager_poloniex.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_poloniex)
+        Exchanges.instance().add_exchange(exchange_manager_poloniex, "")
 
         assert "binance" in Exchanges.instance().exchanges
         assert "bitmex" in Exchanges.instance().exchanges
@@ -56,15 +56,15 @@ class TestExchanges:
 
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_binance)
+        Exchanges.instance().add_exchange(exchange_manager_binance, "")
 
         exchange_manager_bitmex = ExchangeManager(config, "bitmex")
         await exchange_manager_bitmex.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_bitmex)
+        Exchanges.instance().add_exchange(exchange_manager_bitmex, "")
 
         exchange_manager_poloniex = ExchangeManager(config, "poloniex")
         await exchange_manager_poloniex.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_poloniex)
+        Exchanges.instance().add_exchange(exchange_manager_poloniex, "")
 
         assert Exchanges.instance().get_exchanges_list("binance")[0].exchange_manager is exchange_manager_binance
         assert Exchanges.instance().get_exchanges_list("bitmex")[0].exchange_manager is exchange_manager_bitmex
@@ -82,15 +82,15 @@ class TestExchanges:
 
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_binance)
+        Exchanges.instance().add_exchange(exchange_manager_binance, "")
 
         exchange_manager_bitmex = ExchangeManager(config, "bitmex")
         await exchange_manager_bitmex.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_bitmex)
+        Exchanges.instance().add_exchange(exchange_manager_bitmex, "")
 
         exchange_manager_poloniex = ExchangeManager(config, "poloniex")
         await exchange_manager_poloniex.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_poloniex)
+        Exchanges.instance().add_exchange(exchange_manager_poloniex, "")
 
         Exchanges.instance().del_exchange("binance", exchange_manager_binance.id)
         assert "binance" not in Exchanges.instance().exchanges
@@ -111,15 +111,15 @@ class TestExchanges:
 
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_binance)
+        Exchanges.instance().add_exchange(exchange_manager_binance, "")
 
         exchange_manager_bitmex = ExchangeManager(config, "bitmex")
         await exchange_manager_bitmex.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_bitmex)
+        Exchanges.instance().add_exchange(exchange_manager_bitmex, "")
 
         exchange_manager_poloniex = ExchangeManager(config, "poloniex")
         await exchange_manager_poloniex.initialize()
-        Exchanges.instance().add_exchange(exchange_manager_poloniex)
+        Exchanges.instance().add_exchange(exchange_manager_poloniex, "")
 
         exchanges = Exchanges.instance().get_all_exchanges()
         assert exchanges[0].exchange_manager is exchange_manager_binance

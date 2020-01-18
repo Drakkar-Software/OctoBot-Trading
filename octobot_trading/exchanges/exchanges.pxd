@@ -23,6 +23,7 @@ cdef class ExchangeConfiguration(object):
 
     cdef public str exchange_name
     cdef public str id
+    cdef public str matrix_id
 
     cdef public list cryptocurrencies
     cdef public list symbols
@@ -32,7 +33,7 @@ cdef class ExchangeConfiguration(object):
 cdef class Exchanges(Singleton):
     cdef public dict exchanges
 
-    cpdef void add_exchange(self, ExchangeManager exchange_manager)
+    cpdef void add_exchange(self, ExchangeManager exchange_manager, str matrix_id)
     cpdef ExchangeConfiguration get_exchange(self, str exchange_name, str exchange_manager_id)
     cpdef dict get_exchanges(self, str exchange_name)
     cpdef list get_all_exchanges(self)

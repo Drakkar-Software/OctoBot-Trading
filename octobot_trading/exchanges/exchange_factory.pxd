@@ -38,3 +38,4 @@ cdef class ExchangeFactory:
     cdef bint rest_only
     cdef bint is_collecting
     cdef bint exchange_only
+    cdef str matrix_id

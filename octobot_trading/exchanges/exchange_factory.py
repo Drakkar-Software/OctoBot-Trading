@@ -35,6 +35,7 @@ class ExchangeFactory:
                  is_sandboxed=False,
                  is_collecting=False,
                  exchange_only=False,
+                 matrix_id=None,
                  backtesting_files=None):
         self.logger = get_logger(self.__class__.__name__)
         self.config = config
@@ -47,6 +48,7 @@ class ExchangeFactory:
         self.is_collecting = is_collecting
         self.backtesting_files = backtesting_files
         self.exchange_only = exchange_only
+        self.matrix_id = matrix_id
         self.exchange_manager = ExchangeManager(config,
                                                 exchange_name,
                                                 is_simulated=is_simulated,
@@ -87,7 +89,7 @@ class ExchangeFactory:
             await create_trading_mode(self.config, self.exchange_manager)
 
             # add to global exchanges
-            Exchanges.instance().add_exchange(self.exchange_manager)
+            Exchanges.instance().add_exchange(self.exchange_manager, self.matrix_id)
         except Exception as e:
             self.logger.error(f"An error occurred when creating trader or initializing trading mode : ")
             raise e
