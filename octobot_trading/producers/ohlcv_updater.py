@@ -110,7 +110,7 @@ class OHLCVUpdater(OHLCVProducer):
                     await asyncio.sleep(time_frame_sleep)
             except NotSupported:
                 self.logger.warning(
-                    f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                    f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
                 self.logger.exception(f"Failed to update ohlcv data for {pair} on {time_frame} : {e}")

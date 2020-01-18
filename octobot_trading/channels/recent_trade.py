@@ -43,7 +43,7 @@ class RecentTradeProducer(ExchangeChannelProducer):
     async def send(self, symbol, recent_trades):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
-                "exchange": self.channel.exchange_manager.exchange.name,
+                "exchange": self.channel.exchange_manager.exchange_name,
                 "exchange_id": self.channel.exchange_manager.id,
                 "symbol": symbol,
                 "recent_trades": recent_trades

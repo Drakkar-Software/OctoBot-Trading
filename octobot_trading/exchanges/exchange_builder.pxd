@@ -16,26 +16,33 @@
 #  License along with this library.
 
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.traders.trader cimport Trader
 
-cdef class ExchangeFactory:
-    cdef public ExchangeManager exchange_manager
+cdef class ExchangeBuilder:
+    cdef object logger
 
     cdef dict config
 
-    cdef object logger
-
-    cdef Trader trader
-
-    cdef list backtesting_files
+    cdef public ExchangeManager exchange_manager
 
     cdef public str exchange_name
 
-    cdef bint is_simulated
-    cdef bint is_backtesting
-    cdef bint ignore_config
-    cdef bint is_sandboxed
-    cdef bint rest_only
-    cdef bint is_collecting
-    cdef bint exchange_only
-    cdef str matrix_id
+    cdef bint _is_using_trading_modes
+    cdef bint _is_exchange_manager_sandboxed
+
+    cdef str _matrix_id
+
+    cdef str _trading_tentacles_path
+
+    """
+    Builder methods
+    """
+    cpdef ExchangeBuilder is_backtesting(self, list backtesting_files)
+    cpdef ExchangeBuilder is_sandboxed(self, bint sandboxed)
+    cpdef ExchangeBuilder is_simulated(self)
+    cpdef ExchangeBuilder is_collecting(self)
+    cpdef ExchangeBuilder is_real(self)
+    cpdef ExchangeBuilder is_exchange_only(self)
+    cpdef ExchangeBuilder is_ignoring_config(self)
+    cpdef ExchangeBuilder use_trading_mode(self, str trading_tentacles_path)
+    cpdef ExchangeBuilder disable_trading_mode(self)
+    cpdef ExchangeBuilder has_matrix(self, str matrix_id)

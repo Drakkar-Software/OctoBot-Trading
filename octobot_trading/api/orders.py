@@ -24,26 +24,18 @@ from octobot_trading.enums import TraderOrderType
 LOGGER = get_logger(LOGGER_TAG)
 
 
-class OrdersApi:
-    # Orders list
-    @staticmethod
-    def get_open_orders(exchange_manager, symbol: str) -> list:
-        return exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol)
-
-    # Order creation
-    @staticmethod
-    async def create_order(exchange_manager,
-                           order_type: TraderOrderType,
-                           symbol: str,
-                           current_price: float,
-                           quantity: float,
-                           price: float) -> Order:
-        return await exchange_manager.trader.create_order(
-            exchange_manager.trader.create_order_instance(order_type=order_type,
-                                                          symbol=symbol,
-                                                          current_price=current_price,
-                                                          quantity=quantity,
-                                                          price=price))
+async def create_order(exchange_manager,
+                       order_type: TraderOrderType,
+                       symbol: str,
+                       current_price: float,
+                       quantity: float,
+                       price: float) -> Order:
+    return await exchange_manager.trader.create_order(
+        exchange_manager.trader.create_order_instance(order_type=order_type,
+                                                      symbol=symbol,
+                                                      current_price=current_price,
+                                                      quantity=quantity,
+                                                      price=price))
 
 
 def get_open_orders(exchange_manager) -> list:

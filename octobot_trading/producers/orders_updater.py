@@ -52,7 +52,7 @@ class OpenOrdersUpdater(OrdersProducer):
                     if open_orders:
                         await self.push(self._cleanup_open_orders_dict(open_orders))
             except NotSupported:
-                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
                 self.logger.error(f"Fail to update open orders : {e}")
@@ -89,7 +89,7 @@ class CloseOrdersUpdater(OrdersProducer):
                     if close_orders:
                         await self.push(self._cleanup_close_orders_dict(close_orders), is_closed=True)
             except NotSupported:
-                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
                 self.logger.error(f"Fail to update close orders : {e}")

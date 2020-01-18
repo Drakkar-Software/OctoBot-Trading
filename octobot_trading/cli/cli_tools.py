@@ -95,10 +95,10 @@ async def time_callback(timestamp):
         logging.info(f"TIME : TIMESTAMP = {timestamp}")
 
 
-def start_cli_exchange(exchange_factory):
+def start_cli_exchange(exchange_builder):
     current_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(current_loop)
-    current_loop.run_until_complete(start_exchange(exchange_factory))
+    current_loop.run_until_complete(start_exchange(exchange_builder))
 
     try:
         current_loop.run_until_complete(wait_exchange_tasks())
@@ -106,8 +106,8 @@ def start_cli_exchange(exchange_factory):
         logging.error(f"An error occurred when cancelling task")
 
 
-async def start_exchange(exchange_factory):
-    await exchange_factory.create()
+async def start_exchange(exchange_builder):
+    exchange_manager = await exchange_builder.build()
 
     # consumers
     exchange_id = exchange_factory.exchange_manager.id

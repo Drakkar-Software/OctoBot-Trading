@@ -39,7 +39,7 @@ class OrderBookUpdater(OrderBookProducer):
                         pass
                 await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
             except NotSupported:
-                self.logger.warning(f"{self.channel.exchange_manager.exchange.name} is not supporting updates")
+                self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
                 self.logger.exception(f"Fail to update order book : {e}")

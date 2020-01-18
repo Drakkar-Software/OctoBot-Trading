@@ -52,7 +52,8 @@ class TestTrader:
     @staticmethod
     async def init_default(simulated=True):
         config = load_test_config()
-        exchange_manager = ExchangeManager(config, TestTrader.EXCHANGE_MANAGER_CLASS_STRING, is_simulated=simulated)
+        exchange_manager = ExchangeManager(config, TestTrader.EXCHANGE_MANAGER_CLASS_STRING)
+        exchange_manager.is_simulated = simulated
         await exchange_manager.initialize()
 
         trader = TraderSimulator(config, exchange_manager)

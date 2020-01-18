@@ -29,7 +29,7 @@ class OrderBookCallBack(OrderBookProducer):
         super().__init__(channel)
         self.parent = parent
         self.logger = get_logger(f"WebSocket"
-                                 f" - {self.parent.exchange_manager.exchange.name}"
+                                 f" - {self.parent.exchange_manager.exchange_name}"
                                  f" - {self.__class__.__name__}")
 
     async def l2_order_book_callback(self, _, pair, asks, bids, timestamp):
@@ -49,7 +49,7 @@ class RecentTradesCallBack(RecentTradeProducer):
         super().__init__(channel)
         self.parent = parent
         self.logger = get_logger(f"WebSocket"
-                                 f" - {self.parent.exchange_manager.exchange.name}"
+                                 f" - {self.parent.exchange_manager.exchange_name}"
                                  f" - {self.__class__.__name__}")
 
     async def recent_trades_callback(self, _, pair, side, amount, price, timestamp):
@@ -72,7 +72,7 @@ class TickersCallBack(TickerProducer):
         super().__init__(channel)
         self.parent = parent
         self.logger = get_logger(f"WebSocket"
-                                 f" - {self.parent.exchange_manager.exchange.name}"
+                                 f" - {self.parent.exchange_manager.exchange_name}"
                                  f" - {self.__class__.__name__}")
 
     async def tickers_callback(self, _, pair, bid, ask, last, timestamp):
@@ -97,7 +97,7 @@ class OHLCVCallBack(OHLCVProducer):
         self.parent = parent
         self.time_frame = time_frame
         self.logger = get_logger(f"WebSocket"
-                                 f" - {self.parent.exchange_manager.exchange.name}"
+                                 f" - {self.parent.exchange_manager.exchange_name}"
                                  f" - {self.__class__.__name__}")
 
     async def ohlcv_callback(self, data=None):

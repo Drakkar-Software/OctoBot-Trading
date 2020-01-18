@@ -76,7 +76,7 @@ class ExchangeConfig(Initializable):
                         if self.exchange_manager.symbol_exists(symbol):
                             self.traded_cryptocurrencies[cryptocurrency].append(symbol)
                         else:
-                            self._logger.error(f"{self.exchange_manager.exchange.name} is not supporting the "
+                            self._logger.error(f"{self.exchange_manager.exchange_name} is not supporting the "
                                                f"{symbol} trading pair.")
 
                 else:
@@ -92,7 +92,7 @@ class ExchangeConfig(Initializable):
                 # add to global traded pairs
                 if not self.traded_cryptocurrencies[cryptocurrency]:
                     self._logger.error(
-                        f"{self.exchange_manager.exchange.name} is not supporting any {cryptocurrency} trading pair "
+                        f"{self.exchange_manager.exchange_name} is not supporting any {cryptocurrency} trading pair "
                         f"from current configuration.")
                 self.traded_symbol_pairs += self.traded_cryptocurrencies[cryptocurrency]
             else:

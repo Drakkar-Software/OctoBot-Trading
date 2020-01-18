@@ -34,6 +34,7 @@ cdef class ExchangeManager(Initializable):
     cdef public Trader trader
 
     cdef public str exchange_class_string
+    cdef public str exchange_name
 
     cdef public list backtesting_files
 

@@ -32,11 +32,10 @@ class TestExchangeManager:
         if not config:
             config = load_test_config()
 
-        exchange_manager = ExchangeManager(config,
-                                           TestExchangeManager.EXCHANGE_NAME,
-                                           is_simulated=simulated,
-                                           is_backtesting=False,
-                                           rest_only=True)
+        exchange_manager = ExchangeManager(config, TestExchangeManager.EXCHANGE_NAME)
+        exchange_manager.is_simulated = simulated
+        exchange_manager.is_backtesting = False
+        exchange_manager.rest_only = True
 
         await exchange_manager.initialize()
         return config, exchange_manager
@@ -46,7 +45,7 @@ class TestExchangeManager:
         config, exchange_manager = await self.init_default(simulated=True)
 
         assert exchange_manager is not None
-        assert exchange_manager.exchange.name is TestExchangeManager.EXCHANGE_NAME
+        assert exchange_manager.exchange_name is TestExchangeManager.EXCHANGE_NAME
 
         assert exchange_manager.config is config
 
@@ -57,7 +56,7 @@ class TestExchangeManager:
         config, exchange_manager = await self.init_default(simulated=False)
 
         assert exchange_manager is not None
-        assert exchange_manager.exchange.name is TestExchangeManager.EXCHANGE_NAME
+        assert exchange_manager.exchange_name is TestExchangeManager.EXCHANGE_NAME
 
         assert exchange_manager.config is config
 

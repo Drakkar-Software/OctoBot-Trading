@@ -39,7 +39,7 @@ class PortfolioProfitabilty(Initializable):
         self.trader = trader
         self.portfolio_manager = portfolio_manager
         self.exchange_manager = exchange_manager
-        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
+        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange_name}]")
 
         self.profitability = 0
         self.profitability_percent = 0
