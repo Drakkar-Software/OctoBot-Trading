@@ -58,6 +58,7 @@ class KlineUpdater(KlineProducer):
                                                                                             limit=self.KLINE_LIMIT)
                     try:
                         candle = candle[0]
+                        self.channel.exchange_manager.uniformize_candles_if_necessary(candle)
                         await self.push(time_frame, pair, candle)
                     except TypeError:
                         pass
@@ -69,12 +70,6 @@ class KlineUpdater(KlineProducer):
                 await self.pause()
             except Exception as e:
                 self.logger.error(f"Failed to update kline data in {time_frame} : {e}")
-
-    # async def config_callback(self, exchange, cryptocurrency, symbols, time_frames):
-    #     if time_frames:
-    #         for time_frame in time_frames:
-    #             self.__create_time_frame_kline_task(time_frame)
-    #             self.logger.info(f"global_data_callback: added {time_frame}")
 
     async def resume(self) -> None:
         await super().resume()
