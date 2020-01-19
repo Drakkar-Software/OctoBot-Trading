@@ -203,6 +203,9 @@ class Order:
     async def close_order(self):
         await self.trader.notify_order_close(self)
 
+    def add_linked_order(self, order):
+        self.linked_orders.append(order)
+
     def get_currency_and_market(self) -> (str, str):
         return self.currency, self.market
 
