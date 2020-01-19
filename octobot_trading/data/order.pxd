@@ -86,6 +86,7 @@ cdef class Order:
 
     cpdef str to_string(self)
     cpdef bint check_last_prices(self, list last_prices, double price_to_check, bint inferior, bint simulated_time=*)
+    cpdef add_linked_order(self, Order order)
     cpdef tuple get_currency_and_market(self)
     cpdef double get_total_fees(self, str currency)
     cpdef bint is_filled(self)
