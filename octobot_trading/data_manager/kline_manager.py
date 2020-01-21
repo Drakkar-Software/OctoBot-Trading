@@ -46,8 +46,6 @@ class KlineManager(Initializable):
 
             if self.kline[PriceIndexes.IND_PRICE_VOL.value] is nan:
                 self.kline[PriceIndexes.IND_PRICE_VOL.value] = kline[PriceIndexes.IND_PRICE_VOL.value]
-            else:
-                self.kline[PriceIndexes.IND_PRICE_VOL.value] += kline[PriceIndexes.IND_PRICE_VOL.value]
 
             self.kline[PriceIndexes.IND_PRICE_CLOSE.value] = kline[PriceIndexes.IND_PRICE_CLOSE.value]
 
