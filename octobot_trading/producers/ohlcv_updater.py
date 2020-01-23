@@ -68,6 +68,7 @@ class OHLCVUpdater(OHLCVProducer):
         # fetch history
         candles: list = await self.channel.exchange_manager.exchange \
             .get_symbol_prices(pair, time_frame, limit=self.OHLCV_OLD_LIMIT)
+        self.channel.exchange_manager.uniformize_candles_if_necessary(candles)
         await self.push(time_frame, pair, candles[:-1], replace_all=True)
 
     async def _candle_callback(self, time_frame, pair, should_initialize=False):
@@ -84,7 +85,7 @@ class OHLCVUpdater(OHLCVProducer):
 
                 if candles:
                     last_candle: list = candles[-1]
-                    self.channel.exchange_manager.uniformize_candles_if_necessary(last_candle)
+                    self.channel.exchange_manager.uniformize_candles_if_necessary(candles)
                 else:
                     last_candle: list = []
 
@@ -97,7 +98,7 @@ class OHLCVUpdater(OHLCVProducer):
                     else:
                         # A fresh candle happened
                         last_candle_timestamp = current_candle_timestamp
-                        await self.push(time_frame, pair, candles[:-1], partial=True)  # push only completed candles
+                        await self.push(time_frame, pair, candles[:-1], partial=True)   # push only completed candles
 
                         if should_sleep_time < self.OHLCV_MIN_REFRESH_TIME:
                             should_sleep_time = self.OHLCV_MIN_REFRESH_TIME
