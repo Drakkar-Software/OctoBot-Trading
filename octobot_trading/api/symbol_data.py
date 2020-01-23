@@ -31,5 +31,9 @@ def get_symbol_historical_candles(symbol_data, time_frame, limit=-1) -> dict:
     return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_prices(limit)
 
 
+def has_symbol_klines(symbol_data, time_frame) -> bool:
+    return TimeFrames(time_frame) in symbol_data.symbol_klines
+
+
 def get_symbol_klines(symbol_data, time_frame) -> list:
     return symbol_data.symbol_klines[TimeFrames(time_frame)].kline
