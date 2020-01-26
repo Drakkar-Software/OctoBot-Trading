@@ -241,6 +241,9 @@ class ExchangeManager(Initializable):
     def get_exchange_quote_and_base(self, symbol):
         return self.exchange.get_split_pair_from_exchange(symbol)
 
+    def get_exchange_backtesting(self):
+        return self.exchange.backtesting if isinstance(self.exchange, ExchangeSimulator) else None
+
     def _load_config_symbols_and_time_frames(self):
         client = self.exchange.client
         if client:
