@@ -17,3 +17,7 @@
 
 def get_portfolio(exchange_manager) -> dict:
     return exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+
+
+def get_origin_portfolio(exchange_manager) -> dict:
+    return exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability.origin_portfolio.portfolio

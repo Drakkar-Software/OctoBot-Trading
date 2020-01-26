@@ -30,13 +30,21 @@ def get_exchange_manager_from_exchange_name_and_id(exchange_name, exchange_id) -
     return Exchanges.instance().get_exchange(exchange_name, exchange_id).exchange_manager
 
 
-# prefer get_exchange_manager_from_exchange_name_and_id when possible
-def get_exchange_manager_from_exchange_id(exchange_id) -> ExchangeManager:
+# prefer get_exchange_configurations_from_exchange_name when possible
+def get_exchange_configuration_from_exchange_id(exchange_id) -> ExchangeManager:
     for exchange_configs in Exchanges.instance().exchanges.values():
         for exchange_config in exchange_configs.values():
             if exchange_config.exchange_manager.id == exchange_id:
-                return exchange_config.exchange_manager
-    raise KeyError(f"No exchange manager with id: {exchange_id}")
+                return exchange_config
+    raise KeyError(f"No exchange configuration with id: {exchange_id}")
+
+
+# prefer get_exchange_manager_from_exchange_name_and_id when possible
+def get_exchange_manager_from_exchange_id(exchange_id) -> ExchangeManager:
+    try:
+        return get_exchange_configuration_from_exchange_id(exchange_id).exchange_manager
+    except KeyError:
+        raise KeyError(f"No exchange manager with id: {exchange_id}")
 
 
 def get_exchange_managers_from_exchange_ids(exchange_ids) -> list:
@@ -64,6 +72,10 @@ def get_exchange_ids() -> list:
 
 def get_exchange_name(exchange_manager) -> str:
     return exchange_manager.get_exchange_name()
+
+
+def get_backtesting_instance(exchange_manager):
+    return exchange_manager.get_exchange_backtesting()
 
 
 def get_trading_pairs(exchange_manager) -> list:
