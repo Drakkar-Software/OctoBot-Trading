@@ -22,7 +22,7 @@ class BuyMarketOrder(Order):
         super().__init__(trader)
         self.side = TradeOrderSide.BUY
 
-    async def update_order_status(self, last_prices: list, simulated_time=False):
+    async def update_order_status(self, last_prices: list):
         if not self.trader.simulate:
             await self.default_exchange_update_order_status()
         else:
@@ -34,4 +34,4 @@ class BuyMarketOrder(Order):
             self.filled_quantity = self.origin_quantity
             self.total_cost = self.filled_price*self.filled_quantity
             self.fee = self.get_computed_fee()
-            self.executed_time = self.generate_executed_time(simulated_time)
+            self.executed_time = self.generate_executed_time()

@@ -17,12 +17,18 @@ import json
 
 from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
+from octobot_trading.channels.exchange_channel import get_chan as get_exchange_chan
 
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
+from octobot_commons.enums import PriceIndexes
+from octobot_trading.constants import OHLCV_CHANNEL
+from octobot_trading.enums import ExchangeConstantsOrderColumns
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
 
 
 class RecentTradeUpdaterSimulator(RecentTradeUpdater):
+    SIMULATED_RECENT_TRADE_LIMIT = 2
+
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer
@@ -46,11 +52,30 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
                     self.last_timestamp_pushed = recent_trades_data[0]
                     await self.push(pair, recent_trades_data[-1])
         except DataBaseNotExists as e:
-            self.logger.warning(f"Not enough data : {e}")
+            self.logger.warning(f"Not enough data : {e} will use ohlcv data to simulate recent trades.")
             await self.pause()
             await self.stop()
+            await get_exchange_chan(OHLCV_CHANNEL, self.channel.exchange_manager.id) \
+                .new_consumer(self.recent_trades_from_ohlcv_callback)
         except IndexError as e:
             self.logger.warning(f"Failed to access recent_trades_data : {e}")
+
+    async def recent_trades_from_ohlcv_callback(self, exchange: str, exchange_id: str, symbol: str, time_frame, candle):
+        if candle:
+            last_candle_open_price = candle[PriceIndexes.IND_PRICE_OPEN.value]
+            last_candle_timestamp = candle[PriceIndexes.IND_PRICE_TIME.value]
+            recent_trades = [self._generate_recent_trade(last_candle_timestamp, last_candle_open_price)] \
+                * self.SIMULATED_RECENT_TRADE_LIMIT
+            if last_candle_timestamp > self.last_timestamp_pushed:
+                self.last_timestamp_pushed = last_candle_timestamp
+                await self.push(symbol, recent_trades, partial=True)
+
+    @staticmethod
+    def _generate_recent_trade(timestamp, price):
+        return {
+            ExchangeConstantsOrderColumns.TIMESTAMP.value: timestamp,
+            ExchangeConstantsOrderColumns.PRICE.value: price
+        }
 
     async def pause(self):
         if self.time_consumer is not None:

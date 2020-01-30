@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_backtesting.api.backtesting import initialize_backtesting
+from octobot_backtesting.api.backtesting import initialize_backtesting, get_backtesting_current_time
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
 from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
@@ -72,6 +72,9 @@ class ExchangeSimulator(AbstractExchange):
 
     async def stop(self):
         pass  # TODO
+
+    def get_exchange_current_time(self):
+        return get_backtesting_current_time(self.backtesting)
 
     def symbol_exists(self, symbol):
         return symbol in self.symbols
@@ -158,3 +161,6 @@ class ExchangeSimulator(AbstractExchange):
 
     def is_authenticated(self) -> bool:
         return False
+
+    def get_split_pair_from_exchange(self, pair) -> (str, str):
+        return split_symbol(pair)
