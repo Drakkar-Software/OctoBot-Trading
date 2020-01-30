@@ -85,7 +85,7 @@ cdef class Order:
     cdef void __update_taker_maker_from_raw(self)
 
     cpdef str to_string(self)
-    cpdef bint check_last_prices(self, list last_prices, double price_to_check, bint inferior, bint simulated_time=*)
+    cpdef bint check_last_prices(self, list last_prices, double price_to_check, bint inferior)
     cpdef add_linked_order(self, Order order)
     cpdef tuple get_currency_and_market(self)
     cpdef double get_total_fees(self, str currency)
@@ -93,7 +93,7 @@ cdef class Order:
     cpdef bint is_cancelled(self)
     cpdef dict get_computed_fee(self, object forced_value=*)
     cpdef double get_profitability(self)
-    cpdef float generate_executed_time(self, bint simulated_time=*)
+    cpdef float generate_executed_time(self)
     cpdef bint is_self_managed(self)
     cpdef bint update_from_raw(self, dict raw_order)
 

@@ -31,3 +31,5 @@ cdef class AbstractExchange(Initializable):
     cdef public ExchangeManager exchange_manager
 
     cdef public str name
+
+    cpdef float get_exchange_current_time(self)

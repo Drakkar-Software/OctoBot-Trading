@@ -23,5 +23,5 @@ class StopLossLimitOrder(Order):
         super().__init__(trader)
         self.side = TradeOrderSide.SELL
 
-    async def update_order_status(self, last_prices: list, simulated_time=False):
+    async def update_order_status(self, last_prices: list):
         pass

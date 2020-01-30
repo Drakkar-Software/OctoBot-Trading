@@ -22,14 +22,14 @@ class StopLossOrder(Order):
         super().__init__(trader)
         self.side = TradeOrderSide.SELL
 
-    async def update_order_status(self, last_prices: list, simulated_time=False):
-        if self.check_last_prices(last_prices, self.origin_price, True, simulated_time):
+    async def update_order_status(self, last_prices: list):
+        if self.check_last_prices(last_prices, self.origin_price, True):
             self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
             self.status = OrderStatus.FILLED
             self.filled_price = self.origin_price
             self.filled_quantity = self.origin_quantity
             self.total_cost = self.filled_price * self.filled_quantity
-            self.executed_time = self.generate_executed_time(simulated_time)
+            self.executed_time = self.generate_executed_time()
             if self.trader.simulate:
                 # compute normal fees
                 self.fee = self.get_computed_fee()

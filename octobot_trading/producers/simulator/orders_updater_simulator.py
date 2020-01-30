@@ -45,7 +45,8 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
 
     async def handle_recent_trade(self, exchange: str, exchange_id: str, symbol: str, recent_trades: list):
         try:
-            failed_order_updates = await self.__update_orders_status(symbol=symbol, last_prices=recent_trades)
+            failed_order_updates = await self.__update_orders_status(symbol=symbol,
+                                                                     last_prices=recent_trades)
 
             if failed_order_updates:
                 self.logger.info(f"Forcing real trader refresh.")
@@ -60,8 +61,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
 
     async def __update_orders_status(self,
                                      symbol: str,
-                                     last_prices: list,
-                                     simulated_time: bool = False) -> list:
+                                     last_prices: list) -> list:
         failed_order_updates = []
         for order in copy.copy(
                 self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
@@ -71,8 +71,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                 async with order.lock:
                     order_filled = await self._update_order_status(order,
                                                                    failed_order_updates,
-                                                                   last_prices,
-                                                                   simulated_time=simulated_time)
+                                                                   last_prices)
             except Exception as e:
                 raise e
             finally:
@@ -93,11 +92,10 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     async def _update_order_status(self,
                                    order: Order,
                                    failed_order_updates: list,
-                                   last_prices: list,
-                                   simulated_time: bool = False):
+                                   last_prices: list):
         order_filled = False
         try:
-            await order.update_order_status(last_prices, simulated_time=simulated_time)
+            await order.update_order_status(last_prices)
 
             if order.status == OrderStatus.FILLED:
                 order_filled = True

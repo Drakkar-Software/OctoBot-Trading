@@ -22,16 +22,16 @@ class SellLimitOrder(Order):
         super().__init__(trader)
         self.side = TradeOrderSide.SELL
 
-    async def update_order_status(self, last_prices: list, simulated_time=False):
+    async def update_order_status(self, last_prices: list):
         if not self.trader.simulate:
             await self.default_exchange_update_order_status()
         else:
             # ONLY FOR SIMULATION
-            if self.check_last_prices(last_prices, self.origin_price, False, simulated_time):
+            if self.check_last_prices(last_prices, self.origin_price, False):
                 self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
                 self.status = OrderStatus.FILLED
                 self.filled_price = self.origin_price
                 self.filled_quantity = self.origin_quantity
                 self.total_cost = self.filled_price * self.filled_quantity
                 self.fee = self.get_computed_fee()
-                self.executed_time = self.generate_executed_time(simulated_time)
+                self.executed_time = self.generate_executed_time()

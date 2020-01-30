@@ -33,3 +33,5 @@ cdef class ExchangeSimulator(AbstractExchange):
     cpdef get_uniform_timestamp(self, float timestamp)
     cpdef dict get_fees(self, str symbol=*)
     cpdef dict get_trade_fee(self, str symbol, object order_type, float quantity, float price, str taker_or_maker=*)
+    cpdef tuple get_split_pair_from_exchange(self, str pair)
+    cpdef float get_exchange_current_time(self)

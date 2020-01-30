@@ -16,12 +16,10 @@
 
 import time
 from asyncio import Lock
-
 import math
+
 from octobot_commons.dict_util import get_value_or_default
-
 from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ECOC, ExchangeConstantsOrderColumns, TradeOrderType
@@ -91,7 +89,7 @@ class Order:
             self.timestamp = timestamp
         if not self.timestamp:
             if not timestamp:
-                self.creation_time = time.time()
+                self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
                 self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
@@ -151,19 +149,19 @@ class Order:
                 self.executed_time = self.trader.exchange_manager.exchange.get_uniform_timestamp(timestamp)
         return changed
 
-    async def update_order_status(self, last_prices: list, simulated_time=False):
+    async def update_order_status(self, last_prices: list):
         """
         Update_order_status will define the rules for a simulated order to be filled / canceled
         """
         raise NotImplementedError("Update_order_status not implemented")
 
     # check_last_prices is used to collect data to perform the order update_order_status process
-    def check_last_prices(self, last_prices, price_to_check, inferior, simulated_time=False) -> bool:
+    def check_last_prices(self, last_prices, price_to_check, inferior) -> bool:
         if last_prices:
             prices = [p[ECOC.PRICE.value]
                       for p in last_prices
                       if not math.isnan(p[ECOC.PRICE.value]) and (
-                              p[ECOC.TIMESTAMP.value] >= self.creation_time or simulated_time)]
+                              p[ECOC.TIMESTAMP.value] >= self.creation_time)]
 
             if prices:
                 if inferior:
@@ -250,11 +248,8 @@ class Order:
         elif new_status == OrderStatus.CANCELED:
             await self.cancel_from_exchange()
 
-    def generate_executed_time(self, simulated_time=False):
-        if not simulated_time or not self.last_prices:  # TODO
-            return time.time()
-        else:
-            return self.last_prices[-1][ECOC.TIMESTAMP.value]
+    def generate_executed_time(self):
+        return self.exchange_manager.exchange.get_exchange_current_time()
 
     def is_self_managed(self):
         # stop losses and take profits are self managed by the bot

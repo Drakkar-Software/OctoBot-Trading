@@ -13,8 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import json
-
 from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
 
