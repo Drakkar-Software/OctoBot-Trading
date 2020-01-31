@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -15,7 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.channels.price cimport MarkPriceProducer
+from octobot_trading.constants import OHLCV_CHANNEL
+from octobot_trading.channels.exchange_channel import get_chan as get_exchange_chan
 
-cdef class MarkPriceUpdater(MarkPriceProducer):
-    pass
+
+async def register_on_ohlcv_chan(exchange_id, callback):
+    ohlcv_chan = get_exchange_chan(OHLCV_CHANNEL, exchange_id)
+    # Before registration, wait for producers to be initialized (meaning their historical candles are already
+    # loaded) to avoid callback calls on historical (and potentially invalid) values
+    for producer in ohlcv_chan.get_producers():
+        await producer.wait_for_initialization()
+    await ohlcv_chan.new_consumer(callback)

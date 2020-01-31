@@ -13,14 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import json
+import asyncio
 
+from octobot_backtesting.api.backtesting import get_backtesting_current_time
 from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
-
-from octobot_commons.enums import TimeFrames
-
 from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
 
 
@@ -30,13 +28,21 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         self.exchange_data_importer = importer
         self.exchange_name = self.channel.exchange_manager.exchange_name
 
+        self.initial_timestamp = get_backtesting_current_time(self.channel.exchange_manager.exchange.backtesting)
         self.last_timestamp_pushed = 0
         self.time_consumer = None
 
     async def start(self):
+        if not self.is_initialized:
+            await self._initialize()
         await self.resume()
 
+    async def wait_for_initialization(self, timeout=OHLCVUpdater.OHLCV_INITIALIZATION_TIMEOUT):
+        await asyncio.wait_for(self.ohlcv_initialized_event.wait(), timeout)
+
     async def handle_timestamp(self, timestamp, **kwargs):
+        if not self.is_initialized:
+            await self.wait_for_initialization()
         if self.last_timestamp_pushed == 0:
             self.last_timestamp_pushed = timestamp
 
@@ -69,3 +75,21 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         if self.time_consumer is None and not self.channel.is_paused:
             self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
                 self.handle_timestamp)
+
+    async def _initialize_candles(self, time_frame, pair):
+        # fetch history
+        ohlcv_data = None
+        try:
+            ohlcv_data: list = await self.exchange_data_importer.get_ohlcv_from_timestamps(
+                exchange_name=self.exchange_name,
+                symbol=pair,
+                time_frame=time_frame,
+                limit=self.OHLCV_OLD_LIMIT,
+                superior_timestamp=self.initial_timestamp)
+            self.logger.info(f"Loaded pre-backtesting starting timestamp historical "
+                             f"candles for: {pair} in {time_frame}")
+        except Exception as e:
+            self.logger.error(f"Error while fetching historical candles: {e}")
+            self.logger.exception(e)
+        if ohlcv_data:
+            await self.push(time_frame, pair, [ohlcv[-1] for ohlcv in ohlcv_data], replace_all=True)

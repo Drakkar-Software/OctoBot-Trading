@@ -13,10 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_backtesting.api.backtesting import initialize_backtesting, get_backtesting_current_time
+from octobot_backtesting.api.backtesting import initialize_backtesting, modify_backtesting_timestamps, \
+    start_backtesting, get_backtesting_current_time
+from octobot_backtesting.api.importer import get_available_data_types
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
-from octobot_channels.channels.channel import get_chan
-from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
 from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
@@ -25,7 +25,8 @@ from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
-from octobot_trading.producers.simulator import UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS
+from octobot_trading.producers.simulator import UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS, \
+    SIMULATOR_PRODUCERS_TO_DATA_TYPE
 
 
 class ExchangeSimulator(AbstractExchange):
@@ -61,14 +62,35 @@ class ExchangeSimulator(AbstractExchange):
         timestamps = [await importer.get_data_timestamp_interval()
                       for importer in self.exchange_importers]  # [(min, max) ... ]
 
-        await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).modify(
+        await modify_backtesting_timestamps(
+            self.backtesting,
             minimum_timestamp=min(timestamps)[0],
             maximum_timestamp=max(timestamps)[1])
 
     async def create_backtesting_exchange_producers(self):
         for importer in self.exchange_importers:
+            available_data_types = get_available_data_types(importer)
+            at_least_one_updater = False
             for updater in UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
-                await updater(get_trading_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
+                if self._are_required_data_available(updater, available_data_types):
+                    await updater(get_trading_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
+                    at_least_one_updater = True
+            if not at_least_one_updater:
+                self.logger.error(f"No updater created for {importer.symbols} backtesting")
+
+    async def start_backtesting(self):
+        await start_backtesting(self.backtesting)
+
+    @staticmethod
+    def _are_required_data_available(updater, available_data_types):
+        if updater not in SIMULATOR_PRODUCERS_TO_DATA_TYPE:
+            # no required data if updater is not in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys
+            return True
+        else:
+            # if updater is in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys: check that at least one of the required data is
+            # available
+            return any(required_data_type in available_data_types
+                       for required_data_type in SIMULATOR_PRODUCERS_TO_DATA_TYPE[updater])
 
     async def stop(self):
         pass  # TODO

@@ -13,17 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import json
+import asyncio
 
+from octobot_backtesting.api.importer import get_available_data_types
 from octobot_backtesting.data import DataBaseNotExists
+from octobot_backtesting.enums import ExchangeDataTables
 from octobot_channels.channels.channel import get_chan
-from octobot_trading.channels.exchange_channel import get_chan as get_exchange_chan
 
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_commons.enums import PriceIndexes
-from octobot_trading.constants import OHLCV_CHANNEL
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
+from octobot_trading.producers.simulator.simulator_updater_utils import register_on_ohlcv_chan
 
 
 class RecentTradeUpdaterSimulator(RecentTradeUpdater):
@@ -55,12 +56,9 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
             self.logger.warning(f"Not enough data : {e} will use ohlcv data to simulate recent trades.")
             await self.pause()
             await self.stop()
-            await get_exchange_chan(OHLCV_CHANNEL, self.channel.exchange_manager.id) \
-                .new_consumer(self.recent_trades_from_ohlcv_callback)
-        except IndexError as e:
-            self.logger.warning(f"Failed to access recent_trades_data : {e}")
 
-    async def recent_trades_from_ohlcv_callback(self, exchange: str, exchange_id: str, symbol: str, time_frame, candle):
+    async def _recent_trades_from_ohlcv_callback(self, exchange: str, exchange_id: str,
+                                                 symbol: str, time_frame, candle):
         if candle:
             last_candle_open_price = candle[PriceIndexes.IND_PRICE_OPEN.value]
             last_candle_timestamp = candle[PriceIndexes.IND_PRICE_TIME.value]
@@ -83,5 +81,12 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:
-            self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
-                self.handle_timestamp)
+            if ExchangeDataTables.RECENT_TRADES in get_available_data_types(self.exchange_data_importer):
+                self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
+                    self.handle_timestamp)
+            else:
+                # asyncio.shield to avoid auto-cancel (if error in other tasks that will exit main asyncio.gather)
+                # resulting in failure to register as consumer
+                await asyncio.shield(register_on_ohlcv_chan(self.channel.exchange_manager.id,
+                                                            self._recent_trades_from_ohlcv_callback))
+

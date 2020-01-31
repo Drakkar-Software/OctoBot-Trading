@@ -13,8 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.price import MarkPriceProducer
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL
@@ -24,10 +22,6 @@ from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConst
 
 class MarkPriceUpdater(MarkPriceProducer):
     CHANNEL_NAME = MARK_PRICE_CHANNEL
-
-    def __init__(self, channel):
-        super().__init__(channel)
-        self.logger = get_logger(self.__class__.__name__)
 
     async def start(self):
         await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id)\
