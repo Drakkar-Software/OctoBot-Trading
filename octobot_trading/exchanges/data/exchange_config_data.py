@@ -106,8 +106,7 @@ class ExchangeConfig(Initializable):
             if self.exchange_manager.time_frame_exists(time_frame.value):
                 self.traded_time_frames.append(time_frame)
         # add shortest timeframe for realtime evaluators
-        client_shortest_time_frame = find_min_time_frame(
-            self.exchange_manager.client_time_frames[CONFIG_WILDCARD], MIN_EVAL_TIME_FRAME)
+        client_shortest_time_frame = find_min_time_frame(self.exchange_manager.client_time_frames, MIN_EVAL_TIME_FRAME)
         if client_shortest_time_frame not in self.traded_time_frames:
             self.traded_time_frames.append(client_shortest_time_frame)
 

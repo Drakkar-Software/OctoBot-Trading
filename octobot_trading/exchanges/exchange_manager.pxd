@@ -54,13 +54,14 @@ cdef class ExchangeManager(Initializable):
     cdef public ExchangePersonalData exchange_personal_data
     cdef public ExchangeSymbolsData exchange_symbols_data
 
-    cdef public dict client_time_frames
+    cdef public list client_time_frames
     cdef public list client_symbols
 
     # private
     cdef void _load_config_symbols_and_time_frames(self)
     cdef void _load_constants(self)
     cdef void _load_config_symbols_and_time_frames(self)
+    cdef void _initialize_simulator_time_frames(self)
     cdef object _uniformize_candles_timestamps(self, list candles)
     cdef void _uniformize_candle_timestamps(self, list candle)
     cdef void _raise_exchange_load_error(self)
@@ -78,7 +79,7 @@ cdef class ExchangeManager(Initializable):
     cpdef force_disable_web_socket(self, str exchange_name)
     cpdef check_web_socket_config(self, str exchange_name)
     cpdef bint symbol_exists(self, str symbol)
-    cpdef bint time_frame_exists(self, object time_frame, str symbol=*)
+    cpdef bint time_frame_exists(self, object time_frame)
     cpdef int get_rate_limit(self)
     cpdef object uniformize_candles_if_necessary(self, object candle_or_candles)
     cpdef str get_exchange_name(self)

@@ -20,7 +20,7 @@ from octobot_channels.util.channel_creator import create_all_subclasses_channel
 from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
 
 from octobot_commons.config_util import has_invalid_default_config_value
-from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_WILDCARD
+from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.timestamp_util import is_valid_timestamp
@@ -72,7 +72,7 @@ class ExchangeManager(Initializable):
         self.exchange_type = None
 
         self.client_symbols = []
-        self.client_time_frames = {}
+        self.client_time_frames = []
 
         self.exchange_config = ExchangeConfig(self)
         self.exchange_personal_data = ExchangePersonalData(self)
@@ -151,6 +151,8 @@ class ExchangeManager(Initializable):
     async def _create_simulated_exchange(self):
         self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
         await self.exchange.initialize()
+        await self._initialize_simulator_time_frames()
+        self.exchange_config.set_config_time_frame()
         self.exchange_config.set_config_traded_pairs()
         await self._create_exchange_channels()
 
@@ -249,28 +251,27 @@ class ExchangeManager(Initializable):
         client = self.exchange.client
         if client:
             self.client_symbols = client.symbols
-            self.client_time_frames[CONFIG_WILDCARD] = client.timeframes if hasattr(client, "timeframes") else {}
+            self.client_time_frames = client.timeframes if hasattr(client, "timeframes") else []
         else:
             self._logger.error("Failed to load client from REST exchange")
             self._raise_exchange_load_error()
+
+    async def _initialize_simulator_time_frames(self):
+        self.client_time_frames = self.exchange.get_available_time_frames()
 
     # SYMBOLS
     def symbol_exists(self, symbol):
         if self.client_symbols is None:
             self._logger.error(f"Failed to load available symbols from REST exchange, impossible to check if "
-                              f"{symbol} exists on {self.exchange.name}")
+                               f"{symbol} exists on {self.exchange.name}")
             return False
         return symbol in self.client_symbols
 
     # TIME FRAMES
-    def time_frame_exists(self, time_frame, symbol=None):
-        if CONFIG_WILDCARD in self.client_time_frames and not self.client_time_frames[CONFIG_WILDCARD]:
+    def time_frame_exists(self, time_frame):
+        if not self.client_time_frames:
             return False
-        elif CONFIG_WILDCARD in self.client_time_frames or symbol is None:
-            return time_frame in self.client_time_frames[CONFIG_WILDCARD]
-
-        # should only happen in backtesting (or with an exchange with different timeframes per symbol)
-        return time_frame in self.client_time_frames[symbol]
+        return time_frame in self.client_time_frames
 
     def get_rate_limit(self):
         return self.exchange_type.rateLimit / 1000
