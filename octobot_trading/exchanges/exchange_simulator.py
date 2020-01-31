@@ -15,7 +15,7 @@
 #  License along with this library.
 from octobot_backtesting.api.backtesting import initialize_backtesting, modify_backtesting_timestamps, \
     start_backtesting, get_backtesting_current_time
-from octobot_backtesting.api.importer import get_available_data_types
+from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
@@ -55,7 +55,6 @@ class ExchangeSimulator(AbstractExchange):
 
         # set exchange manager attributes
         self.exchange_manager.client_symbols = self.symbols
-        self.exchange_manager.exchange_config.traded_time_frames = self.time_frames
 
     async def modify_channels(self):
         # set mininmum and maximum timestamp according to all importers data
@@ -103,6 +102,9 @@ class ExchangeSimulator(AbstractExchange):
 
     def time_frame_exists(self, time_frame):
         return time_frame in self.time_frames
+
+    def get_available_time_frames(self):
+        return [time_frame.value for time_frame in get_available_time_frames(next(iter(self.exchange_importers)))]
 
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
         return {
