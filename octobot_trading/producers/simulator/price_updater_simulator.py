@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,8 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.producers.prices_updater import MarkPriceUpdater
 
-from octobot_trading.channels.price cimport MarkPriceProducer
 
-cdef class MarkPriceUpdater(MarkPriceProducer):
-    pass
+class MarkPriceUpdaterSimulator(MarkPriceUpdater):
+    def __init__(self, channel, importer):
+        super().__init__(channel)
+        self.exchange_data_importer = importer

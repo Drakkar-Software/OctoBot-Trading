@@ -17,16 +17,27 @@ from octobot_trading.producers.balance_updater import BalanceProfitabilityUpdate
 from octobot_trading.producers.simulator.positions_updater_simulator import PositionsUpdaterSimulator
 from octobot_trading.producers.simulator.orders_updater_simulator import CloseOrdersUpdaterSimulator, \
     OpenOrdersUpdaterSimulator
+from octobot_trading.producers.simulator.price_updater_simulator import MarkPriceUpdaterSimulator
 from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
 from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
 from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
 from octobot_trading.producers.simulator.order_book_updater_simulator import OrderBookUpdaterSimulator
 from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
+from octobot_backtesting.enums import ExchangeDataTables
 
 UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [OHLCVUpdaterSimulator, OrderBookUpdaterSimulator,
                                                RecentTradeUpdaterSimulator, TickerUpdaterSimulator,
-                                               KlineUpdaterSimulator]
+                                               KlineUpdaterSimulator, MarkPriceUpdaterSimulator]
 
 # TODO PositionsUpdaterSimulator
 AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [CloseOrdersUpdaterSimulator, OpenOrdersUpdaterSimulator,
                                              BalanceProfitabilityUpdater]
+
+# Required data to run updater (requires at least one per list)
+SIMULATOR_PRODUCERS_TO_DATA_TYPE = {
+    OHLCVUpdaterSimulator: [ExchangeDataTables.OHLCV],
+    OrderBookUpdaterSimulator: [ExchangeDataTables.ORDER_BOOK],
+    RecentTradeUpdaterSimulator: [ExchangeDataTables.RECENT_TRADES, ExchangeDataTables.OHLCV],
+    TickerUpdaterSimulator: [ExchangeDataTables.TICKER, ExchangeDataTables.OHLCV],
+    KlineUpdaterSimulator: [ExchangeDataTables.KLINE],
+}

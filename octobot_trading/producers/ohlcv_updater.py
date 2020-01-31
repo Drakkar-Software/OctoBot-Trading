@@ -31,10 +31,14 @@ class OHLCVUpdater(OHLCVProducer):
     OHLCV_ON_ERROR_TIME = 5
     OHLCV_MIN_REFRESH_TIME = 3
 
+    OHLCV_INITIALIZATION_TIMEOUT = 60
+
     def __init__(self, channel):
         super().__init__(channel)
         self.tasks = []
         self.is_initialized = False
+
+        self.ohlcv_initialized_event = asyncio.Event()
 
     """
     Creates OHLCV refresh tasks
@@ -42,15 +46,27 @@ class OHLCVUpdater(OHLCVProducer):
 
     async def start(self):
         if not self.is_initialized:
-            for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
-                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                    await self._initialize_candles(time_frame, pair)
-        self.is_initialized = True
-        self.logger.debug("Candle history loaded")
+            await self._initialize()
         self.tasks = [
             asyncio.create_task(self._candle_callback(time_frame, pair))
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames
             for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs]
+
+    async def wait_for_initialization(self, timeout=OHLCV_INITIALIZATION_TIMEOUT):
+        raise NotImplementedError("wait_for_initialization is not implemented yet")
+
+    async def _initialize(self):
+        try:
+            for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
+                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+                    await self._initialize_candles(time_frame, pair)
+        except Exception as e:
+            self.logger.error(f"Error while initializing candles: {e}")
+            self.logger.exception(e)
+        finally:
+            self.logger.debug("Candle history loaded")
+            self.ohlcv_initialized_event.set()
+            self.is_initialized = True
 
     def _create_time_frame_candle_task(self, time_frame):
         self.tasks += [asyncio.create_task(self._candle_callback(time_frame, pair, should_initialize=True))

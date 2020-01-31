@@ -26,6 +26,7 @@ cdef class OHLCVUpdaterSimulator(OHLCVUpdater):
 
     cdef str exchange_name
 
+    cdef float initial_timestamp
     cdef float last_timestamp_pushed
 
     cdef Consumer time_consumer

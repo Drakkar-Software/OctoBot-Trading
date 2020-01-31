@@ -13,8 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from copy import deepcopy
-
 from octobot_commons.constants import PORTFOLIO_TOTAL, CONFIG_CRYPTO_CURRENCIES
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol, merge_currencies
@@ -210,7 +208,7 @@ class PortfolioProfitabilty(Initializable):
             # do not log warning in backtesting or tests
             self.logger.warning(f"Can't find matching symbol for {currency} and {self.reference_market}")
         else:
-            self.logger.info(f"Can't find matching symbol for {currency} and {self.reference_market}")
+            self.logger.debug(f"Can't find matching symbol for {currency} and {self.reference_market}")
 
     async def __evaluate_config_crypto_currencies_values(self):
         values_dict = {}

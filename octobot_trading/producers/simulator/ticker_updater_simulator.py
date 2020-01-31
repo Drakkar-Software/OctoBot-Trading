@@ -13,10 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
+from octobot_backtesting.api.importer import get_available_data_types
 from octobot_backtesting.data import DataBaseNotExists
+from octobot_backtesting.enums import ExchangeDataTables
 from octobot_channels.channels.channel import get_chan
+from octobot_commons.enums import PriceIndexes
 
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
+from octobot_trading.enums import ExchangeConstantsTickersColumns
+from octobot_trading.producers.simulator.simulator_updater_utils import register_on_ohlcv_chan
 from octobot_trading.producers.ticker_updater import TickerUpdater
 
 
@@ -49,11 +56,37 @@ class TickerUpdaterSimulator(TickerUpdater):
         except IndexError as e:
             self.logger.warning(f"Failed to access ticker_data : {e}")
 
+    async def _ticker_from_ohlcv_callback(self, exchange: str, exchange_id: str, symbol: str, time_frame, candle):
+        if candle:
+            last_candle_timestamp = candle[PriceIndexes.IND_PRICE_TIME.value]
+            if last_candle_timestamp > self.last_timestamp_pushed:
+                self.last_timestamp_pushed = last_candle_timestamp
+                ticker = self._generate_ticker_from_candle(candle, symbol, last_candle_timestamp)
+                await self.push(symbol, ticker)
+
+    @staticmethod
+    def _generate_ticker_from_candle(candle, symbol, last_candle_timestamp):
+        return {
+            ExchangeConstantsTickersColumns.TIMESTAMP.value: last_candle_timestamp,
+            ExchangeConstantsTickersColumns.LAST.value: candle[PriceIndexes.IND_PRICE_CLOSE.value],
+            ExchangeConstantsTickersColumns.SYMBOL.value: symbol,
+            ExchangeConstantsTickersColumns.HIGH.value: candle[PriceIndexes.IND_PRICE_HIGH.value],
+            ExchangeConstantsTickersColumns.LOW.value: candle[PriceIndexes.IND_PRICE_LOW.value],
+            ExchangeConstantsTickersColumns.OPEN.value: candle[PriceIndexes.IND_PRICE_OPEN.value],
+            ExchangeConstantsTickersColumns.CLOSE.value: candle[PriceIndexes.IND_PRICE_CLOSE.value]
+        }
+
     async def pause(self):
         if self.time_consumer is not None:
             await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:
-            self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
-                self.handle_timestamp)
+            if ExchangeDataTables.TICKER in get_available_data_types(self.exchange_data_importer):
+                self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
+                    self.handle_timestamp)
+            else:
+                # asyncio.shield to avoid auto-cancel (if error in other tasks that will exit main asyncio.gather)
+                # resulting in failure to register as consumer
+                await asyncio.shield(register_on_ohlcv_chan(self.channel.exchange_manager.id,
+                                                            self._ticker_from_ohlcv_callback))

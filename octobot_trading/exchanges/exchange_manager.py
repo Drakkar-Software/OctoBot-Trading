@@ -158,6 +158,7 @@ class ExchangeManager(Initializable):
         try:
             await self.exchange.modify_channels()
             await self.exchange.create_backtesting_exchange_producers()
+            await self.exchange.start_backtesting()
         except ValueError:
             self._logger.error("Not enough exchange data to calculate backtesting duration")
             await self.stop()

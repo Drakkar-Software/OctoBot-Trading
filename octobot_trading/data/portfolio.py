@@ -15,6 +15,7 @@
 #  License along with this library.
 
 from asyncio import Lock
+from copy import deepcopy
 
 from octobot_trading.orders import TraderOrderTypeClasses
 from octobot_trading.util.initializable import Initializable
@@ -49,7 +50,7 @@ class Portfolio(Initializable):
     async def copy(self):
         pf: Portfolio = Portfolio(self.exchange_name, self.is_simulated)
         await pf.initialize()
-        pf.portfolio: dict = self.portfolio.copy()
+        pf.portfolio: dict = deepcopy(self.portfolio)
         return pf
 
     async def update_portfolio_from_balance(self, balance) -> bool:
