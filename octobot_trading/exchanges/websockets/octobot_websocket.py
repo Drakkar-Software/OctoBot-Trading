@@ -154,7 +154,9 @@ class OctoBotWebSocketClient(AbstractWebsocket):
                 self.is_handling_ohlcv or \
                 self.is_handling_recent_trades:
             try:
-                self.octobot_websockets_executors = ThreadPoolExecutor(max_workers=len(self.octobot_websockets))
+                self.octobot_websockets_executors = ThreadPoolExecutor(
+                    max_workers=len(self.octobot_websockets),
+                    thread_name_prefix=f"{self.get_name()}-{self.exchange_name}-pool-executor")
                 for websocket in self.octobot_websockets:
                     asyncio.get_event_loop().run_in_executor(self.octobot_websockets_executors, websocket.start)
                 self.is_websocket_running = True
