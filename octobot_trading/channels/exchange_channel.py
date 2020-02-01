@@ -60,6 +60,7 @@ class ExchangeChannel(Channel):
     CONSUMER_CLASS = ExchangeChannelConsumer
     WITH_TIME_FRAME = False
 
+    CRYPTOCURRENCY_KEY = "cryptocurrency"
     SYMBOL_KEY = "symbol"
     TIME_FRAME_KEY = "time_frame"
 
@@ -78,10 +79,14 @@ class ExchangeChannel(Channel):
                            consumer_instance: object = None,
                            size=0,
                            filter_size=False,
-                           symbol=CHANNEL_WILDCARD):
+                           symbol=CHANNEL_WILDCARD,
+                           cryptocurrency=CHANNEL_WILDCARD):
         consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size,
                                                                                    filter_size=filter_size)
-        await self._add_new_consumer_and_run(consumer, symbol=symbol, with_time_frame=self.WITH_TIME_FRAME)
+        await self._add_new_consumer_and_run(consumer,
+                                             cryptocurrency=cryptocurrency,
+                                             symbol=symbol,
+                                             with_time_frame=self.WITH_TIME_FRAME)
         await self._check_producers_state()
         return consumer
 
@@ -95,17 +100,22 @@ class ExchangeChannel(Channel):
             for producer in self.get_producers():
                 await producer.resume()
 
-    def get_filtered_consumers(self, symbol=CHANNEL_WILDCARD, time_frame=CHANNEL_WILDCARD):
+    def get_filtered_consumers(self,
+                               cryptocurrency=CHANNEL_WILDCARD,
+                               symbol=CHANNEL_WILDCARD,
+                               time_frame=CHANNEL_WILDCARD):
         return self.get_consumer_from_filters({
+            self.CRYPTOCURRENCY_KEY: cryptocurrency,
             self.SYMBOL_KEY: symbol,
             self.TIME_FRAME_KEY: time_frame
         })
 
-    async def _add_new_consumer_and_run(self, consumer, symbol=CHANNEL_WILDCARD, with_time_frame=False):
-        if symbol:
-            symbol = CHANNEL_WILDCARD
-
+    async def _add_new_consumer_and_run(self, consumer,
+                                        cryptocurrency=CHANNEL_WILDCARD,
+                                        symbol=CHANNEL_WILDCARD,
+                                        with_time_frame=False):
         consumer_filters: dict = {
+            self.CRYPTOCURRENCY_KEY: cryptocurrency,
             self.SYMBOL_KEY: symbol,
             self.TIME_FRAME_KEY: CHANNEL_WILDCARD if with_time_frame else None
         }
