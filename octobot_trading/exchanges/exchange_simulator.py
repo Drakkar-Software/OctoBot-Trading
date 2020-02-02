@@ -14,14 +14,18 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_backtesting.api.backtesting import initialize_backtesting, modify_backtesting_timestamps, \
-    start_backtesting, get_backtesting_current_time
-from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames
+    start_backtesting, get_backtesting_current_time, set_time_updater_interval
+from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames, \
+    get_data_timestamp_interval
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
+from octobot_commons.constants import MINUTE_TO_SECONDS
+from octobot_commons.enums import TimeFramesMinutes
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
+from octobot_commons.time_frame_manager import get_config_time_frame, find_min_time_frame
 from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, \
-    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW
+    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW, OHLCV_CHANNEL
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
@@ -58,7 +62,8 @@ class ExchangeSimulator(AbstractExchange):
 
     async def modify_channels(self):
         # set mininmum and maximum timestamp according to all importers data
-        timestamps = [await importer.get_data_timestamp_interval()
+        min_time_frame_to_consider = find_min_time_frame(get_config_time_frame(self.config))
+        timestamps = [await get_data_timestamp_interval(importer, min_time_frame_to_consider)
                       for importer in self.exchange_importers]  # [(min, max) ... ]
 
         await modify_backtesting_timestamps(
@@ -66,12 +71,22 @@ class ExchangeSimulator(AbstractExchange):
             minimum_timestamp=min(timestamps)[0],
             maximum_timestamp=max(timestamps)[1])
 
+        if self._has_only_ohlcv():
+            set_time_updater_interval(self.backtesting,
+                                      TimeFramesMinutes[min_time_frame_to_consider] * MINUTE_TO_SECONDS)
+
+    def _has_only_ohlcv(self):
+        for importer in self.exchange_importers:
+            if not get_available_data_types(importer) == SIMULATOR_PRODUCERS_TO_DATA_TYPE[OHLCV_CHANNEL]:
+                return False
+        return True
+
     async def create_backtesting_exchange_producers(self):
         for importer in self.exchange_importers:
             available_data_types = get_available_data_types(importer)
             at_least_one_updater = False
-            for updater in UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
-                if self._are_required_data_available(updater, available_data_types):
+            for channel_type, updater in UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS.items():
+                if self._are_required_data_available(channel_type, available_data_types):
                     await updater(get_trading_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
                     at_least_one_updater = True
             if not at_least_one_updater:
@@ -81,15 +96,15 @@ class ExchangeSimulator(AbstractExchange):
         await start_backtesting(self.backtesting)
 
     @staticmethod
-    def _are_required_data_available(updater, available_data_types):
-        if updater not in SIMULATOR_PRODUCERS_TO_DATA_TYPE:
+    def _are_required_data_available(channel_type, available_data_types):
+        if channel_type not in SIMULATOR_PRODUCERS_TO_DATA_TYPE:
             # no required data if updater is not in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys
             return True
         else:
             # if updater is in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys: check that at least one of the required data is
             # available
             return any(required_data_type in available_data_types
-                       for required_data_type in SIMULATOR_PRODUCERS_TO_DATA_TYPE[updater])
+                       for required_data_type in SIMULATOR_PRODUCERS_TO_DATA_TYPE[channel_type])
 
     async def stop(self):
         pass  # TODO
