@@ -27,6 +27,8 @@ cdef class ExchangeSimulator(AbstractExchange):
 
     cdef public Backtesting backtesting
 
+    cdef bint _has_only_ohlcv(self)
+
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame)
     cpdef dict get_market_status(self, str symbol, float price_example=*, bint with_fixer=*)

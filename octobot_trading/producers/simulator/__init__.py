@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.constants import OHLCV_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, ORDER_BOOK_CHANNEL, \
+    KLINE_CHANNEL, MARK_PRICE_CHANNEL
 from octobot_trading.producers.balance_updater import BalanceProfitabilityUpdater
 from octobot_trading.producers.simulator.positions_updater_simulator import PositionsUpdaterSimulator
 from octobot_trading.producers.simulator.orders_updater_simulator import CloseOrdersUpdaterSimulator, \
@@ -25,19 +27,27 @@ from octobot_trading.producers.simulator.order_book_updater_simulator import Ord
 from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
 from octobot_backtesting.enums import ExchangeDataTables
 
-UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [OHLCVUpdaterSimulator, OrderBookUpdaterSimulator,
-                                               RecentTradeUpdaterSimulator, TickerUpdaterSimulator,
-                                               KlineUpdaterSimulator, MarkPriceUpdaterSimulator]
+UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = {
+    OHLCV_CHANNEL: OHLCVUpdaterSimulator,
+    ORDER_BOOK_CHANNEL: OrderBookUpdaterSimulator,
+    RECENT_TRADES_CHANNEL: RecentTradeUpdaterSimulator,
+    TICKER_CHANNEL: TickerUpdaterSimulator,
+    KLINE_CHANNEL:  KlineUpdaterSimulator,
+    MARK_PRICE_CHANNEL: MarkPriceUpdaterSimulator
+}
 
 # TODO PositionsUpdaterSimulator
-AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [CloseOrdersUpdaterSimulator, OpenOrdersUpdaterSimulator,
-                                             BalanceProfitabilityUpdater]
+AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [
+    CloseOrdersUpdaterSimulator,
+    OpenOrdersUpdaterSimulator,
+    BalanceProfitabilityUpdater
+]
 
 # Required data to run updater (requires at least one per list)
 SIMULATOR_PRODUCERS_TO_DATA_TYPE = {
-    OHLCVUpdaterSimulator: [ExchangeDataTables.OHLCV],
-    OrderBookUpdaterSimulator: [ExchangeDataTables.ORDER_BOOK],
-    RecentTradeUpdaterSimulator: [ExchangeDataTables.RECENT_TRADES, ExchangeDataTables.OHLCV],
-    TickerUpdaterSimulator: [ExchangeDataTables.TICKER, ExchangeDataTables.OHLCV],
-    KlineUpdaterSimulator: [ExchangeDataTables.KLINE],
+    OHLCV_CHANNEL: [ExchangeDataTables.OHLCV],
+    ORDER_BOOK_CHANNEL: [ExchangeDataTables.ORDER_BOOK],
+    RECENT_TRADES_CHANNEL: [ExchangeDataTables.RECENT_TRADES, ExchangeDataTables.OHLCV],
+    TICKER_CHANNEL: [ExchangeDataTables.TICKER, ExchangeDataTables.OHLCV],
+    KLINE_CHANNEL: [ExchangeDataTables.KLINE]
 }
