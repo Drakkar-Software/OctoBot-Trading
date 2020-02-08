@@ -19,8 +19,8 @@ from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolDa
 from octobot_commons.enums import TimeFrames
 
 
-def get_symbol_data(exchange_manager, symbol) -> ExchangeSymbolData:
-    return exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol)
+def get_symbol_data(exchange_manager, symbol, allow_creation=True) -> ExchangeSymbolData:
+    return exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol, allow_creation=allow_creation)
 
 
 def get_symbol_candles_manager(symbol_data, time_frame) -> CandlesManager:

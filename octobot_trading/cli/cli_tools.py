@@ -66,9 +66,10 @@ async def balance_profitability_callback(exchange: str, exchange_id: str, profit
                      f"{PrettyPrinter.portfolio_profitability_pretty_print(profitability, profitability_percent, 'USDT')}")
 
 
-async def trades_callback(exchange: str, exchange_id: str, symbol: str,  trade):
+async def trades_callback(exchange: str, exchange_id: str, symbol: str, trade, old_trade: bool):
     if get_should_display_callbacks_logs():
-        logging.info(f"TRADES : EXCHANGE = {exchange} || SYMBOL = {symbol} || TRADE = {trade}")
+        logging.info(f"TRADES : EXCHANGE = {exchange} || SYMBOL = {symbol} || TRADE = {trade} "
+                     f"|| OLD_TRADE = {old_trade}")
 
 
 async def orders_callback(exchange: str, exchange_id: str, symbol: str,  order, is_closed, is_updated, is_from_bot):

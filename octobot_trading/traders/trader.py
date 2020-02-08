@@ -260,11 +260,9 @@ class Trader(Initializable):
             async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
                 await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
 
-            # add to trade history
-            self.exchange_manager.exchange_personal_data.trades_manager.upsert_trade_instance(
-                create_trade_from_order(order,
-                                        close_status=OrderStatus.CLOSED,
-                                        executed_time=time.time()))
+            # add to trade history and notify
+            await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
+                create_trade_from_order(order))
 
             # remove order to open_orders
             self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)

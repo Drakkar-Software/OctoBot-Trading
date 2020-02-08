@@ -26,7 +26,6 @@ class Trade:
 
         self.status = OrderStatus.OPEN
         self.creation_time = time.time()
-        self.executed_time = 0
 
         self.trade_id = trader.parse_order_id(None)
 

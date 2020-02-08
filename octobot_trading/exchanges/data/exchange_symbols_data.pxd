@@ -27,4 +27,4 @@ cdef class ExchangeSymbolsData:
     cdef public AbstractExchange exchange
     cdef public ExchangeManager exchange_manager
 
-    cpdef public ExchangeSymbolData get_exchange_symbol_data(self, str symbol)
+    cpdef public ExchangeSymbolData get_exchange_symbol_data(self, str symbol, bint allow_creation=*)

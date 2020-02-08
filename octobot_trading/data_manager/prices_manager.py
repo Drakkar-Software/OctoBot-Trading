@@ -26,6 +26,8 @@ class PricesManager(Initializable):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.mark_price = 0
+
+        # warning: should only be created in the async loop thread
         self.prices_initialized_event = Event()
 
     async def initialize_impl(self):
