@@ -24,4 +24,14 @@ async def register_on_ohlcv_chan(exchange_id, callback):
     # loaded) to avoid callback calls on historical (and potentially invalid) values
     for producer in ohlcv_chan.get_producers():
         await producer.wait_for_initialization()
-    await ohlcv_chan.new_consumer(callback)
+    return await ohlcv_chan.new_consumer(callback)
+
+
+async def stop_and_pause(producer):
+    await super(type(producer), producer).stop()
+    try:
+        await producer.pause()
+    except KeyError:
+        pass
+    producer.time_consumer = None
+

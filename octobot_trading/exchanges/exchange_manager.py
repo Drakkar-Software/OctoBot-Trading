@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import uuid
-from copy import copy
 
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
 from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
@@ -25,7 +24,7 @@ from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.timestamp_util import is_valid_timestamp
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan, get_exchange_channels, \
-    del_chan
+    del_chan, del_exchange_channel_container
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
     WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
 from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
@@ -85,13 +84,30 @@ class ExchangeManager(Initializable):
         if self.exchange is not None:
             await self.exchange.stop()
             Exchanges.instance().del_exchange(self.exchange.name, self.id)
+            self.exchange.exchange_manager = None
             if not self.exchange_only:
                 await self.stop_exchange_channels()
+        if self.exchange_personal_data is not None and \
+                self.exchange_personal_data.portfolio_manager is not None:
+            self.exchange_personal_data.portfolio_manager.portfolio_profitability = None
+        self.exchange_config = None
+        self.exchange_personal_data = None
+        self.exchange_symbols_data = None
+        self.trader = None
 
     async def stop_exchange_channels(self):
-        for channel_name in copy(get_exchange_channels(self.id)).keys():
-            await get_chan(channel_name, self.id).stop()
-            del_chan(channel_name, self.id)
+        try:
+            chan_names = list(get_exchange_channels(self.id).keys())
+            for channel_name in chan_names:
+                channel = get_chan(channel_name, self.id)
+                await channel.stop()
+                for consumer in channel.consumers:
+                    await channel.remove_consumer(consumer)
+                get_chan(channel_name, self.id).flush()
+                del_chan(channel_name, self.id)
+            del_exchange_channel_container(self.id)
+        except KeyError:
+            self._logger.error(f"No exchange channel for this exchange (id: {self.id})")
 
     async def register_trader(self, trader):
         self.trader = trader

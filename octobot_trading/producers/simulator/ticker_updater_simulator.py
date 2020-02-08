@@ -23,7 +23,7 @@ from octobot_commons.enums import PriceIndexes
 
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_trading.enums import ExchangeConstantsTickersColumns
-from octobot_trading.producers.simulator.simulator_updater_utils import register_on_ohlcv_chan
+from octobot_trading.producers.simulator.simulator_updater_utils import register_on_ohlcv_chan, stop_and_pause
 from octobot_trading.producers.ticker_updater import TickerUpdater
 
 
@@ -79,6 +79,9 @@ class TickerUpdaterSimulator(TickerUpdater):
     async def pause(self):
         if self.time_consumer is not None:
             await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
+
+    async def stop(self):
+        await stop_and_pause(self)
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:

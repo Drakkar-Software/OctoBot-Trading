@@ -37,9 +37,16 @@ class AbstractTradingModeProducer(ModeChannelProducer):
 
         self.final_eval = INIT_EVAL_NOTE
 
+        self.consumer = None
+
+    def flush(self):
+        self.trading_mode = None
+        self.exchange_manager = None
+        self.consumer = None
+
     async def start(self) -> None:
         try:
-            await get_channel(OctoBotEvaluatorsChannelsName.MATRIX.value).new_consumer(
+            self.consumer = await get_channel(OctoBotEvaluatorsChannelsName.MATRIX.value).new_consumer(
                 callback=self.matrix_callback,
                 matrix_id=Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                             self.exchange_manager.id).matrix_id,
@@ -48,6 +55,14 @@ class AbstractTradingModeProducer(ModeChannelProducer):
                 time_frame=self.trading_mode.time_frame if self.trading_mode.time_frame else CONFIG_WILDCARD)
         except KeyError:
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
+
+    async def stop(self):
+        await super().stop()
+        try:
+            await get_channel(OctoBotEvaluatorsChannelsName.MATRIX.value).remove_consumer(self.consumer)
+        except KeyError:
+            self.logger.error(f"Can't unregister matrix channel on {self.exchange_name}")
+        self.flush()
 
     async def matrix_callback(self, matrix_id, evaluator_name, evaluator_type,
                               eval_note, eval_note_type, exchange_name, cryptocurrency, symbol, time_frame):
