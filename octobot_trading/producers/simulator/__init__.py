@@ -44,10 +44,19 @@ AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [
 ]
 
 # Required data to run updater (requires at least one per list)
-SIMULATOR_PRODUCERS_TO_DATA_TYPE = {
+SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE = {
     OHLCV_CHANNEL: [ExchangeDataTables.OHLCV],
     ORDER_BOOK_CHANNEL: [ExchangeDataTables.ORDER_BOOK],
     RECENT_TRADES_CHANNEL: [ExchangeDataTables.RECENT_TRADES, ExchangeDataTables.OHLCV],
     TICKER_CHANNEL: [ExchangeDataTables.TICKER, ExchangeDataTables.OHLCV],
     KLINE_CHANNEL: [ExchangeDataTables.KLINE]
+}
+
+# Required data to run real data updater (requires each per list)
+SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE = {
+    OHLCV_CHANNEL: [ExchangeDataTables.OHLCV],
+    ORDER_BOOK_CHANNEL: [ExchangeDataTables.ORDER_BOOK],
+    RECENT_TRADES_CHANNEL: [ExchangeDataTables.RECENT_TRADES],
+    TICKER_CHANNEL: [ExchangeDataTables.TICKER],
+    KLINE_CHANNEL: [ExchangeDataTables.KLINE],
 }
