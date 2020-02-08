@@ -13,7 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.api.exchange import get_exchange_ids
 from octobot_trading.api.orders import get_order_exchange_name
+from octobot_trading.channels.exchange_channel import get_chan
+from octobot_trading.channels.trades import TradesChannel
 
 
 def get_trade_history(exchange_manager, symbol=None) -> list:
@@ -31,3 +34,10 @@ def get_total_paid_trading_fees(exchange_manager) -> dict:
 
 def get_trade_exchange_name(trade) -> str:
     return get_order_exchange_name(trade.order)
+
+
+async def subscribe_to_trades_channel(callback):
+    trades_channel_name = TradesChannel.get_name()
+    for exchange_id in get_exchange_ids():
+        channel = get_chan(trades_channel_name, exchange_id)
+        await channel.new_consumer(callback)

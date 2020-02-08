@@ -27,9 +27,12 @@ class ExchangeSymbolsData:
         self.config = exchange_manager.config
         self.exchange_symbol_data = {}
 
-    def get_exchange_symbol_data(self, symbol):
+    def get_exchange_symbol_data(self, symbol, allow_creation=True):
         try:
             return self.exchange_symbol_data[symbol]
-        except KeyError:
-            self.exchange_symbol_data[symbol] = ExchangeSymbolData(self.exchange_manager, symbol)
-            return self.exchange_symbol_data[symbol]
+        except KeyError as e:
+            if allow_creation:
+                # warning: should only be called in the async loop thread
+                self.exchange_symbol_data[symbol] = ExchangeSymbolData(self.exchange_manager, symbol)
+                return self.exchange_symbol_data[symbol]
+            raise e
