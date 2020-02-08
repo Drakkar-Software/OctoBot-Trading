@@ -20,6 +20,7 @@ from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_trading.producers.ohlcv_updater import OHLCVUpdater
+from octobot_trading.producers.simulator.simulator_updater_utils import stop_and_pause
 
 
 class OHLCVUpdaterSimulator(OHLCVUpdater):
@@ -49,13 +50,14 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         try:
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+                    # use timestamp - 1 for superior timestamp to avoid select of a future candle
+                    # (selection is <= and >=)
                     ohlcv_data: list = await self.exchange_data_importer.get_ohlcv_from_timestamps(
                         exchange_name=self.exchange_name,
                         symbol=pair,
                         time_frame=time_frame,
                         inferior_timestamp=self.last_timestamp_pushed,
-                        superior_timestamp=timestamp)
-
+                        superior_timestamp=timestamp - 1)
                     if ohlcv_data:
                         await self.push(time_frame, pair, [ohlcv[-1] for ohlcv in ohlcv_data], partial=True)
 
@@ -71,6 +73,9 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         if self.time_consumer is not None:
             await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
 
+    async def stop(self):
+        await stop_and_pause(self)
+
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:
             self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
@@ -85,7 +90,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
                 symbol=pair,
                 time_frame=time_frame,
                 limit=self.OHLCV_OLD_LIMIT,
-                superior_timestamp=self.initial_timestamp)
+                superior_timestamp=self.initial_timestamp - 1)
             self.logger.info(f"Loaded pre-backtesting starting timestamp historical "
                              f"candles for: {pair} in {time_frame}")
         except Exception as e:
