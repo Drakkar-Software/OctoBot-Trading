@@ -20,6 +20,7 @@ from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 
 from octobot_trading.producers.order_book_updater import OrderBookUpdater
+from octobot_trading.producers.simulator.simulator_updater_utils import stop_and_pause
 
 
 class OrderBookUpdaterSimulator(OrderBookUpdater):
@@ -55,6 +56,9 @@ class OrderBookUpdaterSimulator(OrderBookUpdater):
     async def pause(self):
         if self.time_consumer is not None:
             await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
+
+    async def stop(self):
+        await stop_and_pause(self)
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:

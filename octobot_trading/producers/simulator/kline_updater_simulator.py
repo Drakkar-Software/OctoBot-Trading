@@ -13,14 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import json
-
 from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
 
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
-from octobot_commons.enums import TimeFrames
 from octobot_trading.producers.kline_updater import KlineUpdater
+from octobot_trading.producers.simulator.simulator_updater_utils import stop_and_pause
 
 
 class KlineUpdaterSimulator(KlineUpdater):
@@ -58,6 +56,9 @@ class KlineUpdaterSimulator(KlineUpdater):
     async def pause(self):
         if self.time_consumer is not None:
             await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
+
+    async def stop(self):
+        await stop_and_pause(self)
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:

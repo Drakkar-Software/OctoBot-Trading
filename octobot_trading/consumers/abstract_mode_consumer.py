@@ -28,6 +28,10 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
         self.trading_mode = trading_mode
         self.exchange_manager = trading_mode.exchange_manager
 
+    def flush(self):
+        self.trading_mode = None
+        self.exchange_manager = None
+
     async def internal_callback(self, **kwargs):
         raise NotImplementedError("internal_callback is not implemented")
 

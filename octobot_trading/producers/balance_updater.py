@@ -51,12 +51,21 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         super().__init__(channel)
         self.logger = get_logger(self.__class__.__name__)
         self.exchange_personal_data = self.channel.exchange_manager.exchange_personal_data
+        self.balance_consumer = None
+        self.ticker_consumer = None
 
     async def start(self):
-        await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).new_consumer(
+        self.balance_consumer = await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).new_consumer(
             self.handle_balance_update)
-        await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id).new_consumer(
+        self.ticker_consumer = await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id).new_consumer(
             self.handle_ticker_update)
+
+    async def stop(self):
+        await super().stop()
+        await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).remove_consumer(self.balance_consumer)
+        await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id).remove_consumer(self.ticker_consumer)
+        self.balance_consumer = None
+        self.ticker_consumer = None
 
     """
     Balance channel consumer callback

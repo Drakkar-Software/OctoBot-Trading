@@ -147,6 +147,13 @@ def get_exchange_channels(exchange_id) -> dict:
         raise KeyError(f"Channels not found on exchange with id: {exchange_id}")
 
 
+def del_exchange_channel_container(exchange_id):
+    try:
+        ChannelInstances.instance().channels.pop(exchange_id, None)
+    except KeyError:
+        raise KeyError(f"Channels not found on exchange with id: {exchange_id}")
+
+
 def get_chan(chan_name, exchange_id) -> ExchangeChannel:
     try:
         return ChannelInstances.instance().channels[exchange_id][chan_name]
