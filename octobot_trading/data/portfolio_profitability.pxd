@@ -23,9 +23,8 @@ from octobot_trading.data.portfolio cimport Portfolio
 from octobot_trading.data_manager.portfolio_manager cimport PortfolioManager
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.traders.trader cimport Trader
-from octobot_trading.util.initializable cimport Initializable
 
-cdef class PortfolioProfitabilty(Initializable):
+cdef class PortfolioProfitabilty:
     cdef object logger
     cdef object config
 
@@ -40,6 +39,7 @@ cdef class PortfolioProfitabilty(Initializable):
     cdef public double portfolio_origin_value
     cdef public double portfolio_current_value
     cdef public double initial_portfolio_current_profitability
+    cdef public set initializing_symbol_prices
 
     cdef dict currencies_last_prices
     cdef public dict origin_crypto_currencies_values
@@ -51,7 +51,7 @@ cdef class PortfolioProfitabilty(Initializable):
 
     cdef public str reference_market
 
-    cdef dict __only_symbol_currency_filter(self, dict currency_dict)
-    cdef void __init_traded_currencies_without_market_specific(self)
-    cdef void __inform_no_matching_symbol(self, str currency, bint force=*)
+    cdef dict _only_symbol_currency_filter(self, dict currency_dict)
+    cdef void _init_traded_currencies_without_market_specific(self)
+    cdef void _inform_no_matching_symbol(self, str currency, bint force=*)
 
