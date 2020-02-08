@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.api.orders import get_order_exchange_name
 
 
 def get_trade_history(exchange_manager, symbol=None) -> list:
@@ -30,4 +29,8 @@ def get_total_paid_trading_fees(exchange_manager) -> dict:
 
 
 def get_trade_exchange_name(trade) -> str:
-    return get_order_exchange_name(trade.order)
+    return trade.exchange_manager.get_exchange_name()
+
+
+def is_trade_simulated(trade) -> bool:
+    return trade.trader.simulate
