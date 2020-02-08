@@ -14,9 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_backtesting.api.backtesting import initialize_backtesting, modify_backtesting_timestamps, \
-    start_backtesting, get_backtesting_current_time, set_time_updater_interval
+    start_backtesting, get_backtesting_current_time, set_time_updater_interval, stop_backtesting
 from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames, \
-    get_data_timestamp_interval
+    get_data_timestamp_interval, stop_importer
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
 from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes
@@ -30,7 +30,7 @@ from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, Exchange
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
 from octobot_trading.producers.simulator import UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS, \
-    SIMULATOR_PRODUCERS_TO_DATA_TYPE
+    SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE, SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE
 
 
 class ExchangeSimulator(AbstractExchange):
@@ -76,9 +76,18 @@ class ExchangeSimulator(AbstractExchange):
                                       TimeFramesMinutes[min_time_frame_to_consider] * MINUTE_TO_SECONDS)
 
     def _has_only_ohlcv(self):
+        return self.get_real_available_data() == set(SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[OHLCV_CHANNEL])
+
+    def get_real_available_data(self):
+        available_data = set()
         for importer in self.exchange_importers:
-            if not get_available_data_types(importer) == SIMULATOR_PRODUCERS_TO_DATA_TYPE[OHLCV_CHANNEL]:
-                return False
+            available_data = available_data.union(get_available_data_types(importer))
+        return available_data
+
+    @staticmethod
+    def handles_real_data_for_updater(channel_type, available_data):
+        if channel_type in SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE:
+            return all(data_type in available_data for data_type in SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE[channel_type])
         return True
 
     async def create_backtesting_exchange_producers(self):
@@ -97,17 +106,20 @@ class ExchangeSimulator(AbstractExchange):
 
     @staticmethod
     def _are_required_data_available(channel_type, available_data_types):
-        if channel_type not in SIMULATOR_PRODUCERS_TO_DATA_TYPE:
+        if channel_type not in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE:
             # no required data if updater is not in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys
             return True
         else:
             # if updater is in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys: check that at least one of the required data is
             # available
             return any(required_data_type in available_data_types
-                       for required_data_type in SIMULATOR_PRODUCERS_TO_DATA_TYPE[channel_type])
+                       for required_data_type in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[channel_type])
 
     async def stop(self):
-        pass  # TODO
+        for importer in self.exchange_importers:
+            await stop_importer(importer)
+        await stop_backtesting(self.backtesting)
+        self.backtesting = None
 
     def get_exchange_current_time(self):
         return get_backtesting_current_time(self.backtesting)
