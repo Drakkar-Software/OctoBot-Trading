@@ -22,6 +22,10 @@ def create_exchange_builder(config, exchange_name) -> ExchangeBuilder:
     return ExchangeBuilder(config, exchange_name)
 
 
+async def stop_exchange(exchange_manager) -> None:
+    await exchange_manager.stop()
+
+
 def get_exchange_configurations_from_exchange_name(exchange_name) -> dict:
     return Exchanges.instance().get_exchanges(exchange_name)
 
@@ -76,6 +80,10 @@ def get_exchange_name(exchange_manager) -> str:
 
 def get_backtesting_instance(exchange_manager):
     return exchange_manager.get_exchange_backtesting()
+
+
+def get_is_backtesting(exchange_manager) -> bool:
+    return exchange_manager.is_backtesting
 
 
 def get_trading_pairs(exchange_manager) -> list:

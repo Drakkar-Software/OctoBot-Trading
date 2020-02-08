@@ -40,3 +40,8 @@ def get_current_holdings_values(exchange_manager) -> float:
 
 def get_reference_market(config) -> str:
     return util_get_reference_market(config)
+
+
+def get_initializing_currencies_prices(exchange_manager) -> set:
+    return exchange_manager.exchange_personal_data.portfolio_manager.\
+        portfolio_profitability.initializing_symbol_prices
