@@ -18,8 +18,7 @@ import os
 
 import pytest
 import time
-from asyncmock import AsyncMock
-from mock import patch
+from mock import AsyncMock, patch
 
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 from octobot_commons.tests.test_config import load_test_config
