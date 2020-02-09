@@ -52,12 +52,12 @@ cdef class Order:
     cdef public double created_last_price
     cdef public double order_profitability
 
-    cdef public float timestamp
-    cdef public float creation_time
-    cdef public float canceled_time
-    cdef public float executed_time
+    cdef public double timestamp
+    cdef public double creation_time
+    cdef public double canceled_time
+    cdef public double executed_time
 
-    cdef public dict fee # Dict[str, Union[str, float]]
+    cdef public dict fee # Dict[str, Union[str, double]]
 
     cdef list last_prices
     cdef public list linked_orders
@@ -91,7 +91,7 @@ cdef class Order:
     cpdef bint is_cancelled(self)
     cpdef dict get_computed_fee(self, object forced_value=*)
     cpdef double get_profitability(self)
-    cpdef float generate_executed_time(self)
+    cpdef double generate_executed_time(self)
     cpdef bint is_self_managed(self)
     cpdef bint update_from_raw(self, dict raw_order)
 

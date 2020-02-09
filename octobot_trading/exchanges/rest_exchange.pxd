@@ -22,15 +22,15 @@ cdef class RestExchange(AbstractExchange):
 
     # balance additional info
     cdef list info_list
-    cdef float free
-    cdef float used
-    cdef float total
+    cdef double free
+    cdef double used
+    cdef double total
 
     cdef object all_currencies_price_ticker
 
     # private
     cdef void __create_client(self)
-    cdef void __log_error(self, str error, object order_type, str symbol, float quantity, float price, float stop_price)
+    cdef void __log_error(self, str error, object order_type, str symbol, double quantity, double price, double stop_price)
 
     # @staticmethod TODO
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
@@ -40,8 +40,8 @@ cdef class RestExchange(AbstractExchange):
 
     # public
     cpdef get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
-    cpdef dict get_trade_fee(self, str symbol, object order_type, float quantity, float price, str taker_or_maker)
+    cpdef dict get_trade_fee(self, str symbol, object order_type, double quantity, double price, str taker_or_maker)
     cpdef dict get_fees(self, str symbol)
-    cpdef float get_uniform_timestamp(self, float timestamp)
+    cpdef double get_uniform_timestamp(self, double timestamp)
     cpdef str get_pair_from_exchange(self, str pair)
     cpdef tuple get_split_pair_from_exchange(self, str pair)

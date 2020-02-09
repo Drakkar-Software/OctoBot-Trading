@@ -135,7 +135,7 @@ class TestTradeFactory:
 
         exec_time = time.time()
         trade = create_trade_from_order(order, executed_time=exec_time)
-        assert(exec_time - 50 <= trade.executed_time <= exec_time + 50)
+        assert trade.executed_time == exec_time
 
         await self.stop(exchange_manager)
 

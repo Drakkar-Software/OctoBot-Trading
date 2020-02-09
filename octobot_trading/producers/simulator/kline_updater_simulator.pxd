@@ -24,6 +24,6 @@ cdef class KlineUpdaterSimulator(KlineUpdater):
 
     cdef str exchange_name
 
-    cdef float last_timestamp_pushed
+    cdef double last_timestamp_pushed
 
     cdef Consumer time_consumer

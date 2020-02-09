@@ -32,4 +32,4 @@ cdef class AbstractExchange(Initializable):
 
     cdef public str name
 
-    cpdef float get_exchange_current_time(self)
+    cpdef double get_exchange_current_time(self)

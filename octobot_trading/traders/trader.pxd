@@ -26,7 +26,7 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class Trader(Initializable):
     cdef dict config
 
-    cdef public float risk
+    cdef public double risk
 
     cdef public str trader_type_str
 
@@ -40,4 +40,4 @@ cdef class Trader(Initializable):
     # methods
     cpdef str parse_order_id(self, str order_id)
 
-    cpdef float set_risk(self, float risk)
+    cpdef double set_risk(self, double risk)
