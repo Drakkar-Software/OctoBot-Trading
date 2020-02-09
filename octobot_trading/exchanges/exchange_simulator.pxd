@@ -31,9 +31,9 @@ cdef class ExchangeSimulator(AbstractExchange):
 
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame)
-    cpdef dict get_market_status(self, str symbol, float price_example=*, bint with_fixer=*)
-    cpdef get_uniform_timestamp(self, float timestamp)
+    cpdef dict get_market_status(self, str symbol, double price_example=*, bint with_fixer=*)
+    cpdef double get_uniform_timestamp(self, double timestamp)
     cpdef dict get_fees(self, str symbol=*)
-    cpdef dict get_trade_fee(self, str symbol, object order_type, float quantity, float price, str taker_or_maker=*)
+    cpdef dict get_trade_fee(self, str symbol, object order_type, double quantity, double price, str taker_or_maker=*)
     cpdef tuple get_split_pair_from_exchange(self, str pair)
-    cpdef float get_exchange_current_time(self)
+    cpdef double get_exchange_current_time(self)

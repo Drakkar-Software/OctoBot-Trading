@@ -33,13 +33,13 @@ cdef class PortfolioProfitabilty(Initializable):
     cdef ExchangeManager exchange_manager
     cdef Trader trader
 
-    cdef public float profitability
-    cdef public float profitability_percent
-    cdef public float profitability_diff
-    cdef public float market_profitability_percent
-    cdef public float portfolio_origin_value
-    cdef public float portfolio_current_value
-    cdef public float initial_portfolio_current_profitability
+    cdef public double profitability
+    cdef public double profitability_percent
+    cdef public double profitability_diff
+    cdef public double market_profitability_percent
+    cdef public double portfolio_origin_value
+    cdef public double portfolio_current_value
+    cdef public double initial_portfolio_current_profitability
 
     cdef dict currencies_last_prices
     cdef public dict origin_crypto_currencies_values

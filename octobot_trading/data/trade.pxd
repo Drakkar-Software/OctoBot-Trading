@@ -45,15 +45,15 @@ cdef class Trade:
     cdef public double total_cost
     cdef public double trade_profitability
 
-    cdef public float timestamp
-    cdef public float creation_time
-    cdef public float canceled_time
-    cdef public float executed_time
+    cdef public double timestamp
+    cdef public double creation_time
+    cdef public double canceled_time
+    cdef public double executed_time
 
-    cdef public dict fee # Dict[str, Union[str, float]]
+    cdef public dict fee # Dict[str, Union[str, double]]
 
     cpdef void update_from_order(self,
                                  Order order,
-                                 float canceled_time=*,
-                                 float creation_time=*,
-                                 float executed_time=*)
+                                 double canceled_time=*,
+                                 double creation_time=*,
+                                 double executed_time=*)

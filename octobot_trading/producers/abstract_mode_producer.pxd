@@ -23,4 +23,4 @@ cdef class AbstractTradingModeProducer(ModeChannelProducer):
 
     cdef public str exchange_name
 
-    cdef public float final_eval
+    cdef public double final_eval

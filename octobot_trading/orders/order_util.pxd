@@ -17,4 +17,4 @@
 
 cpdef bint is_valid(object element, object key)
 cpdef object get_min_max_amounts(dict symbol_market, object default_value=*)
-cpdef bint check_cost(float total_order_price, object min_cost)
+cpdef bint check_cost(double total_order_price, object min_cost)

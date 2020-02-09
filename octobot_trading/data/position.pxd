@@ -36,28 +36,28 @@ cdef class Position(Initializable):
 
     cdef public int leverage
 
-    cdef public float entry_price
-    cdef public float mark_price
-    cdef public float quantity
-    cdef public float liquidation_price
-    cdef public float unrealised_pnl
+    cdef public double entry_price
+    cdef public double mark_price
+    cdef public double quantity
+    cdef public double liquidation_price
+    cdef public double unrealised_pnl
 
-    cdef public float timestamp
-    cdef public float creation_time
-    cdef public float canceled_time
-    cdef public float executed_time
+    cdef public double timestamp
+    cdef public double creation_time
+    cdef public double canceled_time
+    cdef public double executed_time
 
     cdef bint __update(self,
                       str position_id,
                       str symbol,
                       str currency,
                       str market,
-                      float timestamp,
-                      float entry_price,
-                      float mark_price,
-                      float quantity,
-                      float liquidation_price,
-                      float unrealised_pnl,
+                      double timestamp,
+                      double entry_price,
+                      double mark_price,
+                      double quantity,
+                      double liquidation_price,
+                      double unrealised_pnl,
                       int leverage,
                       bint is_open)
 
