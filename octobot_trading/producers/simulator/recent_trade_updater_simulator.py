@@ -60,9 +60,10 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
     async def _recent_trades_from_ohlcv_callback(self, exchange: str, exchange_id: str,
                                                  symbol: str, time_frame, candle):
         if candle:
-            last_candle_open_price = candle[PriceIndexes.IND_PRICE_OPEN.value]
+            # candles are pushed when completed therefore the current price is the candle's close price
+            last_candle_close_price = candle[PriceIndexes.IND_PRICE_CLOSE.value]
             last_candle_timestamp = candle[PriceIndexes.IND_PRICE_TIME.value]
-            recent_trades = [self._generate_recent_trade(last_candle_timestamp, last_candle_open_price)] \
+            recent_trades = [self._generate_recent_trade(last_candle_timestamp, last_candle_close_price)] \
                 * self.SIMULATED_RECENT_TRADE_LIMIT
             if last_candle_timestamp > self.last_timestamp_pushed:
                 self.last_timestamp_pushed = last_candle_timestamp
