@@ -41,6 +41,7 @@ class Order:
         self.linked_orders = []
 
         self.order_id = trader.parse_order_id(None)
+        self.simulated = trader.simulate
 
         self.symbol = None
         self.currency = None
