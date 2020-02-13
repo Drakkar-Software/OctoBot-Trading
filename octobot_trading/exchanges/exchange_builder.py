@@ -54,7 +54,7 @@ class ExchangeBuilder:
 
             # create trading modes
             if self._is_using_trading_modes:
-                await self._build_modes()
+                self.exchange_manager.trading_modes = await self._build_modes()
 
             # configure exchange
             if not self.exchange_manager.is_backtesting:
@@ -80,7 +80,7 @@ class ExchangeBuilder:
     async def _build_modes(self):
         try:
             init_trading_mode_config(self.config, self._trading_tentacles_path)
-            await create_trading_modes(self.config, self.exchange_manager)
+            return await create_trading_modes(self.config, self.exchange_manager)
         except Exception as e:
             self.logger.error(f"An error occurred when initializing trading mode : ")
             raise e

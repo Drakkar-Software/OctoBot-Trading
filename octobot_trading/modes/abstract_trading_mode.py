@@ -54,6 +54,20 @@ class AbstractTradingMode(AbstractTentacle):
         # Time_frame is the chart time frame (Should be None if wildcard)
         self.time_frame = None
 
+        # producers is the list of producers created by this trading mode
+        self.producers = []
+
+        # producers is the list of consumers created by this trading mode
+        self.consumers = []
+
+    # Used to know the current state of the trading mode.
+    # Overwrite in subclasses
+    def get_current_state(self) -> tuple:
+        """
+        :return: (str, float): (current state description, current state value)
+        """
+        return "N/A", 0
+
     @classmethod
     def get_name(cls) -> str:
         return cls.__name__
@@ -104,13 +118,19 @@ class AbstractTradingMode(AbstractTentacle):
         return True
 
     async def initialize(self) -> None:
-        await self.create_producers()
-        await self.create_consumers()
+        self.producers = await self.create_producers()
+        self.consumers = await self.create_consumers()
 
-    async def create_producers(self) -> None:
+    async def stop(self) -> None:
+        for producer in self.producers:
+            await producer.stop()
+        for consumer in self.consumers:
+            await consumer.stop()
+
+    async def create_producers(self) -> list:
         raise NotImplementedError("create_producers not implemented")
 
-    async def create_consumers(self) -> None:
+    async def create_consumers(self) -> list:
         raise NotImplementedError("create_consumers not implemented")
 
     def load_config(self) -> None:

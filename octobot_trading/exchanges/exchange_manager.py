@@ -66,6 +66,7 @@ class ExchangeManager(Initializable):
 
         self.trader = None
         self.exchange = None
+        self.trading_modes = []
 
         self.exchange_web_socket = None
         self.exchange_type = None
@@ -81,6 +82,8 @@ class ExchangeManager(Initializable):
         await self.create_exchanges()
 
     async def stop(self):
+        for trading_mode in self.trading_modes:
+            await trading_mode.stop()
         if self.exchange is not None:
             await self.exchange.stop()
             Exchanges.instance().del_exchange(self.exchange.name, self.id)
@@ -94,6 +97,7 @@ class ExchangeManager(Initializable):
         self.exchange_personal_data = None
         self.exchange_symbols_data = None
         self.trader = None
+        self.trading_modes = []
 
     async def stop_exchange_channels(self):
         try:
