@@ -31,6 +31,18 @@ def init_trading_mode_config(config, trading_tentacles_path) -> None:
     create_classes_list(config, AbstractTradingMode)
 
 
+def get_trading_modes(exchange_manager) -> list:
+    return exchange_manager.trading_modes
+
+
+def get_trading_mode_symbol(trading_mode) -> list:
+    return trading_mode.symbol
+
+
+def get_trading_mode_current_state(trading_mode) -> tuple:
+    return trading_mode.get_current_state()
+
+
 def get_activated_trading_mode(config) -> AbstractTradingMode.__class__:
     return util_get_activated_trading_mode(config)
 

@@ -28,6 +28,9 @@ cdef class AbstractTradingMode(AbstractTentacle):
     cdef public str symbol
     cdef public str time_frame
 
+    cdef public list producers
+    cdef public list consumers
+
     cpdef void load_config(self)
     cpdef void set_default_config(self)
 

@@ -32,6 +32,7 @@ cdef class ExchangeManager(Initializable):
     cdef object _logger
 
     cdef public Trader trader
+    cdef public list trading_modes
 
     cdef public str exchange_class_string
     cdef public str exchange_name
