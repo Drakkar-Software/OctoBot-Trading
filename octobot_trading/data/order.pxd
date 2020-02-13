@@ -41,6 +41,7 @@ cdef class Order:
     cdef public str market
     cdef public str taker_or_maker
     cdef public str order_id
+    cdef public bint simulated
 
     cdef public double origin_price
     cdef public double origin_stop_price

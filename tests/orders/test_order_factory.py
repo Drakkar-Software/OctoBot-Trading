@@ -47,6 +47,7 @@ class TestOrderFactory:
         _, exchange_manager, trader_inst = await self.init_default()
 
         order_to_test = Order(trader_inst)
+        assert order_to_test.simulated is True
 
         ccxt_order_buy_market = {
             "side": TradeOrderSide.BUY,

@@ -28,6 +28,7 @@ class Trade:
         self.creation_time = time.time()
 
         self.trade_id = trader.parse_order_id(None)
+        self.simulated = True
 
         self.symbol = None
         self.currency = None
@@ -58,6 +59,7 @@ class Trade:
         self.status = order.status
         self.fee = order.fee
         self.trade_id = order.order_id
+        self.simulated = order.simulated
         self.side = order.side
         self.creation_time = order.creation_time if order.creation_time > 0 else creation_time
         self.canceled_time = order.canceled_time if order.canceled_time > 0 else canceled_time

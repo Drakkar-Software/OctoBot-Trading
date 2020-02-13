@@ -33,7 +33,7 @@ def get_total_paid_trading_fees(exchange_manager) -> dict:
 
 
 def get_trade_exchange_name(trade) -> str:
-    return get_order_exchange_name(trade.order)
+    return trade.exchange_manager.get_exchange_name()
 
 
 async def subscribe_to_trades_channel(callback):
