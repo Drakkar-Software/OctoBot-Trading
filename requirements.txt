@@ -17,6 +17,5 @@ click-completion==0.5.2
 click-shell==1.0
 
 # other requirements
-scipy==1.4.1
 colorlog==4.1.0
 yarl==1.1.0
