@@ -24,19 +24,21 @@ cdef class CandlesManager(Initializable):
 
     cdef public bint candles_initialized
 
-    cdef np.float64_t[::1] close_candles
-    cdef np.float64_t[::1] open_candles
-    cdef np.float64_t[::1] high_candles
-    cdef np.float64_t[::1] low_candles
-    cdef np.float64_t[::1] time_candles
-    cdef np.float64_t[::1] volume_candles
+    cdef public np.float64_t[::1] close_candles
+    cdef public np.float64_t[::1] open_candles
+    cdef public np.float64_t[::1] high_candles
+    cdef public np.float64_t[::1] low_candles
+    cdef public np.float64_t[::1] time_candles
+    cdef public np.float64_t[::1] volume_candles
 
-    cdef int close_candles_index
-    cdef int open_candles_index
-    cdef int high_candles_index
-    cdef int low_candles_index
-    cdef int time_candles_index
-    cdef int volume_candles_index
+    cdef public int close_candles_index
+    cdef public int open_candles_index
+    cdef public int high_candles_index
+    cdef public int low_candles_index
+    cdef public int time_candles_index
+    cdef public int volume_candles_index
+
+    cdef public bint reached_max
 
     cpdef np.float64_t[::1] get_symbol_close_candles(self, int limit=*)
     cpdef np.float64_t[::1] get_symbol_open_candles(self, int limit=*)
@@ -51,9 +53,10 @@ cdef class CandlesManager(Initializable):
     cpdef void replace_all_candles(self, list all_candles_data)
 
     # private
-    cdef void __set_all_candles(self, object new_candles_data)
-    cdef void __change_current_candle(self)
-    cdef bint __should_add_new_candle(self, new_open_time)
-    cdef object __inc_candle_index(self)
-    cdef void __reset_candles(self)
-    cdef np.float64_t[::1] __extract_limited_data(self, np.float64_t[::1] data, int limit=*, int max_limit=*)
+    cdef void _set_all_candles(self, object new_candles_data)
+    cdef void _change_current_candle(self)
+    cdef bint _should_add_new_candle(self, new_open_time)
+    cdef void _check_max_candles(self)
+    cdef object _inc_candle_index(self)
+    cdef void _reset_candles(self)
+    cdef np.float64_t[::1] _extract_limited_data(self, np.float64_t[::1] data, int limit=*, int max_limit=*)

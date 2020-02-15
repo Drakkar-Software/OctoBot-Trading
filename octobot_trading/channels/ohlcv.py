@@ -28,10 +28,8 @@ class OHLCVProducer(ExchangeChannelProducer):
         try:
             if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
-                await self.channel.exchange_manager.get_symbol_data(symbol).handle_candles_update(time_frame,
-                                                                                                  candle,
-                                                                                                  replace_all=replace_all,
-                                                                                                  partial=partial)
+                await self.channel.exchange_manager.get_symbol_data(symbol)\
+                    .handle_candles_update(time_frame, candle, replace_all=replace_all, partial=partial)
                 if candle and (partial or replace_all):
                     candle = candle[-1]
                 await self.send(time_frame=time_frame.value, symbol=symbol, candle=candle)
