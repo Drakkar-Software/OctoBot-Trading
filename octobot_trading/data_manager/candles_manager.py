@@ -14,8 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import numpy as np
-from scipy.ndimage.interpolation import shift
 
+from octobot_commons.data_util import shift_value_array
 from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
 
@@ -141,12 +141,13 @@ class CandlesManager(Initializable):
             self.add_new_candle(new_candles_data)
 
     def _change_current_candle(self):
-        self.close_candles = shift(self.close_candles, -1, cval=np.NaN)
-        self.open_candles = shift(self.open_candles, -1, cval=np.NaN)
-        self.high_candles = shift(self.high_candles, -1, cval=np.NaN)
-        self.low_candles = shift(self.low_candles, -1, cval=np.NaN)
-        self.time_candles = shift(self.time_candles, -1, cval=np.NaN)
-        self.volume_candles = shift(self.volume_candles, -1, cval=np.NaN)
+        self.close_candles = shift_value_array(self.close_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
+        self.open_candles = shift_value_array(self.open_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
+        self.high_candles = shift_value_array(self.high_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
+        self.low_candles = shift_value_array(self.low_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
+        self.volume_candles = shift_value_array(self.volume_candles, -1, self.MAX_CANDLES_COUNT, np.nan,
+                                                      np.float64)
+        self.time_candles = shift_value_array(self.time_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
 
     def _should_add_new_candle(self, new_open_time):
         return new_open_time not in self.time_candles
