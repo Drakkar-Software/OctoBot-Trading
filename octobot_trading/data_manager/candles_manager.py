@@ -13,8 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from typing import Union, List, Dict
-
 import numpy as np
 from scipy.ndimage.interpolation import shift
 
@@ -46,13 +44,16 @@ class CandlesManager(Initializable):
         self.low_candles = None
         self.time_candles = None
         self.volume_candles = None
-        self.__reset_candles()
+
+        self.reached_max = False
+        self._reset_candles()
 
     async def initialize_impl(self):
-        self.__reset_candles()
+        self._reset_candles()
 
-    def __reset_candles(self):
+    def _reset_candles(self):
         self.candles_initialized = False
+        self.reached_max = False
 
         self.close_candles_index = 0
         self.open_candles_index = 0
@@ -70,22 +71,22 @@ class CandlesManager(Initializable):
 
     # getters
     def get_symbol_close_candles(self, limit=-1):
-        return self.__extract_limited_data(self.close_candles, limit, max_limit=self.close_candles_index)
+        return self._extract_limited_data(self.close_candles, limit, max_limit=self.close_candles_index)
 
     def get_symbol_open_candles(self, limit=-1):
-        return self.__extract_limited_data(self.open_candles, limit, max_limit=self.open_candles_index)
+        return self._extract_limited_data(self.open_candles, limit, max_limit=self.open_candles_index)
 
     def get_symbol_high_candles(self, limit=-1):
-        return self.__extract_limited_data(self.high_candles, limit, max_limit=self.high_candles_index)
+        return self._extract_limited_data(self.high_candles, limit, max_limit=self.high_candles_index)
 
     def get_symbol_low_candles(self, limit=-1):
-        return self.__extract_limited_data(self.low_candles, limit, max_limit=self.low_candles_index)
+        return self._extract_limited_data(self.low_candles, limit, max_limit=self.low_candles_index)
 
     def get_symbol_time_candles(self, limit=-1):
-        return self.__extract_limited_data(self.time_candles, limit, max_limit=self.time_candles_index)
+        return self._extract_limited_data(self.time_candles, limit, max_limit=self.time_candles_index)
 
     def get_symbol_volume_candles(self, limit=-1):
-        return self.__extract_limited_data(self.volume_candles, limit, max_limit=self.volume_candles_index)
+        return self._extract_limited_data(self.volume_candles, limit, max_limit=self.volume_candles_index)
 
     def get_symbol_prices(self, limit=-1):
         return {
@@ -98,8 +99,8 @@ class CandlesManager(Initializable):
         }
 
     def replace_all_candles(self, all_candles_data):
-        self.__reset_candles()
-        self.__set_all_candles(all_candles_data)
+        self._reset_candles()
+        self._set_all_candles(all_candles_data)
         self.candles_initialized = True
 
     """
@@ -117,43 +118,45 @@ class CandlesManager(Initializable):
         except IndexError as e:
             self.logger.error(f"Fail to add last candle {candles_data} : {e}")
 
-    def add_new_candle(self, new_candle_data: Dict):
-        if self.__should_add_new_candle(new_candle_data[PriceIndexes.IND_PRICE_TIME.value]):
+    def add_new_candle(self, new_candle_data):
+        if self._should_add_new_candle(new_candle_data[PriceIndexes.IND_PRICE_TIME.value]):
             try:
+                self._check_max_candles()
                 self.close_candles[self.close_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_CLOSE.value]
                 self.open_candles[self.open_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_OPEN.value]
                 self.high_candles[self.high_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_HIGH.value]
                 self.low_candles[self.low_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_LOW.value]
                 self.time_candles[self.time_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_TIME.value]
                 self.volume_candles[self.volume_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_VOL.value]
-                self.__inc_candle_index()
+                self._inc_candle_index()
             except IndexError as e:
                 self.logger.error(f"Fail to add new candle {new_candle_data} : {e}")
 
     # private
-    def __set_all_candles(self, new_candles_data: Union[List, Dict]):
+    def _set_all_candles(self, new_candles_data):
         if isinstance(new_candles_data[-1], list):
             for candle_data in new_candles_data:
                 self.add_new_candle(candle_data)
         else:
             self.add_new_candle(new_candles_data)
 
-    def __change_current_candle(self):
-        shift(self.close_candles, -1, cval=np.NaN)
-        shift(self.open_candles, -1, cval=np.NaN)
-        shift(self.high_candles, -1, cval=np.NaN)
-        shift(self.low_candles, -1, cval=np.NaN)
-        shift(self.time_candles, -1, cval=np.NaN)
-        shift(self.volume_candles, -1, cval=np.NaN)
+    def _change_current_candle(self):
+        self.close_candles = shift(self.close_candles, -1, cval=np.NaN)
+        self.open_candles = shift(self.open_candles, -1, cval=np.NaN)
+        self.high_candles = shift(self.high_candles, -1, cval=np.NaN)
+        self.low_candles = shift(self.low_candles, -1, cval=np.NaN)
+        self.time_candles = shift(self.time_candles, -1, cval=np.NaN)
+        self.volume_candles = shift(self.volume_candles, -1, cval=np.NaN)
 
-    def __should_add_new_candle(self, new_open_time):
+    def _should_add_new_candle(self, new_open_time):
         return new_open_time not in self.time_candles
 
-    def __inc_candle_index(self):
-        if self.close_candles_index == -1:
-            return self.__change_current_candle()
+    def _check_max_candles(self):
+        if self.reached_max:
+            self._change_current_candle()
 
-        if self.close_candles_index < CandlesManager.MAX_CANDLES_COUNT:
+    def _inc_candle_index(self):
+        if self.close_candles_index < CandlesManager.MAX_CANDLES_COUNT - 1:
             self.close_candles_index += 1
             self.open_candles_index += 1
             self.high_candles_index += 1
@@ -161,20 +164,16 @@ class CandlesManager(Initializable):
             self.time_candles_index += 1
             self.volume_candles_index += 1
         else:
-            self.close_candles_index = -1
-            self.open_candles_index = -1
-            self.high_candles_index = -1
-            self.low_candles_index = -1
-            self.time_candles_index = -1
-            self.volume_candles_index = -1
+            self.reached_max = True
 
-    def __extract_limited_data(self, data, limit=-1, max_limit=-1):
+    def _extract_limited_data(self, data, limit=-1, max_limit=-1):
+        max_handled_limit = self.MAX_CANDLES_COUNT if self.reached_max else max_limit
         if limit == -1:
             if max_limit == -1:
                 return data
-            return data[:max_limit]
+            return data[:max_handled_limit]
 
         if max_limit == -1:
             return data[-min(limit, len(data)):]
         else:
-            return data[max_limit - limit:max_limit]
+            return data[max_handled_limit - limit:max_handled_limit]
