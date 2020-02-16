@@ -73,25 +73,23 @@ def test_get_symbol_prices():
     candles_manager = CandlesManager()
     candle = _gen_candles(1)[0]
     candles_manager.add_new_candle(candle)
-    assert candles_manager.get_symbol_prices() == {
-        PriceIndexes.IND_PRICE_CLOSE.value: candle[PriceIndexes.IND_PRICE_CLOSE.value],
-        PriceIndexes.IND_PRICE_OPEN.value: candle[PriceIndexes.IND_PRICE_OPEN.value],
-        PriceIndexes.IND_PRICE_HIGH.value: candle[PriceIndexes.IND_PRICE_HIGH.value],
-        PriceIndexes.IND_PRICE_LOW.value: candle[PriceIndexes.IND_PRICE_LOW.value],
-        PriceIndexes.IND_PRICE_VOL.value: candle[PriceIndexes.IND_PRICE_VOL.value],
-        PriceIndexes.IND_PRICE_TIME.value: candle[PriceIndexes.IND_PRICE_TIME.value]
-    }
+    symbol_price = candles_manager.get_symbol_prices()
+    assert symbol_price[PriceIndexes.IND_PRICE_CLOSE.value][-1] == candle[PriceIndexes.IND_PRICE_CLOSE.value]
+    assert symbol_price[PriceIndexes.IND_PRICE_OPEN.value][-1] == candle[PriceIndexes.IND_PRICE_OPEN.value]
+    assert symbol_price[PriceIndexes.IND_PRICE_HIGH.value][-1] == candle[PriceIndexes.IND_PRICE_HIGH.value]
+    assert symbol_price[PriceIndexes.IND_PRICE_LOW.value][-1] == candle[PriceIndexes.IND_PRICE_LOW.value]
+    assert symbol_price[PriceIndexes.IND_PRICE_VOL.value][-1] == candle[PriceIndexes.IND_PRICE_VOL.value]
+    assert symbol_price[PriceIndexes.IND_PRICE_TIME.value][-1] == candle[PriceIndexes.IND_PRICE_TIME.value]
 
     second_candle = _gen_candles(2)[1]
     candles_manager.add_new_candle(second_candle)
-    assert candles_manager.get_symbol_prices(1) == {
-        PriceIndexes.IND_PRICE_CLOSE.value: second_candle[PriceIndexes.IND_PRICE_CLOSE.value],
-        PriceIndexes.IND_PRICE_OPEN.value: second_candle[PriceIndexes.IND_PRICE_OPEN.value],
-        PriceIndexes.IND_PRICE_HIGH.value: second_candle[PriceIndexes.IND_PRICE_HIGH.value],
-        PriceIndexes.IND_PRICE_LOW.value: second_candle[PriceIndexes.IND_PRICE_LOW.value],
-        PriceIndexes.IND_PRICE_VOL.value: second_candle[PriceIndexes.IND_PRICE_VOL.value],
-        PriceIndexes.IND_PRICE_TIME.value: second_candle[PriceIndexes.IND_PRICE_TIME.value]
-    }
+    second_sym_price = candles_manager.get_symbol_prices(1)
+    assert second_sym_price[PriceIndexes.IND_PRICE_CLOSE.value][-1] == second_candle[PriceIndexes.IND_PRICE_CLOSE.value]
+    assert second_sym_price[PriceIndexes.IND_PRICE_OPEN.value][-1] == second_candle[PriceIndexes.IND_PRICE_OPEN.value]
+    assert second_sym_price[PriceIndexes.IND_PRICE_HIGH.value][-1] == second_candle[PriceIndexes.IND_PRICE_HIGH.value]
+    assert second_sym_price[PriceIndexes.IND_PRICE_LOW.value][-1] == second_candle[PriceIndexes.IND_PRICE_LOW.value]
+    assert second_sym_price[PriceIndexes.IND_PRICE_VOL.value][-1] == second_candle[PriceIndexes.IND_PRICE_VOL.value]
+    assert second_sym_price[PriceIndexes.IND_PRICE_TIME.value][-1] == second_candle[PriceIndexes.IND_PRICE_TIME.value]
 
 
 def test_get_symbol_candles_data():
