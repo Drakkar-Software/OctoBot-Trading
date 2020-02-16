@@ -43,6 +43,9 @@ class ExchangeBuilder:
     Build
     """
     async def build(self):
+        # first add to global exchanges to always be able to find it later
+        Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
+
         await self.exchange_manager.initialize()
 
         # initialize exchange for trading if not collecting
@@ -59,9 +62,6 @@ class ExchangeBuilder:
             # configure exchange
             if not self.exchange_manager.is_backtesting:
                 self.exchange_manager.exchange.client.setSandboxMode(self._is_exchange_manager_sandboxed)
-
-        # add to global exchanges
-        Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
 
         return self.exchange_manager
 
