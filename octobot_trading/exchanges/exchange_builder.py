@@ -107,6 +107,10 @@ class ExchangeBuilder:
         self.exchange_manager.trader = Trader(self.config, self.exchange_manager)
         return self
 
+    def is_margin(self, use_margin=True):
+        self.exchange_manager.is_margin = use_margin
+        return self
+
     def is_rest_only(self):
         self.exchange_manager.rest_only = True
         return self

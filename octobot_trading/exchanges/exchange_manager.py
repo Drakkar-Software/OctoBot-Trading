@@ -32,6 +32,8 @@ from octobot_trading.exchanges.data.exchange_personal_data import ExchangePerson
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchanges import Exchanges
+from octobot_trading.exchanges.margin.margin_exchange import MarginExchange
+from octobot_trading.exchanges.margin.margin_util import get_margin_exchange_class_from_exchange_type
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.producers import UNAUTHENTICATED_UPDATER_PRODUCERS, AUTHENTICATED_UPDATER_PRODUCERS
@@ -55,6 +57,7 @@ class ExchangeManager(Initializable):
         self.rest_only: bool = False
         self.ignore_config: bool = False
         self.is_collecting: bool = False
+        self.is_margin: bool = False
 
         # exchange_only is True when exchange channels are not required (therefore not created)
         self.exchange_only: bool = False
@@ -152,9 +155,16 @@ class ExchangeManager(Initializable):
         self.exchange_name = self.exchange.name
         self.is_ready = True
 
+    """
+    Real exchange
+    """
     async def _create_real_exchange(self):
         # create REST based on ccxt exchange
-        self.exchange = RestExchange(self.config, self.exchange_type, self)
+        if self.is_margin:
+            await self._search_and_create_margin_exchange()
+        else:
+            self.exchange = RestExchange(self.config, self.exchange_type, self)
+
         await self.exchange.initialize()
 
         self._load_constants()
@@ -168,6 +178,9 @@ class ExchangeManager(Initializable):
             if self.check_web_socket_config(self.exchange.name):
                 await self._search_and_create_websocket(AbstractWebsocket)
 
+    """
+    Simulated Exchange
+    """
     async def _create_simulated_exchange(self):
         self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
         await self.exchange.initialize()
@@ -185,6 +198,16 @@ class ExchangeManager(Initializable):
             self._logger.error("Not enough exchange data to calculate backtesting duration")
             await self.stop()
 
+    """
+    Margin exchange
+    """
+    async def _search_and_create_margin_exchange(self):
+        margin_exchange_class = get_margin_exchange_class_from_exchange_type(self.exchange_type)
+        self.exchange = margin_exchange_class(self.config, self.exchange_type, self)
+
+    """
+    Exchange channels
+    """
     async def _create_exchange_channels(self):  # TODO filter creation --> not required if pause is managed
         await create_all_subclasses_channel(ExchangeChannel, set_chan, exchange_manager=self)
 
