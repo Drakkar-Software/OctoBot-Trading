@@ -43,6 +43,15 @@ class ExchangeBuilder:
     Build
     """
     async def build(self):
+        try:
+            await self._build_exchange_manager()
+        except Exception as e:
+            # stop exchange manager if an exception occurred when building it
+            await self.exchange_manager.stop()
+            raise e
+        return self.exchange_manager
+
+    async def _build_exchange_manager(self):
         await self.exchange_manager.initialize()
 
         # initialize exchange for trading if not collecting
@@ -62,8 +71,6 @@ class ExchangeBuilder:
 
         # add to global exchanges
         Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
-
-        return self.exchange_manager
 
     async def _build_trader(self):
         try:
