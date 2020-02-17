@@ -44,8 +44,6 @@ class RestExchange(AbstractExchange):
         self.is_authenticated = False
         self.__create_client()
 
-        self.is_supporting_position = True
-
     async def initialize_impl(self):
         try:
             await self.client.load_markets()
@@ -275,44 +273,6 @@ class RestExchange(AbstractExchange):
             order_required_fields = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
                                      ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.REMAINING.value]
         return all(key in order for key in order_required_fields)
-
-    # positions
-    async def get_position(self, params={}):
-        try:
-            if self.is_supporting_position:
-                return await self.client.private_get_position(params=params)
-        except (AttributeError, ExchangeNotAvailable):
-            self.is_supporting_position = False
-
-    async def get_open_position(self):
-        # try:
-        if self.is_supporting_position:
-            return await self.get_position(params={
-                'filter': json.dumps({
-                    "isOpen": True
-                })
-            })
-        # except (AttributeError):
-        #     self.is_supporting_position = False
-
-    async def get_position_from_id(self, position_id, symbol=None):
-        return await self.client.private_get_position(id=position_id, symbol=symbol)
-
-    # async def get_positions(self, symbol=None, since=None, limit=None, params={}):
-    #     return await self.client.fetch_open_positions(symbol=symbol, since=since, limit=limit, params=params)
-    #
-    # async def get_open_positions(self, symbol=None, since=None, limit=None, params={}):
-    #     return await self.client.get_open_positions(symbol=symbol, since=since, limit=limit, params=params)
-    #
-    # async def get_closed_positions(self, symbol=None, since=None, limit=None, params={}):
-    #     return await self.client.get_closed_positions(symbol=symbol, since=since, limit=limit, params=params)
-    #
-    # async def get_position_trades(self, position_id, symbol=None, since=None, limit=None, params={}):
-    #     return await self.client.get_position_trades(id=position_id, symbol=symbol, since=since, limit=limit,
-    #                                                    params=params)
-
-    async def get_position_status(self, position_id, symbol=None, params={}):
-        return await self.client.get_position_status(id=position_id, symbol=symbol, params=params)
 
     def __log_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
