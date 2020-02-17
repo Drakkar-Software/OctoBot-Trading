@@ -38,6 +38,8 @@ class RestExchange(AbstractExchange):
     CCXT library wrapper
     """
 
+    CCXT_CLIENT_LOGIN_OPTIONS = {}
+
     def __init__(self, config, exchange_type, exchange_manager):
         super().__init__(config, exchange_type, exchange_manager)
         # We will need to create the rest client and fetch exchange config
@@ -82,19 +84,22 @@ class RestExchange(AbstractExchange):
                     'secret': secret,
                     'password': password,
                     'verbose': False,
-                    'enableRateLimit': True
+                    'enableRateLimit': True,
+                    'options': self.CCXT_CLIENT_LOGIN_OPTIONS
                 })
             except Exception as e:
                 self.is_authenticated = False
                 self.exchange_manager.handle_token_error(e, self.logger)
                 self.client = self.exchange_type({
                     'verbose': False,
-                    'enableRateLimit': True
+                    'enableRateLimit': True,
+                    'options': self.CCXT_CLIENT_LOGIN_OPTIONS
                 })
         else:
             self.client = self.exchange_type({
                     'verbose': False,
-                    'enableRateLimit': True
+                    'enableRateLimit': True,
+                    'options': self.CCXT_CLIENT_LOGIN_OPTIONS
                 })
             self.logger.error("configuration issue: missing login information !")
         self.client.logger.setLevel(logging.INFO)
@@ -340,6 +345,9 @@ class RestExchange(AbstractExchange):
                 raise KeyError(f'{pair} is not supported')
         else:
             raise ValueError(f'{pair} is not supported')
+
+    def set_sandbox_mode(self, is_sandboxed):
+        self.client.setSandboxMode(is_sandboxed)
 
     @staticmethod
     def __get_side(order_type):
