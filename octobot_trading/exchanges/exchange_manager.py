@@ -16,7 +16,6 @@
 import uuid
 
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
-from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
 
 from octobot_commons.config_util import has_invalid_default_config_value
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
@@ -34,6 +33,7 @@ from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
+from octobot_trading.exchanges.websockets.websockets_util import check_web_socket_config, search_websocket_class
 from octobot_trading.producers import UNAUTHENTICATED_UPDATER_PRODUCERS, AUTHENTICATED_UPDATER_PRODUCERS
 from octobot_trading.producers.simulator import AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS
 from octobot_trading.util import is_trader_simulator_enabled
@@ -165,8 +165,8 @@ class ExchangeManager(Initializable):
         # create Websocket exchange if possible
         if not self.rest_only:
             # search for websocket
-            if self.check_web_socket_config(self.exchange.name):
-                await self._search_and_create_websocket(AbstractWebsocket)
+            if check_web_socket_config(self.config, self.exchange.name):
+                await self._search_and_create_websocket()
 
     async def _create_simulated_exchange(self):
         self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
@@ -205,47 +205,47 @@ class ExchangeManager(Initializable):
             for updater in AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
                 await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
+    """
+    Websocket
+    """
     def _is_managed_by_websocket(self, channel):  # TODO improve checker
         return not self.rest_only and self.has_websocket and \
                any([self.exchange_web_socket.is_feed_available(feed)
-                   for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
+                    for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
 
-    async def _search_and_create_websocket(self, websocket_class):
-        for socket_manager in websocket_class.__subclasses__():
-            # add websocket exchange if available
-            if socket_manager.has_name(self.exchange.name):
-                self.exchange_web_socket = socket_manager.get_websocket_client(self.config, self)
+    async def _search_and_create_websocket(self):
+        socket_manager = search_websocket_class(AbstractWebsocket, self.exchange_name)
+        if socket_manager is not None:
+            await self._create_websocket(AbstractWebsocket.__name__, socket_manager)
 
-                # init websocket
-                try:
-                    await self.exchange_web_socket.init_web_sockets(self.exchange_config.traded_time_frames,
-                                                                    self.exchange_config.traded_symbol_pairs)
+    async def _create_websocket(self, websocket_class_name, socket_manager):
+        try:
+            self.exchange_web_socket = socket_manager.get_websocket_client(self.config, self)
+            await self._init_websocket()
+            self._logger.info(f"{socket_manager.get_name()} connected to {self.exchange.name}")
+        except Exception as e:
+            self._logger.error(f"Fail to init websocket for {websocket_class_name} : {e}")
+            self.exchange_web_socket = None
+            self.has_websocket = False
+            raise e
 
-                    # start the websocket
-                    self.exchange_web_socket.start_sockets()
+    async def _init_websocket(self):
+        await self.exchange_web_socket.init_web_sockets(self.exchange_config.traded_time_frames,
+                                                        self.exchange_config.traded_symbol_pairs)
 
-                    self.has_websocket = self.exchange_web_socket.is_websocket_running
-                    self._logger.info(f"{socket_manager.get_name()} connected to {self.exchange.name}")
-                except Exception as e:
-                    self._logger.error(f"Fail to init websocket for {websocket_class} : {e}")
-                    self.exchange_web_socket = None
-                    self.has_websocket = False
-                    raise e
+        self.exchange_web_socket.start_sockets()
 
-    # Exchange configuration functions
+        self.has_websocket = self.exchange_web_socket.is_websocket_running
+
+    """
+    Exchange Configuration
+    """
     def check_config(self, exchange_name):
         if CONFIG_EXCHANGE_KEY not in self.config[CONFIG_EXCHANGES][exchange_name] \
                 or CONFIG_EXCHANGE_SECRET not in self.config[CONFIG_EXCHANGES][exchange_name]:
             return False
         else:
             return True
-
-    def force_disable_web_socket(self, exchange_name):
-        return CONFIG_EXCHANGE_WEB_SOCKET in self.config[CONFIG_EXCHANGES][exchange_name] \
-               and not self.config[CONFIG_EXCHANGES][exchange_name][CONFIG_EXCHANGE_WEB_SOCKET]
-
-    def check_web_socket_config(self, exchange_name):
-        return not self.force_disable_web_socket(exchange_name)
 
     def enabled(self):
         # if we can get candlestick data
