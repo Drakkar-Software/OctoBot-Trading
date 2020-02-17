@@ -77,8 +77,6 @@ cdef class ExchangeManager(Initializable):
     cpdef void reset_exchange_symbols_data(self)
     cpdef void reset_exchange_personal_data(self)
     cpdef bint check_config(self, str exchange_name)
-    cpdef force_disable_web_socket(self, str exchange_name)
-    cpdef check_web_socket_config(self, str exchange_name)
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame)
     cpdef int get_rate_limit(self)
