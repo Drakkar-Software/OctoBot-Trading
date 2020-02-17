@@ -56,6 +56,7 @@ class ExchangeManager(Initializable):
         self.ignore_config: bool = False
         self.is_collecting: bool = False
         self.is_margin: bool = False
+        self.is_sandboxed: bool = False
 
         # exchange_only is True when exchange channels are not required (therefore not created)
         self.exchange_only: bool = False
@@ -161,7 +162,10 @@ class ExchangeManager(Initializable):
         if self.is_margin:
             await self._search_and_create_margin_exchange()
         else:
-            self.exchange = RestExchange(self.config, self.exchange_type, self)
+            self.exchange = RestExchange(config=self.config,
+                                         exchange_type=self.exchange_type,
+                                         exchange_manager=self,
+                                         is_sandboxed=self.is_sandboxed)
 
         await self.exchange.initialize()
 

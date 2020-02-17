@@ -27,8 +27,6 @@ cdef class Position(Initializable):
     cdef Trader trader
     cdef ExchangeManager exchange_manager
 
-    cdef public bint is_open
-
     cdef public str symbol
     cdef public str currency
     cdef public str market
@@ -58,7 +56,6 @@ cdef class Position(Initializable):
                       double quantity,
                       double liquidation_price,
                       double unrealised_pnl,
-                      int leverage,
-                      bint is_open)
+                      int leverage)
 
     cpdef bint update_position_from_raw(self, dict raw_position)

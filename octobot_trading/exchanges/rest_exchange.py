@@ -38,14 +38,16 @@ class RestExchange(AbstractExchange):
 
     CCXT_CLIENT_LOGIN_OPTIONS = {}
 
-    def __init__(self, config, exchange_type, exchange_manager):
+    def __init__(self, config, exchange_type, exchange_manager, is_sandboxed=False):
         super().__init__(config, exchange_type, exchange_manager)
         # We will need to create the rest client and fetch exchange config
         self.is_authenticated = False
+        self.is_sandboxed = is_sandboxed
         self.__create_client()
 
     async def initialize_impl(self):
         try:
+            self.set_sandbox_mode(self.is_sandboxed)
             await self.client.load_markets()
         except ExchangeNotAvailable as e:
             self.logger.error(f"initialization impossible: {e}")
@@ -323,17 +325,23 @@ class RestExchange(AbstractExchange):
     def get_pair_from_exchange(self, pair) -> str:
         try:
             return self.client.market(pair)["symbol"]
-        except ccxt.base.errors.BadSymbol:
-            self.logger.error(f"Failed to get market of {pair}")
-            return None
+        except BadSymbol:
+            try:
+                return self.client.markets_by_id[pair]["symbol"]
+            except KeyError:
+                self.logger.error(f"Failed to get market of {pair}")
+                return None
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
         try:
             market_data: dict = self.client.market(pair)
             return market_data["base"], market_data["quote"]
         except BadSymbol:
-            self.logger.error(f"Failed to get market of {pair}")
-            return None, None
+            try:
+                return self.client.markets_by_id[pair]["base"], self.client.markets_by_id[pair]["quote"]
+            except KeyError:
+                self.logger.error(f"Failed to get market of {pair}")
+                return None, None
 
     def get_exchange_pair(self, pair: str) -> str:
         if pair in self.client.symbols:

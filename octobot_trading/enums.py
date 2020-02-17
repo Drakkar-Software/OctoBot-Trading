@@ -181,10 +181,9 @@ class ExchangeConstantsPositionColumns(Enum):
     SYMBOL = "symbol"
     LIQUIDATION_PRICE = "liquidationPrice"
     MARK_PRICE = "markPrice"
-    ENTRY_PRICE = "avgEntryPrice"
+    ENTRY_PRICE = "entryPrice"
     UNREALISED_PNL = "unrealisedPnl"
-    IS_OPEN = "isOpen"
-    QUANTITY = "currentQty"
+    QUANTITY = "quantity"
     LEVERAGE = "leverage"
 
 
