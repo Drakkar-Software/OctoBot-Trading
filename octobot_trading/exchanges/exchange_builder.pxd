@@ -27,7 +27,6 @@ cdef class ExchangeBuilder:
     cdef public str exchange_name
 
     cdef bint _is_using_trading_modes
-    cdef bint _is_exchange_manager_sandboxed
 
     cdef str _matrix_id
 

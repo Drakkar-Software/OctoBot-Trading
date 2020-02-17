@@ -18,6 +18,7 @@ from octobot_commons.constants import CONFIG_TRADING_FILE_PATH
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.api.modes import init_trading_mode_config, create_trading_modes
+from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_SANDBOXED
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.traders.trader import Trader
@@ -34,7 +35,6 @@ class ExchangeBuilder:
         self.exchange_manager: ExchangeManager = ExchangeManager(self.config, self.exchange_name)
 
         self._is_using_trading_modes: bool = True
-        self._is_exchange_manager_sandboxed: bool = False
         self._matrix_id: str = None
 
         self._trading_tentacles_path = CONFIG_TRADING_FILE_PATH
@@ -64,10 +64,6 @@ class ExchangeBuilder:
             # create trading modes
             if self._is_using_trading_modes:
                 self.exchange_manager.trading_modes = await self._build_modes()
-
-            # configure exchange
-            if not self.exchange_manager.is_backtesting:
-                self.exchange_manager.exchange.set_sandbox_mode(self._is_exchange_manager_sandboxed)
 
         # add to global exchanges
         Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
@@ -101,7 +97,8 @@ class ExchangeBuilder:
         return self
 
     def is_sandboxed(self, sandboxed: bool):
-        self._is_exchange_manager_sandboxed = sandboxed
+        self.exchange_manager.is_sandboxed = sandboxed or \
+                                             self.config[CONFIG_EXCHANGES][self.exchange_name][CONFIG_EXCHANGE_SANDBOXED]
         return self
 
     def is_simulated(self):

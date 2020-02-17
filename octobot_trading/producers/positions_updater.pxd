@@ -19,4 +19,4 @@ from octobot_trading.channels.positions cimport PositionsProducer
 
 
 cdef class PositionsUpdater(PositionsProducer):
-    cdef dict _cleanup_positions_dict(self, dict positions)
+    pass

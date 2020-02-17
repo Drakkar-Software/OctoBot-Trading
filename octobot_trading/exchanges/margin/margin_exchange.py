@@ -53,3 +53,6 @@ class MarginExchange(RestExchange):
 
     async def get_position_status(self, position_id, symbol=None):
         raise NotImplementedError("get_position_status is not implemented")
+
+    def cleanup_positions_dict(self, positions):
+        return positions

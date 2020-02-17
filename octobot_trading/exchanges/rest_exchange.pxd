@@ -18,6 +18,7 @@ from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
 
 cdef class RestExchange(AbstractExchange):
     cdef public bint is_authenticated
+    cdef public bint is_sandboxed
 
     # balance additional info
     cdef list info_list

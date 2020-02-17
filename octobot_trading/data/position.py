@@ -38,7 +38,7 @@ class Position:
 
     def __update(self, position_id, symbol, currency, market,
                  timestamp, entry_price, mark_price, quantity,
-                 liquidation_price, unrealised_pnl, leverage, is_open):
+                 liquidation_price, unrealised_pnl, leverage):
         changed: bool = False
 
         if position_id and self.position_id != position_id:
@@ -78,10 +78,6 @@ class Position:
         if liquidation_price and self.liquidation_price != liquidation_price:
             self.liquidation_price = liquidation_price
 
-        if is_open and self.is_open != is_open:
-            self.is_open = is_open
-            changed = True
-
         return changed
 
     def update_position_from_raw(self, raw_position):
@@ -98,6 +94,5 @@ class Position:
             "timestamp": raw_position[ExchangeConstantsPositionColumns.TIMESTAMP.value],
             "unrealised_pnl": raw_position[ExchangeConstantsPositionColumns.UNREALISED_PNL.value],
             "leverage": raw_position[ExchangeConstantsPositionColumns.LEVERAGE.value],
-            "is_open": raw_position[ExchangeConstantsPositionColumns.IS_OPEN.value],
             "mark_price": raw_position[ExchangeConstantsPositionColumns.MARK_PRICE.value]
         })
