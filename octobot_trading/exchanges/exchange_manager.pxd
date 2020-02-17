@@ -46,6 +46,7 @@ cdef class ExchangeManager(Initializable):
     cdef public bint is_backtesting
     cdef public bint is_trader_simulated
     cdef public bint is_collecting
+    cdef public bint is_margin
     cdef public bint has_websocket
     cdef public bint exchange_only
 

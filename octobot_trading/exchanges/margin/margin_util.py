@@ -9,7 +9,16 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+#  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.exchanges.margin.margin_exchange import MarginExchange
+
+
+def get_margin_exchange_class_from_exchange_type(exchange_type):
+    for margin_exchange_candidate in MarginExchange.__subclasses__():
+        if margin_exchange_candidate.get_name() == exchange_type.__name__:
+            return margin_exchange_candidate
+    return None

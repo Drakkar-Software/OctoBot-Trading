@@ -41,6 +41,7 @@ cdef class ExchangeBuilder:
     cpdef ExchangeBuilder is_simulated(self)
     cpdef ExchangeBuilder is_collecting(self)
     cpdef ExchangeBuilder is_real(self)
+    cpdef ExchangeBuilder is_margin(self, bint use_margin=*)
     cpdef ExchangeBuilder is_exchange_only(self)
     cpdef ExchangeBuilder is_ignoring_config(self)
     cpdef ExchangeBuilder use_trading_mode(self, str trading_tentacles_path)
