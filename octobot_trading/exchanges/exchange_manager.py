@@ -323,6 +323,11 @@ class ExchangeManager(Initializable):
     def need_to_uniformize_timestamp(timestamp):
         return not is_valid_timestamp(timestamp)
 
+    def get_uniformized_timestamp(self, timestamp):
+        if ExchangeManager.need_to_uniformize_timestamp(timestamp):
+            return self.exchange.get_uniform_timestamp(timestamp)
+        return timestamp
+
     def uniformize_candles_if_necessary(self, candle_or_candles):
         if candle_or_candles:  # TODO improve
             if isinstance(candle_or_candles[0], list):

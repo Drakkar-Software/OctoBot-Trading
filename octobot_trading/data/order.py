@@ -63,6 +63,9 @@ class Order:
         self.order_profitability = 0
         self.total_cost = 0
 
+        # raw exchange order type, used to create order dict
+        self.exchange_order_type = None
+
     @classmethod
     def get_name(cls):
         return cls.__name__
@@ -143,6 +146,8 @@ class Order:
 
         if order_type:
             self.order_type = order_type
+            if self.exchange_order_type is None:
+                self.exchange_order_type = _get_trade_order_type(order_type)
 
         if not self.filled_price and self.filled_quantity and self.total_cost:
             self.filled_price = self.total_cost / self.filled_quantity
@@ -311,6 +316,22 @@ class Order:
             # (should only be used for simulation anyway)
             self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
 
+    def to_dict(self):
+        filled_price = self.filled_price if self.filled_price > 0 else self.origin_price
+        return {
+            ExchangeConstantsOrderColumns.ID.value: self.order_id,
+            ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
+            ExchangeConstantsOrderColumns.PRICE.value: filled_price,
+            ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
+            ExchangeConstantsOrderColumns.TIMESTAMP.value: self.timestamp,
+            ExchangeConstantsOrderColumns.TYPE.value: self.exchange_order_type.value,
+            ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
+            ExchangeConstantsOrderColumns.AMOUNT.value: self.origin_quantity,
+            ExchangeConstantsOrderColumns.COST.value: self.total_cost,
+            ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
+            ExchangeConstantsOrderColumns.FEE.value: self.fee
+        }
+
     def to_string(self):
         return (f"{self.symbol} | "
                 f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
@@ -344,7 +365,25 @@ def parse_order_type(raw_order):
         return None, None
 
 
-def _get_sell_and_buy_types(order_type):
+def _get_trade_order_type(order_type: TraderOrderType) -> TradeOrderType:
+    if order_type == TraderOrderType.BUY_LIMIT \
+            or order_type == TraderOrderType.SELL_LIMIT:
+        return TradeOrderType.LIMIT
+    if order_type == TraderOrderType.BUY_MARKET \
+            or order_type == TraderOrderType.SELL_MARKET:
+        return TradeOrderType.MARKET
+    elif order_type == TraderOrderType.STOP_LOSS_LIMIT:
+        return TradeOrderType.STOP_LOSS_LIMIT
+    elif order_type == TraderOrderType.TAKE_PROFIT_LIMIT:
+        return TradeOrderType.TAKE_PROFIT_LIMIT
+    elif order_type == TraderOrderType.TAKE_PROFIT:
+        return TradeOrderType.TAKE_PROFIT
+    elif order_type == TraderOrderType.STOP_LOSS:
+        return TradeOrderType.STOP_LOSS
+    return None
+
+
+def _get_sell_and_buy_types(order_type) -> TraderOrderType:
     if order_type == TradeOrderType.STOP_LOSS:
         return TraderOrderType.STOP_LOSS
     elif order_type == TradeOrderType.STOP_LOSS_LIMIT:

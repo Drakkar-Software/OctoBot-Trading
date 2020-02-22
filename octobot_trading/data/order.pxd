@@ -63,6 +63,8 @@ cdef class Order:
     cdef list last_prices
     cdef public list linked_orders
 
+    cdef public object exchange_order_type # raw exchange order type, used to create order dict
+
     cpdef bint update(self,
             str symbol,
             str order_id=*,
@@ -95,6 +97,8 @@ cdef class Order:
     cpdef double generate_executed_time(self)
     cpdef bint is_self_managed(self)
     cpdef bint update_from_raw(self, dict raw_order)
+    cpdef void consider_as_filled(self)
+    cpdef dict to_dict(self)
 
 cpdef object parse_order_status(dict raw_order)
 

@@ -19,7 +19,9 @@ from octobot_trading.channels.orders import OrdersChannel
 from octobot_trading.data.order import Order
 from octobot_trading.api import LOGGER_TAG
 from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.enums import TraderOrderType
+from octobot_trading.enums import TraderOrderType, OrderStatus
+from octobot_trading.data.order import parse_order_type as order_parse_order_type, \
+    parse_order_status as order_parse_order_status
 
 LOGGER = get_logger(LOGGER_TAG)
 
@@ -56,6 +58,26 @@ async def cancel_order_with_id(exchange_manager, order_id) -> bool:
 
 def get_order_exchange_name(order) -> str:
     return order.exchange_manager.get_exchange_name()
+
+
+def order_to_dict(order) -> dict:
+    return order.to_dict()
+
+
+def parse_order_type(dict_order) -> TraderOrderType:
+    return order_parse_order_type(dict_order)[1]
+
+
+def parse_order_status(dict_order) -> OrderStatus:
+    return order_parse_order_status(dict_order)
+
+
+def get_order_profitability(exchange_manager, order_id) -> float:
+    try:
+        return exchange_manager.exchange_personal_data.orders_manager.get_order(order_id).get_profitability()
+    except KeyError:
+        # try in trades (order might be filled and stored in trades)
+        return exchange_manager.exchange_personal_data.trades_manager.get_trade(order_id).trade_profitability
 
 
 async def subscribe_to_order_channels(callback):
