@@ -29,6 +29,7 @@ class TradeOrderType(Enum):
     TAKE_PROFIT = "take_profit"
     TAKE_PROFIT_LIMIT = "take_profit_limit"
     LIMIT_MAKER = "limit_maker"  # LIMIT_MAKER is a limit order that is rejected if would be filled as taker
+    UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
 class EvaluatorStates(Enum):
@@ -57,6 +58,7 @@ class TraderOrderType(Enum):
     TRAILING_STOP = "trailing_stop"
     TAKE_PROFIT = "take_profit"
     TAKE_PROFIT_LIMIT = "take_profit_limit"
+    UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
 class ExchangeConstantsTickersColumns(Enum):
