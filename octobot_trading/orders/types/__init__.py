@@ -22,7 +22,7 @@ from octobot_trading.orders.types.sell_market_order import SellMarketOrder
 from octobot_trading.orders.types.stop_loss_limit_order import StopLossLimitOrder
 from octobot_trading.orders.types.stop_loss_order import StopLossOrder
 from octobot_trading.orders.types.trailing_stop_order import TrailingStopOrder
-
+from octobot_trading.orders.types.unknown_order import UnknownOrder
 
 TraderOrderTypeClasses = {
     TraderOrderType.BUY_MARKET: BuyMarketOrder,
@@ -32,4 +32,5 @@ TraderOrderTypeClasses = {
     TraderOrderType.STOP_LOSS_LIMIT: StopLossLimitOrder,
     TraderOrderType.SELL_MARKET: SellMarketOrder,
     TraderOrderType.SELL_LIMIT: SellLimitOrder,
+    TraderOrderType.UNKNOWN: UnknownOrder,
 }

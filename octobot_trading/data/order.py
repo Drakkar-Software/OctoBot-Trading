@@ -305,6 +305,10 @@ class Order:
             raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value])
 
     def __update_type_from_raw(self, raw_order):
+        try:
+            self.exchange_order_type = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
+        except ValueError:
+            self.exchange_order_type = TradeOrderType.UNKNOWN
         self.side, self.order_type = parse_order_type(raw_order)
 
     def __update_taker_maker_from_raw(self):
@@ -343,23 +347,35 @@ class Order:
 def parse_order_type(raw_order):
     try:
         side: TradeOrderSide = TradeOrderSide(raw_order[ExchangeConstantsOrderColumns.SIDE.value])
-        order_type: TradeOrderType = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
-
-        if side == TradeOrderSide.BUY:
-            if order_type == TradeOrderType.LIMIT or order_type == TradeOrderType.LIMIT_MAKER:
-                order_type = TraderOrderType.BUY_LIMIT
-            elif order_type == TradeOrderType.MARKET:
-                order_type = TraderOrderType.BUY_MARKET
+        order_type: TradeOrderType = TradeOrderType.UNKNOWN
+        parsed_order_type: TraderOrderType = TraderOrderType.UNKNOWN
+        try:
+            order_type = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
+        except ValueError as e:
+            if raw_order[ExchangeConstantsOrderColumns.TYPE.value] is None:
+                # No order type info: use unknown order type
+                return side, TraderOrderType.UNKNOWN
             else:
-                order_type = _get_sell_and_buy_types(order_type)
+                # Incompatible order type info: raise error
+                raise e
+
+        if order_type == TradeOrderType.UNKNOWN:
+            parsed_order_type = TraderOrderType.UNKNOWN
+        elif side == TradeOrderSide.BUY:
+            if order_type == TradeOrderType.LIMIT or order_type == TradeOrderType.LIMIT_MAKER:
+                parsed_order_type = TraderOrderType.BUY_LIMIT
+            elif order_type == TradeOrderType.MARKET:
+                parsed_order_type = TraderOrderType.BUY_MARKET
+            else:
+                parsed_order_type = _get_sell_and_buy_types(order_type)
         elif side == TradeOrderSide.SELL:
             if order_type == TradeOrderType.LIMIT or order_type == TradeOrderType.LIMIT_MAKER:
-                order_type = TraderOrderType.SELL_LIMIT
+                parsed_order_type = TraderOrderType.SELL_LIMIT
             elif order_type == TradeOrderType.MARKET:
-                order_type = TraderOrderType.SELL_MARKET
+                parsed_order_type = TraderOrderType.SELL_MARKET
             else:
-                order_type = _get_sell_and_buy_types(order_type)
-        return side, order_type
+                parsed_order_type = _get_sell_and_buy_types(order_type)
+        return side, parsed_order_type
     except KeyError:
         get_logger(Order.__class__.__name__).error("Failed to parse order type")
         return None, None
