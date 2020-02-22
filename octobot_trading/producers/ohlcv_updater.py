@@ -61,8 +61,7 @@ class OHLCVUpdater(OHLCVProducer):
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     await self._initialize_candles(time_frame, pair)
         except Exception as e:
-            self.logger.error(f"Error while initializing candles: {e}")
-            self.logger.exception(e)
+            self.logger.exception(e, True, f"Error while initializing candles: {e}")
         finally:
             self.logger.debug("Candle history loaded")
             self.ohlcv_initialized_event.set()
@@ -130,7 +129,7 @@ class OHLCVUpdater(OHLCVProducer):
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(f"Failed to update ohlcv data for {pair} on {time_frame} : {e}")
+                self.logger.exception(e, True, f"Failed to update ohlcv data for {pair} on {time_frame} : {e}")
                 await asyncio.sleep(self.OHLCV_ON_ERROR_TIME)
 
     async def resume(self) -> None:

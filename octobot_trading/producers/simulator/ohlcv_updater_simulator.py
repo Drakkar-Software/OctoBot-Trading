@@ -94,7 +94,6 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
             self.logger.info(f"Loaded pre-backtesting starting timestamp historical "
                              f"candles for: {pair} in {time_frame}")
         except Exception as e:
-            self.logger.error(f"Error while fetching historical candles: {e}")
-            self.logger.exception(e)
+            self.logger.exception(e, True, f"Error while fetching historical candles: {e}")
         if ohlcv_data:
             await self.push(time_frame, pair, [ohlcv[-1] for ohlcv in ohlcv_data], replace_all=True)

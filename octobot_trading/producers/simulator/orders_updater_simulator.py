@@ -52,7 +52,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                 self.logger.info(f"Forcing real trader refresh.")
                 self.channel.exchange_manager.trader.force_refresh_orders_and_portfolio()
         except Exception as e:
-            self.logger.exception(f"Fail to handle recent trade : {e}")
+            self.logger.exception(e, True, f"Fail to handle recent trade : {e}")
 
     """
     Ask orders to check their status
@@ -110,7 +110,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
         except InsufficientFunds as e:
             self.logger.error(f"Not enough funds to create order: {e} (updating {order}).")
         except Exception as e:
-            self.logger.exception(f"Fail to update order status : {e} (concerned order : {order}).")
+            self.logger.exception(e, True, f"Fail to update order status : {e} (concerned order : {order}).")
         finally:
             return order_filled
 

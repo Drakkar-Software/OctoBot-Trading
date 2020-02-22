@@ -49,8 +49,7 @@ class PositionsProducer(ExchangeChannelProducer):
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
-            self.logger.error(f"exception when triggering update: {e}")
-            self.logger.exception(e)
+            self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
     async def send(self, symbol, position, is_closed=False, is_updated=False, is_from_bot=True):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):

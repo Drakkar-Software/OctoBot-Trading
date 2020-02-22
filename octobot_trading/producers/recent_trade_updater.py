@@ -37,7 +37,7 @@ class RecentTradeUpdater(RecentTradeProducer):
                                 partial=True)
             await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
         except Exception as e:
-            self.logger.exception(f"Fail to initialize recent trades : {e}")
+            self.logger.exception(e, True, f"Fail to initialize recent trades : {e}")
 
     async def start(self):
         await self.init_recent_trades()
@@ -58,7 +58,7 @@ class RecentTradeUpdater(RecentTradeProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(f"Fail to update recent trades : {e}")
+                self.logger.exception(e, True, f"Fail to update recent trades : {e}")
 
     def __cleanup_trades_dict(self, recent_trades):
         try:

@@ -115,8 +115,7 @@ class PortfolioProfitabilty:
             self.logger.warning(f"Missing ticker data to calculate profitability")
             self.logger.warning(f"Missing {e} ticker data to calculate profitability")
         except Exception as e:
-            self.logger.error(str(e))
-            self.logger.exception(e)
+            self.logger.exception(e, True, str(e))
 
     """ Returns the % move average of all the watched cryptocurrencies between bot's start time and now
     """

@@ -137,7 +137,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
                                     channels=self.channels,
                                     callbacks=self.callbacks))
         except ValueError as e:
-            self.logger.exception(f"Fail to create feed : {e}")
+            self.logger.exception(e, True, f"Fail to create feed : {e}")
 
     @classmethod
     def get_name(cls):

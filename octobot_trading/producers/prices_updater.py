@@ -40,7 +40,7 @@ class MarkPriceUpdater(MarkPriceProducer):
 
             await self.push(symbol, mark_price)
         except Exception as e:
-            self.logger.exception(f"Fail to handle recent trades update : {e}")
+            self.logger.exception(e, True, f"Fail to handle recent trades update : {e}")
 
     """
     Ticker channel consumer callback
@@ -50,4 +50,4 @@ class MarkPriceUpdater(MarkPriceProducer):
         try:
             await self.push(symbol, ticker[ExchangeConstantsTickersColumns.CLOSE.value])
         except Exception as e:
-            self.logger.exception(f"Fail to handle ticker update : {e}")
+            self.logger.exception(e, True, f"Fail to handle ticker update : {e}")
