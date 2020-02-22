@@ -79,7 +79,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                 if order_filled:
                     await get_chan(ORDERS_CHANNEL, self.channel.exchange_manager.id).get_internal_producer() \
                         .send(symbol=order.symbol,
-                              order=order,
+                              order=order.to_dict(),
                               is_from_bot=True,
                               is_closed=True,
                               is_updated=False)

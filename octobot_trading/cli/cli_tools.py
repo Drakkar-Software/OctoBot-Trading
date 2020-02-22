@@ -72,7 +72,7 @@ async def trades_callback(exchange: str, exchange_id: str, symbol: str, trade, o
                      f"|| OLD_TRADE = {old_trade}")
 
 
-async def orders_callback(exchange: str, exchange_id: str, symbol: str,  order, is_closed, is_updated, is_from_bot):
+async def orders_callback(exchange: str, exchange_id: str, symbol: str,  order: dict, is_closed, is_updated, is_from_bot):
     if get_should_display_callbacks_logs():
         order_string = f"ORDERS : EXCHANGE = {exchange} || SYMBOL = {symbol} ||"
         if is_closed:

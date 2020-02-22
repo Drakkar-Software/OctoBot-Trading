@@ -63,6 +63,9 @@ class OpenOrdersUpdater(OrdersProducer):
         for open_order in open_orders:
             try:
                 open_order.pop(ExchangeConstantsOrderColumns.INFO.value)
+                exchange_timestamp = open_order[ExchangeConstantsOrderColumns.TIMESTAMP.value]
+                open_order[ExchangeConstantsOrderColumns.TIMESTAMP.value] = \
+                    self.channel.exchange_manager.get_uniformized_timestamp(exchange_timestamp)
             except KeyError as e:
                 self.logger.error(f"Fail to cleanup open order dict ({e})")
         return open_orders
