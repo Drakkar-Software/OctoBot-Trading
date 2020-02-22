@@ -43,7 +43,7 @@ class TickerUpdater(TickerProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(f"Fail to update ticker : {e}")
+                self.logger.exception(e, True, f"Fail to update ticker : {e}")
 
     def _cleanup_ticker_dict(self, ticker):
         try:

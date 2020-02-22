@@ -36,8 +36,7 @@ class PositionsUpdater(PositionsProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(e)
-                self.logger.error(f"Fail to update positions : {e}")
+                self.logger.exception(e, True, f"Fail to update positions : {e}")
 
             await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
 

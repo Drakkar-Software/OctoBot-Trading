@@ -42,7 +42,7 @@ class OrderBookUpdater(OrderBookProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.exception(f"Fail to update order book : {e}")
+                self.logger.exception(e, True, f"Fail to update order book : {e}")
 
     async def resume(self) -> None:
         await super().resume()

@@ -106,8 +106,7 @@ class AbstractWebsocket:
         try:
             return self.exchange_manager.get_ccxt_exchange().get_client().markets_by_id[symbol]['symbol']
         except Exception as e:
-            self.logger.error(f"Can't parse {symbol} from ccxt exchange")
-            self.logger.exception(e)
+            self.logger.exception(e, True, f"Can't parse {symbol} from ccxt exchange")
 
     @staticmethod
     def safe_lower_string(dictionary, key, default_value=None):

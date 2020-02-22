@@ -75,7 +75,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(balance=balance, ticker=None, symbol=None)
         except Exception as e:
-            self.logger.exception(f"Fail to handle balance update : {e}")
+            self.logger.exception(e, True, f"Fail to handle balance update : {e}")
 
     """
     Ticker channel consumer callback
@@ -85,4 +85,4 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(symbol=symbol, ticker=ticker, balance=None)
         except Exception as e:
-            self.logger.exception(f"Fail to handle ticker update : {e}")
+            self.logger.exception(e, True, f"Fail to handle ticker update : {e}")

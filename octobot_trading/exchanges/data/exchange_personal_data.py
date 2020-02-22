@@ -54,9 +54,8 @@ class ExchangePersonalData(Initializable):
                 await self.orders_manager.initialize()
                 await self.positions_manager.initialize()
             except Exception as e:
-                self.logger.error(f"Error when initializing : {e}. "
-                                  f"{self.exchange.name} personal data disabled.")
-                self.logger.exception(e)
+                self.logger.exception(e, True, f"Error when initializing : {e}. "
+                                               f"{self.exchange.name} personal data disabled.")
 
     # updates
     async def handle_portfolio_update(self, balance, should_notify: bool = True) -> bool:
@@ -66,7 +65,7 @@ class ExchangePersonalData(Initializable):
                 await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer().send(balance)
             return changed
         except AttributeError as e:
-            self.logger.exception(f"Failed to update balance : {e}")
+            self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
     async def handle_portfolio_update_from_order(self, order, should_notify: bool = True) -> bool:
@@ -77,7 +76,7 @@ class ExchangePersonalData(Initializable):
                     get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
             return changed
         except AttributeError as e:
-            self.logger.exception(f"Failed to update balance : {e}")
+            self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
     async def handle_portfolio_profitability_update(self, balance, ticker, symbol, should_notify: bool = True):
@@ -97,7 +96,7 @@ class ExchangePersonalData(Initializable):
                           market_profitability_percent=portfolio_profitability.market_profitability_percent,
                           initial_portfolio_current_profitability=portfolio_profitability.initial_portfolio_current_profitability)
         except Exception as e:
-            self.logger.exception(f"Failed to update portfolio profitability : {e}")
+            self.logger.exception(e, True, f"Failed to update portfolio profitability : {e}")
 
     async def handle_order_update(self, symbol, order_id, order, should_notify: bool = True,
                                   skip_upsert: bool = False) -> (bool, bool):
@@ -114,7 +113,7 @@ class ExchangePersonalData(Initializable):
                           is_updated=changed)
             return changed
         except Exception as e:
-            self.logger.exception(f"Failed to update order : {e}")
+            self.logger.exception(e, True, f"Failed to update order : {e}")
             return False, False
 
     async def handle_order_instance_update(self, order, should_notify: bool = True):
@@ -129,7 +128,7 @@ class ExchangePersonalData(Initializable):
                           is_updated=changed)
             return changed
         except Exception as e:
-            self.logger.exception(f"Failed to update order instance : {e}")
+            self.logger.exception(e, True, f"Failed to update order instance : {e}")
             return False
 
     async def handle_closed_order_update(self, symbol, order_id, order, should_notify: bool = True) -> bool:
@@ -144,7 +143,7 @@ class ExchangePersonalData(Initializable):
                           is_updated=changed)
             return changed
         except Exception as e:
-            self.logger.exception(f"Failed to update order : {e}")
+            self.logger.exception(e, True, f"Failed to update order : {e}")
             return False
 
     async def handle_trade_update(self, symbol, trade_id, trade, should_notify: bool = True):
@@ -157,7 +156,7 @@ class ExchangePersonalData(Initializable):
                           old_trade=False)
             return changed
         except Exception as e:
-            self.logger.exception(f"Failed to update trade : {e}")
+            self.logger.exception(e, True, f"Failed to update trade : {e}")
             return False
 
     async def handle_trade_instance_update(self, trade, should_notify: bool = True):
@@ -170,7 +169,7 @@ class ExchangePersonalData(Initializable):
                           old_trade=False)
             return changed
         except Exception as e:
-            self.logger.exception(f"Failed to update trade instance : {e}")
+            self.logger.exception(e, True, f"Failed to update trade instance : {e}")
             return False
 
     async def handle_position_update(self, symbol, position_id, position, should_notify: bool = True):
@@ -185,7 +184,7 @@ class ExchangePersonalData(Initializable):
                           is_from_bot=True)
             return changed
         except Exception as e:
-            self.logger.exception(f"Failed to update position : {e}")
+            self.logger.exception(e, True, f"Failed to update position : {e}")
             return False
 
     async def handle_position_instance_update(self, position, should_notify: bool = True):
@@ -200,7 +199,7 @@ class ExchangePersonalData(Initializable):
                           is_from_bot=True)
             return changed
         except Exception as e:
-            self.logger.exception(f"Failed to update position instance : {e}")
+            self.logger.exception(e, True, f"Failed to update position instance : {e}")
             return False
 
     def get_order_portfolio(self, order):

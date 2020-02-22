@@ -91,8 +91,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
                                       symbol=symbol,
                                       time_frame=time_frame)
         except Exception as e:
-            self.logger.error(f"Error when finalizing: {e}")
-            self.logger.exception(e)
+            self.logger.exception(e, True, f"Error when finalizing: {e}")
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
         """
