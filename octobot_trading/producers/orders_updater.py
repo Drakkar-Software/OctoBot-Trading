@@ -41,7 +41,7 @@ class OpenOrdersUpdater(OrdersProducer):
             self.logger.error(f"Fail to initialize open orders : {e}")
 
     async def start(self):
-        # await self.initialize()
+        await self.initialize()
         while not self.should_stop and not self.channel.is_paused:
             try:
                 for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:

@@ -103,9 +103,8 @@ class Order:
             self.origin_price = price
             changed = True
 
-        # TODO
-        # if fee is not None and self.fee != fee and self.filled_quantity is not None:
-        #     self.fee = self.get_computed_fee()
+        if fee is not None and self.fee != fee:
+            self.fee = fee
 
         if current_price and self.created_last_price != current_price:
             self.created_last_price = current_price
