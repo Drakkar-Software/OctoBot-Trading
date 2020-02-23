@@ -33,3 +33,4 @@ cdef class AbstractExchange(Initializable):
     cdef public str name
 
     cpdef double get_exchange_current_time(self)
+    cpdef str get_name(cls)
