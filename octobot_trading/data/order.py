@@ -288,6 +288,15 @@ class Order:
             timestamp=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
         )
 
+    def consider_as_filled(self):
+        self.status = OrderStatus.FILLED
+        if self.executed_time == 0:
+            self.executed_time = self.timestamp
+        if self.filled_quantity == 0:
+            self.filled_quantity = self.origin_quantity
+        if self.filled_price == 0:
+            self.filled_price = self.origin_price
+
     def update_order_from_raw(self, raw_order):
         self.status = parse_order_status(raw_order)
         self.total_cost = raw_order[ExchangeConstantsOrderColumns.COST.value]
