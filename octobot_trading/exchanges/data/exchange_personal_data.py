@@ -152,7 +152,7 @@ class ExchangePersonalData(Initializable):
             if should_notify:
                 await get_chan(TRADES_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=symbol,
-                          trade=trade,
+                          trade=trade.to_dict(),
                           old_trade=False)
             return changed
         except Exception as e:
@@ -165,7 +165,7 @@ class ExchangePersonalData(Initializable):
             if should_notify:
                 await get_chan(TRADES_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=trade.symbol,
-                          trade=trade,
+                          trade=trade.to_dict(),
                           old_trade=False)
             return changed
         except Exception as e:

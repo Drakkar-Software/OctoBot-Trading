@@ -16,7 +16,7 @@
 
 import time
 
-from octobot_trading.enums import OrderStatus
+from octobot_trading.enums import OrderStatus, ExchangeConstantsOrderColumns
 
 
 class Trade:
@@ -47,6 +47,9 @@ class Trade:
         self.trade_profitability = 0
         self.total_cost = 0
 
+        # raw exchange trade type, used to create trade dict
+        self.exchange_trade_type = None
+
     def update_from_order(self, order, creation_time=0, canceled_time=0, executed_time=0):
         self.currency, self.market = order.get_currency_and_market()
         self.taker_or_maker = order.taker_or_maker
@@ -56,6 +59,7 @@ class Trade:
         self.origin_quantity = order.origin_quantity
         self.total_cost = order.total_cost
         self.trade_type = order.order_type
+        self.exchange_trade_type = order.exchange_order_type
         self.status = order.status
         self.fee = order.fee
         self.trade_id = order.order_id
@@ -65,3 +69,19 @@ class Trade:
         self.canceled_time = order.canceled_time if order.canceled_time > 0 else canceled_time
         self.executed_time = order.executed_time if order.executed_time > 0 else executed_time
         self.symbol = order.symbol
+
+    def to_dict(self):
+        trade_time = self.executed_time if self.status is not OrderStatus.CANCELED else self.canceled_time
+        return {
+            ExchangeConstantsOrderColumns.ID.value: self.trade_id,
+            ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
+            ExchangeConstantsOrderColumns.PRICE.value: self.executed_price,
+            ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
+            ExchangeConstantsOrderColumns.TIMESTAMP.value: trade_time,
+            ExchangeConstantsOrderColumns.TYPE.value: self.exchange_trade_type.value,
+            ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
+            ExchangeConstantsOrderColumns.AMOUNT.value: self.executed_quantity,
+            ExchangeConstantsOrderColumns.COST.value: self.total_cost,
+            ExchangeConstantsOrderColumns.TAKERORMAKER.value: self.taker_or_maker,
+            ExchangeConstantsOrderColumns.FEE.value: self.fee
+        }
