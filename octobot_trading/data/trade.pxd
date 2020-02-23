@@ -53,6 +53,8 @@ cdef class Trade:
 
     cdef public dict fee # Dict[str, Union[str, double]]
 
+    cdef public object exchange_trade_type # raw exchange trade type, used to create trade dict
+
     cpdef void update_from_order(self,
                                  Order order,
                                  double canceled_time=*,

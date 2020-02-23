@@ -14,18 +14,31 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.api.exchange import get_exchange_ids
-from octobot_trading.api.orders import get_order_exchange_name
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.trades import TradesChannel
+from octobot_trading.enums import TraderOrderType
+from octobot_trading.data.order import parse_order_type as order_parse_order_type
 
 
-def get_trade_history(exchange_manager, symbol=None) -> list:
-    if symbol is None:
-        return exchange_manager.exchange_personal_data.trades_manager.trades.values()
+def get_trade_history(exchange_manager, symbol=None, since=None, as_dict=False) -> list:
+    return [trade.to_dict() if as_dict else trade
+            for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values()
+            if _trade_filter(trade, symbol, since)]
+
+
+def _trade_filter(trade, symbol=None, timestamp=None) -> bool:
+    if symbol is None and timestamp is None:
+        return True
+    elif symbol is None and timestamp is not None:
+        return _is_trade_after(trade, timestamp)
+    elif symbol is not None and timestamp is None:
+        return trade.symbol == symbol
     else:
-        return [trade
-                for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values()
-                if trade.symbol == symbol]
+        return trade.symbol == symbol and _is_trade_after(trade, timestamp)
+
+
+def _is_trade_after(trade, timestamp) -> bool:
+    return trade.executed_time > timestamp or trade.canceled_time > timestamp
 
 
 def get_total_paid_trading_fees(exchange_manager) -> dict:
@@ -34,6 +47,15 @@ def get_total_paid_trading_fees(exchange_manager) -> dict:
 
 def get_trade_exchange_name(trade) -> str:
     return trade.exchange_manager.get_exchange_name()
+
+
+def parse_trade_type(dict_trade) -> TraderOrderType:
+    # can use parse_order_type since format is compatible
+    return order_parse_order_type(dict_trade)[1]
+
+
+def trade_to_dict(trade) -> dict:
+    return trade.to_dict()
 
 
 async def subscribe_to_trades_channel(callback):

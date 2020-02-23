@@ -63,6 +63,9 @@ class TradesManager(Initializable):
                 self.logger.warning(f"Trade without any registered fee: {trade}")
         return total_fees
 
+    def get_trade(self, trade_id):
+        return self.trades[trade_id]
+
     # private
     def _check_trades_size(self):
         if len(self.trades) > self.MAX_TRADES_COUNT:

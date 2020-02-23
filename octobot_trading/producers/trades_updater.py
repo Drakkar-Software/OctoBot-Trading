@@ -67,6 +67,9 @@ class TradesUpdater(TradesProducer):
         for trade in trades:
             try:
                 trade.pop(ExchangeConstantsOrderColumns.INFO.value)
+                exchange_timestamp = trade[ExchangeConstantsOrderColumns.TIMESTAMP.value]
+                trade[ExchangeConstantsOrderColumns.TIMESTAMP.value] = \
+                    self.channel.exchange_manager.get_uniformized_timestamp(exchange_timestamp)
             except KeyError as e:
                 self.logger.error(f"Fail to cleanup trade dict ({e})")
         return trades
