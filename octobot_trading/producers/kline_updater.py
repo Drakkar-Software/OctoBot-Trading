@@ -25,6 +25,7 @@ from octobot_trading.channels.kline import KlineProducer
 class KlineUpdater(KlineProducer):
     CHANNEL_NAME = KLINE_CHANNEL
     KLINE_REFRESH_TIME = 8
+    QUICK_KLINE_REFRESH_TIME = 3
     KLINE_LIMIT = 1
 
     def __init__(self, channel):
@@ -50,26 +51,31 @@ class KlineUpdater(KlineProducer):
     async def time_frame_watcher(self, time_frame):
         while not self.should_stop and not self.channel.is_paused:
             try:
-                candle: list = []
                 started_time = time.time()
+                quick_sleep = False
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                    candle = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
-                                                                                            time_frame,
-                                                                                            limit=self.KLINE_LIMIT)
+                    candle: list = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
+                                                                                                  time_frame,
+                                                                                                  limit=self.KLINE_LIMIT)
                     try:
                         candle = candle[0]
                         self.channel.exchange_manager.uniformize_candles_if_necessary(candle)
                         await self.push(time_frame, pair, candle)
                     except TypeError:
                         pass
+                    except IndexError:
+                        quick_sleep = True
+                        self.logger.warning(f"Not enough data to compute kline data in {time_frame} for {pair}. "
+                                            f"Kline will be updated with the next refresh.")
 
-                if candle:
-                    await asyncio.sleep(self.KLINE_REFRESH_TIME - (time.time() - started_time))
+                sleep_time = max((self.QUICK_KLINE_REFRESH_TIME if quick_sleep else self.KLINE_REFRESH_TIME)
+                                 - (time.time() - started_time), 0)
+                await asyncio.sleep(sleep_time)
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.error(f"Failed to update kline data in {time_frame} : {e}")
+                self.logger.exception(e, True, f"Failed to update kline data in {time_frame} : {e}")
 
     async def resume(self) -> None:
         await super().resume()
