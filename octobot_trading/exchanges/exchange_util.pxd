@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,11 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.margin.margin_exchange import MarginExchange
+cpdef object get_margin_exchange_class(object exchange_type)
+cpdef object get_rest_exchange_class(object exchange_type)
 
-
-def get_margin_exchange_class_from_exchange_type(exchange_type):
-    for margin_exchange_candidate in MarginExchange.__subclasses__():
-        if margin_exchange_candidate.get_name() == exchange_type.__name__:
-            return margin_exchange_candidate
-    return None
+cdef object _search_exchange_class_from_exchange_type(object exchange_type, object exchange_class)

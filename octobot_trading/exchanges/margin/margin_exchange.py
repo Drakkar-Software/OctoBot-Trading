@@ -23,12 +23,8 @@ class MarginExchange(RestExchange):
     CCXT margin library wrapper
     """
 
-    def __init__(self, config, exchange_type, exchange_manager):
-        super().__init__(config, exchange_type, exchange_manager)
-
-    @classmethod
-    def get_name(cls) -> str:
-        raise NotImplemented("get_name is not implemented")
+    def __init__(self, config, exchange_type, exchange_manager, is_sandboxed=False):
+        super().__init__(config, exchange_type, exchange_manager, is_sandboxed=is_sandboxed)
 
     async def get_position(self):
         raise NotImplementedError("get_position is not implemented")

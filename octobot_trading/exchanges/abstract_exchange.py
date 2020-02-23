@@ -32,3 +32,7 @@ class AbstractExchange(Initializable):
 
     def get_exchange_current_time(self):
         return time.time()
+
+    @classmethod
+    def get_name(cls) -> str:
+        raise NotImplementedError("get_name is not implemented")

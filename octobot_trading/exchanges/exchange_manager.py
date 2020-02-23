@@ -30,7 +30,7 @@ from octobot_trading.exchanges.data.exchange_personal_data import ExchangePerson
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchanges import Exchanges
-from octobot_trading.exchanges.margin.margin_util import get_margin_exchange_class_from_exchange_type
+from octobot_trading.exchanges.exchange_util import get_margin_exchange_class, get_rest_exchange_class
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.exchanges.websockets.websockets_util import check_web_socket_config, search_websocket_class
@@ -157,15 +157,13 @@ class ExchangeManager(Initializable):
     """
     Real exchange
     """
+
     async def _create_real_exchange(self):
         # create REST based on ccxt exchange
         if self.is_margin:
             await self._search_and_create_margin_exchange()
         else:
-            self.exchange = RestExchange(config=self.config,
-                                         exchange_type=self.exchange_type,
-                                         exchange_manager=self,
-                                         is_sandboxed=self.is_sandboxed)
+            await self._search_and_create_rest_exchange()
 
         await self.exchange.initialize()
 
@@ -183,6 +181,7 @@ class ExchangeManager(Initializable):
     """
     Simulated Exchange
     """
+
     async def _create_simulated_exchange(self):
         self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
         await self.exchange.initialize()
@@ -201,15 +200,31 @@ class ExchangeManager(Initializable):
             await self.stop()
 
     """
+    Rest exchange
+    """
+
+    async def _search_and_create_rest_exchange(self):
+        rest_exchange_class = get_rest_exchange_class(self.exchange_type)
+        self.exchange = rest_exchange_class(config=self.config,
+                                            exchange_type=self.exchange_type,
+                                            exchange_manager=self,
+                                            is_sandboxed=self.is_sandboxed)
+
+    """
     Margin exchange
     """
+
     async def _search_and_create_margin_exchange(self):
-        margin_exchange_class = get_margin_exchange_class_from_exchange_type(self.exchange_type)
-        self.exchange = margin_exchange_class(self.config, self.exchange_type, self)
+        margin_exchange_class = get_margin_exchange_class(self.exchange_type)
+        self.exchange = margin_exchange_class(config=self.config,
+                                              exchange_type=self.exchange_type,
+                                              exchange_manager=self,
+                                              is_sandboxed=self.is_sandboxed)
 
     """
     Exchange channels
     """
+
     async def _create_exchange_channels(self):  # TODO filter creation --> not required if pause is managed
         await create_all_subclasses_channel(ExchangeChannel, set_chan, exchange_manager=self)
 
@@ -233,6 +248,7 @@ class ExchangeManager(Initializable):
     """
     Websocket
     """
+
     def _is_managed_by_websocket(self, channel):  # TODO improve checker
         return not self.rest_only and self.has_websocket and \
                any([self.exchange_web_socket.is_feed_available(feed)
@@ -265,6 +281,7 @@ class ExchangeManager(Initializable):
     """
     Exchange Configuration
     """
+
     def check_config(self, exchange_name):
         if CONFIG_EXCHANGE_KEY not in self.config[CONFIG_EXCHANGES][exchange_name] \
                 or CONFIG_EXCHANGE_SECRET not in self.config[CONFIG_EXCHANGES][exchange_name]:
