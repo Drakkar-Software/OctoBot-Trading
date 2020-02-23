@@ -85,6 +85,8 @@ class TestTradeFactory:
         assert trade.executed_quantity == 1.5
         assert trade.origin_price == 0.06917684
         assert trade.executed_price == 0.06917684
+        assert trade.executed_time == 1502962946216
+        assert trade.status == OrderStatus.FILLED
 
         await self.stop(exchange_manager)
 

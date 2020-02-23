@@ -21,6 +21,7 @@ from octobot_trading.orders.order_factory import create_order_from_raw, create_o
 def create_trade_instance_from_raw(trader, raw_trade):
     order = create_order_from_raw(trader, raw_trade)
     order.update_from_raw(raw_trade)
+    order.consider_as_filled()
     return create_trade_from_order(order)
 
 
