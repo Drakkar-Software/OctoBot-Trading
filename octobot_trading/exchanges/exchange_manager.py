@@ -110,7 +110,8 @@ class ExchangeManager(Initializable):
                 await channel.stop()
                 for consumer in channel.consumers:
                     await channel.remove_consumer(consumer)
-                get_chan(channel_name, self.id).flush()
+                # The following method does not exists
+                # get_chan(channel_name, self.id).flush()
                 del_chan(channel_name, self.id)
             del_exchange_channel_container(self.id)
         except KeyError:
