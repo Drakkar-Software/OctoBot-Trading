@@ -13,13 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import json
 import logging
 
 import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
 from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol
-
 from octobot_commons.config_util import decrypt
 from octobot_commons.constants import MSECONDS_TO_MINUTE
 from octobot_commons.dict_util import get_value_or_default

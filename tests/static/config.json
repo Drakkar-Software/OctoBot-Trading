@@ -72,7 +72,7 @@
     "enabled": true,
     "starting-portfolio": {
       "BTC": 10,
-      "USD": 1000
+      "USDT": 1000
     }
   }
 }

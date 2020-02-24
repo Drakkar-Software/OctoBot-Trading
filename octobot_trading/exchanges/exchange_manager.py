@@ -16,7 +16,6 @@
 import uuid
 
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
-
 from octobot_commons.config_util import has_invalid_default_config_value
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.enums import PriceIndexes
@@ -31,7 +30,6 @@ from octobot_trading.exchanges.data.exchange_personal_data import ExchangePerson
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchanges import Exchanges
-from octobot_trading.exchanges.margin.margin_exchange import MarginExchange
 from octobot_trading.exchanges.margin.margin_util import get_margin_exchange_class_from_exchange_type
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
