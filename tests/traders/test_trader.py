@@ -488,12 +488,17 @@ class TestTrader:
             # 1 order to sell ada, 1 order to buy btc (sell usdt), NO order for usd (not in config pairs)
             assert len(orders) == 2
 
-            sell_ADA_order = orders[0]
+            if orders[0].symbol == "ADA/BTC":
+                sell_ADA_order = orders[0]
+                sell_USDT_order = orders[1]
+            else:
+                sell_ADA_order = orders[1]
+                sell_USDT_order = orders[0]
+
             assert sell_ADA_order.symbol == "ADA/BTC"
             assert sell_ADA_order.order_type == TraderOrderType.SELL_MARKET
             assert sell_ADA_order.origin_quantity == 1500
 
-            sell_USDT_order = orders[1]
             assert sell_USDT_order.symbol == "BTC/USDT"
             assert sell_USDT_order.order_type == TraderOrderType.BUY_MARKET
             assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
