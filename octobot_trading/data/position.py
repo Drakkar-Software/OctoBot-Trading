@@ -15,7 +15,7 @@
 #  License along with this library.
 import time
 
-from octobot_trading.enums import ExchangeConstantsPositionColumns
+from octobot_trading.enums import ExchangeConstantsPositionColumns, PositionStatus
 
 
 class Position:
@@ -34,11 +34,10 @@ class Position:
         self.liquidation_price = 0
         self.unrealised_pnl = 0
         self.leverage = 0
-        self.is_open = True
+        self.status = PositionStatus.OPEN
 
-    def __update(self, position_id, symbol, currency, market,
-                 timestamp, entry_price, mark_price, quantity,
-                 liquidation_price, unrealised_pnl, leverage):
+    def _update(self, position_id, symbol, currency, market, timestamp, entry_price, mark_price, quantity,
+                liquidation_price, unrealised_pnl, leverage, status=None):
         changed: bool = False
 
         if position_id and self.position_id != position_id:
@@ -54,7 +53,7 @@ class Position:
                 self.creation_time = time.time()
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
-                self.creation_time = self.exchange.get_uniform_timestamp(timestamp)
+                self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
             self.timestamp = self.creation_time
 
         if quantity and self.quantity != quantity:
@@ -78,13 +77,20 @@ class Position:
         if liquidation_price and self.liquidation_price != liquidation_price:
             self.liquidation_price = liquidation_price
 
+        if status and self.status != status:
+            self.status = status
+
         return changed
+
+    def is_liquidated(self):
+        return self.status is PositionStatus.LIQUIDATED
 
     def update_position_from_raw(self, raw_position):
         currency, market = self.exchange_manager.get_exchange_quote_and_base(
             raw_position[ExchangeConstantsPositionColumns.SYMBOL.value])
-        return self.__update(**{
-            "symbol": self.exchange_manager.get_exchange_symbol(raw_position[ExchangeConstantsPositionColumns.SYMBOL.value]),
+        return self._update(**{
+            "symbol": self.exchange_manager.get_exchange_symbol(
+                raw_position[ExchangeConstantsPositionColumns.SYMBOL.value]),
             "currency": currency,
             "market": market,
             "entry_price": raw_position[ExchangeConstantsPositionColumns.ENTRY_PRICE.value],
@@ -96,3 +102,38 @@ class Position:
             "leverage": raw_position[ExchangeConstantsPositionColumns.LEVERAGE.value],
             "mark_price": raw_position[ExchangeConstantsPositionColumns.MARK_PRICE.value]
         })
+
+    def _check_for_liquidation(self):
+        """
+        _check_for_liquidation will define the rules for a simulated position to be liquidated
+        """
+        raise NotImplementedError("_check_for_liquidation not implemented")
+
+    async def close(self):
+        await self.trader.notify_position_close(self)
+
+    async def liquidate(self):
+        await self.trader.notify_position_liquidate(self)
+
+    async def update_status(self, mark_price):
+        self.mark_price = mark_price
+
+        # liquidation check
+        self._check_for_liquidation()
+        if self.is_liquidated():
+            await self.liquidate()
+
+        # update P&L
+        # TODO
+
+
+class ShortPosition(Position):
+    def _check_for_liquidation(self):
+        if self.mark_price >= self.liquidation_price:
+            self.status = PositionStatus.LIQUIDATED
+
+
+class LongPosition(Position):
+    def _check_for_liquidation(self):
+        if self.mark_price <= self.liquidation_price:
+            self.status = PositionStatus.LIQUIDATED

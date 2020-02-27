@@ -48,6 +48,12 @@ class OrderStatus(Enum):
     CLOSED = "closed"
 
 
+class PositionStatus(Enum):
+    LIQUIDATED = "liquidated"
+    OPEN = "open"
+    CLOSED = "closed"
+
+
 class TraderOrderType(Enum):
     BUY_MARKET = "buy_market"
     BUY_LIMIT = "buy_limit"

@@ -36,11 +36,11 @@ UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = {
     MARK_PRICE_CHANNEL: MarkPriceUpdaterSimulator
 }
 
-# TODO PositionsUpdaterSimulator
 AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [
     CloseOrdersUpdaterSimulator,
     OpenOrdersUpdaterSimulator,
-    BalanceProfitabilityUpdater
+    BalanceProfitabilityUpdater,
+    PositionsUpdaterSimulator
 ]
 
 # Required data to run updater (requires at least one per list)

@@ -18,4 +18,4 @@ from octobot_trading.producers.positions_updater cimport PositionsUpdater
 
 
 cdef class PositionsUpdaterSimulator(PositionsUpdater):
-    pass
+    cdef object exchange_manager
