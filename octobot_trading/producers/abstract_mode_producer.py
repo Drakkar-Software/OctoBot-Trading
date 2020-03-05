@@ -37,6 +37,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
 
         self.final_eval = INIT_EVAL_NOTE
 
+        self.state = None
         self.consumer = None
 
     def flush(self):
@@ -128,12 +129,12 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         if trader.is_enabled():
             async with self.exchange_manager.exchange_personal_data.portfolio_manager.get_lock():
                 pf = self.exchange_manager.exchange_personal_data.portfolio_manager
-                order_creator = self.trading_mode.get_creator(self.symbol)
-                if await order_creator.can_create_order(self.symbol, self.exchange_manager, self.state, pf):
+                order_creator = self.trading_mode.get_creator(self.trading_mode.symbol)
+                if await order_creator.can_create_order(self.trading_mode.symbol, self.exchange_manager, self.state, pf):
                     try:
                         _ = await order_creator.create_new_order(
                             self.final_eval,
-                            self.symbol,
+                            self.trading_mode.symbol,
                             self.exchange_manager,
                             trader,
                             pf,
@@ -145,7 +146,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
                                 await trader.force_refresh_orders_and_portfolio(pf)
                                 _ = await order_creator.create_new_order(
                                     self.final_eval,
-                                    self.symbol,
+                                    self.trading_mode.symbol,
                                     self.exchange_manager,
                                     trader,
                                     pf,

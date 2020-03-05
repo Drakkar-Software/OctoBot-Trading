@@ -21,7 +21,7 @@ from octobot_trading.util import is_trader_enabled as config_is_trader_enabled, 
 LOGGER = get_logger(LOGGER_TAG)
 
 
-def is_trader_enabled_in_config(exchange_manager) -> bool:
+def is_trader_enabled_in_config_from_exchange_manager(exchange_manager) -> bool:
     return exchange_manager.trader.enabled(exchange_manager.trader.config)
 
 

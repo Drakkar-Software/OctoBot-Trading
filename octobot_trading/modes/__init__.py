@@ -1,3 +1,4 @@
+# pylint: disable=E0611, E0401
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #

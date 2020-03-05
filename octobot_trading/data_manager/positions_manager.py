@@ -49,6 +49,14 @@ class PositionsManager(Initializable):
         updated: bool = self._update_position_from_raw(self.positions[position_id], raw_position)
         return updated, not self.positions[position_id].is_open, updated
 
+    def upsert_position_instance(self, position) -> (bool, bool, bool):
+        if position.position_id not in self.positions:
+            self.positions[position.position_id] = position
+            self._check_positions_size()
+            return True, not self.positions[position.position_id].is_open, False
+        # TODO
+        return False
+
     # private
     def _check_positions_size(self):
         if len(self.positions) > self.MAX_POSITIONS_COUNT:

@@ -25,4 +25,6 @@ cdef class AbstractTradingModeProducer(ModeChannelProducer):
 
     cdef public double final_eval
 
+    cdef public object state
+
     cdef public object consumer
