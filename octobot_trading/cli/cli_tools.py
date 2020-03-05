@@ -111,7 +111,7 @@ async def start_exchange(exchange_builder):
     exchange_manager = await exchange_builder.build()
 
     # consumers
-    exchange_id = exchange_factory.exchange_manager.id
+    exchange_id = exchange_manager.id
     await get_trading_chan(TICKER_CHANNEL, exchange_id).new_consumer(ticker_callback)
     await get_trading_chan(RECENT_TRADES_CHANNEL, exchange_id).new_consumer(
         recent_trades_callback)

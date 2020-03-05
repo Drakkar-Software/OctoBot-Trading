@@ -33,18 +33,19 @@ class SubPortfolio(Portfolio):
         return modified
 
     def update_from_parent(self): # TODO
-        # get the current portfolio if percent is relative or if we can't use the origin portfolio
-        if self.is_relative or not self.trader.get_trades_manager().get_origin_portfolio():
-            balance = self.parent_portfolio.get_portfolio()
-
-        # the percent is applied to the origin portfolio (when not relative)
-        else:
-            balance = self.trader.get_trades_manager().get_origin_portfolio()
-
-        # calculate for each currency the new quantity
-        self.portfolio = {currency: {PORTFOLIO_AVAILABLE: balance[currency][PORTFOLIO_AVAILABLE] * self.percent,
-                                     PORTFOLIO_TOTAL: balance[currency][PORTFOLIO_TOTAL] * self.percent}
-                          for currency in balance}
+        # # get the current portfolio if percent is relative or if we can't use the origin portfolio
+        # if self.is_relative or not self.trader.get_trades_manager().get_origin_portfolio():
+        #     balance = self.parent_portfolio.get_portfolio()
+        #
+        # # the percent is applied to the origin portfolio (when not relative)
+        # else:
+        #     balance = self.trader.get_trades_manager().get_origin_portfolio()
+        #
+        # # calculate for each currency the new quantity
+        # self.portfolio = {currency: {PORTFOLIO_AVAILABLE: balance[currency][PORTFOLIO_AVAILABLE] * self.percent,
+        #                              PORTFOLIO_TOTAL: balance[currency][PORTFOLIO_TOTAL] * self.percent}
+        #                   for currency in balance}
+        pass
 
     def set_percent(self, percent):
         if percent and percent > 0:

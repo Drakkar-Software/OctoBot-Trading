@@ -41,6 +41,15 @@ matrix:
         - rm -rf $PACKAGE_FOLDER
         - pytest tests
 
+    - name: "Linux - Python 3.8-dev - Pylint"
+      stage: test
+      os: linux
+      python: 3.8-dev
+      language: python
+      script:
+        - pylint --rcfile=standard.rc octobot_trading
+        - if [ $? -ne 1 ]; then exit 0; fi
+
     - name: "Linux - Python 3 - Deploy"
       stage: deploy
       script:

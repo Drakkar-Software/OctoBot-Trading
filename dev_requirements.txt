@@ -4,6 +4,8 @@ pytest-cov
 pytest-asyncio
 pytest-xdist
 
+pylint
+
 mock>=4.0.1
 
 coverage

@@ -1,4 +1,4 @@
-# cython: language_level=3
+# pylint: disable=E0203
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #

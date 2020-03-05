@@ -1,3 +1,4 @@
+# pylint: disable=E0611
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -101,6 +102,10 @@ class AbstractWebsocket:
         if self.exchange_manager.get_personal_data().get_orders_are_initialized():
             ccxt_order = self.convert_into_ccxt_order(msg)
             self.exchange_manager.get_personal_data().upsert_order(ccxt_order["id"], ccxt_order)
+
+    @abstractmethod
+    def convert_into_ccxt_order(self, msg) -> bool:
+        raise NotImplementedError("convert_into_ccxt_order not implemented")
 
     def _parse_symbol_from_ccxt(self, symbol):
         try:

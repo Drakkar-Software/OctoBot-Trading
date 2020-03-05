@@ -197,7 +197,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
 
     @staticmethod
     def __convert_seconds_to_time_frame(time_frame_seconds):
-        return TimeFramesMinutes(time_frame_seconds / MINUTE_TO_SECONDS)
+        return [tf for tf, tf_min in TimeFramesMinutes.items() if tf_min == time_frame_seconds / MINUTE_TO_SECONDS][0]
 
     @staticmethod
     def __convert_time_frame_minutes_to_seconds(time_frame):

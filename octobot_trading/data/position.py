@@ -54,7 +54,7 @@ class Position:
                 self.creation_time = time.time()
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
-                self.creation_time = self.exchange.get_uniform_timestamp(timestamp)
+                self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
             self.timestamp = self.creation_time
 
         if quantity and self.quantity != quantity:
