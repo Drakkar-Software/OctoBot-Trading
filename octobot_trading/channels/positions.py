@@ -20,7 +20,7 @@ from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
-from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstantsPositionColumns
+from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstantsPositionColumns, PositionStatus
 
 
 class PositionsProducer(ExchangeChannelProducer):
@@ -37,21 +37,23 @@ class PositionsProducer(ExchangeChannelProducer):
                             symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
                         position_id: str = position[ExchangeConstantsOrderColumns.ID.value]
 
-                        changed, is_closed, is_updated = await self.channel.exchange_manager.exchange_personal_data \
-                            .handle_position_update(symbol, position_id, position, should_notify=False)
+                        changed, is_closed, is_updated, is_liquidated = await self.channel.exchange_manager \
+                            .exchange_personal_data.handle_position_update(symbol, position_id, position,
+                                                                           should_notify=False)
 
                         if changed:
                             await self.send(symbol=symbol,
                                             position=position,
                                             is_closed=is_closed,
                                             is_updated=is_updated,
+                                            is_liquidated=position.is_liquidated(),
                                             is_from_bot=is_from_bot)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, symbol, position, is_closed=False, is_updated=False, is_from_bot=True):
+    async def send(self, symbol, position, is_closed=False, is_updated=False, is_liquidated=False, is_from_bot=True):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
@@ -60,6 +62,7 @@ class PositionsProducer(ExchangeChannelProducer):
                 "position": position,
                 "is_closed": is_closed,
                 "is_updated": is_updated,
+                "is_liquidated": is_liquidated,
                 "is_from_bot": is_from_bot
             })
 

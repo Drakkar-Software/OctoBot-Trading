@@ -267,6 +267,23 @@ class Trader(Initializable):
             # remove order to open_orders
             self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
 
+    """
+    Positions
+    """
+
+    async def notify_position_cancel(self, position):
+        # # update portfolio with ended order
+        # async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
+        #     self.exchange_manager.exchange_personal_data.get_order_portfolio(order) \
+        #         .update_portfolio_available(order, is_new_order=False)
+        pass  # TODO
+
+    async def notify_position_close(self, position):
+        pass  # TODO
+
+    async def notify_position_liquidate(self, position):
+        pass  # TODO
+
     # TODO : check if it's replaced by trade updater
     # def update_close_orders(self):
     #     for symbol in self.exchange_manager.exchange_config.get_traded_pairs():
