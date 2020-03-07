@@ -13,12 +13,83 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import copy
 
+from octobot_commons.logging.logging_util import get_logger
+
+from octobot_trading.channels.exchange_channel import get_chan
+from octobot_trading.constants import MARK_PRICE_CHANNEL, POSITIONS_CHANNEL
+from octobot_trading.data.position import Position
+from octobot_trading.enums import PositionStatus
 from octobot_trading.producers.positions_updater import PositionsUpdater
 
 
 class PositionsUpdaterSimulator(PositionsUpdater):
-    SIMULATOR_LAST_PRICES_TO_CHECK = 50
-
     def __init__(self, channel):
         super().__init__(channel)
+        self.exchange_manager = None
+
+    async def start(self):
+        self.exchange_manager = self.channel.exchange_manager
+        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
+        await get_chan(MARK_PRICE_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_mark_price)
+
+    """
+    MarkPrice channel consumer callback
+    """
+
+    async def handle_mark_price(self, exchange: str, exchange_id: str, symbol: str, mark_price):
+        try:
+            await self._update_positions_status(symbol=symbol, mark_price=mark_price)
+        except Exception as e:
+            self.logger.exception(e, True, f"Fail to handle mark price : {e}")
+
+    """
+    Ask positions to check their status
+    Ask liquidation and P&L update process if required
+    """
+
+    async def _update_positions_status(self, symbol: str, mark_price):
+        for position in copy.copy(
+                self.exchange_manager.exchange_personal_data.positions_manager.get_open_positions(symbol=symbol)):
+            position_closed = False
+            try:
+                # ask orders to update their status
+                async with position.lock:
+                    position_closed = await self._update_position_status(position,
+                                                                         mark_price)
+            except Exception as e:
+                raise e
+            finally:
+                # ensure always call fill callback
+                if position_closed:
+                    await get_chan(POSITIONS_CHANNEL, self.channel.exchange_manager.id).get_internal_producer() \
+                        .send(symbol=position.symbol,
+                              order=position.to_dict(),
+                              is_from_bot=True,
+                              is_liquidated=position.is_liquidated(),
+                              is_closed=True,
+                              is_updated=False)
+
+    """
+    Call position status update
+    """
+
+    async def _update_position_status(self,
+                                      position: Position,
+                                      mark_price):
+        position_closed = False
+        try:
+            await position.update_status(mark_price)
+
+            if position.status in (PositionStatus.CLOSED, PositionStatus.LIQUIDATED):
+                position_closed = True
+                self.logger.debug(f"{position.symbol} (ID : {position.position_id})"
+                                  f" closed on {self.channel.exchange.name} "
+                                  f"at {position.mark_price} "
+                                  f"by {'liquidation' if position.is_liquidated() else 'manual close'}")
+                await position.close()
+        except Exception as e:
+            self.logger.exception(e, True, f"Fail to update position status : {e} (concerned position : {position}).")
+        finally:
+            return position_closed
