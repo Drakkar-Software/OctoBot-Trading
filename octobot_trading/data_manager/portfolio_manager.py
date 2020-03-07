@@ -16,7 +16,8 @@
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.constants import CONFIG_SIMULATOR, \
-    CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING, SIMULATOR_CURRENT_PORTFOLIO
+    CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING
+from octobot_trading.data.margin_portfolio import MarginPortfolio
 from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.data.portfolio_profitability import PortfolioProfitabilty
 from octobot_trading.util.initializable import Initializable
@@ -36,7 +37,10 @@ class PortfolioManager(Initializable):
         await self.__reset_portfolio()
 
     async def __reset_portfolio(self):
-        self.portfolio = Portfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
+        if self.exchange_manager.is_margin:
+            self.portfolio = MarginPortfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
+        else:
+            self.portfolio = Portfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
         await self.__load_portfolio()
 
         self.portfolio_profitability = PortfolioProfitabilty(self.config, self.trader, self, self.exchange_manager)
@@ -65,9 +69,9 @@ class PortfolioManager(Initializable):
         portfolio_amount_dict = self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]
 
         try:
-            await self.handle_balance_update(Portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
+            await self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
         except Exception as e:
             self.logger.exception(e, True, f"Error when loading trading history, will reset history. ({e})")
             self.trader.get_previous_state_manager.reset_trading_history()
-            await self.handle_balance_update(Portfolio.get_portfolio_from_amount_dict(
+            await self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(
                 self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]))

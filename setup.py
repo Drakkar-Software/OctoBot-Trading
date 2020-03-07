@@ -64,6 +64,7 @@ packages_list = ["octobot_trading.util.initializable",
                  "octobot_trading.producers.simulator.price_updater_simulator",
                  "octobot_trading.producers.simulator.recent_trade_updater_simulator",
                  "octobot_trading.producers.simulator.ticker_updater_simulator",
+                 "octobot_trading.data.margin_portfolio",
                  "octobot_trading.data.order",
                  "octobot_trading.data.position",
                  "octobot_trading.data.trade",
@@ -139,6 +140,7 @@ CYTHON_DEBUG = False if not os.getenv('CYTHON_DEBUG') else os.getenv('CYTHON_DEB
 
 if CYTHON_DEBUG:
     from Cython.Compiler.Options import get_directive_defaults
+
     get_directive_defaults()['cache_builtins'] = False
 
 setup(
