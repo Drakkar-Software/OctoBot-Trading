@@ -32,6 +32,8 @@ cdef class Position(Initializable):
     cdef public str market
     cdef public str position_id
 
+    cdef public object status # PositionStatus
+
     cdef public int leverage
 
     cdef public double entry_price
@@ -45,7 +47,7 @@ cdef class Position(Initializable):
     cdef public double canceled_time
     cdef public double executed_time
 
-    cdef bint __update(self,
+    cdef bint _update(self,
                       str position_id,
                       str symbol,
                       str currency,
@@ -56,6 +58,15 @@ cdef class Position(Initializable):
                       double quantity,
                       double liquidation_price,
                       double unrealised_pnl,
-                      int leverage)
+                      int leverage,
+                      object status=*)
+    cdef bint _check_for_liquidation(self)
 
     cpdef bint update_position_from_raw(self, dict raw_position)
+    cpdef bint is_liquidated(self)
+
+cdef class ShortPosition(Position):
+    cdef bint _check_for_liquidation(self)
+
+cdef class LongPosition(Position):
+    cdef bint _check_for_liquidation(self)

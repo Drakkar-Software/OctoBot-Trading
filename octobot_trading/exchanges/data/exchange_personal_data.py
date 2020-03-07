@@ -22,6 +22,7 @@ from octobot_trading.data_manager.orders_manager import OrdersManager
 from octobot_trading.data_manager.portfolio_manager import PortfolioManager
 from octobot_trading.data_manager.positions_manager import PositionsManager
 from octobot_trading.data_manager.trades_manager import TradesManager
+from octobot_trading.enums import PositionStatus
 from octobot_trading.util.initializable import Initializable
 
 
@@ -181,7 +182,8 @@ class ExchangePersonalData(Initializable):
                           position=position,
                           is_closed=False,
                           is_updated=changed,
-                          is_from_bot=True)
+                          is_from_bot=True,
+                          is_liquidated=position.is_liquidated())
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position : {e}")
@@ -196,7 +198,8 @@ class ExchangePersonalData(Initializable):
                           position=position,
                           is_closed=False,
                           is_updated=changed,
-                          is_from_bot=True)
+                          is_from_bot=True,
+                          is_liquidated=position.is_liquidated())
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position instance : {e}")
