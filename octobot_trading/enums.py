@@ -21,6 +21,11 @@ class TradeOrderSide(Enum):
     SELL = "sell"
 
 
+class PositionSide(Enum):
+    LONG = "long"
+    SHORT = "short"
+
+
 class TradeOrderType(Enum):
     LIMIT = "limit"
     MARKET = "market"
@@ -45,6 +50,12 @@ class OrderStatus(Enum):
     OPEN = "open"
     PARTIALLY_FILLED = "partially_filled"
     CANCELED = "canceled"
+    CLOSED = "closed"
+
+
+class PositionStatus(Enum):
+    LIQUIDATED = "liquidated"
+    OPEN = "open"
     CLOSED = "closed"
 
 
