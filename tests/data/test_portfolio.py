@@ -65,13 +65,15 @@ class TestPortfolio:
         await self.stop_default(exchange_manager)
 
     async def test_get_portfolio_from_amount_dict(self):
-        assert Portfolio.get_portfolio_from_amount_dict({"zyx": 10, "BTC": 1}) == {
+        _, exchange_manager, portfolio_manager, _ = await self.init_default()
+        assert portfolio_manager.portfolio.get_portfolio_from_amount_dict({"zyx": 10, "BTC": 1}) == {
             'zyx': {'available': 10, 'total': 10},
             'BTC': {'available': 1, 'total': 1}
         }
-        assert Portfolio.get_portfolio_from_amount_dict({}) == {}
+        assert portfolio_manager.portfolio.get_portfolio_from_amount_dict({}) == {}
         with pytest.raises(RuntimeError):
-            Portfolio.get_portfolio_from_amount_dict({"zyx": "10", "BTC": 1})
+            portfolio_manager.portfolio.get_portfolio_from_amount_dict({"zyx": "10", "BTC": 1})
+        await self.stop_default(exchange_manager)
 
     async def test_get_currency_portfolio(self):
         _, exchange_manager, portfolio_manager, _ = await self.init_default()

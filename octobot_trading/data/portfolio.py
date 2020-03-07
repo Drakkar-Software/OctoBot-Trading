@@ -50,44 +50,25 @@ class Portfolio(Initializable):
     async def copy(self):
         pf: Portfolio = Portfolio(self.exchange_name, self.is_simulated)
         await pf.initialize()
-        pf.portfolio: dict = deepcopy(self.portfolio)
+        pf.portfolio = deepcopy(self.portfolio)
         return pf
 
     async def update_portfolio_from_balance(self, balance) -> bool:
         if balance == self.portfolio:
             return False
-        self.portfolio = {
-            currency: {
-                PORTFOLIO_AVAILABLE: balance[currency][CONFIG_PORTFOLIO_FREE]
-                if CONFIG_PORTFOLIO_FREE in balance[currency] else balance[currency][PORTFOLIO_AVAILABLE],
-                PORTFOLIO_TOTAL: balance[currency][CONFIG_PORTFOLIO_TOTAL]
-                if CONFIG_PORTFOLIO_TOTAL in balance[currency] else balance[currency][PORTFOLIO_TOTAL]}
-            for currency in balance}
+        self.portfolio = {currency: self._parse_currency_balance(balance[currency]) for currency in balance}
         self.logger.debug(f"Portfolio updated | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
         return False
 
     def get_currency_from_given_portfolio(self, currency, portfolio_type=PORTFOLIO_AVAILABLE):
         if currency in self.portfolio:
             return self.portfolio[currency][portfolio_type]
-        self.portfolio[currency] = {
-            PORTFOLIO_AVAILABLE: 0,
-            PORTFOLIO_TOTAL: 0
-        }
+        self._reset_currency_portfolio(currency)
         return self.portfolio[currency][portfolio_type]
 
     # Get specified currency quantity in the portfolio
     def get_currency_portfolio(self, currency, portfolio_type=PORTFOLIO_AVAILABLE):
         return self.get_currency_from_given_portfolio(currency, portfolio_type)
-
-    # Set new currency quantity in the portfolio
-    def _update_portfolio_data(self, currency, value, total=True, available=False):
-        if currency in self.portfolio:
-            if total:
-                self.portfolio[currency][PORTFOLIO_TOTAL] += value
-            if available:
-                self.portfolio[currency][PORTFOLIO_AVAILABLE] += value
-        else:
-            self.portfolio[currency] = {PORTFOLIO_AVAILABLE: value, PORTFOLIO_TOTAL: value}
 
     """ update_portfolio performs the update of the total / available quantity of a currency
     It is called only when an order is filled to update the real quantity of the currency to be set in "total" field
@@ -130,7 +111,7 @@ class Portfolio(Initializable):
                           f"{market_portfolio_num} | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
 
     """ update_portfolio_available performs the availability update of the concerned currency in the current portfolio
-    It is called when an order is filled, created or canceled to update the "available" filed of the portfolio
+    It is called when an order is filled, created or canceled to update the "available" filled of the portfolio
     is_new_order is True when portfolio needs an update after a new order and False when portfolio needs a rollback 
     after an order is cancelled
     """
@@ -138,6 +119,37 @@ class Portfolio(Initializable):
     def update_portfolio_available(self, order, is_new_order=False):
         if self._check_available_should_update(order):
             self._update_portfolio_available(order, 1 if is_new_order else -1)
+
+    # Resets available amount with total amount CAREFUL: if no currency is given, resets all the portfolio !
+    def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
+        if not reset_currency:
+            self.portfolio.update({currency: self._create_currency_portfolio(
+                available=self.portfolio[currency][PORTFOLIO_TOTAL],
+                total=self.portfolio[currency][PORTFOLIO_TOTAL])
+                for currency in self.portfolio})
+        else:
+            if reset_currency in self.portfolio:
+                if reset_quantity is None:
+                    self._set_currency_portfolio(currency=reset_currency,
+                                                 available=self.portfolio[reset_currency][PORTFOLIO_TOTAL],
+                                                 total=self.portfolio[reset_currency][PORTFOLIO_TOTAL])
+                else:
+                    self._update_currency_portfolio(currency=reset_currency, available=reset_quantity)
+
+    def get_portfolio_from_amount_dict(self, amount_dict):
+        if not all(isinstance(i, (int, float)) for i in amount_dict.values()):
+            raise RuntimeError("Portfolio has to be initialized using numbers")
+        return {currency: self._create_currency_portfolio(available=total, total=total)
+                for currency, total in amount_dict.items()}
+
+    # Set new currency quantity in the portfolio
+    def _update_portfolio_data(self, currency, value, total=True, available=False):
+        if currency in self.portfolio:
+            self._update_currency_portfolio(currency,
+                                            available=value if available else 0,
+                                            total=value if total else 0)
+        else:
+            self._set_currency_portfolio(currency=currency, available=value, total=value)
 
     # Check if the order has impact on availability
     def _check_available_should_update(self, order):
@@ -159,23 +171,23 @@ class Portfolio(Initializable):
             new_quantity = - order.origin_quantity * factor
             self._update_portfolio_data(currency, new_quantity, False, True)
 
-    # Resets available amount with total amount CAREFUL: if no currency is give, resets all the portfolio !
-    def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
-        if not reset_currency:
-            self.portfolio.update({currency: {PORTFOLIO_AVAILABLE: self.portfolio[currency][PORTFOLIO_TOTAL],
-                                              PORTFOLIO_TOTAL: self.portfolio[currency][PORTFOLIO_TOTAL]}
-                                   for currency in self.portfolio})
-        else:
-            if reset_currency in self.portfolio:
-                if reset_quantity is None:
-                    self.portfolio[reset_currency][PORTFOLIO_AVAILABLE] = \
-                        self.portfolio[reset_currency][PORTFOLIO_TOTAL]
-                else:
-                    self.portfolio[reset_currency][PORTFOLIO_AVAILABLE] += reset_quantity
+    # parse the exchange balance
+    def _parse_currency_balance(self, currency_balance):
+        return self._create_currency_portfolio(
+            available=currency_balance[CONFIG_PORTFOLIO_FREE]
+            if CONFIG_PORTFOLIO_FREE in currency_balance else currency_balance[PORTFOLIO_AVAILABLE],
+            total=currency_balance[CONFIG_PORTFOLIO_TOTAL]
+            if CONFIG_PORTFOLIO_TOTAL in currency_balance else currency_balance[PORTFOLIO_TOTAL])
 
-    @staticmethod
-    def get_portfolio_from_amount_dict(amount_dict):
-        if not all(isinstance(i, (int, float)) for i in amount_dict.values()):
-            raise RuntimeError("Portfolio has to be initialized using numbers")
-        return {currency: {PORTFOLIO_AVAILABLE: total, PORTFOLIO_TOTAL: total}
-                for currency, total in amount_dict.items()}
+    def _create_currency_portfolio(self, available, total):
+        return {PORTFOLIO_AVAILABLE: available, PORTFOLIO_TOTAL: total}
+
+    def _reset_currency_portfolio(self, currency):
+        self._set_currency_portfolio(currency=currency, available=0, total=0)
+
+    def _set_currency_portfolio(self, currency, available, total):
+        self.portfolio[currency] = self._create_currency_portfolio(available=available, total=total)
+
+    def _update_currency_portfolio(self, currency, available=0, total=0):
+        self.portfolio[currency][PORTFOLIO_AVAILABLE] += available
+        self.portfolio[currency][PORTFOLIO_TOTAL] += total
