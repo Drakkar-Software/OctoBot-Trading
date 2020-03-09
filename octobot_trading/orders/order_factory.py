@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.order import parse_order_type
+from octobot_trading.data.order import parse_order_type, Order
 from octobot_trading.enums import OrderStatus
 from octobot_trading.orders.types import TraderOrderTypeClasses
 
@@ -30,7 +30,7 @@ def create_order_instance_from_raw(trader, raw_order):
 
 
 def create_order_from_type(trader, order_type):
-    return TraderOrderTypeClasses[order_type](trader)
+    return TraderOrderTypeClasses[order_type](trader) if order_type is not None else Order(trader)
 
 
 def create_order_instance(trader,
