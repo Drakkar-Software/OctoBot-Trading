@@ -18,6 +18,7 @@ from collections import OrderedDict
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.data.position import Position
+from octobot_trading.enums import PositionStatus
 from octobot_trading.util.initializable import Initializable
 
 
@@ -40,20 +41,20 @@ class PositionsManager(Initializable):
     def get_closed_positions(self, symbol=None, since=-1, limit=-1):
         return self._select_positions(False, symbol, since, limit)
 
-    def upsert_position(self, position_id, raw_position) -> (bool, bool, bool):
+    def upsert_position(self, position_id, raw_position) -> bool:
         if position_id not in self.positions:
             self.positions[position_id] = self._create_position_from_raw(raw_position)
             self._check_positions_size()
-            return True, not self.positions[position_id].is_open, False
+            return True
 
         updated: bool = self._update_position_from_raw(self.positions[position_id], raw_position)
-        return updated, not self.positions[position_id].is_open, updated
+        return updated
 
-    def upsert_position_instance(self, position) -> (bool, bool, bool):
+    def upsert_position_instance(self, position) -> bool:
         if position.position_id not in self.positions:
             self.positions[position.position_id] = position
             self._check_positions_size()
-            return True, not self.positions[position.position_id].is_open, False
+            return True
         # TODO
         return False
 
@@ -70,12 +71,12 @@ class PositionsManager(Initializable):
     def _update_position_from_raw(self, position, raw_position):
         return position.update_position_from_raw(raw_position)
 
-    def _select_positions(self, is_open=True, symbol=None, since=-1, limit=-1):
+    def _select_positions(self, status=PositionStatus.OPEN, symbol=None, since=-1, limit=-1):
         positions = [
             position
             for position in self.positions.values()
             if (
-                    position.is_open == is_open and
+                    position.status == status and
                     (symbol is None or (symbol and position.symbol == symbol)) and
                     (since == -1 or (since and position.timestamp < since))
             )

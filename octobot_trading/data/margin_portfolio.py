@@ -28,7 +28,8 @@ class MarginPortfolio(Portfolio):
             available=currency_balance[CONFIG_PORTFOLIO_FREE]
             if CONFIG_PORTFOLIO_FREE in currency_balance else currency_balance[PORTFOLIO_AVAILABLE],
             margin=currency_balance[CONFIG_PORTFOLIO_MARGIN]
-            if CONFIG_PORTFOLIO_MARGIN in currency_balance else currency_balance[MARGIN_PORTFOLIO],
+            if CONFIG_PORTFOLIO_MARGIN in currency_balance else (currency_balance[MARGIN_PORTFOLIO]
+                                                                 if MARGIN_PORTFOLIO in currency_balance else 0),
             total=currency_balance[CONFIG_PORTFOLIO_TOTAL]
             if CONFIG_PORTFOLIO_TOTAL in currency_balance else currency_balance[PORTFOLIO_TOTAL])
 
