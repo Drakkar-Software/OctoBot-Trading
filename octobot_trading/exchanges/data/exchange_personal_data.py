@@ -14,15 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
-
+from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import BALANCE_CHANNEL, ORDERS_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, \
     BALANCE_PROFITABILITY_CHANNEL
-from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.data_manager.orders_manager import OrdersManager
 from octobot_trading.data_manager.portfolio_manager import PortfolioManager
 from octobot_trading.data_manager.positions_manager import PositionsManager
 from octobot_trading.data_manager.trades_manager import TradesManager
-from octobot_trading.enums import PositionStatus
 from octobot_trading.util.initializable import Initializable
 
 
@@ -177,13 +175,14 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.positions_manager.upsert_position(position_id, position)
             if should_notify:
+                position_instance = self.positions_manager[position_id]
                 await get_chan(POSITIONS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(symbol=symbol,
-                          position=position,
+                          position=position_instance.to_dict(),
                           is_closed=False,
                           is_updated=changed,
                           is_from_bot=True,
-                          is_liquidated=position.is_liquidated())
+                          is_liquidated=position_instance.is_liquidated())
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position : {e}")

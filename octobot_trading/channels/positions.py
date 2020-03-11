@@ -24,10 +24,10 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstan
 
 
 class PositionsProducer(ExchangeChannelProducer):
-    async def push(self, positions, is_from_bot=True):
-        await self.perform(positions, is_from_bot=is_from_bot)
+    async def push(self, positions, is_closed=False, is_liquidated=False, is_from_bot=True):
+        await self.perform(positions, is_closed=is_closed, is_liquidated=is_liquidated, is_from_bot=is_from_bot)
 
-    async def perform(self, positions, is_from_bot=True):
+    async def perform(self, positions, is_closed=False, is_liquidated=False, is_from_bot=True):
         try:
             for position in positions:
                 if position:
@@ -37,16 +37,18 @@ class PositionsProducer(ExchangeChannelProducer):
                             symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
                         position_id: str = position[ExchangeConstantsOrderColumns.ID.value]
 
-                        changed, is_closed, is_updated, is_liquidated = await self.channel.exchange_manager \
-                            .exchange_personal_data.handle_position_update(symbol, position_id, position,
-                                                                           should_notify=False)
+                        changed = await self.channel.exchange_manager.exchange_personal_data. \
+                            handle_position_update(symbol=symbol,
+                                                   position_id=position_id,
+                                                   position=position,
+                                                   should_notify=False)
 
                         if changed:
                             await self.send(symbol=symbol,
                                             position=position,
                                             is_closed=is_closed,
-                                            is_updated=is_updated,
-                                            is_liquidated=position.is_liquidated(),
+                                            is_updated=changed,
+                                            is_liquidated=is_liquidated,
                                             is_from_bot=is_from_bot)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")

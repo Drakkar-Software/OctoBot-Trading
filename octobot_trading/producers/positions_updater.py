@@ -35,7 +35,7 @@ class PositionsUpdater(PositionsProducer):
             try:
                 positions: list = await self.channel.exchange_manager.exchange.get_open_position()
                 if positions:
-                    await self.push(positions)
+                    await self.push(positions, is_closed=False, is_liquidated=False)
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()

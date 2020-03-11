@@ -47,8 +47,7 @@ class PositionsManager(Initializable):
             self._check_positions_size()
             return True
 
-        updated: bool = self._update_position_from_raw(self.positions[position_id], raw_position)
-        return updated
+        return self._update_position_from_raw(self.positions[position_id], raw_position)
 
     def upsert_position_instance(self, position) -> bool:
         if position.position_id not in self.positions:

@@ -35,9 +35,10 @@ class Position:
         self.unrealised_pnl = 0
         self.leverage = 0
         self.status = PositionStatus.OPEN
+        self.side = None  # TODO PositionSide
 
     def _update(self, position_id, symbol, currency, market, timestamp, entry_price, mark_price, quantity,
-                liquidation_price, unrealised_pnl, leverage, status=None):
+                liquidation_price, unrealised_pnl, leverage, status=None, side=None):
         changed: bool = False
 
         if position_id and self.position_id != position_id:
@@ -80,6 +81,9 @@ class Position:
         if status and self.status != status:
             self.status = status
 
+        if side and self.side != side:
+            self.side = side
+
         return changed
 
     def is_liquidated(self):
@@ -102,6 +106,21 @@ class Position:
             "leverage": raw_position[ExchangeConstantsPositionColumns.LEVERAGE.value],
             "mark_price": raw_position[ExchangeConstantsPositionColumns.MARK_PRICE.value]
         })
+
+    def to_dict(self):
+        return {
+            ExchangeConstantsPositionColumns.ID.value: self.position_id,
+            ExchangeConstantsPositionColumns.SYMBOL.value: self.symbol,
+            ExchangeConstantsPositionColumns.STATUS.value: self.status.value,
+            ExchangeConstantsPositionColumns.TIMESTAMP.value: self.timestamp,
+            ExchangeConstantsPositionColumns.SIDE.value: self.side.value,
+            ExchangeConstantsPositionColumns.QUANTITY.value: self.quantity,
+            ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
+            ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
+            ExchangeConstantsPositionColumns.ENTRY_PRICE.value: self.entry_price,
+            ExchangeConstantsPositionColumns.UNREALISED_PNL.value: self.unrealised_pnl,
+            ExchangeConstantsPositionColumns.LEVERAGE.value: self.leverage,
+        }
 
     def _check_for_liquidation(self):
         """
