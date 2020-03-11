@@ -188,6 +188,7 @@ class ExchangeConstantsOrderColumns(Enum):
 
 
 class ExchangeConstantsPositionColumns(Enum):
+    ID = "id"
     TIMESTAMP = "timestamp"
     SYMBOL = "symbol"
     LIQUIDATION_PRICE = "liquidationPrice"
@@ -196,6 +197,8 @@ class ExchangeConstantsPositionColumns(Enum):
     UNREALISED_PNL = "unrealisedPnl"
     QUANTITY = "quantity"
     LEVERAGE = "leverage"
+    STATUS = "status"
+    SIDE = "side"
 
 
 class ExchangeConstantsFeesColumns(Enum):

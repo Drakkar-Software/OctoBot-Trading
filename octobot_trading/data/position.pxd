@@ -33,6 +33,7 @@ cdef class Position(Initializable):
     cdef public str position_id
 
     cdef public object status # PositionStatus
+    cdef public object side # PositionSide
 
     cdef public int leverage
 
@@ -59,8 +60,11 @@ cdef class Position(Initializable):
                       double liquidation_price,
                       double unrealised_pnl,
                       int leverage,
-                      object status=*)
+                      object status=*,
+                      object side=*)
     cdef bint _check_for_liquidation(self)
+
+    cpdef dict to_dict(self)
 
     cpdef bint update_position_from_raw(self, dict raw_position)
     cpdef bint is_liquidated(self)
