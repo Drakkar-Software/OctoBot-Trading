@@ -38,9 +38,11 @@ class TradesManager(Initializable):
 
     def upsert_trade(self, trade_id, raw_trade):
         if trade_id not in self.trades:
-            self.trades[trade_id] = create_trade_instance_from_raw(self.trader, raw_trade)
-            self._check_trades_size()
-            return True
+            created_trade = create_trade_instance_from_raw(self.trader, raw_trade)
+            if created_trade:
+                self.trades[trade_id] = created_trade
+                self._check_trades_size()
+                return True
         return False
 
     def upsert_trade_instance(self, trade):

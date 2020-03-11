@@ -385,7 +385,6 @@ def parse_order_type(raw_order):
                 parsed_order_type = _get_sell_and_buy_types(order_type)
         return side, parsed_order_type
     except (KeyError, ValueError):
-        get_logger(Order.__class__.__name__).error("Failed to parse order type")
         return None, None
 
 
