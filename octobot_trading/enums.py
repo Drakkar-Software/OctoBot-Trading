@@ -37,6 +37,11 @@ class TradeOrderType(Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
+class MarginType(Enum):
+    CROSS = "cross"
+    ISOLATE = "isolate"
+
+
 class EvaluatorStates(Enum):
     SHORT = 1
     VERY_SHORT = 2
