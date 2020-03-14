@@ -22,33 +22,23 @@ class MarginExchange(RestExchange):
     """
     CCXT margin library wrapper
     """
+    async def get_symbol_open_positions(self, symbol: str) -> dict:
+        raise NotImplementedError("get_symbol_open_positions is not implemented")
 
-    def __init__(self, config, exchange_type, exchange_manager, is_sandboxed=False):
-        super().__init__(config, exchange_type, exchange_manager, is_sandboxed=is_sandboxed)
-
-    async def get_position(self):
-        raise NotImplementedError("get_position is not implemented")
-
-    async def get_open_position(self):
-        raise NotImplementedError("get_open_position is not implemented")
-
-    async def get_position_from_id(self, position_id, symbol=None):
-        raise NotImplementedError("get_position_from_id is not implemented")
-
-    async def get_positions(self, symbol=None, since=None, limit=None):
-        raise NotImplementedError("get_positions is not implemented")
-
-    async def get_open_positions(self, symbol=None, since=None, limit=None):
+    async def get_open_positions(self) -> dict:
         raise NotImplementedError("get_open_positions is not implemented")
 
-    async def get_closed_positions(self, symbol=None, since=None, limit=None):
-        raise NotImplementedError("get_closed_positions is not implemented")
+    async def get_symbol_positions_history(self, symbol: str):
+        raise NotImplementedError("get_symbol_positions_history is not implemented")
 
-    async def get_position_trades(self, position_id, symbol=None, since=None, limit=None):
-        raise NotImplementedError("get_position_trades is not implemented")
+    async def get_positions_history(self):
+        raise NotImplementedError("get_positions_history is not implemented")
 
-    async def get_position_status(self, position_id, symbol=None):
-        raise NotImplementedError("get_position_status is not implemented")
+    async def get_symbol_leverage(self, symbol: str):
+        raise NotImplementedError("get_symbol_leverage is not implemented")
 
-    def cleanup_positions_dict(self, positions):
-        return positions
+    async def set_symbol_leverage(self, symbol: str, leverage: int):
+        raise NotImplementedError("set_symbol_leverage is not implemented")
+
+    def cleanup_position_dict(self, position) -> dict:
+        return position
