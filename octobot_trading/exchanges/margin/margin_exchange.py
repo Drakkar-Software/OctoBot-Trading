@@ -40,5 +40,9 @@ class MarginExchange(RestExchange):
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         raise NotImplementedError("set_symbol_leverage is not implemented")
 
+    async def set_symbol_margin_type(self, symbol: str, isolated: bool):
+        # If not isolated = cross
+        raise NotImplementedError("set_symbol_margin_type is not implemented")
+
     def cleanup_position_dict(self, position) -> dict:
         return position
