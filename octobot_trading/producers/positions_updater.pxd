@@ -19,4 +19,4 @@ from octobot_trading.channels.positions cimport PositionsProducer
 
 
 cdef class PositionsUpdater(PositionsProducer):
-    pass
+    cdef public bint should_use_open_position_per_symbol

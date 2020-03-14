@@ -17,4 +17,4 @@
 from octobot_trading.exchanges.rest_exchange cimport RestExchange
 
 cdef class MarginExchange(RestExchange):
-    cpdef list cleanup_positions_dict(self, list positions)
+    cpdef list cleanup_position_dict(self, list position)

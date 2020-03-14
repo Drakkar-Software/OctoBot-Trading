@@ -27,25 +27,48 @@ class PositionsUpdater(PositionsProducer):
     CHANNEL_NAME = POSITIONS_CHANNEL
     POSITIONS_REFRESH_TIME = 11
 
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.should_use_open_position_per_symbol = False
+
     async def start(self):
         if not self._should_run():
             return
 
+        # First fetch to define should_use_open_position_per_symbol
+        try:
+            await self.fetch_positions()
+        except NotImplementedError:
+            self.should_use_open_position_per_symbol = True
+            await self.fetch_position_per_symbol()
+
         while not self.should_stop and not self.channel.is_paused:
+            await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
             try:
-                positions: list = await self.channel.exchange_manager.exchange.get_open_position()
-                if positions:
-                    await self.push(positions, is_closed=False, is_liquidated=False)
+                if self.should_use_open_position_per_symbol:
+                    await self.fetch_position_per_symbol()
+                else:
+                    await self.fetch_positions()
+
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
                 self.logger.exception(e, True, f"Fail to update positions : {e}")
 
-            await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
-
     def _should_run(self) -> bool:
         return self.channel.exchange_manager.is_margin
+
+    async def fetch_position_per_symbol(self):
+        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            position = await self.channel.exchange_manager.exchange.get_symbol_open_positions(symbol=symbol)
+            if position:
+                await self.push(position, is_closed=False, is_liquidated=False)
+
+    async def fetch_positions(self):
+        for symbol, position in (await self.channel.exchange_manager.exchange.get_open_positions()).items():
+            if position and symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+                await self.push(position, is_closed=False, is_liquidated=False)
 
     async def resume(self) -> None:
         if not self._should_run():
