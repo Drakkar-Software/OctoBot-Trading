@@ -77,6 +77,13 @@ class TraderOrderType(Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
+class ExchangeConstantsFundingColumns(Enum):
+    SYMBOL = "symbol"
+    TIMESTAMP = "timestamp"
+    FUNDING_RATE = "funding_rate"
+    NEXT_FUNDING_TIME = "next_funding_time"
+
+
 class ExchangeConstantsTickersColumns(Enum):
     SYMBOL = "symbol"
     TIMESTAMP = "timestamp"

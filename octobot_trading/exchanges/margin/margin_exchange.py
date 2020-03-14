@@ -19,6 +19,12 @@ from octobot_trading.exchanges.rest_exchange import RestExchange
 
 
 class MarginExchange(RestExchange):
+    # Mark price params
+    MARK_PRICE_IN_POSITION = False
+
+    # Funding rate params
+    FUNDING_WITH_MARK_PRICE = False
+
     """
     CCXT margin library wrapper
     """
@@ -36,6 +42,12 @@ class MarginExchange(RestExchange):
 
     async def get_symbol_leverage(self, symbol: str):
         raise NotImplementedError("get_symbol_leverage is not implemented")
+
+    async def get_mark_price(self, symbol: str, limit: int = 1):
+        raise NotImplementedError("get_mark_price is not implemented")
+
+    async def get_funding_rate(self, symbol: str, limit: int = 1):
+        raise NotImplementedError("get_funding_rate is not implemented")
 
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         raise NotImplementedError("set_symbol_leverage is not implemented")
