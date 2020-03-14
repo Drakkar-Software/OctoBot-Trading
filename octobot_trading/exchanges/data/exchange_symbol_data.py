@@ -17,6 +17,7 @@
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.data_manager.candles_manager import CandlesManager
+from octobot_trading.data_manager.funding_manager import FundingManager
 from octobot_trading.data_manager.kline_manager import KlineManager
 from octobot_trading.data_manager.order_book_manager import OrderBookManager
 from octobot_trading.data_manager.prices_manager import PricesManager
@@ -36,6 +37,7 @@ class ExchangeSymbolData:
         self.prices_manager = PricesManager()
         self.recent_trades_manager = RecentTradesManager()
         self.ticker_manager = TickerManager()
+        self.funding_manager = FundingManager() if self.exchange_manager.is_margin else None
 
         self.symbol_candles = {}
         self.symbol_klines = {}
@@ -103,3 +105,7 @@ class ExchangeSymbolData:
                 return
 
         symbol_klines.kline_update(kline)
+
+    async def handle_funding_update(self, funding_rate, next_funding_time, timestamp):
+        if self.funding_manager:
+            self.funding_manager.funding_update(funding_rate, next_funding_time, timestamp)
