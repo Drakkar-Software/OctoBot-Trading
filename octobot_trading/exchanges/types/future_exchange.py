@@ -13,12 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import ccxt
 
 from octobot_trading.exchanges.rest_exchange import RestExchange
 
 
-class MarginExchange(RestExchange):
+class FutureExchange(RestExchange):
     # Mark price params
     MARK_PRICE_IN_POSITION = False
 
@@ -26,7 +25,7 @@ class MarginExchange(RestExchange):
     FUNDING_WITH_MARK_PRICE = False
 
     """
-    CCXT margin library wrapper
+    CCXT future library wrapper
     """
     async def get_symbol_open_positions(self, symbol: str) -> dict:
         raise NotImplementedError("get_symbol_open_positions is not implemented")

@@ -30,7 +30,8 @@ from octobot_trading.exchanges.data.exchange_personal_data import ExchangePerson
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchanges import Exchanges
-from octobot_trading.exchanges.exchange_util import get_margin_exchange_class, get_rest_exchange_class
+from octobot_trading.exchanges.exchange_util import get_margin_exchange_class, get_rest_exchange_class, \
+    get_future_exchange_class, get_spot_exchange_class
 from octobot_trading.exchanges.rest_exchange import RestExchange
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.exchanges.websockets.websockets_util import check_web_socket_config, search_websocket_class
@@ -55,7 +56,9 @@ class ExchangeManager(Initializable):
         self.rest_only: bool = False
         self.ignore_config: bool = False
         self.is_collecting: bool = False
+        self.is_spot_only: bool = False
         self.is_margin: bool = False
+        self.is_future: bool = False
         self.is_sandboxed: bool = False
 
         # exchange_only is True when exchange channels are not required (therefore not created)
@@ -160,9 +163,14 @@ class ExchangeManager(Initializable):
 
     async def _create_real_exchange(self):
         # create REST based on ccxt exchange
-        if self.is_margin:
+        if self.is_spot_only:
+            await self._search_and_create_spot_exchange()
+        elif self.is_future:
+            await self._search_and_create_future_exchange()
+        elif self.is_margin:
             await self._search_and_create_margin_exchange()
-        else:
+
+        if not self.exchange:
             await self._search_and_create_rest_exchange()
 
         await self.exchange.initialize()
@@ -205,10 +213,23 @@ class ExchangeManager(Initializable):
 
     async def _search_and_create_rest_exchange(self):
         rest_exchange_class = get_rest_exchange_class(self.exchange_type)
-        self.exchange = rest_exchange_class(config=self.config,
-                                            exchange_type=self.exchange_type,
-                                            exchange_manager=self,
-                                            is_sandboxed=self.is_sandboxed)
+        if rest_exchange_class:
+            self.exchange = rest_exchange_class(config=self.config,
+                                                exchange_type=self.exchange_type,
+                                                exchange_manager=self,
+                                                is_sandboxed=self.is_sandboxed)
+
+    """
+    Spot exchange
+    """
+
+    async def _search_and_create_spot_exchange(self):
+        spot_exchange_class = get_spot_exchange_class(self.exchange_type)
+        if spot_exchange_class:
+            self.exchange = spot_exchange_class(config=self.config,
+                                                exchange_type=self.exchange_type,
+                                                exchange_manager=self,
+                                                is_sandboxed=self.is_sandboxed)
 
     """
     Margin exchange
@@ -216,10 +237,23 @@ class ExchangeManager(Initializable):
 
     async def _search_and_create_margin_exchange(self):
         margin_exchange_class = get_margin_exchange_class(self.exchange_type)
-        self.exchange = margin_exchange_class(config=self.config,
-                                              exchange_type=self.exchange_type,
-                                              exchange_manager=self,
-                                              is_sandboxed=self.is_sandboxed)
+        if margin_exchange_class:
+            self.exchange = margin_exchange_class(config=self.config,
+                                                  exchange_type=self.exchange_type,
+                                                  exchange_manager=self,
+                                                  is_sandboxed=self.is_sandboxed)
+
+    """
+    Future exchange
+    """
+
+    async def _search_and_create_future_exchange(self):
+        future_exchange_class = get_future_exchange_class(self.exchange_type)
+        if future_exchange_class:
+            self.exchange = future_exchange_class(config=self.config,
+                                                  exchange_type=self.exchange_type,
+                                                  exchange_manager=self,
+                                                  is_sandboxed=self.is_sandboxed)
 
     """
     Exchange channels
