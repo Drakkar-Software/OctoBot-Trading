@@ -203,7 +203,8 @@ class PortfolioProfitabilty:
             if self.exchange_manager.symbol_exists(symbol):
                 return self.currencies_last_prices[symbol] * quantity
 
-            elif self.exchange_manager.symbol_exists(symbol_inverted):
+            elif self.exchange_manager.symbol_exists(symbol_inverted) and \
+                    self.currencies_last_prices[symbol_inverted] != 0:
                 return quantity / self.currencies_last_prices[symbol_inverted]
 
             self._inform_no_matching_symbol(currency)
@@ -283,6 +284,8 @@ class PortfolioProfitabilty:
     async def evaluate_value(self, currency, quantity, raise_error=True):
         # easy case --> the current currency is the reference currency
         if currency == self.reference_market:
+            return quantity
+        elif quantity == 0:
             return quantity
         else:
             currency_value = await self._try_get_value_of_currency(currency, quantity, raise_error)
