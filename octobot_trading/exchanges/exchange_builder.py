@@ -115,6 +115,14 @@ class ExchangeBuilder:
         self.exchange_manager.is_margin = use_margin
         return self
 
+    def is_future(self, use_future=True):
+        self.exchange_manager.is_future = use_future
+        return self
+
+    def is_spot_only(self, use_spot_only=True):
+        self.exchange_manager.is_spot_only = use_spot_only
+        return self
+
     def is_rest_only(self):
         self.exchange_manager.rest_only = True
         return self

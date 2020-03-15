@@ -16,5 +16,5 @@
 #  License along with this library.
 from octobot_trading.exchanges.rest_exchange cimport RestExchange
 
-cdef class MarginExchange(RestExchange):
+cdef class FutureExchange(RestExchange):
     cpdef list cleanup_position_dict(self, list position)
