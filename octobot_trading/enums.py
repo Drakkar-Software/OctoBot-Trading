@@ -84,6 +84,12 @@ class ExchangeConstantsFundingColumns(Enum):
     NEXT_FUNDING_TIME = "next_funding_time"
 
 
+class ExchangeConstantsMarkPriceColumns(Enum):
+    SYMBOL = "symbol"
+    TIMESTAMP = "timestamp"
+    MARK_PRICE = "mark_price"
+
+
 class ExchangeConstantsTickersColumns(Enum):
     SYMBOL = "symbol"
     TIMESTAMP = "timestamp"
