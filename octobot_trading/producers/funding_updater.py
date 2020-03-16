@@ -72,10 +72,11 @@ class FundingUpdater(FundingProducer):
         return None
 
     def _should_run(self) -> bool:
-        if not self.channel.exchange_manager.is_margin:
+        if not self.channel.exchange_manager.is_future:
             return False
         else:
-            return not self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE
+            return not self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE and \
+                   not self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
 
     async def resume(self) -> None:
         if not self._should_run():
