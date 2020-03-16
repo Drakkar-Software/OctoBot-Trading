@@ -22,7 +22,7 @@ from octobot_trading.channels.price import MarkPriceProducer
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, FUNDING_CHANNEL
 from octobot_trading.data_manager.prices_manager import PricesManager
 from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsOrderColumns, \
-    ExchangeConstantsFundingColumns
+    ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns
 
 
 class MarkPriceUpdater(MarkPriceProducer):
@@ -114,7 +114,7 @@ class MarkPriceUpdater(MarkPriceProducer):
                 mark_price = await self.channel.exchange_manager.exchange.get_mark_price(symbol)
 
             if mark_price:
-                await self.push(symbol, mark_price)
+                await self.push(symbol, mark_price[ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])
         except (NotSupported, NotImplementedError) as ne:
             raise ne
         except Exception as e:
