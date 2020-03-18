@@ -88,6 +88,9 @@ POSITIONS_CHANNEL = "Positions"
 # Internal
 MODE_CHANNEL = "Mode"
 
+# CCXT library constants
+CCXT_INFO = "info"
+
 # Websockets
 WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
     TICKER_CHANNEL: [Feeds.TICKER],

@@ -29,10 +29,10 @@ class FutureExchange(RestExchange):
     """
     CCXT future library wrapper
     """
-    async def get_symbol_open_positions(self, symbol: str) -> dict:
+    async def get_symbol_open_positions(self, symbol: str) -> list:
         raise NotImplementedError("get_symbol_open_positions is not implemented")
 
-    async def get_open_positions(self) -> dict:
+    async def get_open_positions(self) -> list:
         raise NotImplementedError("get_open_positions is not implemented")
 
     async def get_symbol_leverage(self, symbol: str):
@@ -65,5 +65,11 @@ class FutureExchange(RestExchange):
         # If not isolated = cross
         raise NotImplementedError("set_symbol_margin_type is not implemented")
 
-    def cleanup_position_dict(self, position) -> dict:
-        return position
+    def cleanup_position_dict(self, position_dict) -> dict:
+        return position_dict
+
+    def cleanup_funding_dict(self, funding_dict, from_ticker=False) -> dict:
+        return funding_dict
+
+    def cleanup_mark_price_dict(self, mark_price_dict, from_ticker=False) -> dict:
+        return mark_price_dict
