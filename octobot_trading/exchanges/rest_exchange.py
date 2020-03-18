@@ -138,14 +138,25 @@ class RestExchange(AbstractExchange):
                               f"To fix this, please synchronize your computer's clock. ")
             raise e
 
+    def get_candle_since_timestamp(self, time_frame, count):
+        return self.client.milliseconds() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * count
+
     async def get_symbol_prices(self, symbol, time_frame, limit=None):
         try:
             if limit:
-                since = self.client.milliseconds() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * limit
-                return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, since=since)
+                return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit,
+                                                     since=self.get_candle_since_timestamp(time_frame, limit))
             return await self.client.fetch_ohlcv(symbol, time_frame.value)
         except BaseError as e:
             self.logger.error(f"Failed to get_symbol_prices {e}")
+            return None
+
+    async def get_kline_price(self, symbol, time_frame):
+        try:
+            # default implementation
+            return await self.get_symbol_prices(symbol, time_frame, limit=1)
+        except BaseError as e:
+            self.logger.error(f"Failed to get_kline_price {e}")
             return None
 
     # return up to ten bidasks on each side of the order book stack
