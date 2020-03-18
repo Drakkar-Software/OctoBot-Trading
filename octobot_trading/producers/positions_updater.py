@@ -60,14 +60,14 @@ class PositionsUpdater(PositionsProducer):
 
     async def fetch_position_per_symbol(self):
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            for position in await self.channel.exchange_manager.exchange.get_symbol_open_positions(symbol=symbol):
-                if position:
-                    await self.push(position, is_closed=False, is_liquidated=False)
+            for positions in await self.channel.exchange_manager.exchange.get_symbol_open_positions(symbol=symbol):
+                if positions:
+                    await self.push(positions=positions, is_closed=False, is_liquidated=False)
 
     async def fetch_positions(self):
-        for symbol, position in (await self.channel.exchange_manager.exchange.get_open_positions()).items():
-            if position and symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                await self.push(position, is_closed=False, is_liquidated=False)
+        for symbol, positions in (await self.channel.exchange_manager.exchange.get_open_positions()).items():
+            if positions and symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+                await self.push(positions=positions, is_closed=False, is_liquidated=False)
 
     async def resume(self) -> None:
         if not self._should_run():

@@ -14,8 +14,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.channels.balance cimport BalanceProducer
+from octobot_trading.channels.funding cimport FundingProducer
+from octobot_trading.channels.kline cimport KlineProducer
 from octobot_trading.channels.ohlcv cimport OHLCVProducer
 from octobot_trading.channels.order_book cimport OrderBookProducer
+from octobot_trading.channels.orders cimport OrdersProducer
+from octobot_trading.channels.positions cimport PositionsProducer
+from octobot_trading.channels.price cimport MarkPriceProducer
 from octobot_trading.channels.recent_trade cimport RecentTradeProducer
 from octobot_trading.channels.ticker cimport TickerProducer
 
@@ -23,12 +29,45 @@ from octobot_trading.exchanges.websockets.abstract_websocket cimport AbstractWeb
 
 cdef class OrderBookCallBack(OrderBookProducer):
     cdef public AbstractWebsocket parent
+    cdef object pair
 
 cdef class RecentTradesCallBack(RecentTradeProducer):
     cdef public AbstractWebsocket parent
+    cdef object pair
 
 cdef class TickersCallBack(TickerProducer):
     cdef public AbstractWebsocket parent
+    cdef object pair
+
+cdef class FundingCallBack(FundingProducer):
+    cdef public AbstractWebsocket parent
+    cdef object pair
+
+cdef class MarkPriceCallBack(MarkPriceProducer):
+    cdef public AbstractWebsocket parent
+    cdef object pair
+
+cdef class BalanceCallBack(BalanceProducer):
+    cdef public AbstractWebsocket parent
+
+cdef class OrdersCallBack(OrdersProducer):
+    cdef public AbstractWebsocket parent
+    cdef object pair
+
+cdef class PositionsCallBack(PositionsProducer):
+    cdef public AbstractWebsocket parent
+    cdef object pair
+
+cdef class ExecutionsCallBack(OrdersProducer):
+    cdef public AbstractWebsocket parent
+    cdef object pair
 
 cdef class OHLCVCallBack(OHLCVProducer):
     cdef public AbstractWebsocket parent
+    cdef object pair
+    cdef object time_frame
+
+cdef class KlineCallBack(KlineProducer):
+    cdef public AbstractWebsocket parent
+    cdef object pair
+    cdef object time_frame

@@ -23,10 +23,10 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeC
 
 
 class BalanceProducer(ExchangeChannelProducer):
-    async def push(self, balance, is_delta=False):
-        await self.perform(balance, is_delta=is_delta)
+    async def push(self, balance):
+        await self.perform(balance)
 
-    async def perform(self, balance, is_delta=False):
+    async def perform(self, balance):
         try:
             changed = await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update(balance,
                                                                                                          should_notify=False)

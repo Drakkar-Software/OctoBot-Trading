@@ -25,15 +25,14 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 class TradesProducer(ExchangeChannelProducer):
     async def push(self, trades, old_trade=False):
-        # TODO add symbol param
         await self.perform(trades, old_trade=old_trade)
 
     async def perform(self, trades, old_trade=False):
         try:
             for trade in trades:
-                symbol: str = self.channel.exchange_manager.get_exchange_symbol(
-                    trade[ExchangeConstantsOrderColumns.SYMBOL.value])
-                if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
+                symbol: str = trade[ExchangeConstantsOrderColumns.SYMBOL.value]
+                if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+                        self.channel.get_filtered_consumers(symbol=symbol):
                     trade_id: str = trade[ExchangeConstantsOrderColumns.ID.value]
 
                     added: bool = await self.channel.exchange_manager.exchange_personal_data.handle_trade_update(

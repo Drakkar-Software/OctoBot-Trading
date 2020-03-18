@@ -86,5 +86,6 @@ cdef class ExchangeManager(Initializable):
     cpdef int get_rate_limit(self)
     cpdef object uniformize_candles_if_necessary(self, object candle_or_candles)
     cpdef str get_exchange_name(self)
+    cpdef tuple get_exchange_credentials(self, object logger)
     cpdef bint should_decrypt_token(self, object logger)
     cpdef ExchangeSymbolData get_symbol_data(self, str symbol)

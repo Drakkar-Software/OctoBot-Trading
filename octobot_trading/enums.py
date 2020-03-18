@@ -52,9 +52,9 @@ class EvaluatorStates(Enum):
 
 
 class OrderStatus(Enum):
-    FILLED = "closed"
     OPEN = "open"
     PARTIALLY_FILLED = "partially_filled"
+    FILLED = "filled"
     CANCELED = "canceled"
     CLOSED = "closed"
 
