@@ -81,6 +81,10 @@ class AbstractWebsocket:
     def handles_funding(self) -> bool:
         raise NotImplementedError("handles_funding not implemented")
 
+    @abstractmethod
+    def handles_mark_price(self) -> bool:
+        raise NotImplementedError("handles_mark_price not implemented")
+
     @staticmethod
     def parse_order_status(status):
         raise NotImplementedError("parse_order_status not implemented")
@@ -92,6 +96,14 @@ class AbstractWebsocket:
     @abstractmethod
     def handles_orders(self) -> bool:
         raise NotImplementedError("handles_orders not implemented")
+
+    @abstractmethod
+    def handles_positions(self) -> bool:
+        raise NotImplementedError("handles_positions not implemented")
+
+    @abstractmethod
+    def handles_executions(self) -> bool:
+        raise NotImplementedError("handles_executions not implemented")
 
     # ============== ccxt adaptation methods ==============
     def _init_ccxt_order_from_other_source(self, ccxt_order):

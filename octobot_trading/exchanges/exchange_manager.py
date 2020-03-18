@@ -16,7 +16,7 @@
 import uuid
 
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
-from octobot_commons.config_util import has_invalid_default_config_value
+from octobot_commons.config_util import has_invalid_default_config_value, decrypt
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
@@ -24,7 +24,7 @@ from octobot_commons.timestamp_util import is_valid_timestamp
 from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan, get_exchange_channels, \
     del_chan, del_exchange_channel_container
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
-    WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
+    WEBSOCKET_FEEDS_TO_TRADING_CHANNELS, CONFIG_EXCHANGE_PASSWORD
 from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
 from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
@@ -414,6 +414,17 @@ class ExchangeManager(Initializable):
                            "please enter your api tokens in exchange configuration")
             return False
         return True
+
+    def get_exchange_credentials(self, logger, exchange_name):
+        if self.ignore_config or not self.should_decrypt_token(logger):
+            return "", "", ""
+        config_exchange = self.config[CONFIG_EXCHANGES][exchange_name]
+        return decrypt(config_exchange[CONFIG_EXCHANGE_KEY]) \
+                   if config_exchange[CONFIG_EXCHANGE_KEY] else None, \
+               decrypt(config_exchange[CONFIG_EXCHANGE_SECRET]) \
+                   if config_exchange[CONFIG_EXCHANGE_SECRET] else None, \
+               decrypt(config_exchange[CONFIG_EXCHANGE_PASSWORD]) \
+                   if CONFIG_EXCHANGE_PASSWORD in config_exchange else None
 
     @staticmethod
     def handle_token_error(error, logger):

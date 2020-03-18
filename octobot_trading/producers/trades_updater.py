@@ -37,7 +37,7 @@ class TradesUpdater(TradesProducer):
                     limit=self.MAX_OLD_TRADES_TO_FETCH)
 
                 if trades:
-                    await self.push(self._cleanup_trades_dict(trades))
+                    await self.push(trades=self._cleanup_trades_dict(trades))
 
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
         except NotSupported:

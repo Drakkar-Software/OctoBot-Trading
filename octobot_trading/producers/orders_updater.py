@@ -35,7 +35,7 @@ class OpenOrdersUpdater(OrdersProducer):
                 open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(symbol=symbol)
 
                 if open_orders:
-                    await self.push(self._cleanup_open_orders_dict(open_orders), is_from_bot=False)
+                    await self.push(orders=self._cleanup_open_orders_dict(open_orders), is_from_bot=False)
 
                 await asyncio.sleep(self.ORDERS_STARTING_REFRESH_TIME)
         except Exception as e:
@@ -51,7 +51,7 @@ class OpenOrdersUpdater(OrdersProducer):
                         limit=self.ORDERS_UPDATE_LIMIT)
 
                     if open_orders:
-                        await self.push(self._cleanup_open_orders_dict(open_orders))
+                        await self.push(orders=self._cleanup_open_orders_dict(open_orders))
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
@@ -91,7 +91,8 @@ class CloseOrdersUpdater(OrdersProducer):
                         limit=self.ORDERS_UPDATE_LIMIT)
 
                     if close_orders:
-                        await self.push(self._cleanup_close_orders_dict(close_orders), is_closed=True)
+                        await self.push(orders=self._cleanup_close_orders_dict(close_orders),
+                                        is_closed=True)
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()

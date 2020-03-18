@@ -66,18 +66,8 @@ class RestExchange(AbstractExchange):
         """
         if self.exchange_manager.ignore_config or self.exchange_manager.check_config(self.name):
             try:
-                if self.exchange_manager.ignore_config or not self.exchange_manager.should_decrypt_token(self.logger):
-                    key = ""
-                    secret = ""
-                    password = ""
-                else:
-                    config_exchange = self.config[CONFIG_EXCHANGES][self.name]
-                    key = decrypt(config_exchange[CONFIG_EXCHANGE_KEY]) \
-                        if config_exchange[CONFIG_EXCHANGE_KEY] else None
-                    secret = decrypt(config_exchange[CONFIG_EXCHANGE_SECRET]) \
-                        if config_exchange[CONFIG_EXCHANGE_SECRET] else None
-                    password = decrypt(config_exchange[CONFIG_EXCHANGE_PASSWORD]) \
-                        if CONFIG_EXCHANGE_PASSWORD in config_exchange else None
+                key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.name)
+                if key and secret:
                     self.is_authenticated = True
 
                 self.client = self.exchange_type({

@@ -49,5 +49,4 @@ class TickerManager(Initializable):
         }
 
     def ticker_update(self, ticker):
-        if ticker:
-            self.ticker = ticker
+        self.ticker.update(ticker)
