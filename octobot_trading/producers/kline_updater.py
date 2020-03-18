@@ -27,7 +27,6 @@ class KlineUpdater(KlineProducer):
     CHANNEL_NAME = KLINE_CHANNEL
     KLINE_REFRESH_TIME = 8
     QUICK_KLINE_REFRESH_TIME = 3
-    KLINE_LIMIT = 1
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -55,9 +54,7 @@ class KlineUpdater(KlineProducer):
                 started_time = time.time()
                 quick_sleep = False
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                    candle: list = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
-                                                                                                  time_frame,
-                                                                                                  limit=self.KLINE_LIMIT)
+                    candle: list = await self.channel.exchange_manager.exchange.get_kline_price(pair, time_frame)
                     try:
                         candle = candle[0]
                         self.channel.exchange_manager.uniformize_candles_if_necessary(candle)

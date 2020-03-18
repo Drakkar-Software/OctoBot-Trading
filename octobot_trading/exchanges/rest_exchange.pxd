@@ -46,3 +46,4 @@ cdef class RestExchange(AbstractExchange):
     cpdef str get_pair_from_exchange(self, str pair)
     cpdef tuple get_split_pair_from_exchange(self, str pair)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)
+    cpdef double get_candle_since_timestamp(self, object time_frame, int count)
