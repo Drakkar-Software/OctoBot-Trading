@@ -14,9 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.rest_exchange cimport RestExchange
 
-cdef class FutureExchange(RestExchange):
-    cpdef dict cleanup_position_dict(self, dict position_dict, object position_status)
-    cpdef dict cleanup_funding_dict(self, dict funding_dict, bint from_ticker=*)
-    cpdef dict cleanup_mark_price_dict(self, dict mark_price_dict, bint from_ticker=*)
+cpdef void set_exchange_value_if_necessary(dict parsed_dict, str default_key, str exchange_key)
+cpdef void set_exchange_value_to_default(dict parsed_dict, str default_key, object default_value)
+cpdef double calculate_position_value(double quantity, double mark_price)

@@ -65,7 +65,7 @@ class FutureExchange(RestExchange):
         # If not isolated = cross
         raise NotImplementedError("set_symbol_margin_type is not implemented")
 
-    def cleanup_position_dict(self, position_dict) -> dict:
+    def cleanup_position_dict(self, position_dict, position_status) -> dict:
         return position_dict
 
     def cleanup_funding_dict(self, funding_dict, from_ticker=False) -> dict:

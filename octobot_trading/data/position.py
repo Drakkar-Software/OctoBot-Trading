@@ -15,7 +15,7 @@
 #  License along with this library.
 import time
 
-from octobot_trading.enums import ExchangeConstantsPositionColumns, PositionStatus
+from octobot_trading.enums import ExchangeConstantsPositionColumns, PositionStatus, PositionSide
 
 
 class Position:
@@ -31,23 +31,33 @@ class Position:
         self.entry_price = 0
         self.mark_price = 0
         self.quantity = 0
+        self.value = 0
+        self.margin = 0
         self.liquidation_price = 0
         self.unrealised_pnl = 0
+        self.realised_pnl = 0
         self.leverage = 0
         self.status = PositionStatus.OPEN
-        self.side = None  # TODO PositionSide
+        self.side = PositionSide.UNKNOWN
 
-    def _update(self, position_id, symbol, currency, market, timestamp, entry_price, mark_price, quantity,
-                liquidation_price, unrealised_pnl, leverage, status=None, side=None):
+    def _should_change(self, original_value, new_value):
+        if new_value and original_value != new_value:
+            return True
+
+    def _update(self, position_id, symbol, currency, market, timestamp,
+                entry_price, mark_price, liquidation_price,
+                quantity, value, margin,
+                unrealised_pnl, realised_pnl,
+                leverage, status=None, side=None):
         changed: bool = False
 
-        if position_id and self.position_id != position_id:
+        if self._should_change(self.position_id, position_id):
             self.position_id = position_id
 
-        if symbol and self.symbol != symbol:
+        if self._should_change(self.symbol, symbol):
             self.symbol, self.currency, self.market = symbol, currency, market
 
-        if timestamp and self.timestamp != timestamp:
+        if self._should_change(self.timestamp, timestamp):
             self.timestamp = timestamp
         if not self.timestamp:
             if not timestamp:
@@ -57,32 +67,47 @@ class Position:
                 self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
             self.timestamp = self.creation_time
 
-        if quantity and self.quantity != quantity:
-            self.quantity = quantity
+        if self._should_change(self.quantity, quantity):
+            self.quantity = float(quantity)
             changed = True
 
-        if unrealised_pnl and self.unrealised_pnl != unrealised_pnl:
-            self.unrealised_pnl = unrealised_pnl
+        if self._should_change(self.value, value):
+            self.value = float(value)
             changed = True
 
-        if leverage and self.leverage != leverage:
-            self.leverage = leverage
+        if self._should_change(self.margin, margin):
+            self.margin = float(margin)
             changed = True
 
-        if entry_price and self.entry_price != entry_price:
-            self.entry_price = entry_price
+        if self._should_change(self.unrealised_pnl, unrealised_pnl):
+            self.unrealised_pnl = float(unrealised_pnl)
+            changed = True
 
-        if mark_price and self.mark_price != mark_price:
-            self.mark_price = mark_price
+        if self._should_change(self.realised_pnl, realised_pnl):
+            self.realised_pnl = float(realised_pnl)
+            changed = True
 
-        if liquidation_price and self.liquidation_price != liquidation_price:
-            self.liquidation_price = liquidation_price
+        if self._should_change(self.leverage, leverage):
+            self.leverage = int(leverage)
+            changed = True
 
-        if status and self.status != status:
-            self.status = status
+        if self._should_change(self.entry_price, entry_price):
+            self.entry_price = float(entry_price)
 
-        if side and self.side != side:
-            self.side = side
+        if self._should_change(self.mark_price, mark_price):
+            self.mark_price = float(mark_price)
+
+        if self._should_change(self.liquidation_price, liquidation_price):
+            self.liquidation_price = float(liquidation_price)
+
+        if self._should_change(self.status.value, status):
+            self.status = PositionStatus(status)
+
+        if self._should_change(self.side.value, side):
+            self.side = PositionSide(side)
+
+        if self.side is PositionSide.UNKNOWN and self.quantity:
+            self.side = PositionSide.LONG if self.quantity > 0 else PositionSide.SHORT
 
         return changed
 
@@ -98,13 +123,19 @@ class Position:
             "currency": currency,
             "market": market,
             "entry_price": raw_position[ExchangeConstantsPositionColumns.ENTRY_PRICE.value],
-            "quantity": raw_position[ExchangeConstantsPositionColumns.QUANTITY.value],
+            "mark_price": raw_position[ExchangeConstantsPositionColumns.MARK_PRICE.value],
             "liquidation_price": raw_position[ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value],
+            "quantity": raw_position[ExchangeConstantsPositionColumns.QUANTITY.value],
+            "value": raw_position[ExchangeConstantsPositionColumns.VALUE.value],
+            "margin": raw_position[ExchangeConstantsPositionColumns.MARGIN.value],
             "position_id": None,
             "timestamp": raw_position[ExchangeConstantsPositionColumns.TIMESTAMP.value],
             "unrealised_pnl": raw_position[ExchangeConstantsPositionColumns.UNREALISED_PNL.value],
+            "realised_pnl": raw_position[ExchangeConstantsPositionColumns.REALISED_PNL.value],
             "leverage": raw_position[ExchangeConstantsPositionColumns.LEVERAGE.value],
-            "mark_price": raw_position[ExchangeConstantsPositionColumns.MARK_PRICE.value]
+            "status": raw_position[ExchangeConstantsPositionColumns.STATUS.value],
+            "side": raw_position[ExchangeConstantsPositionColumns.SIDE.value]
+            if ExchangeConstantsPositionColumns.SIDE.value in raw_position else None
         })
 
     def to_dict(self):
@@ -115,10 +146,13 @@ class Position:
             ExchangeConstantsPositionColumns.TIMESTAMP.value: self.timestamp,
             ExchangeConstantsPositionColumns.SIDE.value: self.side.value,
             ExchangeConstantsPositionColumns.QUANTITY.value: self.quantity,
-            ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
-            ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
+            ExchangeConstantsPositionColumns.VALUE.value: self.value,
+            ExchangeConstantsPositionColumns.MARGIN.value: self.margin,
             ExchangeConstantsPositionColumns.ENTRY_PRICE.value: self.entry_price,
+            ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
+            ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
             ExchangeConstantsPositionColumns.UNREALISED_PNL.value: self.unrealised_pnl,
+            ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
             ExchangeConstantsPositionColumns.LEVERAGE.value: self.leverage,
         }
 

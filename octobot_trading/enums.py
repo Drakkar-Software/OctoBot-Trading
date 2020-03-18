@@ -24,6 +24,7 @@ class TradeOrderSide(Enum):
 class PositionSide(Enum):
     LONG = "long"
     SHORT = "short"
+    UNKNOWN = "unknown"
 
 
 class TradeOrderType(Enum):
@@ -209,11 +210,14 @@ class ExchangeConstantsPositionColumns(Enum):
     ID = "id"
     TIMESTAMP = "timestamp"
     SYMBOL = "symbol"
-    LIQUIDATION_PRICE = "liquidationPrice"
-    MARK_PRICE = "markPrice"
-    ENTRY_PRICE = "entryPrice"
-    UNREALISED_PNL = "unrealisedPnl"
+    ENTRY_PRICE = "entry_price"
+    MARK_PRICE = "mark_price"
+    LIQUIDATION_PRICE = "liquidation_price"
+    UNREALISED_PNL = "unrealised_pnl"
+    REALISED_PNL = "realised_pnl"
     QUANTITY = "quantity"
+    VALUE = "value"
+    MARGIN = "margin"
     LEVERAGE = "leverage"
     STATUS = "status"
     SIDE = "side"
