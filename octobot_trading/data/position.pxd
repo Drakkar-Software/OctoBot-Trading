@@ -39,9 +39,11 @@ cdef class Position(Initializable):
 
     cdef public double entry_price
     cdef public double mark_price
-    cdef public double quantity
     cdef public double liquidation_price
+    cdef public double quantity
+    cdef public double value
     cdef public double unrealised_pnl
+    cdef public double realised_pnl
 
     cdef public double timestamp
     cdef public double creation_time
@@ -56,13 +58,17 @@ cdef class Position(Initializable):
                       double timestamp,
                       double entry_price,
                       double mark_price,
-                      double quantity,
                       double liquidation_price,
+                      double quantity,
+                      double value,
+                      double margin,
                       double unrealised_pnl,
+                      double realised_pnl,
                       int leverage,
                       object status=*,
                       object side=*)
     cdef bint _check_for_liquidation(self)
+    cdef bint _should_change(self, object original_value, object new_value)
 
     cpdef dict to_dict(self)
 
