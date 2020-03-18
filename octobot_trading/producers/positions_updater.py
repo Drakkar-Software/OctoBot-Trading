@@ -56,13 +56,13 @@ class PositionsUpdater(PositionsProducer):
                 self.logger.exception(e, True, f"Fail to update positions : {e}")
 
     def _should_run(self) -> bool:
-        return self.channel.exchange_manager.is_margin
+        return self.channel.exchange_manager.is_future
 
     async def fetch_position_per_symbol(self):
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            position = await self.channel.exchange_manager.exchange.get_symbol_open_positions(symbol=symbol)
-            if position:
-                await self.push(position, is_closed=False, is_liquidated=False)
+            for position in await self.channel.exchange_manager.exchange.get_symbol_open_positions(symbol=symbol):
+                if position:
+                    await self.push(position, is_closed=False, is_liquidated=False)
 
     async def fetch_positions(self):
         for symbol, position in (await self.channel.exchange_manager.exchange.get_open_positions()).items():

@@ -17,4 +17,6 @@
 from octobot_trading.exchanges.rest_exchange cimport RestExchange
 
 cdef class FutureExchange(RestExchange):
-    cpdef list cleanup_position_dict(self, list position)
+    cpdef dict cleanup_position_dict(self, dict position_dict)
+    cpdef dict cleanup_funding_dict(self, dict funding_dict, bint from_ticker=*)
+    cpdef dict cleanup_mark_price_dict(self, dict mark_price_dict, bint from_ticker=*)

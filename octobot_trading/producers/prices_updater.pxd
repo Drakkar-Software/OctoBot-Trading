@@ -18,4 +18,5 @@
 from octobot_trading.channels.price cimport MarkPriceProducer
 
 cdef class MarkPriceUpdater(MarkPriceProducer):
-    pass
+    cdef object recent_trades_consumer
+    cdef object ticker_consumer
