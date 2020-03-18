@@ -81,15 +81,12 @@ class ExchangeSymbolData:
     def handle_mark_price_update(self, mark_price):
         self.prices_manager.set_mark_price(mark_price)
 
-    def handle_order_book_update(self, asks, bids, is_delta=False):
-        if is_delta:
-            # TODO check if initialized
-            self.order_book_manager.order_book_delta_update(asks, bids)
-        else:
-            self.order_book_manager.order_book_update(asks, bids)
+    def handle_order_book_update(self, asks, bids):
+        self.order_book_manager.order_book_update(asks, bids)
 
     def handle_ticker_update(self, ticker):
-        self.ticker_manager.ticker_update(ticker)
+        if ticker:
+            self.ticker_manager.ticker_update(ticker)
 
     async def handle_kline_update(self, time_frame, kline):
         try:

@@ -21,17 +21,16 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns, ExchangeConstan
 
 
 class PositionsProducer(ExchangeChannelProducer):
-    async def push(self, position, is_closed=False, is_liquidated=False, is_from_bot=True):
-        await self.perform(position, is_closed=is_closed, is_liquidated=is_liquidated, is_from_bot=is_from_bot)
+    async def push(self, positions, is_closed=False, is_liquidated=False, is_from_bot=True):
+        await self.perform(positions, is_closed=is_closed, is_liquidated=is_liquidated, is_from_bot=is_from_bot)
 
-    async def perform(self, position, is_closed=False, is_liquidated=False, is_from_bot=True):
+    async def perform(self, positions, is_closed=False, is_liquidated=False, is_from_bot=True):
         try:
-            if position:
-                symbol: str = self.channel.exchange_manager.get_exchange_symbol(
-                    position[ExchangeConstantsPositionColumns.SYMBOL.value])
+            for position in positions:
+                symbol: str = position[ExchangeConstantsPositionColumns.SYMBOL.value]
                 if self.channel.get_filtered_consumers(
                         symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
-                    position_id: str = position[ExchangeConstantsOrderColumns.ID.value]
+                    position_id: str = position[ExchangeConstantsPositionColumns.ID.value]
 
                     changed = await self.channel.exchange_manager.exchange_personal_data. \
                         handle_position_update(symbol=symbol,

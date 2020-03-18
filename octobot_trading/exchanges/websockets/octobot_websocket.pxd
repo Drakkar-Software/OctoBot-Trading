@@ -31,13 +31,11 @@ cdef class OctoBotWebSocketClient(AbstractWebsocket):
 
     cdef public dict open_sockets_keys
     cdef public dict callbacks
+    cdef public dict handled_feeds
 
-    cdef public bint is_handling_ohlcv
-    cdef public bint is_handling_price_ticker
-    cdef public bint is_handling_order_book
-    cdef public bint is_handling_recent_trades
-    cdef public bint is_handling_funding
     cdef public bint is_websocket_running
+    cdef public bint is_websocket_authenticated
+    cdef public bint use_separated_websockets
 
     # private
     cdef void __add_feed_and_run_if_required(self, object feed, object callback)
@@ -48,6 +46,8 @@ cdef class OctoBotWebSocketClient(AbstractWebsocket):
 
     @staticmethod
     cdef int __convert_time_frame_minutes_to_seconds(object time_frame)
+
+    cdef void _add_callback(self, object callback, str feed_name, str symbol=*, object time_frame=*):
 
     # public
     # cpdef void init_web_sockets(self, list time_frames, list trader_pairs)

@@ -18,16 +18,16 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes
-
-from octobot_trading.constants import RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, TICKER_CHANNEL
-from octobot_websockets.api.feed_creator import get_feed_from_name
-from octobot_websockets.callback import TradeCallback, BookCallback, TickerCallback
-from octobot_websockets.feeds.feed import Feeds
-
 from octobot_trading.channels.exchange_channel import get_chan
+from octobot_trading.constants import RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, TICKER_CHANNEL, KLINE_CHANNEL, \
+    OHLCV_CHANNEL, MARK_PRICE_CHANNEL, FUNDING_CHANNEL, POSITIONS_CHANNEL, BALANCE_CHANNEL, ORDERS_CHANNEL, \
+    TRADES_CHANNEL
 from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
 from octobot_trading.exchanges.websockets.websocket_callbacks import RecentTradesCallBack, OrderBookCallBack, \
-    TickersCallBack
+    TickersCallBack, KlineCallBack, OHLCVCallBack, MarkPriceCallBack, FundingCallBack, PositionsCallBack, \
+    BalanceCallBack, ExecutionsCallBack, OrdersCallBack
+from octobot_websockets.api.feed_creator import get_feed_from_name
+from octobot_websockets.feeds.feed import Feeds
 
 
 class OctoBotWebSocketClient(AbstractWebsocket):
@@ -47,16 +47,13 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         self.trader_pairs = []
         self.time_frames = []
 
-        self.is_handling_ohlcv = False
-        self.is_handling_price_ticker = False
-        self.is_handling_order_book = False
-        self.is_handling_recent_trades = False
-        self.is_handling_funding = False
-
         self.channels = []
         self.callbacks = {}
+        self.handled_feeds = {}
 
         self.is_websocket_running = False
+        self.is_websocket_authenticated = False
+        self.use_separated_websockets = False
 
     async def init_web_sockets(self, time_frames, trader_pairs):
         self.exchange_class = get_feed_from_name(self.exchange_manager.exchange_name)
@@ -64,9 +61,23 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         self.time_frames = time_frames
 
         if self.trader_pairs:
-            await self.add_recent_trade_feed()
-            await self.add_order_book_feed()
-            await self.add_tickers_feed()
+            # unauthenticated
+            await self.add_feed(RecentTradesCallBack, Feeds.TRADES, RECENT_TRADES_CHANNEL, self.trader_pairs)
+            await self.add_feed(OrderBookCallBack, Feeds.L2_BOOK, ORDER_BOOK_CHANNEL, self.trader_pairs)
+            await self.add_feed(OrderBookCallBack, Feeds.L3_BOOK, ORDER_BOOK_CHANNEL, self.trader_pairs)
+            await self.add_feed(TickersCallBack, Feeds.TICKER, TICKER_CHANNEL, self.trader_pairs)
+            await self.add_feed(FundingCallBack, Feeds.FUNDING, FUNDING_CHANNEL, self.trader_pairs)
+            await self.add_feed(MarkPriceCallBack, Feeds.MARK_PRICE, MARK_PRICE_CHANNEL, self.trader_pairs)
+
+            if self.time_frames:
+                await self.add_feed(OHLCVCallBack, Feeds.CANDLE, OHLCV_CHANNEL, self.trader_pairs, self.time_frames)
+                await self.add_feed(KlineCallBack, Feeds.KLINE, KLINE_CHANNEL, self.trader_pairs, self.time_frames)
+
+            # authenticated
+            await self.add_feed(PositionsCallBack, Feeds.POSITION, POSITIONS_CHANNEL)
+            await self.add_feed(BalanceCallBack, Feeds.PORTFOLIO, BALANCE_CHANNEL)
+            await self.add_feed(ExecutionsCallBack, Feeds.TRADE, TRADES_CHANNEL)
+            await self.add_feed(OrdersCallBack, Feeds.ORDERS, ORDERS_CHANNEL)
 
             # ensure feeds are added
             self.__create_octobot_feed_feeds()
@@ -74,44 +85,67 @@ class OctoBotWebSocketClient(AbstractWebsocket):
             self.logger.warning(f"{self.exchange_manager.exchange_name.title()}'s "
                                 f"websocket has no symbol to feed")
 
-    # Feeds
-    async def add_recent_trade_feed(self):
-        if self.is_feed_available(Feeds.TRADES):
-            recent_trade_callback = RecentTradesCallBack(self,
-                                                         get_chan(RECENT_TRADES_CHANNEL,
-                                                                  self.exchange_manager.id))
+    async def add_feed(self, callback_class, feed_name, channel_name, symbols=None, time_frames=None):
+        if self.is_feed_available(feed_name):
+            if symbols:
+                if time_frames:
+                    await self.add_time_frames_feeds(callback_class, feed_name, channel_name, symbols, time_frames)
+                else:
+                    await self.add_symbols_feeds(callback_class, feed_name, channel_name, symbols)
+            else:
+                callback = callback_class(self, get_chan(channel_name, self.exchange_manager.id))
+                self._add_callback(callback.callback, feed_name)
+                await self._run_callback(feed_name, callback)
 
-            self.__add_feed_and_run_if_required(Feeds.TRADES,
-                                                TradeCallback(recent_trade_callback.recent_trades_callback))
-            await recent_trade_callback.run()
-            self.is_handling_recent_trades = True
+            self.handled_feeds[feed_name] = True
         else:
-            self.logger.warning(f"{self.exchange_manager.exchange_class_string.title()}'s "
-                                f"websocket is not handling recent trades")
-
-    async def add_order_book_feed(self):
-        if self.is_feed_available(Feeds.L2_BOOK):
-            order_book_callback = OrderBookCallBack(self, get_chan(ORDER_BOOK_CHANNEL,
-                                                                   self.exchange_manager.id))
-
-            self.__add_feed_and_run_if_required(Feeds.L2_BOOK, BookCallback(order_book_callback.l2_order_book_callback))
-            await order_book_callback.run()
-            self.is_handling_order_book = True
-        else:
-            self.logger.warning(f"{self.exchange_manager.exchange_class_string.title()}'s "
-                                f"websocket is not handling order book")
-
-    async def add_tickers_feed(self):
-        if self.is_feed_available(Feeds.TICKER):
-            tickers_callback = TickersCallBack(self, get_chan(TICKER_CHANNEL, self.exchange_manager.id))
-
-            self.__add_feed_and_run_if_required(Feeds.TICKER, TickerCallback(tickers_callback.tickers_callback))
-            await tickers_callback.run()
-
-            self.is_handling_price_ticker = True
-        else:
+            self.handled_feeds[feed_name] = False
             self.logger.warning(f"{self.exchange_manager.exchange_name}'s "
-                                f"websocket is not handling tickers")
+                                f"websocket is not handling {feed_name.value}")
+
+    async def add_symbols_feeds(self, callback_class, feed_name, channel_name, symbols):
+        for symbol in symbols:
+            callback = callback_class(self,
+                                      get_chan(channel_name, self.exchange_manager.id),
+                                      pair=symbol)
+            self._add_callback(callback.callback, feed_name, symbol=symbol)
+            await self._run_callback(feed_name, callback)
+
+    async def add_time_frames_feeds(self, callback_class, feed_name, channel_name, symbols, time_frames):
+        for symbol in symbols:
+            for time_frame in time_frames:
+                callback = callback_class(self,
+                                          get_chan(channel_name, self.exchange_manager.id),
+                                          pair=symbol,
+                                          time_frame=time_frame)
+                self._add_callback(callback.callback, feed_name, symbol=symbol, time_frame=time_frame)
+                await self._run_callback(feed_name, callback)
+
+    async def _run_callback(self, feed, callback):
+        if self.use_separated_websockets:
+            # TODO
+            # should run and reset channels (duplicate)
+            # if feed in self.channels:
+            #     self.__create_octobot_feed_feeds()
+            #     self.channels = []
+            #     self.callbacks = {}
+            pass
+
+        self.channels.append(feed)
+        await callback.run()
+
+    def _add_callback(self, callback, feed_name, symbol=None, time_frame=None):
+        if symbol:
+            if feed_name not in self.callbacks:
+                self.callbacks[feed_name] = {}
+            if time_frame:
+                if symbol not in self.callbacks[feed_name]:
+                    self.callbacks[feed_name][symbol] = {}
+                self.callbacks[feed_name][symbol][time_frame] = callback
+            else:
+                self.callbacks[feed_name][symbol] = callback
+        else:
+            self.callbacks[feed_name] = callback
 
     def is_feed_available(self, feed):
         try:
@@ -120,22 +154,18 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         except (KeyError, ValueError):
             return False
 
-    def __add_feed_and_run_if_required(self, feed, callback):
-        # should run and reset channels (duplicate)
-        if feed in self.channels:
-            self.__create_octobot_feed_feeds()
-            self.channels = []
-            self.callbacks = {}
-
-        self.channels.append(feed)
-        self.callbacks[feed] = callback
-
     def __create_octobot_feed_feeds(self):
         try:
+            key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_name)
             self.octobot_websockets.append(
                 self.exchange_class(pairs=self.trader_pairs,
+                                    time_frames=self.time_frames,
                                     channels=self.channels,
-                                    callbacks=self.callbacks))
+                                    callbacks=self.callbacks,
+                                    api_key=key,
+                                    api_secret=secret,
+                                    api_password=password,
+                                    use_testnet=self.exchange_manager.is_sandboxed))
         except ValueError as e:
             self.logger.exception(e, True, f"Fail to create feed : {e}")
 
@@ -148,11 +178,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         return get_feed_from_name(name) is not None
 
     def start_sockets(self):
-        if self.is_handling_order_book or \
-                self.is_handling_price_ticker or \
-                self.is_handling_funding or \
-                self.is_handling_ohlcv or \
-                self.is_handling_recent_trades:
+        if any(self.handled_feeds.values()):
             try:
                 self.octobot_websockets_executors = ThreadPoolExecutor(
                     max_workers=len(self.octobot_websockets),
@@ -186,6 +212,9 @@ class OctoBotWebSocketClient(AbstractWebsocket):
     def handles_funding(self):
         return False
 
+    def handles_mark_price(self):
+        return False
+
     def handles_ohlcv(self):
         return False
 
@@ -193,6 +222,12 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         return False
 
     def handles_orders(self):
+        return False
+
+    def handles_positions(self):
+        return False
+
+    def handles_executions(self):
         return False
 
     @staticmethod
