@@ -87,7 +87,7 @@ class TickerUpdater(TickerProducer):
 
     async def extract_mark_price(self, symbol: str, ticker: dict):
         try:
-            ticker = self.channel.exchange_manager.exchange.cleanup_mark_price_dict(ticker, from_ticker=True)
+            ticker = self.channel.exchange_manager.exchange.parse_mark_price(ticker, from_ticker=True)
             await get_chan(MARK_PRICE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=symbol, mark_price=ticker[ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])
         except Exception as e:
@@ -95,7 +95,7 @@ class TickerUpdater(TickerProducer):
 
     async def extract_funding_rate(self, symbol: str, ticker: dict):
         try:
-            ticker = self.channel.exchange_manager.exchange.cleanup_funding_dict(ticker, from_ticker=True)
+            ticker = self.channel.exchange_manager.exchange.parse_funding(ticker, from_ticker=True)
             await get_chan(FUNDING_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=symbol,
                      funding_rate=ticker[ExchangeConstantsFundingColumns.FUNDING_RATE.value],

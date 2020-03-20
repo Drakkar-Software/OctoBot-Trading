@@ -27,7 +27,7 @@ from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_KEY, CON
     CONFIG_EXCHANGE_PASSWORD, CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_USED, \
     CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
-    ExchangeConstantsOrderColumns as ecoc, TradeOrderSide
+    ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
 
@@ -36,6 +36,9 @@ class RestExchange(AbstractExchange):
     """
     CCXT library wrapper
     """
+
+    BUY_STR = TradeOrderSide.BUY.value
+    SELL_STR = TradeOrderSide.SELL.value
 
     CCXT_CLIENT_LOGIN_OPTIONS = {}
 
@@ -354,6 +357,9 @@ class RestExchange(AbstractExchange):
         else:
             raise ValueError(f'{pair} is not supported')
 
+    def get_default_balance(self):
+        return self.client.account()
+
     def set_sandbox_mode(self, is_sandboxed):
         self.client.setSandboxMode(is_sandboxed)
 
@@ -361,3 +367,33 @@ class RestExchange(AbstractExchange):
     def __get_side(order_type):
         return TradeOrderSide.BUY.value if order_type in (TraderOrderType.BUY_LIMIT, TraderOrderType.BUY_MARKET) \
             else TradeOrderSide.SELL.value
+
+    """
+    Parsers
+    """
+    def parse_balance(self, balance):
+        return self.client.parse_balance(balance)
+
+    def parse_trade(self, trade):
+        return self.client.parse_trade(trade)
+
+    def parse_order(self, order):
+        return self.client.parse_order(order)
+
+    def parse_ticker(self, ticker):
+        return self.client.parse_ticker(ticker)
+
+    def parse_ohlcv(self, ohlcv):
+        return self.client.parse_ohlcv(ohlcv)
+
+    def parse_timestamp(self, data_dict, timestamp_key):
+        return self.client.parse8601(self.client.safe_string(data_dict, timestamp_key))
+
+    def parse_currency(self, currency):
+        return self.client.safe_currency_code(currency)
+
+    def parse_status(self, status):
+        return OrderStatus(self.client.parse_order_status(status))
+
+    def parse_side(self, side):
+        return TradeOrderSide.Buy if side == self.BUY_STR else TradeOrderSide.SELL

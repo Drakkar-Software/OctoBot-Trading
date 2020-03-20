@@ -15,7 +15,11 @@ click==7.1.1
 click-completion==0.5.2
 click-shell==2.0
 
+# Websocket requirements
+websockets==8.1
+
 # other requirements
+pandas==1.0.3
 colorlog==4.1.0
 yarl==1.1.0
 idna<2.9,>=2.5

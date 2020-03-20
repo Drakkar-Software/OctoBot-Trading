@@ -65,11 +65,22 @@ class FutureExchange(RestExchange):
         # If not isolated = cross
         raise NotImplementedError("set_symbol_margin_type is not implemented")
 
-    def cleanup_position_dict(self, position_dict, position_status) -> dict:
+    """
+    Parsers
+    """
+    def parse_position(self, position_dict) -> dict:
         return position_dict
 
-    def cleanup_funding_dict(self, funding_dict, from_ticker=False) -> dict:
+    def parse_funding(self, funding_dict, from_ticker=False) -> dict:
         return funding_dict
 
-    def cleanup_mark_price_dict(self, mark_price_dict, from_ticker=False) -> dict:
+    def parse_mark_price(self, mark_price_dict, from_ticker=False) -> dict:
         return mark_price_dict
+
+    def parse_position_status(self, status):
+        return status
+
+    def calculate_position_value(self, quantity, mark_price):
+        if mark_price:
+            return quantity / mark_price
+        return 0

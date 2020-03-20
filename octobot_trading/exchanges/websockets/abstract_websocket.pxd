@@ -16,7 +16,7 @@
 #  License along with this library.
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 
-cdef class AbstractWebsocket:
+cdef class AbstractWebsocket:e
     cdef public dict config
 
     cdef public ExchangeManager exchange_manager
@@ -25,11 +25,3 @@ cdef class AbstractWebsocket:
 
     cdef public object client
     cdef public object logger
-
-    # private
-    cdef void _init_ccxt_order_from_other_source(self, object ccxt_order)
-    cdef void _update_order(self, object msg)
-    cdef str _parse_symbol_from_ccxt(self, str symbol)
-    
-    @staticmethod
-    cdef str _adapt_symbol(str symbol)

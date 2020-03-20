@@ -13,9 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
-from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
 
 
 def create_exchange_builder(config, exchange_name) -> ExchangeBuilder:

@@ -60,8 +60,9 @@ class OrderStatus(Enum):
 
 
 class PositionStatus(Enum):
-    LIQUIDATED = "liquidated"
+    LIQUIDATING = "liquidating"
     OPEN = "open"
+    ADL = "auto_deleveraging"
     CLOSED = "closed"
 
 
