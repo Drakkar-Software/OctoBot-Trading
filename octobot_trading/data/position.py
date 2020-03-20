@@ -112,7 +112,7 @@ class Position:
         return changed
 
     def is_liquidated(self):
-        return self.status is PositionStatus.LIQUIDATED
+        return self.status is PositionStatus.LIQUIDATING
 
     def update_position_from_raw(self, raw_position):
         currency, market = self.exchange_manager.get_exchange_quote_and_base(
@@ -183,10 +183,10 @@ class Position:
 class ShortPosition(Position):
     def _check_for_liquidation(self):
         if self.mark_price >= self.liquidation_price:
-            self.status = PositionStatus.LIQUIDATED
+            self.status = PositionStatus.LIQUIDATING
 
 
 class LongPosition(Position):
     def _check_for_liquidation(self):
         if self.mark_price <= self.liquidation_price:
-            self.status = PositionStatus.LIQUIDATED
+            self.status = PositionStatus.LIQUIDATING

@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,18 +15,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+cdef class Book:
+    cdef public timestamp
 
-def set_exchange_value_if_necessary(parsed_dict, default_key, exchange_key):
-    if default_key not in parsed_dict and exchange_key in parsed_dict:
-        parsed_dict[default_key] = parsed_dict[exchange_key]
+    cdef public object orders
 
-
-def set_exchange_value_to_default(parsed_dict, default_key, default_value):
-    if default_key not in parsed_dict:
-        parsed_dict[default_key] = default_value
-
-
-def calculate_position_value(quantity, mark_price):
-    if mark_price:
-        return quantity / mark_price
-    return 0
+    cpdef void reset(self)
+    cpdef void handle_book_update(self, list orders, str id_key=*)
+    cpdef void handle_book_delta_delete(self, list orders, str id_key=*)
+    cpdef void handle_book_delta_update(self, list orders, str id_key=*)
+    cpdef void handle_book_delta_insert(self, list orders, str id_key=*)
+    cpdef list get_asks(self, str side=*)
+    cpdef list get_bids(self, str side=*)

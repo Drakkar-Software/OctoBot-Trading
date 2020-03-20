@@ -13,8 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
-
-from octobot_websockets.constants import Feeds
+from enum import Enum
 
 # Strings
 CURRENT_PORTFOLIO_STRING = "Current Portfolio :"
@@ -91,17 +90,46 @@ MODE_CHANNEL = "Mode"
 # CCXT library constants
 CCXT_INFO = "info"
 
+# Websocket constants
+BUY = 'buy'
+SELL = 'sell'
+
+BID = 'bid'
+ASK = 'ask'
+BIDS = 'bids'
+ASKS = 'asks'
+UND = 'undefined'
+
+CONFIG_EXCHANGE_WEB_SOCKET = "web-socket"
+
+class WebsocketFeeds(Enum):
+    L2_BOOK = 'l2_book'
+    L3_BOOK = 'l3_book'
+    BOOK_DELTA = 'book_delta'
+    TRADES = 'trades'
+    TICKER = 'ticker'
+    CANDLE = 'candle'
+    KLINE = 'kline'
+    FUNDING = 'funding'
+    MARK_PRICE = 'mark_price'
+    ORDERS = 'orders'
+    PORTFOLIO = 'portfolio'
+    POSITION = 'position'
+    TRADE = 'trade'
+    UNSUPPORTED = 'unsupported'
+
+
 # Websockets
 WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
-    TICKER_CHANNEL: [Feeds.TICKER],
-    RECENT_TRADES_CHANNEL: [Feeds.TRADES],
-    ORDER_BOOK_CHANNEL: [Feeds.L2_BOOK, Feeds.L3_BOOK],
-    KLINE_CHANNEL: [Feeds.KLINE],
-    OHLCV_CHANNEL: [Feeds.CANDLE],
-    TRADES_CHANNEL: [Feeds.TRADE],
-    ORDERS_CHANNEL: [Feeds.ORDERS],
-    MARK_PRICE_CHANNEL: [Feeds.MARK_PRICE],
-    BALANCE_CHANNEL: [Feeds.PORTFOLIO],
-    POSITIONS_CHANNEL: [Feeds.POSITION],
-    FUNDING_CHANNEL: [Feeds.FUNDING]
+    TICKER_CHANNEL: [WebsocketFeeds.TICKER],
+    RECENT_TRADES_CHANNEL: [WebsocketFeeds.TRADES],
+    ORDER_BOOK_CHANNEL: [WebsocketFeeds.L2_BOOK, WebsocketFeeds.L3_BOOK],
+    KLINE_CHANNEL: [WebsocketFeeds.KLINE],
+    OHLCV_CHANNEL: [WebsocketFeeds.CANDLE],
+    TRADES_CHANNEL: [WebsocketFeeds.TRADE],
+    ORDERS_CHANNEL: [WebsocketFeeds.ORDERS],
+    MARK_PRICE_CHANNEL: [WebsocketFeeds.MARK_PRICE],
+    BALANCE_CHANNEL: [WebsocketFeeds.PORTFOLIO],
+    POSITIONS_CHANNEL: [WebsocketFeeds.POSITION],
+    FUNDING_CHANNEL: [WebsocketFeeds.FUNDING]
 }

@@ -45,5 +45,17 @@ cdef class RestExchange(AbstractExchange):
     cpdef double get_uniform_timestamp(self, double timestamp)
     cpdef str get_pair_from_exchange(self, str pair)
     cpdef tuple get_split_pair_from_exchange(self, str pair)
+    cpdef dict get_default_balance(self)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)
     cpdef double get_candle_since_timestamp(self, object time_frame, int count)
+
+    # parsers
+    cpdef dict parse_balance(self, dict balance)
+    cpdef dict parse_trade(self, dict trade)
+    cpdef dict parse_order(self, dict order)
+    cpdef dict parse_ticker(self, dict ticker)
+    cpdef dict parse_ohlcv(self, dict ohlcv)
+    cpdef double parse_timestamp(self, dict data_dict, str timestamp_key)
+    cpdef str parse_currency(self, str currency)
+    cpdef object parse_status(self, str status)
+    cpdef object parse_side(self, str side)

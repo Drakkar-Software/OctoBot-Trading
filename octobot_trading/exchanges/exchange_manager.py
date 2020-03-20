@@ -305,10 +305,10 @@ class ExchangeManager(Initializable):
             raise e
 
     async def _init_websocket(self):
-        await self.exchange_web_socket.init_web_sockets(self.exchange_config.traded_time_frames,
-                                                        self.exchange_config.traded_symbol_pairs)
+        await self.exchange_web_socket.init_websocket(self.exchange_config.traded_time_frames,
+                                                      self.exchange_config.traded_symbol_pairs)
 
-        self.exchange_web_socket.start_sockets()
+        await self.exchange_web_socket.start_sockets()
 
         self.has_websocket = self.exchange_web_socket.is_websocket_running
 

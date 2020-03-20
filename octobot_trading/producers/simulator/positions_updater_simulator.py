@@ -82,7 +82,7 @@ class PositionsUpdaterSimulator(PositionsUpdater):
         try:
             await position.update_status(mark_price)
 
-            if position.status in (PositionStatus.CLOSED, PositionStatus.LIQUIDATED):
+            if position.status in (PositionStatus.CLOSED, PositionStatus.LIQUIDATING):
                 position_closed = True
                 self.logger.debug(f"{position.symbol} (ID : {position.position_id})"
                                   f" closed on {self.channel.exchange.name} "

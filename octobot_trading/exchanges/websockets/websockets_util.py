@@ -13,9 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.tentacles_management.advanced_manager import get_all_classes_from_parent, \
+    search_class_name_in_class_list
 
-from octobot_websockets.constants import CONFIG_EXCHANGE_WEB_SOCKET
-from octobot_trading.constants import CONFIG_EXCHANGES
+from octobot_trading.exchanges.types.websocket_exchange import WebsocketExchange
+from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_WEB_SOCKET
 
 
 def force_disable_web_socket(config, exchange_name) -> bool:
@@ -33,3 +35,7 @@ def search_websocket_class(websocket_class, exchange_name):
         if socket_manager.has_name(exchange_name):
             return socket_manager
     return None
+
+
+def get_exchange_websocket_from_name(name):
+    return search_class_name_in_class_list(name, get_all_classes_from_parent(WebsocketExchange))
