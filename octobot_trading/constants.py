@@ -13,7 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
-from enum import Enum
+
+from octobot_trading.enums import WebsocketFeeds
 
 # Strings
 CURRENT_PORTFOLIO_STRING = "Current Portfolio :"
@@ -102,24 +103,6 @@ UND = 'undefined'
 
 CONFIG_EXCHANGE_WEB_SOCKET = "web-socket"
 
-class WebsocketFeeds(Enum):
-    L2_BOOK = 'l2_book'
-    L3_BOOK = 'l3_book'
-    BOOK_DELTA = 'book_delta'
-    TRADES = 'trades'
-    TICKER = 'ticker'
-    CANDLE = 'candle'
-    KLINE = 'kline'
-    FUNDING = 'funding'
-    MARK_PRICE = 'mark_price'
-    ORDERS = 'orders'
-    PORTFOLIO = 'portfolio'
-    POSITION = 'position'
-    TRADE = 'trade'
-    UNSUPPORTED = 'unsupported'
-
-
-# Websockets
 WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
     TICKER_CHANNEL: [WebsocketFeeds.TICKER],
     RECENT_TRADES_CHANNEL: [WebsocketFeeds.TRADES],

@@ -19,15 +19,14 @@ import logging
 import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
 from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol
-from octobot_commons.config_util import decrypt
+
 from octobot_commons.constants import MSECONDS_TO_MINUTE
 from octobot_commons.dict_util import get_value_or_default
 from octobot_commons.enums import TimeFramesMinutes
-from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_KEY, CONFIG_EXCHANGE_SECRET, \
-    CONFIG_EXCHANGE_PASSWORD, CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_USED, \
-    CONFIG_PORTFOLIO_TOTAL
+from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
+    CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
-    ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus
+    ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
 
@@ -40,6 +39,8 @@ class RestExchange(AbstractExchange):
     BUY_STR = TradeOrderSide.BUY.value
     SELL_STR = TradeOrderSide.SELL.value
 
+    ACCOUNTS = {}
+
     CCXT_CLIENT_LOGIN_OPTIONS = {}
 
     def __init__(self, config, exchange_type, exchange_manager, is_sandboxed=False):
@@ -47,7 +48,8 @@ class RestExchange(AbstractExchange):
         # We will need to create the rest client and fetch exchange config
         self.is_authenticated = False
         self.is_sandboxed = is_sandboxed
-        self.__create_client()
+        self.current_account = AccountTypes.CASH
+        self._create_client()
 
     async def initialize_impl(self):
         try:
@@ -62,7 +64,7 @@ class RestExchange(AbstractExchange):
             return getattr(ccxt, exchange_class_string)
         return exchange_class_string
 
-    def __create_client(self):
+    def _create_client(self):
         """
         Exchange instance creation
         :return:
@@ -249,10 +251,10 @@ class RestExchange(AbstractExchange):
             return created_order
 
         except InsufficientFunds as e:
-            self.__log_error(e, order_type, symbol, quantity, price, stop_price)
+            self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(e)
         except Exception as e:
-            self.__log_error(e, order_type, symbol, quantity, price, stop_price)
+            self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.error(e)
         return None
 
@@ -284,7 +286,7 @@ class RestExchange(AbstractExchange):
                                      ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.REMAINING.value]
         return all(key in order for key in order_required_fields)
 
-    def __log_error(self, error, order_type, symbol, quantity, price, stop_price):
+    def _log_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
             f" stop_price: {stop_price}"
         self.logger.error(f"Failed to create order : {error} ({order_desc})")
@@ -292,7 +294,7 @@ class RestExchange(AbstractExchange):
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
-                                         side=RestExchange.__get_side(order_type),
+                                         side=RestExchange._get_side(order_type),
                                          amount=quantity,
                                          price=price,
                                          takerOrMaker=taker_or_maker)
@@ -364,9 +366,15 @@ class RestExchange(AbstractExchange):
         self.client.setSandboxMode(is_sandboxed)
 
     @staticmethod
-    def __get_side(order_type):
+    def _get_side(order_type):
         return TradeOrderSide.BUY.value if order_type in (TraderOrderType.BUY_LIMIT, TraderOrderType.BUY_MARKET) \
             else TradeOrderSide.SELL.value
+
+    """
+    Accounts
+    """
+    async def switch_to_account(self, account_type):
+        raise NotImplementedError("switch_to_account is not available on this exchange")
 
     """
     Parsers
@@ -386,6 +394,9 @@ class RestExchange(AbstractExchange):
     def parse_ohlcv(self, ohlcv):
         return self.client.parse_ohlcv(ohlcv)
 
+    def parse_order_book(self, order_book):
+        return self.client.parse_order_book(order_book)
+
     def parse_timestamp(self, data_dict, timestamp_key):
         return self.client.parse8601(self.client.safe_string(data_dict, timestamp_key))
 
@@ -397,3 +408,6 @@ class RestExchange(AbstractExchange):
 
     def parse_side(self, side):
         return TradeOrderSide.Buy if side == self.BUY_STR else TradeOrderSide.SELL
+
+    def parse_account(self, account):
+        return AccountTypes[account]

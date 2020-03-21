@@ -38,8 +38,12 @@ class PositionsUpdater(PositionsProducer):
         try:
             await self.fetch_positions()
         except NotImplementedError:
-            self.should_use_open_position_per_symbol = True
-            await self.fetch_position_per_symbol()
+            try:
+                self.should_use_open_position_per_symbol = True
+                await self.fetch_position_per_symbol()
+            except NotImplementedError:
+                self.logger.warning("Position updater cannot fetch positions : required methods are not implemented")
+                await self.stop()
 
         while not self.should_stop and not self.channel.is_paused:
             await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
@@ -51,7 +55,7 @@ class PositionsUpdater(PositionsProducer):
 
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
-                await self.pause()
+                await self.stop()
             except Exception as e:
                 self.logger.exception(e, True, f"Fail to update positions : {e}")
 
