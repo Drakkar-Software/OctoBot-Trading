@@ -28,7 +28,7 @@ from octobot_commons.constants import HOURS_TO_SECONDS
 from octobot_commons.enums import TimeFrames
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.constants import WebsocketFeeds as Feeds
+from octobot_trading.enums import WebsocketFeeds as Feeds
 
 
 class WebsocketExchange:
@@ -116,6 +116,7 @@ class WebsocketExchange:
                     if self.api_key and self.api_secret:
                         await self.do_auth()
 
+                    await self.prepare()
                     await self.subscribe()
                     await self._handler()
             except (websockets.ConnectionClosed, ConnectionAbortedError, ConnectionResetError, CancelledError) as e:
@@ -165,6 +166,13 @@ class WebsocketExchange:
     def on_pong(self):
         self.logger.debug("Pong received")
 
+    async def on_ping(self):
+        self.logger.debug("Ping received. Sending pong...")
+        await self.ping()
+
+    async def ping(self):
+        self.logger.warning("Ping command not implemented")
+
     def on_close(self):
         self.logger.info('Closed')
 
@@ -182,12 +190,11 @@ class WebsocketExchange:
         self.websocket.close()
         self.on_close()
 
-    @abstractmethod
-    async def do_auth(self):
-        NotImplementedError("on_message is not implemented")
+    async def prepare(self):
+        pass
 
     @abstractmethod
-    async def ping(self):
+    async def do_auth(self):
         NotImplementedError("on_message is not implemented")
 
     @abstractmethod

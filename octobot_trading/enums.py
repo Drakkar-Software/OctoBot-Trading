@@ -242,3 +242,26 @@ class FeePropertyColumns(Enum):
     CURRENCY = "currency"  # currency the fee is paid in
     RATE = "rate"  # multiplier applied to compute fee
     COST = "cost"  # fee amount
+
+
+class AccountTypes(Enum):
+    CASH = "cash"
+    MARGIN = "margin"
+    FUTURE = "future"
+
+
+class WebsocketFeeds(Enum):
+    L2_BOOK = 'l2_book'
+    L3_BOOK = 'l3_book'
+    BOOK_DELTA = 'book_delta'
+    TRADES = 'trades'
+    TICKER = 'ticker'
+    CANDLE = 'candle'
+    KLINE = 'kline'
+    FUNDING = 'funding'
+    MARK_PRICE = 'mark_price'
+    ORDERS = 'orders'
+    PORTFOLIO = 'portfolio'
+    POSITION = 'position'
+    TRADE = 'trade'
+    UNSUPPORTED = 'unsupported'

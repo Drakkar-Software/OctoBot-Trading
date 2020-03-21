@@ -408,8 +408,8 @@ class ExchangeManager(Initializable):
 
     def should_decrypt_token(self, logger):
         if has_invalid_default_config_value(
-                self.config[CONFIG_EXCHANGES][self.get_exchange_name()][CONFIG_EXCHANGE_KEY],
-                self.config[CONFIG_EXCHANGES][self.get_exchange_name()][CONFIG_EXCHANGE_SECRET]):
+                self.config[CONFIG_EXCHANGES][self.get_exchange_name()].get(CONFIG_EXCHANGE_KEY, ''),
+                self.config[CONFIG_EXCHANGES][self.get_exchange_name()].get(CONFIG_EXCHANGE_SECRET, '')):
             logger.warning("Exchange configuration tokens are not set yet, to use OctoBot's real trader's features, "
                            "please enter your api tokens in exchange configuration")
             return False
@@ -420,11 +420,11 @@ class ExchangeManager(Initializable):
             return "", "", ""
         config_exchange = self.config[CONFIG_EXCHANGES][exchange_name]
         return decrypt(config_exchange[CONFIG_EXCHANGE_KEY]) \
-                   if config_exchange[CONFIG_EXCHANGE_KEY] else None, \
+                   if config_exchange.get(CONFIG_EXCHANGE_KEY, '') else None, \
                decrypt(config_exchange[CONFIG_EXCHANGE_SECRET]) \
-                   if config_exchange[CONFIG_EXCHANGE_SECRET] else None, \
+                   if config_exchange.get(CONFIG_EXCHANGE_SECRET, '') else None, \
                decrypt(config_exchange[CONFIG_EXCHANGE_PASSWORD]) \
-                   if CONFIG_EXCHANGE_PASSWORD in config_exchange else None
+                   if config_exchange.get(CONFIG_EXCHANGE_PASSWORD, '') else None
 
     @staticmethod
     def handle_token_error(error, logger):

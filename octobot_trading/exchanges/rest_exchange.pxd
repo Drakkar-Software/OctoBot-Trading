@@ -20,23 +20,26 @@ cdef class RestExchange(AbstractExchange):
     cdef public bint is_authenticated
     cdef public bint is_sandboxed
 
-    # balance additional info
     cdef list info_list
+
+    # balance additional info
     cdef double free
     cdef double used
     cdef double total
 
     cdef object all_currencies_price_ticker
 
+    cdef public object current_account
+
     # private
-    cdef void __create_client(self)
-    cdef void __log_error(self, str error, object order_type, str symbol, double quantity, double price, double stop_price)
+    cdef void _create_client(self)
+    cdef void _log_error(self, str error, object order_type, str symbol, double quantity, double price, double stop_price)
 
     # @staticmethod TODO
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
 
     @staticmethod
-    cdef str __get_side(object order_type)
+    cdef str _get_side(object order_type)
 
     # public
     cpdef get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
@@ -55,7 +58,9 @@ cdef class RestExchange(AbstractExchange):
     cpdef dict parse_order(self, dict order)
     cpdef dict parse_ticker(self, dict ticker)
     cpdef dict parse_ohlcv(self, dict ohlcv)
+    cpdef dict parse_order_book(self, dict order_book)
     cpdef double parse_timestamp(self, dict data_dict, str timestamp_key)
     cpdef str parse_currency(self, str currency)
     cpdef object parse_status(self, str status)
     cpdef object parse_side(self, str side)
+    cpdef object parse_account(self, str account)
