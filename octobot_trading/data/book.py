@@ -18,7 +18,7 @@ import operator
 import pandas as pd
 from time import time
 
-from octobot_websockets.constants import SELL, BUY
+from octobot_trading.enums import TradeOrderSide
 
 
 class Book:
@@ -50,8 +50,8 @@ class Book:
         self.orders.update(insert_list)
         self.orders = self.orders.sort_index(ascending=False)
 
-    def get_asks(self, side=SELL):
+    def get_asks(self, side=TradeOrderSide.SELL.value):
         return self.orders.query(f"side.str.contains('{side}')", engine='python').values.tolist()
 
-    def get_bids(self, side=BUY):
+    def get_bids(self, side=TradeOrderSide.BUY.value):
         return self.orders.query(f"side.str.contains('{side}')", engine='python').values.tolist()

@@ -23,7 +23,6 @@ cdef class WebsocketExchange:
 
     cdef int timeout
     cdef int timeout_interval
-    cdef int book_update_interval
     cdef int updates
 
     cdef bint is_connected
@@ -31,6 +30,7 @@ cdef class WebsocketExchange:
     cdef bint use_testnet
     cdef bint is_authenticated
 
+    cdef public list currencies
     cdef public list pairs
     cdef public list time_frames
     cdef public list channels
@@ -47,9 +47,11 @@ cdef class WebsocketExchange:
     cdef object last_msg
     cdef object loop
 
-    cdef _initialize(self, list pairs, list channels, dict callbacks)
-    cdef on_close(self)
-    cdef list get_auth(self)
+    cdef void _initialize(self, list pairs, list channels)
+    cdef void on_open(self)
+    cdef void on_auth(self, bint status)
+    cdef void on_close(self)
+    cdef void on_error(self, str error)
     cdef list get_pairs(self)
     cdef double fix_timestamp(self, double ts)
     cdef double timestamp_normalize(self, double ts)

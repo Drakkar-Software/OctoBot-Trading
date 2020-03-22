@@ -407,7 +407,7 @@ class RestExchange(AbstractExchange):
         return OrderStatus(self.client.parse_order_status(status))
 
     def parse_side(self, side):
-        return TradeOrderSide.Buy if side == self.BUY_STR else TradeOrderSide.SELL
+        return TradeOrderSide.BUY if side == self.BUY_STR else TradeOrderSide.SELL
 
     def parse_account(self, account):
         return AccountTypes[account]

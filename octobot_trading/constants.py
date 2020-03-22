@@ -92,15 +92,6 @@ MODE_CHANNEL = "Mode"
 CCXT_INFO = "info"
 
 # Websocket constants
-BUY = 'buy'
-SELL = 'sell'
-
-BID = 'bid'
-ASK = 'ask'
-BIDS = 'bids'
-ASKS = 'asks'
-UND = 'undefined'
-
 CONFIG_EXCHANGE_WEB_SOCKET = "web-socket"
 
 WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
