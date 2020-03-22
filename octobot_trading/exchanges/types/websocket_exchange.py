@@ -24,8 +24,8 @@ import websockets
 from ccxt.base.errors import BadSymbol
 from ccxt.base.exchange import Exchange as ccxtExchange
 
-from octobot_commons.constants import HOURS_TO_SECONDS
-from octobot_commons.enums import TimeFrames
+from octobot_commons.constants import HOURS_TO_SECONDS, MINUTE_TO_SECONDS
+from octobot_commons.enums import TimeFrames, TimeFramesMinutes
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.enums import WebsocketFeeds as Feeds
@@ -33,16 +33,17 @@ from octobot_trading.enums import WebsocketFeeds as Feeds
 
 class WebsocketExchange:
     MAX_DELAY = HOURS_TO_SECONDS
+    EXCHANGE_FEEDS = {}
 
     def __init__(self,
                  exchange_manager: object,
-                 pairs: list = None,
                  channels: list = None,
+                 currencies: list = None,
+                 pairs: list = None,
+                 time_frames: List[TimeFrames] = None,
                  api_key: str = None,
                  api_secret: str = None,
                  api_password: str = None,
-                 time_frames: List[TimeFrames] = None,
-                 book_interval: int = 1000,
                  timeout: int = 120,
                  timeout_interval: int = 5):
         self.logger = get_logger(self.__class__.__name__)
@@ -60,13 +61,13 @@ class WebsocketExchange:
 
         self.timeout = timeout
         self.timeout_interval = timeout_interval
-        self.book_update_interval = book_interval
         self.updates = 0
 
         self.is_connected = False
         self.is_authenticated = False
         self.should_stop = False
 
+        self.currencies = currencies if currencies else []
         self.pairs = []
         self.channels = []
         self.time_frames = time_frames if time_frames is not None else []
@@ -113,7 +114,7 @@ class WebsocketExchange:
                     self._watch_task = asyncio.create_task(self._watch())
                     # connection was successful, reset retry count and delay
                     delay = 1
-                    if self.api_key and self.api_secret:
+                    if not self.exchange_manager.without_auth and self.api_key and self.api_secret:
                         await self.do_auth()
 
                     await self.prepare()
@@ -193,6 +194,18 @@ class WebsocketExchange:
     async def prepare(self):
         pass
 
+    @classmethod
+    def is_handling_spot(cls) -> bool:
+        return False
+
+    @classmethod
+    def is_handling_margin(cls) -> bool:
+        return False
+
+    @classmethod
+    def is_handling_future(cls) -> bool:
+        return False
+
     @abstractmethod
     async def do_auth(self):
         NotImplementedError("on_message is not implemented")
@@ -203,83 +216,35 @@ class WebsocketExchange:
 
     @abstractmethod
     async def on_message(self, message):
-        raise NotImplemented("on_message is not implemented")
+        raise NotImplementedError("on_message is not implemented")
 
     @abstractmethod
     async def subscribe(self):
-        raise NotImplemented("subscribe is not implemented")
+        raise NotImplementedError("subscribe is not implemented")
 
     @classmethod
     def get_name(cls) -> str:
-        raise NotImplemented("get_name is not implemented")
+        raise NotImplementedError("get_name is not implemented")
 
     @classmethod
     def get_ws_endpoint(cls) -> str:
-        raise NotImplemented("get_ws_endpoint is not implemented")
+        raise NotImplementedError("get_ws_endpoint is not implemented")
 
     @classmethod
     def get_ws_testnet_endpoint(cls) -> str:
-        raise NotImplemented("get_ws_testnet_endpoint is not implemented")
+        raise NotImplementedError("get_ws_testnet_endpoint is not implemented")
 
     @classmethod
     def get_endpoint(cls) -> str:
-        raise NotImplemented("get_endpoint is not implemented")
+        raise NotImplementedError("get_endpoint is not implemented")
 
     @classmethod
     def get_testnet_endpoint(cls):
-        raise NotImplemented("get_testnet_endpoint is not implemented")
+        raise NotImplementedError("get_testnet_endpoint is not implemented")
 
     @classmethod
     def get_ccxt_async_client(cls):
-        raise NotImplemented("get_ccxt_async_client is not implemented")
-
-    @classmethod
-    def get_L2_book_feed(cls) -> str:
-        raise NotImplemented("get_L2_book_feed is not implemented")
-
-    @classmethod
-    def get_L3_book_feed(cls) -> str:
-        raise NotImplemented("get_L3_book_feed is not implemented")
-
-    @classmethod
-    def get_trades_feed(cls) -> str:
-        raise NotImplemented("get_trades_feed is not implemented")
-
-    @classmethod
-    def get_ticker_feed(cls) -> str:
-        raise NotImplemented("get_ticker_feed is not implemented")
-
-    @classmethod
-    def get_candle_feed(cls) -> str:
-        raise NotImplemented("get_candle_feed is not implemented")
-
-    @classmethod
-    def get_kline_feed(cls) -> str:
-        raise NotImplemented("get_kline_feed is not implemented")
-
-    @classmethod
-    def get_funding_feed(cls) -> str:
-        raise NotImplemented("get_funding_feed is not implemented")
-
-    @classmethod
-    def get_portfolio_feed(cls) -> str:
-        raise NotImplemented("get_portfolio_feed is not implemented")
-
-    @classmethod
-    def get_orders_feed(cls) -> str:
-        raise NotImplemented("get_orders_feed is not implemented")
-
-    @classmethod
-    def get_position_feed(cls) -> str:
-        raise NotImplemented("get_position_feed is not implemented")
-
-    @classmethod
-    def get_mark_price_feed(cls) -> str:
-        raise NotImplemented("get_mark_price_feed is not implemented")
-
-    @classmethod
-    def get_execution_feed(cls) -> str:
-        raise NotImplemented("get_execution_feed is not implemented")
+        raise NotImplementedError("get_ccxt_async_client is not implemented")
 
     def fix_timestamp(self, ts):
         return ts
@@ -289,23 +254,14 @@ class WebsocketExchange:
 
     @classmethod
     def get_feeds(cls) -> dict:
-        return {
-            Feeds.FUNDING: cls.get_funding_feed(),
-            Feeds.MARK_PRICE: cls.get_mark_price_feed(),
-            Feeds.L2_BOOK: cls.get_L2_book_feed(),
-            Feeds.L3_BOOK: cls.get_L3_book_feed(),
-            Feeds.TRADES: cls.get_trades_feed(),
-            Feeds.CANDLE: cls.get_candle_feed(),
-            Feeds.KLINE: cls.get_kline_feed(),
-            Feeds.TICKER: cls.get_ticker_feed(),
-            Feeds.POSITION: cls.get_position_feed(),
-            Feeds.ORDERS: cls.get_orders_feed(),
-            Feeds.TRADE: cls.get_execution_feed(),
-            Feeds.PORTFOLIO: cls.get_portfolio_feed()
-        }
+        return cls.EXCHANGE_FEEDS
+
+    @classmethod
+    def get_exchange_feed(cls, feed) -> str:
+        return cls.EXCHANGE_FEEDS.get(feed, Feeds.UNSUPPORTED.value)
 
     def feed_to_exchange(self, feed):
-        ret: str = self.get_feeds()[feed]
+        ret: str = self.get_exchange_feed(feed)
         if ret == Feeds.UNSUPPORTED.value:
             self.logger.error("{} is not supported on {}".format(feed, self.get_name()))
             raise ValueError(f"{feed} is not supported on {self.get_name()}")

@@ -15,6 +15,8 @@
 #  License along with this library.
 import uuid
 
+from ccxt import AuthenticationError
+
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
 from octobot_commons.config_util import has_invalid_default_config_value, decrypt
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
@@ -60,6 +62,7 @@ class ExchangeManager(Initializable):
         self.is_margin: bool = False
         self.is_future: bool = False
         self.is_sandboxed: bool = False
+        self.without_auth: bool = False
 
         # exchange_only is True when exchange channels are not required (therefore not created)
         self.exchange_only: bool = False
@@ -173,7 +176,13 @@ class ExchangeManager(Initializable):
         if not self.exchange:
             await self._search_and_create_rest_exchange()
 
-        await self.exchange.initialize()
+        try:
+            await self.exchange.initialize()
+        except AuthenticationError:
+            self._logger.error("Authentication error, retrying without authentication...")
+            self.without_auth = True
+            await self._create_real_exchange()
+            return
 
         self._load_constants()
 
@@ -416,7 +425,7 @@ class ExchangeManager(Initializable):
         return True
 
     def get_exchange_credentials(self, logger, exchange_name):
-        if self.ignore_config or not self.should_decrypt_token(logger):
+        if self.ignore_config or not self.should_decrypt_token(logger) or self.without_auth:
             return "", "", ""
         config_exchange = self.config[CONFIG_EXCHANGES][exchange_name]
         return decrypt(config_exchange[CONFIG_EXCHANGE_KEY]) \

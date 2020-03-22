@@ -134,7 +134,7 @@ class TestTradeFactory:
         assert trade.status == OrderStatus.FILLED
 
         trade = create_trade_from_order(order)
-        assert trade.status == OrderStatus.CLOSED
+        assert trade.status == OrderStatus.FILLED
 
         exec_time = time.time()
         trade = create_trade_from_order(order, executed_time=exec_time)
