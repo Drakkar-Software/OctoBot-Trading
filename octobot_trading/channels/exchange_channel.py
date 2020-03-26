@@ -78,11 +78,9 @@ class ExchangeChannel(Channel):
                            consumer_filters: dict = None,
                            consumer_instance: object = None,
                            size=0,
-                           filter_size=False,
                            symbol=CHANNEL_WILDCARD,
                            cryptocurrency=CHANNEL_WILDCARD):
-        consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size,
-                                                                                   filter_size=filter_size)
+        consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size)
         await self._add_new_consumer_and_run(consumer,
                                              cryptocurrency=cryptocurrency,
                                              symbol=symbol,
