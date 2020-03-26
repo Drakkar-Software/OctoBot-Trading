@@ -62,8 +62,7 @@ class ModeChannel(ExchangeChannel):
                            trading_mode_name=CHANNEL_WILDCARD,
                            cryptocurrency=CHANNEL_WILDCARD,
                            symbol=CHANNEL_WILDCARD,
-                           time_frame=CHANNEL_WILDCARD,
-                           filter_size=False):
+                           time_frame=CHANNEL_WILDCARD):
         await self._add_new_consumer_and_run(consumer_instance,
                                              trading_mode_name=trading_mode_name,
                                              cryptocurrency=cryptocurrency,
