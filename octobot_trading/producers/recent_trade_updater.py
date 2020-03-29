@@ -18,9 +18,8 @@ import asyncio
 
 from ccxt.base.errors import NotSupported
 
-from octobot_trading.constants import RECENT_TRADES_CHANNEL
 from octobot_trading.channels.recent_trade import RecentTradeProducer
-from octobot_trading.enums import ExchangeConstantsOrderColumns
+from octobot_trading.constants import RECENT_TRADES_CHANNEL
 
 
 class RecentTradeUpdater(RecentTradeProducer):
@@ -31,11 +30,12 @@ class RecentTradeUpdater(RecentTradeProducer):
     async def init_recent_trades(self):
         try:
             for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                recent_trades = await self.channel.exchange_manager.exchange.get_recent_trades(pair,
-                                                                                               limit=self.RECENT_TRADE_LIMIT)
+                recent_trades = await self.channel.exchange_manager.exchange.\
+                    get_recent_trades(pair, limit=self.RECENT_TRADE_LIMIT)
                 if recent_trades:
                     await self.push(pair,
-                                    self.__cleanup_trades_dict(recent_trades),
+                                    list(map(self.channel.exchange_manager.exchange.clean_recent_trade,
+                                             recent_trades)),
                                     partial=True)
             await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
         except Exception as e:
@@ -47,11 +47,12 @@ class RecentTradeUpdater(RecentTradeProducer):
         while not self.should_stop and not self.channel.is_paused:
             try:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                    recent_trades = await self.channel.exchange_manager.exchange.get_recent_trades(pair,
-                                                                                                   limit=self.RECENT_TRADE_LIMIT)
+                    recent_trades = await self.channel.exchange_manager.exchange.\
+                        get_recent_trades(pair, limit=self.RECENT_TRADE_LIMIT)
                     try:
                         await self.push(pair,
-                                        self.__cleanup_trades_dict(recent_trades),
+                                        list(map(self.channel.exchange_manager.exchange.clean_recent_trade,
+                                                 recent_trades)),
                                         partial=True)
                     except TypeError:
                         pass
@@ -61,22 +62,6 @@ class RecentTradeUpdater(RecentTradeProducer):
                 await self.pause()
             except Exception as e:
                 self.logger.exception(e, True, f"Fail to update recent trades : {e}")
-
-    def __cleanup_trades_dict(self, recent_trades):
-        try:
-            for trade in recent_trades:
-                trade.pop(ExchangeConstantsOrderColumns.INFO.value)
-                trade.pop(ExchangeConstantsOrderColumns.DATETIME.value)
-                trade.pop(ExchangeConstantsOrderColumns.ID.value)
-                trade.pop(ExchangeConstantsOrderColumns.ORDER.value)
-                trade.pop(ExchangeConstantsOrderColumns.SYMBOL.value)
-                trade.pop(ExchangeConstantsOrderColumns.COST.value)
-                trade.pop(ExchangeConstantsOrderColumns.FEE.value)
-                trade.pop(ExchangeConstantsOrderColumns.TYPE.value)
-                trade.pop(ExchangeConstantsOrderColumns.TAKERORMAKER.value)
-        except KeyError as e:
-            self.logger.error(f"Fail to cleanup recent trades dict ({e})")
-        return recent_trades
 
     async def resume(self) -> None:
         await super().resume()

@@ -37,7 +37,7 @@ class TradesUpdater(TradesProducer):
                     limit=self.MAX_OLD_TRADES_TO_FETCH)
 
                 if trades:
-                    await self.push(trades=self._cleanup_trades_dict(trades))
+                    await self.push(trades=list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
 
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
         except NotSupported:
@@ -58,22 +58,11 @@ class TradesUpdater(TradesProducer):
         #                 limit=self.TRADES_LIMIT)
         #
         #             if trades:
-        #                 await self.push(self._cleanup_trades_dict(trades))
+        #                 await self.push(list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
         #     except Exception as e:
         #         self.logger.error(f"Fail to update trades : {e}")
         #
         #     await asyncio.sleep(self.TRADES_REFRESH_TIME)
-
-    def _cleanup_trades_dict(self, trades):
-        for trade in trades:
-            try:
-                trade.pop(ExchangeConstantsOrderColumns.INFO.value)
-                exchange_timestamp = trade[ExchangeConstantsOrderColumns.TIMESTAMP.value]
-                trade[ExchangeConstantsOrderColumns.TIMESTAMP.value] = \
-                    self.channel.exchange_manager.get_uniformized_timestamp(exchange_timestamp)
-            except KeyError as e:
-                self.logger.error(f"Fail to cleanup trade dict ({e})")
-        return trades
 
     async def resume(self) -> None:
         await super().resume()
