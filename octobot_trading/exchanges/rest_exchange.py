@@ -26,7 +26,7 @@ from octobot_commons.enums import TimeFramesMinutes
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
-    ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes
+    ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes, ExchangeConstantsOrderColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
 
@@ -417,3 +417,37 @@ class RestExchange(AbstractExchange):
 
     def parse_account(self, account):
         return AccountTypes[account]
+
+    """
+    Cleaners
+    """
+    def clean_recent_trade(self, recent_trade):
+        try:
+            recent_trade.pop(ExchangeConstantsOrderColumns.INFO.value)
+            recent_trade.pop(ExchangeConstantsOrderColumns.DATETIME.value)
+            recent_trade.pop(ExchangeConstantsOrderColumns.ID.value)
+            recent_trade.pop(ExchangeConstantsOrderColumns.ORDER.value)
+            recent_trade.pop(ExchangeConstantsOrderColumns.FEE.value)
+            recent_trade.pop(ExchangeConstantsOrderColumns.TYPE.value)
+            recent_trade.pop(ExchangeConstantsOrderColumns.TAKERORMAKER.value)
+        except KeyError as e:
+            self.logger.error(f"Fail to clean recent_trade dict ({e})")
+        return recent_trade
+
+    def clean_trade(self, trade):
+        try:
+            trade.pop(ExchangeConstantsOrderColumns.INFO.value)
+            trade[ExchangeConstantsOrderColumns.TIMESTAMP.value] = \
+                self.exchange_manager.get_uniformized_timestamp(trade[ExchangeConstantsOrderColumns.TIMESTAMP.value])
+        except KeyError as e:
+            self.logger.error(f"Fail to clean trade dict ({e})")
+        return trade
+
+    def clean_order(self, order):
+        try:
+            order.pop(ExchangeConstantsOrderColumns.INFO.value)
+            exchange_timestamp = order[ExchangeConstantsOrderColumns.TIMESTAMP.value]
+            order[ExchangeConstantsOrderColumns.TIMESTAMP.value] = \
+                self.exchange_manager.get_uniformized_timestamp(exchange_timestamp)
+        except KeyError as e:
+            self.logger.error(f"Fail to cleanup order dict ({e})")

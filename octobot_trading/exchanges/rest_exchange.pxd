@@ -65,3 +65,8 @@ cdef class RestExchange(AbstractExchange):
     cpdef object parse_status(self, str status)
     cpdef object parse_side(self, str side)
     cpdef object parse_account(self, str account)
+
+    # cleaners
+    cpdef dict clean_recent_trade(self, dict recent_trade)
+    cpdef dict clean_trade(self, dict trade)
+    cpdef dict clean_order(self, dict order)
