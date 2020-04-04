@@ -399,6 +399,9 @@ class RestExchange(AbstractExchange):
     def parse_order_book(self, order_book):
         return self.client.parse_order_book(order_book)
 
+    def parse_order_book_ticker(self, order_book_ticker):
+        return order_book_ticker
+
     def parse_timestamp(self, data_dict, timestamp_key, default_value=None, ms=False):
         parsed_timestamp = self.client.parse8601(self.client.safe_string(data_dict, timestamp_key))
         return (parsed_timestamp if ms else parsed_timestamp * 10 ** -3) if parsed_timestamp else default_value

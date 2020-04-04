@@ -23,7 +23,7 @@ cdef class WebsocketExchange:
 
     cdef int timeout
     cdef int timeout_interval
-    cdef int updates
+    cdef int last_ping_time
 
     cdef bint is_connected
     cdef bint should_stop

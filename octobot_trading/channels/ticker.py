@@ -26,9 +26,11 @@ class TickerProducer(ExchangeChannelProducer):
 
     async def perform(self, symbol, ticker):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):  # and price_ticker_is_initialized
-                self.channel.exchange_manager.get_symbol_data(symbol).handle_ticker_update(ticker)
-                await self.send(symbol=symbol, ticker=ticker)
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+                    self.channel.get_filtered_consumers(symbol=symbol):  #
+                if ticker:  # and price_ticker_is_initialized
+                    self.channel.exchange_manager.get_symbol_data(symbol).handle_ticker_update(ticker)
+                    await self.send(symbol=symbol, ticker=ticker)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
@@ -46,4 +48,35 @@ class TickerProducer(ExchangeChannelProducer):
 
 class TickerChannel(ExchangeChannel):
     PRODUCER_CLASS = TickerProducer
+    CONSUMER_CLASS = ExchangeChannelConsumer
+
+
+class MiniTickerProducer(ExchangeChannelProducer):
+    async def push(self, symbol, mini_ticker):
+        await self.perform(symbol, mini_ticker)
+
+    async def perform(self, symbol, mini_ticker):
+        try:
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+                    self.channel.get_filtered_consumers(symbol=symbol):
+                if mini_ticker:
+                    self.channel.exchange_manager.get_symbol_data(symbol).handle_mini_ticker_update(mini_ticker)
+                    await self.send(symbol=symbol, mini_ticker=mini_ticker)
+        except CancelledError:
+            self.logger.info("Update tasks cancelled.")
+        except Exception as e:
+            self.logger.exception(e, True, f"Exception when triggering update: {e}")
+
+    async def send(self, symbol, mini_ticker):
+        for consumer in self.channel.get_filtered_consumers(symbol=symbol):
+            await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange_name,
+                "exchange_id": self.channel.exchange_manager.id,
+                "symbol": symbol,
+                "mini_ticker": mini_ticker
+            })
+
+
+class MiniTickerChannel(ExchangeChannel):
+    PRODUCER_CLASS = MiniTickerProducer
     CONSUMER_CLASS = ExchangeChannelConsumer

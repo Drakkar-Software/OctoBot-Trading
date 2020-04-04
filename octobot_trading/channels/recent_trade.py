@@ -16,7 +16,6 @@
 from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
-
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
 
 
@@ -26,7 +25,8 @@ class RecentTradeProducer(ExchangeChannelProducer):
 
     async def perform(self, symbol, recent_trades, replace_all=False, partial=False):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+                    self.channel.get_filtered_consumers(symbol=symbol):
                 recent_trades = self.channel.exchange_manager.get_symbol_data(symbol).handle_recent_trade_update(
                     recent_trades,
                     replace_all=replace_all,
@@ -52,4 +52,34 @@ class RecentTradeProducer(ExchangeChannelProducer):
 class RecentTradeChannel(ExchangeChannel):
     FILTER_SIZE = 10
     PRODUCER_CLASS = RecentTradeProducer
+    CONSUMER_CLASS = ExchangeChannelConsumer
+
+
+class LiquidationsProducer(ExchangeChannelProducer):
+    async def push(self, symbol, liquidations):
+        await self.perform(symbol, liquidations)
+
+    async def perform(self, symbol, liquidations):
+        try:
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
+                    symbol=symbol):
+                self.channel.exchange_manager.get_symbol_data(symbol).handle_liquidations(liquidations)
+                await self.send(symbol=symbol, liquidations=liquidations)
+        except CancelledError:
+            self.logger.info("Update tasks cancelled.")
+        except Exception as e:
+            self.logger.exception(e, True, f"Exception when triggering update: {e}")
+
+    async def send(self, symbol, liquidations):
+        for consumer in self.channel.get_filtered_consumers(symbol=symbol):
+            await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange_name,
+                "exchange_id": self.channel.exchange_manager.id,
+                "symbol": symbol,
+                "liquidations": liquidations
+            })
+
+
+class LiquidationsChannel(ExchangeChannel):
+    PRODUCER_CLASS = LiquidationsProducer
     CONSUMER_CLASS = ExchangeChannelConsumer

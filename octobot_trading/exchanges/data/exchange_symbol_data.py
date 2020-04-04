@@ -78,15 +78,23 @@ class ExchangeSymbolData:
         # recent trades should be a dict
         return self.recent_trades_manager.add_recent_trade(recent_trades)
 
+    def handle_liquidations(self, liquidations):
+        self.recent_trades_manager.add_new_liquidations(liquidations)
+
     def handle_mark_price_update(self, mark_price):
         self.prices_manager.set_mark_price(mark_price)
 
     def handle_order_book_update(self, asks, bids):
         self.order_book_manager.order_book_update(asks, bids)
 
+    def handle_order_book_ticker_update(self, ask_quantity, ask_price, bid_quantity, bid_price):
+        self.order_book_manager.order_book_ticker_update(ask_quantity, ask_price, bid_quantity, bid_price)
+
     def handle_ticker_update(self, ticker):
-        if ticker:
-            self.ticker_manager.ticker_update(ticker)
+        self.ticker_manager.ticker_update(ticker)
+
+    def handle_mini_ticker_update(self, mini_ticker):
+        self.ticker_manager.mini_ticker_update(mini_ticker)
 
     async def handle_kline_update(self, time_frame, kline):
         try:

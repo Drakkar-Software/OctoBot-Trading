@@ -14,6 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import logging
+
+import time
 from abc import abstractmethod
 from asyncio import CancelledError
 from datetime import datetime
@@ -47,6 +50,8 @@ class WebsocketExchange:
                  timeout: int = 120,
                  timeout_interval: int = 5):
         self.logger = get_logger(self.__class__.__name__)
+        logging.getLogger('websockets.server').setLevel(logging.ERROR)
+        logging.getLogger('websockets.protocol').setLevel(logging.ERROR)
 
         self.exchange_manager = exchange_manager
         self.exchange = self.exchange_manager.exchange
@@ -61,7 +66,7 @@ class WebsocketExchange:
 
         self.timeout = timeout
         self.timeout_interval = timeout_interval
-        self.updates = 0
+        self.last_ping_time = 0
 
         self.is_connected = False
         self.is_authenticated = False
@@ -167,14 +172,15 @@ class WebsocketExchange:
             self.logger.warning("Authentication failed")
 
     def on_pong(self):
-        self.logger.debug("Pong received")
+        self.logger.debug(f"Pong received | latency = {float(time.time() * 1000)  - (self.last_ping_time * 1000)}")
 
     async def on_ping(self):
         self.logger.debug("Ping received. Sending pong...")
-        await self.ping()
+        self.websocket.pong()
 
     async def ping(self):
-        self.logger.warning("Ping command not implemented")
+        self.last_ping_time = time.time()
+        self.websocket.ping()
 
     def on_close(self):
         self.logger.info('Closed')

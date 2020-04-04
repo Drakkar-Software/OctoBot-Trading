@@ -28,4 +28,5 @@ cdef class OrderBookManager(Initializable):
 
     cpdef void reset_order_book(self)
     cpdef void order_book_update(self, list asks, list bids)
-    cpdef void order_book_delta_update(self, list asks, list bids)
+    cpdef void order_book_ticker_update(self, double ask_quantity, double ask_price,
+                                        double bid_quantity, double bid_price)

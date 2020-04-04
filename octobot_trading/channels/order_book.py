@@ -26,7 +26,8 @@ class OrderBookProducer(ExchangeChannelProducer):
 
     async def perform(self, symbol, asks, bids):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):  # and symbol_data.order_book_is_initialized()
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
+                    symbol=symbol):  # and symbol_data.order_book_is_initialized()
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_update(asks, bids)
                 await self.send(symbol=symbol, asks=asks, bids=bids)
         except CancelledError:
@@ -47,4 +48,42 @@ class OrderBookProducer(ExchangeChannelProducer):
 
 class OrderBookChannel(ExchangeChannel):
     PRODUCER_CLASS = OrderBookProducer
+    CONSUMER_CLASS = ExchangeChannelConsumer
+
+
+class OrderBookTickerProducer(ExchangeChannelProducer):
+    async def push(self, symbol, ask_quantity, ask_price, bid_quantity, bid_price):
+        await self.perform(symbol, ask_quantity, ask_price, bid_quantity, bid_price)
+
+    async def perform(self, symbol, ask_quantity, ask_price, bid_quantity, bid_price):
+        try:
+            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
+                    symbol=symbol):
+                self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_ticker_update(ask_quantity,
+                                                                                                      ask_price,
+                                                                                                      bid_quantity,
+                                                                                                      bid_price)
+                await self.send(symbol=symbol,
+                                ask_quantity=ask_quantity, ask_price=ask_price,
+                                bid_quantity=bid_quantity, bid_price=bid_price)
+        except CancelledError:
+            self.logger.info("Update tasks cancelled.")
+        except Exception as e:
+            self.logger.exception(e, True, f"Exception when triggering update: {e}")
+
+    async def send(self, symbol, ask_quantity, ask_price, bid_quantity, bid_price):
+        for consumer in self.channel.get_filtered_consumers(symbol=symbol):
+            await consumer.queue.put({
+                "exchange": self.channel.exchange_manager.exchange_name,
+                "exchange_id": self.channel.exchange_manager.id,
+                "symbol": symbol,
+                "ask_quantity": ask_quantity,
+                "ask_price": ask_price,
+                "bid_quantity": bid_quantity,
+                "bid_price": bid_price
+            })
+
+
+class OrderBookTickerChannel(ExchangeChannel):
+    PRODUCER_CLASS = OrderBookTickerProducer
     CONSUMER_CLASS = ExchangeChannelConsumer

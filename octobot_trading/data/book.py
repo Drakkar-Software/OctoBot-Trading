@@ -35,9 +35,8 @@ class Book:
         self.timestamp = time()
 
     def handle_book_delta_delete(self, orders, id_key="id"):
-        # ids = [order[id_key] for order in orders]
-        # self.orders.drop(index=ids)
-        pass
+        ids = [order[id_key] for order in orders]
+        self.orders.drop(index=ids, errors='ignore')
 
     def handle_book_delta_update(self, orders, id_key="id"):
         update_list = pd.json_normalize(orders).set_index(id_key)

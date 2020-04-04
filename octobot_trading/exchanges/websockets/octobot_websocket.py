@@ -52,9 +52,12 @@ class OctoBotWebSocketClient(AbstractWebsocket):
             await self.add_feed(WebsocketFeeds.TRADES)
             await self.add_feed(WebsocketFeeds.L2_BOOK)
             await self.add_feed(WebsocketFeeds.L3_BOOK)
+            await self.add_feed(WebsocketFeeds.BOOK_TICKER)
+            await self.add_feed(WebsocketFeeds.MINI_TICKER)
             await self.add_feed(WebsocketFeeds.TICKER)
             await self.add_feed(WebsocketFeeds.FUNDING)
             await self.add_feed(WebsocketFeeds.MARK_PRICE)
+            await self.add_feed(WebsocketFeeds.LIQUIDATIONS)
 
             if self.time_frames:
                 await self.add_feed(WebsocketFeeds.CANDLE)

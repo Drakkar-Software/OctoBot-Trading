@@ -80,11 +80,14 @@ class FutureExchange(RestExchange):
     def parse_mark_price(self, mark_price_dict, from_ticker=False) -> dict:
         return mark_price_dict
 
+    def parse_liquidation(self, liquidation_dict) -> dict:
+        return liquidation_dict
+
     def parse_position_status(self, status):
-        return PositionStatus(status)
+        return status
 
     def parse_position_side(self, side):
-        return PositionSide.LONG if side == self.LONG_STR else PositionSide.SHORT
+        return PositionSide.LONG.value if side == self.LONG_STR else PositionSide.SHORT.value
 
     def calculate_position_value(self, quantity, mark_price):
         if mark_price:

@@ -21,5 +21,10 @@ cdef class TickerManager(Initializable):
     cdef object logger
 
     cdef public dict ticker
+    cdef public dict mini_ticker
+
+    cdef void reset_ticker(self)
+    cdef void reset_mini_ticker(self)
 
     cpdef void ticker_update(self, dict ticker)
+    cpdef void mini_ticker_update(self, dict mini_ticker)

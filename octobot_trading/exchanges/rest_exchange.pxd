@@ -59,6 +59,7 @@ cdef class RestExchange(AbstractExchange):
     cpdef dict parse_ticker(self, dict ticker)
     cpdef dict parse_ohlcv(self, dict ohlcv)
     cpdef dict parse_order_book(self, dict order_book)
+    cpdef dict parse_order_book_ticker(self, dict order_book_ticker)
     cpdef double parse_timestamp(self, dict data_dict, str timestamp_key, object default_value=*, bint ms=*)
     cpdef str parse_currency(self, str currency)
     cpdef object parse_status(self, str status)
