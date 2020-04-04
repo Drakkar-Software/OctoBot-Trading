@@ -19,9 +19,10 @@ import asyncio
 from ccxt.base.errors import NotSupported
 
 from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.constants import TICKER_CHANNEL, FUNDING_CHANNEL, MARK_PRICE_CHANNEL
+from octobot_trading.constants import TICKER_CHANNEL, FUNDING_CHANNEL, MARK_PRICE_CHANNEL, MINI_TICKER_CHANNEL
 from octobot_trading.channels.ticker import TickerProducer
-from octobot_trading.enums import ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns
+from octobot_trading.enums import ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns, \
+    ExchangeConstantsMiniTickerColumns, ExchangeConstantsTickersColumns
 
 
 class TickerUpdater(TickerProducer):
@@ -46,6 +47,7 @@ class TickerUpdater(TickerProducer):
 
                     if ticker:
                         await self.push(pair, ticker)
+                        await self.parse_mini_ticker(pair, ticker)
 
                         if self.channel.exchange_manager.is_future:
                             await self.parse_future_data(pair, ticker)
@@ -68,6 +70,28 @@ class TickerUpdater(TickerProducer):
 
     def _get_pairs_to_update(self):
         return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self._added_pairs
+
+    """
+    Mini ticker
+    """
+    async def parse_mini_ticker(self, pair, ticker):
+        try:
+            await get_chan(MINI_TICKER_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+                push(symbol=pair, mini_ticker={
+                    ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value:
+                        ticker[ExchangeConstantsTickersColumns.HIGH.value],
+                    ExchangeConstantsMiniTickerColumns.LOW_PRICE.value:
+                        ticker[ExchangeConstantsTickersColumns.LOW.value],
+                    ExchangeConstantsMiniTickerColumns.OPEN_PRICE.value:
+                        ticker[ExchangeConstantsTickersColumns.OPEN.value],
+                    ExchangeConstantsMiniTickerColumns.CLOSE_PRICE.value:
+                        ticker[ExchangeConstantsTickersColumns.CLOSE.value],
+                    ExchangeConstantsMiniTickerColumns.VOLUME.value:
+                        ticker[ExchangeConstantsTickersColumns.BASE_VOLUME.value],
+                    ExchangeConstantsMiniTickerColumns.TIMESTAMP.value:
+                        ticker[ExchangeConstantsTickersColumns.TIMESTAMP.value]})
+        except Exception as e:
+            self.logger.error(f"Failed to parse mini ticker : {e}")
 
     """
     Future data management

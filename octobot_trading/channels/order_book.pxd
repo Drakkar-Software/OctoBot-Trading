@@ -23,3 +23,9 @@ cdef class OrderBookProducer(ExchangeChannelProducer):
 
 cdef class OrderBookChannel(ExchangeChannel):
     pass
+
+cdef class OrderBookTickerProducer(ExchangeChannelProducer):
+    pass
+
+cdef class OrderBookTickerChannel(ExchangeChannel):
+    pass

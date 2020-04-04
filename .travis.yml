@@ -45,7 +45,7 @@ jobs:
       python: 3.8-dev
       language: python
       script:
-        - pylint --rcfile=standard.rc octobot_trading
+        - pylint --rcfile=standard.rc $PACKAGE_FOLDER
         - if [ $? -ne 1 ]; then exit 0; fi
 
     - name: "Linux - Python 3 - Deploy"

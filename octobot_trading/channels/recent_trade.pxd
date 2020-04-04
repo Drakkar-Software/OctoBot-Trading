@@ -23,3 +23,9 @@ cdef class RecentTradeProducer(ExchangeChannelProducer):
 
 cdef class RecentTradeChannel(ExchangeChannel):
     pass
+
+cdef class LiquidationsProducer(ExchangeChannelProducer):
+    pass
+
+cdef class LiquidationsChannel(ExchangeChannel):
+    pass

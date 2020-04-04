@@ -23,3 +23,9 @@ cdef class TickerProducer(ExchangeChannelProducer):
 
 cdef class TickerChannel(ExchangeChannel):
     pass
+
+cdef class MiniTickerProducer(ExchangeChannelProducer):
+    pass
+
+cdef class MiniTickerChannel(ExchangeChannel):
+    pass

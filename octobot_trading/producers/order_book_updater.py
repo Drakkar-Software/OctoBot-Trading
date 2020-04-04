@@ -18,7 +18,8 @@ import asyncio
 
 from ccxt.base.errors import NotSupported
 
-from octobot_trading.constants import ORDER_BOOK_CHANNEL
+from octobot_trading.channels.exchange_channel import get_chan
+from octobot_trading.constants import ORDER_BOOK_CHANNEL, ORDER_BOOK_TICKER_CHANNEL
 from octobot_trading.channels.order_book import OrderBookProducer
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns
 
@@ -35,15 +36,31 @@ class OrderBookUpdater(OrderBookProducer):
                     try:
                         asks, bids = order_book[ExchangeConstantsOrderBookInfoColumns.ASKS.value], \
                                      order_book[ExchangeConstantsOrderBookInfoColumns.BIDS.value]
+
+                        await self.parse_order_book_ticker(pair, asks, bids)
                         await self.push(pair, asks, bids)
-                    except TypeError:
-                        pass
+                    except TypeError as e:
+                        self.logger.error(f"Failed to fetch order book for {pair} : {e}")
                 await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
                 self.logger.exception(e, True, f"Fail to update order book : {e}")
+
+    """
+    Order book ticker
+    """
+
+    async def parse_order_book_ticker(self, pair, asks, bids):
+        try:
+            if asks and bids:
+                await get_chan(ORDER_BOOK_TICKER_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+                    push(symbol=pair,
+                         ask_quantity=asks[0][1], ask_price=asks[0][0],
+                         bid_quantity=bids[0][1], bid_price=bids[0][0])
+        except Exception as e:
+            self.logger.error(f"Failed to parse order book ticker : {e}")
 
     async def resume(self) -> None:
         await super().resume()

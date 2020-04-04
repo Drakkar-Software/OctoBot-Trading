@@ -25,6 +25,7 @@ class OrderBookManager(Initializable):
         self.order_book_initialized = False
         self.bids = []
         self.asks = []
+        self.ask_quantity, self.ask_price, self.bid_quantity, self.bid_price = 0, 0, 0, 0
 
     async def initialize_impl(self):
         self.reset_order_book()
@@ -33,6 +34,7 @@ class OrderBookManager(Initializable):
         self.order_book_initialized = False
         self.bids = []
         self.asks = []
+        self.ask_quantity, self.ask_price, self.bid_quantity, self.bid_price = 0, 0, 0, 0
 
     def order_book_update(self, asks, bids):
         self.order_book_initialized = True
@@ -41,5 +43,6 @@ class OrderBookManager(Initializable):
         if bids:
             self.bids = bids
 
-    def order_book_delta_update(self, asks, bids):
-        pass
+    def order_book_ticker_update(self, ask_quantity, ask_price, bid_quantity, bid_price):
+        self.ask_quantity, self.ask_price = ask_quantity, ask_price
+        self.bid_quantity, self.bid_price = bid_quantity, bid_price

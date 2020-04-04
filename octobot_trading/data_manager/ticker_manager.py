@@ -16,7 +16,7 @@
 from math import nan
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.enums import ExchangeConstantsTickersColumns
+from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsMiniTickerColumns
 from octobot_trading.util.initializable import Initializable
 
 
@@ -25,28 +25,44 @@ class TickerManager(Initializable):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.ticker = {}
+        self.mini_ticker = {}
         self.reset_ticker()
+        self.reset_mini_ticker()
 
     async def initialize_impl(self):
         self.reset_ticker()
+        self.reset_mini_ticker()
+
+    def reset_mini_ticker(self):
+        self.mini_ticker = {
+            ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value: nan,
+            ExchangeConstantsMiniTickerColumns.LOW_PRICE.value: nan,
+            ExchangeConstantsMiniTickerColumns.OPEN_PRICE.value: nan,
+            ExchangeConstantsMiniTickerColumns.CLOSE_PRICE.value: nan,
+            ExchangeConstantsMiniTickerColumns.VOLUME.value: nan,
+            ExchangeConstantsMiniTickerColumns.TIMESTAMP.value: 0
+        }
 
     def reset_ticker(self):
         self.ticker = {
-            ExchangeConstantsTickersColumns.ASK: nan,
-            ExchangeConstantsTickersColumns.ASK_VOLUME: nan,
-            ExchangeConstantsTickersColumns.BID: nan,
-            ExchangeConstantsTickersColumns.BID_VOLUME: nan,
-            ExchangeConstantsTickersColumns.OPEN: nan,
-            ExchangeConstantsTickersColumns.LOW: nan,
-            ExchangeConstantsTickersColumns.HIGH: nan,
-            ExchangeConstantsTickersColumns.CLOSE: nan,
-            ExchangeConstantsTickersColumns.LAST: nan,
-            ExchangeConstantsTickersColumns.AVERAGE: nan,
-            ExchangeConstantsTickersColumns.SYMBOL: nan,
-            ExchangeConstantsTickersColumns.QUOTE_VOLUME: nan,
-            ExchangeConstantsTickersColumns.TIMESTAMP: 0,
-            ExchangeConstantsTickersColumns.VWAP: nan
+            ExchangeConstantsTickersColumns.ASK.value: nan,
+            ExchangeConstantsTickersColumns.ASK_VOLUME.value: nan,
+            ExchangeConstantsTickersColumns.BID.value: nan,
+            ExchangeConstantsTickersColumns.BID_VOLUME.value: nan,
+            ExchangeConstantsTickersColumns.OPEN.value: nan,
+            ExchangeConstantsTickersColumns.LOW.value: nan,
+            ExchangeConstantsTickersColumns.HIGH.value: nan,
+            ExchangeConstantsTickersColumns.CLOSE.value: nan,
+            ExchangeConstantsTickersColumns.LAST.value: nan,
+            ExchangeConstantsTickersColumns.AVERAGE.value: nan,
+            ExchangeConstantsTickersColumns.SYMBOL.value: nan,
+            ExchangeConstantsTickersColumns.QUOTE_VOLUME.value: nan,
+            ExchangeConstantsTickersColumns.TIMESTAMP.value: 0,
+            ExchangeConstantsTickersColumns.VWAP.value: nan
         }
 
     def ticker_update(self, ticker):
         self.ticker.update(ticker)
+
+    def mini_ticker_update(self, mini_ticker):
+        self.mini_ticker.update(mini_ticker)

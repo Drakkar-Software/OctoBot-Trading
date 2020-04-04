@@ -37,5 +37,8 @@ cdef class ExchangeSymbolData:
 
     cpdef list handle_recent_trade_update(self, object recent_trades, bint replace_all=*, bint partial=*) # recent trades can be list or dict
     cpdef void handle_order_book_update(self, list asks, list bids)
+    cpdef void handle_order_book_ticker_update(self, double ask_quantity, double ask_price,
+                                               double bid_quantity, double bid_price)
     cpdef void handle_mark_price_update(self, double mark_price)
     cpdef void handle_ticker_update(self, dict ticker)
+    cpdef void handle_mini_ticker_update(self, dict mini_ticker)

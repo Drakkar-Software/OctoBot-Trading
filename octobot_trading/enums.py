@@ -139,6 +139,16 @@ class ExchangeConstantsTickersInfoColumns(Enum):
     COUNT = "count"
 
 
+class ExchangeConstantsMiniTickerColumns(Enum):
+    SYMBOL = "symbol"
+    OPEN_PRICE = "open_price"
+    HIGH_PRICE = "high_price"
+    LOW_PRICE = "low_price"
+    CLOSE_PRICE = "close_price"
+    VOLUME = "volume"
+    TIMESTAMP = "timestamp"
+
+
 class ExchangeConstantsMarketStatusColumns(Enum):
     SYMBOL = "symbol"
     ID = "id"
@@ -183,6 +193,15 @@ class ExchangeConstantsOrderBookInfoColumns(Enum):
     NONCE = "nonce"
 
 
+class ExchangeConstantsOrderBookTickerColumns(Enum):
+    BID_QUANTITY = "bid_quantity"
+    BID_PRICE = "bid_price"
+    ASK_QUANTITY = "ask_quantity"
+    ASK_PRICE = "ask_price"
+    SYMBOL = "symbol"
+    TIMESTAMP = "timestamp"
+
+
 class ExchangeConstantsOrderColumns(Enum):
     INFO = "info"
     ID = "id"
@@ -224,6 +243,15 @@ class ExchangeConstantsPositionColumns(Enum):
     SIDE = "side"
 
 
+class ExchangeConstantsLiquidationColumns(Enum):
+    ID = "id"
+    TIMESTAMP = "timestamp"
+    SYMBOL = "symbol"
+    PRICE = "price"
+    QUANTITY = "quantity"
+    SIDE = "side"
+
+
 class ExchangeConstantsFeesColumns(Enum):
     TYPE = "type"
     CURRENCY = "currency"
@@ -253,8 +281,10 @@ class AccountTypes(Enum):
 class WebsocketFeeds(Enum):
     L2_BOOK = 'l2_book'
     L3_BOOK = 'l3_book'
-    BOOK_DELTA = 'book_delta'
+    BOOK_TICKER = 'book_ticker'
     TRADES = 'trades'
+    LIQUIDATIONS = 'liquidations'
+    MINI_TICKER = 'mini_ticker'
     TICKER = 'ticker'
     CANDLE = 'candle'
     KLINE = 'kline'

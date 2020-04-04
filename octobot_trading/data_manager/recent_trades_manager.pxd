@@ -16,18 +16,16 @@
 #  License along with this library.
 from octobot_trading.util.initializable cimport Initializable
 
-
 cdef class RecentTradesManager(Initializable):
     cdef object logger
 
-    cdef public bint recent_trades_initialized
+    cdef public object recent_trades
+    cdef public object liquidations
 
-    cdef public list recent_trades
-
-    cdef void __check_recent_trades_size(self)
-    cdef void __reset_recent_trades(self)
+    cdef void _reset_recent_trades(self)
 
     cpdef list set_all_recent_trades(self, list recent_trades)
     cpdef list add_new_trades(self, list recent_trades)
     cpdef list add_recent_trade(self, dict recent_trade)
 
+    cpdef list add_new_liquidations(self, list liquidations)
