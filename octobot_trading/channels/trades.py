@@ -30,7 +30,8 @@ class TradesProducer(ExchangeChannelProducer):
     async def perform(self, trades, old_trade=False):
         try:
             for trade in trades:
-                symbol: str = trade[ExchangeConstantsOrderColumns.SYMBOL.value]
+                symbol: str = self.channel.exchange_manager.get_exchange_symbol(
+                    trade[ExchangeConstantsOrderColumns.SYMBOL.value])
                 if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
                         self.channel.get_filtered_consumers(symbol=symbol):
                     trade_id: str = trade[ExchangeConstantsOrderColumns.ID.value]

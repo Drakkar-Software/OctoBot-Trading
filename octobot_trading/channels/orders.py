@@ -30,7 +30,8 @@ class OrdersProducer(ExchangeChannelProducer):
     async def perform(self, orders, is_closed=False, is_from_bot=True):
         try:
             for order in orders:
-                symbol: str = order[ExchangeConstantsOrderColumns.SYMBOL.value]
+                symbol: str = self.channel.exchange_manager.get_exchange_symbol(
+                    order[ExchangeConstantsOrderColumns.SYMBOL.value])
                 if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
                         symbol=symbol):
                     order_id: str = order[ExchangeConstantsOrderColumns.ID.value]
