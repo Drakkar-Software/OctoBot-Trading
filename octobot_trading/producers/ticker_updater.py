@@ -100,7 +100,7 @@ class TickerUpdater(TickerProducer):
                 push(symbol=symbol,
                      funding_rate=ticker[ExchangeConstantsFundingColumns.FUNDING_RATE.value],
                      next_funding_time=ticker[ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
-                     timestamp=ticker[ExchangeConstantsFundingColumns.TIMESTAMP.value])
+                     timestamp=ticker[ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update funding rate from ticker : {e}")
 

@@ -13,11 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
+from octobot_trading.enums import PositionSide, PositionStatus
 from octobot_trading.exchanges.rest_exchange import RestExchange
 
 
 class FutureExchange(RestExchange):
+    LONG_STR = "long"
+    SHORT_STR = "short"
+
     # Mark price params
     MARK_PRICE_IN_POSITION = False
     MARK_PRICE_IN_TICKER = False
@@ -32,7 +35,7 @@ class FutureExchange(RestExchange):
     async def get_symbol_open_positions(self, symbol: str) -> list:
         raise NotImplementedError("get_symbol_open_positions is not implemented")
 
-    async def get_open_positions(self) -> list:
+    async def get_open_positions(self) -> dict:
         raise NotImplementedError("get_open_positions is not implemented")
 
     async def get_symbol_leverage(self, symbol: str):
@@ -78,7 +81,10 @@ class FutureExchange(RestExchange):
         return mark_price_dict
 
     def parse_position_status(self, status):
-        return status
+        return PositionStatus(status)
+
+    def parse_position_side(self, side):
+        return PositionSide.LONG if side == self.LONG_STR else PositionSide.SHORT
 
     def calculate_position_value(self, quantity, mark_price):
         if mark_price:

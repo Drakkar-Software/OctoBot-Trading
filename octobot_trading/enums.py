@@ -81,7 +81,7 @@ class TraderOrderType(Enum):
 
 class ExchangeConstantsFundingColumns(Enum):
     SYMBOL = "symbol"
-    TIMESTAMP = "timestamp"
+    LAST_FUNDING_TIME = "last_funding_time"
     FUNDING_RATE = "funding_rate"
     NEXT_FUNDING_TIME = "next_funding_time"
 

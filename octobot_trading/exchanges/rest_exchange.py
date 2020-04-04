@@ -18,7 +18,7 @@ import logging
 
 import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
-from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol
+from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, RequestTimeout
 
 from octobot_commons.constants import MSECONDS_TO_MINUTE
 from octobot_commons.dict_util import get_value_or_default
@@ -55,7 +55,7 @@ class RestExchange(AbstractExchange):
         try:
             self.set_sandbox_mode(self.is_sandboxed)
             await self.client.load_markets()
-        except ExchangeNotAvailable as e:
+        except (ExchangeNotAvailable, RequestTimeout) as e:
             self.logger.error(f"initialization impossible: {e}")
 
     @staticmethod
@@ -93,10 +93,10 @@ class RestExchange(AbstractExchange):
                 })
         else:
             self.client = self.exchange_type({
-                    'verbose': False,
-                    'enableRateLimit': True,
-                    'options': self.CCXT_CLIENT_LOGIN_OPTIONS
-                })
+                'verbose': False,
+                'enableRateLimit': True,
+                'options': self.CCXT_CLIENT_LOGIN_OPTIONS
+            })
             self.logger.error("configuration issue: missing login information !")
         self.client.logger.setLevel(logging.INFO)
 
@@ -288,7 +288,7 @@ class RestExchange(AbstractExchange):
 
     def _log_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
-            f" stop_price: {stop_price}"
+                     f" stop_price: {stop_price}"
         self.logger.error(f"Failed to create order : {error} ({order_desc})")
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
@@ -373,12 +373,14 @@ class RestExchange(AbstractExchange):
     """
     Accounts
     """
+
     async def switch_to_account(self, account_type):
         raise NotImplementedError("switch_to_account is not available on this exchange")
 
     """
     Parsers
     """
+
     def parse_balance(self, balance):
         return self.client.parse_balance(balance)
 
@@ -397,8 +399,9 @@ class RestExchange(AbstractExchange):
     def parse_order_book(self, order_book):
         return self.client.parse_order_book(order_book)
 
-    def parse_timestamp(self, data_dict, timestamp_key):
-        return self.client.parse8601(self.client.safe_string(data_dict, timestamp_key))
+    def parse_timestamp(self, data_dict, timestamp_key, default_value=None, ms=False):
+        parsed_timestamp = self.client.parse8601(self.client.safe_string(data_dict, timestamp_key))
+        return (parsed_timestamp if ms else parsed_timestamp * 10 ** -3) if parsed_timestamp else default_value
 
     def parse_currency(self, currency):
         return self.client.safe_currency_code(currency)

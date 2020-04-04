@@ -21,4 +21,5 @@ cdef class FutureExchange(RestExchange):
     cpdef dict parse_funding(self, dict funding_dict, bint from_ticker=*)
     cpdef dict parse_mark_price(self, dict mark_price_dict, bint from_ticker=*)
     cpdef object parse_position_status(self, str status)
+    cpdef object parse_position_side(self, str side)
     cpdef double calculate_position_value(self, double quantity, double mark_price)
