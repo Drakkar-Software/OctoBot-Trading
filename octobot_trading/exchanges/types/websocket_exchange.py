@@ -96,6 +96,8 @@ class WebsocketExchange:
             if datetime.utcnow() - datetime.timedelta(seconds=self.timeout) > self.last_msg:
                 self.logger.warning("No messages received within timeout, restarting connection")
                 await self.reconnect()
+        await self.ping()
+        self.logger.debug("Sending keepalive...")
         await asyncio.sleep(self.timeout_interval)
 
     async def _connect(self):

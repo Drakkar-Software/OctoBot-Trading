@@ -127,7 +127,7 @@ class MarkPriceUpdater(MarkPriceProducer):
                 push(symbol=symbol,
                      funding_rate=funding_rate[ExchangeConstantsFundingColumns.FUNDING_RATE.value],
                      next_funding_time=funding_rate[ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
-                     timestamp=funding_rate[ExchangeConstantsFundingColumns.TIMESTAMP.value])
+                     timestamp=funding_rate[ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
 
     def _should_run(self) -> bool:
         return self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE and \

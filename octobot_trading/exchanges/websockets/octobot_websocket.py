@@ -83,7 +83,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
 
     def is_feed_available(self, feed):
         try:
-            feed_available = self.exchange_class.get_feeds()[feed]
+            feed_available = self.exchange_class.get_exchange_feed(feed)
             return feed_available is not WebsocketFeeds.UNSUPPORTED.value
         except (KeyError, ValueError):
             return False

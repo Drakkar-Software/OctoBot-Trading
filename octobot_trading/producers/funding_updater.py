@@ -63,7 +63,7 @@ class FundingUpdater(FundingProducer):
                 await self.push(symbol=symbol,
                                 funding_rate=funding[ExchangeConstantsFundingColumns.FUNDING_RATE.value],
                                 next_funding_time=next_funding_time,
-                                timestamp=funding[ExchangeConstantsFundingColumns.TIMESTAMP.value])
+                                timestamp=funding[ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
                 return next_funding_time
         except (NotSupported, NotImplementedError) as ne:
             raise ne
