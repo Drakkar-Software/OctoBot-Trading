@@ -14,7 +14,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.constants import CONFIG_TRADING_FILE_PATH
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.api.modes import init_trading_mode_config, create_trading_modes
@@ -37,7 +36,7 @@ class ExchangeBuilder:
         self._is_using_trading_modes: bool = True
         self._matrix_id: str = None
 
-        self._trading_tentacles_path = CONFIG_TRADING_FILE_PATH
+        self._tentacles_setup_config = None
 
     """
     Build
@@ -82,8 +81,8 @@ class ExchangeBuilder:
 
     async def _build_modes(self):
         try:
-            init_trading_mode_config(self.config, self._trading_tentacles_path)
-            return await create_trading_modes(self.config, self.exchange_manager)
+            init_trading_mode_config(self.config)
+            return await create_trading_modes(self.config, self.exchange_manager, self._tentacles_setup_config)
         except Exception as e:
             self.logger.error(f"An error occurred when initializing trading mode : ")
             raise e
@@ -139,9 +138,8 @@ class ExchangeBuilder:
         self.exchange_manager.ignore_config = True
         return self
 
-    def use_trading_mode(self, trading_tentacles_path):
-        self._is_using_trading_modes = True
-        self._trading_tentacles_path = trading_tentacles_path
+    def use_tentacles_setup_config(self, tentacles_setup_config):
+        self._tentacles_setup_config = tentacles_setup_config
         return self
 
     def disable_trading_mode(self):

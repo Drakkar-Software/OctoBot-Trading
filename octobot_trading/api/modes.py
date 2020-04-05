@@ -13,21 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.errors import ConfigTradingError
 from octobot_commons.constants import CONFIG_WILDCARD
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.tentacles_management import create_classes_list
-from octobot_commons.tentacles_management.config_manager import reload_tentacle_config
 
 from octobot_trading.api import LOGGER_TAG
-from octobot_trading.constants import CONFIG_TRADING_TENTACLES
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.modes import AbstractTradingMode
 from octobot_trading.util.trading_config_util import get_activated_trading_mode as util_get_activated_trading_mode
 
 
-def init_trading_mode_config(config, trading_tentacles_path) -> None:
-    reload_tentacle_config(config, CONFIG_TRADING_TENTACLES, trading_tentacles_path, ConfigTradingError)
+def init_trading_mode_config(config) -> None:
     create_classes_list(config, AbstractTradingMode)
 
 
@@ -43,16 +39,13 @@ def get_trading_mode_current_state(trading_mode) -> tuple:
     return trading_mode.get_current_state()
 
 
-def get_activated_trading_mode(config) -> AbstractTradingMode.__class__:
-    return util_get_activated_trading_mode(config)
+def get_activated_trading_mode(config, tentacles_setup_config) -> AbstractTradingMode.__class__:
+    return util_get_activated_trading_mode(config, tentacles_setup_config)
 
 
-def get_trading_config(config) -> dict:
-    return config[CONFIG_TRADING_TENTACLES]
-
-
-async def create_trading_modes(config: dict, exchange_manager: ExchangeManager) -> list:
-    return await _create_trading_modes(trading_mode_class=get_activated_trading_mode(config),
+async def create_trading_modes(config: dict, exchange_manager: ExchangeManager, tentacles_setup_config: object) -> list:
+    return await _create_trading_modes(trading_mode_class=util_get_activated_trading_mode(config,
+                                                                                          tentacles_setup_config),
                                        config=config,
                                        exchange_manager=exchange_manager,
                                        cryptocurrencies=exchange_manager.exchange_config.traded_cryptocurrencies,

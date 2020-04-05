@@ -18,30 +18,29 @@ from shutil import copyfile
 
 import pytest
 
-from octobot_commons.constants import CONFIG_TRADING_FILE, TENTACLES_TRADING_PATH, TENTACLES_PATH
 from octobot_commons.errors import ConfigTradingError
 from octobot_commons.tests.test_config import load_test_config, TEST_CONFIG_FOLDER
+from octobot_tentacles_manager.constants import USER_TENTACLE_CONFIG_PATH, CONFIG_TENTACLES_FILE
 from octobot_trading.api.exchange import create_exchange_builder
-from octobot_trading.exchanges.exchanges import Exchanges
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 TESTS_FOLDER = "tests"
 TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
-TEST_TRADING_TENTACLES_PATH = os.path.join(TESTS_FOLDER, TENTACLES_PATH, TENTACLES_TRADING_PATH)
-TEST_TRADING_TENTACLES_CONFIG_PATH = os.path.join(TEST_TRADING_TENTACLES_PATH, CONFIG_TRADING_FILE)
+TEST_TRADING_TENTACLES_CONFIG_PATH = os.path.join(TESTS_FOLDER, USER_TENTACLE_CONFIG_PATH)
+TEST_TRADING_TENTACLES_CONFIG_FILE_PATH = os.path.join(TEST_TRADING_TENTACLES_CONFIG_PATH, CONFIG_TENTACLES_FILE)
 
 
 def create_test_tentacles_config():
-    if not os.path.exists(TEST_TRADING_TENTACLES_PATH):
-        os.makedirs(TEST_TRADING_TENTACLES_PATH)
-        copyfile(os.path.join(TEST_CONFIG_FOLDER, CONFIG_TRADING_FILE), TEST_TRADING_TENTACLES_CONFIG_PATH)
+    if not os.path.exists(TEST_TRADING_TENTACLES_CONFIG_PATH):
+        os.makedirs(TEST_TRADING_TENTACLES_CONFIG_PATH)
+        copyfile(os.path.join(TEST_CONFIG_FOLDER, CONFIG_TENTACLES_FILE), TEST_TRADING_TENTACLES_CONFIG_PATH)
 
 
 def remove_test_tentacles_config():
-    if not os.path.exists(TEST_TRADING_TENTACLES_PATH):
-        os.removedirs(TEST_TRADING_TENTACLES_PATH)
+    if not os.path.exists(TEST_TRADING_TENTACLES_CONFIG_PATH):
+        os.removedirs(TEST_TRADING_TENTACLES_CONFIG_PATH)
 
 
 class TestExchangeFactory:
