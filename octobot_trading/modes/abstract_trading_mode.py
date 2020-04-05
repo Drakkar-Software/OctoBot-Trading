@@ -13,17 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-import os
 from abc import ABCMeta
 
-from octobot_commons.config import load_config
-from octobot_commons.constants import TENTACLES_TRADING_PATH, TENTACLE_DEFAULT_CONFIG
+from octobot_commons.constants import TENTACLE_DEFAULT_CONFIG
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.tentacles_management.abstract_tentacle import AbstractTentacle
+from octobot_tentacles_manager.api.configurator import get_tentacle_config
 
-from octobot_trading.constants import TENTACLES_TRADING_MODE_PATH, TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT, \
-    TRADING_MODE_REQUIRED_STRATEGIES
+from octobot_trading.constants import TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT, TRADING_MODE_REQUIRED_STRATEGIES
 
 
 class AbstractTradingMode(AbstractTentacle):
@@ -67,18 +64,6 @@ class AbstractTradingMode(AbstractTentacle):
         :return: (str, float): (current state description, current state value)
         """
         return "N/A", 0
-
-    @classmethod
-    def get_name(cls) -> str:
-        return cls.__name__
-
-    @classmethod
-    def get_tentacle_folder(cls) -> str:
-        return TENTACLES_TRADING_PATH
-
-    @classmethod
-    def get_config_tentacle_type(cls) -> str:
-        return TENTACLES_TRADING_MODE_PATH
 
     @classmethod
     def get_is_cryptocurrency_wildcard(cls) -> bool:
@@ -134,10 +119,8 @@ class AbstractTradingMode(AbstractTentacle):
         raise NotImplementedError("create_consumers not implemented")
 
     def load_config(self) -> None:
-        config_file = self.get_config_file_name()
         # try with this class name
-        if os.path.isfile(config_file):
-            self.trading_config = load_config(config_file)
+        self.trading_config = get_tentacle_config(self.__class__)
 
         # set default config if nothing found
         if not self.trading_config:
@@ -153,14 +136,14 @@ class AbstractTradingMode(AbstractTentacle):
 
     @classmethod
     def get_required_strategies_names_and_count(cls, trading_mode_config=None):
-        config = trading_mode_config or cls.get_specific_config()
+        config = trading_mode_config or get_tentacle_config(cls)
         if TRADING_MODE_REQUIRED_STRATEGIES in config:
             return config[TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)
-        raise Exception(f"'{TRADING_MODE_REQUIRED_STRATEGIES}' is missing in {cls.get_config_file_name()}")
+        raise Exception(f"'{TRADING_MODE_REQUIRED_STRATEGIES}' is missing in configuration file")
 
     @classmethod
     def get_default_strategies(cls):
-        config = cls.get_specific_config()
+        config = get_tentacle_config(cls)
         if TENTACLE_DEFAULT_CONFIG in config:
             return config[TENTACLE_DEFAULT_CONFIG]
 
