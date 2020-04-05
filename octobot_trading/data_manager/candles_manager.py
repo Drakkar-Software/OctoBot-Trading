@@ -172,9 +172,9 @@ class CandlesManager(Initializable):
         if limit == -1:
             if max_limit == -1:
                 return data
-            return data[:max_handled_limit]
+            return np.asarray(data[:max_handled_limit], dtype=np.float64)
 
         if max_limit == -1:
-            return data[-min(limit, len(data)):]
+            return np.asarray(data[-min(limit, len(data)):], dtype=np.float64)
         else:
-            return data[max_handled_limit - limit:max_handled_limit]
+            return np.asarray(data[max_handled_limit - limit:max_handled_limit], dtype=np.float64)
