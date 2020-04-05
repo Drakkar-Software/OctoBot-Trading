@@ -37,3 +37,10 @@ def has_symbol_klines(symbol_data, time_frame) -> bool:
 
 def get_symbol_klines(symbol_data, time_frame) -> list:
     return symbol_data.symbol_klines[TimeFrames(time_frame)].kline
+
+
+def create_new_candles_manager(candles=None) -> CandlesManager:
+    manager = CandlesManager()
+    if candles is not None:
+        manager.replace_all_candles(candles)
+    return manager
