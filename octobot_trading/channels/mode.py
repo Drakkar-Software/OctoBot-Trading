@@ -57,12 +57,13 @@ class ModeChannel(ExchangeChannel):
     TIME_FRAME_KEY = "time_frame"
 
     async def new_consumer(self,
-                           consumer_instance: ModeChannelConsumer,
+                           callback: object = None,  # shouldn't be provided here (InternalConsumer)
+                           consumer_instance: ModeChannelConsumer = None,
                            size=0,
                            trading_mode_name=CHANNEL_WILDCARD,
                            cryptocurrency=CHANNEL_WILDCARD,
                            symbol=CHANNEL_WILDCARD,
-                           time_frame=CHANNEL_WILDCARD):
+                           time_frame=None):
         await self._add_new_consumer_and_run(consumer_instance,
                                              trading_mode_name=trading_mode_name,
                                              cryptocurrency=cryptocurrency,
@@ -90,8 +91,10 @@ class ModeChannel(ExchangeChannel):
             self.TRADING_MODE_NAME_KEY: trading_mode_name,
             self.CRYPTOCURRENCY_KEY: cryptocurrency,
             self.SYMBOL_KEY: symbol,
-            self.TIME_FRAME_KEY: time_frame,
         }
+
+        if time_frame:
+            consumer_filters[self.TIME_FRAME_KEY] = time_frame
 
         self.add_new_consumer(consumer, consumer_filters)
         await consumer.run()

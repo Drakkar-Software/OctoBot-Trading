@@ -50,6 +50,5 @@ class OHLCVProducer(ExchangeChannelProducer):
 
 
 class OHLCVChannel(ExchangeChannel):
-    WITH_TIME_FRAME = True
     PRODUCER_CLASS = OHLCVProducer
     CONSUMER_CLASS = ExchangeChannelConsumer

@@ -58,7 +58,6 @@ class ExchangeChannelProducer(Producer):
 class ExchangeChannel(Channel):
     PRODUCER_CLASS = ExchangeChannelProducer
     CONSUMER_CLASS = ExchangeChannelConsumer
-    WITH_TIME_FRAME = False
 
     CRYPTOCURRENCY_KEY = "cryptocurrency"
     SYMBOL_KEY = "symbol"
@@ -75,16 +74,16 @@ class ExchangeChannel(Channel):
 
     async def new_consumer(self,
                            callback: object = None,
-                           consumer_filters: dict = None,
                            consumer_instance: object = None,
                            size=0,
                            symbol=CHANNEL_WILDCARD,
-                           cryptocurrency=CHANNEL_WILDCARD):
+                           cryptocurrency=CHANNEL_WILDCARD,
+                           time_frame=None):
         consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size)
         await self._add_new_consumer_and_run(consumer,
                                              cryptocurrency=cryptocurrency,
                                              symbol=symbol,
-                                             with_time_frame=self.WITH_TIME_FRAME)
+                                             time_frame=time_frame)
         await self._check_producers_state()
         return consumer
 
@@ -111,12 +110,13 @@ class ExchangeChannel(Channel):
     async def _add_new_consumer_and_run(self, consumer,
                                         cryptocurrency=CHANNEL_WILDCARD,
                                         symbol=CHANNEL_WILDCARD,
-                                        with_time_frame=False):
+                                        time_frame=None):
         consumer_filters: dict = {
             self.CRYPTOCURRENCY_KEY: cryptocurrency,
             self.SYMBOL_KEY: symbol,
-            self.TIME_FRAME_KEY: CHANNEL_WILDCARD if with_time_frame else None
         }
+        if time_frame:
+            consumer_filters[self.TIME_FRAME_KEY] = time_frame
 
         self.add_new_consumer(consumer, consumer_filters)
         await consumer.run()
