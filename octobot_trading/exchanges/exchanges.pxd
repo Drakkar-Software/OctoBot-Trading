@@ -25,7 +25,7 @@ cdef class ExchangeConfiguration(object):
     cdef public str id
     cdef public str matrix_id
 
-    cdef public list cryptocurrencies
+    cdef public dict symbols_by_crypto_currencies
     cdef public list symbols
     cdef public list time_frames
 
