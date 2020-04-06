@@ -15,7 +15,7 @@
 #  License along with this library.
 from octobot_commons.constants import CONFIG_WILDCARD
 from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.tentacles_management import create_classes_list
+from octobot_commons.tentacles_management.advanced_manager import create_classes_list
 
 from octobot_trading.api import LOGGER_TAG
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
