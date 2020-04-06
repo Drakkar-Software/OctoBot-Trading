@@ -50,6 +50,5 @@ class KlineProducer(ExchangeChannelProducer):
 
 
 class KlineChannel(ExchangeChannel):
-    WITH_TIME_FRAME = True
     PRODUCER_CLASS = KlineProducer
     CONSUMER_CLASS = ExchangeChannelConsumer
