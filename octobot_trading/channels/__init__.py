@@ -15,7 +15,6 @@
 #  License along with this library.
 
 from .balance import *
-from .exchange_channel import *
 from .kline import *
 from .mode import *
 from .ohlcv import *

@@ -23,8 +23,8 @@ from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.timestamp_util import is_valid_timestamp
-from octobot_trading.channels.exchange_channel import ExchangeChannel, get_chan, set_chan, get_exchange_channels, \
-    del_chan, del_exchange_channel_container
+from octobot_trading.channels.exchange_channel import get_exchange_channels, del_chan, set_chan, get_chan, \
+    del_exchange_channel_container, ExchangeChannel
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
     WEBSOCKET_FEEDS_TO_TRADING_CHANNELS, CONFIG_EXCHANGE_PASSWORD
 from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
