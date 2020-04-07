@@ -28,9 +28,9 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         self.exchange_name = exchange_manager.exchange_name
 
         self.octobot_websockets = []
-        self.octobot_websockets_executors = []
         self.octobot_websockets_tasks = []
 
+        self.octobot_websockets_executors = None
         self.exchange_class = None
 
         self.trader_pairs = []

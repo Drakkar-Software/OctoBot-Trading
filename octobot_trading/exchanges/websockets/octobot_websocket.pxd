@@ -21,12 +21,12 @@ cdef class OctoBotWebSocketClient(AbstractWebsocket):
     cdef public str exchange_name
 
     cdef public list octobot_websockets
-    cdef public list octobot_websockets_executors
     cdef public list octobot_websockets_tasks
     cdef public list trader_pairs
     cdef public list time_frames
     cdef public list channels
 
+    cdef public object octobot_websockets_executors
     cdef public object exchange_class
 
     cdef public dict open_sockets_keys

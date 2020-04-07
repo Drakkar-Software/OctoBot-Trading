@@ -21,7 +21,7 @@ from octobot_tentacles_manager.api.configurator import get_activated_tentacles
 from octobot_trading.modes import AbstractTradingMode
 
 
-def get_activated_trading_mode(config, tentacles_setup_config):
+def get_activated_trading_mode(config, tentacles_setup_config) -> AbstractTradingMode.__class__:
     if tentacles_setup_config is not None:
         try:
             trading_modes = [tentacle_class

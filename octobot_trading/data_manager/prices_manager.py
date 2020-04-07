@@ -44,6 +44,6 @@ class PricesManager(Initializable):
     def __reset_prices(self):
         self.mark_price = 0
 
-    @staticmethod
-    def calculate_mark_price_from_recent_trade_prices(recent_trade_prices):
-        return sum(recent_trade_prices) / len(recent_trade_prices)
+
+def calculate_mark_price_from_recent_trade_prices(recent_trade_prices):
+    return sum(recent_trade_prices) / len(recent_trade_prices)
