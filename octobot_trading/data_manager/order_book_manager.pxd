@@ -23,6 +23,11 @@ cdef class OrderBookManager(Initializable):
 
     cdef public bint order_book_initialized
 
+    cdef public double ask_quantity
+    cdef public double ask_price
+    cdef public double bid_quantity
+    cdef public double bid_price
+
     cdef public list bids
     cdef public list asks
 

@@ -20,7 +20,7 @@ from ccxt import NotSupported
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.price import MarkPriceProducer
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, FUNDING_CHANNEL
-from octobot_trading.data_manager.prices_manager import PricesManager
+from octobot_trading.data_manager.prices_manager import PricesManager, calculate_mark_price_from_recent_trade_prices
 from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsOrderColumns, \
     ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns
 
@@ -71,7 +71,7 @@ class MarkPriceUpdater(MarkPriceProducer):
 
     async def handle_recent_trades_update(self, exchange: str, exchange_id: str, symbol: str, recent_trades: list):
         try:
-            mark_price = PricesManager.calculate_mark_price_from_recent_trade_prices(
+            mark_price = calculate_mark_price_from_recent_trade_prices(
                 [float(last_price[ExchangeConstantsOrderColumns.PRICE.value])
                  for last_price in recent_trades])
 

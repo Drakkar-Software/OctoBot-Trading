@@ -28,5 +28,4 @@ cdef class PricesManager(Initializable):
 
     cpdef list set_mark_price(self, double mark_price)
 
-    @staticmethod
-    cdef double calculate_mark_price_from_recent_trade_prices(list recent_trade_prices)
+cpdef double calculate_mark_price_from_recent_trade_prices(list recent_trade_prices)
