@@ -18,12 +18,9 @@ from octobot_channels.channels.channel cimport Channel
 from octobot_channels.consumer cimport Consumer, InternalConsumer, SupervisedConsumer
 from octobot_channels.producer cimport Producer
 
-from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-
 cdef class ExchangeChannel(Channel):
-    cdef public ExchangeManager exchange_manager
-    cdef public AbstractExchange exchange
+    cdef public object exchange_manager
+    cdef public object exchange
 
     cdef int filter_send_counter
     cdef bint should_send_filter
