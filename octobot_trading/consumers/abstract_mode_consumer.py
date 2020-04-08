@@ -23,8 +23,6 @@ from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc,
 class AbstractTradingModeConsumer(ModeChannelConsumer):
     def __init__(self, trading_mode):
         super().__init__()
-        self._logger = get_logger(self.__class__.__name__)
-
         self.trading_mode = trading_mode
         self.exchange_manager = trading_mode.exchange_manager
 
@@ -59,21 +57,6 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
         # other cases like neutral state or unfulfilled previous conditions
         return False
 
-    @staticmethod
-    def check_factor(min_val, max_val, factor):
-        """
-        Checks if factor is min_val < factor < max_val
-        :param min_val:
-        :param max_val:
-        :param factor:
-        :return:
-        """
-        if factor > max_val:
-            return max_val
-        if factor < min_val:
-            return min_val
-        return factor
-
     async def get_holdings_ratio(self, currency):
         return await self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability \
             .holdings_ratio(currency)
@@ -81,3 +64,18 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
     def get_number_of_traded_assets(self):
         return len(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability
                    .origin_crypto_currencies_values)
+
+
+def check_factor(min_val, max_val, factor):
+    """
+    Checks if factor is min_val < factor < max_val
+    :param min_val:
+    :param max_val:
+    :param factor:
+    :return:
+    """
+    if factor > max_val:
+        return max_val
+    if factor < min_val:
+        return min_val
+    return factor

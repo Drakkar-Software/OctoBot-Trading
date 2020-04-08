@@ -18,13 +18,10 @@ from octobot_trading.channels.mode cimport ModeChannelConsumer
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 
 cdef class AbstractTradingModeConsumer(ModeChannelConsumer):
-    cdef object _logger
-
     cdef public object trading_mode
 
     cdef public ExchangeManager exchange_manager
 
-    @staticmethod
-    cdef check_factor(min_val, max_val, factor)
-
     cpdef int get_number_of_traded_assets(self)
+
+cpdef check_factor(min_val, max_val, factor)
