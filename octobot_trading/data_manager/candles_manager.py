@@ -177,4 +177,4 @@ class CandlesManager(Initializable):
         if max_limit == -1:
             return np.array(data[-min(limit, len(data)):])
         else:
-            return np.array(data[max_handled_limit - limit:max_handled_limit])
+            return np.array(data[max(0, max_handled_limit - limit): max_handled_limit])
