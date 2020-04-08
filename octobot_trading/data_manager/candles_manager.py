@@ -168,13 +168,13 @@ class CandlesManager(Initializable):
             self.reached_max = True
 
     def _extract_limited_data(self, data, limit=-1, max_limit=-1):
-        max_handled_limit = self.MAX_CANDLES_COUNT if self.reached_max else max_limit
+        max_handled_limit: int = self.MAX_CANDLES_COUNT if self.reached_max else max_limit
         if limit == -1:
             if max_limit == -1:
-                return data
-            return data[:max_handled_limit]
+                return np.array(data)
+            return np.array(data[:max_handled_limit])
 
         if max_limit == -1:
-            return data[-min(limit, len(data)):]
+            return np.array(data[-min(limit, len(data)):])
         else:
-            return data[max_handled_limit - limit:max_handled_limit]
+            return np.array(data[max_handled_limit - limit:max_handled_limit])
