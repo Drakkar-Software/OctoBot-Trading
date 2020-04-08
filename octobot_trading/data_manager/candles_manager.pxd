@@ -40,12 +40,12 @@ cdef class CandlesManager(Initializable):
 
     cdef public bint reached_max
 
-    cpdef np.float64_t[::1] get_symbol_close_candles(self, int limit=*)
-    cpdef np.float64_t[::1] get_symbol_open_candles(self, int limit=*)
-    cpdef np.float64_t[::1] get_symbol_high_candles(self, int limit=*)
-    cpdef np.float64_t[::1] get_symbol_low_candles(self, int limit=*)
-    cpdef np.float64_t[::1] get_symbol_time_candles(self, int limit=*)
-    cpdef np.float64_t[::1] get_symbol_volume_candles(self, int limit=*)
+    cpdef np.ndarray get_symbol_close_candles(self, int limit=*)
+    cpdef np.ndarray get_symbol_open_candles(self, int limit=*)
+    cpdef np.ndarray get_symbol_high_candles(self, int limit=*)
+    cpdef np.ndarray get_symbol_low_candles(self, int limit=*)
+    cpdef np.ndarray get_symbol_time_candles(self, int limit=*)
+    cpdef np.ndarray get_symbol_volume_candles(self, int limit=*)
 
     cpdef dict get_symbol_prices(self, object limit=*)
     cpdef void add_old_and_new_candles(self, list candles_data)
@@ -59,4 +59,4 @@ cdef class CandlesManager(Initializable):
     cdef void _check_max_candles(self)
     cdef object _inc_candle_index(self)
     cdef void _reset_candles(self)
-    cdef np.float64_t[::1] _extract_limited_data(self, np.float64_t[::1] data, int limit=*, int max_limit=*)
+    cdef np.ndarray _extract_limited_data(self, np.float64_t[::1] data, int limit=*, int max_limit=*)
