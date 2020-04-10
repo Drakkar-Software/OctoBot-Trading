@@ -15,11 +15,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.channels.exchange_channel cimport ExchangeChannel, ExchangeChannelProducer
+from octobot_trading.channels.exchange_channel cimport TimeFrameExchangeChannel, ExchangeChannelProducer
 
 
 cdef class KlineProducer(ExchangeChannelProducer):
     pass
 
-cdef class KlineChannel(ExchangeChannel):
+cdef class KlineChannel(TimeFrameExchangeChannel):
     pass

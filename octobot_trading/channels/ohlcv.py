@@ -17,7 +17,8 @@ from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
+from octobot_trading.channels.exchange_channel import ExchangeChannelProducer, ExchangeChannelConsumer, \
+    TimeFrameExchangeChannel
 
 
 class OHLCVProducer(ExchangeChannelProducer):
@@ -49,6 +50,6 @@ class OHLCVProducer(ExchangeChannelProducer):
             })
 
 
-class OHLCVChannel(ExchangeChannel):
+class OHLCVChannel(TimeFrameExchangeChannel):
     PRODUCER_CLASS = OHLCVProducer
     CONSUMER_CLASS = ExchangeChannelConsumer

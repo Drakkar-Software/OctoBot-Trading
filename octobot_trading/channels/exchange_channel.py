@@ -61,7 +61,6 @@ class ExchangeChannel(Channel):
 
     CRYPTOCURRENCY_KEY = "cryptocurrency"
     SYMBOL_KEY = "symbol"
-    TIME_FRAME_KEY = "time_frame"
 
     def __init__(self, exchange_manager):
         super().__init__()
@@ -78,12 +77,12 @@ class ExchangeChannel(Channel):
                            size=0,
                            symbol=CHANNEL_WILDCARD,
                            cryptocurrency=CHANNEL_WILDCARD,
-                           time_frame=None):
+                           **kwargs):
         consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size)
         await self._add_new_consumer_and_run(consumer,
                                              cryptocurrency=cryptocurrency,
                                              symbol=symbol,
-                                             time_frame=time_frame)
+                                             **kwargs)
         await self._check_producers_state()
         return consumer
 
@@ -99,6 +98,34 @@ class ExchangeChannel(Channel):
 
     def get_filtered_consumers(self,
                                cryptocurrency=CHANNEL_WILDCARD,
+                               symbol=CHANNEL_WILDCARD):
+        return self.get_consumer_from_filters({
+            self.CRYPTOCURRENCY_KEY: cryptocurrency,
+            self.SYMBOL_KEY: symbol
+        })
+
+    async def _add_new_consumer_and_run(self, consumer,
+                                        cryptocurrency=CHANNEL_WILDCARD,
+                                        symbol=CHANNEL_WILDCARD):
+        self.add_new_consumer(consumer,
+                              {
+                                  self.CRYPTOCURRENCY_KEY: cryptocurrency,
+                                  self.SYMBOL_KEY: symbol
+                              })
+        await self._run_consumer(consumer,
+                                 symbol=symbol)
+
+    async def _run_consumer(self, consumer,
+                            symbol=CHANNEL_WILDCARD):
+        await consumer.run()
+        self.logger.debug(f"Consumer started for symbol {symbol}")
+
+
+class TimeFrameExchangeChannel(ExchangeChannel):
+    TIME_FRAME_KEY = "time_frame"
+
+    def get_filtered_consumers(self,
+                               cryptocurrency=CHANNEL_WILDCARD,
                                symbol=CHANNEL_WILDCARD,
                                time_frame=CHANNEL_WILDCARD):
         return self.get_consumer_from_filters({
@@ -110,17 +137,15 @@ class ExchangeChannel(Channel):
     async def _add_new_consumer_and_run(self, consumer,
                                         cryptocurrency=CHANNEL_WILDCARD,
                                         symbol=CHANNEL_WILDCARD,
-                                        time_frame=None):
-        consumer_filters: dict = {
-            self.CRYPTOCURRENCY_KEY: cryptocurrency,
-            self.SYMBOL_KEY: symbol,
-        }
-        if time_frame:
-            consumer_filters[self.TIME_FRAME_KEY] = time_frame
-
-        self.add_new_consumer(consumer, consumer_filters)
-        await consumer.run()
-        self.logger.debug(f"Consumer started for symbol {symbol}")
+                                        time_frame=CHANNEL_WILDCARD):
+        self.add_new_consumer(consumer,
+                              {
+                                  self.CRYPTOCURRENCY_KEY: cryptocurrency,
+                                  self.SYMBOL_KEY: symbol,
+                                  self.TIME_FRAME_KEY: time_frame
+                              })
+        await self._run_consumer(consumer,
+                                 symbol=symbol)
 
 
 def set_chan(chan, name) -> None:

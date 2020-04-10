@@ -25,6 +25,9 @@ cdef class ExchangeChannel(Channel):
     cdef int filter_send_counter
     cdef bint should_send_filter
 
+    cpdef object get_filtered_consumers(self, str cryptocurrency=*, str symbol=*)
+
+cdef class TimeFrameExchangeChannel(ExchangeChannel):
     cpdef object get_filtered_consumers(self, str cryptocurrency=*, str symbol=*, str time_frame=*)
 
 cdef class ExchangeChannelConsumer(Consumer):
