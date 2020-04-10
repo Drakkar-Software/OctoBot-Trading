@@ -16,9 +16,9 @@
 from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
-from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
+from octobot_trading.channels.exchange_channel import ExchangeChannelProducer, ExchangeChannelConsumer, \
+    TimeFrameExchangeChannel
 
 
 class KlineProducer(ExchangeChannelProducer):
@@ -49,6 +49,6 @@ class KlineProducer(ExchangeChannelProducer):
             })
 
 
-class KlineChannel(ExchangeChannel):
+class KlineChannel(TimeFrameExchangeChannel):
     PRODUCER_CLASS = KlineProducer
     CONSUMER_CLASS = ExchangeChannelConsumer
