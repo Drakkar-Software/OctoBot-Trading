@@ -40,17 +40,22 @@ class TradesProducer(ExchangeChannelProducer):
                         should_notify=False)
 
                     if added:
-                        await self.send(symbol=symbol, trade=trade, old_trade=old_trade)
+                        await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                                        get_pair_cryptocurrency(symbol),
+                                        symbol=symbol,
+                                        trade=trade,
+                                        old_trade=old_trade)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, symbol, trade, old_trade=False):
+    async def send(self, cryptocurrency, symbol, trade, old_trade=False):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
                 "exchange_id": self.channel.exchange_manager.id,
+                "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "trade": trade,
                 "old_trade": old_trade

@@ -29,17 +29,22 @@ class OrderBookProducer(ExchangeChannelProducer):
             if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
                     symbol=symbol):  # and symbol_data.order_book_is_initialized()
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_update(asks, bids)
-                await self.send(symbol=symbol, asks=asks, bids=bids)
+                await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                                get_pair_cryptocurrency(symbol),
+                                symbol=symbol,
+                                asks=asks,
+                                bids=bids)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, symbol, asks, bids):
+    async def send(self, cryptocurrency, symbol, asks, bids):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
                 "exchange_id": self.channel.exchange_manager.id,
+                "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "asks": asks,
                 "bids": bids
@@ -63,7 +68,9 @@ class OrderBookTickerProducer(ExchangeChannelProducer):
                                                                                                       ask_price,
                                                                                                       bid_quantity,
                                                                                                       bid_price)
-                await self.send(symbol=symbol,
+                await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                                get_pair_cryptocurrency(symbol),
+                                symbol=symbol,
                                 ask_quantity=ask_quantity, ask_price=ask_price,
                                 bid_quantity=bid_quantity, bid_price=bid_price)
         except CancelledError:
@@ -71,11 +78,12 @@ class OrderBookTickerProducer(ExchangeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, symbol, ask_quantity, ask_price, bid_quantity, bid_price):
+    async def send(self, cryptocurrency, symbol, ask_quantity, ask_price, bid_quantity, bid_price):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
                 "exchange_id": self.channel.exchange_manager.id,
+                "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "ask_quantity": ask_quantity,
                 "ask_price": ask_price,

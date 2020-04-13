@@ -40,7 +40,9 @@ class PositionsProducer(ExchangeChannelProducer):
                                                should_notify=False)
 
                     if changed:
-                        await self.send(symbol=symbol,
+                        await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                                        get_pair_cryptocurrency(symbol),
+                                        symbol=symbol,
                                         position=position,
                                         is_closed=is_closed,
                                         is_updated=changed,
@@ -51,11 +53,12 @@ class PositionsProducer(ExchangeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, symbol, position, is_closed=False, is_updated=False, is_liquidated=False, is_from_bot=True):
+    async def send(self, cryptocurrency, symbol, position, is_closed=False, is_updated=False, is_liquidated=False, is_from_bot=True):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
                 "exchange_id": self.channel.exchange_manager.id,
+                "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "position": position,
                 "is_closed": is_closed,

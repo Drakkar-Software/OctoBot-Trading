@@ -56,7 +56,8 @@ class TickerUpdaterSimulator(TickerUpdater):
         except IndexError as e:
             self.logger.warning(f"Failed to access ticker_data : {e}")
 
-    async def _ticker_from_ohlcv_callback(self, exchange: str, exchange_id: str, symbol: str, time_frame, candle):
+    async def _ticker_from_ohlcv_callback(self, exchange: str, exchange_id: str,
+                                          cryptocurrency: str, symbol: str, time_frame, candle):
         if candle:
             last_candle_timestamp = candle[PriceIndexes.IND_PRICE_TIME.value]
             if last_candle_timestamp > self.last_timestamp_pushed:

@@ -38,9 +38,9 @@ class PositionsUpdaterSimulator(PositionsUpdater):
     MarkPrice channel consumer callback
     """
 
-    async def handle_mark_price(self, exchange: str, exchange_id: str, symbol: str, mark_price):
+    async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
         try:
-            await self._update_positions_status(symbol=symbol, mark_price=mark_price)
+            await self._update_positions_status(cryptocurrency=cryptocurrency, symbol=symbol, mark_price=mark_price)
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle mark price : {e}")
 
@@ -49,7 +49,7 @@ class PositionsUpdaterSimulator(PositionsUpdater):
     Ask liquidation and P&L update process if required
     """
 
-    async def _update_positions_status(self, symbol: str, mark_price):
+    async def _update_positions_status(self, cryptocurrency: str, symbol: str, mark_price):
         for position in copy.copy(
                 self.exchange_manager.exchange_personal_data.positions_manager.get_open_positions(symbol=symbol)):
             position_closed = False
@@ -64,7 +64,8 @@ class PositionsUpdaterSimulator(PositionsUpdater):
                 # ensure always call fill callback
                 if position_closed:
                     await get_chan(POSITIONS_CHANNEL, self.channel.exchange_manager.id).get_internal_producer() \
-                        .send(symbol=position.symbol,
+                        .send(cryptocurrency=cryptocurrency,
+                              symbol=position.symbol,
                               order=position.to_dict(),
                               is_from_bot=True,
                               is_liquidated=position.is_liquidated(),

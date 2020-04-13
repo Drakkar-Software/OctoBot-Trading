@@ -30,7 +30,11 @@ class KlineProducer(ExchangeChannelProducer):
             if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
-                await self.send(time_frame=time_frame.value, symbol=symbol, kline=kline)
+                await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                                get_pair_cryptocurrency(symbol),
+                                symbol=symbol,
+                                time_frame=time_frame.value,
+                                kline=kline)
         except KeyError:
             pass
         except CancelledError:
@@ -38,11 +42,12 @@ class KlineProducer(ExchangeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, time_frame, symbol, kline):
+    async def send(self, cryptocurrency, symbol, time_frame, kline):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
                 "exchange_id": self.channel.exchange_manager.id,
+                "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "time_frame": time_frame,
                 "kline": kline

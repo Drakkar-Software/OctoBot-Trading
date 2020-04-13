@@ -105,7 +105,8 @@ class ExchangePersonalData(Initializable):
                 changed = self.orders_manager.upsert_order(order_id, order)
             if should_notify:
                 await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(symbol=symbol,
+                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                          symbol=symbol,
                           order=order.to_dict(),
                           is_from_bot=True,
                           is_closed=False,
@@ -120,7 +121,8 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.orders_manager.upsert_order_instance(order)
             if should_notify:
                 await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(symbol=order.symbol,
+                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
+                          symbol=order.symbol,
                           order=order.to_dict(),
                           is_from_bot=True,
                           is_closed=False,
@@ -135,7 +137,8 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.orders_manager.upsert_order_close(order_id, order)
             if should_notify:
                 await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(symbol=symbol,
+                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                          symbol=symbol,
                           order=order.to_dict(),
                           is_from_bot=True,
                           is_closed=True,
@@ -150,7 +153,8 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.trades_manager.upsert_trade(trade_id, trade)
             if should_notify:
                 await get_chan(TRADES_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(symbol=symbol,
+                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                          symbol=symbol,
                           trade=trade.to_dict(),
                           old_trade=False)
             return changed
@@ -163,7 +167,8 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.trades_manager.upsert_trade_instance(trade)
             if should_notify:
                 await get_chan(TRADES_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(symbol=trade.symbol,
+                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(trade.symbol),
+                          symbol=trade.symbol,
                           trade=trade.to_dict(),
                           old_trade=False)
             return changed
@@ -177,7 +182,8 @@ class ExchangePersonalData(Initializable):
             if should_notify:
                 position_instance = self.positions_manager[position_id]
                 await get_chan(POSITIONS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(symbol=symbol,
+                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                          symbol=symbol,
                           position=position_instance.to_dict(),
                           is_closed=False,
                           is_updated=changed,
@@ -193,7 +199,8 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.positions_manager.upsert_position_instance(position)
             if should_notify:
                 await get_chan(POSITIONS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(symbol=position.symbol,
+                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(position.symbol),
+                          symbol=position.symbol,
                           position=position,
                           is_closed=False,
                           is_updated=changed,

@@ -31,7 +31,8 @@ class MarkPriceProducer(ExchangeChannelProducer):
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_mark_price_update(mark_price)
 
                 # mark_price attribute access required to send calculation result
-                await self.send(symbol=symbol,
+                await self.send(cryptocurrency=self.channel.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                                symbol=symbol,
                                 mark_price=self.channel.exchange_manager.get_symbol_data(
                                     symbol).prices_manager.mark_price)
         except CancelledError:
@@ -39,11 +40,12 @@ class MarkPriceProducer(ExchangeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, symbol, mark_price):
+    async def send(self, cryptocurrency, symbol, mark_price):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
                 "exchange_id": self.channel.exchange_manager.id,
+                "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "mark_price": mark_price
             })

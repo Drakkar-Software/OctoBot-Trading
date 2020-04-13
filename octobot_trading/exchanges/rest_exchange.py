@@ -350,14 +350,21 @@ class RestExchange(AbstractExchange):
                 self.logger.error(f"Failed to get market of {pair}")
                 return None, None
 
-    def get_exchange_pair(self, pair: str) -> str:
+    def get_exchange_pair(self, pair) -> str:
         if pair in self.client.symbols:
             try:
                 return self.client.market(pair)["id"]
             except KeyError:
-                raise KeyError(f'{pair} is not supported')
-        else:
-            raise ValueError(f'{pair} is not supported')
+                pass
+        raise ValueError(f'{pair} is not supported')
+
+    def get_pair_cryptocurrency(self, pair) -> str:
+        if pair in self.client.symbols:
+            try:
+                return self.client.market(pair)["base"]
+            except KeyError:
+                pass
+        raise ValueError(f'{pair} is not supported')
 
     def get_default_balance(self):
         return self.client.account()

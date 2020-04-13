@@ -44,10 +44,12 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     Recent trade channel consumer callback
     """
 
-    async def handle_recent_trade(self, exchange: str, exchange_id: str, symbol: str, recent_trades: list):
+    async def handle_recent_trade(self, exchange: str, exchange_id: str,
+                                  cryptocurrency: str, symbol: str, recent_trades: list):
         try:
-            failed_order_updates = await self.__update_orders_status(symbol=symbol,
-                                                                     last_prices=recent_trades)
+            failed_order_updates = await self._update_orders_status(cryptocurrency=cryptocurrency,
+                                                                    symbol=symbol,
+                                                                    last_prices=recent_trades)
 
             if failed_order_updates:
                 self.logger.info(f"Forcing real trader refresh.")
@@ -60,9 +62,10 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     Ask cancellation and filling process if it is required
     """
 
-    async def __update_orders_status(self,
-                                     symbol: str,
-                                     last_prices: list) -> list:
+    async def _update_orders_status(self,
+                                    cryptocurrency: str,
+                                    symbol: str,
+                                    last_prices: list) -> list:
         failed_order_updates = []
         for order in copy.copy(
                 self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
@@ -79,7 +82,8 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                 # ensure always call fill callback
                 if order_filled:
                     await get_chan(ORDERS_CHANNEL, self.channel.exchange_manager.id).get_internal_producer() \
-                        .send(symbol=order.symbol,
+                        .send(cryptocurrency=cryptocurrency,
+                              symbol=order.symbol,
                               order=order.to_dict(),
                               is_from_bot=True,
                               is_closed=True,
