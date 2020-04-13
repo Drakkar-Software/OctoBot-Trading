@@ -37,3 +37,4 @@ cdef class ExchangeSimulator(AbstractExchange):
     cpdef dict get_trade_fee(self, str symbol, object order_type, double quantity, double price, str taker_or_maker=*)
     cpdef tuple get_split_pair_from_exchange(self, str pair)
     cpdef double get_exchange_current_time(self)
+    cpdef str get_pair_cryptocurrency(self, str pair)

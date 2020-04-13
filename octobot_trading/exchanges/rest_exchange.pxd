@@ -47,6 +47,8 @@ cdef class RestExchange(AbstractExchange):
     cpdef dict get_fees(self, str symbol)
     cpdef double get_uniform_timestamp(self, double timestamp)
     cpdef str get_pair_from_exchange(self, str pair)
+    cpdef str get_exchange_pair(self, str pair)
+    cpdef str get_pair_cryptocurrency(self, str pair)
     cpdef tuple get_split_pair_from_exchange(self, str pair)
     cpdef dict get_default_balance(self)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)

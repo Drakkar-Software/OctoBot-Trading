@@ -58,7 +58,7 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
             await self.stop()
 
     async def _recent_trades_from_ohlcv_callback(self, exchange: str, exchange_id: str,
-                                                 symbol: str, time_frame, candle):
+                                                 cryptocurrency: str, symbol: str, time_frame, candle):
         if candle:
             # candles are pushed when completed therefore the current price is the candle's close price
             last_candle_close_price = candle[PriceIndexes.IND_PRICE_CLOSE.value]

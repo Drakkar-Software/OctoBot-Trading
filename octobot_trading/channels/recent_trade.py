@@ -33,17 +33,21 @@ class RecentTradeProducer(ExchangeChannelProducer):
                     partial=partial)
 
                 if recent_trades:
-                    await self.send(symbol=symbol, recent_trades=recent_trades)
+                    await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                                    get_pair_cryptocurrency(symbol),
+                                    symbol=symbol,
+                                    recent_trades=recent_trades)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, symbol, recent_trades):
+    async def send(self, cryptocurrency, symbol, recent_trades):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
                 "exchange_id": self.channel.exchange_manager.id,
+                "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "recent_trades": recent_trades
             })
@@ -64,17 +68,20 @@ class LiquidationsProducer(ExchangeChannelProducer):
             if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
                     symbol=symbol):
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_liquidations(liquidations)
-                await self.send(symbol=symbol, liquidations=liquidations)
+                await self.send(cryptocurrency=self.channel.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                                symbol=symbol,
+                                liquidations=liquidations)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, symbol, liquidations):
+    async def send(self, cryptocurrency, symbol, liquidations):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
                 "exchange_id": self.channel.exchange_manager.id,
+                "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "liquidations": liquidations
             })

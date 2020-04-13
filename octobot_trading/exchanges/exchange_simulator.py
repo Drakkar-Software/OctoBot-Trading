@@ -215,3 +215,6 @@ class ExchangeSimulator(AbstractExchange):
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
         return split_symbol(pair)
+
+    def get_pair_cryptocurrency(self, pair) -> str:
+        return self.get_split_pair_from_exchange(pair)[0]
