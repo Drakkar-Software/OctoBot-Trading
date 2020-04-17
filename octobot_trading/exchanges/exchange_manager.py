@@ -93,11 +93,11 @@ class ExchangeManager(Initializable):
         for trading_mode in self.trading_modes:
             await trading_mode.stop()
         if self.exchange is not None:
+            if not self.exchange_only:
+                await self.stop_exchange_channels()
             await self.exchange.stop()
             Exchanges.instance().del_exchange(self.exchange.name, self.id)
             self.exchange.exchange_manager = None
-            if not self.exchange_only:
-                await self.stop_exchange_channels()
         if self.exchange_personal_data is not None and \
                 self.exchange_personal_data.portfolio_manager is not None:
             self.exchange_personal_data.portfolio_manager.portfolio_profitability = None
