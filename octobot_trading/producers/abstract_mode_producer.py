@@ -63,14 +63,15 @@ class AbstractTradingModeProducer(ModeChannelProducer):
 
     async def stop(self):
         await super().stop()
-        try:
-            from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
-            await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX.value,
-                                     Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                                       self.exchange_manager.id).matrix_id
-                                     ).remove_consumer(self.consumer)
-        except (KeyError, ImportError):
-            self.logger.error(f"Can't unregister matrix channel on {self.exchange_name}")
+        if self.exchange_manager is not None:
+            try:
+                from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
+                await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX.value,
+                                         Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
+                                                                           self.exchange_manager.id).matrix_id
+                                         ).remove_consumer(self.consumer)
+            except (KeyError, ImportError):
+                self.logger.error(f"Can't unregister matrix channel on {self.exchange_name}")
         self.flush()
 
     async def matrix_callback(self, matrix_id, evaluator_name, evaluator_type,
