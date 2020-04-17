@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2020-04-17
+### Added
+- [ModeChannel] data param to consumers callback
+- [ModeChannel] consumer filtering by state
+
+### Fixed
+- [AbstractModeProducer] Matrix channel subscription
+
 ## [1.5.0] - 2020-04-13
 ### Added
 - [ExchangeChannel] Cryptocurrency param to channels callbacks
