@@ -29,11 +29,13 @@ class ModeChannelProducer(ExchangeChannelProducer):
     async def send(self,
                    final_note=INIT_EVAL_NOTE,
                    trading_mode_name=CHANNEL_WILDCARD,
+                   state=CHANNEL_WILDCARD,
                    cryptocurrency=CHANNEL_WILDCARD,
                    symbol=CHANNEL_WILDCARD,
                    time_frame=None,
-                   state=EvaluatorStates.NEUTRAL):
+                   data=None):
         for consumer in self.channel.get_filtered_consumers(trading_mode_name=trading_mode_name,
+                                                            state=state,
                                                             cryptocurrency=cryptocurrency,
                                                             symbol=symbol,
                                                             time_frame=time_frame):
@@ -43,7 +45,8 @@ class ModeChannelProducer(ExchangeChannelProducer):
                 "trading_mode_name": trading_mode_name,
                 "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
-                "time_frame": time_frame
+                "time_frame": time_frame,
+                "data": data
             })
 
 
@@ -52,6 +55,7 @@ class ModeChannel(ExchangeChannel):
     CONSUMER_CLASS = ModeChannelConsumer
 
     TRADING_MODE_NAME_KEY = "trading_mode_name"
+    STATE_KEY = "state"
     CRYPTOCURRENCY_KEY = "cryptocurrency"
     SYMBOL_KEY = "symbol"
     TIME_FRAME_KEY = "time_frame"
@@ -61,22 +65,26 @@ class ModeChannel(ExchangeChannel):
                            consumer_instance: ModeChannelConsumer = None,
                            size=0,
                            trading_mode_name=CHANNEL_WILDCARD,
+                           state=CHANNEL_WILDCARD,
                            cryptocurrency=CHANNEL_WILDCARD,
                            symbol=CHANNEL_WILDCARD,
                            time_frame=None):
         await self._add_new_consumer_and_run(consumer_instance,
                                              trading_mode_name=trading_mode_name,
+                                             state=state,
                                              cryptocurrency=cryptocurrency,
                                              symbol=symbol,
                                              time_frame=time_frame)
 
     def get_filtered_consumers(self,
                                trading_mode_name=CHANNEL_WILDCARD,
+                               state=CHANNEL_WILDCARD,
                                cryptocurrency=CHANNEL_WILDCARD,
                                symbol=CHANNEL_WILDCARD,
                                time_frame=CHANNEL_WILDCARD):
         return self.get_consumer_from_filters({
             self.TRADING_MODE_NAME_KEY: trading_mode_name,
+            self.STATE_KEY: state,
             self.CRYPTOCURRENCY_KEY: cryptocurrency,
             self.SYMBOL_KEY: symbol,
             self.TIME_FRAME_KEY: time_frame
@@ -84,13 +92,15 @@ class ModeChannel(ExchangeChannel):
 
     async def _add_new_consumer_and_run(self, consumer,
                                         trading_mode_name=CHANNEL_WILDCARD,
+                                        state=CHANNEL_WILDCARD,
                                         cryptocurrency=CHANNEL_WILDCARD,
                                         symbol=CHANNEL_WILDCARD,
                                         time_frame=None):
         consumer_filters: dict = {
             self.TRADING_MODE_NAME_KEY: trading_mode_name,
+            self.STATE_KEY: state,
             self.CRYPTOCURRENCY_KEY: cryptocurrency,
-            self.SYMBOL_KEY: symbol,
+            self.SYMBOL_KEY: symbol
         }
 
         if time_frame:
@@ -100,6 +110,7 @@ class ModeChannel(ExchangeChannel):
         await consumer.run()
         self.logger.debug(f"Consumer started for : "
                           f"[trading_mode_name={trading_mode_name},"
+                          f" state={state},"
                           f" cryptocurrency={cryptocurrency},"
                           f" symbol={symbol},"
                           f" time_frame={time_frame}]")
