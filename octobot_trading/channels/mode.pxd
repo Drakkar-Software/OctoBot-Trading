@@ -26,4 +26,5 @@ cdef class ModeChannelProducer(ExchangeChannelProducer):
     pass
 
 cdef class ModeChannel(ExchangeChannel):
-    cpdef object get_filtered_consumers(self, str trading_mode_name=*, str cryptocurrency=*, str symbol=*, str time_frame=*)
+    cpdef object get_filtered_consumers(self, str trading_mode_name=*, str state =*, str cryptocurrency=*,
+                                        str symbol=*, str time_frame=*)
