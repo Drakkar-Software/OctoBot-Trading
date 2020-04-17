@@ -44,3 +44,7 @@ def create_new_candles_manager(candles=None) -> CandlesManager:
     if candles is not None:
         manager.replace_all_candles(candles)
     return manager
+
+
+def force_set_mark_price(exchange_manager, symbol, price):
+    exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol).prices_manager.set_mark_price(price)

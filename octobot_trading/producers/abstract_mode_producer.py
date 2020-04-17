@@ -91,9 +91,6 @@ class AbstractTradingModeProducer(ModeChannelProducer):
             # Do nothing if not its exchange
             return
 
-        # reset previous note
-        self.final_eval = INIT_EVAL_NOTE
-
         try:
             await self.set_final_eval(matrix_id=matrix_id,
                                       cryptocurrency=cryptocurrency,
