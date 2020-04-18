@@ -38,7 +38,8 @@ class PricesManager(Initializable):
         self.prices_initialized_event.set()
 
     async def get_mark_price(self, timeout=MARK_PRICE_TIMEOUT):
-        await wait_for(self.prices_initialized_event.wait(), timeout)
+        if not self.prices_initialized_event.is_set():
+            await wait_for(self.prices_initialized_event.wait(), timeout)
         return self.mark_price
 
     def __reset_prices(self):
