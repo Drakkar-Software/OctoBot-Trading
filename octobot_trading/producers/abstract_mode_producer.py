@@ -88,7 +88,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         Finalize evaluation
         :return: None
         """
-        if exchange_name != self.exchange_name:
+        if exchange_name != self.exchange_name or not self.exchange_manager.trader.is_enabled:
             # Do nothing if not its exchange
             return
 
@@ -127,40 +127,6 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         :return:
         """
         raise NotImplementedError("get_should_cancel_loaded_orders not implemented")
-
-    async def create_order_if_possible(self) -> None:
-        """
-        For each trader call the creator to check if order creation is possible and create it
-        :return: None
-        """
-        trader = self.exchange_manager.trader
-        if trader.is_enabled():
-            async with self.exchange_manager.exchange_personal_data.portfolio_manager.get_lock():
-                pf = self.exchange_manager.exchange_personal_data.portfolio_manager
-                order_creator = self.trading_mode.get_creator(self.trading_mode.symbol)
-                if await order_creator.can_create_order(self.trading_mode.symbol, self.exchange_manager, self.state, pf):
-                    try:
-                        _ = await order_creator.create_new_order(
-                            self.final_eval,
-                            self.trading_mode.symbol,
-                            self.exchange_manager,
-                            trader,
-                            pf,
-                            self.state)
-                    except InsufficientFunds:
-                        if not trader.get_simulate():
-                            try:
-                                # second chance: force portfolio update and retry
-                                await trader.force_refresh_orders_and_portfolio(pf)
-                                _ = await order_creator.create_new_order(
-                                    self.final_eval,
-                                    self.trading_mode.symbol,
-                                    self.exchange_manager,
-                                    trader,
-                                    pf,
-                                    self.state)
-                            except InsufficientFunds as e:
-                                self.logger.error(f"Failed to create order on second attempt : {e})")
 
     async def cancel_symbol_open_orders(self, symbol) -> None:
         """
