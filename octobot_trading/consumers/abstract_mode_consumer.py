@@ -13,9 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.symbol_util import split_symbol
+from ccxt import InsufficientFunds
 
+from octobot_commons.symbol_util import split_symbol
 from octobot_trading.channels.mode import ModeChannelConsumer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, EvaluatorStates
 
@@ -33,10 +33,33 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
     async def internal_callback(self, **kwargs):
         raise NotImplementedError("internal_callback is not implemented")
 
+    async def create_new_orders(self, symbol, final_note, state, **kwargs):
+        raise NotImplementedError("create_new_orders is not implemented")
+
+    async def create_order_if_possible(self, symbol, final_note, state, **kwargs) -> list:
+        """
+        For each trader call the creator to check if order creation is possible and create it.
+        Will retry once on failure
+        :return: None
+        """
+        async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+            pf = self.exchange_manager.exchange_personal_data.portfolio_manager
+            if await self.can_create_order(symbol, state):
+                try:
+                    return await self.create_new_orders(symbol, final_note, state, **kwargs)
+                except InsufficientFunds:
+                    try:
+                        # second chance: force portfolio update and retry
+                        await self.exchange_manager.force_refresh_orders_and_portfolio(pf)
+                        return await self.create_new_orders(symbol, final_note, state, **kwargs)
+                    except InsufficientFunds as e:
+                        self.logger.error(f"Failed to create order on second attempt : {e})")
+        return []
+
     # Can be overwritten
     async def can_create_order(self, symbol, state):
         currency, market = split_symbol(symbol)
-        portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager
+        portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
 
         # get symbol min amount when creating order
         symbol_limit = self.exchange_manager.exchange.get_market_status(symbol)[Ecmsc.LIMITS.value]
