@@ -17,7 +17,6 @@ import math
 
 from octobot_commons.dict_util import get_value_or_default
 from octobot_trading.constants import CURRENCY_DEFAULT_MAX_PRICE_DIGITS
-
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
 from octobot_trading.orders.order_util import is_valid, check_cost
