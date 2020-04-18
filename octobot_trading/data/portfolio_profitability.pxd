@@ -41,7 +41,7 @@ cdef class PortfolioProfitabilty:
     cdef public double initial_portfolio_current_profitability
     cdef public set initializing_symbol_prices
 
-    cdef dict currencies_last_prices
+    cdef public dict currencies_last_prices
     cdef public dict origin_crypto_currencies_values
     cdef public dict current_crypto_currencies_values
 
