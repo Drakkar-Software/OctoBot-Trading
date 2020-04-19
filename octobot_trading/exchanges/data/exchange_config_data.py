@@ -36,6 +36,7 @@ class ExchangeConfig(Initializable):
         self.traded_cryptocurrencies = {}
         self.traded_symbol_pairs = []
         self.traded_time_frames = []
+        self.real_time_time_frames = []
 
     async def initialize_impl(self):
         pass
@@ -107,10 +108,10 @@ class ExchangeConfig(Initializable):
                 self.traded_time_frames.append(time_frame)
         if not self.exchange_manager.is_backtesting:
             # add shortest timeframe for realtime evaluators
-            client_shortest_time_frame = find_min_time_frame(self.exchange_manager.client_time_frames, MIN_EVAL_TIME_FRAME)
-            if client_shortest_time_frame not in self.traded_time_frames:
-                self.traded_time_frames.append(client_shortest_time_frame)
-
+            client_shortest_time_frame = find_min_time_frame(self.exchange_manager.client_time_frames,
+                                                             MIN_EVAL_TIME_FRAME)
+            self.real_time_time_frames.append(client_shortest_time_frame)
+        self.traded_time_frames.extend(tf for tf in self.real_time_time_frames if tf not in self.traded_time_frames)
         self.traded_time_frames = sort_time_frames(self.traded_time_frames, reverse=True)
 
     @staticmethod

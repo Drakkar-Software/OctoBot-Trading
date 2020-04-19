@@ -27,7 +27,8 @@ cdef class ExchangeConfiguration(object):
 
     cdef public dict symbols_by_crypto_currencies
     cdef public list symbols
-    cdef public list time_frames
+    cdef public list time_frames_without_real_time
+    cdef public list real_time_time_frames
 
 
 cdef class Exchanges(Singleton):
