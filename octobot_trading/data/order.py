@@ -193,7 +193,7 @@ class Order:
         if not self.trader.simulate and not self.is_self_managed():
             cancelled_order = await self.exchange_manager.exchange.cancel_order(self.order_id, self.symbol)
 
-        await self.trader.notify_order_cancel(self)
+        await self.trader.notify_order_cancel(self, remove_from_manager=True)
         return cancelled_order
 
     async def cancel_from_exchange(self):

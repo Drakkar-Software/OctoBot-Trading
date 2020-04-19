@@ -232,11 +232,15 @@ class Trader(Initializable):
                 orders += await self._sell_everything(symbol, inverted, timeout=timeout)
         return orders
 
-    async def notify_order_cancel(self, order):
+    async def notify_order_cancel(self, order, remove_from_manager=True):
         # update portfolio with ended order
         async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
             self.exchange_manager.exchange_personal_data.get_order_portfolio(order) \
                 .update_portfolio_available(order, is_new_order=False)
+
+        if remove_from_manager:
+            # remove order from open_orders
+            self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
 
     async def notify_order_close(self, order, cancel=False, cancel_linked_only=False):
         # Cancel linked orders
@@ -264,7 +268,7 @@ class Trader(Initializable):
             await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
                 create_trade_from_order(order))
 
-            # remove order to open_orders
+            # remove order from open_orders
             self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
 
     """
