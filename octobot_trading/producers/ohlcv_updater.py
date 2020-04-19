@@ -85,7 +85,8 @@ class OHLCVUpdater(OHLCVProducer):
         candles: list = await self.channel.exchange_manager.exchange \
             .get_symbol_prices(pair, time_frame, limit=self.OHLCV_OLD_LIMIT)
         self.channel.exchange_manager.uniformize_candles_if_necessary(candles)
-        await self.push(time_frame, pair, candles[:-1], replace_all=True)
+        await self.channel.exchange_manager.get_symbol_data(pair) \
+            .handle_candles_update(time_frame, candles, replace_all=True, partial=False)
 
     async def _candle_callback(self, time_frame, pair, should_initialize=False):
         time_frame_sleep: int = TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS
