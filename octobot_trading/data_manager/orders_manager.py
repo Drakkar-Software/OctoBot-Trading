@@ -76,6 +76,10 @@ class OrdersManager(Initializable):
     def remove_order_instance(self, order):
         if order.order_id in self.orders:
             self.orders.pop(order.order_id, None)
+        else:
+            self.logger.warning(f"Attempt to remove an order that is not in orders_manager: {order.order_type.name} "
+                                f"{order.symbol}: {order.origin_quantity} at {order.origin_price} "
+                                f"(id: {order.order_id})")
 
     # private methods
     def _reset_orders(self):
