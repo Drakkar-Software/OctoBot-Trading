@@ -96,4 +96,5 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         except Exception as e:
             self.logger.exception(e, True, f"Error while fetching historical candles: {e}")
         if ohlcv_data:
-            await self.push(time_frame, pair, [ohlcv[-1] for ohlcv in ohlcv_data], replace_all=True)
+            await self.channel.exchange_manager.get_symbol_data(pair) \
+                .handle_candles_update(time_frame, [ohlcv[-1] for ohlcv in ohlcv_data], replace_all=True, partial=False)
