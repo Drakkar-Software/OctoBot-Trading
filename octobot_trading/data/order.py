@@ -193,7 +193,7 @@ class Order:
         if not self.trader.simulate and not self.is_self_managed():
             cancelled_order = await self.exchange_manager.exchange.cancel_order(self.order_id, self.symbol)
 
-        await self.trader.notify_order_cancel(self, remove_from_manager=True)
+        await self.trader.notify_order_cancel(self, remove_from_manager=self.is_self_managed())
         return cancelled_order
 
     async def cancel_from_exchange(self):
@@ -343,6 +343,13 @@ class Order:
             ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
             ExchangeConstantsOrderColumns.FEE.value: self.fee
         }
+
+    def clear(self):
+        self.trader = None
+        self.exchange_manager = None
+        self.linked_to = None
+        self.linked_portfolio = None
+        self.linked_orders = []
 
     def to_string(self):
         return (f"{self.symbol} | "

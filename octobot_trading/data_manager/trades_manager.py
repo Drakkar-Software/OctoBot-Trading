@@ -80,3 +80,9 @@ class TradesManager(Initializable):
     def _remove_oldest_trades(self, nb_to_remove):
         for _ in range(nb_to_remove):
             self.trades.popitem(last=False)
+
+    def clear(self):
+        for trade in self.trades.values():
+            trade.trader = None
+            trade.exchange_manager = None
+        self._reset_trades()

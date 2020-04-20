@@ -98,9 +98,8 @@ class ExchangeManager(Initializable):
             await self.exchange.stop()
             Exchanges.instance().del_exchange(self.exchange.name, self.id)
             self.exchange.exchange_manager = None
-        if self.exchange_personal_data is not None and \
-                self.exchange_personal_data.portfolio_manager is not None:
-            self.exchange_personal_data.portfolio_manager.portfolio_profitability = None
+        if self.exchange_personal_data is not None:
+            self.exchange_personal_data.clear()
         self.exchange_config = None
         self.exchange_personal_data = None
         self.exchange_symbols_data = None
