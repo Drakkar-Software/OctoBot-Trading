@@ -40,3 +40,4 @@ cdef class ExchangePersonalData(Initializable):
     cdef public PositionsManager positions_manager
 
     cpdef object get_order_portfolio(self, Order order)
+    cpdef void clear(self)

@@ -37,3 +37,4 @@ cdef class TradesManager(Initializable):
     cpdef bint upsert_trade(self, str trade_id, dict raw_trade)
     cpdef void upsert_trade_instance(self, Trade trade)
     cpdef dict get_total_paid_fees(self)
+    cpdef void clear(self)
