@@ -99,6 +99,7 @@ cdef class Order:
     cpdef bint update_from_raw(self, dict raw_order)
     cpdef void consider_as_filled(self)
     cpdef dict to_dict(self)
+    cpdef void clear(self)
 
 cpdef object parse_order_status(dict raw_order)
 

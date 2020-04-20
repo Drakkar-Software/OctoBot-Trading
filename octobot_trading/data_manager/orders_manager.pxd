@@ -47,3 +47,4 @@ cdef class OrdersManager(Initializable):
     cpdef list get_all_orders(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_open_orders(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_closed_orders(self, str symbol=*, int since=*, int limit=*)
+    cpdef void clear(self)
