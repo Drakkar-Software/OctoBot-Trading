@@ -232,7 +232,7 @@ class Trader(Initializable):
                 orders += await self._sell_everything(symbol, inverted, timeout=timeout)
         return orders
 
-    async def notify_order_cancel(self, order, remove_from_manager=True):
+    async def notify_order_cancel(self, order, remove_from_manager=False):
         # update portfolio with ended order
         async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
             self.exchange_manager.exchange_personal_data.get_order_portfolio(order) \

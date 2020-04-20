@@ -16,7 +16,6 @@
 from collections import OrderedDict
 
 from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus
 from octobot_trading.util.initializable import Initializable
@@ -76,6 +75,7 @@ class OrdersManager(Initializable):
     def remove_order_instance(self, order):
         if order.order_id in self.orders:
             self.orders.pop(order.order_id, None)
+            order.clear()
         else:
             self.logger.warning(f"Attempt to remove an order that is not in orders_manager: {order.order_type.name} "
                                 f"{order.symbol}: {order.origin_quantity} at {order.origin_price} "
@@ -113,3 +113,8 @@ class OrdersManager(Initializable):
     def _remove_oldest_orders(self, nb_to_remove):
         for _ in range(nb_to_remove):
             self.orders.popitem(last=False)
+
+    def clear(self):
+        for order in self.orders.values():
+            order.clear()
+        self._reset_orders()
