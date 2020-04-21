@@ -63,21 +63,6 @@ def get_exchange_current_time(exchange_manager) -> float:
     return exchange_manager.exchange.get_exchange_current_time()
 
 
-def get_any_exchange_current_time_from_matrix_id(matrix_id) -> float:
-    """
-    WARNING: only works on live mode or mono-exchange backtesting.
-    Might give incoherent time on multiple exchanges backtesting
-    Currently used to assign an evaluation timestamp when no exchange name is available
-    :param matrix_id:
-    :return:
-    """
-    for exchange_configs in Exchanges.instance().exchanges.values():
-        for exchange_config in exchange_configs.values():
-            if exchange_config.exchange_manager.matrix_id == matrix_id:
-                return get_exchange_current_time(exchange_config.exchange_manager.exchange_manager)
-    return 0
-
-
 def get_exchange_id_from_matrix_id(exchange_name, matrix_id) -> str:
     for exchange_configuration in get_exchange_configurations_from_exchange_name(exchange_name).values():
         if exchange_configuration.matrix_id == matrix_id:
@@ -115,3 +100,7 @@ def get_watched_timeframes(exchange_manager) -> list:
 
 async def force_refresh_orders_and_portfolio(exchange_manager):
     return await exchange_manager.trader.force_refresh_orders_and_portfolio()
+
+
+def get_base_currency(exchange_manager, pair) -> str:
+    return exchange_manager.exchange.get_pair_cryptocurrency(pair)
