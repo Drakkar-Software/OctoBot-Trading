@@ -13,11 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import numpy as np
-
 from octobot_trading.data_manager.candles_manager import CandlesManager
 from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
-from octobot_commons.enums import TimeFrames, PriceIndexes
+from octobot_trading.data_adapters.candles_adapter import \
+    get_symbol_close_candles as adapter_get_symbol_close_candles, \
+    get_symbol_open_candles as adapter_get_symbol_open_candles, \
+    get_symbol_high_candles as adapter_get_symbol_high_candles, \
+    get_symbol_low_candles as adapter_get_symbol_low_candles, \
+    get_symbol_volume_candles as adapter_get_symbol_volume_candles, \
+    get_symbol_time_candles as adapter_get_symbol_time_candles
+from octobot_commons.enums import TimeFrames
 
 
 def get_symbol_data(exchange_manager, symbol, allow_creation=True) -> ExchangeSymbolData:
@@ -41,69 +46,27 @@ def get_symbol_klines(symbol_data, time_frame) -> list:
 
 
 def get_symbol_close_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    if include_in_construction:
-        return _add_in_construction_data(
-            get_symbol_candles_manager(symbol_data, time_frame).get_symbol_close_candles(limit),
-            symbol_data,
-            time_frame,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_close_candles(limit)
+    return adapter_get_symbol_close_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_open_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    if include_in_construction:
-        return _add_in_construction_data(
-            get_symbol_open_candles(symbol_data, time_frame).get_symbol_open_candles(limit),
-            symbol_data,
-            time_frame,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_open_candles(limit)
+    return adapter_get_symbol_open_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_high_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    if include_in_construction:
-        return _add_in_construction_data(
-            get_symbol_high_candles(symbol_data, time_frame).get_symbol_high_candles(limit),
-            symbol_data,
-            time_frame,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_high_candles(limit)
+    return adapter_get_symbol_high_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_low_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    if include_in_construction:
-        return _add_in_construction_data(
-            get_symbol_low_candles(symbol_data, time_frame).get_symbol_low_candles(limit),
-            symbol_data,
-            time_frame,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_low_candles(limit)
+    return adapter_get_symbol_low_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_volume_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    if include_in_construction:
-        return _add_in_construction_data(
-            get_symbol_volume_candles(symbol_data, time_frame).get_symbol_volume_candles(limit),
-            symbol_data,
-            time_frame,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_volume_candles(limit)
+    return adapter_get_symbol_volume_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_time_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    if include_in_construction:
-        return _add_in_construction_data(
-            get_symbol_time_candles(symbol_data, time_frame).get_symbol_time_candles(limit),
-            symbol_data,
-            time_frame,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_time_candles(limit)
+    return adapter_get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def create_new_candles_manager(candles=None) -> CandlesManager:
@@ -115,8 +78,3 @@ def create_new_candles_manager(candles=None) -> CandlesManager:
 
 def force_set_mark_price(exchange_manager, symbol, price):
     exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol).prices_manager.set_mark_price(price)
-
-
-def _add_in_construction_data(candles, symbol_data, time_frame, data_type):
-    # TODO: optimize numpy call if possible
-    return np.append(candles, get_symbol_klines(symbol_data, time_frame)[data_type])
