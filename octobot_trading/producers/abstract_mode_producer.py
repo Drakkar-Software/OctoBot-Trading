@@ -75,7 +75,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         self.flush()
 
     async def matrix_callback(self, matrix_id, evaluator_name, evaluator_type,
-                              eval_note, eval_note_type, eval_time, exchange_name, cryptocurrency, symbol, time_frame):
+                              eval_note, eval_note_type, exchange_name, cryptocurrency, symbol, time_frame):
         await self.finalize(exchange_name=exchange_name, matrix_id=matrix_id, cryptocurrency=cryptocurrency,
                             symbol=symbol, time_frame=time_frame)
 
