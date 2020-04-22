@@ -13,3 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+import pytest
+
+from octobot_commons.tests.test_config import load_test_config
+from octobot_trading.exchanges.exchange_manager import ExchangeManager
+
+pytestmark = pytest.mark.asyncio
+
+
+@pytest.yield_fixture
+async def exchange_manager(config=None, exchange_name="binance"):
+    exchange_manager_instance = ExchangeManager(config if config is not None else load_test_config(), exchange_name)
+    await exchange_manager_instance.initialize()
+    yield exchange_manager_instance
+    await exchange_manager_instance.stop()
