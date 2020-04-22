@@ -17,3 +17,5 @@ setuptools
 wheel
 
 pur
+
+aiohttp

@@ -13,8 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
-
 import pytest
 
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
