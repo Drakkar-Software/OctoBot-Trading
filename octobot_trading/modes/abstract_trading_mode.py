@@ -142,8 +142,8 @@ class AbstractTradingMode(AbstractTentacle):
         raise Exception(f"'{TRADING_MODE_REQUIRED_STRATEGIES}' is missing in configuration file")
 
     @classmethod
-    def get_default_strategies(cls):
-        config = get_tentacle_config(cls)
+    def get_default_strategies(cls, trading_mode_config=None):
+        config = trading_mode_config or get_tentacle_config(cls)
         if TENTACLE_DEFAULT_CONFIG in config:
             return config[TENTACLE_DEFAULT_CONFIG]
 
