@@ -141,13 +141,12 @@ class CandlesManager(Initializable):
             self.add_new_candle(new_candles_data)
 
     def _change_current_candle(self):
-        self.close_candles = shift_value_array(self.close_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
-        self.open_candles = shift_value_array(self.open_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
-        self.high_candles = shift_value_array(self.high_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
-        self.low_candles = shift_value_array(self.low_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
-        self.volume_candles = shift_value_array(self.volume_candles, -1, self.MAX_CANDLES_COUNT, np.nan,
-                                                      np.float64)
-        self.time_candles = shift_value_array(self.time_candles, -1, self.MAX_CANDLES_COUNT, np.nan, np.float64)
+        self.close_candles = shift_value_array(self.close_candles, -1, np.nan, np.float64)
+        self.open_candles = shift_value_array(self.open_candles, -1, np.nan, np.float64)
+        self.high_candles = shift_value_array(self.high_candles, -1, np.nan, np.float64)
+        self.low_candles = shift_value_array(self.low_candles, -1, np.nan, np.float64)
+        self.volume_candles = shift_value_array(self.volume_candles, -1, np.nan, np.float64)
+        self.time_candles = shift_value_array(self.time_candles, -1, np.nan, np.float64)
 
     def _should_add_new_candle(self, new_open_time):
         return new_open_time not in self.time_candles
