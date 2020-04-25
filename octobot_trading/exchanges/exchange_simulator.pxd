@@ -38,3 +38,10 @@ cdef class ExchangeSimulator(AbstractExchange):
     cpdef str get_pair_cryptocurrency(self, str pair)
     cpdef list get_available_time_frames(self)
     cpdef list get_time_frames(self, object importer)
+
+cpdef bint get_real_available_data(list exchange_importers)
+# Should be cythonized with cython 3.0
+# cpdef set handles_real_data_for_updater(str channel_type, list available_data_types)
+
+# Should be cythonized with cython 3.0
+# cdef bint _are_required_data_available(str channel_type, list available_data_types)

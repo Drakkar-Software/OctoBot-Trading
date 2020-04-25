@@ -36,19 +36,28 @@ class ExchangeSimulator(AbstractExchange):
         self.backtesting = backtesting
         self.allowed_time_lag = DEFAULT_BACKTESTING_TIME_LAG
 
+        """
+        Backtesting exchange importers list
+        """
         self.exchange_importers = []
 
-        self.symbols = []
-        self.time_frames = []
+        """
+        Exchange simulator will never be authenticated
+        """
+        self.is_authenticated = False
 
         self.current_future_candles = {}
 
     async def initialize_impl(self):
+        client_symbols = []
+        client_time_frames = []
+
         self.exchange_importers = self.backtesting.get_importers(ExchangeDataImporter)
+
         # load symbols and time frames
         for importer in self.exchange_importers:
-            self.symbols += importer.symbols
-            self.time_frames += importer.time_frames
+            client_symbols += importer.symbols
+            client_time_frames += importer.time_frames
 
         # remove duplicates
         self.symbols = list(set(self.symbols))
@@ -59,35 +68,19 @@ class ExchangeSimulator(AbstractExchange):
         self.time_frames = list(set(self.time_frames))
 
         # set exchange manager attributes
-        self.exchange_manager.client_symbols = self.symbols
-
-    @staticmethod
-    def handles_real_data_for_updater(channel_type, available_data):
-        if channel_type in SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE:
-            return all(data_type in available_data for data_type in SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE[channel_type])
-        return True
+        self.exchange_manager.client_symbols = client_symbols
+        self.exchange_manager.client_time_frames = client_time_frames
 
     async def create_backtesting_exchange_producers(self):
         for importer in self.exchange_importers:
             available_data_types = get_available_data_types(importer)
             at_least_one_updater = False
             for channel_type, updater in UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS.items():
-                if self._are_required_data_available(channel_type, available_data_types):
+                if _are_required_data_available(channel_type, available_data_types):
                     await updater(get_trading_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
                     at_least_one_updater = True
             if not at_least_one_updater:
                 self.logger.error(f"No updater created for {importer.symbols} backtesting")
-
-    @staticmethod
-    def _are_required_data_available(channel_type, available_data_types):
-        if channel_type not in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE:
-            # no required data if updater is not in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys
-            return True
-        else:
-            # if updater is in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys: check that at least one of the required data is
-            # available
-            return any(required_data_type in available_data_types
-                       for required_data_type in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[channel_type])
 
     async def stop(self):
         self.backtesting = None
@@ -95,17 +88,6 @@ class ExchangeSimulator(AbstractExchange):
 
     def get_exchange_current_time(self):
         return get_backtesting_current_time(self.backtesting)
-
-    def symbol_exists(self, symbol):
-        return symbol in self.symbols
-
-    def time_frame_exists(self, time_frame):
-        return time_frame in self.time_frames
-
-    def get_available_time_frames(self):
-        if self.exchange_importers:
-            return [time_frame.value for time_frame in get_available_time_frames(next(iter(self.exchange_importers)))]
-        return []
 
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
         return {
@@ -130,9 +112,6 @@ class ExchangeSimulator(AbstractExchange):
                 },
             },
         }
-
-    def get_uniform_timestamp(self, timestamp):
-        return timestamp / 1000
 
     def get_fees(self, symbol=None):
         result_fees = {
@@ -184,11 +163,6 @@ class ExchangeSimulator(AbstractExchange):
             FeePropertyColumns.COST.value: cost
         }
 
-    def get_time_frames(self, importer):
-        return sort_time_frames(set(get_available_time_frames(importer)) &
-                                set(self.exchange_manager.exchange_config.traded_time_frames),
-                                reverse=True)
-
     def is_authenticated(self) -> bool:
         return False
 
@@ -198,9 +172,26 @@ class ExchangeSimulator(AbstractExchange):
     def get_pair_cryptocurrency(self, pair) -> str:
         return self.get_split_pair_from_exchange(pair)[0]
 
-    @staticmethod
-    def get_real_available_data(exchange_importers):
-        available_data = set()
-        for importer in exchange_importers:
-            available_data = available_data.union(get_available_data_types(importer))
-        return available_data
+
+def handles_real_data_for_updater(channel_type, available_data):
+    if channel_type in SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE:
+        return all(data_type in available_data for data_type in SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE[channel_type])
+    return True
+
+
+def get_real_available_data(exchange_importers):
+    available_data = set()
+    for importer in exchange_importers:
+        available_data = available_data.union(get_available_data_types(importer))
+    return available_data
+
+
+def _are_required_data_available(channel_type, available_data_types):
+    if channel_type not in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE:
+        # no required data if updater is not in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys
+        return True
+    else:
+        # if updater is in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys: check that at least one of the required data is
+        # available
+        return any(required_data_type in available_data_types
+                   for required_data_type in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[channel_type])

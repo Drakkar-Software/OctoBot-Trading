@@ -20,6 +20,10 @@ from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.rest_exchange import RestExchange
 
+# Import required fixtures
+from tests import event_loop
+from tests.exchanges import exchange_manager
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
@@ -63,8 +67,6 @@ class TestExchangeManager:
         assert isinstance(exchange_manager.exchange, RestExchange)
         await exchange_manager.stop()
 
-    async def test_ready(self):
-        _, exchange_manager = await self.init_default()
-
+    @pytest.mark.usefixtures("event_loop", "exchange_manager")
+    async def test_ready(self, exchange_manager):
         assert exchange_manager.is_ready
-        await exchange_manager.stop()

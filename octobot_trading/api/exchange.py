@@ -16,7 +16,7 @@
 from octobot_trading.constants import OHLCV_CHANNEL
 from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
+from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator, get_real_available_data
 from octobot_trading.exchanges.exchanges import Exchanges, ExchangeConfiguration
 from octobot_trading.producers.simulator import SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE
 
@@ -124,8 +124,7 @@ def get_exchange_name(exchange_manager) -> str:
 
 
 def has_only_ohlcv(exchange_importers):
-    return ExchangeSimulator.get_real_available_data(exchange_importers) == \
-           set(SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[OHLCV_CHANNEL])
+    return get_real_available_data(exchange_importers) == set(SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[OHLCV_CHANNEL])
 
 
 def get_is_backtesting(exchange_manager) -> bool:

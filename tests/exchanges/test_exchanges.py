@@ -15,21 +15,17 @@
 #  License along with this library.
 import pytest
 
-from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
+
+# Import required fixtures
+from tests import config
 
 pytestmark = pytest.mark.asyncio
 
 
 class TestExchanges:
-    @staticmethod
-    async def init_default():
-        return load_test_config()
-
-    async def test_add_exchange(self):
-        config = await self.init_default()
-
+    async def test_add_exchange(self, config):
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
         Exchanges.instance().add_exchange(exchange_manager_binance, "")
@@ -51,9 +47,7 @@ class TestExchanges:
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
 
-    async def test_get_exchange(self):
-        config = await self.init_default()
-
+    async def test_get_exchange(self, config):
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
         Exchanges.instance().add_exchange(exchange_manager_binance, "")
@@ -77,9 +71,7 @@ class TestExchanges:
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
 
-    async def test_del_exchange(self):
-        config = await self.init_default()
-
+    async def test_del_exchange(self, config):
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
         Exchanges.instance().add_exchange(exchange_manager_binance, "")
@@ -106,9 +98,7 @@ class TestExchanges:
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
 
-    async def test_get_all_exchanges(self):
-        config = await self.init_default()
-
+    async def test_get_all_exchanges(self, config):
         exchange_manager_binance = ExchangeManager(config, "binance")
         await exchange_manager_binance.initialize()
         Exchanges.instance().add_exchange(exchange_manager_binance, "")
