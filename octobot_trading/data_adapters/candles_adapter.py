@@ -13,8 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import numpy as np
-
+from octobot_commons.data_util import shift_value_array
 from octobot_commons.enums import TimeFrames, PriceIndexes
 
 
@@ -91,5 +90,4 @@ def get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construct
 
 
 def _add_in_construction_data(candles, symbol_data, time_frame, data_type):
-    # TODO: optimize numpy call if possible
-    return np.append(candles, symbol_data.symbol_klines[time_frame].kline[data_type])
+    return shift_value_array(candles, fill_value=symbol_data.symbol_klines[time_frame].kline[data_type])
