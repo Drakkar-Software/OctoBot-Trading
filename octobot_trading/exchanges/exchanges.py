@@ -28,10 +28,8 @@ class ExchangeConfiguration:
         self.matrix_id = matrix_id
         self.symbols = exchange_manager.exchange_config.traded_symbol_pairs
         self.symbols_by_crypto_currencies = exchange_manager.exchange_config.traded_cryptocurrencies
-        self.time_frames_without_real_time = [
-            time_frame
-            for time_frame in exchange_manager.exchange_config.traded_time_frames
-            if time_frame not in exchange_manager.exchange_config.real_time_time_frames]
+        self.time_frames_without_real_time = list(set(exchange_manager.exchange_config.traded_time_frames) -
+                                                  set(exchange_manager.exchange_config.real_time_time_frames))
         self.real_time_time_frames = exchange_manager.exchange_config.real_time_time_frames
 
 

@@ -25,8 +25,7 @@ def get_symbol_close_candles(symbol_data, time_frame, limit, include_in_construc
             symbol_data,
             tf,
             PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return symbol_data.symbol_candles[tf].get_symbol_close_candles(limit)
+    return symbol_data.symbol_candles[tf].get_symbol_close_candles(limit)
 
 
 def get_symbol_open_candles(symbol_data, time_frame, limit, include_in_construction):
@@ -36,9 +35,8 @@ def get_symbol_open_candles(symbol_data, time_frame, limit, include_in_construct
             symbol_data.symbol_candles[tf].get_symbol_open_candles(limit),
             symbol_data,
             tf,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return symbol_data.symbol_candles[tf].get_symbol_open_candles(limit)
+            PriceIndexes.IND_PRICE_OPEN.value)
+    return symbol_data.symbol_candles[tf].get_symbol_open_candles(limit)
 
 
 def get_symbol_high_candles(symbol_data, time_frame, limit, include_in_construction):
@@ -48,9 +46,8 @@ def get_symbol_high_candles(symbol_data, time_frame, limit, include_in_construct
             symbol_data.symbol_candles[tf].get_symbol_high_candles(limit),
             symbol_data,
             tf,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return symbol_data.symbol_candles[tf].get_symbol_high_candles(limit)
+            PriceIndexes.IND_PRICE_HIGH.value)
+    return symbol_data.symbol_candles[tf].get_symbol_high_candles(limit)
 
 
 def get_symbol_low_candles(symbol_data, time_frame, limit, include_in_construction):
@@ -60,9 +57,8 @@ def get_symbol_low_candles(symbol_data, time_frame, limit, include_in_constructi
             symbol_data.symbol_candles[tf].get_symbol_low_candles(limit),
             symbol_data,
             tf,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return symbol_data.symbol_candles[tf].get_symbol_low_candles(limit)
+            PriceIndexes.IND_PRICE_LOW.value)
+    return symbol_data.symbol_candles[tf].get_symbol_low_candles(limit)
 
 
 def get_symbol_volume_candles(symbol_data, time_frame, limit, include_in_construction):
@@ -72,9 +68,8 @@ def get_symbol_volume_candles(symbol_data, time_frame, limit, include_in_constru
             symbol_data.symbol_candles[tf].get_symbol_volume_candles(limit),
             symbol_data,
             tf,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return symbol_data.symbol_candles[tf].get_symbol_volume_candles(limit)
+            PriceIndexes.IND_PRICE_VOL.value)
+    return symbol_data.symbol_candles[tf].get_symbol_volume_candles(limit)
 
 
 def get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construction):
@@ -84,9 +79,8 @@ def get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construct
             symbol_data.symbol_candles[tf].get_symbol_time_candles(limit),
             symbol_data,
             tf,
-            PriceIndexes.IND_PRICE_CLOSE.value)
-    else:
-        return symbol_data.symbol_candles[tf].get_symbol_time_candles(limit)
+            PriceIndexes.IND_PRICE_TIME.value)
+    return symbol_data.symbol_candles[tf].get_symbol_time_candles(limit)
 
 
 def _add_in_construction_data(candles, symbol_data, time_frame, data_type):

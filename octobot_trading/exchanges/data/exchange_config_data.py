@@ -107,7 +107,7 @@ class ExchangeConfig(Initializable):
             client_shortest_time_frame = find_min_time_frame(self.exchange_manager.client_time_frames,
                                                              MIN_EVAL_TIME_FRAME)
             self.real_time_time_frames.append(client_shortest_time_frame)
-        self.traded_time_frames.extend([tf for tf in self.real_time_time_frames if tf not in self.traded_time_frames])
+        self.traded_time_frames = list(set().union(self.traded_time_frames, self.real_time_time_frames))
         self.traded_time_frames = sort_time_frames(self.traded_time_frames, reverse=True)
 
     @staticmethod
