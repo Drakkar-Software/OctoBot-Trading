@@ -17,7 +17,6 @@ import asyncio
 
 from octobot_commons.symbol_util import split_symbol
 
-from octobot_commons.dict_util import get_value_or_default
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, ExchangeConstantsOrderColumns, \
@@ -50,24 +49,24 @@ def get_min_max_amounts(symbol_market, default_value=None):
             limit_amount = symbol_market_limits[Ecmsc.LIMITS_AMOUNT.value]
             if is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value) \
                     or is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MAX.value):
-                min_quantity = get_value_or_default(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value, default_value)
-                max_quantity = get_value_or_default(limit_amount, Ecmsc.LIMITS_AMOUNT_MAX.value, default_value)
+                min_quantity = limit_amount.get(Ecmsc.LIMITS_AMOUNT_MIN.value, default_value)
+                max_quantity = limit_amount.get(Ecmsc.LIMITS_AMOUNT_MAX.value, default_value)
 
         # case 2: use cost and price
         if Ecmsc.LIMITS_COST.value in symbol_market_limits:
             limit_cost = symbol_market_limits[Ecmsc.LIMITS_COST.value]
             if is_valid(limit_cost, Ecmsc.LIMITS_COST_MIN.value) \
                     or is_valid(limit_cost, Ecmsc.LIMITS_COST_MAX.value):
-                min_cost = get_value_or_default(limit_cost, Ecmsc.LIMITS_COST_MIN.value, default_value)
-                max_cost = get_value_or_default(limit_cost, Ecmsc.LIMITS_COST_MAX.value, default_value)
+                min_cost = limit_cost.get(Ecmsc.LIMITS_COST_MIN.value, default_value)
+                max_cost = limit_cost.get(Ecmsc.LIMITS_COST_MAX.value, default_value)
 
         # case 2: use quantity and price
         if Ecmsc.LIMITS_PRICE.value in symbol_market_limits:
             limit_price = symbol_market_limits[Ecmsc.LIMITS_PRICE.value]
             if is_valid(limit_price, Ecmsc.LIMITS_PRICE_MIN.value) \
                     or is_valid(limit_price, Ecmsc.LIMITS_PRICE_MAX.value):
-                min_price = get_value_or_default(limit_price, Ecmsc.LIMITS_PRICE_MIN.value, default_value)
-                max_price = get_value_or_default(limit_price, Ecmsc.LIMITS_PRICE_MAX.value, default_value)
+                min_price = limit_price.get(Ecmsc.LIMITS_PRICE_MIN.value, default_value)
+                max_price = limit_price.get(Ecmsc.LIMITS_PRICE_MAX.value, default_value)
 
     return min_quantity, max_quantity, min_cost, max_cost, min_price, max_price
 

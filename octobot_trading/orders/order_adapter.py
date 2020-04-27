@@ -15,7 +15,6 @@
 #  License along with this library.
 import math
 
-from octobot_commons.dict_util import get_value_or_default
 from octobot_trading.constants import CURRENCY_DEFAULT_MAX_PRICE_DIGITS
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
@@ -23,14 +22,14 @@ from octobot_trading.orders.order_util import is_valid, check_cost
 
 
 def adapt_price(symbol_market, price):
-    maximal_price_digits = get_value_or_default(symbol_market[Ecmsc.PRECISION.value],
+    maximal_price_digits = symbol_market[Ecmsc.PRECISION.value].get(
                                                 Ecmsc.PRECISION_PRICE.value,
                                                 CURRENCY_DEFAULT_MAX_PRICE_DIGITS)
     return trunc_with_n_decimal_digits(price, maximal_price_digits)
 
 
 def adapt_quantity(symbol_market, quantity):
-    maximal_volume_digits = get_value_or_default(symbol_market[Ecmsc.PRECISION.value],
+    maximal_volume_digits = symbol_market[Ecmsc.PRECISION.value].get(
                                                  Ecmsc.PRECISION_AMOUNT.value, 0)
     return trunc_with_n_decimal_digits(quantity, maximal_volume_digits)
 
@@ -128,11 +127,11 @@ def check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, f
 
     # case 1: try with data directly from exchange
     if is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value):
-        min_quantity = get_value_or_default(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value, math.nan)
+        min_quantity = limit_amount.get(Ecmsc.LIMITS_AMOUNT_MIN.value, math.nan)
         max_quantity = None
         # not all symbol data have a max quantity
         if is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MAX.value):
-            max_quantity = get_value_or_default(limit_amount, Ecmsc.LIMITS_AMOUNT_MAX.value, math.nan)
+            max_quantity = limit_amount.get(Ecmsc.LIMITS_AMOUNT_MAX.value, math.nan)
 
         # adapt digits if necessary
         valid_quantity = adapt_quantity(symbol_market, quantity)
@@ -146,11 +145,11 @@ def check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, f
 
         # case 1.1: use only quantity and cost
         if is_valid(limit_cost, Ecmsc.LIMITS_COST_MIN.value):
-            min_cost = get_value_or_default(limit_cost, Ecmsc.LIMITS_COST_MIN.value, math.nan)
+            min_cost = limit_cost.get(Ecmsc.LIMITS_COST_MIN.value, math.nan)
             max_cost = None
             # not all symbol data have a max cost
             if is_valid(limit_cost, Ecmsc.LIMITS_COST_MAX.value):
-                max_cost = get_value_or_default(limit_cost, Ecmsc.LIMITS_COST_MAX.value, math.nan)
+                max_cost = limit_cost.get(Ecmsc.LIMITS_COST_MAX.value, math.nan)
 
             # check total_order_price not < min_cost
             if not check_cost(total_order_price, min_cost):
@@ -169,11 +168,11 @@ def check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, f
 
         # case 1.2: use only quantity and price
         elif is_valid(limit_price, Ecmsc.LIMITS_PRICE_MIN.value):
-            min_price = get_value_or_default(limit_price, Ecmsc.LIMITS_PRICE_MIN.value, math.nan)
+            min_price = limit_price.get(Ecmsc.LIMITS_PRICE_MIN.value, math.nan)
             max_price = None
             # not all symbol data have a max price
             if is_valid(limit_price, Ecmsc.LIMITS_PRICE_MAX.value):
-                max_price = get_value_or_default(limit_price, Ecmsc.LIMITS_PRICE_MAX.value, math.nan)
+                max_price = limit_price.get(Ecmsc.LIMITS_PRICE_MAX.value, math.nan)
 
             if (max_price is not None and (max_price <= valid_price)) or valid_price <= min_price:
                 # invalid order
@@ -222,8 +221,8 @@ def add_dusts_to_quantity_if_necessary(quantity, price, symbol_market, current_s
         limit_amount = fixed_market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_AMOUNT.value]
         limit_cost = fixed_market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value]
 
-    min_quantity = get_value_or_default(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value, math.nan)
-    min_cost = get_value_or_default(limit_cost, Ecmsc.LIMITS_COST_MIN.value, math.nan)
+    min_quantity = limit_amount.get(Ecmsc.LIMITS_AMOUNT_MIN.value, math.nan)
+    min_cost = limit_cost.get(Ecmsc.LIMITS_COST_MIN.value, math.nan)
 
     # check with 40% more than remaining total not to require huge market moves to sell this asset
     min_cost_to_consider = min_cost * 1.4

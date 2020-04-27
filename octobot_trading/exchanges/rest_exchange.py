@@ -21,7 +21,6 @@ from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
 from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, RequestTimeout
 
 from octobot_commons.constants import MSECONDS_TO_MINUTE
-from octobot_commons.dict_util import get_value_or_default
 from octobot_commons.enums import TimeFramesMinutes
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
@@ -304,14 +303,14 @@ class RestExchange(AbstractExchange):
             market_status = self.client.market(symbol)
             return {
                 ExchangeConstantsMarketPropertyColumns.TAKER.value:
-                    get_value_or_default(market_status, ExchangeConstantsMarketPropertyColumns.TAKER.value,
-                                         CONFIG_DEFAULT_FEES),
+                    market_status.get(ExchangeConstantsMarketPropertyColumns.TAKER.value,
+                                      CONFIG_DEFAULT_FEES),
                 ExchangeConstantsMarketPropertyColumns.MAKER.value:
-                    get_value_or_default(market_status, ExchangeConstantsMarketPropertyColumns.MAKER.value,
-                                         CONFIG_DEFAULT_FEES),
+                    market_status.get(ExchangeConstantsMarketPropertyColumns.MAKER.value,
+                                      CONFIG_DEFAULT_FEES),
                 ExchangeConstantsMarketPropertyColumns.FEE.value:
-                    get_value_or_default(market_status, ExchangeConstantsMarketPropertyColumns.FEE.value,
-                                         CONFIG_DEFAULT_FEES)
+                    market_status.get(ExchangeConstantsMarketPropertyColumns.FEE.value,
+                                      CONFIG_DEFAULT_FEES)
             }
         except Exception as e:
             self.logger.error(f"Fees data for {symbol} was not found ({e})")
@@ -428,6 +427,7 @@ class RestExchange(AbstractExchange):
     """
     Cleaners
     """
+
     def clean_recent_trade(self, recent_trade):
         try:
             recent_trade.pop(ecoc.INFO.value)
