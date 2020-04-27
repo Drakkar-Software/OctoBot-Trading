@@ -110,6 +110,7 @@ class AbstractTradingMode(AbstractTentacle):
             await producer.stop()
         for consumer in self.consumers:
             await consumer.stop()
+        self.exchange_manager = None
 
     async def create_producers(self) -> list:
         raise NotImplementedError("create_producers not implemented")
