@@ -13,8 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
-from octobot_trading.orders.order_util import get_min_max_amounts
+from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, FeePropertyColumns
+from octobot_trading.orders.order_util import get_min_max_amounts, get_fees_for_currency
 
 
 def test_get_min_max_amounts():
@@ -82,3 +82,22 @@ def test_get_min_max_amounts():
     assert max_cost == "xyz"  # None is not a valid value => assign default
     assert min_price == "xyz"
     assert max_price == "xyz"
+
+
+def test_get_fees_for_currency():
+    fee1 = {
+        FeePropertyColumns.CURRENCY.value: "BTC",
+        FeePropertyColumns.COST.value: 1
+    }
+    assert get_fees_for_currency(fee1, "BTC") == 1
+    assert get_fees_for_currency(fee1, "BTC1") == 0
+
+    fee2 = {
+        FeePropertyColumns.CURRENCY.value: "BTC",
+        FeePropertyColumns.COST.value: 0
+    }
+    assert get_fees_for_currency(fee2, "BTC") == 0
+    assert get_fees_for_currency(fee2, "BTC1") == 0
+
+    assert get_fees_for_currency({}, "BTC") == 0
+    assert get_fees_for_currency(None, "BTC") == 0
