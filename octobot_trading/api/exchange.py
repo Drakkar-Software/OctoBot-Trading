@@ -15,7 +15,7 @@
 #  License along with this library.
 from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.exchanges.exchanges import Exchanges
+from octobot_trading.exchanges.exchanges import Exchanges, ExchangeConfiguration
 
 
 def create_exchange_builder(config, exchange_name) -> ExchangeBuilder:
@@ -34,8 +34,12 @@ def get_exchange_manager_from_exchange_name_and_id(exchange_name, exchange_id) -
     return Exchanges.instance().get_exchange(exchange_name, exchange_id).exchange_manager
 
 
+def get_exchange_time_frames_without_real_time(exchange_name, exchange_id) -> list:
+    return Exchanges.instance().get_exchange(exchange_name, exchange_id).time_frames_without_real_time
+
+
 # prefer get_exchange_configurations_from_exchange_name when possible
-def get_exchange_configuration_from_exchange_id(exchange_id) -> ExchangeManager:
+def get_exchange_configuration_from_exchange_id(exchange_id) -> ExchangeConfiguration:
     for exchange_configs in Exchanges.instance().exchanges.values():
         for exchange_config in exchange_configs.values():
             if exchange_config.exchange_manager.id == exchange_id:
