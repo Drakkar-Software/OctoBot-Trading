@@ -19,7 +19,6 @@ from octobot_commons.constants import TENTACLE_DEFAULT_CONFIG
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.tentacles_management.abstract_tentacle import AbstractTentacle
 from octobot_tentacles_manager.api.configurator import get_tentacle_config
-
 from octobot_trading.constants import TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT, TRADING_MODE_REQUIRED_STRATEGIES
 
 
@@ -131,8 +130,8 @@ class AbstractTradingMode(AbstractTentacle):
         pass
 
     """
-        Strategy related methods
-        """
+    Strategy related methods
+    """
 
     @classmethod
     def get_required_strategies_names_and_count(cls, trading_mode_config=None):

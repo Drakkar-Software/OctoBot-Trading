@@ -71,10 +71,10 @@ class TickerUpdater(TickerProducer):
     def _get_pairs_to_update(self):
         return self.channel.exchange_manager.exchange_config.traded_symbol_pairs + self._added_pairs
 
-    """
-    Mini ticker
-    """
     async def parse_mini_ticker(self, pair, ticker):
+        """
+        Mini ticker
+        """
         try:
             await get_chan(MINI_TICKER_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=pair, mini_ticker={

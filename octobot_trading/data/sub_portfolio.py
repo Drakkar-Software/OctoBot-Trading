@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.data.portfolio import Portfolio
-from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
 
 class SubPortfolio(Portfolio):

@@ -13,8 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from ccxt.async_support import InsufficientFunds
-
 from octobot_commons.channels_name import OctoBotEvaluatorsChannelsName
 from octobot_commons.constants import INIT_EVAL_NOTE, CONFIG_WILDCARD
 from octobot_commons.logging.logging_util import get_logger

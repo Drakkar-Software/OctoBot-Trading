@@ -17,11 +17,10 @@
 import copy
 
 from ccxt.base.errors import InsufficientFunds
-from octobot_commons.logging.logging_util import get_logger
 
+from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.constants import RECENT_TRADES_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan
-
 from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus
 from octobot_trading.producers import MissingOrderException
@@ -40,12 +39,11 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
         self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
         await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_recent_trade)
 
-    """
-    Recent trade channel consumer callback
-    """
-
     async def handle_recent_trade(self, exchange: str, exchange_id: str,
                                   cryptocurrency: str, symbol: str, recent_trades: list):
+        """
+        Recent trade channel consumer callback
+        """
         try:
             failed_order_updates = await self._update_orders_status(cryptocurrency=cryptocurrency,
                                                                     symbol=symbol,
@@ -57,15 +55,14 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle recent trade : {e}")
 
-    """
-    Ask orders to check their status
-    Ask cancellation and filling process if it is required
-    """
-
     async def _update_orders_status(self,
                                     cryptocurrency: str,
                                     symbol: str,
                                     last_prices: list) -> list:
+        """
+        Ask orders to check their status
+        Ask cancellation and filling process if it is required
+        """
         failed_order_updates = []
         for order in copy.copy(
                 self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
@@ -90,14 +87,13 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                               is_updated=False)
         return failed_order_updates
 
-    """
-    Call order status update
-    """
-
     async def _update_order_status(self,
                                    order: Order,
                                    failed_order_updates: list,
                                    last_prices: list):
+        """
+        Call order status update
+        """
         order_filled = False
         try:
             await order.update_order_status(last_prices)

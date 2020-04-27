@@ -24,12 +24,13 @@ from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, 
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ECOC, ExchangeConstantsOrderColumns, TradeOrderType
 
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
-
 
 class Order:
+    """
+    Order class will represent an open order in the specified exchange
+    In simulation it will also define rules to be filled / canceled
+    It is also use to store creation & fill values of the order
+    """
 
     def __init__(self, trader):
         self.trader = trader

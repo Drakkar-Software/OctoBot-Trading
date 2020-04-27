@@ -48,11 +48,10 @@ class OrderBookUpdater(OrderBookProducer):
             except Exception as e:
                 self.logger.exception(e, True, f"Fail to update order book : {e}")
 
-    """
-    Order book ticker
-    """
-
     async def parse_order_book_ticker(self, pair, asks, bids):
+        """
+        Order book ticker
+        """
         try:
             if asks and bids:
                 await get_chan(ORDER_BOOK_TICKER_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
