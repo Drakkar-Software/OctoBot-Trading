@@ -124,5 +124,4 @@ def total_fees_from_order_dict(order_dict, currency):
 def get_fees_for_currency(fee, currency):
     if fee and fee[FeePropertyColumns.CURRENCY.value] == currency:
         return fee[FeePropertyColumns.COST.value]
-    else:
-        return 0
+    return 0
