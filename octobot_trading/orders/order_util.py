@@ -20,7 +20,8 @@ from octobot_commons.symbol_util import split_symbol
 from octobot_commons.dict_util import get_value_or_default
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
+from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, ExchangeConstantsOrderColumns, \
+    FeePropertyColumns
 from octobot_trading.exchanges.util.exchange_market_status_fixer import is_ms_valid
 
 
@@ -114,3 +115,14 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
     symbol_market = exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
     return current_symbol_holding, current_market_quantity, market_quantity, mark_price, symbol_market
+
+
+def total_fees_from_order_dict(order_dict, currency):
+    return get_fees_for_currency(order_dict[ExchangeConstantsOrderColumns.FEE.value], currency)
+
+
+def get_fees_for_currency(fee, currency):
+    if fee and fee[FeePropertyColumns.CURRENCY.value] == currency:
+        return fee[FeePropertyColumns.COST.value]
+    else:
+        return 0
