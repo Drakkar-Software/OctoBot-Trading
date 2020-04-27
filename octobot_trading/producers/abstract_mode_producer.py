@@ -46,6 +46,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
     async def start(self) -> None:
         try:
             from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
+            from octobot_evaluators.enums import EvaluatorMatrixTypes
             matrix_id = Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                           self.exchange_manager.id).matrix_id
             self.consumer = await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX.value,
@@ -55,6 +56,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
                                                             self.exchange_manager.id).matrix_id,
                 cryptocurrency=self.trading_mode.cryptocurrency if self.trading_mode.cryptocurrency else CONFIG_WILDCARD,
                 symbol=self.trading_mode.symbol if self.trading_mode.symbol else CONFIG_WILDCARD,
+                evaluator_type=EvaluatorMatrixTypes.STRATEGIES.value,
                 time_frame=self.trading_mode.time_frame if self.trading_mode.time_frame else CONFIG_WILDCARD)
         except (KeyError, ImportError):
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")

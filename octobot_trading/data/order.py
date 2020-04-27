@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
 import time
 from asyncio import Lock
 import math
@@ -23,6 +22,7 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ECOC, ExchangeConstantsOrderColumns, TradeOrderType
+from octobot_trading.orders.order_util import get_fees_for_currency
 
 
 class Order:
@@ -214,10 +214,7 @@ class Order:
         return self.currency, self.market
 
     def get_total_fees(self, currency):
-        if self.fee and self.fee[FeePropertyColumns.CURRENCY.value] == currency:
-            return self.fee[FeePropertyColumns.COST.value]
-        else:
-            return 0
+        return get_fees_for_currency(self.fee, currency)
 
     def is_filled(self):
         return self.status == OrderStatus.FILLED
