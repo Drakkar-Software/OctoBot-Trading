@@ -60,7 +60,6 @@ class TradesManager(Initializable):
                     total_fees[fee_currency] += fee_cost
                 else:
                     total_fees[fee_currency] = fee_cost
-                pass
             else:
                 self.logger.warning(f"Trade without any registered fee: {trade}")
         return total_fees

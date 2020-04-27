@@ -41,11 +41,10 @@ class OHLCVUpdater(OHLCVProducer):
 
         self.ohlcv_initialized_event = asyncio.Event()
 
-    """
-    Creates OHLCV refresh tasks
-    """
-
     async def start(self):
+        """
+        Creates OHLCV refresh tasks
+        """
         if not self.is_initialized:
             await self._initialize()
         self.tasks = [
@@ -76,11 +75,10 @@ class OHLCVUpdater(OHLCVProducer):
         self.tasks += [asyncio.create_task(self._candle_callback(time_frame, pair, should_initialize=True))
                        for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames]
 
-    """
-    Manage timeframe OHLCV data refreshing for all pairs
-    """
-
     async def _initialize_candles(self, time_frame, pair):
+        """
+        Manage timeframe OHLCV data refreshing for all pairs
+        """
         # fetch history
         candles: list = await self.channel.exchange_manager.exchange \
             .get_symbol_prices(pair, time_frame, limit=self.OHLCV_OLD_LIMIT)
@@ -97,9 +95,9 @@ class OHLCVUpdater(OHLCVProducer):
 
         while not self.should_stop and not self.channel.is_paused:
             try:
-                candles: list = await self.channel.exchange_manager.exchange \
-                    .get_symbol_prices(pair, time_frame, limit=self.OHLCV_LIMIT)
-
+                self.logger.info(f'waiting for asyncio.wait_for on {time_frame}')
+                candles: list = await self.channel.exchange_manager.exchange.get_symbol_prices(pair, time_frame, limit=self.OHLCV_LIMIT)
+                self.logger.info(f'got {time_frame}')
                 if candles:
                     last_candle: list = candles[-1]
                     self.channel.exchange_manager.uniformize_candles_if_necessary(candles)

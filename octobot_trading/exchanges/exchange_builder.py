@@ -38,10 +38,10 @@ class ExchangeBuilder:
 
         self._tentacles_setup_config = None
 
-    """
-    Build
-    """
     async def build(self):
+        """
+        Build the exchange
+        """
         try:
             await self._build_exchange_manager()
         except Exception as e:

@@ -32,11 +32,10 @@ class KlineUpdater(KlineProducer):
         super().__init__(channel)
         self.tasks = []
 
-    """
-    Creates OHLCV refresh tasks
-    """
-
     async def start(self):
+        """
+        Creates OHLCV refresh tasks
+        """
         self.tasks = [
             asyncio.create_task(self.time_frame_watcher(time_frame))
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames]
@@ -44,11 +43,10 @@ class KlineUpdater(KlineProducer):
     def __create_time_frame_kline_task(self, time_frame):
         self.tasks += asyncio.create_task(self.time_frame_watcher(time_frame))
 
-    """
-    Manage timeframe OHLCV data refreshing for all pairs
-    """
-
     async def time_frame_watcher(self, time_frame):
+        """
+        Manage timeframe OHLCV data refreshing for all pairs
+        """
         while not self.should_stop and not self.channel.is_paused:
             try:
                 started_time = time.time()

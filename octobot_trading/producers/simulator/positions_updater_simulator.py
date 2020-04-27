@@ -34,22 +34,20 @@ class PositionsUpdaterSimulator(PositionsUpdater):
         self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
         await get_chan(MARK_PRICE_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_mark_price)
 
-    """
-    MarkPrice channel consumer callback
-    """
-
     async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
+        """
+        MarkPrice channel consumer callback
+        """
         try:
             await self._update_positions_status(cryptocurrency=cryptocurrency, symbol=symbol, mark_price=mark_price)
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle mark price : {e}")
 
-    """
-    Ask positions to check their status
-    Ask liquidation and P&L update process if required
-    """
-
     async def _update_positions_status(self, cryptocurrency: str, symbol: str, mark_price):
+        """
+        Ask positions to check their status
+        Ask liquidation and P&L update process if required
+        """
         for position in copy.copy(
                 self.exchange_manager.exchange_personal_data.positions_manager.get_open_positions(symbol=symbol)):
             position_closed = False
@@ -72,13 +70,12 @@ class PositionsUpdaterSimulator(PositionsUpdater):
                               is_closed=True,
                               is_updated=False)
 
-    """
-    Call position status update
-    """
-
     async def _update_position_status(self,
                                       position: Position,
                                       mark_price):
+        """
+        Call position status update
+        """
         position_closed = False
         try:
             await position.update_status(mark_price)

@@ -15,16 +15,16 @@
 #  License along with this library.
 import uuid
 
-from octobot_trading.constants import SIMULATOR_CURRENT_PORTFOLIO, SIMULATOR_TRADER_STR
-
+from octobot_trading.constants import SIMULATOR_TRADER_STR
 from octobot_trading.traders.trader import Trader
 from octobot_trading.util import is_trader_simulator_enabled
 
-""" TraderSimulator has a role of exchange response simulator
-- During order creation / filling / canceling process"""
-
 
 class TraderSimulator(Trader):
+    """
+    TraderSimulator has a role of exchange response simulator
+    - During order creation / filling / canceling process
+    """
 
     NO_HISTORY_MESSAGE = "Starting a fresh new trading simulation session using trader simulator initial portfolio " \
                          "in configuration."

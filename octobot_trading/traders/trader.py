@@ -21,7 +21,6 @@ from octobot_trading.constants import REAL_TRADER_STR, CONFIG_TRADER_RISK, CONFI
     CONFIG_TRADER_RISK_MAX
 from octobot_trading.data.order import Order
 from octobot_trading.data.portfolio import Portfolio
-from octobot_trading.data.trade import Trade
 from octobot_trading.enums import OrderStatus, TraderOrderType
 from octobot_trading.orders.order_adapter import check_and_adapt_order_details_if_necessary
 from octobot_trading.orders.order_factory import create_order_instance

@@ -20,7 +20,7 @@ from ccxt import NotSupported
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.price import MarkPriceProducer
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, FUNDING_CHANNEL
-from octobot_trading.data_manager.prices_manager import PricesManager, calculate_mark_price_from_recent_trade_prices
+from octobot_trading.data_manager.prices_manager import calculate_mark_price_from_recent_trade_prices
 from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsOrderColumns, \
     ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns
 
@@ -65,12 +65,11 @@ class MarkPriceUpdater(MarkPriceProducer):
         if not self.channel.exchange_manager.is_future:
             await self.unsubscribe()
 
-    """
-    Recent trades channel consumer callback
-    """
-
     async def handle_recent_trades_update(self, exchange: str, exchange_id: str,
                                           cryptocurrency: str, symbol: str, recent_trades: list):
+        """
+        Recent trades channel consumer callback
+        """
         try:
             mark_price = calculate_mark_price_from_recent_trade_prices(
                 [float(last_price[ExchangeConstantsOrderColumns.PRICE.value])
@@ -80,22 +79,20 @@ class MarkPriceUpdater(MarkPriceProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle recent trades update : {e}")
 
-    """
-    Ticker channel consumer callback
-    """
-
     async def handle_ticker_update(self, exchange: str, exchange_id: str,
                                    cryptocurrency: str, symbol: str, ticker: dict):
+        """
+        Ticker channel consumer callback
+        """
         try:
             await self.push(symbol, ticker[ExchangeConstantsTickersColumns.CLOSE.value])
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle ticker update : {e}")
 
-    """
-    Mark price updater from exchange data
-    """
-
     async def start_fetching(self):
+        """
+        Mark price updater from exchange data
+        """
         while not self.should_stop and not self.channel.is_paused:
             try:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:

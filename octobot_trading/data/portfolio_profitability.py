@@ -24,11 +24,12 @@ from octobot_trading.enums import ExchangeConstantsTickersColumns
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.util import get_reference_market
 
-""" PortfolioProfitabilty calculates the portfolio profitability
-by subtracting portfolio_current_value and portfolio_origin_value """
-
 
 class PortfolioProfitabilty:
+    """
+    PortfolioProfitabilty calculates the portfolio profitability
+    by subtracting portfolio_current_value and portfolio_origin_value
+    """
 
     def __init__(self, config, trader, portfolio_manager, exchange_manager):
         super().__init__()

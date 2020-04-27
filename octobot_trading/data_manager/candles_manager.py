@@ -103,11 +103,12 @@ class CandlesManager(Initializable):
         self._set_all_candles(all_candles_data)
         self.candles_initialized = True
 
-    """
-    Same as add_new_candle but also checks if old candles are missing
-    """
-
     def add_old_and_new_candles(self, candles_data):
+        """
+        Same as add_new_candle but also checks if old candles are missing
+        :param candles_data: new candles data
+        :return:
+        """
         # check old candles
         for old_candle in candles_data[:-1]:
             if old_candle[PriceIndexes.IND_PRICE_TIME.value] not in self.time_candles:
@@ -119,6 +120,10 @@ class CandlesManager(Initializable):
             self.logger.error(f"Fail to add last candle {candles_data} : {e}")
 
     def add_new_candle(self, new_candle_data):
+        """
+        :param new_candle_data: new candles data
+        :return:
+        """
         if self._should_add_new_candle(new_candle_data[PriceIndexes.IND_PRICE_TIME.value]):
             try:
                 self._check_max_candles()

@@ -13,27 +13,26 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
 from asyncio import Lock
 from copy import deepcopy
 
 from octobot_trading.orders.types import TraderOrderTypeClasses
 from octobot_trading.util.initializable import Initializable
-
 from octobot_trading.constants import CURRENT_PORTFOLIO_STRING, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import TradeOrderSide, TraderOrderType
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
-""" The Portfolio class manage an exchange portfolio
-This will begin by loading current exchange portfolio (by pulling user data)
-In case of simulation this will load the CONFIG_STARTING_PORTFOLIO
-This class also manage the availability of each currency in the portfolio:
-- When an order is created it will subtract the quantity of the total
-- When an order is filled or canceled restore the availability with the real quantity """
-
 
 class Portfolio(Initializable):
+    """
+    The Portfolio class manage an exchange portfolio
+    This will begin by loading current exchange portfolio (by pulling user data)
+    In case of simulation this will load the CONFIG_STARTING_PORTFOLIO
+    This class also manage the availability of each currency in the portfolio:
+    - When an order is created it will subtract the quantity of the total
+    - When an order is filled or canceled restore the availability with the real quantity
+    """
     def __init__(self, exchange_name, is_simulated=False):
         super().__init__()
         self.exchange_name = exchange_name
@@ -70,12 +69,13 @@ class Portfolio(Initializable):
     def get_currency_portfolio(self, currency, portfolio_type=PORTFOLIO_AVAILABLE):
         return self.get_currency_from_given_portfolio(currency, portfolio_type)
 
-    """ update_portfolio performs the update of the total / available quantity of a currency
-    It is called only when an order is filled to update the real quantity of the currency to be set in "total" field
-    Returns get_profitability() return
-    """
-
     async def update_portfolio_from_order(self, order):
+        """
+        update_portfolio performs the update of the total / available quantity of a currency
+        It is called only when an order is filled to update the real quantity of the currency to be set in "total" field
+        :param order: the order to be taken into account
+        :return: None
+        """
         # stop losses and take profits aren't using available portfolio
         if not self._check_available_should_update(order):
             self._update_portfolio_available(order)
@@ -117,6 +117,15 @@ class Portfolio(Initializable):
     """
 
     def update_portfolio_available(self, order, is_new_order=False):
+        """
+        update_portfolio_available performs the availability update of the concerned currency in the current portfolio
+        It is called when an order is filled, created or canceled to update the "available" filled of the portfolio
+        is_new_order is True when portfolio needs an update after a new order and False when portfolio needs a rollback
+        after an order is cancelled
+        :param order: the order to take into account
+        :param is_new_order: True if this is a new order
+        :return: None
+        """
         if self._check_available_should_update(order):
             self._update_portfolio_available(order, 1 if is_new_order else -1)
 

@@ -68,11 +68,10 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         self.balance_consumer = None
         self.ticker_consumer = None
 
-    """
-    Balance channel consumer callback
-    """
-
     async def handle_balance_update(self, exchange: str, exchange_id: str, balance: dict):
+        """
+        Balance channel consumer callback
+        """
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(balance=balance,
                                                                                     ticker=None,
@@ -80,12 +79,11 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle balance update : {e}")
 
-    """
-    Ticker channel consumer callback
-    """
-
     async def handle_ticker_update(self, exchange: str, exchange_id: str,
                                    cryptocurrency: str, symbol: str, ticker: dict):
+        """
+        Ticker channel consumer callback
+        """
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(symbol=symbol,
                                                                                     ticker=ticker,
