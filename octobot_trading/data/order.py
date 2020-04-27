@@ -17,7 +17,6 @@ import time
 from asyncio import Lock
 import math
 
-from octobot_commons.dict_util import get_value_or_default
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
@@ -273,17 +272,17 @@ class Order:
                 get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
         return self.update(
-            symbol=str(get_value_or_default(raw_order, ExchangeConstantsOrderColumns.SYMBOL.value, None)),
-            current_price=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, 0.0),
-            quantity=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.AMOUNT.value, 0.0),
-            price=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            symbol=str(raw_order.get(ExchangeConstantsOrderColumns.SYMBOL.value, None)),
+            current_price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            quantity=raw_order.get(ExchangeConstantsOrderColumns.AMOUNT.value, 0.0),
+            price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
             status=parse_order_status(raw_order),
-            order_id=str(get_value_or_default(raw_order, ExchangeConstantsOrderColumns.ID.value, None)),
-            quantity_filled=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.FILLED.value, 0.0),
-            filled_price=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.PRICE.value, 0.0),
-            total_cost=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.COST.value, 0.0),
-            fee=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.FEE.value, None),
-            timestamp=get_value_or_default(raw_order, ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
+            order_id=str(raw_order.get(ExchangeConstantsOrderColumns.ID.value, None)),
+            quantity_filled=raw_order.get(ExchangeConstantsOrderColumns.FILLED.value, 0.0),
+            filled_price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            total_cost=raw_order.get(ExchangeConstantsOrderColumns.COST.value, 0.0),
+            fee=raw_order.get(ExchangeConstantsOrderColumns.FEE.value, None),
+            timestamp=raw_order.get(ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
         )
 
     def consider_as_filled(self):

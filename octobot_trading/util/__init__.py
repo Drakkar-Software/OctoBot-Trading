@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS
-from octobot_commons.dict_util import get_value_or_default
 from octobot_commons.symbol_util import split_symbol
 
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_SIMULATOR, CONFIG_TRADING, CONFIG_TRADER_REFERENCE_MARKET, \
@@ -77,4 +76,4 @@ def get_market_pair(config, currency) -> (str, bool):
 
 def get_reference_market(config) -> str:
     # The reference market is the currency unit of the calculated quantity value
-    return get_value_or_default(config[CONFIG_TRADING], CONFIG_TRADER_REFERENCE_MARKET, DEFAULT_REFERENCE_MARKET)
+    return config[CONFIG_TRADING].get(CONFIG_TRADER_REFERENCE_MARKET, DEFAULT_REFERENCE_MARKET)
