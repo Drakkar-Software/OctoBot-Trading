@@ -15,16 +15,32 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+
 from ccxt.base.errors import NotSupported
 
-from octobot_trading.constants import TRADES_CHANNEL
 from octobot_trading.channels.trades import TradesProducer
+from octobot_trading.constants import TRADES_CHANNEL
 
 
 class TradesUpdater(TradesProducer):
+    """
+    The Trades Update fetch the exchange trades and send it to the Trade Channel
+    """
+
+    """
+    The updater related channel name
+    """
     CHANNEL_NAME = TRADES_CHANNEL
+
+    """
+    Trades history request limit
+    """
     MAX_OLD_TRADES_TO_FETCH = 100
     TRADES_LIMIT = 10
+
+    """
+    The default trade history update refresh time in seconds
+    """
     TRADES_REFRESH_TIME = 333
 
     async def init_old_trades(self):
@@ -63,6 +79,9 @@ class TradesUpdater(TradesProducer):
         #     await asyncio.sleep(self.TRADES_REFRESH_TIME)
 
     async def resume(self) -> None:
+        """
+        Resume updater process
+        """
         await super().resume()
         if not self.is_running:
             await self.run()
