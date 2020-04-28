@@ -18,7 +18,13 @@ from octobot_trading.constants import OHLCV_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan as get_exchange_chan
 
 
-async def register_on_ohlcv_chan(exchange_id, callback):
+async def register_on_ohlcv_chan(exchange_id, callback) -> object:
+    """
+    Register a consumer on OHLCV channel
+    :param exchange_id: the exchange id
+    :param callback: the consumer callback
+    :return: created consumer instance
+    """
     ohlcv_chan = get_exchange_chan(OHLCV_CHANNEL, exchange_id)
     # Before registration, wait for producers to be initialized (meaning their historical candles are already
     # loaded) to avoid callback calls on historical (and potentially invalid) values
@@ -27,11 +33,14 @@ async def register_on_ohlcv_chan(exchange_id, callback):
     return await ohlcv_chan.new_consumer(callback)
 
 
-async def stop_and_pause(producer):
+async def stop_and_pause(producer) -> None:
+    """
+    Stop and pause the provided producer
+    :param producer: the producer to stop and pause
+    """
     await super(type(producer), producer).stop()
     try:
         await producer.pause()
     except KeyError:
         pass
     producer.time_consumer = None
-
