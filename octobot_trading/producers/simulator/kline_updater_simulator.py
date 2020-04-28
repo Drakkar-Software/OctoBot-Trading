@@ -35,6 +35,7 @@ class KlineUpdaterSimulator(KlineUpdater):
 
     async def handle_timestamp(self, timestamp, **kwargs):
         try:
+            await self.wait_for_processing()
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     kline_data = await self.exchange_data_importer.get_kline_from_timestamps(

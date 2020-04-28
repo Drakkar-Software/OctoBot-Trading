@@ -31,7 +31,25 @@ class MarkPriceUpdaterSimulator(MarkPriceUpdater):
         # if recent trades and ticker channels are both generated from ohlcv, do not watch them both,
         # prefer recent trades
         if real_data_for_recent_trades or not (real_data_for_recent_trades or real_data_for_ticker):
-            await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id)\
+            await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
                 .new_consumer(self.handle_recent_trades_update)
         if real_data_for_ticker:
             await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_ticker_update)
+
+    async def handle_recent_trades_update(self, exchange: str, exchange_id: str,
+                                          cryptocurrency: str, symbol: str, recent_trades: list):
+        await self.wait_for_processing()
+        await super(MarkPriceUpdater, self).handle_recent_trades_update(exchange=exchange,
+                                                                        exchange_id=exchange_id,
+                                                                        cryptocurrency=cryptocurrency,
+                                                                        symbol=symbol,
+                                                                        recent_trades=recent_trades)
+
+    async def handle_ticker_update(self, exchange: str, exchange_id: str,
+                                   cryptocurrency: str, symbol: str, ticker: dict):
+        await self.wait_for_processing()
+        await super(MarkPriceUpdater, self).handle_ticker_update(exchange=exchange,
+                                                                 exchange_id=exchange_id,
+                                                                 cryptocurrency=cryptocurrency,
+                                                                 symbol=symbol,
+                                                                 ticker=ticker)

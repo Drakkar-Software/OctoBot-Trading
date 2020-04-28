@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 
 from octobot_channels.consumer import Consumer, InternalConsumer, SupervisedConsumer
 from octobot_channels.producer import Producer
@@ -29,6 +30,10 @@ class ExchangeChannelConsumer(Consumer):
     pass
 
 
+class ExchangeSimulatorChannelConsumer(SupervisedConsumer):
+    pass
+
+
 class ExchangeChannelInternalConsumer(InternalConsumer):
     pass
 
@@ -38,26 +43,13 @@ class ExchangeChannelSupervisedConsumer(SupervisedConsumer):
 
 
 class ExchangeChannelProducer(Producer):
-    async def send(self, **kwargs) -> None:
-        for consumer in self.channel.get_filtered_consumers():
-            await consumer.queue.put(kwargs)
-
-    async def pause(self) -> None:
-        self.logger.debug("Pausing...")
-        # Triggers itself if not already paused
-        if not self.channel.is_paused:
-            self.channel.is_paused = True
-
-    async def resume(self) -> None:
-        self.logger.debug("Resuming...")
-        # Triggers itself if not already resumed
-        if self.channel.is_paused:
-            self.channel.is_paused = False
+    pass
 
 
 class ExchangeChannel(Channel):
     PRODUCER_CLASS = ExchangeChannelProducer
     CONSUMER_CLASS = ExchangeChannelConsumer
+    SIMULATOR_CONSUMER_CLASS = ExchangeSimulatorChannelConsumer
 
     CRYPTOCURRENCY_KEY = "cryptocurrency"
     SYMBOL_KEY = "symbol"
@@ -78,7 +70,10 @@ class ExchangeChannel(Channel):
                            symbol=CHANNEL_WILDCARD,
                            cryptocurrency=CHANNEL_WILDCARD,
                            **kwargs):
-        consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size)
+        consumer = consumer_instance \
+            if consumer_instance else (self.CONSUMER_CLASS(callback, size=size)
+                                       if not self.exchange_manager.is_backtesting else
+                                       self.SIMULATOR_CONSUMER_CLASS(callback, size=size))
         await self._add_new_consumer_and_run(consumer,
                                              cryptocurrency=cryptocurrency,
                                              symbol=symbol,
