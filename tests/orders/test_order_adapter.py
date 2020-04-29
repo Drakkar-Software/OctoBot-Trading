@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import math
 import pytest
 
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
@@ -445,3 +446,4 @@ async def test_trunc_with_n_decimal_digits():
     assert trunc_with_n_decimal_digits(578.000145000156, 9) == 578.000145
     assert trunc_with_n_decimal_digits(578.000145000156, 10) == 578.0001450001
     assert trunc_with_n_decimal_digits(578.000145000156, 12) == 578.000145000156
+    assert math.isnan(trunc_with_n_decimal_digits(math.nan, 12))
