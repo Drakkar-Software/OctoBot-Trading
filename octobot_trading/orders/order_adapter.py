@@ -36,8 +36,11 @@ def adapt_quantity(symbol_market, quantity):
 
 
 def trunc_with_n_decimal_digits(value, digits):  # TODO migrate to commons
-    # force exact representation
-    return float("{0:.{1}f}".format(math.trunc(value * 10 ** digits) / (10 ** digits), digits if digits > 1 else 1))
+    try:
+        # force exact representation
+        return float("{0:.{1}f}".format(math.trunc(value * 10 ** digits) / (10 ** digits), digits if digits > 1 else 1))
+    except ValueError:
+        return value
 
 
 def adapt_order_quantity_because_quantity(limiting_value, max_value, quantity_to_adapt, price, symbol_market):
@@ -114,6 +117,9 @@ def check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, f
     :param fixed_symbol_data:
     :return:
     """
+    if math.isnan(quantity) or math.isnan(price):
+        return []
+
     symbol_market_limits = symbol_market[Ecmsc.LIMITS.value]
 
     limit_amount = symbol_market_limits[Ecmsc.LIMITS_AMOUNT.value]
