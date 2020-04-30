@@ -44,11 +44,11 @@ class MarginType(Enum):
 
 
 class EvaluatorStates(Enum):
-    SHORT = 1
-    VERY_SHORT = 2
-    LONG = 3
-    VERY_LONG = 4
-    NEUTRAL = 5
+    SHORT = "SHORT"
+    VERY_SHORT = "VERY_SHORT"
+    LONG = "LONG"
+    VERY_LONG = "VERY_LONG"
+    NEUTRAL = "NEUTRAL"
 
 
 class OrderStatus(Enum):

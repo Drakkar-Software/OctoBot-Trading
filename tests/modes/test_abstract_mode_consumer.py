@@ -63,31 +63,31 @@ async def test_can_create_order():
     min_trigger_market = "ADA/BNB"
 
     # order from neutral state => false
-    assert not await consumer.can_create_order(symbol, EvaluatorStates.NEUTRAL)
+    assert not await consumer.can_create_order(symbol, EvaluatorStates.NEUTRAL.value)
 
     # sell order using a currency with 0 available
-    assert not await consumer.can_create_order(not_owned_symbol, EvaluatorStates.SHORT)
-    assert not await consumer.can_create_order(not_owned_symbol, EvaluatorStates.VERY_SHORT)
+    assert not await consumer.can_create_order(not_owned_symbol, EvaluatorStates.SHORT.value)
+    assert not await consumer.can_create_order(not_owned_symbol, EvaluatorStates.VERY_SHORT.value)
 
     # sell order using a currency with < min available
-    assert not await consumer.can_create_order(min_trigger_symbol, EvaluatorStates.SHORT)
-    assert not await consumer.can_create_order(min_trigger_symbol, EvaluatorStates.VERY_SHORT)
+    assert not await consumer.can_create_order(min_trigger_symbol, EvaluatorStates.SHORT.value)
+    assert not await consumer.can_create_order(min_trigger_symbol, EvaluatorStates.VERY_SHORT.value)
 
     # sell order using a currency with > min available
-    assert await consumer.can_create_order(not_owned_market, EvaluatorStates.SHORT)
-    assert await consumer.can_create_order(not_owned_market, EvaluatorStates.VERY_SHORT)
+    assert await consumer.can_create_order(not_owned_market, EvaluatorStates.SHORT.value)
+    assert await consumer.can_create_order(not_owned_market, EvaluatorStates.VERY_SHORT.value)
 
     # buy order using a market with 0 available
-    assert not await consumer.can_create_order(not_owned_market, EvaluatorStates.LONG)
-    assert not await consumer.can_create_order(not_owned_market, EvaluatorStates.VERY_LONG)
+    assert not await consumer.can_create_order(not_owned_market, EvaluatorStates.LONG.value)
+    assert not await consumer.can_create_order(not_owned_market, EvaluatorStates.VERY_LONG.value)
 
     # buy order using a market with < min available
-    assert not await consumer.can_create_order(min_trigger_market, EvaluatorStates.LONG)
-    assert not await consumer.can_create_order(min_trigger_market, EvaluatorStates.VERY_LONG)
+    assert not await consumer.can_create_order(min_trigger_market, EvaluatorStates.LONG.value)
+    assert not await consumer.can_create_order(min_trigger_market, EvaluatorStates.VERY_LONG.value)
 
     # buy order using a market with > min available
-    assert await consumer.can_create_order(not_owned_symbol, EvaluatorStates.LONG)
-    assert await consumer.can_create_order(not_owned_symbol, EvaluatorStates.VERY_LONG)
+    assert await consumer.can_create_order(not_owned_symbol, EvaluatorStates.LONG.value)
+    assert await consumer.can_create_order(not_owned_symbol, EvaluatorStates.VERY_LONG.value)
 
 
 async def test_can_create_order_unknown_symbols():
@@ -97,21 +97,21 @@ async def test_can_create_order_unknown_symbols():
     unknown_everything = "VI?/*s?"
 
     # buy order with unknown market
-    assert not await consumer.can_create_order(unknown_market, EvaluatorStates.LONG)
-    assert not await consumer.can_create_order(unknown_market, EvaluatorStates.VERY_LONG)
-    assert await consumer.can_create_order(unknown_market, EvaluatorStates.SHORT)
-    assert await consumer.can_create_order(unknown_market, EvaluatorStates.VERY_SHORT)
+    assert not await consumer.can_create_order(unknown_market, EvaluatorStates.LONG.value)
+    assert not await consumer.can_create_order(unknown_market, EvaluatorStates.VERY_LONG.value)
+    assert await consumer.can_create_order(unknown_market, EvaluatorStates.SHORT.value)
+    assert await consumer.can_create_order(unknown_market, EvaluatorStates.VERY_SHORT.value)
 
     # sell order with unknown symbol
-    assert not await consumer.can_create_order(unknown_symbol, EvaluatorStates.SHORT)
-    assert not await consumer.can_create_order(unknown_symbol, EvaluatorStates.VERY_SHORT)
-    assert await consumer.can_create_order(unknown_symbol, EvaluatorStates.LONG)
-    assert await consumer.can_create_order(unknown_symbol, EvaluatorStates.VERY_LONG)
+    assert not await consumer.can_create_order(unknown_symbol, EvaluatorStates.SHORT.value)
+    assert not await consumer.can_create_order(unknown_symbol, EvaluatorStates.VERY_SHORT.value)
+    assert await consumer.can_create_order(unknown_symbol, EvaluatorStates.LONG.value)
+    assert await consumer.can_create_order(unknown_symbol, EvaluatorStates.VERY_LONG.value)
 
     # neutral state with unknown symbol, market and everything
-    assert not await consumer.can_create_order(unknown_symbol, EvaluatorStates.NEUTRAL)
-    assert not await consumer.can_create_order(unknown_market, EvaluatorStates.NEUTRAL)
-    assert not await consumer.can_create_order(unknown_everything,  EvaluatorStates.NEUTRAL)
+    assert not await consumer.can_create_order(unknown_symbol, EvaluatorStates.NEUTRAL.value)
+    assert not await consumer.can_create_order(unknown_market, EvaluatorStates.NEUTRAL.value)
+    assert not await consumer.can_create_order(unknown_everything,  EvaluatorStates.NEUTRAL.value)
 
 
 async def test_valid_create_new_order():
