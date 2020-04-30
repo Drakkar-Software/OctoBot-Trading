@@ -116,7 +116,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
                         symbol=symbol,
                         time_frame=time_frame,
                         final_note=final_note,
-                        state=state,
+                        state=state.value,
                         data=data if data is not None else {})
 
     @classmethod
