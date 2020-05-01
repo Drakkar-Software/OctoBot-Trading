@@ -21,11 +21,3 @@ class FundingUpdaterSimulator(FundingUpdater):
     """
     The Funding Update Simulator fetch the exchange funding rate and send it to the Funding Channel
     """
-
-    async def before_update(self) -> (int, int):
-        """
-        Called to initialize funding update
-        :return: the next funding time and the sleep time
-        """
-        await self.wait_for_processing()
-        return await super(FundingUpdater, self).before_update()
