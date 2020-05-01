@@ -30,6 +30,8 @@ cdef class ExchangeBuilder:
 
     cdef str _matrix_id
 
+    cdef str _bot_id
+
     cdef object _tentacles_setup_config
 
     """
@@ -44,5 +46,6 @@ cdef class ExchangeBuilder:
     cpdef ExchangeBuilder is_exchange_only(self)
     cpdef ExchangeBuilder is_ignoring_config(self)
     cpdef ExchangeBuilder use_tentacles_setup_config(self, object tentacles_setup_config)
+    cpdef ExchangeBuilder set_bot_id(self, str bot_id)
     cpdef ExchangeBuilder disable_trading_mode(self)
     cpdef ExchangeBuilder has_matrix(self, str matrix_id)
