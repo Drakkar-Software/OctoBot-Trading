@@ -33,9 +33,6 @@ cdef class TimeFrameExchangeChannel(ExchangeChannel):
 cdef class ExchangeChannelConsumer(Consumer):
     pass
 
-cdef class ExchangeSimulatorChannelConsumer(SupervisedConsumer):
-    pass
-
 cdef class ExchangeChannelProducer(Producer):
     pass
 
