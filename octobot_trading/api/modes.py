@@ -43,14 +43,18 @@ def get_activated_trading_mode(config, tentacles_setup_config) -> AbstractTradin
     return util_get_activated_trading_mode(config, tentacles_setup_config)
 
 
-async def create_trading_modes(config: dict, exchange_manager: ExchangeManager, tentacles_setup_config: object) -> list:
+async def create_trading_modes(config: dict,
+                               exchange_manager: ExchangeManager,
+                               tentacles_setup_config: object,
+                               bot_id: str) -> list:
     return await _create_trading_modes(trading_mode_class=util_get_activated_trading_mode(config,
                                                                                           tentacles_setup_config),
                                        config=config,
                                        exchange_manager=exchange_manager,
                                        cryptocurrencies=exchange_manager.exchange_config.traded_cryptocurrencies,
                                        symbols=exchange_manager.exchange_config.traded_symbol_pairs,
-                                       time_frames=exchange_manager.exchange_config.traded_time_frames)
+                                       time_frames=exchange_manager.exchange_config.traded_time_frames,
+                                       bot_id=bot_id)
 
 
 async def _create_trading_modes(trading_mode_class: AbstractTradingMode.__class__,
@@ -58,14 +62,16 @@ async def _create_trading_modes(trading_mode_class: AbstractTradingMode.__class_
                                 exchange_manager: ExchangeManager,
                                 cryptocurrencies: list = None,
                                 symbols: list = None,
-                                time_frames: list = None) -> list:
+                                time_frames: list = None,
+                                bot_id: str = None) -> list:
     return [
         await create_trading_mode(trading_mode_class=trading_mode_class,
                                   config=config,
                                   exchange_manager=exchange_manager,
                                   cryptocurrency=cryptocurrency,
                                   symbol=symbol,
-                                  time_frame=time_frame)
+                                  time_frame=time_frame,
+                                  bot_id=bot_id)
         for cryptocurrency in __get_cryptocurrencies_to_create(trading_mode_class, cryptocurrencies)
         for symbol in __get_symbols_to_create(trading_mode_class, symbols)
         for time_frame in __get_time_frames_to_create(trading_mode_class, time_frames)
@@ -77,12 +83,14 @@ async def create_trading_mode(trading_mode_class: AbstractTradingMode.__class__,
                               exchange_manager: ExchangeManager,
                               cryptocurrency: str = None,
                               symbol: str = None,
-                              time_frame: object = None) -> AbstractTradingMode:
+                              time_frame: object = None,
+                              bot_id: str = None) -> AbstractTradingMode:
     try:
         trading_mode: AbstractTradingMode = trading_mode_class(config, exchange_manager)
         trading_mode.cryptocurrency = cryptocurrency
         trading_mode.symbol = symbol
         trading_mode.time_frame = time_frame
+        trading_mode.bot_id = bot_id
         await trading_mode.initialize()
         get_logger(f"{LOGGER_TAG}[{exchange_manager.exchange_name}]") \
             .debug(f"{trading_mode.get_name()} started for "

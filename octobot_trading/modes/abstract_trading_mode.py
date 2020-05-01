@@ -35,6 +35,9 @@ class AbstractTradingMode(AbstractTentacle):
         # Mode related exchange manager instance
         self.exchange_manager = exchange_manager
 
+        # The id of the OctoBot using this trading mode
+        self.bot_id: str = None
+
         # Evaluator specific config (Is loaded from tentacle specific file)
         self.trading_config: dict = None
 

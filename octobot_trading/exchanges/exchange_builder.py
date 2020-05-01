@@ -35,6 +35,7 @@ class ExchangeBuilder:
 
         self._is_using_trading_modes: bool = True
         self._matrix_id: str = None
+        self._bot_id: str = None
 
         self._tentacles_setup_config = None
 
@@ -82,7 +83,10 @@ class ExchangeBuilder:
     async def _build_modes(self):
         try:
             init_trading_mode_config(self.config)
-            return await create_trading_modes(self.config, self.exchange_manager, self._tentacles_setup_config)
+            return await create_trading_modes(self.config,
+                                              self.exchange_manager,
+                                              self._tentacles_setup_config,
+                                              self._bot_id)
         except Exception as e:
             self.logger.error(f"An error occurred when initializing trading mode : ")
             raise e
@@ -140,6 +144,10 @@ class ExchangeBuilder:
 
     def use_tentacles_setup_config(self, tentacles_setup_config):
         self._tentacles_setup_config = tentacles_setup_config
+        return self
+
+    def set_bot_id(self, bot_id):
+        self._bot_id = bot_id
         return self
 
     def disable_trading_mode(self):
