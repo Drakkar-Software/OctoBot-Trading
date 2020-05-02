@@ -53,6 +53,7 @@ class ModeChannelProducer(ExchangeChannelProducer):
 class ModeChannel(ExchangeChannel):
     PRODUCER_CLASS = ModeChannelProducer
     CONSUMER_CLASS = ModeChannelConsumer
+    DEFAULT_PRIORITY_LEVEL = 2
 
     TRADING_MODE_NAME_KEY = "trading_mode_name"
     STATE_KEY = "state"
@@ -63,11 +64,10 @@ class ModeChannel(ExchangeChannel):
     async def new_consumer(self,
                            callback: object = None,  # shouldn't be provided here (InternalConsumer)
                            consumer_instance: ModeChannelConsumer = None,
-                           size=0,
-                           trading_mode_name=CHANNEL_WILDCARD,
+                           trading_mode_name: str = CHANNEL_WILDCARD,
                            state=CHANNEL_WILDCARD,
-                           cryptocurrency=CHANNEL_WILDCARD,
-                           symbol=CHANNEL_WILDCARD,
+                           cryptocurrency: str = CHANNEL_WILDCARD,
+                           symbol: str = CHANNEL_WILDCARD,
                            time_frame=None):
         await self._add_new_consumer_and_run(consumer_instance,
                                              trading_mode_name=trading_mode_name,

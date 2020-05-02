@@ -58,7 +58,7 @@ class BalanceUpdater(BalanceProducer):
             except Exception as e:
                 self.logger.error(f"Failed to update balance : {e}")
 
-    async def fetch_portfolio(self) -> None:
+    async def fetch_portfolio(self):
         """
         Fetch portfolio from exchange
         """

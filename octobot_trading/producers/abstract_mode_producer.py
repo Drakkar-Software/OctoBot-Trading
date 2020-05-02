@@ -24,34 +24,47 @@ from octobot_trading.exchanges.exchanges import Exchanges
 class AbstractTradingModeProducer(ModeChannelProducer):
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
+        # the trading mode instance logger
         self.logger = get_logger(self.__class__.__name__)
+
+        # the trading mode instance
         self.trading_mode = trading_mode
+
+        # the global bot config
         self.config = config
+
+        # the trading mode exchange manager
         self.exchange_manager = exchange_manager
 
         # shortcut
         self.exchange_name = self.exchange_manager.exchange_name
 
+        # the final eval used by TradingModeConsumers, default value is INIT_EVAL_NOTE
         self.final_eval = INIT_EVAL_NOTE
 
+        # the producer state used by TradingModeConsumers
         self.state = None
-        self.consumer = None
 
-    def flush(self):
-        self.trading_mode = None
-        self.exchange_manager = None
-        self.consumer = None
+        # the matrix consumer instance
+        self.matrix_consumer = None
+
+        # Define trading modes default consumer priority level
+        self.priority_level: int = 2
 
     # noinspection PyArgumentList
     async def start(self) -> None:
+        """
+        Start trading mode channels subscriptions
+        """
         try:
             from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
             from octobot_evaluators.enums import EvaluatorMatrixTypes
             matrix_id = Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                           self.exchange_manager.id).matrix_id
-            self.consumer = await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX.value,
-                                                     matrix_id).new_consumer(
+            self.matrix_consumer = await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX.value,
+                                                            matrix_id).new_consumer(
                 callback=self.matrix_callback,
+                priority_level=self.priority_level,
                 matrix_id=Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                             self.exchange_manager.id).matrix_id,
                 cryptocurrency=self.trading_mode.cryptocurrency if self.trading_mode.cryptocurrency else CONFIG_WILDCARD,
@@ -61,7 +74,10 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         except (KeyError, ImportError):
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
 
-    async def stop(self):
+    async def stop(self) -> None:
+        """
+        Stop trading mode channels subscriptions
+        """
         await super().stop()
         if self.exchange_manager is not None:
             try:
@@ -69,13 +85,33 @@ class AbstractTradingModeProducer(ModeChannelProducer):
                 await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX.value,
                                          Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                                            self.exchange_manager.id).matrix_id
-                                         ).remove_consumer(self.consumer)
+                                         ).remove_consumer(self.matrix_consumer)
             except (KeyError, ImportError):
                 self.logger.error(f"Can't unregister matrix channel on {self.exchange_name}")
         self.flush()
 
+    def flush(self) -> None:
+        """
+        Flush all instance objects reference
+        """
+        self.trading_mode = None
+        self.exchange_manager = None
+        self.matrix_consumer = None
+
     async def matrix_callback(self, matrix_id, evaluator_name, evaluator_type,
-                              eval_note, eval_note_type, exchange_name, cryptocurrency, symbol, time_frame):
+                              eval_note, eval_note_type, exchange_name, cryptocurrency, symbol, time_frame) -> None:
+        """
+        Called when a strategy updates the matrix
+        :param matrix_id: the matrix_id
+        :param evaluator_name: the evaluator name, should be the strategy name
+        :param evaluator_type: the evaluator type, should be EvaluatorMatrixTypes.STRATEGIES.value
+        :param eval_note: the eval note, should be the strategy eval note
+        :param eval_note_type: the eval note type
+        :param exchange_name: the exchange name
+        :param cryptocurrency: the cryptocurrency
+        :param symbol: the symbol
+        :param time_frame: the time frame
+        """
         await self.finalize(exchange_name=exchange_name, matrix_id=matrix_id, cryptocurrency=cryptocurrency,
                             symbol=symbol, time_frame=time_frame)
 
@@ -86,7 +122,6 @@ class AbstractTradingModeProducer(ModeChannelProducer):
                        time_frame=None) -> None:
         """
         Finalize evaluation
-        :return: None
         """
         if exchange_name != self.exchange_name or not self.exchange_manager.trader.is_enabled:
             # Do nothing if not its exchange
@@ -100,17 +135,16 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Error when finalizing: {e}")
 
-    async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
+    async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame) -> None:
         """
         Called to calculate the final note or state => when any notification appears
-        :return:
         """
         raise NotImplementedError("set_final_eval not implemented")
 
     async def submit_trading_evaluation(self, cryptocurrency, symbol, time_frame,
                                         final_note=INIT_EVAL_NOTE,
                                         state=EvaluatorStates.NEUTRAL,
-                                        data=None):
+                                        data=None) -> None:
         await self.send(trading_mode_name=self.trading_mode.get_name(),
                         cryptocurrency=cryptocurrency,
                         symbol=symbol,
@@ -120,18 +154,16 @@ class AbstractTradingModeProducer(ModeChannelProducer):
                         data=data if data is not None else {})
 
     @classmethod
-    def get_should_cancel_loaded_orders(cls):
+    def get_should_cancel_loaded_orders(cls) -> bool:
         """
         Called by cancel_symbol_open_orders => return true if OctoBot should cancel all orders for a symbol including
         orders already existing when OctoBot started up
-        :return:
         """
         raise NotImplementedError("get_should_cancel_loaded_orders not implemented")
 
     async def cancel_symbol_open_orders(self, symbol) -> None:
         """
         Cancel all trader open orders
-        :return: None
         """
         cancel_loaded_orders = self.get_should_cancel_loaded_orders()
 

@@ -112,7 +112,7 @@ class ExchangeChannel(Channel):
 
     async def _run_consumer(self, consumer,
                             symbol=CHANNEL_WILDCARD):
-        await consumer.run()
+        await consumer.run(with_task=not self.is_synchronized)
         self.logger.debug(f"Consumer started for symbol {symbol}")
 
 

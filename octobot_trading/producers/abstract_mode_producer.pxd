@@ -20,11 +20,12 @@ cdef class AbstractTradingModeProducer(ModeChannelProducer):
     cdef public object trading_mode
     cdef public object config
     cdef public object exchange_manager
+    cdef public object final_eval
+    cdef public object state
+    cdef public object matrix_consumer
 
     cdef public str exchange_name
 
-    cdef public object final_eval
+    cdef public int priority_level
 
-    cdef public object state
-
-    cdef public object consumer
+    cpdef void flush(self)
