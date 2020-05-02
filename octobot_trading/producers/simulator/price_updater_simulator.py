@@ -25,7 +25,7 @@ class MarkPriceUpdaterSimulator(MarkPriceUpdater):
 
     async def start(self):
         exchange = self.channel.exchange_manager.exchange
-        available_data = exchange.get_real_available_data()
+        available_data = exchange.get_real_available_data(exchange.exchange_importers)
         real_data_for_recent_trades = exchange.handles_real_data_for_updater(RECENT_TRADES_CHANNEL, available_data)
         real_data_for_ticker = exchange.handles_real_data_for_updater(TICKER_CHANNEL, available_data)
         # if recent trades and ticker channels are both generated from ohlcv, do not watch them both,

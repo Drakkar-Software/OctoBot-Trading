@@ -67,7 +67,7 @@ class ExchangeManager(Initializable):
         # exchange_only is True when exchange channels are not required (therefore not created)
         self.exchange_only: bool = False
 
-        self.backtesting_files: list = None
+        self.backtesting = None
 
         self.is_trader_simulated = is_trader_simulator_enabled(self.config)
         self.has_websocket = False
@@ -105,6 +105,7 @@ class ExchangeManager(Initializable):
         self.exchange_symbols_data = None
         self.trader = None
         self.trading_modes = []
+        self.backtesting = None
 
     async def stop_exchange_channels(self):
         try:
@@ -199,21 +200,15 @@ class ExchangeManager(Initializable):
     """
 
     async def _create_simulated_exchange(self):
-        self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting_files)
+        self.exchange = ExchangeSimulator(self.config, self.exchange_type, self, self.backtesting)
         await self.exchange.initialize()
-        await self._initialize_simulator_time_frames()
+        self._initialize_simulator_time_frames()
         self.exchange_config.set_config_time_frame()
         self.exchange_config.set_config_traded_pairs()
         await self._create_exchange_channels()
 
     async def _init_simulated_exchange(self):
-        try:
-            await self.exchange.modify_channels()
-            await self.exchange.create_backtesting_exchange_producers()
-            await self.exchange.start_backtesting()
-        except ValueError:
-            self._logger.error("Not enough exchange data to calculate backtesting duration")
-            await self.stop()
+        await self.exchange.create_backtesting_exchange_producers()
 
     """
     Rest exchange
@@ -349,9 +344,6 @@ class ExchangeManager(Initializable):
     def get_exchange_quote_and_base(self, symbol):
         return self.exchange.get_split_pair_from_exchange(symbol)
 
-    def get_exchange_backtesting(self):
-        return self.exchange.backtesting if isinstance(self.exchange, ExchangeSimulator) else None
-
     def _load_config_symbols_and_time_frames(self):
         client = self.exchange.client
         if client:
@@ -361,7 +353,7 @@ class ExchangeManager(Initializable):
             self._logger.error("Failed to load client from REST exchange")
             self._raise_exchange_load_error()
 
-    async def _initialize_simulator_time_frames(self):
+    def _initialize_simulator_time_frames(self):
         self.client_time_frames = self.exchange.get_available_time_frames()
 
     # SYMBOLS
