@@ -77,6 +77,13 @@ def get_exchange_id_from_matrix_id(exchange_name, matrix_id) -> str:
     return None
 
 
+def get_matrix_id_from_exchange_id(exchange_name, exchange_id) -> str:
+    for exchange_configuration in get_exchange_configurations_from_exchange_name(exchange_name).values():
+        if exchange_configuration.id == exchange_id:
+            return exchange_configuration.matrix_id
+    return None
+
+
 def get_all_exchange_ids_from_matrix_id(matrix_id) -> list:
     return [
         exchange_configuration.id

@@ -25,7 +25,6 @@ from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.modes import AbstractTradingMode
 from octobot_trading.traders.trader_simulator import TraderSimulator
 
-
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
@@ -41,7 +40,7 @@ async def _get_tools():
     # use backtesting not to spam exchanges apis
     exchange_manager.is_simulated = True
     exchange_manager.is_backtesting = True
-    exchange_manager.backtesting = Backtesting(None, [])
+    exchange_manager.backtesting = Backtesting(None, [exchange_manager.id], None, [])
 
     await exchange_manager.initialize()
 
