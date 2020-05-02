@@ -264,7 +264,9 @@ class ExchangeManager(Initializable):
 
     async def _create_exchange_channels(self):  # TODO filter creation --> not required if pause is managed
         for exchange_channel_class_type in [ExchangeChannel, TimeFrameExchangeChannel]:
-            await create_all_subclasses_channel(exchange_channel_class_type, set_chan, exchange_manager=self)
+            await create_all_subclasses_channel(exchange_channel_class_type, set_chan, 
+                                                is_synchronized=self.is_backtesting,
+                                                exchange_manager=self)
 
     async def _create_exchange_producers(self):
         # Real data producers
