@@ -77,6 +77,29 @@ def get_exchange_id_from_matrix_id(exchange_name, matrix_id) -> str:
     return None
 
 
+def get_all_exchange_ids_from_matrix_id(matrix_id) -> list:
+    return [
+        exchange_configuration.id
+        for exchange_configuration in Exchanges.instance().get_all_exchanges()
+        if exchange_configuration.matrix_id == matrix_id
+    ]
+
+
+def get_exchange_configuration_from_exchange(exchange_name, exchange_id) -> ExchangeConfiguration:
+    return Exchanges.instance().get_exchange(exchange_name, exchange_id)
+
+
+def get_all_exchange_ids_with_same_matrix_id(exchange_name, exchange_id) -> list:
+    """
+    Used to get all the exchange ids for the same octobot instance represented by the matrix_id
+    :param exchange_name: the exchange name
+    :param exchange_id: the exchange id
+    :return: the exchange ids for the same matrix id
+    """
+    return get_all_exchange_ids_from_matrix_id(
+        get_exchange_configuration_from_exchange(exchange_name, exchange_id).matrix_id)
+
+
 def get_exchange_names() -> list:
     return Exchanges.instance().get_exchange_names()
 
