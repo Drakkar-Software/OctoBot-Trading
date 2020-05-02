@@ -14,32 +14,37 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 
+from octobot_channels.channels.channel import Channel
+from octobot_channels.channels.channel_instances import ChannelInstances
+from octobot_channels.constants import CHANNEL_WILDCARD
 from octobot_channels.consumer import Consumer, InternalConsumer, SupervisedConsumer
 from octobot_channels.producer import Producer
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_channels.channels.channel import Channel
-
-from octobot_channels.constants import CHANNEL_WILDCARD
-from octobot_channels.channels.channel_instances import ChannelInstances
-
 
 class ExchangeChannelConsumer(Consumer):
-    pass
+    """
+    Consumer adapted for ExchangeChannel
+    """
 
 
 class ExchangeChannelInternalConsumer(InternalConsumer):
-    pass
+    """
+    InternalConsumer adapted for ExchangeChannel
+    """
 
 
 class ExchangeChannelSupervisedConsumer(SupervisedConsumer):
-    pass
+    """
+    SupervisedConsumer adapted for ExchangeChannel
+    """
 
 
 class ExchangeChannelProducer(Producer):
-    pass
+    """
+    Producer adapted for ExchangeChannel
+    """
 
 
 class ExchangeChannel(Channel):
@@ -47,6 +52,7 @@ class ExchangeChannel(Channel):
     CONSUMER_CLASS = ExchangeChannelConsumer
     CRYPTOCURRENCY_KEY = "cryptocurrency"
     SYMBOL_KEY = "symbol"
+    DEFAULT_PRIORITY_LEVEL = 1
 
     def __init__(self, exchange_manager):
         super().__init__()
@@ -60,11 +66,14 @@ class ExchangeChannel(Channel):
     async def new_consumer(self,
                            callback: object = None,
                            consumer_instance: object = None,
-                           size=0,
-                           symbol=CHANNEL_WILDCARD,
-                           cryptocurrency=CHANNEL_WILDCARD,
-                           **kwargs):
-        consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback, size=size)
+                           size: int = 0,
+                           priority_level: int = DEFAULT_PRIORITY_LEVEL,
+                           symbol: str = CHANNEL_WILDCARD,
+                           cryptocurrency: str = CHANNEL_WILDCARD,
+                           **kwargs) -> ExchangeChannelConsumer:
+        consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback,
+                                                                                   size=size,
+                                                                                   priority_level=priority_level)
         await self._add_new_consumer_and_run(consumer,
                                              cryptocurrency=cryptocurrency,
                                              symbol=symbol,
