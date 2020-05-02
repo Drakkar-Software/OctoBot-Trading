@@ -22,12 +22,9 @@ cdef class ExchangeSimulator(AbstractExchange):
 
     cdef public list symbols
     cdef public list time_frames
-    cdef public list backtesting_data_files
     cdef public list exchange_importers
 
     cdef public Backtesting backtesting
-
-    cdef bint _has_only_ohlcv(self)
 
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame)
@@ -38,3 +35,4 @@ cdef class ExchangeSimulator(AbstractExchange):
     cpdef tuple get_split_pair_from_exchange(self, str pair)
     cpdef double get_exchange_current_time(self)
     cpdef str get_pair_cryptocurrency(self, str pair)
+    cpdef list get_available_time_frames(self)

@@ -15,6 +15,7 @@
 #  License along with this library.
 import pytest
 
+from octobot_backtesting.backtesting import Backtesting
 from octobot_commons.constants import PORTFOLIO_TOTAL
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_STARTING_PORTFOLIO
@@ -40,10 +41,9 @@ async def _get_tools():
     # use backtesting not to spam exchanges apis
     exchange_manager.is_simulated = True
     exchange_manager.is_backtesting = True
+    exchange_manager.backtesting = Backtesting(None, [])
 
-    # no backtesting file provided, except ValueError from initialize
-    with pytest.raises(ValueError):
-        await exchange_manager.initialize()
+    await exchange_manager.initialize()
 
     trader = TraderSimulator(config, exchange_manager)
     await trader.initialize()

@@ -94,9 +94,9 @@ class ExchangeBuilder:
     """
     Builder methods
     """
-    def is_backtesting(self, backtesting_files):
+    def is_backtesting(self, backtesting_instance):
         self.exchange_manager.is_backtesting = True
-        self.exchange_manager.backtesting_files = backtesting_files
+        self.exchange_manager.backtesting = backtesting_instance
         return self
 
     def is_sandboxed(self, sandboxed: bool):

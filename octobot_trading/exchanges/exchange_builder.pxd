@@ -37,7 +37,7 @@ cdef class ExchangeBuilder:
     """
     Builder methods
     """
-    cpdef ExchangeBuilder is_backtesting(self, list backtesting_files)
+    cpdef ExchangeBuilder is_backtesting(self, object backtesting_instance)
     cpdef ExchangeBuilder is_sandboxed(self, bint sandboxed)
     cpdef ExchangeBuilder is_simulated(self)
     cpdef ExchangeBuilder is_collecting(self)

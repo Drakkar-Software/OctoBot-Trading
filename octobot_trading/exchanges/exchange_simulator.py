@@ -13,19 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_backtesting.api.backtesting import initialize_backtesting, modify_backtesting_timestamps, \
-    start_backtesting, get_backtesting_current_time, set_time_updater_interval, stop_backtesting
-from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames, \
-    get_data_timestamp_interval, stop_importer
+from octobot_backtesting.api.backtesting import get_backtesting_current_time
+from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
-from octobot_commons.constants import MINUTE_TO_SECONDS
-from octobot_commons.enums import TimeFramesMinutes
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
-from octobot_commons.time_frame_manager import get_config_time_frame, find_min_time_frame
 from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, \
-    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW, OHLCV_CHANNEL
+    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
@@ -34,10 +29,9 @@ from octobot_trading.producers.simulator import UNAUTHENTICATED_UPDATER_SIMULATO
 
 
 class ExchangeSimulator(AbstractExchange):
-    def __init__(self, config, exchange_type, exchange_manager, backtesting_data_files):
+    def __init__(self, config, exchange_type, exchange_manager, backtesting):
         super().__init__(config, exchange_type, exchange_manager)
-        self.backtesting_data_files = backtesting_data_files
-        self.backtesting = None
+        self.backtesting = backtesting
 
         self.exchange_importers = []
 
@@ -45,8 +39,6 @@ class ExchangeSimulator(AbstractExchange):
         self.time_frames = []
 
     async def initialize_impl(self):
-        self.backtesting = await initialize_backtesting(self.config, self.backtesting_data_files)
-
         self.exchange_importers = self.backtesting.get_importers(ExchangeDataImporter)
         # load symbols and time frames
         for importer in self.exchange_importers:
@@ -59,30 +51,6 @@ class ExchangeSimulator(AbstractExchange):
 
         # set exchange manager attributes
         self.exchange_manager.client_symbols = self.symbols
-
-    async def modify_channels(self):
-        # set mininmum and maximum timestamp according to all importers data
-        min_time_frame_to_consider = find_min_time_frame(get_config_time_frame(self.config))
-        timestamps = [await get_data_timestamp_interval(importer, min_time_frame_to_consider)
-                      for importer in self.exchange_importers]  # [(min, max) ... ]
-
-        await modify_backtesting_timestamps(
-            self.backtesting,
-            minimum_timestamp=min(timestamps)[0],
-            maximum_timestamp=max(timestamps)[1])
-
-        if self._has_only_ohlcv():
-            set_time_updater_interval(self.backtesting,
-                                      TimeFramesMinutes[min_time_frame_to_consider] * MINUTE_TO_SECONDS)
-
-    def _has_only_ohlcv(self):
-        return self.get_real_available_data() == set(SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[OHLCV_CHANNEL])
-
-    def get_real_available_data(self):
-        available_data = set()
-        for importer in self.exchange_importers:
-            available_data = available_data.union(get_available_data_types(importer))
-        return available_data
 
     @staticmethod
     def handles_real_data_for_updater(channel_type, available_data):
@@ -101,9 +69,6 @@ class ExchangeSimulator(AbstractExchange):
             if not at_least_one_updater:
                 self.logger.error(f"No updater created for {importer.symbols} backtesting")
 
-    async def start_backtesting(self):
-        await start_backtesting(self.backtesting)
-
     @staticmethod
     def _are_required_data_available(channel_type, available_data_types):
         if channel_type not in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE:
@@ -116,10 +81,8 @@ class ExchangeSimulator(AbstractExchange):
                        for required_data_type in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[channel_type])
 
     async def stop(self):
-        for importer in self.exchange_importers:
-            await stop_importer(importer)
-        await stop_backtesting(self.backtesting)
         self.backtesting = None
+        self.exchange_importers = []
 
     def get_exchange_current_time(self):
         return get_backtesting_current_time(self.backtesting)
@@ -131,7 +94,9 @@ class ExchangeSimulator(AbstractExchange):
         return time_frame in self.time_frames
 
     def get_available_time_frames(self):
-        return [time_frame.value for time_frame in get_available_time_frames(next(iter(self.exchange_importers)))]
+        if self.exchange_importers:
+            return [time_frame.value for time_frame in get_available_time_frames(next(iter(self.exchange_importers)))]
+        return []
 
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
         return {
@@ -218,3 +183,10 @@ class ExchangeSimulator(AbstractExchange):
 
     def get_pair_cryptocurrency(self, pair) -> str:
         return self.get_split_pair_from_exchange(pair)[0]
+
+    @staticmethod
+    def get_real_available_data(exchange_importers):
+        available_data = set()
+        for importer in exchange_importers:
+            available_data = available_data.union(get_available_data_types(importer))
+        return available_data
