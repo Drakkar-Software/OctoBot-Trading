@@ -18,7 +18,7 @@ import logging
 
 import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
-from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, RequestTimeout
+from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, RequestTimeout, NotSupported
 
 from octobot_commons.constants import MSECONDS_TO_MINUTE
 from octobot_commons.enums import TimeFramesMinutes
@@ -369,7 +369,11 @@ class RestExchange(AbstractExchange):
         return self.client.account()
 
     def set_sandbox_mode(self, is_sandboxed):
-        self.client.setSandboxMode(is_sandboxed)
+        try:
+            self.client.setSandboxMode(is_sandboxed)
+        except NotSupported:
+            self.logger.warning(f"setSandboxMode is not supported for {self.name} "
+                                f"in type {self.client.options['defaultType']}")
 
     @staticmethod
     def _get_side(order_type):
