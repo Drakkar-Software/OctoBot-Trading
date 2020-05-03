@@ -95,9 +95,9 @@ class OHLCVUpdater(OHLCVProducer):
 
         while not self.should_stop and not self.channel.is_paused:
             try:
-                self.logger.info(f'waiting for asyncio.wait_for on {time_frame}')
-                candles: list = await self.channel.exchange_manager.exchange.get_symbol_prices(pair, time_frame, limit=self.OHLCV_LIMIT)
-                self.logger.info(f'got {time_frame}')
+                candles: list = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
+                                                                                               time_frame,
+                                                                                               limit=self.OHLCV_LIMIT)
                 if candles:
                     last_candle: list = candles[-1]
                     self.channel.exchange_manager.uniformize_candles_if_necessary(candles)
