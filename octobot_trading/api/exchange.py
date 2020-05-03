@@ -135,3 +135,7 @@ async def force_refresh_orders_and_portfolio(exchange_manager):
 
 def get_base_currency(exchange_manager, pair) -> str:
     return exchange_manager.exchange.get_pair_cryptocurrency(pair)
+
+
+def get_fees(exchange_manager, symbol) -> dict:
+    return exchange_manager.exchange.get_fees(symbol)

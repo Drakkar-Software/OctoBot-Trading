@@ -56,6 +56,8 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
                             return await self.create_new_orders(symbol, final_note, state, **kwargs)
                         except InsufficientFunds as e:
                             self.logger.error(f"Failed to create order on second attempt : {e})")
+                    except Exception as e:
+                        self.logger.exception(e, True, f"Error when creating order: {e}")
             return []
         finally:
             self.logger.debug(f"Exiting create_order_if_possible for {symbol}")

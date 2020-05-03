@@ -13,10 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.constants import PORTFOLIO_AVAILABLE
 
 
 def get_portfolio(exchange_manager) -> dict:
     return exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+
+
+def get_portfolio_currency(exchange_manager, currency, portfolio_type=PORTFOLIO_AVAILABLE) -> float:
+    return exchange_manager.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
+        currency,
+        portfolio_type=portfolio_type
+    )
 
 
 def get_origin_portfolio(exchange_manager) -> dict:
