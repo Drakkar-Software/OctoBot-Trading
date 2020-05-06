@@ -29,4 +29,4 @@ cdef class OHLCVUpdaterSimulator(OHLCVUpdater):
     cdef double initial_timestamp
     cdef double last_timestamp_pushed
 
-    cdef Consumer time_consumer
+    cdef public Consumer time_consumer
