@@ -26,6 +26,7 @@ cdef class AbstractExchange(Initializable):
     cdef public object client
     cdef public object exchange_type
     cdef public object logger
+    cdef public double allowed_time_lag
 
     cdef public Trader trader
     cdef public ExchangeManager exchange_manager

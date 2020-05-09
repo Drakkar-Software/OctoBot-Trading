@@ -20,7 +20,8 @@ from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
 from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, \
-    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW
+    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW, \
+    DEFAULT_BACKTESTING_TIME_LAG
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
@@ -32,6 +33,7 @@ class ExchangeSimulator(AbstractExchange):
     def __init__(self, config, exchange_type, exchange_manager, backtesting):
         super().__init__(config, exchange_type, exchange_manager)
         self.backtesting = backtesting
+        self.allowed_time_lag = DEFAULT_BACKTESTING_TIME_LAG
 
         self.exchange_importers = []
 

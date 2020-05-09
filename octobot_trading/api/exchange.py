@@ -70,6 +70,10 @@ def get_exchange_current_time(exchange_manager) -> float:
     return exchange_manager.exchange.get_exchange_current_time()
 
 
+def get_exchange_allowed_time_lag(exchange_manager) -> float:
+    return exchange_manager.exchange.allowed_time_lag
+
+
 def get_exchange_id_from_matrix_id(exchange_name, matrix_id) -> str:
     for exchange_configuration in get_exchange_configurations_from_exchange_name(exchange_name).values():
         if exchange_configuration.matrix_id == matrix_id:

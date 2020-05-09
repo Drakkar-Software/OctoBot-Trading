@@ -15,6 +15,7 @@
 #  License along with this library.
 import time
 from octobot_commons.logging.logging_util import get_logger
+from octobot_trading.constants import DEFAULT_EXCHANGE_TIME_LAG
 from octobot_trading.util.initializable import Initializable
 
 
@@ -26,6 +27,7 @@ class AbstractExchange(Initializable):
         self.exchange_manager = exchange_manager
         self.name = self.exchange_type.__name__
         self.logger = get_logger(f"{self.__class__.__name__}[{self.name}]")
+        self.allowed_time_lag = DEFAULT_EXCHANGE_TIME_LAG
 
     async def initialize_impl(self):
         raise NotImplementedError("initialize_impl not implemented")
