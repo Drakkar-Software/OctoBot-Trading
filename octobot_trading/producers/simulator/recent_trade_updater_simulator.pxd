@@ -29,3 +29,5 @@ cdef class RecentTradeUpdaterSimulator(RecentTradeUpdater):
     cdef double last_timestamp_pushed
 
     cdef public Consumer time_consumer
+
+    cdef str recent_trades_time_frame
