@@ -44,8 +44,6 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
     async def handle_timestamp(self, timestamp, **kwargs):
         if not self.is_initialized:
             await self.wait_for_initialization()
-        if self.last_timestamp_pushed == 0:
-            self.last_timestamp_pushed = timestamp
 
         try:
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
@@ -56,8 +54,8 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
                         exchange_name=self.exchange_name,
                         symbol=pair,
                         time_frame=time_frame,
-                        inferior_timestamp=self.last_timestamp_pushed,
-                        superior_timestamp=timestamp - 1)
+                        inferior_timestamp=self.last_timestamp_pushed + 1,
+                        superior_timestamp=timestamp)
                     if ohlcv_data:
                         await self.push(time_frame, pair, [ohlcv[-1] for ohlcv in ohlcv_data], partial=True)
 
@@ -90,9 +88,12 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
                 symbol=pair,
                 time_frame=time_frame,
                 limit=self.OHLCV_OLD_LIMIT,
-                superior_timestamp=self.initial_timestamp - 1)
+                superior_timestamp=self.initial_timestamp)
+            self.last_timestamp_pushed = self.initial_timestamp
+            candles_len = len(ohlcv_data)
             self.logger.info(f"Loaded pre-backtesting starting timestamp historical "
-                             f"candles for: {pair} in {time_frame}")
+                             f"candles for: {pair} in {time_frame}: {candles_len} "
+                             f"candle{'s' if candles_len > 1 else ''}")
         except Exception as e:
             self.logger.exception(e, True, f"Error while fetching historical candles: {e}")
         if ohlcv_data:
