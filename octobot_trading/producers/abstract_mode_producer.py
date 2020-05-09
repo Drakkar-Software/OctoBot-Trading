@@ -61,7 +61,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
             from octobot_evaluators.enums import EvaluatorMatrixTypes
             matrix_id = Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                           self.exchange_manager.id).matrix_id
-            self.matrix_consumer = await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX.value,
+            self.matrix_consumer = await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
                                                             matrix_id).new_consumer(
                 callback=self.matrix_callback,
                 priority_level=self.priority_level,
@@ -82,7 +82,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         if self.exchange_manager is not None:
             try:
                 from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
-                await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX.value,
+                await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
                                          Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                                            self.exchange_manager.id).matrix_id
                                          ).remove_consumer(self.matrix_consumer)
