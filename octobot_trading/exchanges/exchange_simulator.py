@@ -40,6 +40,8 @@ class ExchangeSimulator(AbstractExchange):
         self.symbols = []
         self.time_frames = []
 
+        self.current_future_candles = {}
+
     async def initialize_impl(self):
         self.exchange_importers = self.backtesting.get_importers(ExchangeDataImporter)
         # load symbols and time frames
