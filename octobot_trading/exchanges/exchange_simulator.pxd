@@ -23,6 +23,7 @@ cdef class ExchangeSimulator(AbstractExchange):
     cdef public list symbols
     cdef public list time_frames
     cdef public list exchange_importers
+    cdef public dict current_future_candles
 
     cdef public Backtesting backtesting
 

@@ -28,5 +28,6 @@ cdef class OHLCVUpdaterSimulator(OHLCVUpdater):
 
     cdef double initial_timestamp
     cdef double last_timestamp_pushed
+    cdef dict time_frames_to_second
 
     cdef public Consumer time_consumer
