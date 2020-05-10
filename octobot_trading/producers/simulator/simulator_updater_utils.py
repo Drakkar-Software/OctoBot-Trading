@@ -14,24 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.constants import OHLCV_CHANNEL
-from octobot_trading.channels.exchange_channel import get_chan as get_exchange_chan
-
-
-async def register_on_ohlcv_chan(exchange_id, callback) -> object:
-    """
-    Register a consumer on OHLCV channel
-    :param exchange_id: the exchange id
-    :param callback: the consumer callback
-    :return: created consumer instance
-    """
-    ohlcv_chan = get_exchange_chan(OHLCV_CHANNEL, exchange_id)
-    # Before registration, wait for producers to be initialized (meaning their historical candles are already
-    # loaded) to avoid callback calls on historical (and potentially invalid) values
-    for producer in ohlcv_chan.get_producers():
-        await producer.wait_for_initialization()
-    return await ohlcv_chan.new_consumer(callback)
-
 
 async def stop_and_pause(producer) -> None:
     """

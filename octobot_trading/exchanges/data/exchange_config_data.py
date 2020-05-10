@@ -43,6 +43,9 @@ class ExchangeConfig(Initializable):
     def set_config_time_frame(self):  # TODO
         self._set_config_time_frame()
 
+    def get_shortest_time_frame(self):
+        return self.traded_time_frames[-1]
+
     def get_traded_pairs(self, cryptocurrency=None):
         if cryptocurrency:
             if cryptocurrency in self.traded_cryptocurrencies:
