@@ -37,7 +37,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         self.future_candle_sec_length = TimeFramesMinutes[self.future_candle_time_frame] * MINUTE_TO_SECONDS
 
         self.last_candles_by_pair_by_time_frame = {}
-        self.pushed_last_init_candles_by_pair = {}
+        self.require_last_init_candles_pairs_push = True
 
     async def start(self):
         if not self.is_initialized:
@@ -78,15 +78,15 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
                                             pair,
                                             [ohlcv[-1] for ohlcv in ohlcv_data[current_candle_index:]],
                                             partial=True)
-                    elif not self.pushed_last_init_candles_by_pair[pair]:
+                    elif self.require_last_init_candles_pairs_push:
                         # triggered on first iteration to initialize large candles that might be pushed much later
                         # otherwise but are required to complete TA evaluation
                         await self.push(time_frame,
                                         pair,
                                         [self.last_candles_by_pair_by_time_frame[pair][time_frame.value][-1]],
                                         partial=True)
-                self.pushed_last_init_candles_by_pair[pair] = True
             self.last_timestamp_pushed = timestamp
+            self.require_last_init_candles_pairs_push = False
         except DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
@@ -135,4 +135,4 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
             if pair not in self.last_candles_by_pair_by_time_frame:
                 self.last_candles_by_pair_by_time_frame[pair] = {}
             self.last_candles_by_pair_by_time_frame[pair][time_frame.value] = ohlcv_data[0]
-            self.pushed_last_init_candles_by_pair[pair] = False
+            self.require_last_init_candles_pairs_push = True

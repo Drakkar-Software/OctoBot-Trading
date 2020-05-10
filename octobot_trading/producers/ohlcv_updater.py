@@ -51,9 +51,6 @@ class OHLCVUpdater(OHLCVProducer):
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames
             for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs]
 
-    async def wait_for_initialization(self, timeout=OHLCV_INITIALIZATION_TIMEOUT):
-        raise NotImplementedError("wait_for_initialization is not implemented yet")
-
     async def _initialize(self):
         try:
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
