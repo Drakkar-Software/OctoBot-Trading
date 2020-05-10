@@ -31,7 +31,7 @@ cdef class ExchangeConfig(Initializable):
 
     cpdef void set_config_time_frame(self)
     cpdef void set_config_traded_pairs(self)
-    cpdef str get_shortest_time_frame(self)
+    cpdef object get_shortest_time_frame(self)
     cpdef list get_traded_pairs(self, str cryptocurrency=*)
 
     @staticmethod
