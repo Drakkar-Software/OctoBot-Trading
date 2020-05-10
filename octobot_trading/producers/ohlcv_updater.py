@@ -40,8 +40,6 @@ class OHLCVUpdater(OHLCVProducer):
         self.tasks = []
         self.is_initialized = False
 
-        self.ohlcv_initialized_event = asyncio.Event()
-
     async def start(self):
         """
         Creates OHLCV refresh tasks
@@ -65,7 +63,6 @@ class OHLCVUpdater(OHLCVProducer):
             self.logger.exception(e, True, f"Error while initializing candles: {e}")
         finally:
             self.logger.debug("Candle history loaded")
-            self.ohlcv_initialized_event.set()
             self.is_initialized = True
 
     def _create_time_frame_candle_task(self, time_frame):
