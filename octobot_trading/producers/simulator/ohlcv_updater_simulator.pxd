@@ -32,7 +32,7 @@ cdef class OHLCVUpdaterSimulator(OHLCVUpdater):
 
     cdef public Consumer time_consumer
 
-    cdef str future_candle_time_frame
+    cdef object future_candle_time_frame
     cdef int future_candle_sec_length
 
     cdef dict last_candles_by_pair_by_time_frame
