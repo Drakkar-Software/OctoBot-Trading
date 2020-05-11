@@ -34,6 +34,7 @@ class TickerUpdaterSimulator(TickerUpdater):
         self.exchange_name = self.channel.exchange_manager.exchange_name
 
         self.last_timestamp_pushed = 0
+        self.last_timestamp_pushed_by_symbol = {}
         self.time_consumer = None
         # Only generate tickers from the shortest handled time frame
         self.ticker_time_frame = self.channel.exchange_manager.exchange_config.get_shortest_time_frame().value
@@ -62,8 +63,8 @@ class TickerUpdaterSimulator(TickerUpdater):
                                           cryptocurrency: str, symbol: str, time_frame, candle):
         if self.ticker_time_frame == time_frame and candle:
             last_candle_timestamp = candle[PriceIndexes.IND_PRICE_TIME.value]
-            if last_candle_timestamp > self.last_timestamp_pushed:
-                self.last_timestamp_pushed = last_candle_timestamp
+            if last_candle_timestamp > self.last_timestamp_pushed_by_symbol[symbol]:
+                self.last_timestamp_pushed_by_symbol[symbol] = last_candle_timestamp
                 ticker = self._generate_ticker_from_candle(candle, symbol, last_candle_timestamp)
                 await self.push(symbol, ticker)
 
@@ -97,4 +98,8 @@ class TickerUpdaterSimulator(TickerUpdater):
                     await get_exchange_chan(OHLCV_CHANNEL,
                                             self.channel.exchange_manager.id)\
                         .new_consumer(self._ticker_from_ohlcv_callback)
+                    self.last_timestamp_pushed_by_symbol = {
+                        symbol: 0
+                        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+                    }
                 self.is_running = True

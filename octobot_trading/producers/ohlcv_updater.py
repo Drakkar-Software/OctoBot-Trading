@@ -51,10 +51,16 @@ class OHLCVUpdater(OHLCVProducer):
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames
             for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs]
 
+    def _get_traded_pairs(self):
+        return self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+
+    def _get_time_frames(self):
+        return self.channel.exchange_manager.exchange_config.traded_time_frames
+
     async def _initialize(self):
         try:
-            for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames:
-                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            for time_frame in self._get_time_frames():
+                for pair in self._get_traded_pairs():
                     await self._initialize_candles(time_frame, pair)
         except Exception as e:
             self.logger.exception(e, True, f"Error while initializing candles: {e}")

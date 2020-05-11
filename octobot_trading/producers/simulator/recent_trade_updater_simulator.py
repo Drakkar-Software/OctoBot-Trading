@@ -36,6 +36,7 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
         self.exchange_name = self.channel.exchange_manager.exchange_name
 
         self.last_timestamp_pushed = 0
+        self.last_timestamp_pushed_by_symbol = {}
         self.time_consumer = None
         # Only generate recent trades from the shortest handled time frame
         self.recent_trades_time_frame = self.channel.exchange_manager.exchange_config.get_shortest_time_frame().value
@@ -68,24 +69,24 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
                 # Recent trades for this candle are between the next candle candle high price and the next candle
                 # low price in order to get these prices, use exchange simulator's future candles filled by the
                 # previous ohlcv updater cycle that also triggered this call
-                future_candle = self.channel.exchange.current_future_candles[time_frame]
+                future_candle = self.channel.exchange.current_future_candles[symbol][time_frame]
                 last_candle_timestamp = future_candle[PriceIndexes.IND_PRICE_TIME.value]
-                if last_candle_timestamp > self.last_timestamp_pushed:
+                if last_candle_timestamp > self.last_timestamp_pushed_by_symbol[symbol]:
                     future_candle_low_price = future_candle[PriceIndexes.IND_PRICE_LOW.value]
                     future_candle_high_price = future_candle[PriceIndexes.IND_PRICE_HIGH.value]
                     recent_trades = [self._generate_recent_trade(last_candle_timestamp, future_candle_low_price),
                                      self._generate_recent_trade(last_candle_timestamp, future_candle_high_price)]
-                    self.last_timestamp_pushed = last_candle_timestamp
+                    self.last_timestamp_pushed_by_symbol[symbol] = last_candle_timestamp
                     await self.push(symbol, recent_trades, partial=True)
             except (KeyError, TypeError):
                 # future candle not initialized or missing, should rarely happen: use received candle's close value
                 if candle:
                     last_candle_timestamp = candle[PriceIndexes.IND_PRICE_TIME.value]
-                    if last_candle_timestamp > self.last_timestamp_pushed:
+                    if last_candle_timestamp > self.last_timestamp_pushed_by_symbol[symbol]:
                         last_candle_close_price = candle[PriceIndexes.IND_PRICE_CLOSE.value]
                         recent_trades = [self._generate_recent_trade(last_candle_timestamp, last_candle_close_price)] \
                             * self.SIMULATED_RECENT_TRADE_LIMIT
-                        self.last_timestamp_pushed = last_candle_timestamp
+                        self.last_timestamp_pushed_by_symbol[symbol] = last_candle_timestamp
                         await self.push(symbol, recent_trades, partial=True)
 
     @staticmethod
@@ -113,4 +114,8 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
                     await get_exchange_chan(OHLCV_CHANNEL,
                                             self.channel.exchange_manager.id)\
                         .new_consumer(self._recent_trades_from_ohlcv_callback)
+                    self.last_timestamp_pushed_by_symbol = {
+                        symbol: 0
+                        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+                    }
                 self.is_running = True

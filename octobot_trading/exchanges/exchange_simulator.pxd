@@ -18,14 +18,14 @@ from octobot_backtesting.backtesting cimport Backtesting
 from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
 
 cdef class ExchangeSimulator(AbstractExchange):
-    cdef public bint initializing
+    cdef public Backtesting backtesting
+
+    cdef public list exchange_importers
 
     cdef public list symbols
     cdef public list time_frames
-    cdef public list exchange_importers
-    cdef public dict current_future_candles
 
-    cdef public Backtesting backtesting
+    cdef public dict current_future_candles
 
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame)
@@ -37,3 +37,5 @@ cdef class ExchangeSimulator(AbstractExchange):
     cpdef double get_exchange_current_time(self)
     cpdef str get_pair_cryptocurrency(self, str pair)
     cpdef list get_available_time_frames(self)
+    cpdef list get_traded_pairs(self, object importer)
+    cpdef list get_time_frames(self, object importer)

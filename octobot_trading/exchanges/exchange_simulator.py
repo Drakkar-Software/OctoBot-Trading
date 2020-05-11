@@ -14,10 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_backtesting.api.backtesting import get_backtesting_current_time
-from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames
+from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames, get_available_symbols
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
+from octobot_commons.time_frame_manager import sort_time_frames
 from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, \
     CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW, \
@@ -51,6 +52,10 @@ class ExchangeSimulator(AbstractExchange):
 
         # remove duplicates
         self.symbols = list(set(self.symbols))
+        self.current_future_candles = {
+            symbol: {}
+            for symbol in self.symbols
+        }
         self.time_frames = list(set(self.time_frames))
 
         # set exchange manager attributes
@@ -116,7 +121,7 @@ class ExchangeSimulator(AbstractExchange):
                     ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MAX.value: 1000000000000,
                 },
                 ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value: {
-                    ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value: 0.00001,
+                    ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value: 0.000001,
                     ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value: 1000000000000,
                 },
                 ExchangeConstantsMarketStatusColumns.LIMITS_COST.value: {
@@ -178,6 +183,15 @@ class ExchangeSimulator(AbstractExchange):
             FeePropertyColumns.RATE.value: rate,
             FeePropertyColumns.COST.value: cost
         }
+
+    def get_traded_pairs(self, importer):
+        return set(get_available_symbols(importer)) & \
+               set(self.exchange_manager.exchange_config.traded_symbol_pairs)
+
+    def get_time_frames(self, importer):
+        return sort_time_frames(set(get_available_time_frames(importer)) &
+                                set(self.exchange_manager.exchange_config.traded_time_frames),
+                                reverse=True)
 
     def is_authenticated(self) -> bool:
         return False
