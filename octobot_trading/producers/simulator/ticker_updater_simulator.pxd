@@ -30,4 +30,5 @@ cdef class TickerUpdaterSimulator(TickerUpdater):
 
     cdef public Consumer time_consumer
 
+    cdef dict last_timestamp_pushed_by_symbol
     cdef str ticker_time_frame

@@ -37,3 +37,5 @@ cdef class OHLCVUpdaterSimulator(OHLCVUpdater):
 
     cdef dict last_candles_by_pair_by_time_frame
     cdef bint require_last_init_candles_pairs_push
+    cdef list traded_pairs
+    cdef list traded_time_frame
