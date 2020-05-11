@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_backtesting.api.backtesting import get_backtesting_current_time
+from octobot_backtesting.api.importer import get_available_symbols
 from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
@@ -37,7 +38,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
         self.future_candle_sec_length = TimeFramesMinutes[self.future_candle_time_frame] * MINUTE_TO_SECONDS
 
         self.last_candles_by_pair_by_time_frame = {}
-        self.require_last_init_candles_pairs_push = True
+        self.require_last_init_candles_pairs_push = False
         self.traded_pairs = self._get_traded_pairs()
         self.traded_time_frame = self._get_time_frames()
 
@@ -113,7 +114,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
                 self.handle_timestamp)
 
     def _get_traded_pairs(self):
-        return self.channel.exchange.get_traded_pairs(self.exchange_data_importer)
+        return get_available_symbols(self.exchange_data_importer)
 
     def _get_time_frames(self):
         return self.channel.exchange.get_time_frames(self.exchange_data_importer)

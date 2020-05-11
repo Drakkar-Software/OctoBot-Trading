@@ -62,13 +62,13 @@ class PortfolioProfitabilty:
 
     async def handle_ticker_update(self, symbol, ticker):
         force_recompute_origin_portfolio = False
-        try:
+        if symbol not in set(self.origin_crypto_currencies_values.keys()):
             # will fail if symbol doesn't have a price in self.origin_crypto_currencies_values and therefore
             # requires the origin portfolio value to be recomputed using this price info in case this price is relevant
-            self.origin_crypto_currencies_values[symbol]
-        except KeyError:
             force_recompute_origin_portfolio = True
             self.origin_crypto_currencies_values[symbol] = ticker[ExchangeConstantsTickersColumns.LAST.value]
+            currency = split_symbol(symbol)[0]
+            self.origin_crypto_currencies_values[currency] = ticker[ExchangeConstantsTickersColumns.LAST.value]
         self.currencies_last_prices[symbol] = ticker[ExchangeConstantsTickersColumns.LAST.value]
         return await self._update_profitability(force_recompute_origin_portfolio)
 
@@ -90,7 +90,8 @@ class PortfolioProfitabilty:
         try:
             await self.update_portfolio_and_currencies_current_value()
 
-            if not self.origin_portfolio:
+            if self.portfolio_origin_value == 0:
+                # try to update portfolio origin value if it's not known yet
                 await self._init_origin_portfolio_and_currencies_value()
             if force_recompute_origin_portfolio:
                 await self._recompute_origin_portfolio_initial_value()
@@ -160,7 +161,7 @@ class PortfolioProfitabilty:
             self.portfolio_manager.portfolio.portfolio)
 
     async def _init_origin_portfolio_and_currencies_value(self):
-        self.origin_portfolio = await self.portfolio_manager.portfolio.copy()
+        self.origin_portfolio = self.origin_portfolio or await self.portfolio_manager.portfolio.copy()
         self.origin_crypto_currencies_values = \
             await self._evaluate_config_crypto_currencies_and_portfolio_values(self.origin_portfolio.portfolio)
         await self._recompute_origin_portfolio_initial_value()
@@ -211,25 +212,24 @@ class PortfolioProfitabilty:
             self._inform_no_matching_symbol(currency)
             return 0
         except KeyError as e:
-            symbols_to_add = []
-            if self.exchange_manager.symbol_exists(symbol):
-                symbols_to_add = [symbol]
-            elif self.exchange_manager.symbol_exists(symbol_inverted):
-                symbols_to_add = [symbol_inverted]
+            if not self.exchange_manager.is_backtesting:
+                symbols_to_add = []
+                if self.exchange_manager.symbol_exists(symbol):
+                    symbols_to_add = [symbol]
+                elif self.exchange_manager.symbol_exists(symbol_inverted):
+                    symbols_to_add = [symbol_inverted]
 
-            if symbols_to_add:
-                await get_chan(TICKER_CHANNEL, self.exchange_manager.id).modify(added_pairs=symbols_to_add)
-                self.initializing_symbol_prices.add(currency)
-            if raise_error:
-                raise e
+                if symbols_to_add:
+                    await get_chan(TICKER_CHANNEL, self.exchange_manager.id).modify(added_pairs=symbols_to_add)
+                    self.initializing_symbol_prices.add(currency)
+                if raise_error:
+                    raise e
             return 0
 
-    def _inform_no_matching_symbol(self, currency, force=False):
-        if not isinstance(self.exchange_manager.exchange, ExchangeSimulator):
-            # do not log warning in backtesting or tests
+    def _inform_no_matching_symbol(self, currency):
+        # do not log warning in backtesting or tests
+        if not self.exchange_manager.is_backtesting:
             self.logger.warning(f"Can't find matching symbol for {currency} and {self.reference_market}")
-        else:
-            self.logger.debug(f"Can't find matching symbol for {currency} and {self.reference_market}")
 
     async def _evaluate_config_crypto_currencies_and_portfolio_values(self, portfolio):
         values_dict = {}
