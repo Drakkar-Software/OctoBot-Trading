@@ -53,5 +53,5 @@ cdef class PortfolioProfitabilty:
 
     cdef dict _only_symbol_currency_filter(self, dict currency_dict)
     cdef void _init_traded_currencies_without_market_specific(self)
-    cdef void _inform_no_matching_symbol(self, str currency, bint force=*)
+    cdef void _inform_no_matching_symbol(self, str currency)
 

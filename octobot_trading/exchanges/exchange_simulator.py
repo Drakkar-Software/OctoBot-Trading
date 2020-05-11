@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_backtesting.api.backtesting import get_backtesting_current_time
-from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames, get_available_symbols
+from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames
 from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
 from octobot_commons.number_util import round_into_str_with_max_digits
 from octobot_commons.symbol_util import split_symbol
@@ -183,10 +183,6 @@ class ExchangeSimulator(AbstractExchange):
             FeePropertyColumns.RATE.value: rate,
             FeePropertyColumns.COST.value: cost
         }
-
-    def get_traded_pairs(self, importer):
-        return set(get_available_symbols(importer)) & \
-               set(self.exchange_manager.exchange_config.traded_symbol_pairs)
 
     def get_time_frames(self, importer):
         return sort_time_frames(set(get_available_time_frames(importer)) &
