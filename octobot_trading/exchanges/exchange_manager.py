@@ -18,7 +18,7 @@ import uuid
 from ccxt import AuthenticationError
 
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
-from octobot_commons.config_util import has_invalid_default_config_value, decrypt
+from octobot_commons.config_util import has_invalid_default_config_value, decrypt_element_if_possible
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
@@ -422,12 +422,9 @@ class ExchangeManager(Initializable):
         if self.ignore_config or not self.should_decrypt_token(logger) or self.without_auth:
             return "", "", ""
         config_exchange = self.config[CONFIG_EXCHANGES][exchange_name]
-        return decrypt(config_exchange[CONFIG_EXCHANGE_KEY]) \
-                   if config_exchange.get(CONFIG_EXCHANGE_KEY, '') else None, \
-               decrypt(config_exchange[CONFIG_EXCHANGE_SECRET]) \
-                   if config_exchange.get(CONFIG_EXCHANGE_SECRET, '') else None, \
-               decrypt(config_exchange[CONFIG_EXCHANGE_PASSWORD]) \
-                   if config_exchange.get(CONFIG_EXCHANGE_PASSWORD, '') else None
+        return (decrypt_element_if_possible(CONFIG_EXCHANGE_KEY, config_exchange, None),
+                decrypt_element_if_possible(CONFIG_EXCHANGE_SECRET, config_exchange, None),
+                decrypt_element_if_possible(CONFIG_EXCHANGE_PASSWORD, config_exchange, None))
 
     @staticmethod
     def handle_token_error(error, logger):
