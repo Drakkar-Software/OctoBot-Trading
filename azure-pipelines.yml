@@ -1,0 +1,95 @@
+trigger:
+  branches:
+    include:
+    - master
+  tags:
+    include:
+    - '*'
+  paths:
+    include:
+      - '*'
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+    - '*'
+
+variables:
+  CYTHON_TEST_IGNORE: true
+
+jobs:
+- job: Windows
+  pool:
+    vmImage: 'windows-latest'
+  strategy:
+    maxParallel: 2
+    matrix:
+        Python37-32bit-full:
+          PYTHON_VERSION: '3.7'
+          PYTHON_ARCH: 'x86'
+        Python37-64bit-full:
+          PYTHON_VERSION: '3.7'
+          PYTHON_ARCH: 'x64'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: $(PYTHON_VERSION)
+      addToPath: true
+      architecture: $(PYTHON_ARCH)
+  - script: |
+      python -m pip install --upgrade pip setuptools wheel
+      python -m pip install --prefer-binary -r requirements.txt -r dev_requirements.txt
+    displayName: 'Install dependencies'
+  - script: |
+      python setup.py build_ext --inplace
+      python setup.py install
+    displayName: 'Install OctoBot-Trading'
+  - script: python -m pytest tests
+    displayName: 'Run OctoBot-Trading tests'
+  - script: python setup.py bdist_wheel
+    displayName: 'Building wheel'
+  - task: TwineAuthenticate@1
+    condition: startsWith(variables['build.sourceBranch'], 'refs/tags/')
+    displayName: 'Official Twine Authenticate'
+    inputs:
+      pythonUploadServiceConnection: pypi-official
+  - script: python -m twine upload -r "pypi-official" --config-file $(PYPIRC_PATH) --skip-existing dist/*
+    condition: startsWith(variables['build.sourceBranch'], 'refs/tags/')
+    displayName: 'Uploading wheel'
+
+- job: macOS
+  pool:
+    vmImage: 'macOS-latest'
+  strategy:
+    maxParallel: 2
+    matrix:
+        Python37-64bit-full:
+          PYTHON_VERSION: '3.7'
+          PYTHON_ARCH: 'x64'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: $(PYTHON_VERSION)
+      addToPath: true
+      architecture: $(PYTHON_ARCH)
+  - script: |
+      python -m pip install --upgrade pip setuptools wheel
+      python -m pip install --prefer-binary -r requirements.txt -r dev_requirements.txt
+    displayName: 'Install dependencies'
+  - script: |
+      python setup.py build_ext --inplace
+      python setup.py install
+    displayName: 'Install OctoBot-Trading'
+  - script: python -m pytest tests
+    displayName: 'Run OctoBot-Trading tests'
+  - script: python setup.py bdist_wheel
+    displayName: 'Building wheel'
+  - task: TwineAuthenticate@1
+    condition: startsWith(variables['build.sourceBranch'], 'refs/tags/')
+    displayName: 'Official Twine Authenticate'
+    inputs:
+      pythonUploadServiceConnection: pypi-official
+  - script: python -m twine upload -r "pypi-official" --config-file $(PYPIRC_PATH) --skip-existing dist/*
+    condition: startsWith(variables['build.sourceBranch'], 'refs/tags/')
+    displayName: 'Uploading wheel'
