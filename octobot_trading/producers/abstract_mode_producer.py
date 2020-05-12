@@ -70,6 +70,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
                 cryptocurrency=self.trading_mode.cryptocurrency if self.trading_mode.cryptocurrency else CONFIG_WILDCARD,
                 symbol=self.trading_mode.symbol if self.trading_mode.symbol else CONFIG_WILDCARD,
                 evaluator_type=EvaluatorMatrixTypes.STRATEGIES.value,
+                exchange_name=self.exchange_name,
                 time_frame=self.trading_mode.time_frame if self.trading_mode.time_frame else CONFIG_WILDCARD)
         except (KeyError, ImportError):
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
