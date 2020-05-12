@@ -350,7 +350,7 @@ class ExchangeManager(Initializable):
         client = self.exchange.client
         if client:
             self.client_symbols = client.symbols
-            self.client_time_frames = list(client.timeframes.values()) if hasattr(client, "timeframes") else []
+            self.client_time_frames = list(client.timeframes) if hasattr(client, "timeframes") else []
         else:
             self._logger.error("Failed to load client from REST exchange")
             self._raise_exchange_load_error()
