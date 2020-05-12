@@ -16,7 +16,7 @@
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.api.modes import init_trading_mode_config, create_trading_modes
+from octobot_trading.api.modes import create_trading_modes
 from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_SANDBOXED
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
@@ -82,7 +82,6 @@ class ExchangeBuilder:
 
     async def _build_modes(self):
         try:
-            init_trading_mode_config(self.config)
             return await create_trading_modes(self.config,
                                               self.exchange_manager,
                                               self._tentacles_setup_config,
