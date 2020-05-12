@@ -141,6 +141,8 @@ class ExchangeManager(Initializable):
         self.exchange_personal_data = ExchangePersonalData(self)
 
     async def create_exchanges(self):
+        if self.is_sandboxed:
+            self._logger.info(f"Using sandbox exchange for {self.exchange_name}")
         self.exchange_type = RestExchange.create_exchange_type(self.exchange_class_string)
 
         if not self.is_backtesting:
