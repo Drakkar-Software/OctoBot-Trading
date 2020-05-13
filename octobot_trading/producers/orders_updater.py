@@ -25,8 +25,8 @@ from octobot_trading.constants import ORDERS_CHANNEL
 class OpenOrdersUpdater(OrdersProducer):
     CHANNEL_NAME = ORDERS_CHANNEL
     ORDERS_STARTING_REFRESH_TIME = 10
-    ORDERS_REFRESH_TIME = 12
-    ORDERS_UPDATE_LIMIT = 10
+    ORDERS_REFRESH_TIME = 777
+    ORDERS_UPDATE_LIMIT = 200
 
     async def initialize(self):
         try:

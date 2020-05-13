@@ -30,7 +30,7 @@ class OHLCVUpdater(OHLCVProducer):
     OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_OLD_LIMIT = 200  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_ON_ERROR_TIME = 5
-    OHLCV_MIN_REFRESH_TIME = 3
+    OHLCV_MIN_REFRESH_TIME = 1
 
     OHLCV_INITIALIZATION_TIMEOUT = 60
     OHLCV_INITIALIZATION_RETRY_DELAY = 10
