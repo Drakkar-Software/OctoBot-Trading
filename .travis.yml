@@ -39,7 +39,7 @@ jobs:
         - rm -rf $PACKAGE_FOLDER
         - pytest tests
 
-    - name: "Linux - Python 3.8-dev - Pylint"
+    - name: "Linux amd64 - Python 3.8-dev - Pylint"
       stage: test
       os: linux
       python: 3.8-dev
@@ -66,7 +66,7 @@ jobs:
             tags: true
             condition: $TRAVIS_OS_NAME = 'linux'
         - provider: script
-          script: docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/octobot-pypi-deploy:i686 "i686" "cp37-cp37m" "cp37"
+          script: docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/pypi-builder:manylinux-i686
           cleanup: true
           on:
             repo: "$GH_REPO"
@@ -74,7 +74,7 @@ jobs:
             tags: true
             condition: "$TRAVIS_OS_NAME = 'linux'"
         - provider: script
-          script: docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/octobot-pypi-deploy:x86_64 "x86_64" "cp37-cp37m" "cp37"
+          script: docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/pypi-builder:manylinux-x86_64
           cleanup: true
           on:
             repo: "$GH_REPO"
