@@ -59,22 +59,16 @@ class OHLCVUpdater(OHLCVProducer):
 
     async def _initialize(self):
         try:
-            for time_frame in self._get_time_frames():
-                for pair in self._get_traded_pairs():
-                    await self._initialize_candles(time_frame, pair)
+            await asyncio.gather(*[
+                self._initialize_candles(time_frame, pair)
+                for time_frame in self._get_time_frames()
+                for pair in self._get_traded_pairs()
+            ])
         except Exception as e:
             self.logger.exception(e, True, f"Error while initializing candles: {e}")
         finally:
             self.logger.debug("Candle history loaded")
             self.is_initialized = True
-
-    def _create_time_frame_candle_task(self, time_frame):
-        self.tasks += [asyncio.create_task(self._candle_callback(time_frame, pair, should_initialize=True))
-                       for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs]
-
-    def _create_pair_candle_task(self, pair):
-        self.tasks += [asyncio.create_task(self._candle_callback(time_frame, pair, should_initialize=True))
-                       for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames]
 
     async def _initialize_candles(self, time_frame, pair):
         """
