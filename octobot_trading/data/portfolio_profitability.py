@@ -67,7 +67,8 @@ class PortfolioProfitabilty:
             force_recompute_origin_portfolio = True
             self.origin_crypto_currencies_values[symbol] = mark_price
             currency = split_symbol(symbol)[0]
-            self.origin_crypto_currencies_values[currency] = mark_price
+            if currency not in set(self.origin_crypto_currencies_values.keys()):
+                self.origin_crypto_currencies_values[currency] = mark_price
         self.currencies_last_prices[symbol] = mark_price
         return await self._update_profitability(force_recompute_origin_portfolio)
 
