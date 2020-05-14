@@ -148,6 +148,17 @@ async def test_get_holdings_ratio():
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability.portfolio_current_value = 10
     ratio = await consumer.get_holdings_ratio("BTC")
     assert round(ratio, 8) == 1
+    # add ETH and try to get ratio without symbol price
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["ETH"] = {
+        PORTFOLIO_TOTAL: 10
+    }
+    # force not backtesting mode
+    exchange_manager.is_backtesting = False
+    # force add symbol in exchange symbols
+    exchange_manager.client_symbols.append("ETH/BTC")
+    with pytest.raises(KeyError):
+        ratio = await consumer.get_holdings_ratio("ETH")
+    assert round(ratio, 8) == 1
     ratio = await consumer.get_holdings_ratio("USDT")
     assert round(ratio, 8) == 0
     ratio = await consumer.get_holdings_ratio("XYZ")
