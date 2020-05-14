@@ -22,7 +22,7 @@ from octobot_trading.channels.price import MarkPriceProducer
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, FUNDING_CHANNEL
 from octobot_trading.data_manager.prices_manager import calculate_mark_price_from_recent_trade_prices
 from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsOrderColumns, \
-    ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns
+    ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns, RestExchangePairsRefreshMaxThresholds
 
 
 class MarkPriceUpdater(MarkPriceProducer):
@@ -34,11 +34,17 @@ class MarkPriceUpdater(MarkPriceProducer):
         super().__init__(channel)
         self.recent_trades_consumer = None
         self.ticker_consumer = None
+        self.refresh_time = self.MARK_PRICE_REFRESH_TIME
 
     async def start(self):
         if not self.channel.exchange_manager.is_future:
             await self.subscribe()
         elif self._should_run():
+            refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()
+            if refresh_threshold is RestExchangePairsRefreshMaxThresholds.MEDIUM:
+                self.refresh_time = 12
+            elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
+                self.refresh_time = 17
             await self.start_fetching()
 
     async def subscribe(self):
@@ -101,7 +107,7 @@ class MarkPriceUpdater(MarkPriceProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             finally:
-                await asyncio.sleep(self.MARK_PRICE_REFRESH_TIME)
+                await asyncio.sleep(self.refresh_time)
 
     async def fetch_market_price(self, symbol: str):
         try:

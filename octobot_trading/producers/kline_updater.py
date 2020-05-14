@@ -21,6 +21,7 @@ from ccxt.base.errors import NotSupported
 
 from octobot_trading.constants import KLINE_CHANNEL
 from octobot_trading.channels.kline import KlineProducer
+from octobot_trading.enums import RestExchangePairsRefreshMaxThresholds
 
 
 class KlineUpdater(KlineProducer):
@@ -30,12 +31,18 @@ class KlineUpdater(KlineProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
+        self.refresh_time = self.KLINE_REFRESH_TIME
         self.tasks = []
 
     async def start(self):
         """
         Creates OHLCV refresh tasks
         """
+        refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()
+        if refresh_threshold is RestExchangePairsRefreshMaxThresholds.MEDIUM:
+            self.refresh_time = 14
+        elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
+            self.refresh_time = 22
         self.tasks = [
             asyncio.create_task(self.time_frame_watcher(time_frame))
             for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames]
@@ -64,7 +71,7 @@ class KlineUpdater(KlineProducer):
                         self.logger.warning(f"Not enough data to compute kline data in {time_frame} for {pair}. "
                                             f"Kline will be updated with the next refresh.")
 
-                sleep_time = max((self.QUICK_KLINE_REFRESH_TIME if quick_sleep else self.KLINE_REFRESH_TIME)
+                sleep_time = max((self.QUICK_KLINE_REFRESH_TIME if quick_sleep else self.refresh_time)
                                  - (time.time() - started_time), 0)
                 await asyncio.sleep(sleep_time)
             except NotSupported:
