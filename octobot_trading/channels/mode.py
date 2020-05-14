@@ -15,6 +15,7 @@
 #  License along with this library.
 from octobot_channels.channels.channel import CHANNEL_WILDCARD
 from octobot_commons.constants import INIT_EVAL_NOTE
+from octobot_commons.enums import ChannelConsumerPriorityLevels
 
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, \
     ExchangeChannelInternalConsumer
@@ -53,7 +54,7 @@ class ModeChannelProducer(ExchangeChannelProducer):
 class ModeChannel(ExchangeChannel):
     PRODUCER_CLASS = ModeChannelProducer
     CONSUMER_CLASS = ModeChannelConsumer
-    DEFAULT_PRIORITY_LEVEL = 2
+    DEFAULT_PRIORITY_LEVEL = ChannelConsumerPriorityLevels.MEDIUM.value
 
     TRADING_MODE_NAME_KEY = "trading_mode_name"
     STATE_KEY = "state"

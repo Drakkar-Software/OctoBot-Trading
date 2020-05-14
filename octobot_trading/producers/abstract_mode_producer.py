@@ -15,6 +15,7 @@
 #  License along with this library.
 from octobot_commons.channels_name import OctoBotEvaluatorsChannelsName
 from octobot_commons.constants import INIT_EVAL_NOTE, CONFIG_WILDCARD
+from octobot_commons.enums import ChannelConsumerPriorityLevels
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.channels.mode import ModeChannelProducer
 from octobot_trading.enums import EvaluatorStates
@@ -49,7 +50,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         self.matrix_consumer = None
 
         # Define trading modes default consumer priority level
-        self.priority_level: int = 2
+        self.priority_level: int = ChannelConsumerPriorityLevels.MEDIUM.value
 
     # noinspection PyArgumentList
     async def start(self) -> None:

@@ -20,6 +20,8 @@ from octobot_channels.channels.channel_instances import ChannelInstances
 from octobot_channels.constants import CHANNEL_WILDCARD
 from octobot_channels.consumer import Consumer, InternalConsumer, SupervisedConsumer
 from octobot_channels.producer import Producer
+
+from octobot_commons.enums import ChannelConsumerPriorityLevels
 from octobot_commons.logging.logging_util import get_logger
 
 
@@ -52,7 +54,7 @@ class ExchangeChannel(Channel):
     CONSUMER_CLASS = ExchangeChannelConsumer
     CRYPTOCURRENCY_KEY = "cryptocurrency"
     SYMBOL_KEY = "symbol"
-    DEFAULT_PRIORITY_LEVEL = 1
+    DEFAULT_PRIORITY_LEVEL = ChannelConsumerPriorityLevels.HIGH.value
 
     def __init__(self, exchange_manager):
         super().__init__()
