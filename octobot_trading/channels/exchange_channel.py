@@ -81,16 +81,6 @@ class ExchangeChannel(Channel):
         await self._check_producers_state()
         return consumer
 
-    async def _check_producers_state(self) -> None:  # TODO useless (bc copy of Channel.__check_producers_state)
-        if not self.get_filtered_consumers() and not self.is_paused:
-            self.is_paused = True
-            for producer in self.get_producers():
-                await producer.pause()
-        elif self.get_filtered_consumers() and self.is_paused:
-            self.is_paused = False
-            for producer in self.get_producers():
-                await producer.resume()
-
     def get_filtered_consumers(self,
                                cryptocurrency=CHANNEL_WILDCARD,
                                symbol=CHANNEL_WILDCARD):
