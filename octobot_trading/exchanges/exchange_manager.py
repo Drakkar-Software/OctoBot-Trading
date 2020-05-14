@@ -27,6 +27,7 @@ from octobot_trading.channels.exchange_channel import get_exchange_channels, del
     del_exchange_channel_container, ExchangeChannel, TimeFrameExchangeChannel
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
     WEBSOCKET_FEEDS_TO_TRADING_CHANNELS, CONFIG_EXCHANGE_PASSWORD
+from octobot_trading.enums import RestExchangePairsRefreshMaxThresholds
 from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
 from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
@@ -347,6 +348,14 @@ class ExchangeManager(Initializable):
 
     def get_exchange_quote_and_base(self, symbol):
         return self.exchange.get_split_pair_from_exchange(symbol)
+
+    def get_rest_pairs_refresh_threshold(self) -> RestExchangePairsRefreshMaxThresholds:
+        traded_pairs_count = len(self.exchange_config.traded_symbol_pairs)
+        if traded_pairs_count < RestExchangePairsRefreshMaxThresholds.FAST.value:
+            return RestExchangePairsRefreshMaxThresholds.FAST
+        elif traded_pairs_count < RestExchangePairsRefreshMaxThresholds.MEDIUM.value:
+            return RestExchangePairsRefreshMaxThresholds.MEDIUM
+        return RestExchangePairsRefreshMaxThresholds.SLOW
 
     def _load_config_symbols_and_time_frames(self):
         client = self.exchange.client

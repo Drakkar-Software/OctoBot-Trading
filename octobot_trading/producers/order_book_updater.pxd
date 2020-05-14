@@ -19,4 +19,4 @@ from octobot_trading.channels.order_book cimport OrderBookProducer
 
 
 cdef class OrderBookUpdater(OrderBookProducer):
-    pass
+    cdef int refresh_time

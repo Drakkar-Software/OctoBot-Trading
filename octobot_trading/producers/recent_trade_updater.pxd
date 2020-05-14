@@ -19,4 +19,4 @@ from octobot_trading.channels.recent_trade cimport RecentTradeProducer
 
 
 cdef class RecentTradeUpdater(RecentTradeProducer):
-    pass
+    cdef int refresh_time

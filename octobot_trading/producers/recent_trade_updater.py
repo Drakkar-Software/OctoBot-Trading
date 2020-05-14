@@ -20,12 +20,17 @@ from ccxt.base.errors import NotSupported
 
 from octobot_trading.channels.recent_trade import RecentTradeProducer
 from octobot_trading.constants import RECENT_TRADES_CHANNEL
+from octobot_trading.enums import RestExchangePairsRefreshMaxThresholds
 
 
 class RecentTradeUpdater(RecentTradeProducer):
     CHANNEL_NAME = RECENT_TRADES_CHANNEL
     RECENT_TRADE_REFRESH_TIME = 5
     RECENT_TRADE_LIMIT = 20  # should be < to RecentTradesManager's MAX_TRADES_COUNT
+
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.refresh_time = self.RECENT_TRADE_REFRESH_TIME
 
     async def init_recent_trades(self):
         try:
@@ -37,11 +42,16 @@ class RecentTradeUpdater(RecentTradeProducer):
                                     list(map(self.channel.exchange_manager.exchange.clean_recent_trade,
                                              recent_trades)),
                                     partial=True)
-            await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
+            await asyncio.sleep(self.refresh_time)
         except Exception as e:
             self.logger.exception(e, True, f"Fail to initialize recent trades : {e}")
 
     async def start(self):
+        refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()
+        if refresh_threshold is RestExchangePairsRefreshMaxThresholds.MEDIUM:
+            self.refresh_time = 9
+        elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
+            self.refresh_time = 15
         await self.init_recent_trades()
 
         while not self.should_stop and not self.channel.is_paused:
@@ -56,7 +66,7 @@ class RecentTradeUpdater(RecentTradeProducer):
                                         partial=True)
                     except TypeError:
                         pass
-                await asyncio.sleep(self.RECENT_TRADE_REFRESH_TIME)
+                await asyncio.sleep(self.refresh_time)
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()

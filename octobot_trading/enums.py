@@ -295,3 +295,9 @@ class WebsocketFeeds(Enum):
     POSITION = 'position'
     TRADE = 'trade'
     UNSUPPORTED = 'unsupported'
+
+
+class RestExchangePairsRefreshMaxThresholds(Enum):
+    FAST = 5
+    MEDIUM = 10
+    SLOW = None

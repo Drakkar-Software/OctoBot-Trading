@@ -21,14 +21,23 @@ from ccxt.base.errors import NotSupported
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import ORDER_BOOK_CHANNEL, ORDER_BOOK_TICKER_CHANNEL
 from octobot_trading.channels.order_book import OrderBookProducer
-from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns
+from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns, RestExchangePairsRefreshMaxThresholds
 
 
 class OrderBookUpdater(OrderBookProducer):
     CHANNEL_NAME = ORDER_BOOK_CHANNEL
     ORDER_BOOK_REFRESH_TIME = 5
 
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.refresh_time = self.ORDER_BOOK_REFRESH_TIME
+
     async def start(self):
+        refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()
+        if refresh_threshold is RestExchangePairsRefreshMaxThresholds.MEDIUM:
+            self.refresh_time = 9
+        elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
+            self.refresh_time = 15
         while not self.should_stop and not self.channel.is_paused:
             try:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
@@ -41,7 +50,7 @@ class OrderBookUpdater(OrderBookProducer):
                         await self.push(pair, asks, bids)
                     except TypeError as e:
                         self.logger.error(f"Failed to fetch order book for {pair} : {e}")
-                await asyncio.sleep(self.ORDER_BOOK_REFRESH_TIME)
+                await asyncio.sleep(self.refresh_time)
             except NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
