@@ -78,15 +78,15 @@ class ExchangePersonalData(Initializable):
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
-    async def handle_portfolio_profitability_update(self, balance, ticker, symbol, should_notify: bool = True):
+    async def handle_portfolio_profitability_update(self, balance, mark_price, symbol, should_notify: bool = True):
         try:
             portfolio_profitability = self.portfolio_manager.portfolio_profitability
 
             if balance is not None:
                 await portfolio_profitability.handle_balance_update(balance)
 
-            if ticker is not None and symbol is not None:
-                await portfolio_profitability.handle_ticker_update(symbol, ticker)
+            if mark_price is not None and symbol is not None:
+                await portfolio_profitability.handle_mark_price_update(symbol, mark_price)
 
             if should_notify:
                 await get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange_manager.id).get_internal_producer() \

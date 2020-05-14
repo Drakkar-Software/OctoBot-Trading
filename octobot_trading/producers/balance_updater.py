@@ -19,7 +19,7 @@ import asyncio
 from ccxt.base.errors import NotSupported
 
 from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.constants import BALANCE_CHANNEL, TICKER_CHANNEL
+from octobot_trading.constants import BALANCE_CHANNEL, MARK_PRICE_CHANNEL
 from octobot_trading.channels.balance import (
     BalanceProducer,
     BalanceProfitabilityProducer,
@@ -91,7 +91,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
             self.channel.exchange_manager.exchange_personal_data
         )
         self.balance_consumer = None
-        self.ticker_consumer = None
+        self.mark_price_consumer = None
 
     async def start(self) -> None:
         """
@@ -100,9 +100,9 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         self.balance_consumer = await get_chan(
             BALANCE_CHANNEL, self.channel.exchange_manager.id
         ).new_consumer(self.handle_balance_update)
-        self.ticker_consumer = await get_chan(
-            TICKER_CHANNEL, self.channel.exchange_manager.id
-        ).new_consumer(self.handle_ticker_update)
+        self.mark_price_consumer = await get_chan(
+            MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
+        ).new_consumer(self.handle_mark_price_update)
 
     async def stop(self) -> None:
         """
@@ -113,10 +113,10 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
             BALANCE_CHANNEL, self.channel.exchange_manager.id
         ).remove_consumer(self.balance_consumer)
         await get_chan(
-            TICKER_CHANNEL, self.channel.exchange_manager.id
-        ).remove_consumer(self.ticker_consumer)
+            MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
+        ).remove_consumer(self.mark_price_consumer)
         self.balance_consumer = None
-        self.ticker_consumer = None
+        self.mark_price_consumer = None
 
     async def handle_balance_update(
         self, exchange: str, exchange_id: str, balance: dict
@@ -129,18 +129,18 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         """
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(
-                balance=balance, ticker=None, symbol=None
+                balance=balance, mark_price=None, symbol=None
             )
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle balance update : {e}")
 
-    async def handle_ticker_update(
+    async def handle_mark_price_update(
         self,
         exchange: str,
         exchange_id: str,
         cryptocurrency: str,
         symbol: str,
-        ticker: dict,
+        mark_price: float,
     ) -> None:
         """
         Ticker channel consumer callback
@@ -148,11 +148,11 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         :param exchange_id: the exchange id
         :param cryptocurrency: the related currency
         :param symbol: the related symbol
-        :param ticker: the ticker dict
+        :param mark_price: the mark price
         """
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(
-                symbol=symbol, ticker=ticker, balance=None
+                symbol=symbol, mark_price=mark_price, balance=None
             )
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle ticker update : {e}")

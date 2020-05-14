@@ -24,4 +24,4 @@ cdef class BalanceUpdater(BalanceProducer):
 cdef class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
     cdef ExchangePersonalData exchange_personal_data
     cdef object balance_consumer
-    cdef object ticker_consumer
+    cdef object mark_price_consumer
