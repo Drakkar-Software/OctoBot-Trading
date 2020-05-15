@@ -20,8 +20,6 @@ from octobot_commons.symbol_util import split_symbol, merge_currencies
 from octobot_trading.constants import TICKER_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import CONFIG_PORTFOLIO_TOTAL
-from octobot_trading.enums import ExchangeConstantsTickersColumns
-from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.util import get_reference_market
 
 
@@ -60,16 +58,16 @@ class PortfolioProfitabilty:
 
         self.reference_market = get_reference_market(self.config)
 
-    async def handle_ticker_update(self, symbol, ticker):
+    async def handle_mark_price_update(self, symbol, mark_price):
         force_recompute_origin_portfolio = False
         if symbol not in set(self.origin_crypto_currencies_values.keys()):
             # will fail if symbol doesn't have a price in self.origin_crypto_currencies_values and therefore
             # requires the origin portfolio value to be recomputed using this price info in case this price is relevant
             force_recompute_origin_portfolio = True
-            self.origin_crypto_currencies_values[symbol] = ticker[ExchangeConstantsTickersColumns.LAST.value]
+            self.origin_crypto_currencies_values[symbol] = mark_price
             currency = split_symbol(symbol)[0]
-            self.origin_crypto_currencies_values[currency] = ticker[ExchangeConstantsTickersColumns.LAST.value]
-        self.currencies_last_prices[symbol] = ticker[ExchangeConstantsTickersColumns.LAST.value]
+            self.origin_crypto_currencies_values[currency] = mark_price
+        self.currencies_last_prices[symbol] = mark_price
         return await self._update_profitability(force_recompute_origin_portfolio)
 
     async def handle_balance_update(self, balance):

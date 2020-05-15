@@ -52,13 +52,13 @@ class BalanceChannel(ExchangeChannel):
 
 
 class BalanceProfitabilityProducer(ExchangeChannelProducer):
-    async def push(self, balance, ticker):
-        await self.perform(balance, ticker)
+    async def push(self, balance, mark_price):
+        await self.perform(balance, mark_price)
 
-    async def perform(self, balance, ticker):
+    async def perform(self, balance, mark_price):
         try:
             await self.channel.exchange_manager.exchange_personal_data \
-                .handle_portfolio_profitability_update(balance, ticker, should_notify=True)
+                .handle_portfolio_profitability_update(balance, mark_price, None, should_notify=True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
