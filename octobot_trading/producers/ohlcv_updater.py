@@ -111,14 +111,14 @@ class OHLCVUpdater(OHLCVProducer):
                     should_sleep_time: float = current_candle_timestamp + time_frame_sleep - time.time()
 
                     if last_candle_timestamp == current_candle_timestamp:
-                        should_sleep_time = self.OHLCV_MIN_REFRESH_TIME
+                        should_sleep_time = OHLCVUpdater.OHLCV_MIN_REFRESH_TIME
                     else:
                         # A fresh candle happened
                         last_candle_timestamp = current_candle_timestamp
                         await self.push(time_frame, pair, candles[:-1], partial=True)   # push only completed candles
 
-                        if should_sleep_time < self.OHLCV_MIN_REFRESH_TIME:
-                            should_sleep_time = self.OHLCV_MIN_REFRESH_TIME
+                        if should_sleep_time < OHLCVUpdater.OHLCV_MIN_REFRESH_TIME:
+                            should_sleep_time = OHLCVUpdater.OHLCV_MIN_REFRESH_TIME
                         elif should_sleep_time > time_frame_sleep:
                             should_sleep_time = time_frame_sleep
 

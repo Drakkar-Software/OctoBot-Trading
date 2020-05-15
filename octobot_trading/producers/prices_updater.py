@@ -34,7 +34,7 @@ class MarkPriceUpdater(MarkPriceProducer):
         super().__init__(channel)
         self.recent_trades_consumer = None
         self.ticker_consumer = None
-        self.refresh_time = self.MARK_PRICE_REFRESH_TIME
+        self.refresh_time = MarkPriceUpdater.MARK_PRICE_REFRESH_TIME
 
     async def start(self):
         if not self.channel.exchange_manager.is_future:

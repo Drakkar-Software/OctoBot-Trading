@@ -30,7 +30,7 @@ class RecentTradeUpdater(RecentTradeProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.refresh_time = self.RECENT_TRADE_REFRESH_TIME
+        self.refresh_time = RecentTradeUpdater.RECENT_TRADE_REFRESH_TIME
 
     async def init_recent_trades(self):
         try:

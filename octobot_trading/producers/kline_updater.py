@@ -31,7 +31,7 @@ class KlineUpdater(KlineProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.refresh_time = self.KLINE_REFRESH_TIME
+        self.refresh_time = KlineUpdater.KLINE_REFRESH_TIME
         self.tasks = []
 
     async def start(self):
