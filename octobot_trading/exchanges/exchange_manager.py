@@ -353,7 +353,7 @@ class ExchangeManager(Initializable):
         traded_pairs_count = len(self.exchange_config.traded_symbol_pairs)
         if traded_pairs_count < RestExchangePairsRefreshMaxThresholds.FAST.value:
             return RestExchangePairsRefreshMaxThresholds.FAST
-        elif traded_pairs_count < RestExchangePairsRefreshMaxThresholds.MEDIUM.value:
+        if traded_pairs_count < RestExchangePairsRefreshMaxThresholds.MEDIUM.value:
             return RestExchangePairsRefreshMaxThresholds.MEDIUM
         return RestExchangePairsRefreshMaxThresholds.SLOW
 
