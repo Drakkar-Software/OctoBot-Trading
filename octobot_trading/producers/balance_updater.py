@@ -129,7 +129,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         """
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(
-                balance, None, None
+                balance=balance, mark_price=None, symbol=None
             )
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle balance update : {e}")
@@ -152,7 +152,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         """
         try:
             await self.exchange_personal_data.handle_portfolio_profitability_update(
-                None, mark_price, symbol
+                balance=None, mark_price=mark_price, symbol=symbol
             )
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle ticker update : {e}")

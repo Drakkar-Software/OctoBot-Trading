@@ -83,10 +83,10 @@ class ExchangePersonalData(Initializable):
             portfolio_profitability = self.portfolio_manager.portfolio_profitability
 
             if balance is not None:
-                await portfolio_profitability.handle_balance_update(balance)
+                await portfolio_profitability.handle_balance_update(balance=balance)
 
             if mark_price is not None and symbol is not None:
-                await portfolio_profitability.handle_mark_price_update(symbol, mark_price)
+                await portfolio_profitability.handle_mark_price_update(symbol=symbol, mark_price=mark_price)
 
             if should_notify:
                 await get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange_manager.id).get_internal_producer() \

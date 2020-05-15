@@ -28,8 +28,8 @@ class BalanceProducer(ExchangeChannelProducer):
 
     async def perform(self, balance):
         try:
-            changed = await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update(balance,
-                                                                                                         should_notify=False)
+            changed = await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update(
+                balance=balance, should_notify=False)
             if changed:
                 await self.send(balance)
         except CancelledError:
@@ -58,7 +58,8 @@ class BalanceProfitabilityProducer(ExchangeChannelProducer):
     async def perform(self, balance, mark_price):
         try:
             await self.channel.exchange_manager.exchange_personal_data \
-                .handle_portfolio_profitability_update(balance, mark_price, None, should_notify=True)
+                .handle_portfolio_profitability_update(balance=balance, mark_price=mark_price,
+                                                       symbol=None, should_notify=True)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

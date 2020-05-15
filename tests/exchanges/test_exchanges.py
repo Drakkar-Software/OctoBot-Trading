@@ -26,3 +26,27 @@ class TestExchanges:
     @staticmethod
     async def init_default():
         return load_test_config()
+
+    async def test_add_exchange(self):
+        config = await self.init_default()
+
+        exchange_manager_binance = ExchangeManager(config, "binance")
+        await exchange_manager_binance.initialize()
+        Exchanges.instance().add_exchange(exchange_manager_binance, "")
+
+        exchange_manager_bitmex = ExchangeManager(config, "bitmex")
+        await exchange_manager_bitmex.initialize()
+        Exchanges.instance().add_exchange(exchange_manager_bitmex, "")
+
+        exchange_manager_poloniex = ExchangeManager(config, "poloniex")
+        await exchange_manager_poloniex.initialize()
+        Exchanges.instance().add_exchange(exchange_manager_poloniex, "")
+
+        assert "binance" in Exchanges.instance().exchanges
+        assert "bitmex" in Exchanges.instance().exchanges
+        assert "poloniex" in Exchanges.instance().exchanges
+        assert "test" not in Exchanges.instance().exchanges
+
+        # await exchange_manager_binance.stop()
+        # await exchange_manager_bitmex.stop()
+        # await exchange_manager_poloniex.stop()
