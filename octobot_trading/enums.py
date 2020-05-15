@@ -300,4 +300,4 @@ class WebsocketFeeds(Enum):
 class RestExchangePairsRefreshMaxThresholds(Enum):
     FAST = 5
     MEDIUM = 10
-    SLOW = None
+    SLOW = 20
