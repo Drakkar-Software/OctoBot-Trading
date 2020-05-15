@@ -78,6 +78,7 @@ cdef class ExchangeManager(Initializable):
     cpdef str get_exchange_symbol(self, str symbol)
     cpdef str get_exchange_symbol_id(self, str symbol)
     cpdef tuple get_exchange_quote_and_base(self, str symbol)
+    cpdef object get_rest_pairs_refresh_threshold(self)
     cpdef bint need_user_stream(self)
     cpdef void reset_exchange_symbols_data(self)
     cpdef void reset_exchange_personal_data(self)

@@ -30,7 +30,7 @@ class OrderBookUpdater(OrderBookProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.refresh_time = self.ORDER_BOOK_REFRESH_TIME
+        self.refresh_time = OrderBookUpdater.ORDER_BOOK_REFRESH_TIME
 
     async def start(self):
         refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()

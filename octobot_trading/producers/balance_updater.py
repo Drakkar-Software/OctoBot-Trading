@@ -76,7 +76,7 @@ class BalanceUpdater(BalanceProducer):
 class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
     """
     The Balance Profitability Updater triggers the portfolio profitability calculation
-    by subscribing to Ticker and Balance channel updates
+    by subscribing to Mark price and Balance channel updates
     """
 
     """
@@ -143,7 +143,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         mark_price: float,
     ) -> None:
         """
-        Ticker channel consumer callback
+        Mark price channel consumer callback
         :param exchange: the exchange name
         :param exchange_id: the exchange id
         :param cryptocurrency: the related currency
@@ -155,4 +155,4 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
                 symbol=symbol, mark_price=mark_price, balance=None
             )
         except Exception as e:
-            self.logger.exception(e, True, f"Fail to handle ticker update : {e}")
+            self.logger.exception(e, True, f"Fail to handle mark price update : {e}")
