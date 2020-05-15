@@ -66,25 +66,26 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
         failed_order_updates = []
         for order in copy.copy(
                 self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=symbol)):
-            order_filled = False
-            try:
-                # ask orders to update their status
-                async with order.lock:
-                    order_filled = await self._update_order_status(order,
-                                                                   failed_order_updates,
-                                                                   last_prices)
-            except Exception as e:
-                raise e
-            finally:
-                # ensure always call fill callback
-                if order_filled:
-                    await get_chan(ORDERS_CHANNEL, self.channel.exchange_manager.id).get_internal_producer() \
-                        .send(cryptocurrency=cryptocurrency,
-                              symbol=order.symbol,
-                              order=order.to_dict(),
-                              is_from_bot=True,
-                              is_closed=True,
-                              is_updated=False)
+            if self.exchange_manager.exchange_personal_data.orders_manager.has_order(order.order_id):
+                order_filled = False
+                try:
+                    # ask orders to update their status
+                    async with order.lock:
+                        order_filled = await self._update_order_status(order,
+                                                                       failed_order_updates,
+                                                                       last_prices)
+                except Exception as e:
+                    raise e
+                finally:
+                    # ensure always call fill callback
+                    if order_filled:
+                        await get_chan(ORDERS_CHANNEL, self.channel.exchange_manager.id).get_internal_producer() \
+                            .send(cryptocurrency=cryptocurrency,
+                                  symbol=order.symbol,
+                                  order=order.to_dict(),
+                                  is_from_bot=True,
+                                  is_closed=True,
+                                  is_updated=False)
         return failed_order_updates
 
     async def _update_order_status(self,

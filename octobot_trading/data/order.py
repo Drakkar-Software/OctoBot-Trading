@@ -355,6 +355,9 @@ class Order:
                 f"Quantity : {self.origin_quantity} | "
                 f"Status : {self.status.name if self.status is not None else 'Unknown'}")
 
+    def __str__(self):
+        return self.to_string()
+
 
 def parse_order_type(raw_order):
     try:
