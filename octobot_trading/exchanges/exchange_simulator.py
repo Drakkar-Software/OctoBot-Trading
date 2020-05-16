@@ -38,28 +38,28 @@ class ExchangeSimulator(AbstractExchange):
 
         self.exchange_importers = []
 
-        self.symbols = []
-        self.time_frames = []
+        self.symbols = set()
+        self.time_frames = set()
 
         self.current_future_candles = {}
+
+        self.is_authenticated = False
 
     async def initialize_impl(self):
         self.exchange_importers = self.backtesting.get_importers(ExchangeDataImporter)
         # load symbols and time frames
         for importer in self.exchange_importers:
-            self.symbols += importer.symbols
-            self.time_frames += importer.time_frames
+            self.symbols.update(importer.symbols)
+            self.time_frames.update(importer.time_frames)
 
         # remove duplicates
-        self.symbols = list(set(self.symbols))
         self.current_future_candles = {
             symbol: {}
             for symbol in self.symbols
         }
-        self.time_frames = list(set(self.time_frames))
 
         # set exchange manager attributes
-        self.exchange_manager.client_symbols = self.symbols
+        self.exchange_manager.client_symbols = list(self.symbols)
 
     @staticmethod
     def handles_real_data_for_updater(channel_type, available_data):
@@ -95,12 +95,6 @@ class ExchangeSimulator(AbstractExchange):
 
     def get_exchange_current_time(self):
         return get_backtesting_current_time(self.backtesting)
-
-    def symbol_exists(self, symbol):
-        return symbol in self.symbols
-
-    def time_frame_exists(self, time_frame):
-        return time_frame in self.time_frames
 
     def get_available_time_frames(self):
         if self.exchange_importers:
@@ -188,9 +182,6 @@ class ExchangeSimulator(AbstractExchange):
         return sort_time_frames(set(get_available_time_frames(importer)) &
                                 set(self.exchange_manager.exchange_config.traded_time_frames),
                                 reverse=True)
-
-    def is_authenticated(self) -> bool:
-        return False
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
         return split_symbol(pair)

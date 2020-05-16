@@ -18,6 +18,7 @@ import asyncio
 from os import path
 import pytest
 import requests
+from octobot_commons.tests.test_config import load_test_config
 
 from octobot_tentacles_manager.api.installer import install_all_tentacles
 from octobot_tentacles_manager.constants import TENTACLES_PATH
@@ -32,6 +33,10 @@ def event_loop():
     yield loop
     loop.close()
 
+
+@pytest.fixture
+async def config():
+    return load_test_config()
 
 @pytest.yield_fixture
 async def install_tentacles():
