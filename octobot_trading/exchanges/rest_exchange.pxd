@@ -52,7 +52,7 @@ cdef class RestExchange(AbstractExchange):
     cpdef tuple get_split_pair_from_exchange(self, str pair)
     cpdef dict get_default_balance(self)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)
-    cpdef double get_candle_since_timestamp(self, object time_frame, int count)
+    cpdef long get_candle_since_timestamp(self, object time_frame, int count)
 
     # parsers
     cpdef dict parse_balance(self, dict balance)
