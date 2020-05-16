@@ -37,7 +37,7 @@ cdef class ExchangeSimulator(AbstractExchange):
     cpdef double get_exchange_current_time(self)
     cpdef str get_pair_cryptocurrency(self, str pair)
     cpdef list get_available_time_frames(self)
-    cpdef set get_time_frames(self, object importer)
+    cpdef list get_time_frames(self, object importer)
 
 # Should be cythonized with cython 3.0
 # cpdef set handles_real_data_for_updater(str channel_type, list available_data_types)
