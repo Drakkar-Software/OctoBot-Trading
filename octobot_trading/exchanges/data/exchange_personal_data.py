@@ -21,6 +21,7 @@ from octobot_trading.data_manager.orders_manager import OrdersManager
 from octobot_trading.data_manager.portfolio_manager import PortfolioManager
 from octobot_trading.data_manager.positions_manager import PositionsManager
 from octobot_trading.data_manager.trades_manager import TradesManager
+from octobot_trading.trades.trade_factory import create_trade_from_order
 from octobot_trading.util.initializable import Initializable
 
 
@@ -134,16 +135,20 @@ class ExchangePersonalData(Initializable):
 
     async def handle_closed_order_update(self, symbol, order_id, order, should_notify: bool = True) -> bool:
         try:
-            changed: bool = self.orders_manager.upsert_order_close(order_id, order)
-            if should_notify:
-                await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
-                          symbol=symbol,
-                          order=order.to_dict(),
-                          is_from_bot=True,
-                          is_closed=True,
-                          is_updated=changed)
-            return changed
+            existing_order = self.orders_manager.upsert_order_close(order_id, order)
+            if existing_order is not None:
+                await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
+                    create_trade_from_order(existing_order))
+                if should_notify:
+                    await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+                        .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                              symbol=symbol,
+                              order=existing_order.to_dict(),
+                              is_from_bot=True,
+                              is_closed=True,
+                              is_updated=True)
+                return True
+            return False
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
             return False
