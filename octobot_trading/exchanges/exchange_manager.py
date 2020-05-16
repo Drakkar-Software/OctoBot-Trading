@@ -278,13 +278,17 @@ class ExchangeManager(Initializable):
                 if not self._is_managed_by_websocket(updater.CHANNEL_NAME):
                     await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
-        if self.exchange.is_authenticated and not (self.is_simulated or self.is_backtesting or self.is_collecting):
+        if self.exchange.is_authenticated \
+                and self.trader \
+                and not (self.is_simulated or self.is_backtesting or self.is_collecting):
             for updater in AUTHENTICATED_UPDATER_PRODUCERS:
                 if not self._is_managed_by_websocket(updater.CHANNEL_NAME):
                     await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
         # Simulated producers
-        if (not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting) and not self.is_collecting:
+        if (not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting) \
+                and self.trader \
+                and not self.is_collecting:
             for updater in AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
                 await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
