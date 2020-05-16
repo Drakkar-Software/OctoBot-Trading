@@ -462,3 +462,4 @@ class RestExchange(AbstractExchange):
                 self.exchange_manager.get_uniformized_timestamp(exchange_timestamp)
         except KeyError as e:
             self.logger.error(f"Fail to cleanup order dict ({e})")
+        return order
