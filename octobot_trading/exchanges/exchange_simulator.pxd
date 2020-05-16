@@ -22,13 +22,13 @@ cdef class ExchangeSimulator(AbstractExchange):
 
     cdef public list exchange_importers
 
-    cdef public list symbols
-    cdef public list time_frames
+    cdef public bint is_authenticated
+
+    cdef public set symbols
+    cdef public set time_frames
 
     cdef public dict current_future_candles
 
-    cpdef bint symbol_exists(self, str symbol)
-    cpdef bint time_frame_exists(self, object time_frame)
     cpdef dict get_market_status(self, str symbol, double price_example=*, bint with_fixer=*)
     cpdef double get_uniform_timestamp(self, double timestamp)
     cpdef dict get_fees(self, str symbol=*)
@@ -37,4 +37,10 @@ cdef class ExchangeSimulator(AbstractExchange):
     cpdef double get_exchange_current_time(self)
     cpdef str get_pair_cryptocurrency(self, str pair)
     cpdef list get_available_time_frames(self)
-    cpdef list get_time_frames(self, object importer)
+    cpdef set get_time_frames(self, object importer)
+
+# Should be cythonized with cython 3.0
+# cpdef set handles_real_data_for_updater(str channel_type, list available_data_types)
+
+# Should be cythonized with cython 3.0
+# cdef bint _are_required_data_available(str channel_type, list available_data_types)
