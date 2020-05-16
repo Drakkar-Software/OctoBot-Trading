@@ -60,9 +60,8 @@ DEFAULT_EXCHANGE_TIME_LAG = 10
 DEFAULT_BACKTESTING_TIME_LAG = 0
 
 
-TESTED_EXCHANGES = ["binance", "coinbasepro", "kucoin2"]
-SIMULATOR_TESTED_EXCHANGES = ["bitfinex", "bittrex", "coinbasepro", "kraken", "kucoin2", "poloniex", "cryptopia",
-                              "bitmex"]
+TESTED_EXCHANGES = []
+SIMULATOR_TESTED_EXCHANGES = ["binance", "bybit", "kucoin"]
 
 CONFIG_SIMULATOR_FEES = "fees"
 CONFIG_SIMULATOR_FEES_MAKER = "maker"
