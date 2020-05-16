@@ -247,7 +247,7 @@ class RestExchange(AbstractExchange):
             if created_order[ecoc.PRICE.value] is None and price is not None:
                 created_order[ecoc.PRICE.value] = price
 
-            return created_order
+            return self.clean_order(created_order)
 
         except InsufficientFunds as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
