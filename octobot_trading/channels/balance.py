@@ -29,7 +29,7 @@ class BalanceProducer(ExchangeChannelProducer):
     async def perform(self, balance):
         try:
             changed = await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update(
-                balance, should_notify=False)
+                balance=balance, should_notify=False)
             if changed:
                 await self.send(balance)
         except CancelledError:
