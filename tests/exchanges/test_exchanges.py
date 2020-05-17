@@ -14,12 +14,23 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+from mock import patch
+from datetime import datetime
 
+from octobot_commons.constants import MSECONDS_TO_MINUTE
+from octobot_commons.enums import TimeFrames, TimeFramesMinutes
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
 
 pytestmark = pytest.mark.asyncio
+
+
+MS_TIMESTAMP = round((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds() * 1000)
+
+
+def get_constant_ms_timestamp():
+    return MS_TIMESTAMP
 
 
 class TestExchanges:
@@ -129,3 +140,30 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+
+    async def test_ms_timestamp_operations(self):
+        config = await self.init_default()
+        exchange_manager_bitmex = ExchangeManager(config, "bitmex")
+        await exchange_manager_bitmex.initialize()
+        await exchange_manager_bitmex.stop()
+
+        exchange = exchange_manager_bitmex.exchange
+        with patch.object(exchange.client, 'milliseconds', new=get_constant_ms_timestamp):
+            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_HOUR] * MSECONDS_TO_MINUTE * 200
+            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_HOUR, count=200) == expected_ms_timestamp
+
+            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_WEEK] * MSECONDS_TO_MINUTE * 200
+            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_WEEK, count=200) == expected_ms_timestamp
+
+            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_MONTH] * MSECONDS_TO_MINUTE * 2000
+            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MONTH, count=2000) == expected_ms_timestamp
+
+            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_MINUTE] * MSECONDS_TO_MINUTE * 10
+            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MINUTE, count=10) == expected_ms_timestamp
+
+            expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_MINUTE] * MSECONDS_TO_MINUTE * 0
+            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MINUTE, count=0) == expected_ms_timestamp
+
+            # 2000 months into the future
+            expected_ms_timestamp = MS_TIMESTAMP + TimeFramesMinutes[TimeFrames.ONE_MONTH] * MSECONDS_TO_MINUTE * 2000
+            assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MONTH, count=-2000) == expected_ms_timestamp
