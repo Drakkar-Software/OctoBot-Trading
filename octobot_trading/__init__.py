@@ -15,4 +15,4 @@
 #  License along with this library.
 
 PROJECT_NAME = "OctoBot-Trading"
-VERSION = "1.6.17"  # major.minor.revision
+VERSION = "1.6.18"  # major.minor.revision
