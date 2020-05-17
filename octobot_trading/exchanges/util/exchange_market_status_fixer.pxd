@@ -27,7 +27,7 @@ cdef bint check_market_status_values(market_limit, bint zero_valid=*)
 
 cdef class ExchangeMarketStatusFixer:
     cdef public object market_status
-    cdef public double price_example
+    cdef public object price_example
     cdef public object market_status_specific
 
     cdef void __fix_market_status_precision(self)
