@@ -22,7 +22,7 @@ LOGGER = get_logger(LOGGER_TAG)
 
 
 def is_trader_enabled_in_config_from_exchange_manager(exchange_manager) -> bool:
-    return exchange_manager.trader.enabled(exchange_manager.trader.config)
+    return exchange_manager.trader.enabled(exchange_manager.config)
 
 
 def is_trader_enabled(exchange_manager) -> bool:
