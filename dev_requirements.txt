@@ -3,6 +3,7 @@ pytest-pep8
 pytest-cov
 pytest-asyncio
 pytest-xdist
+pytest-randomly
 
 pylint==2.4.4
 

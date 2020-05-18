@@ -24,5 +24,7 @@ cdef class KlineManager(Initializable):
     cdef public list kline
 
     cdef void _reset_kline(self)
+    cdef void _update_kline_key(self, int kline_key, list kline_update)
+    cdef void _update_kline_init_only_key(self, int kline_key, list kline_update)
 
     cpdef void kline_update(self, list kline)

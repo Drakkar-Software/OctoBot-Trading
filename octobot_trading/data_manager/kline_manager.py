@@ -32,29 +32,38 @@ class KlineManager(Initializable):
     def _reset_kline(self):
         self.kline = [nan] * len(PriceIndexes)
 
+    def _update_kline_key(self, kline_key, kline_update):
+        try:
+            if kline_update[kline_key] is not nan:
+                self.kline[kline_key] = kline_update[kline_key]
+        except KeyError:
+            pass
+
+    def _update_kline_init_only_key(self, kline_key, kline_update):
+        try:
+            if self.kline[kline_key] is nan:
+                self.kline[kline_key] = kline_update[kline_key]
+        except KeyError:
+            pass
+
     def kline_update(self, kline):
         try:
             # test for new candle
             if self.kline[PriceIndexes.IND_PRICE_TIME.value] != kline[PriceIndexes.IND_PRICE_TIME.value]:
                 self._reset_kline()
 
-            if self.kline[PriceIndexes.IND_PRICE_TIME.value] is nan:
-                self.kline[PriceIndexes.IND_PRICE_TIME.value] = kline[PriceIndexes.IND_PRICE_TIME.value]
+            self._update_kline_init_only_key(PriceIndexes.IND_PRICE_TIME.value, kline)
+            self._update_kline_init_only_key(PriceIndexes.IND_PRICE_OPEN.value, kline)
 
-            if self.kline[PriceIndexes.IND_PRICE_OPEN.value] is nan:
-                self.kline[PriceIndexes.IND_PRICE_OPEN.value] = kline[PriceIndexes.IND_PRICE_OPEN.value]
-
-            if self.kline[PriceIndexes.IND_PRICE_VOL.value] is nan:
-                self.kline[PriceIndexes.IND_PRICE_VOL.value] = kline[PriceIndexes.IND_PRICE_VOL.value]
-
-            self.kline[PriceIndexes.IND_PRICE_CLOSE.value] = kline[PriceIndexes.IND_PRICE_CLOSE.value]
+            self._update_kline_key(PriceIndexes.IND_PRICE_VOL.value, kline)
+            self._update_kline_key(PriceIndexes.IND_PRICE_CLOSE.value, kline)
 
             if self.kline[PriceIndexes.IND_PRICE_HIGH.value] is nan or \
                     self.kline[PriceIndexes.IND_PRICE_HIGH.value] < kline[PriceIndexes.IND_PRICE_HIGH.value]:
-                self.kline[PriceIndexes.IND_PRICE_HIGH.value] = kline[PriceIndexes.IND_PRICE_HIGH.value]
+                self._update_kline_key(PriceIndexes.IND_PRICE_HIGH.value, kline)
 
             if self.kline[PriceIndexes.IND_PRICE_LOW.value] is nan or \
                     self.kline[PriceIndexes.IND_PRICE_LOW.value] > kline[PriceIndexes.IND_PRICE_LOW.value]:
-                self.kline[PriceIndexes.IND_PRICE_LOW.value] = kline[PriceIndexes.IND_PRICE_LOW.value]
+                self._update_kline_key(PriceIndexes.IND_PRICE_LOW.value, kline)
         except TypeError as e:
             self.logger.error(f"Fail to update kline with {kline} : {e}")
