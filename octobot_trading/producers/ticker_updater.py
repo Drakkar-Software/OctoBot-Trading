@@ -42,20 +42,17 @@ class TickerUpdater(TickerProducer):
         if self.channel.is_paused:
             await self.pause()
         else:
+            # initialize ticker
+            await asyncio.gather(*[self._fetch_ticker(pair)
+                                   for pair in self._get_pairs_to_update()])
+            await asyncio.sleep(self.TICKER_REFRESH_TIME)
             await self.start_update_loop()
 
     async def start_update_loop(self):
         while not self.should_stop and not self.channel.is_paused:
             try:
                 for pair in self._get_pairs_to_update():
-                    ticker: dict = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
-
-                    if ticker:
-                        await self.push(pair, ticker)
-                        await self.parse_mini_ticker(pair, ticker)
-
-                        if self.channel.exchange_manager.is_future:
-                            await self.parse_future_data(pair, ticker)
+                    await self._fetch_ticker(pair)
 
                 await asyncio.sleep(self.TICKER_REFRESH_TIME)
             except NotSupported:
@@ -63,6 +60,14 @@ class TickerUpdater(TickerProducer):
                 await self.pause()
             except Exception as e:
                 self.logger.exception(e, True, f"Fail to update ticker : {e}")
+
+    async def _fetch_ticker(self, pair):
+        ticker: dict = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
+        if ticker:
+            await self.push(pair, ticker)
+            await self.parse_mini_ticker(pair, ticker)
+            if self.channel.exchange_manager.is_future:
+                await self.parse_future_data(pair, ticker)
 
     def _cleanup_ticker_dict(self, ticker):
         try:
