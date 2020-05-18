@@ -77,7 +77,7 @@ class ExchangeBuilder:
 
             await self.exchange_manager.trader.initialize()
         except ValueError as e:
-            self.logger.error(f"An error occurred when creating trader : ")
+            self.logger.error(f"An error occurred when creating trader : {e}")
             raise e
 
     async def _build_modes(self):
@@ -87,7 +87,7 @@ class ExchangeBuilder:
                                               self._tentacles_setup_config,
                                               self._bot_id)
         except Exception as e:
-            self.logger.error(f"An error occurred when initializing trading mode : ")
+            self.logger.error(f"An error occurred when initializing trading mode : {e}")
             raise e
 
     """
