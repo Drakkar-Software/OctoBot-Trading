@@ -53,7 +53,12 @@ class RecentTradeUpdater(RecentTradeProducer):
         elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
             self.refresh_time = 15
         await self.init_recent_trades()
+        if self.channel.is_paused:
+            await self.pause()
+        else:
+            await self.start_update_loop()
 
+    async def start_update_loop(self):
         while not self.should_stop and not self.channel.is_paused:
             try:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:

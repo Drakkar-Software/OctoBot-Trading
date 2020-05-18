@@ -50,7 +50,12 @@ class FundingUpdater(FundingProducer):
         """
         if not self._should_run():
             return
+        if self.channel.is_paused:
+            await self.pause()
+        else:
+            await self.start_update_loop()
 
+    async def start_update_loop(self):
         while not self.should_stop and not self.channel.is_paused:
             next_funding_time, sleep_time = await self.before_update()
             try:

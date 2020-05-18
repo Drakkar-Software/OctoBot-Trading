@@ -45,7 +45,7 @@ class PositionsUpdater(PositionsProducer):
                 self.logger.warning("Position updater cannot fetch positions : required methods are not implemented")
                 await self.stop()
 
-        while not self.should_stop and not self.channel.is_paused:
+        while not self.should_stop:
             await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
             try:
                 if self.should_use_open_position_per_symbol:

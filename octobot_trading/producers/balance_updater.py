@@ -46,7 +46,7 @@ class BalanceUpdater(BalanceProducer):
         """
         Starts the balance updating process
         """
-        while not self.should_stop and not self.channel.is_paused:
+        while not self.should_stop:
             try:
                 await self.push((await self.fetch_portfolio()))
                 await asyncio.sleep(self.BALANCE_REFRESH_TIME)
