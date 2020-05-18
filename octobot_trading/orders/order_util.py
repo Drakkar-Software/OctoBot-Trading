@@ -100,7 +100,7 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
         mark_price = await exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol) \
             .prices_manager.get_mark_price(timeout=timeout)
     except asyncio.TimeoutError:
-        raise ValueError("Mark price is not available")
+        raise asyncio.TimeoutError("Mark price is not available")
 
     currency, market = split_symbol(symbol)
 
