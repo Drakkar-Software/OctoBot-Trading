@@ -15,34 +15,44 @@
 #  License along with this library.
 from asyncio import Event, wait_for
 
+from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.util.initializable import Initializable
 
 
 class PricesManager(Initializable):
-    MARK_PRICE_TIMEOUT = 60
+    MARK_PRICE_VALIDITY = 5 * MINUTE_TO_SECONDS
 
-    def __init__(self):
+    def __init__(self, exchange_manager):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.mark_price = 0
+        self.mark_price_set_time = 0
+        self.exchange_manager = exchange_manager
 
         # warning: should only be created in the async loop thread
-        self.prices_initialized_event = Event()
+        self.valid_price_received_event = Event()
 
     async def initialize_impl(self):
-        self.__reset_prices()
+        self._reset_prices()
 
     def set_mark_price(self, mark_price):
         self.mark_price = mark_price
-        self.prices_initialized_event.set()
+        self.mark_price_set_time = self.exchange_manager.exchange.get_exchange_current_time()
+        self.valid_price_received_event.set()
 
-    async def get_mark_price(self, timeout=MARK_PRICE_TIMEOUT):
-        if not self.prices_initialized_event.is_set():
-            await wait_for(self.prices_initialized_event.wait(), timeout)
+    async def get_mark_price(self, timeout=MARK_PRICE_VALIDITY):
+        self._ensure_price_validity()
+        if not self.valid_price_received_event.is_set():
+            await wait_for(self.valid_price_received_event.wait(), timeout)
         return self.mark_price
 
-    def __reset_prices(self):
+    def _ensure_price_validity(self):
+        if self.exchange_manager.exchange.get_exchange_current_time() - self.mark_price_set_time > \
+          self.MARK_PRICE_VALIDITY:
+            self.valid_price_received_event.clear()
+
+    def _reset_prices(self):
         self.mark_price = 0
 
 

@@ -82,4 +82,4 @@ def force_set_mark_price(exchange_manager, symbol, price):
 
 def is_mark_price_initialized(exchange_manager, symbol: str) -> bool:
     return exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol).prices_manager.\
-        prices_initialized_event.is_set()
+        valid_price_received_event.is_set()
