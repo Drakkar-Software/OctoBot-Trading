@@ -260,7 +260,8 @@ class PortfolioProfitabilty:
             except KeyError:
                 missing_tickers.add(currency)
         if missing_tickers:
-            self.logger.warning(f"Missing price data for {missing_tickers}, impossible to evaluate currencies value")
+            self.logger.debug(f"Missing price data for {missing_tickers}, impossible to compute all the "
+                              f"currencies values for now.")
         return values_dict
 
     """ evaluate_portfolio_value performs evaluate_value with a portfolio configuration
