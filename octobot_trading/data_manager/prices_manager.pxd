@@ -19,12 +19,15 @@ from octobot_trading.util.initializable cimport Initializable
 
 cdef class PricesManager(Initializable):
     cdef object logger
+    cdef object exchange_manager
 
-    cdef public object prices_initialized_event
+    cdef public object valid_price_received_event
 
     cdef public double mark_price
+    cdef double mark_price_set_time
 
-    cdef void __reset_prices(self)
+    cdef void _reset_prices(self)
+    cdef void _ensure_price_validity(self)
 
     cpdef list set_mark_price(self, double mark_price)
 

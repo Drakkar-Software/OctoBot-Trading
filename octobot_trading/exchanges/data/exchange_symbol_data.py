@@ -34,7 +34,7 @@ class ExchangeSymbolData:
         self.exchange_manager = exchange_manager
 
         self.order_book_manager = OrderBookManager()
-        self.prices_manager = PricesManager()
+        self.prices_manager = PricesManager(self.exchange_manager)
         self.recent_trades_manager = RecentTradesManager()
         self.ticker_manager = TickerManager()
         self.funding_manager = FundingManager() if self.exchange_manager.is_margin else None
