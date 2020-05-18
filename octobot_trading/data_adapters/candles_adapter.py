@@ -86,5 +86,8 @@ def get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construct
 
 
 def _add_in_construction_data(candles, symbol_data, time_frame, data_type):
-    return np.array(shift_value_array(candles, fill_value=symbol_data.symbol_klines[time_frame].kline[data_type]),
-                    dtype=np.float64)
+    try:
+        return np.array(shift_value_array(candles, fill_value=symbol_data.symbol_klines[time_frame].kline[data_type]),
+                        dtype=np.float64)
+    except KeyError:
+        return candles
