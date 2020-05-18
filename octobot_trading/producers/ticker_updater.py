@@ -39,7 +39,12 @@ class TickerUpdater(TickerProducer):
         if self._should_use_future():
             self.is_fetching_future_data = True
             self.TICKER_REFRESH_TIME = self.TICKER_FUTURE_REFRESH_TIME
+        if self.channel.is_paused:
+            await self.pause()
+        else:
+            await self.start_update_loop()
 
+    async def start_update_loop(self):
         while not self.should_stop and not self.channel.is_paused:
             try:
                 for pair in self._get_pairs_to_update():

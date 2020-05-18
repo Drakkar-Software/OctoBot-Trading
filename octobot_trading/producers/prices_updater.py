@@ -45,7 +45,10 @@ class MarkPriceUpdater(MarkPriceProducer):
                 self.refresh_time = 12
             elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
                 self.refresh_time = 17
-            await self.start_fetching()
+            if self.channel.is_paused:
+                await self.pause()
+            else:
+                await self.start_fetching()
 
     async def subscribe(self):
         self.recent_trades_consumer = await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \

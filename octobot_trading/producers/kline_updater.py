@@ -43,9 +43,12 @@ class KlineUpdater(KlineProducer):
             self.refresh_time = 14
         elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
             self.refresh_time = 22
-        self.tasks = [
-            asyncio.create_task(self.time_frame_watcher(time_frame))
-            for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames]
+        if self.channel.is_paused:
+            await self.pause()
+        else:
+            self.tasks = [
+                asyncio.create_task(self.time_frame_watcher(time_frame))
+                for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames]
 
     def __create_time_frame_kline_task(self, time_frame):
         self.tasks += asyncio.create_task(self.time_frame_watcher(time_frame))
@@ -82,7 +85,7 @@ class KlineUpdater(KlineProducer):
 
     async def resume(self) -> None:
         await super().resume()
-        if not self.is_running and self.tasks:
+        if not self.is_running:
             for task in self.tasks:
                 task.cancel()
             await self.run()
