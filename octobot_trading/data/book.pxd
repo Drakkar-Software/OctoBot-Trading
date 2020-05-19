@@ -16,14 +16,28 @@
 #  License along with this library.
 
 cdef class Book:
-    cdef public timestamp
+    cdef object logger
+    cdef public object asks # SortedDict
+    cdef public object bids # SortedDict
 
-    cdef public object orders
+    cdef public double timestamp
 
     cpdef void reset(self)
-    cpdef void handle_book_update(self, list orders, str id_key=*)
-    cpdef void handle_book_delta_delete(self, list orders, str id_key=*)
-    cpdef void handle_book_delta_update(self, list orders, str id_key=*)
-    cpdef void handle_book_delta_insert(self, list orders, str id_key=*)
-    cpdef list get_asks(self, str side=*)
-    cpdef list get_bids(self, str side=*)
+    cpdef void handle_new_book(self, dict orders)
+    cpdef void handle_book_adds(self, list orders)
+    cpdef void handle_book_deletes(self, list orders)
+    cpdef void handle_book_updates(self, list orders)
+    cpdef tuple get_ask(self)
+    cpdef tuple get_bid(self)
+    cpdef object get_asks(self, double price)
+    cpdef object get_bids(self, double price)
+
+    cdef object _handle_book_delete(self, dict order) # using object to prevent ignoring KeyError
+    cdef object _handle_book_update(self, dict order) # using object to prevent ignoring KeyError
+    cdef object _handle_book_add(self, dict order) # using object to prevent ignoring KeyError
+    cdef void _set_asks(self, double price, list asks)
+    cdef void _set_bids(self, double price, list bids)
+    cdef void _remove_asks(self, double price)
+    cdef void _remove_bids(self, double price)
+
+cdef int _order_id_index(str order_id, list order_list)

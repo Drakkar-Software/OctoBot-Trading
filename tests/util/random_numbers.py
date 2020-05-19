@@ -30,8 +30,16 @@ def random_price(min_value=0):
     return uniform(min_value, MAX_PRICE)
 
 
+def random_prices(min_value=0, count=2):
+    return [random_price(min_value=min_value) for _ in range(count)]
+
+
 def random_quantity(min_value=0):
     return uniform(min_value, MAX_QUANTITY)
+
+
+def random_quantities(min_value=0, count=2):
+    return [random_quantity(min_value=min_value) for _ in range(count)]
 
 
 def random_price_list(size=2) -> list:
@@ -40,6 +48,11 @@ def random_price_list(size=2) -> list:
 
 def random_funding_rate(min_value=0):
     return uniform(min_value, MAX_FUNDING_RATE)
+
+
+def random_order_book_side(min_value=0, count=2):
+    return zip(random_prices(min_value=min_value, count=count),
+               random_quantities(min_value=min_value, count=count))
 
 
 def random_candle_tuple():

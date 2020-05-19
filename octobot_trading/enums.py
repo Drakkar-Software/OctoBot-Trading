@@ -191,6 +191,10 @@ class ExchangeConstantsOrderBookInfoColumns(Enum):
     TIMESTAMP = "timestamp"
     DATETIME = "datetime"
     NONCE = "nonce"
+    ORDER_ID = "order_id"
+    PRICE = "price"
+    SIZE = "size"
+    SIDE = "side"
 
 
 class ExchangeConstantsOrderBookTickerColumns(Enum):
