@@ -24,7 +24,7 @@ cdef class PricesManager(Initializable):
     cdef public object valid_price_received_event
 
     cdef public double mark_price
-    cdef double mark_price_set_time
+    cdef public double mark_price_set_time
 
     cdef void _reset_prices(self)
     cdef void _ensure_price_validity(self)

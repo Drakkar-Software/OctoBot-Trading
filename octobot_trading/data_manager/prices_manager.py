@@ -54,7 +54,9 @@ class PricesManager(Initializable):
 
     def _reset_prices(self):
         self.mark_price = 0
+        self.mark_price_set_time = 0
+        self.valid_price_received_event.clear()
 
 
 def calculate_mark_price_from_recent_trade_prices(recent_trade_prices):
-    return sum(recent_trade_prices) / len(recent_trade_prices)
+    return sum(recent_trade_prices) / len(recent_trade_prices) if recent_trade_prices else 0

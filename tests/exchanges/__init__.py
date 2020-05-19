@@ -19,6 +19,7 @@ from shutil import copyfile
 import pytest
 from octobot_backtesting.backtesting import Backtesting
 from octobot_backtesting.constants import CONFIG_BACKTESTING
+from octobot_backtesting.data_manager.time_manager import TimeManager
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.enums import TimeFrames
 
@@ -120,6 +121,7 @@ async def backtesting_exchange_manager(request, backtesting_config, fake_backtes
     exchange_manager_instance = ExchangeManager(config, exchange_name)
     exchange_manager_instance.is_backtesting = True
     exchange_manager_instance.backtesting = fake_backtesting
+    exchange_manager_instance.backtesting.time_manager = TimeManager(config)
     await exchange_manager_instance.initialize()
     yield exchange_manager_instance
     await exchange_manager_instance.stop()
