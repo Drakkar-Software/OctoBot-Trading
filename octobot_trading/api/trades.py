@@ -58,8 +58,7 @@ def trade_to_dict(trade) -> dict:
     return trade.to_dict()
 
 
-async def subscribe_to_trades_channel(callback):
+async def subscribe_to_trades_channel(callback, exchange_id):
     trades_channel_name = TradesChannel.get_name()
-    for exchange_id in get_exchange_ids():
-        channel = get_chan(trades_channel_name, exchange_id)
-        await channel.new_consumer(callback)
+    channel = get_chan(trades_channel_name, exchange_id)
+    await channel.new_consumer(callback)
