@@ -80,8 +80,7 @@ def get_order_profitability(exchange_manager, order_id) -> float:
         return exchange_manager.exchange_personal_data.trades_manager.get_trade(order_id).trade_profitability
 
 
-async def subscribe_to_order_channels(callback):
+async def subscribe_to_order_channel(callback, exchange_id):
     order_channel_name = OrdersChannel.get_name()
-    for exchange_id in get_exchange_ids():
-        channel = get_chan(order_channel_name, exchange_id)
-        await channel.new_consumer(callback)
+    channel = get_chan(order_channel_name, exchange_id)
+    await channel.new_consumer(callback)
