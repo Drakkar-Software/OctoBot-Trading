@@ -21,7 +21,7 @@ from octobot_trading.data_adapters.candles_adapter import \
     get_symbol_high_candles as adapter_get_symbol_high_candles, \
     get_symbol_low_candles as adapter_get_symbol_low_candles, \
     get_symbol_volume_candles as adapter_get_symbol_volume_candles, \
-    get_symbol_time_candles as adapter_get_symbol_time_candles
+    get_symbol_time_candles as adapter_get_symbol_time_candles, get_candle_as_list as adapter_get_candle_as_list
 from octobot_commons.enums import TimeFrames
 
 
@@ -33,8 +33,12 @@ def get_symbol_candles_manager(symbol_data, time_frame) -> CandlesManager:
     return symbol_data.symbol_candles[TimeFrames(time_frame)]
 
 
-def get_symbol_historical_candles(symbol_data, time_frame, limit=-1) -> dict:
+def get_symbol_historical_candles(symbol_data, time_frame, limit=-1) -> object:
     return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_prices(limit)
+
+
+def get_candle_as_list(candles_arrays, candle_index=0) -> list:
+    return adapter_get_candle_as_list(candles_arrays, candle_index)
 
 
 def has_symbol_klines(symbol_data, time_frame) -> bool:

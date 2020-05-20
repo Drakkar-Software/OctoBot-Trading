@@ -85,6 +85,17 @@ def get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construct
     return symbol_data.symbol_candles[tf].get_symbol_time_candles(limit)
 
 
+def get_candle_as_list(candle_arrays_dict: dict, candle_index: int) -> list:
+    candle = [None] * len(PriceIndexes)
+    candle[PriceIndexes.IND_PRICE_TIME.value] = candle_arrays_dict[PriceIndexes.IND_PRICE_TIME.value][candle_index]
+    candle[PriceIndexes.IND_PRICE_OPEN.value] = candle_arrays_dict[PriceIndexes.IND_PRICE_OPEN.value][candle_index]
+    candle[PriceIndexes.IND_PRICE_HIGH.value] = candle_arrays_dict[PriceIndexes.IND_PRICE_HIGH.value][candle_index]
+    candle[PriceIndexes.IND_PRICE_LOW.value] = candle_arrays_dict[PriceIndexes.IND_PRICE_LOW.value][candle_index]
+    candle[PriceIndexes.IND_PRICE_CLOSE.value] = candle_arrays_dict[PriceIndexes.IND_PRICE_CLOSE.value][candle_index]
+    candle[PriceIndexes.IND_PRICE_VOL.value] = candle_arrays_dict[PriceIndexes.IND_PRICE_VOL.value][candle_index]
+    return candle
+
+
 def _add_in_construction_data(candles, symbol_data, time_frame, data_type):
     try:
         return np.array(shift_value_array(candles, fill_value=symbol_data.symbol_klines[time_frame].kline[data_type]),

@@ -17,8 +17,10 @@ import pytest
 import numpy as np
 
 from octobot_commons.enums import PriceIndexes, TimeFrames
+from octobot_trading.api.symbol_data import get_symbol_candles_manager
 from octobot_trading.data_adapters.candles_adapter import get_symbol_close_candles, get_symbol_open_candles, \
-    get_symbol_low_candles, get_symbol_high_candles, get_symbol_time_candles, get_symbol_volume_candles
+    get_symbol_low_candles, get_symbol_high_candles, get_symbol_time_candles, get_symbol_volume_candles, \
+    get_candle_as_list
 from octobot_trading.data_manager.candles_manager import CandlesManager
 from octobot_trading.data_manager.kline_manager import KlineManager
 from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
@@ -114,6 +116,25 @@ async def test_get_symbol_volume_candles(symbol_data, time_frame):
     assert np.array_equal(get_symbol_volume_candles(symbol_data, time_frame, 10, True),
                           np.array(_get_candles_extract_with_extra_candle(PriceIndexes.IND_PRICE_VOL.value),
                                    dtype=float))
+
+
+async def test_get_candle_as_list(symbol_data, time_frame):
+    row_candles = _get_candles()
+    candles = get_symbol_candles_manager(symbol_data, time_frame).get_symbol_prices()
+    candle_as_list = get_candle_as_list(candles, 0)
+    assert candle_as_list == row_candles[0]
+
+    candles_limit_1 = get_symbol_candles_manager(symbol_data, time_frame).get_symbol_prices(limit=1)
+    candles_list_1 = get_candle_as_list(candles_limit_1, 0)
+    assert candles_list_1 == row_candles[-1]
+
+    candles_limit_2 = get_symbol_candles_manager(symbol_data, time_frame).get_symbol_prices(limit=2)
+    candles_list_2 = get_candle_as_list(candles_limit_2, 0)
+    assert candles_list_2 == row_candles[-2]
+
+    candles_limit_2 = get_symbol_candles_manager(symbol_data, time_frame).get_symbol_prices(limit=2)
+    candles_list_2 = get_candle_as_list(candles_limit_2, 1)
+    assert candles_list_2 == row_candles[-1]
 
 
 def _get_candles_extract(index, count=10):
