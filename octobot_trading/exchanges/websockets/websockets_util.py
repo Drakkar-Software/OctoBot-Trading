@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.tentacles_management.advanced_manager import get_all_classes_from_parent, \
+from octobot_commons.tentacles_management.class_inspector import get_all_classes_from_parent, \
     search_class_name_in_class_list
 
 from octobot_trading.exchanges.types.websocket_exchange import WebsocketExchange

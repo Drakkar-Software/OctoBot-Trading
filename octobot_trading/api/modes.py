@@ -15,16 +15,11 @@
 #  License along with this library.
 from octobot_commons.constants import CONFIG_WILDCARD
 from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.tentacles_management.advanced_manager import create_classes_list
 
 from octobot_trading.api import LOGGER_TAG
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.modes import AbstractTradingMode
 from octobot_trading.util.trading_config_util import get_activated_trading_mode as util_get_activated_trading_mode
-
-
-def init_trading_mode_config(config) -> None:
-    create_classes_list(config, AbstractTradingMode)
 
 
 def get_trading_modes(exchange_manager) -> list:
@@ -39,16 +34,15 @@ def get_trading_mode_current_state(trading_mode) -> tuple:
     return trading_mode.get_current_state()
 
 
-def get_activated_trading_mode(config, tentacles_setup_config) -> AbstractTradingMode.__class__:
-    return util_get_activated_trading_mode(config, tentacles_setup_config)
+def get_activated_trading_mode(tentacles_setup_config) -> AbstractTradingMode.__class__:
+    return util_get_activated_trading_mode(tentacles_setup_config)
 
 
 async def create_trading_modes(config: dict,
                                exchange_manager: ExchangeManager,
                                tentacles_setup_config: object,
                                bot_id: str) -> list:
-    return await _create_trading_modes(trading_mode_class=util_get_activated_trading_mode(config,
-                                                                                          tentacles_setup_config),
+    return await _create_trading_modes(trading_mode_class=util_get_activated_trading_mode(tentacles_setup_config),
                                        config=config,
                                        exchange_manager=exchange_manager,
                                        cryptocurrencies=exchange_manager.exchange_config.traded_cryptocurrencies,
