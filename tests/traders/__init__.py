@@ -13,3 +13,30 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import pytest
+from octobot_commons.constants import CONFIG_ENABLED_OPTION
+from octobot_commons.tests.test_config import load_test_config
+from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER
+
+from octobot_trading.traders.trader_simulator import TraderSimulator
+
+from octobot_trading.traders.trader import Trader
+from tests.exchanges import exchange_manager
+
+
+@pytest.fixture
+async def trader(exchange_manager):
+    config = load_test_config()
+    config[CONFIG_TRADER][CONFIG_ENABLED_OPTION] = True
+    trader_inst = Trader(load_test_config(), exchange_manager)
+    await trader_inst.initialize()
+    return config, exchange_manager, trader_inst
+
+
+@pytest.fixture
+async def trader_simulator(exchange_manager):
+    config = load_test_config()
+    config[CONFIG_SIMULATOR][CONFIG_ENABLED_OPTION] = True
+    trader_inst = TraderSimulator(load_test_config(), exchange_manager)
+    await trader_inst.initialize()
+    return config, exchange_manager, trader_inst
