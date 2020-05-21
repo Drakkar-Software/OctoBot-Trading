@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot
+#  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -15,7 +15,6 @@
 #  License along with this library.
 
 import pytest
-# All test coroutines will be treated as marked.
 from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 from octobot_commons.tests.test_config import load_test_config
 
@@ -32,6 +31,7 @@ from octobot_trading.orders.types.sell_market_order import SellMarketOrder
 from octobot_trading.orders.types.stop_loss_order import StopLossOrder
 from tests.test_utils.order_util import fill_market_order, fill_limit_or_stop_order
 
+# All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 

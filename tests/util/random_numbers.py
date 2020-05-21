@@ -26,8 +26,8 @@ def random_timestamp(min_value=0):
     return randrange(min_value, 2000000000)
 
 
-def random_price(min_value=0):
-    return uniform(min_value, MAX_PRICE)
+def random_price(min_value=0, max_value=None):
+    return uniform(min_value, max_value if max_value is not None else MAX_PRICE)
 
 
 def random_prices(min_value=0, count=2):
