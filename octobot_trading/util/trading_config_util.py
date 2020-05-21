@@ -15,13 +15,12 @@
 #  License along with this library.
 from octobot_commons.errors import ConfigTradingError
 from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.tentacles_management.advanced_manager import get_class
 from octobot_commons.tentacles_management.class_inspector import get_deep_class_from_parent_subclasses
 from octobot_tentacles_manager.api.configurator import get_activated_tentacles
 from octobot_trading.modes import AbstractTradingMode
 
 
-def get_activated_trading_mode(config, tentacles_setup_config) -> AbstractTradingMode.__class__:
+def get_activated_trading_mode(tentacles_setup_config) -> AbstractTradingMode.__class__:
     if tentacles_setup_config is not None:
         try:
             trading_modes = [tentacle_class
@@ -38,7 +37,7 @@ def get_activated_trading_mode(config, tentacles_setup_config) -> AbstractTradin
                                                                            AbstractTradingMode)
 
                 if trading_mode_class is not None:
-                    return get_class(config, trading_mode_class)
+                    return trading_mode_class
         except ModuleNotFoundError as e:
             get_logger("get_activated_trading_mode").error(f"Error when loading the activated trading mode: {e}")
 
