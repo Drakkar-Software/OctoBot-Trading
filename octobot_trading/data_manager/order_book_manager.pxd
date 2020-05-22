@@ -28,10 +28,31 @@ cdef class OrderBookManager(Initializable):
     cdef public double bid_quantity
     cdef public double bid_price
 
-    cdef public list bids
-    cdef public list asks
+    cdef public object asks # SortedDict
+    cdef public object bids # SortedDict
+
+    cdef public double timestamp
 
     cpdef void reset_order_book(self)
-    cpdef void order_book_update(self, list asks, list bids)
     cpdef void order_book_ticker_update(self, double ask_quantity, double ask_price,
                                         double bid_quantity, double bid_price)
+    cpdef void handle_new_book(self, dict orders)
+    cpdef void handle_new_books(self, list asks, list bids, object timestamp=*)
+    cpdef void handle_book_adds(self, list orders)
+    cpdef void handle_book_deletes(self, list orders)
+    cpdef void handle_book_updates(self, list orders)
+    cpdef tuple get_ask(self)
+    cpdef tuple get_bid(self)
+    cpdef object get_asks(self, double price)
+    cpdef object get_bids(self, double price)
+
+    cdef object _handle_book_delete(self, dict order) # using object to prevent ignoring KeyError
+    cdef object _handle_book_update(self, dict order) # using object to prevent ignoring KeyError
+    cdef object _handle_book_add(self, dict order) # using object to prevent ignoring KeyError
+    cdef void _set_asks(self, double price, list asks)
+    cdef void _set_bids(self, double price, list bids)
+    cdef void _remove_asks(self, double price)
+    cdef void _remove_bids(self, double price)
+
+cdef int _order_id_index(str order_id, list order_list)
+
