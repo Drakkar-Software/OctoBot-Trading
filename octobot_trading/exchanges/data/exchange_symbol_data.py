@@ -85,7 +85,7 @@ class ExchangeSymbolData:
         self.prices_manager.set_mark_price(mark_price)
 
     def handle_order_book_update(self, asks, bids):
-        self.order_book_manager.order_book_update(asks, bids)
+        self.order_book_manager.handle_new_books(asks, bids)
 
     def handle_order_book_ticker_update(self, ask_quantity, ask_price, bid_quantity, bid_price):
         self.order_book_manager.order_book_ticker_update(ask_quantity, ask_price, bid_quantity, bid_price)
