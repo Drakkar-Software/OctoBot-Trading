@@ -77,7 +77,7 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
                     recent_trades = [self._generate_recent_trade(last_candle_timestamp, future_candle_low_price),
                                      self._generate_recent_trade(last_candle_timestamp, future_candle_high_price)]
                     self.last_timestamp_pushed_by_symbol[symbol] = last_candle_timestamp
-                    await self.push(symbol, recent_trades, partial=True)
+                    await self.push(symbol, recent_trades)
             except (KeyError, TypeError):
                 # future candle not initialized or missing, should rarely happen: use received candle's close value
                 if candle:
@@ -87,7 +87,7 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
                         recent_trades = [self._generate_recent_trade(last_candle_timestamp, last_candle_close_price)] \
                             * self.SIMULATED_RECENT_TRADE_LIMIT
                         self.last_timestamp_pushed_by_symbol[symbol] = last_candle_timestamp
-                        await self.push(symbol, recent_trades, partial=True)
+                        await self.push(symbol, recent_trades)
 
     @staticmethod
     def _generate_recent_trade(timestamp, price):

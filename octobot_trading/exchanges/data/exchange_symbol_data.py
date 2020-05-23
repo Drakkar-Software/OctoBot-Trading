@@ -54,8 +54,6 @@ class ExchangeSymbolData:
 
             if replace_all:
                 symbol_candles.replace_all_candles(new_symbol_candles_data)
-            else:
-                pass  # TODO ask exchange to init
 
             self.symbol_candles[time_frame] = symbol_candles
             return
@@ -67,16 +65,10 @@ class ExchangeSymbolData:
         else:
             symbol_candles.add_new_candle(new_symbol_candles_data)
 
-    def handle_recent_trade_update(self, recent_trades, replace_all=False, partial=False):
-        if partial:
-            # TODO check if initialized
-            return self.recent_trades_manager.add_new_trades(recent_trades)
-        elif replace_all:
+    def handle_recent_trade_update(self, recent_trades, replace_all=False):
+        if replace_all:
             return self.recent_trades_manager.set_all_recent_trades(recent_trades)
-        # TODO check if initialized
-
-        # recent trades should be a dict
-        return self.recent_trades_manager.add_recent_trade(recent_trades)
+        return self.recent_trades_manager.add_new_trades(recent_trades)
 
     def handle_liquidations(self, liquidations):
         self.recent_trades_manager.add_new_liquidations(liquidations)

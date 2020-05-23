@@ -20,17 +20,16 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeC
 
 
 class RecentTradeProducer(ExchangeChannelProducer):
-    async def push(self, symbol, recent_trades, replace_all=False, partial=False):
-        await self.perform(symbol, recent_trades, replace_all=replace_all, partial=partial)
+    async def push(self, symbol, recent_trades, replace_all=False):
+        await self.perform(symbol, recent_trades, replace_all=replace_all)
 
-    async def perform(self, symbol, recent_trades, replace_all=False, partial=False):
+    async def perform(self, symbol, recent_trades, replace_all=False):
         try:
             if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol):
                 recent_trades = self.channel.exchange_manager.get_symbol_data(symbol).handle_recent_trade_update(
                     recent_trades,
-                    replace_all=replace_all,
-                    partial=partial)
+                    replace_all=replace_all)
 
                 if recent_trades:
                     await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
