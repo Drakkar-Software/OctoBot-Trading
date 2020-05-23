@@ -35,7 +35,7 @@ cdef class ExchangeSymbolData:
     cdef public TickerManager ticker_manager
     cdef public FundingManager funding_manager
 
-    cpdef list handle_recent_trade_update(self, object recent_trades, bint replace_all=*, bint partial=*) # recent trades can be list or dict
+    cpdef list handle_recent_trade_update(self, list recent_trades, bint replace_all=*)
     cpdef void handle_order_book_update(self, list asks, list bids)
     cpdef void handle_order_book_ticker_update(self, double ask_quantity, double ask_price,
                                                double bid_quantity, double bid_price)

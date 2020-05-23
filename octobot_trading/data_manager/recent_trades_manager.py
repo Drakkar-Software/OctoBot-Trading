@@ -47,15 +47,6 @@ class RecentTradesManager(Initializable):
             self.recent_trades.extend(new_recent_trades)
             return new_recent_trades
 
-    def add_recent_trade(self, recent_trade):
-        try:
-            if recent_trade not in self.recent_trades:
-                self.recent_trades.append(recent_trade)
-                return [recent_trade]
-        except ValueError as e:
-            self.logger.error(f"Impossible to add new recent trade ({recent_trade} : {e})")
-        return []
-
     def add_new_liquidations(self, liquidations):
         if liquidations:
             new_liquidations: list = [
