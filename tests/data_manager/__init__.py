@@ -13,3 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import pytest
+from octobot_trading.data_manager.prices_manager import PricesManager
+
+from octobot_trading.data_manager.price_events_manager import PriceEventsManager
+
+
+@pytest.fixture()
+def price_events_manager():
+    return PriceEventsManager()
+
+
+@pytest.fixture()
+def prices_manager(backtesting_exchange_manager, price_events_manager):
+    return PricesManager(backtesting_exchange_manager, price_events_manager)

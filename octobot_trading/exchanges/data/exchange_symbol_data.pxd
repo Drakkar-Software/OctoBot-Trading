@@ -16,6 +16,7 @@
 #  License along with this library.
 from octobot_trading.data_manager.funding_manager cimport FundingManager
 from octobot_trading.data_manager.order_book_manager cimport OrderBookManager
+from octobot_trading.data_manager.price_events_manager cimport PriceEventsManager
 from octobot_trading.data_manager.prices_manager cimport PricesManager
 from octobot_trading.data_manager.recent_trades_manager cimport RecentTradesManager
 from octobot_trading.data_manager.ticker_manager cimport TickerManager
@@ -29,6 +30,7 @@ cdef class ExchangeSymbolData:
     cdef public dict symbol_candles
     cdef public dict symbol_klines
 
+    cdef public PriceEventsManager price_events_manager
     cdef public OrderBookManager order_book_manager
     cdef public PricesManager prices_manager
     cdef public RecentTradesManager recent_trades_manager

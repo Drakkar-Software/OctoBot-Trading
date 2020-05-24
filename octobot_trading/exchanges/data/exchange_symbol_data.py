@@ -20,6 +20,7 @@ from octobot_trading.data_manager.candles_manager import CandlesManager
 from octobot_trading.data_manager.funding_manager import FundingManager
 from octobot_trading.data_manager.kline_manager import KlineManager
 from octobot_trading.data_manager.order_book_manager import OrderBookManager
+from octobot_trading.data_manager.price_events_manager import PriceEventsManager
 from octobot_trading.data_manager.prices_manager import PricesManager
 from octobot_trading.data_manager.recent_trades_manager import RecentTradesManager
 from octobot_trading.data_manager.ticker_manager import TickerManager
@@ -33,9 +34,10 @@ class ExchangeSymbolData:
         self.symbol = symbol
         self.exchange_manager = exchange_manager
 
+        self.price_events_manager = PriceEventsManager()
         self.order_book_manager = OrderBookManager()
-        self.prices_manager = PricesManager(self.exchange_manager)
-        self.recent_trades_manager = RecentTradesManager()
+        self.prices_manager = PricesManager(self.exchange_manager, self.price_events_manager)
+        self.recent_trades_manager = RecentTradesManager(self.price_events_manager)
         self.ticker_manager = TickerManager()
         self.funding_manager = FundingManager() if self.exchange_manager.is_margin else None
 
