@@ -10,24 +10,24 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General License for more details.
+#  Lesser General Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data_manager.price_events_manager cimport PriceEventsManager
 from octobot_trading.util.initializable cimport Initializable
 
-cdef class RecentTradesManager(Initializable):
+
+cdef class PriceEventsManager(Initializable):
     cdef object logger
 
-    cdef public PriceEventsManager recent_trades_events_manager
+    cdef list events
 
-    cdef public object recent_trades
-    cdef public object liquidations
+    cpdef void reset(self)
+    cpdef void handle_recent_trades(self, list recent_trades)
+    cpdef void handle_price(self, double price, double timestamp)
+    cpdef object add_event(self, double price, double timestamp, bint trigger_above) # return asyncio.Event
 
-    cdef void _reset_recent_trades(self)
+    cdef int _remove_and_set_event(self, int event_index, object event_to_set) # return int to propagate errors
+    cdef list _check_events(self, double price, double timestamp)
 
-    cpdef list set_all_recent_trades(self, list recent_trades)
-    cpdef list add_new_trades(self, list recent_trades)
-
-    cpdef list add_new_liquidations(self, list liquidations)
+cdef tuple _new_price_event(double price, double timestamp, bint trigger_above)

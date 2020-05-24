@@ -17,6 +17,7 @@ import pytest
 import asyncio
 
 from tests.exchanges import backtesting_exchange_manager, backtesting_config, fake_backtesting
+from tests.data_manager import price_events_manager, prices_manager
 from octobot_trading.data_manager.prices_manager import PricesManager, calculate_mark_price_from_recent_trade_prices
 
 
@@ -24,8 +25,7 @@ from octobot_trading.data_manager.prices_manager import PricesManager, calculate
 pytestmark = pytest.mark.asyncio
 
 
-async def test_initialize(backtesting_exchange_manager):
-    prices_manager = PricesManager(backtesting_exchange_manager)
+async def test_initialize(prices_manager):
     assert prices_manager.mark_price == prices_manager.mark_price_set_time == 0
     assert not prices_manager.valid_price_received_event.is_set()
 
@@ -39,16 +39,14 @@ async def test_initialize(backtesting_exchange_manager):
     assert not prices_manager.valid_price_received_event.is_set()
 
 
-async def test_set_mark_price(backtesting_exchange_manager):
-    prices_manager = PricesManager(backtesting_exchange_manager)
+async def test_set_mark_price(prices_manager):
     prices_manager.set_mark_price(10)
     assert prices_manager.mark_price == 10
-    assert prices_manager.mark_price_set_time == backtesting_exchange_manager.exchange.get_exchange_current_time()
+    assert prices_manager.mark_price_set_time == prices_manager.exchange_manager.exchange.get_exchange_current_time()
     assert prices_manager.valid_price_received_event.is_set()
 
 
-async def test_get_mark_price(backtesting_exchange_manager):
-    prices_manager = PricesManager(backtesting_exchange_manager)
+async def test_get_mark_price(prices_manager):
     # without a set price
     with pytest.raises(asyncio.TimeoutError):
         await prices_manager.get_mark_price(0.01)
@@ -60,7 +58,7 @@ async def test_get_mark_price(backtesting_exchange_manager):
     assert prices_manager.valid_price_received_event.is_set()
 
     # expired price
-    backtesting_exchange_manager.backtesting.time_manager.current_timestamp = 66666666
+    prices_manager.exchange_manager.backtesting.time_manager.current_timestamp = 66666666
     with pytest.raises(asyncio.TimeoutError):
         await prices_manager.get_mark_price(0.01)
     assert not prices_manager.valid_price_received_event.is_set()
@@ -71,7 +69,7 @@ async def test_get_mark_price(backtesting_exchange_manager):
     assert prices_manager.valid_price_received_event.is_set()
 
     # current time move within allowed range
-    backtesting_exchange_manager.backtesting.time_manager.current_timestamp = 1
+    prices_manager.exchange_manager.backtesting.time_manager.current_timestamp = 1
     assert await prices_manager.get_mark_price(0.01) == 10
     assert prices_manager.valid_price_received_event.is_set()
 
