@@ -16,17 +16,19 @@
 from octobot_trading.api.exchange import get_exchange_ids
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.trades import TradesChannel
-from octobot_trading.enums import TraderOrderType
+from octobot_trading.enums import TraderOrderType, OrderStatus
 from octobot_trading.data.order import parse_order_type as order_parse_order_type
 
 
-def get_trade_history(exchange_manager, symbol=None, since=None, as_dict=False) -> list:
+def get_trade_history(exchange_manager, symbol=None, since=None, as_dict=False, include_cancelled=False) -> list:
     return [trade.to_dict() if as_dict else trade
             for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values()
-            if _trade_filter(trade, symbol, since)]
+            if _trade_filter(trade, symbol, since, include_cancelled)]
 
 
-def _trade_filter(trade, symbol=None, timestamp=None) -> bool:
+def _trade_filter(trade, symbol=None, timestamp=None, include_cancelled=False) -> bool:
+    if trade.status is OrderStatus.CANCELED and not include_cancelled:
+        return False
     if symbol is None and timestamp is None:
         return True
     elif symbol is None and timestamp is not None:
