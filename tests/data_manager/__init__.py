@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+from octobot_trading.data_manager.recent_trades_manager import RecentTradesManager
+
 from octobot_trading.data_manager.prices_manager import PricesManager
 
 from octobot_trading.data_manager.price_events_manager import PriceEventsManager
@@ -27,3 +29,8 @@ def price_events_manager():
 @pytest.fixture()
 def prices_manager(backtesting_exchange_manager, price_events_manager):
     return PricesManager(backtesting_exchange_manager, price_events_manager)
+
+
+@pytest.fixture()
+def recent_trades_manager(price_events_manager):
+    return RecentTradesManager(price_events_manager)
