@@ -40,8 +40,8 @@ cdef class OrdersManager(Initializable):
 
     cpdef void update_order_attribute(self, str order_id, str key, object value)
     cpdef Order get_order(self, str order_id)
-    cpdef tuple upsert_order(self, str order_id, dict raw_order)
-    cpdef Order upsert_order_close(self, str order_id, dict raw_order)
+    cpdef bint upsert_order_from_raw(self, str order_id, dict raw_order)
+    cpdef Order upsert_order_close_from_raw(self, str order_id, dict raw_order)
     cpdef bint upsert_order_instance(self, Order order)
     cpdef bint has_order(self, str order_id)
     cpdef void remove_order_instance(self, Order order)

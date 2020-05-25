@@ -73,6 +73,14 @@ class Trader(Initializable):
         return self.risk
 
     async def create_order(self, order, portfolio: Portfolio = None, loaded: bool = False):
+        """
+        Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
+        notifies order channel. Handles linked orders.
+        :param order: Order to create
+        :param portfolio: Portfolio to update (default is this exchange's portfolio)
+        :param loaded: True if this order is fetched from an exchange only and therefore not created by this OctoBot
+        :return: The crated order instance
+        """
         if portfolio is None:
             portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
 
@@ -110,7 +118,8 @@ class Trader(Initializable):
 
     async def create_artificial_order(self, order_type, symbol, current_price, quantity, price, linked_portfolio):
         """
-        Creates an OctoBot managed order
+        Creates an OctoBot managed order (managed orders example: stop loss that is not published on the exchange and
+        that is maintained internally).
         """
         await self.create_order(create_order_instance(trader=self,
                                                       order_type=order_type,
@@ -122,7 +131,7 @@ class Trader(Initializable):
 
     async def _create_not_loaded_order(self, new_order: Order, portfolio) -> Order:
         """
-        Creates an exchange managed order
+        Creates an exchange managed order, it might be a simulated or a real order. Then updates the portfolio.
         """
         if not self.simulate and not new_order.is_self_managed():
             created_order = await self.exchange_manager.exchange.create_order(new_order.order_type,
@@ -145,48 +154,122 @@ class Trader(Initializable):
 
         return new_order
 
-    async def cancel_order(self, order: Order):
+    async def close_filled_order(self, order):
+        """
+        Closes the given filled order starting buy cancelling its linked orders, updating the portfolio, creating
+        the new trade and finally removing the order from order manager. Does not update the order attributes.
+        :param order: Already filled order
+        :return: None
+        """
+        # Cancel linked orders
+        for linked_order in order.linked_orders:
+            await self.cancel_order(linked_order, ignored_order=order)
+
+        # update portfolio with filled order
+        async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
+            await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
+
+        # add to trade history and notify
+        await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
+            create_trade_from_order(order))
+
+        # remove order from open_orders
+        self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
+
+    async def cancel_order(self, order: Order, is_cancelled_from_exchange: bool = False, ignored_order: Order = None):
+        """
+        Cancels the given order and its linked orders, and updates the portfolio, publish in order channel
+        if order is from a real exchange.
+        :param order: Order to cancel
+        :param is_cancelled_from_exchange: When True, will not try to cancel this order on real exchange
+        :param ignored_order: Order not to cancel if found in linked orders recursive cancels (ex: avoid cancelling
+        a filled order)
+        :return: None
+        """
         if order and not order.is_cancelled() and not order.is_filled():
             async with order.lock:
-                odr = order
-                cancelled_order = await odr.cancel_order()
-                self.logger.info(f"{odr.symbol} {odr.get_name()} at {odr.origin_price}"
-                                 f" (ID : {odr.order_id}) cancelled on {self.exchange_manager.exchange_name}")
+                # always cancel this order first to avoid infinite loop followed by deadlock
+                order.cancel_order()
+                for linked_order in order.linked_orders:
+                    if linked_order is not ignored_order:
+                        await self.cancel_order(linked_order, ignored_order=ignored_order)
+                raw_cancelled_order = await self._handle_order_cancellation(order, is_cancelled_from_exchange)
+                self.logger.info(f"{order.symbol} {order.get_name()} at {order.origin_price}"
+                                 f" (ID : {order.order_id}) cancelled on {self.exchange_manager.exchange_name}")
 
-                # skip_upsert when cancelled_order is None (nothing to update because simulated order)
-                skip_upsert = cancelled_order is None
-                cancelled_order = odr if skip_upsert else cancelled_order
-                await self.exchange_manager.exchange_personal_data.handle_order_update(order.symbol,
-                                                                                       order.order_id,
-                                                                                       cancelled_order,
-                                                                                       skip_upsert=skip_upsert)
+                # nothing to update in case of a simulated order
+                if raw_cancelled_order is not None:
+                    await self.exchange_manager.exchange_personal_data.handle_order_update_from_raw(order.symbol,
+                                                                                                    order.order_id,
+                                                                                                    raw_cancelled_order)
+
+    async def _handle_order_cancellation(self, order: Order, is_cancelled_from_exchange: bool) -> dict:
+        raw_cancelled_order = None
+        # if real order: cancel on exchange
+        if not self.simulate and not order.is_self_managed() and not is_cancelled_from_exchange:
+            raw_cancelled_order = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
+
+        # add to trade history and notify
+        await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
+            create_trade_from_order(order,
+                                    close_status=OrderStatus.CANCELED,
+                                    canceled_time=self.exchange_manager.exchange.get_exchange_current_time()))
+
+        # update portfolio with cancelled funds order
+        async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
+            self.exchange_manager.exchange_personal_data.get_order_portfolio(order) \
+                .update_portfolio_available(order, is_new_order=False)
+
+        if order.is_self_managed():
+            # remove order from open_orders
+            self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
+
+        return raw_cancelled_order
 
     async def cancel_order_with_id(self, order_id):
+        """
+        Gets order matching order_id from the OrderManager and calls self.cancel_order() on it
+        :param order_id: Id of the order to cancel
+        :return: True if cancel is successful, False if order is not found
+        """
         try:
             await self.cancel_order(self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id))
             return True
         except KeyError:
             return False
 
-    # Should be called only if we want to cancel all symbol open orders (no filled)
     async def cancel_open_orders(self, symbol, cancel_loaded_orders=True):
-        # use a copy of the list (not the reference)
-        for order in copy.copy(self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders()):
+        """
+        Should be called only if the goal is to cancel all open orders for a given symbol
+        :param symbol: The symbol to cancel all orders on
+        :param cancel_loaded_orders: When True, also cancels loaded orders (order that are not from this bot instance)
+        :return: None
+        """
+        for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if (order.symbol == symbol and order.status is not OrderStatus.CANCELED) and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
-                await self.notify_order_close(order, True)
+                await self.cancel_order(order)
 
     async def cancel_all_open_orders_with_currency(self, currency):
+        """
+        Should be called only if the goal is to cancel all open orders for each traded symbol containing the
+        given currency.
+        :param currency: Currency to find trading pairs to cancel orders on.
+        :return: None
+        """
         symbols = get_pairs(self.config, currency)
         if symbols:
             for symbol in symbols:
                 await self.cancel_open_orders(symbol)
 
     async def cancel_all_open_orders(self):
-        # use a copy of the list (not the reference)
-        for order in copy.copy(self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders()):
+        """
+        Cancel all open orders registered on this bot.
+        :return: None
+        """
+        for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if order.status is not OrderStatus.CANCELED:
-                await self.notify_order_close(order, True)
+                await self.cancel_order(order)
 
     async def _sell_everything(self, symbol, inverted, timeout=None):
         created_orders = []
@@ -215,6 +298,12 @@ class Trader(Initializable):
         return created_orders
 
     async def sell_all(self, currencies_to_sell=None, timeout=None):
+        """
+        Sell every currency in portfolio for reference market using market orders.
+        :param currencies_to_sell: List of currencies to sell, default values consider every currency in portfolio
+        :param timeout: Timeout to get market price
+        :return: The created orders
+        """
         orders = []
         currency_list = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
 
@@ -230,45 +319,6 @@ class Trader(Initializable):
             if symbol:
                 orders += await self._sell_everything(symbol, inverted, timeout=timeout)
         return orders
-
-    async def notify_order_cancel(self, order, remove_from_manager=False):
-        # update portfolio with ended order
-        async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
-            self.exchange_manager.exchange_personal_data.get_order_portfolio(order) \
-                .update_portfolio_available(order, is_new_order=False)
-
-        if remove_from_manager:
-            # remove order from open_orders
-            self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
-
-    async def notify_order_close(self, order, cancel=False, cancel_linked_only=False):
-        # Cancel linked orders
-        for linked_order in order.linked_orders:
-            await self.cancel_order(linked_order)
-
-        # If need to cancel the order call the method and no need to update the portfolio (only availability)
-        if cancel:
-            await self.cancel_order(order)
-
-            self.exchange_manager.exchange_personal_data.trades_manager.upsert_trade_instance(
-                create_trade_from_order(order,
-                                        close_status=OrderStatus.CANCELED,
-                                        canceled_time=time.time()))
-
-        elif cancel_linked_only:
-            pass  # nothing to do
-
-        else:
-            # update portfolio with ended order
-            async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
-                await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
-
-            # add to trade history and notify
-            await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-                create_trade_from_order(order))
-
-            # remove order from open_orders
-            self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
 
     """
     Positions

@@ -49,19 +49,17 @@ class OrdersManager(Initializable):
     def get_order(self, order_id):
         return self.orders[order_id]
 
-    def upsert_order(self, order_id, raw_order) -> (bool, bool):
+    def upsert_order_from_raw(self, order_id, raw_order) -> bool:
         if not self.has_order(order_id):
             self.orders[order_id] = self._create_order_from_raw(raw_order)
             self._check_orders_size()
-            return True, False
-        return self._update_order_from_raw(self.orders[order_id], raw_order), True
+            return True
+        return self._update_order_from_raw(self.orders[order_id], raw_order)
 
-    def upsert_order_close(self, order_id, raw_order) -> Order:
+    def upsert_order_close_from_raw(self, order_id, raw_order) -> Order:
         if self.has_order(order_id):
             order = self.orders[order_id]
             self._update_order_from_raw(self.orders[order_id], raw_order)
-            self.orders.pop(order_id)
-            # trade creation should be handled right after this
             return order
         return None
 

@@ -151,7 +151,7 @@ class Order:
         if not self.filled_price and self.filled_quantity and self.total_cost:
             self.filled_price = self.total_cost / self.filled_quantity
             if timestamp is not None:
-                self.executed_time = self.trader.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+                self.executed_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
         return changed
 
     async def update_order_status(self, last_prices: list):
@@ -183,28 +183,13 @@ class Order:
                         return True
         return False
 
-    async def cancel_order(self):
+    def cancel_order(self):
+        """
+        Set cancelled status and keep track of cancellation time.
+        :return: None
+        """
         self.status = OrderStatus.CANCELED
-        self.canceled_time = time.time()
-
-        cancelled_order = None
-
-        # if real order
-        if not self.trader.simulate and not self.is_self_managed():
-            cancelled_order = await self.exchange_manager.exchange.cancel_order(self.order_id, self.symbol)
-
-        await self.trader.notify_order_cancel(self, remove_from_manager=self.is_self_managed())
-        return cancelled_order
-
-    async def cancel_from_exchange(self):
-        self.status = OrderStatus.CANCELED
-        self.canceled_time = time.time()
-        await self.trader.notify_order_cancel(self)
-        await self.trader.notify_order_close(self, cancel_linked_only=True)
-        self.trader.get_order_manager().remove_order_from_list(self)
-
-    async def close_order(self):
-        await self.trader.notify_order_close(self)
+        self.canceled_time = self.exchange_manager.exchange.get_exchange_current_time()
 
     def add_linked_order(self, order):
         self.linked_orders.append(order)
@@ -248,7 +233,7 @@ class Order:
         if new_status == OrderStatus.FILLED:
             self.trader.parse_exchange_order_to_trade_instance(result, self)
         elif new_status == OrderStatus.CANCELED:
-            await self.cancel_from_exchange()
+            await self.trader.cancel_order(self)
 
     def generate_executed_time(self):
         return self.exchange_manager.exchange.get_exchange_current_time()

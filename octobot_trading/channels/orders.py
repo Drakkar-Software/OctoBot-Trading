@@ -43,11 +43,12 @@ class OrdersProducer(ExchangeChannelProducer):
                             order,
                             should_notify=False)
                     else:
-                        changed, is_updated = await self.channel.exchange_manager.exchange_personal_data.handle_order_update(
-                            symbol,
-                            order_id,
-                            order,
-                            should_notify=False)
+                        changed, is_updated = \
+                            await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
+                                symbol,
+                                order_id,
+                                order,
+                                should_notify=False)
 
                     if changed:
                         await self.send(cryptocurrency=self.channel.exchange_manager.exchange.

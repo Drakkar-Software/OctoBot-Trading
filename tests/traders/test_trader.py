@@ -117,6 +117,9 @@ class TestTrader:
     async def test_cancel_open_orders_default_symbol(self):
         config, exchange_manager, trader_inst = await self.init_default()
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
+        portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+        initial_portfolio = copy.deepcopy(portfolio_manager.portfolio.portfolio)
 
         # Test buy order
         market_buy = BuyMarketOrder(trader_inst)
@@ -150,17 +153,26 @@ class TestTrader:
         assert market_sell in orders_manager.get_open_orders()
         assert limit_buy in orders_manager.get_open_orders()
 
+        assert not trades_manager.trades
+
         await trader_inst.cancel_open_orders(self.DEFAULT_SYMBOL)
 
         assert market_buy not in orders_manager.get_open_orders()
         assert market_sell not in orders_manager.get_open_orders()
         assert limit_buy not in orders_manager.get_open_orders()
 
+        # added cancelled orders as cancelled trades
+        assert len(trades_manager.trades) == 3
+        assert all(trade.status is OrderStatus.CANCELED for trade in trades_manager.trades.values())
+
+        assert initial_portfolio == portfolio_manager.portfolio.portfolio
+
         await self.stop(exchange_manager)
 
     async def test_cancel_open_orders_multi_symbol(self):
         config, exchange_manager, trader_inst = await self.init_default()
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
 
         # Test buy order
         market_buy = BuyMarketOrder(trader_inst)
@@ -204,6 +216,8 @@ class TestTrader:
         assert limit_buy in orders_manager.get_open_orders()
         assert limit_sell in orders_manager.get_open_orders()
 
+        assert not trades_manager.trades
+
         await trader_inst.cancel_open_orders(self.DEFAULT_SYMBOL)
 
         assert market_buy in orders_manager.get_open_orders()
@@ -211,11 +225,15 @@ class TestTrader:
         assert limit_buy not in orders_manager.get_open_orders()
         assert limit_sell in orders_manager.get_open_orders()
 
+        # added cancelled orders as cancelled trades
+        assert len(trades_manager.trades) == 2
+
         await self.stop(exchange_manager)
 
     async def test_cancel_all_open_orders_with_currency(self):
         config, exchange_manager, trader_inst = await self.init_default()
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
 
         # Test buy order
         market_buy = BuyMarketOrder(trader_inst)
@@ -260,12 +278,16 @@ class TestTrader:
         assert limit_buy in orders_manager.get_open_orders()
         assert limit_sell in orders_manager.get_open_orders()
 
+        assert not trades_manager.trades
+
         await trader_inst.cancel_all_open_orders_with_currency("XYZ")
 
         assert market_buy in orders_manager.get_open_orders()
         assert market_sell in orders_manager.get_open_orders()
         assert limit_buy in orders_manager.get_open_orders()
         assert limit_sell in orders_manager.get_open_orders()
+
+        assert not trades_manager.trades
 
         await trader_inst.cancel_all_open_orders_with_currency("XRP")
 
@@ -274,12 +296,18 @@ class TestTrader:
         assert limit_buy in orders_manager.get_open_orders()
         assert limit_sell not in orders_manager.get_open_orders()
 
+        # added cancelled orders as cancelled trades
+        assert len(trades_manager.trades) == 1
+
         await trader_inst.cancel_all_open_orders_with_currency("USDT")
 
         assert market_buy in orders_manager.get_open_orders()
         assert market_sell not in orders_manager.get_open_orders()
         assert limit_buy not in orders_manager.get_open_orders()
         assert limit_sell not in orders_manager.get_open_orders()
+
+        # added cancelled orders as cancelled trades
+        assert len(trades_manager.trades) == 3
 
         await trader_inst.cancel_all_open_orders_with_currency("BTC")
 
@@ -288,11 +316,15 @@ class TestTrader:
         assert limit_buy not in orders_manager.get_open_orders()
         assert limit_sell not in orders_manager.get_open_orders()
 
+        # added cancelled orders as cancelled trades
+        assert len(trades_manager.trades) == 4
+
         await self.stop(exchange_manager)
 
-    async def test_notify_order_close(self):
+    async def test_close_filled_order(self):
         config, exchange_manager, trader_inst = await self.init_default()
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
 
         # Test buy order
         market_buy = BuyMarketOrder(trader_inst)
@@ -322,20 +354,28 @@ class TestTrader:
         await trader_inst.create_order(stop_loss)
         await trader_inst.create_order(limit_sell)
 
-        await trader_inst.notify_order_close(limit_sell, True)
-        await trader_inst.notify_order_close(market_buy, True)
+        assert not trades_manager.trades
+
+        await trader_inst.close_filled_order(limit_sell)
+        await trader_inst.close_filled_order(market_buy)
 
         assert market_buy not in orders_manager.get_open_orders()
         assert limit_sell not in orders_manager.get_open_orders()
         assert stop_loss in orders_manager.get_open_orders()
 
+        # added filled orders as filled trades
+        assert len(trades_manager.trades) == 2
+        assert all(trade.status is market_buy.status and trade.status is not OrderStatus.CANCELED
+                   for trade in trades_manager.trades.values())
+
         await self.stop(exchange_manager)
 
-    async def test_notify_sell_limit_order_cancel(self):
+    async def test_close_filled_buy_limit_order(self):
         _, exchange_manager, trader_inst = await self.init_default()
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
         initial_portfolio = copy.deepcopy(portfolio_manager.portfolio.portfolio)
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
 
         # Test buy order
         limit_buy = create_order_instance(trader=trader_inst,
@@ -347,19 +387,26 @@ class TestTrader:
 
         await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
 
-        await trader_inst.notify_order_close(limit_buy, True)
+        assert not trades_manager.trades
+
+        await trader_inst.close_filled_order(limit_buy)
 
         assert limit_buy not in orders_manager.get_open_orders()
 
-        assert initial_portfolio == portfolio_manager.portfolio.portfolio
+        assert not initial_portfolio == portfolio_manager.portfolio.portfolio
+
+        # added filled orders as filled trades
+        assert len(trades_manager.trades) == 1
+        assert all(trade.status is limit_buy.status for trade in trades_manager.trades.values())
 
         await self.stop(exchange_manager)
 
-    async def test_notify_sell_limit_order_cancel_one_in_two(self):
+    async def test_close_filled_sell_limit_order_one_in_two(self):
         _, exchange_manager, trader_inst = await self.init_default()
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
         initial_portfolio = copy.deepcopy(portfolio_manager.portfolio.portfolio)
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
 
         # Test buy order
         limit_buy = create_order_instance(trader=trader_inst,
@@ -381,23 +428,37 @@ class TestTrader:
 
         await trader_inst.create_order(second_limit_buy, portfolio_manager.portfolio)
 
-        # Cancel only 1st one
-        await trader_inst.notify_order_close(limit_buy, True)
+        assert not trades_manager.trades
+
+        with pytest.raises(KeyError):
+            assert portfolio_manager.portfolio.portfolio["BQX"][PORTFOLIO_AVAILABLE] == 0
+        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_AVAILABLE] == 0.5
+
+        # Fill only 1st one
+        limit_buy.filled_price = 4
+        limit_buy.status = OrderStatus.FILLED
+        await trader_inst.close_filled_order(limit_buy)
+
+        # added filled orders as filled trades
+        assert len(trades_manager.trades) == 1
+        assert all(trade.status is OrderStatus.FILLED for trade in trades_manager.trades.values())
 
         assert limit_buy not in orders_manager.get_open_orders()
         assert second_limit_buy in orders_manager.get_open_orders()
 
         assert initial_portfolio != portfolio_manager.portfolio
-        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_AVAILABLE] == 8.5
-        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_TOTAL] == 10
+        assert portfolio_manager.portfolio.portfolio["BQX"][PORTFOLIO_AVAILABLE] == 2
+        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_AVAILABLE] == 0.5
+        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_TOTAL] == 2
 
         await self.stop(exchange_manager)
 
-    async def test_notify_sell_limit_order_fill(self):
+    async def test_close_filled_sell_limit_order(self):
         _, exchange_manager, trader_inst = await self.init_default()
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
         initial_portfolio = copy.deepcopy(portfolio_manager.portfolio.portfolio)
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
 
         # Test buy order
         limit_buy = create_order_instance(trader=trader_inst,
@@ -411,10 +472,17 @@ class TestTrader:
 
         limit_buy.filled_price = limit_buy.origin_price
         limit_buy.filled_quantity = limit_buy.origin_quantity
+        limit_buy.status = OrderStatus.FILLED
 
-        await trader_inst.notify_order_close(limit_buy)
+        assert not trades_manager.trades
+
+        await trader_inst.close_filled_order(limit_buy)
 
         assert limit_buy not in orders_manager.get_open_orders()
+
+        # added filled orders as filled trades
+        assert len(trades_manager.trades) == 1
+        assert all(trade.status is OrderStatus.FILLED for trade in trades_manager.trades.values())
 
         assert initial_portfolio != portfolio_manager.portfolio
         assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_AVAILABLE] == 9
@@ -424,9 +492,10 @@ class TestTrader:
 
         await self.stop(exchange_manager)
 
-    async def test_notify_order_close_with_linked_orders(self):
+    async def test_close_filled_order_with_linked_orders(self):
         config, exchange_manager, trader_inst = await self.init_default()
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
 
         # Test buy order
         market_buy = BuyMarketOrder(trader_inst)
@@ -459,11 +528,22 @@ class TestTrader:
         await trader_inst.create_order(stop_loss)
         await trader_inst.create_order(limit_sell)
 
-        await trader_inst.notify_order_close(limit_sell)
+        assert not trades_manager.trades
+
+        limit_sell.filled_price = limit_sell.origin_price
+        limit_sell.status = OrderStatus.FILLED
+        await trader_inst.close_filled_order(limit_sell)
 
         assert market_buy in orders_manager.get_open_orders()
         assert stop_loss not in orders_manager.get_open_orders()
         assert limit_sell not in orders_manager.get_open_orders()
+
+        # added filled orders as filled trades
+        assert len(trades_manager.trades) == 2
+        assert trades_manager.get_trade(limit_sell.order_id).status is OrderStatus.FILLED
+        assert trades_manager.get_trade(stop_loss.order_id).status is OrderStatus.CANCELED
+        with pytest.raises(KeyError):
+            trades_manager.get_trade(market_buy.order_id)
 
         await self.stop(exchange_manager)
 
