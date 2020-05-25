@@ -21,6 +21,7 @@ from octobot_trading.data_manager.orders_manager import OrdersManager
 from octobot_trading.data_manager.portfolio_manager import PortfolioManager
 from octobot_trading.data_manager.positions_manager import PositionsManager
 from octobot_trading.data_manager.trades_manager import TradesManager
+from octobot_trading.enums import OrderStatus
 from octobot_trading.trades.trade_factory import create_trade_from_order
 from octobot_trading.util.initializable import Initializable
 
@@ -98,24 +99,21 @@ class ExchangePersonalData(Initializable):
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update portfolio profitability : {e}")
 
-    async def handle_order_update(self, symbol, order_id, order, should_notify: bool = True,
-                                  skip_upsert: bool = False) -> (bool, bool):
+    async def handle_order_update_from_raw(self, symbol, order_id, raw_order, should_notify: bool = True) -> bool:
         try:
-            changed: (bool, bool) = (False, False)
-            if not skip_upsert:
-                changed = self.orders_manager.upsert_order(order_id, order)
+            changed: bool = self.orders_manager.upsert_order_from_raw(order_id, raw_order)
             if should_notify:
                 await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                           symbol=symbol,
-                          order=order.to_dict(),
+                          order=raw_order,
                           is_from_bot=True,
                           is_closed=False,
                           is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
-            return False, False
+            return False
 
     async def handle_order_instance_update(self, order, should_notify: bool = True):
         try:
@@ -133,12 +131,16 @@ class ExchangePersonalData(Initializable):
             self.logger.exception(e, True, f"Failed to update order instance : {e}")
             return False
 
-    async def handle_closed_order_update(self, symbol, order_id, order, should_notify: bool = True) -> bool:
+    async def handle_closed_order_update(self, symbol, order_id, raw_order, should_notify: bool = True) -> bool:
         try:
-            existing_order = self.orders_manager.upsert_order_close(order_id, order)
+            existing_order = self.orders_manager.upsert_order_close_from_raw(order_id, raw_order)
             if existing_order is not None:
-                await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-                    create_trade_from_order(existing_order))
+                if existing_order.status is OrderStatus.CANCELED:
+                    await self.trader.cancel_order(existing_order)
+                elif existing_order.status is OrderStatus.FILLED:
+                    await self.trader.close_filled_order(existing_order)
+                else:
+                    self.logger.error(f"Unknown closed order status: {existing_order.status} for order: {raw_order}")
                 if should_notify:
                     await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                         .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),

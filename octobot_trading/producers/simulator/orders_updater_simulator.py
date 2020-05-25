@@ -104,7 +104,7 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
                 self.logger.debug(f"{order.symbol} {order.get_name()} (ID : {order.order_id})"
                                   f" filled on {self.channel.exchange.name} "
                                   f"at {order.filled_price}")
-                await order.close_order()
+                await self.exchange_manager.trader.close_filled_order(order)
         except MissingOrderException as e:
             self.logger.error(f"Missing exchange order when updating order with id: {e.order_id}. "
                               f"Will force a real trader refresh. ({e})")
