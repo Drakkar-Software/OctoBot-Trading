@@ -20,7 +20,7 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class RecentTradesManager(Initializable):
     cdef object logger
 
-    cdef public PriceEventsManager recent_trades_events_manager
+    cdef public PriceEventsManager price_events_manager
 
     cdef public object recent_trades
     cdef public object liquidations

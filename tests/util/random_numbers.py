@@ -16,6 +16,7 @@
 from random import randrange, uniform
 
 from octobot_commons.enums import PriceIndexes
+from octobot_trading.enums import ExchangeConstantsOrderColumns as ECOC
 
 MAX_PRICE = 10e7
 MAX_QUANTITY = 10e7
@@ -79,3 +80,16 @@ def random_kline() -> list:
     kline[PriceIndexes.IND_PRICE_VOL.value] = random_quantity()
     kline[PriceIndexes.IND_PRICE_TIME.value] = random_timestamp()
     return kline
+
+
+def random_recent_trade() -> dict:
+    return {
+        ECOC.PRICE.value: random_price(),
+        ECOC.AMOUNT.value: random_quantity(),
+        ECOC.COST.value: random_quantity(),
+        ECOC.TIMESTAMP.value: random_timestamp()
+    }
+
+
+def random_recent_trades(count=2) -> list:
+    return [random_recent_trade() for _ in range(count)]

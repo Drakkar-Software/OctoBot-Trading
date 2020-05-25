@@ -34,7 +34,7 @@ async def test_initialize(prices_manager):
     prices_manager.mark_price_set_time = 10
     prices_manager.valid_price_received_event.set()
 
-    await prices_manager.initialize_impl()
+    await prices_manager.initialize()
     assert prices_manager.mark_price == prices_manager.mark_price_set_time == 0
     assert not prices_manager.valid_price_received_event.is_set()
 

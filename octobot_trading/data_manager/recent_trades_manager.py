@@ -27,19 +27,19 @@ class RecentTradesManager(Initializable):
     def __init__(self, price_events_manager):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
-        self.recent_trades_events_manager = price_events_manager
+        self.price_events_manager = price_events_manager
         self.recent_trades = deque(maxlen=self.MAX_RECENT_TRADES_COUNT)
         self.liquidations = deque(maxlen=self.MAX_LIQUIDATIONS_COUNT)
         self._reset_recent_trades()
 
     async def initialize_impl(self):
-        self.recent_trades_events_manager.reset()
+        self.price_events_manager.reset()
         self._reset_recent_trades()
 
     def set_all_recent_trades(self, recent_trades):
         if recent_trades:
-            self.recent_trades = list(set(recent_trades))
-            self.recent_trades_events_manager.handle_recent_trades(self.recent_trades)
+            self.recent_trades = recent_trades
+            self.price_events_manager.handle_recent_trades(self.recent_trades)
             return self.recent_trades
 
     def add_new_trades(self, recent_trades):
@@ -49,7 +49,7 @@ class RecentTradesManager(Initializable):
                 for trade in recent_trades
                 if trade not in self.recent_trades]
             self.recent_trades.extend(new_recent_trades)
-            self.recent_trades_events_manager.handle_recent_trades(new_recent_trades)
+            self.price_events_manager.handle_recent_trades(new_recent_trades)
             return new_recent_trades
 
     def add_new_liquidations(self, liquidations):
