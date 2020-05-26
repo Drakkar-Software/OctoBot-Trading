@@ -21,6 +21,7 @@ from tests.data_manager import recent_trades_manager, price_events_manager
 
 # All test coroutines will be treated as marked.
 from tests.util.random_numbers import random_recent_trade, random_recent_trades
+from tests import event_loop
 
 pytestmark = pytest.mark.asyncio
 

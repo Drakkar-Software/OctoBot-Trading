@@ -49,7 +49,7 @@ async def test_update_and_reset_ticker(ticker_manager):
     assert ticker_manager.ticker[ExchangeConstantsTickersColumns.ASK.value] == price
     assert ticker_manager.ticker[ExchangeConstantsTickersColumns.ASK_VOLUME.value] == vlm
     assert ticker_manager.ticker[ExchangeConstantsTickersColumns.TIMESTAMP.value] == tm
-    if not os.getenv('CYTHON_TEST_IGNORE'):
+    if not os.getenv('CYTHON_IGNORE'):
         ticker_manager.reset_ticker()
         assert ticker_manager.ticker == {
             ExchangeConstantsTickersColumns.ASK.value: nan,
@@ -82,7 +82,7 @@ async def test_update_and_reset_mini_ticker(ticker_manager):
         })
     assert ticker_manager.mini_ticker[ExchangeConstantsMiniTickerColumns.VOLUME.value] == vol
     assert ticker_manager.mini_ticker[ExchangeConstantsMiniTickerColumns.OPEN_PRICE.value] == open_p
-    if not os.getenv('CYTHON_TEST_IGNORE'):
+    if not os.getenv('CYTHON_IGNORE'):
         ticker_manager.reset_mini_ticker()
         assert ticker_manager.mini_ticker == {
                 ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value: nan,

@@ -39,7 +39,7 @@ async def test_init(kline_manager):
 async def test_reset_kline(kline_manager):
     kline_manager.kline = random_kline()
     assert len(kline_manager.kline) == 6
-    if not os.getenv('CYTHON_TEST_IGNORE'):
+    if not os.getenv('CYTHON_IGNORE'):
         kline_manager._reset_kline()
         assert kline_manager.kline == [nan] * len(PriceIndexes)
 

@@ -30,7 +30,7 @@ TENTACLES_LATEST_URL = "https://www.tentacles.octobot.online/repository/tentacle
 
 @pytest.yield_fixture
 def event_loop():
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    loop = asyncio.new_event_loop()
     yield loop
     loop.close()
 

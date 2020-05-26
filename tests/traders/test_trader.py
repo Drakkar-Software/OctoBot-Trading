@@ -560,7 +560,7 @@ class TestTrader:
             PORTFOLIO_TOTAL: 1000
         }
 
-        if not os.getenv('CYTHON_TEST_IGNORE'):
+        if not os.getenv('CYTHON_IGNORE'):
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all()
@@ -598,7 +598,7 @@ class TestTrader:
             PORTFOLIO_TOTAL: 1000
         }
 
-        if not os.getenv('CYTHON_TEST_IGNORE'):
+        if not os.getenv('CYTHON_IGNORE'):
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all(currencies_to_sell=["USDT"], timeout=1)
@@ -609,7 +609,7 @@ class TestTrader:
             assert sell_USDT_order.order_type == TraderOrderType.BUY_MARKET
             assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
 
-        if not os.getenv('CYTHON_TEST_IGNORE'):
+        if not os.getenv('CYTHON_IGNORE'):
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all(currencies_to_sell=["ADA"])
@@ -621,7 +621,7 @@ class TestTrader:
             assert sell_ADA_order.origin_quantity == 1500
             assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
 
-        if not os.getenv('CYTHON_TEST_IGNORE'):
+        if not os.getenv('CYTHON_IGNORE'):
             # currency not in portfolio
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
@@ -633,14 +633,14 @@ class TestTrader:
                 PORTFOLIO_TOTAL: 0
             }
 
-        if not os.getenv('CYTHON_TEST_IGNORE'):
+        if not os.getenv('CYTHON_IGNORE'):
             # currency in portfolio but with 0 quantity
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all(currencies_to_sell=["XRP"])
             assert len(orders) == 0
 
-        if not os.getenv('CYTHON_TEST_IGNORE'):
+        if not os.getenv('CYTHON_IGNORE'):
             # invalid currency
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
@@ -652,7 +652,7 @@ class TestTrader:
                 PORTFOLIO_TOTAL: 0.0000001
             }
 
-        if not os.getenv('CYTHON_TEST_IGNORE'):
+        if not os.getenv('CYTHON_IGNORE'):
             # currency in portfolio but with close to 0 quantity
             with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):

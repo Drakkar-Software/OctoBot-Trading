@@ -21,10 +21,11 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns as ECOC
 MAX_PRICE = 10e7
 MAX_QUANTITY = 10e7
 MAX_FUNDING_RATE = 100
+MAX_TIMESTAMP = 2000000000
 
 
-def random_timestamp(min_value=0):
-    return randrange(min_value, 2000000000)
+def random_timestamp(min_value=0, max_value=MAX_TIMESTAMP):
+    return randrange(min_value, max_value)
 
 
 def random_price(min_value=0, max_value=None):
@@ -82,10 +83,10 @@ def random_kline() -> list:
     return kline
 
 
-def random_recent_trade() -> dict:
+def random_recent_trade(price=None, timestamp=None) -> dict:
     return {
-        ECOC.PRICE.value: random_price(),
-        ECOC.AMOUNT.value: random_quantity(),
+        ECOC.PRICE.value: price if price is not None else random_price(),
+        ECOC.AMOUNT.value: timestamp if timestamp is not None else random_quantity(),
         ECOC.COST.value: random_quantity(),
         ECOC.TIMESTAMP.value: random_timestamp()
     }
