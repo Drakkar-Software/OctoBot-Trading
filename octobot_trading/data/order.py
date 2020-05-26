@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import time
 from asyncio import Lock
 import math
 
@@ -35,7 +34,7 @@ class Order:
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
         self.status = OrderStatus.OPEN
-        self.creation_time = time.time()
+        self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
         self.executed_time = 0
         self.lock = Lock()
         self.linked_orders = []

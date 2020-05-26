@@ -13,9 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-import time
-
 from octobot_trading.enums import OrderStatus, ExchangeConstantsOrderColumns
 
 
@@ -25,7 +22,7 @@ class Trade:
         self.exchange_manager = trader.exchange_manager
 
         self.status = OrderStatus.OPEN
-        self.creation_time = time.time()
+        self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
 
         self.trade_id = trader.parse_order_id(None)
         self.simulated = True

@@ -35,7 +35,6 @@ class OrdersProducer(ExchangeChannelProducer):
                 if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
                         symbol=symbol):
                     order_id: str = order[ExchangeConstantsOrderColumns.ID.value]
-                    is_updated: bool = False
                     if is_closed:
                         changed = await self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(
                             symbol,
@@ -43,7 +42,7 @@ class OrdersProducer(ExchangeChannelProducer):
                             order,
                             should_notify=False)
                     else:
-                        changed, is_updated = \
+                        changed = \
                             await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
                                 symbol,
                                 order_id,
@@ -56,7 +55,7 @@ class OrdersProducer(ExchangeChannelProducer):
                                         symbol=symbol, order=order,
                                         is_from_bot=is_from_bot,
                                         is_closed=is_closed,
-                                        is_updated=is_updated)
+                                        is_updated=changed)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
