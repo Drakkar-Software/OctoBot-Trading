@@ -13,8 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import time
-
 from octobot_trading.enums import ExchangeConstantsPositionColumns, PositionStatus, PositionSide
 
 
@@ -61,7 +59,7 @@ class Position:
             self.timestamp = timestamp
         if not self.timestamp:
             if not timestamp:
-                self.creation_time = time.time()
+                self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
                 self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
