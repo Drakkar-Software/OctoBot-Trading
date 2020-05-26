@@ -24,6 +24,12 @@ class PriceEventsManager:
     Manage price events for a specific price and timestamp
     Mainly used for updating Order status
     """
+
+    """
+    The price event index from a price event tuple
+    """
+    PRICE_EVENT_INDEX = 2
+
     def __init__(self):
         self.logger = get_logger(self.__class__.__name__)
         self.events = []
@@ -41,9 +47,9 @@ class PriceEventsManager:
         """
         for recent_trade in recent_trades:
             try:
-                for event_index, event_to_set in self._check_events(recent_trade[ECOC.PRICE.value],
-                                                                    recent_trade[ECOC.TIMESTAMP.value]):
-                    self._remove_and_set_event(event_index, event_to_set)
+                for event_to_set in self._check_events(recent_trade[ECOC.PRICE.value],
+                                                       recent_trade[ECOC.TIMESTAMP.value]):
+                    self._remove_and_set_event(event_to_set)
             except KeyError:
                 self.logger.error("Error when checking price events with recent trades data")
 
@@ -53,8 +59,8 @@ class PriceEventsManager:
         :param price: the price to check
         :param timestamp: the timestamp to check
         """
-        for event_index, event_to_set in self._check_events(price, timestamp):
-            self._remove_and_set_event(event_index, event_to_set)
+        for event_to_set in self._check_events(price, timestamp):
+            self._remove_and_set_event(event_to_set)
 
     def add_event(self, price, timestamp, trigger_above):
         """
@@ -62,18 +68,36 @@ class PriceEventsManager:
         :param price: the trigger price
         :param timestamp: the timestamp to wait for
         :param trigger_above: True if waiting for an upper price
+        :return: the price event
         """
-        self.events.append(_new_price_event(price, timestamp, trigger_above))
+        price_event_tuple = _new_price_event(price, timestamp, trigger_above)
+        self.events.append(price_event_tuple)
+        return price_event_tuple[PriceEventsManager.PRICE_EVENT_INDEX]
 
-    def _remove_and_set_event(self, event_index, event_to_set):
+    def remove_event(self, event_to_remove):
+        """
+        Public method that calls _remove_event()
+        :param event_to_remove: the event to remove
+        """
+        return self._remove_event(event_to_remove)
+
+    def _remove_and_set_event(self, event_to_set):
         """
         Set the event and remove it from event list
-        :param event_index: the event index to remove from event list
         :param event_to_set: the event to set
         :return: the event index removed from event list
         """
         event_to_set.set()
-        return self.events.pop(event_index)
+        return self._remove_event(event_to_set)
+
+    def _remove_event(self, event_to_remove):
+        """
+        Remove the event from events list
+        :param event_to_remove: the event to remove
+        """
+        for price_event_data in self.events:
+            if event_to_remove in price_event_data:
+                return self.events.remove(price_event_data)
 
     def _check_events(self, price, timestamp):
         """
@@ -83,11 +107,13 @@ class PriceEventsManager:
         :return: the event list that match
         """
         return [
-            (event_index, event)
-            for event_index, (event_price, event_timestamp, event, trigger_above) in enumerate(self.events)
+            event
+            for event_price, event_timestamp, event, trigger_above in self.events
             if event_timestamp <= timestamp and
-            (trigger_above and event_price <= price) or
-            (not trigger_above and event_price >= price)
+            (
+                (trigger_above and event_price <= price) or
+                (not trigger_above and event_price >= price)
+            )
         ]
 
 

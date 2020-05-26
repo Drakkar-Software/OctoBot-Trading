@@ -26,8 +26,10 @@ cdef class PriceEventsManager(Initializable):
     cpdef void handle_recent_trades(self, list recent_trades)
     cpdef void handle_price(self, double price, double timestamp)
     cpdef object add_event(self, double price, double timestamp, bint trigger_above) # return asyncio.Event
+    cpdef object remove_event(self, object event_to_remove) # object is an asyncio.Event
 
-    cdef int _remove_and_set_event(self, int event_index, object event_to_set) # return int to propagate errors
+    cdef object _remove_and_set_event(self, object event_to_set) # return to propagate errors
+    cdef object _remove_event(self, object event_to_remove) # object is an asyncio.Event
     cdef list _check_events(self, double price, double timestamp)
 
 cdef tuple _new_price_event(double price, double timestamp, bint trigger_above)

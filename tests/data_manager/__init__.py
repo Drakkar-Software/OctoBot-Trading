@@ -20,17 +20,19 @@ from octobot_trading.data_manager.prices_manager import PricesManager
 
 from octobot_trading.data_manager.price_events_manager import PriceEventsManager
 
+from tests import event_loop
+
 
 @pytest.fixture()
-def price_events_manager():
+def price_events_manager(event_loop):
     return PriceEventsManager()
 
 
 @pytest.fixture()
-def prices_manager(backtesting_exchange_manager, price_events_manager):
+def prices_manager(event_loop, backtesting_exchange_manager, price_events_manager):
     return PricesManager(backtesting_exchange_manager, price_events_manager)
 
 
 @pytest.fixture()
-def recent_trades_manager(price_events_manager):
+def recent_trades_manager(event_loop, price_events_manager):
     return RecentTradesManager(price_events_manager)

@@ -13,13 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import os
+
 import pytest
 import asyncio
 
 from tests.exchanges import backtesting_exchange_manager, backtesting_config, fake_backtesting
 from tests.data_manager import price_events_manager, prices_manager
 from octobot_trading.data_manager.prices_manager import PricesManager, calculate_mark_price_from_recent_trade_prices
-
+from tests import event_loop
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -42,8 +44,9 @@ async def test_initialize(prices_manager):
 async def test_set_mark_price(prices_manager):
     prices_manager.set_mark_price(10)
     assert prices_manager.mark_price == 10
-    assert prices_manager.mark_price_set_time == prices_manager.exchange_manager.exchange.get_exchange_current_time()
-    assert prices_manager.valid_price_received_event.is_set()
+    if not os.getenv('CYTHON_IGNORE'):
+        assert prices_manager.mark_price_set_time == prices_manager.exchange_manager.exchange.get_exchange_current_time()
+        assert prices_manager.valid_price_received_event.is_set()
 
 
 async def test_get_mark_price(prices_manager):
@@ -58,10 +61,11 @@ async def test_get_mark_price(prices_manager):
     assert prices_manager.valid_price_received_event.is_set()
 
     # expired price
-    prices_manager.exchange_manager.backtesting.time_manager.current_timestamp = 66666666
-    with pytest.raises(asyncio.TimeoutError):
-        await prices_manager.get_mark_price(0.01)
-    assert not prices_manager.valid_price_received_event.is_set()
+    if not os.getenv('CYTHON_IGNORE'):
+        prices_manager.exchange_manager.backtesting.time_manager.current_timestamp = 66666666
+        with pytest.raises(asyncio.TimeoutError):
+            await prices_manager.get_mark_price(0.01)
+        assert not prices_manager.valid_price_received_event.is_set()
 
     # reset price with this time
     prices_manager.set_mark_price(10)
@@ -69,9 +73,10 @@ async def test_get_mark_price(prices_manager):
     assert prices_manager.valid_price_received_event.is_set()
 
     # current time move within allowed range
-    prices_manager.exchange_manager.backtesting.time_manager.current_timestamp = 1
-    assert await prices_manager.get_mark_price(0.01) == 10
-    assert prices_manager.valid_price_received_event.is_set()
+    if not os.getenv('CYTHON_IGNORE'):
+        prices_manager.exchange_manager.backtesting.time_manager.current_timestamp = 1
+        assert await prices_manager.get_mark_price(0.01) == 10
+        assert prices_manager.valid_price_received_event.is_set()
 
     # new value
     prices_manager.set_mark_price(42.0000172)
