@@ -13,24 +13,28 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 from asyncio import Lock
-import math
 
 from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
-    ExchangeConstantsOrderColumns as ECOC, ExchangeConstantsOrderColumns, TradeOrderType
+    ExchangeConstantsOrderColumns, TradeOrderType
 from octobot_trading.orders.order_util import get_fees_for_currency
+from octobot_trading.util.initializable import Initializable
 
 
-class Order:
+class Order(Initializable):
     """
     Order class will represent an open order in the specified exchange
     In simulation it will also define rules to be filled / canceled
     It is also use to store creation & fill values of the order
     """
+    CHECK_ORDER_STATUS_AFTER_INIT_DELAY = 2
 
     def __init__(self, trader):
+        super().__init__()
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
         self.status = OrderStatus.OPEN
@@ -39,6 +43,7 @@ class Order:
         self.lock = Lock()
         self.linked_orders = []
 
+        self.is_synchronized_with_exchange = False
         self.order_id = trader.parse_order_id(None)
         self.simulated = trader.simulate
 
@@ -153,34 +158,14 @@ class Order:
                 self.executed_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
         return changed
 
-    async def update_order_status(self, last_prices: list):
+    async def initialize_impl(self):
+        asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY, self.update_order_status)
+
+    async def update_order_status(self, force_refresh=False):
         """
         Update_order_status will define the rules for a simulated order to be filled / canceled
         """
         raise NotImplementedError("Update_order_status not implemented")
-
-    # check_last_prices is used to collect data to perform the order update_order_status process
-    def check_last_prices(self, last_prices, price_to_check, inferior) -> bool:
-        if last_prices:
-            prices = [p[ECOC.PRICE.value]
-                      for p in last_prices
-                      if not math.isnan(p[ECOC.PRICE.value]) and (
-                              p[ECOC.TIMESTAMP.value] >= self.creation_time)]
-
-            if prices:
-                if inferior:
-                    if float(min(prices)) < price_to_check:
-                        get_logger(self.get_name()).debug(f"{self.symbol} last prices: {prices}, "
-                                                          f"ask for {'inferior' if inferior else 'superior'} "
-                                                          f"to {price_to_check}")
-                        return True
-                else:
-                    if float(max(prices)) > price_to_check:
-                        get_logger(self.get_name()).debug(f"{self.symbol} last prices: {prices}, "
-                                                          f"ask for {'inferior' if inferior else 'superior'} "
-                                                          f"to {price_to_check}")
-                        return True
-        return False
 
     def cancel_order(self):
         """
@@ -229,6 +214,7 @@ class Order:
     async def default_exchange_update_order_status(self):
         result = await self.exchange_manager.exchange.get_order(self.order_id, self.symbol)
         new_status = self.trader.parse_status(result)
+        self.is_synchronized_with_exchange = True
         if new_status == OrderStatus.FILLED:
             self.trader.parse_exchange_order_to_trade_instance(result, self)
         elif new_status == OrderStatus.CANCELED:

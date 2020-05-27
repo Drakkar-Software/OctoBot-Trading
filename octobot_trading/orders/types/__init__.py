@@ -15,19 +15,21 @@
 #  License along with this library.
 
 from octobot_trading.enums import TraderOrderType
-from octobot_trading.orders.types.buy_limit_order import BuyLimitOrder
-from octobot_trading.orders.types.buy_market_order import BuyMarketOrder
-from octobot_trading.orders.types.sell_limit_order import SellLimitOrder
-from octobot_trading.orders.types.sell_market_order import SellMarketOrder
-from octobot_trading.orders.types.stop_loss_limit_order import StopLossLimitOrder
-from octobot_trading.orders.types.stop_loss_order import StopLossOrder
-from octobot_trading.orders.types.trailing_stop_order import TrailingStopOrder
+from octobot_trading.orders.types.limit.buy_limit_order import BuyLimitOrder
+from octobot_trading.orders.types.market.buy_market_order import BuyMarketOrder
+from octobot_trading.orders.types.limit.sell_limit_order import SellLimitOrder
+from octobot_trading.orders.types.market.sell_market_order import SellMarketOrder
+from octobot_trading.orders.types.limit.stop_loss_limit_order import StopLossLimitOrder
+from octobot_trading.orders.types.limit.stop_loss_order import StopLossOrder
+from octobot_trading.orders.types.trailing.trailing_stop_order import TrailingStopOrder
+from octobot_trading.orders.types.trailing.trailing_stop_limit_order import TrailingStopLimitOrder
 from octobot_trading.orders.types.unknown_order import UnknownOrder
 
 TraderOrderTypeClasses = {
     TraderOrderType.BUY_MARKET: BuyMarketOrder,
     TraderOrderType.BUY_LIMIT: BuyLimitOrder,
     TraderOrderType.TRAILING_STOP: TrailingStopOrder,
+    TraderOrderType.TRAILING_STOP_LIMIT: TrailingStopLimitOrder,
     TraderOrderType.STOP_LOSS: StopLossOrder,
     TraderOrderType.STOP_LOSS_LIMIT: StopLossLimitOrder,
     TraderOrderType.SELL_MARKET: SellMarketOrder,

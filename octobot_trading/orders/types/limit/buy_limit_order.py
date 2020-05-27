@@ -13,15 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
 from octobot_trading.enums import TradeOrderSide
-from octobot_trading.data.order import Order
+from octobot_trading.orders.types.limit.limit_order import LimitOrder
 
 
-# TODO
-class StopLossLimitOrder(Order):
+class BuyLimitOrder(LimitOrder):
     def __init__(self, trader):
         super().__init__(trader)
-        self.side = TradeOrderSide.SELL
-
-    async def update_order_status(self, last_prices: list):
-        pass
+        self.side = TradeOrderSide.BUY

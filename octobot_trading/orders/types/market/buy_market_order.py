@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,9 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.enums import TradeOrderSide
+from octobot_trading.orders.types.market.market_order import MarketOrder
 
-from octobot_trading.data.order cimport Order
 
+class BuyMarketOrder(MarketOrder):
+    def __init__(self, trader):
+        super().__init__(trader)
+        self.side = TradeOrderSide.BUY
 
-cdef class BuyLimitOrder(Order):
-    pass

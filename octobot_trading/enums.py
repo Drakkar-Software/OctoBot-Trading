@@ -74,6 +74,7 @@ class TraderOrderType(Enum):
     SELL_MARKET = "sell_market"
     SELL_LIMIT = "sell_limit"
     TRAILING_STOP = "trailing_stop"
+    TRAILING_STOP_LIMIT = "trailing_stop_limit"
     TAKE_PROFIT = "take_profit"
     TAKE_PROFIT_LIMIT = "take_profit_limit"
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data

@@ -1,4 +1,3 @@
-# pylint: disable=E0611
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,24 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import copy
 
-from ccxt.base.errors import InsufficientFunds
-
-from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.constants import RECENT_TRADES_CHANNEL, ORDERS_CHANNEL
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.data.order import Order
-from octobot_trading.enums import OrderStatus
-from octobot_trading.producers import MissingOrderException
-from octobot_trading.producers.orders_updater import OpenOrdersUpdater, CloseOrdersUpdater
+from tests import event_loop
+from tests.exchanges import simulated_trader, simulated_exchange_manager
+from tests.orders import buy_limit_order
 
 
-class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
-    async def start(self):
-        pass
-
-
-class CloseOrdersUpdaterSimulator(CloseOrdersUpdater):
-    async def start(self):
-        pass
+def test_buy_limit_order_trigger(buy_limit_order):
+    prices_event_manager = buy_limit_order.exchange_manager.exchange_symbol_data

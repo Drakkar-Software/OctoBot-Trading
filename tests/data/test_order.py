@@ -81,57 +81,6 @@ async def test_get_profitability(trader_simulator):
     assert order_filled_sup_side_sell_inst.get_profitability() == 0
 
 
-# async def test_check_last_prices(trader_simulator):
-#     config, exchange_manager_inst, trader_inst = trader_simulator
-#     order_inst = Order(trader_inst)
-#
-#     # test price in last trades
-#     # test inferior TRUE
-#     max_price = 10
-#     min_price = 4
-#     order_inst.creation_time = time.time()
-#     recent_trades = [{"price": random_price(min_value=min_price, max_value=max_price), "timestamp": time.time()}
-#                      for _ in range(0, SIMULATOR_LAST_PRICES_TO_CHECK)]
-#
-#     # append validating trade
-#     recent_trades.append({"price": min_price, "timestamp": time.time()})
-#     assert order_inst.check_last_prices(recent_trades, max_price, inferior=True)
-#
-#     # test inferior FALSE
-#     max_price = 10.454677
-#     min_price = 2.4273
-#     order_inst.creation_time = time.time()
-#     recent_trades = [{"price": random_price(min_value=min_price, max_value=max_price), "timestamp": time.time()}
-#                      for _ in range(0, SIMULATOR_LAST_PRICES_TO_CHECK)]
-#
-#     # append validating trade
-#     recent_trades.append({"price": max_price, "timestamp": time.time()})
-#     assert order_inst.check_last_prices(recent_trades,
-#                                         random_price(min_value=min_price, max_value=max_price - 1),
-#                                         inferior=False)
-#
-#     # test price not in last trades
-#     # test inferior TRUE
-#     max_price = 7456.15555632315
-#     min_price = 1421.1488845
-#     order_inst.creation_time = time.time()
-#     recent_trades = [{"price": random_price(min_value=min_price, max_value=max_price), "timestamp": time.time()}
-#                      for _ in range(0, SIMULATOR_LAST_PRICES_TO_CHECK)]
-#
-#     assert not order_inst.check_last_prices(recent_trades, min_price, inferior=True)
-#
-#     # test inferior FALSE
-#     max_price = 0.0001243753
-#     min_price = 0.000012557753
-#     order_inst.creation_time = time.time()
-#     recent_trades = [{"price": random_price(min_value=min_price, max_value=max_price), "timestamp": time.time()}
-#                      for _ in range(0, SIMULATOR_LAST_PRICES_TO_CHECK)]
-#
-#     assert not order_inst.check_last_prices(recent_trades,
-#                                             max_price,
-#                                             inferior=False)
-
-
 async def test_update(trader):
     config, exchange_manager_inst, trader_inst = trader
 

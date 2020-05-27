@@ -28,11 +28,11 @@ from octobot_trading.data.order import Order
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.orders.order_factory import create_order_instance, create_order_instance_from_raw
-from octobot_trading.orders.types.buy_limit_order import BuyLimitOrder
-from octobot_trading.orders.types.buy_market_order import BuyMarketOrder
-from octobot_trading.orders.types.sell_limit_order import SellLimitOrder
-from octobot_trading.orders.types.sell_market_order import SellMarketOrder
-from octobot_trading.orders.types.stop_loss_order import StopLossOrder
+from octobot_trading.orders.types.limit.buy_limit_order import BuyLimitOrder
+from octobot_trading.orders.types.market.buy_market_order import BuyMarketOrder
+from octobot_trading.orders.types.limit.sell_limit_order import SellLimitOrder
+from octobot_trading.orders.types.market.sell_market_order import SellMarketOrder
+from octobot_trading.orders.types.limit.stop_loss_order import StopLossOrder
 from octobot_trading.traders.trader import Trader
 from octobot_trading.traders.trader_simulator import TraderSimulator
 
