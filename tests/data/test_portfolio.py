@@ -20,15 +20,13 @@ from octobot_commons.tests.test_config import load_test_config
 
 from octobot_trading.constants import CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR, \
     CONFIG_SIMULATOR_FEES
-from octobot_trading.data.order import Order
-from octobot_trading.data.portfolio import Portfolio
-from octobot_trading.enums import TraderOrderType, TradeOrderSide
+from octobot_trading.enums import TraderOrderType
 from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
-from octobot_trading.orders.types.buy_limit_order import BuyLimitOrder
-from octobot_trading.orders.types.buy_market_order import BuyMarketOrder
-from octobot_trading.orders.types.sell_limit_order import SellLimitOrder
-from octobot_trading.orders.types.sell_market_order import SellMarketOrder
-from octobot_trading.orders.types.stop_loss_order import StopLossOrder
+from octobot_trading.orders.types.limit.buy_limit_order import BuyLimitOrder
+from octobot_trading.orders.types.market.buy_market_order import BuyMarketOrder
+from octobot_trading.orders.types.limit.sell_limit_order import SellLimitOrder
+from octobot_trading.orders.types.market.sell_market_order import SellMarketOrder
+from octobot_trading.orders.types.limit.stop_loss_order import StopLossOrder
 from tests.test_utils.order_util import fill_market_order, fill_limit_or_stop_order
 
 # All test coroutines will be treated as marked.

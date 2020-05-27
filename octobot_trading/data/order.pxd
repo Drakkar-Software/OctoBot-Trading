@@ -19,9 +19,11 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
+from octobot_trading.util.initializable cimport Initializable
+
 from octobot_trading.data.portfolio cimport Portfolio
 
-cdef class Order:
+cdef class Order(Initializable):
     cdef public object trader
     cdef public object exchange_manager
 
@@ -34,6 +36,7 @@ cdef class Order:
     cdef public Portfolio linked_portfolio
 
     cdef public bint is_simulated
+    cdef public bint is_synchronized_with_exchange
     cdef public bint is_from_this_octobot
 
     cdef public str symbol
@@ -86,7 +89,6 @@ cdef class Order:
     cdef void __update_taker_maker_from_raw(self)
 
     cpdef str to_string(self)
-    cpdef bint check_last_prices(self, list last_prices, double price_to_check, bint inferior)
     cpdef cancel_order(self)
     cpdef add_linked_order(self, Order order)
     cpdef tuple get_currency_and_market(self)

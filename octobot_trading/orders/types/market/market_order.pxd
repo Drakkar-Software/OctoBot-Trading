@@ -18,5 +18,5 @@
 from octobot_trading.data.order cimport Order
 
 
-cdef class SellMarketOrder(Order):
+cdef class MarketOrder(Order):
     pass

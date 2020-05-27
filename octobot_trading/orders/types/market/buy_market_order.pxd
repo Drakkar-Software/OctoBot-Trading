@@ -15,8 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.data.order cimport Order
+from octobot_trading.orders.types.market.market_order cimport MarketOrder
 
-
-cdef class SellLimitOrder(Order):
+cdef class BuyMarketOrder(MarketOrder):
     pass

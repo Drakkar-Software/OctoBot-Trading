@@ -18,5 +18,6 @@
 from octobot_trading.data.order cimport Order
 
 
-cdef class BuyMarketOrder(Order):
-    pass
+cdef class LimitOrder(Order):
+    cdef object limit_price_hit_event # object is asyncio.Event
+    cdef object wait_for_hit_event_task # object is asyncio.Task
