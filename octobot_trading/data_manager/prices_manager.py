@@ -23,13 +23,12 @@ from octobot_trading.util.initializable import Initializable
 class PricesManager(Initializable):
     MARK_PRICE_VALIDITY = 5 * MINUTE_TO_SECONDS
 
-    def __init__(self, exchange_manager, price_events_manager):
+    def __init__(self, exchange_manager):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
         self.mark_price = 0
         self.mark_price_set_time = 0
         self.exchange_manager = exchange_manager
-        self.price_events_manager = price_events_manager
 
         # warning: should only be created in the async loop thread
         self.valid_price_received_event = Event()
@@ -40,7 +39,6 @@ class PricesManager(Initializable):
     def set_mark_price(self, mark_price):
         self.mark_price = mark_price
         self.mark_price_set_time = self.exchange_manager.exchange.get_exchange_current_time()
-        self.price_events_manager.handle_price(self.mark_price, self.mark_price_set_time)
         self.valid_price_received_event.set()
 
     async def get_mark_price(self, timeout=MARK_PRICE_VALIDITY):

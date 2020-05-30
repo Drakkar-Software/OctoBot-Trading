@@ -101,7 +101,7 @@ class PriceEventsManager:
 
     def _check_events(self, price, timestamp):
         """
-        Check each price, timestamp pair event should be triggered
+        Check for each price, timestamp pair event if it should be triggered
         :param price: the price used to check
         :param timestamp: the timestamp used to check
         :return: the event list that match

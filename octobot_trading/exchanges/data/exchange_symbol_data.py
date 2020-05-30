@@ -36,8 +36,8 @@ class ExchangeSymbolData:
 
         self.price_events_manager = PriceEventsManager()
         self.order_book_manager = OrderBookManager()
-        self.prices_manager = PricesManager(self.exchange_manager, self.price_events_manager)
-        self.recent_trades_manager = RecentTradesManager(self.price_events_manager)
+        self.prices_manager = PricesManager(self.exchange_manager)
+        self.recent_trades_manager = RecentTradesManager()
         self.ticker_manager = TickerManager()
         self.funding_manager = FundingManager() if self.exchange_manager.is_margin else None
 
@@ -69,14 +69,18 @@ class ExchangeSymbolData:
 
     def handle_recent_trade_update(self, recent_trades, replace_all=False):
         if replace_all:
-            return self.recent_trades_manager.set_all_recent_trades(recent_trades)
-        return self.recent_trades_manager.add_new_trades(recent_trades)
+            recent_trades_added = self.recent_trades_manager.set_all_recent_trades(recent_trades)
+        else:
+            recent_trades_added = self.recent_trades_manager.add_new_trades(recent_trades)
+        self.price_events_manager.handle_recent_trades(recent_trades_added)
+        return recent_trades_added
 
     def handle_liquidations(self, liquidations):
         self.recent_trades_manager.add_new_liquidations(liquidations)
 
     def handle_mark_price_update(self, mark_price):
         self.prices_manager.set_mark_price(mark_price)
+        self.price_events_manager.handle_price(mark_price, self.exchange_manager.exchange.get_exchange_current_time())
 
     def handle_order_book_update(self, asks, bids):
         self.order_book_manager.handle_new_books(asks, bids)

@@ -14,13 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data_manager.price_events_manager cimport PriceEventsManager
 from octobot_trading.util.initializable cimport Initializable
 
 cdef class RecentTradesManager(Initializable):
     cdef object logger
-
-    cdef public PriceEventsManager price_events_manager
 
     cdef public object recent_trades
     cdef public object liquidations
