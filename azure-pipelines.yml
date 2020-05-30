@@ -16,7 +16,7 @@ pr:
     - '*'
 
 variables:
-  CYTHON_TEST_IGNORE: true
+  CYTHON_IGNORE: true
 
 jobs:
 - job: Windows

@@ -33,7 +33,6 @@ async def test_initialize(recent_trades_manager):
         recent_trades_manager.recent_trades[0]
     with pytest.raises(IndexError):
         recent_trades_manager.liquidations[0]
-    assert recent_trades_manager.price_events_manager
 
 
 async def test_set_all_recent_trades(recent_trades_manager):
@@ -126,4 +125,3 @@ async def test_reset_recent_trades(recent_trades_manager):
             recent_trades_manager.recent_trades[0]
         with pytest.raises(IndexError):
             recent_trades_manager.liquidations[0]
-        assert recent_trades_manager.price_events_manager

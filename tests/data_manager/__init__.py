@@ -29,10 +29,10 @@ def price_events_manager(event_loop):
 
 
 @pytest.fixture()
-def prices_manager(event_loop, backtesting_exchange_manager, price_events_manager):
-    return PricesManager(backtesting_exchange_manager, price_events_manager)
+def prices_manager(event_loop, backtesting_exchange_manager):
+    return PricesManager(backtesting_exchange_manager)
 
 
 @pytest.fixture()
-def recent_trades_manager(event_loop, price_events_manager):
-    return RecentTradesManager(price_events_manager)
+def recent_trades_manager(event_loop):
+    return RecentTradesManager()

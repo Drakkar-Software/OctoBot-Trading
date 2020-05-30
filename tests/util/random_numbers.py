@@ -86,9 +86,9 @@ def random_kline() -> list:
 def random_recent_trade(price=None, timestamp=None) -> dict:
     return {
         ECOC.PRICE.value: price if price is not None else random_price(),
-        ECOC.AMOUNT.value: timestamp if timestamp is not None else random_quantity(),
+        ECOC.AMOUNT.value: random_quantity(),
         ECOC.COST.value: random_quantity(),
-        ECOC.TIMESTAMP.value: random_timestamp()
+        ECOC.TIMESTAMP.value: timestamp if timestamp is not None else random_quantity(),
     }
 
 
