@@ -13,22 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 
-import random
-import time
-
-from octobot_trading.constants import SIMULATOR_LAST_PRICES_TO_CHECK
+from tests.orders.types import ensure_filled
+from tests.util.random_numbers import random_recent_trade, random_price
 
 
 async def fill_limit_or_stop_order(limit_or_stop_order, min_price, max_price):
-    last_prices = []
-    limit_or_stop_order.creation_time = time.time()
-    for i in range(0, SIMULATOR_LAST_PRICES_TO_CHECK):
-        last_prices.insert(i, {})
-        last_prices[i]["price"] = random.uniform(min_price, max_price)
-        last_prices[i]["timestamp"] = time.time()
-
-    await limit_or_stop_order.update_order_status(last_prices)
+    # price_events_manager = limit_or_stop_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+    #     limit_or_stop_order.symbol).price_events_manager
+    # price_events_manager.handle_recent_trades(
+    #     [random_recent_trade(price=random_price(max_value=min_price),
+    #                          timestamp=limit_or_stop_order.timestamp),
+    #      random_recent_trade(price=random_price(min_value=max_price),
+    #                          timestamp=limit_or_stop_order.timestamp)
+    #      ])
+    # await asyncio.create_task(ensure_filled())
+    await limit_or_stop_order.on_fill()
 
 
 async def fill_market_order(market_order, price):

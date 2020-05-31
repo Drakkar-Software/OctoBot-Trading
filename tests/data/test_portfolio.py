@@ -41,11 +41,12 @@ class TestPortfolio:
         if not config:
             config = load_test_config()
 
-        exchange_builder = ExchangeBuilder(config, TestPortfolio.EXCHANGE_NAME).\
-            is_rest_only().\
-            is_simulated().\
+        exchange_builder = ExchangeBuilder(config, TestPortfolio.EXCHANGE_NAME). \
+            is_rest_only(). \
+            is_simulated(). \
             disable_trading_mode()
         exchange_manager = await exchange_builder.build()
+        exchange_manager.is_backtesting = True  # force order refresh
 
         return config, exchange_manager, \
                exchange_manager.exchange_personal_data.portfolio_manager, exchange_manager.trader
@@ -90,6 +91,7 @@ class TestPortfolio:
                           current_price=70,
                           quantity=10,
                           price=70)
+        await market_buy.initialize()
 
         # test buy order creation
         portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
@@ -112,6 +114,8 @@ class TestPortfolio:
                           current_price=60,
                           quantity=8,
                           price=60)
+        await limit_sell.initialize()
+
         # test sell order creation
         portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
         assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 2
@@ -138,6 +142,7 @@ class TestPortfolio:
                          current_price=70,
                          quantity=10,
                          price=70)
+        await limit_buy.initialize()
 
         # update portfolio with creations
         portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
@@ -159,6 +164,7 @@ class TestPortfolio:
                            current_price=80,
                            quantity=8,
                            price=80)
+        await market_sell.initialize()
 
         # update portfolio with creations
         portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
@@ -192,7 +198,7 @@ class TestPortfolio:
                            current_price=70,
                            quantity=3,
                            price=70)
-
+        await market_sell.initialize()
         await fill_market_order(market_sell, 70)
 
         # Test sell order
@@ -221,6 +227,7 @@ class TestPortfolio:
                          current_price=50,
                          quantity=2,
                          price=50)
+        await limit_buy.initialize()
 
         await fill_limit_or_stop_order(limit_buy, 49, 51)
 
@@ -386,6 +393,7 @@ class TestPortfolio:
                           current_price=90,
                           quantity=4,
                           price=90)
+        await limit_sell.initialize()
 
         # Test buy order
         limit_buy = BuyLimitOrder(trader)
@@ -402,6 +410,7 @@ class TestPortfolio:
                            current_price=50,
                            quantity=4,
                            price=50)
+        await limit_buy_2.initialize()
 
         # Test sell order
         limit_sell_2 = SellLimitOrder(trader)
@@ -418,6 +427,7 @@ class TestPortfolio:
                            current_price=10,
                            quantity=2,
                            price=10)
+        await stop_loss_2.initialize()
 
         # Test sell order
         limit_sell_3 = SellLimitOrder(trader)
@@ -426,6 +436,7 @@ class TestPortfolio:
                             current_price=20,
                             quantity=1,
                             price=20)
+        await limit_sell_3.initialize()
 
         # Test stop loss order
         stop_loss_3 = StopLossOrder(trader)
@@ -481,6 +492,7 @@ class TestPortfolio:
                           current_price=90,
                           quantity=4,
                           price=90)
+        await limit_sell.initialize()
 
         # Test buy order
         limit_buy = BuyLimitOrder(trader)
@@ -497,6 +509,7 @@ class TestPortfolio:
                            current_price=50,
                            quantity=4,
                            price=50)
+        await limit_buy_2.initialize()
 
         # Test buy order
         limit_buy_3 = BuyLimitOrder(trader)
@@ -513,6 +526,7 @@ class TestPortfolio:
                            current_price=41,
                            quantity=1.78,
                            price=41)
+        await limit_buy_4.initialize()
 
         # Test buy order
         limit_buy_5 = BuyLimitOrder(trader)
@@ -521,6 +535,7 @@ class TestPortfolio:
                            current_price=0.2122427,
                            quantity=3.72448,
                            price=0.2122427)
+        await limit_buy_5.initialize()
 
         # Test buy order
         limit_buy_6 = BuyLimitOrder(trader)
@@ -529,6 +544,7 @@ class TestPortfolio:
                            current_price=430,
                            quantity=1.05,
                            price=430)
+        await limit_buy_6.initialize()
 
         # Test sell order
         limit_sell_2 = SellLimitOrder(trader)
@@ -545,6 +561,7 @@ class TestPortfolio:
                            current_price=10,
                            quantity=2,
                            price=10)
+        await stop_loss_2.initialize()
 
         # Test sell order
         limit_sell_3 = SellLimitOrder(trader)
@@ -553,6 +570,7 @@ class TestPortfolio:
                             current_price=20,
                             quantity=1,
                             price=20)
+        await limit_sell_3.initialize()
 
         # Test stop loss order
         stop_loss_3 = StopLossOrder(trader)
@@ -577,6 +595,7 @@ class TestPortfolio:
                            current_price=45,
                            quantity=0.2,
                            price=45)
+        await stop_loss_4.initialize()
 
         # Test sell order
         limit_sell_5 = SellLimitOrder(trader)
@@ -585,6 +604,7 @@ class TestPortfolio:
                             current_price=11,
                             quantity=0.7,
                             price=11)
+        await limit_sell_5.initialize()
 
         # Test stop loss order
         stop_loss_5 = StopLossOrder(trader)
@@ -662,6 +682,7 @@ class TestPortfolio:
                           current_price=7,
                           quantity=100,
                           price=7)
+        await market_buy.initialize()
 
         # test buy order creation
         portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
@@ -685,6 +706,7 @@ class TestPortfolio:
                           current_price=0.0135222,
                           quantity=100,
                           price=0.0135222)
+        await market_buy.initialize()
 
         # test buy order creation
         portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
@@ -708,6 +730,7 @@ class TestPortfolio:
                          current_price=0.00012232132312312,
                          quantity=3000.1214545,
                          price=0.00012232132312312)
+        await limit_buy.initialize()
 
         # test buy order creation
         portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
@@ -735,6 +758,7 @@ class TestPortfolio:
                           current_price=90,
                           quantity=4,
                           price=90)
+        await limit_sell.initialize()
 
         portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
         portfolio_manager.portfolio.reset_portfolio_available()
@@ -751,6 +775,7 @@ class TestPortfolio:
                           current_price=90,
                           quantity=4,
                           price=90)
+        await limit_sell.initialize()
 
         portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
         # Test buy order
@@ -760,6 +785,7 @@ class TestPortfolio:
                          current_price=0.5,
                          quantity=4,
                          price=0.5)
+        await limit_buy.initialize()
 
         portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
 
@@ -770,6 +796,7 @@ class TestPortfolio:
                              current_price=10,
                              quantity=50,
                              price=10)
+        await btc_limit_buy.initialize()
 
         portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy, True)
 
@@ -780,6 +807,7 @@ class TestPortfolio:
                               current_price=10,
                               quantity=50,
                               price=10)
+        await btc_limit_buy2.initialize()
 
         portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy2, True)
 

@@ -16,6 +16,8 @@
 
 from octobot_trading.enums import TraderOrderType
 from octobot_trading.orders.types.limit.buy_limit_order import BuyLimitOrder
+from octobot_trading.orders.types.limit.take_profit_limit_order import TakeProfitLimitOrder
+from octobot_trading.orders.types.limit.take_profit_order import TakeProfitOrder
 from octobot_trading.orders.types.market.buy_market_order import BuyMarketOrder
 from octobot_trading.orders.types.limit.sell_limit_order import SellLimitOrder
 from octobot_trading.orders.types.market.sell_market_order import SellMarketOrder
@@ -28,6 +30,8 @@ from octobot_trading.orders.types.unknown_order import UnknownOrder
 TraderOrderTypeClasses = {
     TraderOrderType.BUY_MARKET: BuyMarketOrder,
     TraderOrderType.BUY_LIMIT: BuyLimitOrder,
+    TraderOrderType.TAKE_PROFIT: TakeProfitOrder,
+    TraderOrderType.TAKE_PROFIT_LIMIT: TakeProfitLimitOrder,
     TraderOrderType.TRAILING_STOP: TrailingStopOrder,
     TraderOrderType.TRAILING_STOP_LIMIT: TrailingStopLimitOrder,
     TraderOrderType.STOP_LOSS: StopLossOrder,

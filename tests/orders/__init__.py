@@ -16,7 +16,7 @@
 import pytest
 
 from octobot_trading.orders.types import BuyLimitOrder, SellLimitOrder, SellMarketOrder, BuyMarketOrder, StopLossOrder, \
-    StopLossLimitOrder
+    StopLossLimitOrder, TakeProfitOrder, TakeProfitLimitOrder
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -56,3 +56,15 @@ def stop_loss_order(event_loop, simulated_trader):
 def stop_loss_limit_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
     return StopLossLimitOrder(trader_instance)
+
+
+@pytest.fixture()
+def take_profit_order(event_loop, simulated_trader):
+    _, _, trader_instance = simulated_trader
+    return TakeProfitOrder(trader_instance)
+
+
+@pytest.fixture()
+def take_profit_limit_order(event_loop, simulated_trader):
+    _, _, trader_instance = simulated_trader
+    return TakeProfitLimitOrder(trader_instance)

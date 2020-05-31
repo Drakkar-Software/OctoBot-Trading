@@ -56,5 +56,6 @@ class LimitOrder(Order):
 
     def clear(self):
         super().clear()
-        self.wait_for_hit_event_task.cancel()
-        self.wait_for_hit_event_task = None
+        if self.wait_for_hit_event_task is not None:
+            self.wait_for_hit_event_task.cancel()
+            self.wait_for_hit_event_task = None
