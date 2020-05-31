@@ -25,9 +25,10 @@ class MarketOrder(Order):
         if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):
             await self.default_exchange_update_order_status()
 
-        await self.price_hit()
+        await self.on_fill()
 
-    async def price_hit(self):
+    async def on_fill(self):
+        await super().on_fill()
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
         self.status = OrderStatus.FILLED
         self.origin_price = self.created_last_price
