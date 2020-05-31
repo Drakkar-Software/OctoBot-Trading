@@ -16,5 +16,5 @@
 #  License along with this library.
 from octobot_trading.orders.types.limit.limit_order cimport LimitOrder
 
-cdef class StopLossOrder(LimitOrder):
+cdef class TakeProfitOrder(LimitOrder):
     pass

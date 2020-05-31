@@ -114,6 +114,7 @@ class Trader(Initializable):
         if linked_order is not None:
             new_order.linked_orders.append(linked_order)
 
+        await new_order.initialize()
         return new_order
 
     async def create_artificial_order(self, order_type, symbol, current_price, quantity, price, linked_portfolio):

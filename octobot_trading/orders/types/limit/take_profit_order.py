@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,7 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.orders.types.limit.limit_order cimport LimitOrder
+from octobot_trading.enums import TradeOrderSide, TraderOrderType
+from octobot_trading.orders.types.limit.limit_order import LimitOrder
 
-cdef class StopLossOrder(LimitOrder):
-    pass
+
+class TakeProfitOrder(LimitOrder):
+    def __init__(self, trader, side=TradeOrderSide.SELL):
+        super().__init__(trader)
+        self.side = side
+
+    async def on_fill(self):
+        await super().on_fill()
+        await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET, self.symbol, self.origin_stop_price,
+                                                  self.origin_quantity, self.origin_stop_price,
+                                                  self.linked_portfolio)
