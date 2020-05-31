@@ -33,3 +33,4 @@ class MarketOrder(Order):
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
         self.fee = self.get_computed_fee()
+        # TODO for real orders : add post sync

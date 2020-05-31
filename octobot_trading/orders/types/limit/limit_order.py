@@ -52,6 +52,7 @@ class LimitOrder(Order):
         self.fee = self.get_computed_fee()
         for order in self.linked_orders:
             await self.trader.cancel_order(order)
+        # TODO for real orders : add post sync
 
     def clear(self):
         super().clear()
