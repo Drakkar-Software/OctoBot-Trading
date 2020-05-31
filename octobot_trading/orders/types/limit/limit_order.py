@@ -17,7 +17,7 @@ import asyncio
 from asyncio import wait_for
 
 from octobot_trading.data.order import Order
-from octobot_trading.enums import TradeOrderSide, OrderStatus, ExchangeConstantsMarketPropertyColumns
+from octobot_trading.enums import TradeOrderSide, ExchangeConstantsMarketPropertyColumns
 
 
 class LimitOrder(Order):
@@ -50,6 +50,10 @@ class LimitOrder(Order):
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
         self.fee = self.get_computed_fee()
-        self.executed_time = self.generate_executed_time()
         for order in self.linked_orders:
             await self.trader.cancel_order(order)
+
+    def clear(self):
+        super().clear()
+        self.wait_for_hit_event_task.cancel()
+        self.wait_for_hit_event_task = None

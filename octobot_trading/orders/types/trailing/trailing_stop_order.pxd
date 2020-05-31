@@ -19,4 +19,5 @@ from octobot_trading.data.order cimport Order
 
 
 cdef class TrailingStopOrder(Order):
-    pass
+    cdef object trailing_stop_price_hit_event # object is asyncio.Event
+    cdef object wait_for_hit_event_task # object is asyncio.Task
