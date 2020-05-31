@@ -159,7 +159,10 @@ class Order(Initializable):
         return changed
 
     async def initialize_impl(self):
-        asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY, self.update_order_status)
+        if not self.exchange_manager.is_backtesting:
+            asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY, self.update_order_status)
+        else:
+            await self.update_order_status()
 
     async def update_order_status(self, force_refresh=False):
         """
@@ -179,6 +182,7 @@ class Order(Initializable):
         Set filled status
         """
         self.status = OrderStatus.FILLED
+        self.executed_time = self.generate_executed_time()
 
     def add_linked_order(self, order):
         self.linked_orders.append(order)

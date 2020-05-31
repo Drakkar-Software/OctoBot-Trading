@@ -14,11 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.enums import TradeOrderSide
-from octobot_trading.data.order import Order
+from octobot_trading.orders.types.trailing.trailing_stop_order import TrailingStopOrder
 
 
-# TODO
-class TrailingStopLimitOrder(Order):
+class TrailingStopLimitOrder(TrailingStopOrder):
     def __init__(self, trader, side=TradeOrderSide.SELL):
         super().__init__(trader)
         self.side = side
