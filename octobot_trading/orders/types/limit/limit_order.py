@@ -41,11 +41,11 @@ class LimitOrder(Order):
 
     async def wait_for_price_hit(self):
         await wait_for(self.limit_price_hit_event.wait(), timeout=None)
-        await self.perform_price_hit()
+        await self.on_fill()
 
-    async def perform_price_hit(self):
+    async def on_fill(self):
+        await super().on_fill()
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
-        self.status = OrderStatus.FILLED
         self.filled_price = self.origin_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity

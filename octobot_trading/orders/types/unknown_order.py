@@ -21,7 +21,7 @@ class UnknownOrder(Order):
     def __init__(self, trader):
         super().__init__(trader)
 
-    async def update_order_status(self, last_prices: list):
+    async def update_order_status(self, force_refresh=False):
         if not self.trader.simulate:
             await self.default_exchange_update_order_status()
         else:

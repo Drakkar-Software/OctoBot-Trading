@@ -170,10 +170,15 @@ class Order(Initializable):
     def cancel_order(self):
         """
         Set cancelled status and keep track of cancellation time.
-        :return: None
         """
         self.status = OrderStatus.CANCELED
         self.canceled_time = self.exchange_manager.exchange.get_exchange_current_time()
+
+    async def on_fill(self):
+        """
+        Set filled status
+        """
+        self.status = OrderStatus.FILLED
 
     def add_linked_order(self, order):
         self.linked_orders.append(order)

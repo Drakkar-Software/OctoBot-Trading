@@ -22,8 +22,8 @@ class StopLossLimitOrder(LimitOrder):
         super().__init__(trader)
         self.side = side
 
-    async def perform_price_hit(self):
-        await super().perform_price_hit()
+    async def on_fill(self):
+        await super().on_fill()
         await self.trader.create_artificial_order(TraderOrderType.SELL_LIMIT, self.symbol, self.origin_stop_price,
                                                   self.origin_quantity, self.origin_stop_price,
                                                   self.linked_portfolio)  # TODO change price management
