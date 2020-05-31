@@ -18,7 +18,7 @@ from octobot_trading.orders.types.limit.limit_order import LimitOrder
 
 
 class StopLossOrder(LimitOrder):
-    def __init__(self, trader, side=TradeOrderSide.SELL):
+    def __init__(self, trader, side=TradeOrderSide.BUY):
         super().__init__(trader)
         self.side = side
 
