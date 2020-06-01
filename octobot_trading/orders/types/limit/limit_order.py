@@ -21,11 +21,12 @@ from octobot_trading.enums import TradeOrderSide, ExchangeConstantsMarketPropert
 
 
 class LimitOrder(Order):
-    def __init__(self, trader):
+    def __init__(self, trader, side=TradeOrderSide.BUY):
         super().__init__(trader)
-        self.side = TradeOrderSide.BUY
+        self.side = side
         self.limit_price_hit_event = None
         self.wait_for_hit_event_task = None
+        self.trigger_above = self.side == TradeOrderSide.SELL
 
     async def update_order_status(self, force_refresh=False):
         if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):
@@ -34,7 +35,7 @@ class LimitOrder(Order):
         if self.limit_price_hit_event is None:
             self.limit_price_hit_event = self.exchange_manager.exchange_symbols_data.\
                 get_exchange_symbol_data(self.symbol).price_events_manager.\
-                add_event(self.origin_price, self.creation_time, self.side == TradeOrderSide.SELL)
+                add_event(self.origin_price, self.creation_time, self.trigger_above)
 
         if self.wait_for_hit_event_task is None and self.limit_price_hit_event is not None:
             self.wait_for_hit_event_task = asyncio.create_task(self.wait_for_price_hit())

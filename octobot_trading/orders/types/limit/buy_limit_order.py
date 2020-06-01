@@ -19,6 +19,5 @@ from octobot_trading.orders.types.limit.limit_order import LimitOrder
 
 
 class BuyLimitOrder(LimitOrder):
-    def __init__(self, trader):
-        super().__init__(trader)
-        self.side = TradeOrderSide.BUY
+    def __init__(self, trader, side=TradeOrderSide.BUY):
+        super().__init__(trader, side)
