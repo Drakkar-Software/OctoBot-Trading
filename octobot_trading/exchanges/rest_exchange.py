@@ -275,7 +275,6 @@ class RestExchange(AbstractExchange):
             self.logger.error(e)
         return None
 
-    # todo { 'type': 'trailing-stop' }
     async def _create_specific_order(self, order_type, symbol, quantity, price=None):
         created_order = None
         if order_type == TraderOrderType.BUY_MARKET:
@@ -293,6 +292,10 @@ class RestExchange(AbstractExchange):
         elif order_type == TraderOrderType.TAKE_PROFIT:
             created_order = None
         elif order_type == TraderOrderType.TAKE_PROFIT_LIMIT:
+            created_order = None
+        elif order_type == TraderOrderType.TRAILING_STOP:
+            created_order = None
+        elif order_type == TraderOrderType.TRAILING_STOP_LIMIT:
             created_order = None
         return created_order
 
