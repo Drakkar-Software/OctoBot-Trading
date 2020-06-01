@@ -462,6 +462,8 @@ class RestExchange(AbstractExchange):
             recent_trade.pop(ecoc.FEE.value)
             recent_trade.pop(ecoc.TYPE.value)
             recent_trade.pop(ecoc.TAKERORMAKER.value)
+            recent_trade[ecoc.TIMESTAMP.value] = \
+                self.exchange_manager.get_uniformized_timestamp(recent_trade[ecoc.TIMESTAMP.value])
         except KeyError as e:
             self.logger.error(f"Fail to clean recent_trade dict ({e})")
         return recent_trade
