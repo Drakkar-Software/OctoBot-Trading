@@ -341,6 +341,9 @@ class RestExchange(AbstractExchange):
     def get_uniform_timestamp(self, timestamp):
         return timestamp / 1000
 
+    def get_exchange_current_time(self):
+        return self.get_uniform_timestamp(self.client.milliseconds())
+
     async def stop(self):
         self.logger.info(f"Closing connection.")
         await self.client.close()
