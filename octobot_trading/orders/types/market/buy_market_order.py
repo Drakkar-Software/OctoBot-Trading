@@ -19,6 +19,4 @@ from octobot_trading.orders.types.market.market_order import MarketOrder
 
 class BuyMarketOrder(MarketOrder):
     def __init__(self, trader):
-        super().__init__(trader)
-        self.side = TradeOrderSide.BUY
-
+        super().__init__(trader, side=TradeOrderSide.BUY)

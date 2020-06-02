@@ -18,6 +18,8 @@ from asyncio import Lock
 
 from octobot_commons.logging.logging_util import get_logger
 
+from octobot_trading.channels.exchange_channel import get_chan
+from octobot_trading.constants import ORDERS_CHANNEL
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns, TradeOrderType
@@ -33,7 +35,7 @@ class Order(Initializable):
     """
     CHECK_ORDER_STATUS_AFTER_INIT_DELAY = 2
 
-    def __init__(self, trader):
+    def __init__(self, trader, side=None):
         super().__init__()
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
@@ -57,7 +59,7 @@ class Order(Initializable):
         self.origin_quantity = 0
         self.origin_stop_price = 0
         self.order_type = None
-        self.side = None
+        self.side = side
         self.filled_quantity = 0
         self.linked_portfolio = None
         self.linked_to = None
@@ -73,6 +75,9 @@ class Order(Initializable):
     @classmethod
     def get_name(cls):
         return cls.__name__
+
+    def get_logger_name(self):
+        return f"{self.get_name()} | {self.order_id}"
 
     def update(self, symbol, order_id="", status=OrderStatus.OPEN,
                current_price=0.0, quantity=0.0, price=0.0, stop_price=0.0,
@@ -160,7 +165,9 @@ class Order(Initializable):
 
     async def initialize_impl(self):
         if not self.exchange_manager.is_backtesting:
-            asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY, self.update_order_status)
+            asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY,
+                                                asyncio.create_task,
+                                                self.update_order_status())
         else:
             await self.update_order_status()
 
@@ -183,6 +190,25 @@ class Order(Initializable):
         """
         self.status = OrderStatus.FILLED
         self.executed_time = self.generate_executed_time()
+
+    async def on_fill_complete(self):
+        """
+        Post fill actions
+        """
+        try:
+            get_logger(self.get_logger_name()).debug(f"{self.symbol} {self.get_name()} (ID : {self.order_id}) "
+                                                     f"filled on {self.exchange_manager.exchange_name} "
+                                                     f"at {self.filled_price}")
+            await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+                .send(cryptocurrency=self.currency,
+                      symbol=self.symbol,
+                      order=self.to_dict(),
+                      is_from_bot=True,
+                      is_closed=True,
+                      is_updated=False)
+            await self.exchange_manager.trader.close_filled_order(self)
+        except Exception as e:
+            get_logger(self.get_logger_name()).exception(e, True, f"Fail to execute fill complete action : {e}.")
 
     def add_linked_order(self, order):
         self.linked_orders.append(order)
