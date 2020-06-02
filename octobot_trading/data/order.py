@@ -169,7 +169,7 @@ class Order(Initializable):
                                                 asyncio.create_task,
                                                 self.update_order_status())
         else:
-            await self.update_order_status()
+            asyncio.get_event_loop().call_soon(asyncio.create_task, self.update_order_status())
 
     async def update_order_status(self, force_refresh=False):
         """
