@@ -32,5 +32,4 @@ class MarketOrder(Order):
         self.filled_price = self.created_last_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
-        self.fee = self.get_computed_fee()
         await self.on_fill_complete()

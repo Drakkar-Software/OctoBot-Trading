@@ -19,11 +19,12 @@ import asyncio
 
 import pytest
 
+from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TradeOrderType, OrderStatus
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.orders import stop_loss_order
-from tests.orders.types import ensure_filled
+
 from tests.util.random_numbers import random_price, random_quantity, random_recent_trade, random_timestamp
 
 pytestmark = pytest.mark.asyncio
@@ -46,17 +47,17 @@ async def test_stop_loss_order_trigger(stop_loss_order):
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(min_value=order_price + 1),
                              timestamp=stop_loss_order.timestamp)])
-    await asyncio.create_task(ensure_filled())
+    await wait_asyncio_next_cycle()
     assert not stop_loss_order.is_filled()
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=order_price,
                              timestamp=stop_loss_order.timestamp - 1)])
-    await asyncio.create_task(ensure_filled())
+    await wait_asyncio_next_cycle()
     assert not stop_loss_order.is_filled()
     price_events_manager.handle_recent_trades([random_recent_trade(price=order_price,
                                                                    timestamp=stop_loss_order.timestamp)])
 
-    await asyncio.create_task(ensure_filled())
+    await wait_asyncio_next_cycle()
     assert stop_loss_order.is_filled()
 
     # TODO add test create artificial order

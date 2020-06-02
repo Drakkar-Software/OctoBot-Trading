@@ -35,19 +35,3 @@ class MarkPriceUpdaterSimulator(MarkPriceUpdater):
         if real_data_for_recent_trades:
             await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
                 .new_consumer(self.handle_recent_trades_update)
-        else:
-            await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
-                .new_consumer(self.ignore_recent_trades_update)
-
-    async def ignore_recent_trades_update(self, exchange: str, exchange_id: str,
-                                          cryptocurrency: str, symbol: str, recent_trades: list):
-        """
-        Used
-        :param exchange:
-        :param exchange_id:
-        :param cryptocurrency:
-        :param symbol:
-        :param recent_trades:
-        :return:
-        """
-        pass
