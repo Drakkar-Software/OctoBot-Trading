@@ -103,6 +103,7 @@ cdef class Order(Initializable):
     cpdef void consider_as_filled(self)
     cpdef dict to_dict(self)
     cpdef void clear(self)
+    cpdef str get_logger_name(self)
 
 cpdef object parse_order_status(dict raw_order)
 

@@ -22,7 +22,7 @@ class MarketOrder(Order):
     async def update_order_status(self, force_refresh=False):
         if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):
             await self.default_exchange_update_order_status()
-
+        # TODO for real orders : add post sync
         await self.on_fill()
 
     async def on_fill(self):
@@ -33,4 +33,4 @@ class MarketOrder(Order):
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
         self.fee = self.get_computed_fee()
-        # TODO for real orders : add post sync
+        await self.on_fill_complete()

@@ -46,6 +46,7 @@ class TrailingStopOrder(Order):
 
     async def on_fill(self):
         await super().on_fill()
+        await self.on_fill_complete()
 
     def clear(self):
         super().clear()
