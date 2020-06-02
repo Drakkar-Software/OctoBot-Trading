@@ -57,7 +57,10 @@ class LimitOrder(Order):
         await self.on_fill_complete()
 
     def clear(self):
-        super().clear()
         if self.wait_for_hit_event_task is not None:
             self.wait_for_hit_event_task.cancel()
             self.wait_for_hit_event_task = None
+        if self.limit_price_hit_event is not None:
+            self.exchange_manager.exchange_symbols_data. \
+                get_exchange_symbol_data(self.symbol).price_events_manager.remove_event(self.limit_price_hit_event)
+        super().clear()
