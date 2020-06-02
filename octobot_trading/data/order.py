@@ -16,6 +16,7 @@
 import asyncio
 from asyncio import Lock
 
+from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.exchange_channel import get_chan
@@ -169,7 +170,8 @@ class Order(Initializable):
                                                 asyncio.create_task,
                                                 self.update_order_status())
         else:
-            asyncio.get_event_loop().call_soon(asyncio.create_task, self.update_order_status())
+            asyncio.create_task(self.update_order_status())
+            await wait_asyncio_next_cycle()
 
     async def update_order_status(self, force_refresh=False):
         """
@@ -196,9 +198,16 @@ class Order(Initializable):
         Post fill actions
         """
         try:
+            # compute order fees
+            self.fee = self.get_computed_fee()
+
             get_logger(self.get_logger_name()).debug(f"{self.symbol} {self.get_name()} (ID : {self.order_id}) "
                                                      f"filled on {self.exchange_manager.exchange_name} "
                                                      f"at {self.filled_price}")
+            # cancel linked orders
+            for order in self.linked_orders:
+                await self.trader.cancel_order(order)
+
             await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                 .send(cryptocurrency=self.currency,
                       symbol=self.symbol,

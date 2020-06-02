@@ -14,22 +14,22 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import copy
 
-from ccxt.base.errors import InsufficientFunds
-
-from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.constants import RECENT_TRADES_CHANNEL, ORDERS_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.data.order import Order
-from octobot_trading.enums import OrderStatus
-from octobot_trading.producers import MissingOrderException
+from octobot_trading.constants import RECENT_TRADES_CHANNEL
 from octobot_trading.producers.orders_updater import OpenOrdersUpdater, CloseOrdersUpdater
 
 
 class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
     async def start(self):
-        pass
+        await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
+            .new_consumer(self.ignore_recent_trades_update)
+
+    async def ignore_recent_trades_update(self, exchange: str, exchange_id: str,
+                                          cryptocurrency: str, symbol: str, recent_trades: list):
+        """
+        Used to subscribe at least one recent trades consumer during backtesting
+        """
 
 
 class CloseOrdersUpdaterSimulator(CloseOrdersUpdater):

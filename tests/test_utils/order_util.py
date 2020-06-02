@@ -15,7 +15,8 @@
 #  License along with this library.
 import asyncio
 
-from tests.orders.types import ensure_filled
+from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
+
 from tests.util.random_numbers import random_recent_trade, random_price
 
 
@@ -28,13 +29,11 @@ async def fill_limit_or_stop_order(limit_or_stop_order, min_price, max_price):
     #      random_recent_trade(price=random_price(min_value=max_price),
     #                          timestamp=limit_or_stop_order.timestamp)
     #      ])
-    # await asyncio.create_task(ensure_filled())
+    # await wait_asyncio_next_cycle()
     await limit_or_stop_order.on_fill()
+    await wait_asyncio_next_cycle()
 
 
 async def fill_market_order(market_order, price):
-    last_prices = [{
-        "price": price
-    }]
-
-    await market_order.update_order_status(last_prices)
+    await market_order.on_fill()
+    await wait_asyncio_next_cycle()

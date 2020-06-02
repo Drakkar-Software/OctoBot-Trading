@@ -164,7 +164,11 @@ class Portfolio(Initializable):
     def _check_available_should_update(self, order):
         # stop losses and take profits aren't using available portfolio
         return order.__class__ not in [TraderOrderTypeClasses[TraderOrderType.STOP_LOSS],
-                                       TraderOrderTypeClasses[TraderOrderType.STOP_LOSS_LIMIT]]
+                                       TraderOrderTypeClasses[TraderOrderType.STOP_LOSS_LIMIT],
+                                       TraderOrderTypeClasses[TraderOrderType.TAKE_PROFIT],
+                                       TraderOrderTypeClasses[TraderOrderType.TAKE_PROFIT_LIMIT],
+                                       TraderOrderTypeClasses[TraderOrderType.TRAILING_STOP],
+                                       TraderOrderTypeClasses[TraderOrderType.TRAILING_STOP_LIMIT]]
 
     # Realise portfolio availability update
     def _update_portfolio_available(self, order, factor=1):

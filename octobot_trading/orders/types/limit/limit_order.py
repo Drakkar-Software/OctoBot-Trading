@@ -51,9 +51,6 @@ class LimitOrder(Order):
         self.filled_price = self.origin_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
-        self.fee = self.get_computed_fee()
-        for order in self.linked_orders:
-            await self.trader.cancel_order(order)
         await self.on_fill_complete()
 
     def clear(self):
