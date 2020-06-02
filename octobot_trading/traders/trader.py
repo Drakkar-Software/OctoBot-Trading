@@ -220,9 +220,8 @@ class Trader(Initializable):
             self.exchange_manager.exchange_personal_data.get_order_portfolio(order) \
                 .update_portfolio_available(order, is_new_order=False)
 
-        if order.is_self_managed():
-            # remove order from open_orders
-            self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
+        # remove order from open_orders
+        self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
 
         return raw_cancelled_order
 
