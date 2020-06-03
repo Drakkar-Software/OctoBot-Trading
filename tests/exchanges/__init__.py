@@ -131,10 +131,12 @@ async def backtesting_exchange_manager(request, backtesting_config, fake_backtes
 async def simulated_trader(simulated_exchange_manager):
     config = load_test_config()
     trader_instance = TraderSimulator(config, simulated_exchange_manager)
+    await trader_instance.initialize()
     return config, simulated_exchange_manager, trader_instance
 
 
 @pytest.fixture
 async def backtesting_trader(backtesting_config, backtesting_exchange_manager):
     trader_instance = TraderSimulator(backtesting_config, backtesting_exchange_manager)
+    await trader_instance.initialize()
     return backtesting_config, backtesting_exchange_manager, trader_instance
