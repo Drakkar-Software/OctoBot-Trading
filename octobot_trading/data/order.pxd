@@ -38,13 +38,14 @@ cdef class Order(Initializable):
     cdef public bint is_simulated
     cdef public bint is_synchronized_with_exchange
     cdef public bint is_from_this_octobot
+    cdef public bint simulated
 
     cdef public str symbol
     cdef public str currency
     cdef public str market
     cdef public str taker_or_maker
     cdef public str order_id
-    cdef public bint simulated
+    cdef public str logger_name
 
     cdef public double origin_price
     cdef public double origin_stop_price

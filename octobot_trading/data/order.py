@@ -50,6 +50,7 @@ class Order(Initializable):
         self.order_id = trader.parse_order_id(None)
         self.simulated = trader.simulate
 
+        self.logger_name = None
         self.symbol = None
         self.currency = None
         self.market = None
@@ -78,7 +79,9 @@ class Order(Initializable):
         return cls.__name__
 
     def get_logger_name(self):
-        return f"{self.get_name()} | {self.order_id}"
+        if self.logger_name is None:
+            self.logger_name = f"{self.get_name()} | {self.order_id}"
+        return self.logger_name
 
     def update(self, symbol, order_id="", status=OrderStatus.OPEN,
                current_price=0.0, quantity=0.0, price=0.0, stop_price=0.0,
@@ -165,11 +168,16 @@ class Order(Initializable):
         return changed
 
     async def initialize_impl(self):
+        """
+        Initialize order status update tasks
+        """
         if not self.exchange_manager.is_backtesting:
             asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY,
                                                 asyncio.create_task,
                                                 self.update_order_status())
         else:
+            # In backtesting wait for the next asyncio loop iteration to ensure this order status
+            # is updated before leaving this method
             asyncio.create_task(self.update_order_status())
             await wait_asyncio_next_cycle()
 
@@ -201,12 +209,10 @@ class Order(Initializable):
             # compute order fees
             self.fee = self.get_computed_fee()
 
-            get_logger(self.get_logger_name()).debug(f"{self.symbol} {self.get_name()} (ID : {self.order_id}) "
-                                                     f"filled on {self.exchange_manager.exchange_name} "
+            get_logger(self.get_logger_name()).debug(f"{self.symbol} of size {self.origin_quantity} {self.currency} "
+                                                     f"filled {self.filled_quantity} {self.currency} "
+                                                     f"on {self.exchange_manager.exchange_name} "
                                                      f"at {self.filled_price}")
-            # cancel linked orders
-            for order in self.linked_orders:
-                await self.trader.cancel_order(order)
 
             await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                 .send(cryptocurrency=self.currency,

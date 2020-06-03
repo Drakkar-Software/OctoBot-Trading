@@ -18,12 +18,18 @@ from octobot_trading.orders.types.limit.limit_order import LimitOrder
 
 
 class StopLossLimitOrder(LimitOrder):
+    UNINITIALIZED_LIMIT_PRICE = -1
+
     def __init__(self, trader, side=TradeOrderSide.SELL):
         super().__init__(trader, side)
         self.trigger_above = False
+        self.limit_price = self.UNINITIALIZED_LIMIT_PRICE
 
     async def on_fill(self):
         await super().on_fill()
         await self.trader.create_artificial_order(TraderOrderType.SELL_LIMIT, self.symbol, self.origin_stop_price,
-                                                  self.origin_quantity, self.origin_stop_price,
-                                                  self.linked_portfolio)  # TODO change price management
+                                                  self.origin_quantity,
+                                                  self.limit_price
+                                                  if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE else
+                                                  self.origin_stop_price,
+                                                  self.linked_portfolio)

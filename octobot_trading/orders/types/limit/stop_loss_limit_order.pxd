@@ -17,4 +17,4 @@
 from octobot_trading.orders.types.limit.limit_order cimport LimitOrder
 
 cdef class StopLossLimitOrder(LimitOrder):
-    pass
+    cdef public double limit_price

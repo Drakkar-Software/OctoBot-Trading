@@ -13,27 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 
 from tests.util.random_numbers import random_recent_trade, random_price
 
 
-async def fill_limit_or_stop_order(limit_or_stop_order, min_price, max_price):
-    # price_events_manager = limit_or_stop_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-    #     limit_or_stop_order.symbol).price_events_manager
-    # price_events_manager.handle_recent_trades(
-    #     [random_recent_trade(price=random_price(max_value=min_price),
-    #                          timestamp=limit_or_stop_order.timestamp),
-    #      random_recent_trade(price=random_price(min_value=max_price),
-    #                          timestamp=limit_or_stop_order.timestamp)
-    #      ])
-    # await wait_asyncio_next_cycle()
+async def fill_limit_or_stop_order(limit_or_stop_order):
     await limit_or_stop_order.on_fill()
     await wait_asyncio_next_cycle()
 
 
-async def fill_market_order(market_order, price):
+async def fill_market_order(market_order):
     await market_order.on_fill()
     await wait_asyncio_next_cycle()
