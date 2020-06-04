@@ -27,7 +27,7 @@ class SubPortfolio(Portfolio):
 
     # overwrite parent update_portfolio_balance
     async def update_portfolio_from_balance(self, balance):
-        modified = await self.parent_portfolio.update_portfolio_from_balance(balance)
+        modified = self.parent_portfolio.update_portfolio_from_balance(balance)
         self.update_from_parent()
         return modified
 
@@ -52,9 +52,9 @@ class SubPortfolio(Portfolio):
         else:
             self.percent = self.DEFAULT_SUB_PORTFOLIO_PERCENT
 
-    async def update_portfolio_from_order(self, order):
-        await super().update_portfolio_from_order(order)
-        await self.parent_portfolio.update_portfolio_from_order(order)
+    def update_portfolio_from_order(self, order):
+        super().update_portfolio_from_order(order)
+        self.parent_portfolio.update_portfolio_from_order(order)
 
     def update_portfolio_available(self, order, is_new_order=False):
         super().update_portfolio_available(order, is_new_order=is_new_order)
