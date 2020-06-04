@@ -36,8 +36,8 @@ def random_prices(min_value=0, count=2):
     return [random_price(min_value=min_value) for _ in range(count)]
 
 
-def random_quantity(min_value=0):
-    return uniform(min_value, MAX_QUANTITY)
+def random_quantity(min_value=0, max_value=MAX_QUANTITY):
+    return uniform(min_value, max_value)
 
 
 def random_quantities(min_value=0, count=2):

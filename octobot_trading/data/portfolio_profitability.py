@@ -96,7 +96,7 @@ class PortfolioProfitabilty:
         self.initial_portfolio_current_profitability = 0
 
         try:
-            await self.update_portfolio_and_currencies_current_value()
+            await self._update_portfolio_and_currencies_current_value()
 
             if self.portfolio_origin_value == 0:
                 # try to update portfolio origin value if it's not known yet
@@ -147,7 +147,7 @@ class PortfolioProfitabilty:
         :return: the current crypto-currencies values
         """
         if not self.current_crypto_currencies_values:
-            await self.update_portfolio_and_currencies_current_value()
+            await self._update_portfolio_and_currencies_current_value()
         return self.current_crypto_currencies_values
 
     async def get_current_holdings_values(self):
@@ -159,29 +159,6 @@ class PortfolioProfitabilty:
         return {currency: await self._get_currency_value(self.portfolio_manager.portfolio.portfolio, currency, holdings)
                 for currency in holdings.keys()}
 
-    async def update_portfolio_and_currencies_current_value(self):
-        """
-        Update the portfolio current value with the current portfolio instance
-        """
-        self.portfolio_current_value = await self.update_portfolio_current_value(
-            self.portfolio_manager.portfolio.portfolio)
-
-    async def evaluate_value(self, currency, quantity, raise_error=True):
-        """
-        Evaluate value returns the currency quantity value in the reference (attribute) currency
-        :param currency: the currency to evaluate
-        :param quantity: the currency quantity
-        :param raise_error: will catch exception if False
-        :return: the currency value
-        """
-        # easy case --> the current currency is the reference currency or the quantity is 0
-        if currency == self.reference_market or quantity == 0:
-            return quantity
-        currency_value = await self._try_get_value_of_currency(currency, quantity, raise_error)
-        if currency_value > 0 and currency in self.initializing_symbol_prices:
-            self.initializing_symbol_prices.remove(currency)
-        return currency_value
-
     async def holdings_ratio(self, currency):
         """
         Return the holdings ratio for the specified currency
@@ -190,12 +167,12 @@ class PortfolioProfitabilty:
         """
         currency_holdings: float = self.portfolio_manager.portfolio.get_currency_from_given_portfolio(currency,
                                                                                                       PORTFOLIO_TOTAL)
-        currency_value: float = await self.evaluate_value(currency, currency_holdings)
+        currency_value: float = await self._evaluate_value(currency, currency_holdings)
         return currency_value / self.portfolio_current_value if self.portfolio_current_value else 0
 
     async def update_portfolio_current_value(self, portfolio, currencies_values=None, fill_currencies_values=False):
         """
-        Update the current portfolio value
+        Update the portfolio with current prices
         :param portfolio: the portfolio to update
         :param currencies_values: the currencies values
         :param fill_currencies_values: the currencies values to calculate
@@ -224,6 +201,29 @@ class PortfolioProfitabilty:
                 symbol, _ = split_symbol(pair)
                 if symbol not in self.traded_currencies_without_market_specific:
                     self.traded_currencies_without_market_specific.add(symbol)
+
+    async def _evaluate_value(self, currency, quantity, raise_error=True):
+        """
+        Evaluate value returns the currency quantity value in the reference (attribute) currency
+        :param currency: the currency to evaluate
+        :param quantity: the currency quantity
+        :param raise_error: will catch exception if False
+        :return: the currency value
+        """
+        # easy case --> the current currency is the reference currency or the quantity is 0
+        if currency == self.reference_market or quantity == 0:
+            return quantity
+        currency_value = await self._try_get_value_of_currency(currency, quantity, raise_error)
+        if currency_value > 0 and currency in self.initializing_symbol_prices:
+            self.initializing_symbol_prices.remove(currency)
+        return currency_value
+
+    async def _update_portfolio_and_currencies_current_value(self):
+        """
+        Update the portfolio current value with the current portfolio instance
+        """
+        self.portfolio_current_value = await self.update_portfolio_current_value(
+            self.portfolio_manager.portfolio.portfolio)
 
     async def _init_origin_portfolio_and_currencies_value(self):
         self.origin_portfolio = self.origin_portfolio or await self.portfolio_manager.portfolio.copy()
@@ -295,11 +295,11 @@ class PortfolioProfitabilty:
                 currency_to_evaluate = currency
                 try:
                     if currency not in evaluated_currencies:
-                        values_dict[currency] = await self.evaluate_value(currency, 1)
+                        values_dict[currency] = await self._evaluate_value(currency, 1)
                         evaluated_currencies.add(currency)
                     if market not in evaluated_currencies:
                         currency_to_evaluate = market
-                        values_dict[market] = await self.evaluate_value(market, 1)
+                        values_dict[market] = await self._evaluate_value(market, 1)
                         evaluated_currencies.add(market)
                 except KeyError:
                     missing_tickers.add(currency_to_evaluate)
@@ -307,7 +307,7 @@ class PortfolioProfitabilty:
         for currency in portfolio:
             try:
                 if currency not in evaluated_currencies:
-                    values_dict[currency] = await self.evaluate_value(currency, 1)
+                    values_dict[currency] = await self._evaluate_value(currency, 1)
                     evaluated_currencies.add(currency)
             except KeyError:
                 missing_tickers.add(currency)
@@ -333,6 +333,6 @@ class PortfolioProfitabilty:
             if currencies_values and currency in currencies_values:
                 return currencies_values[currency] * portfolio[currency][CONFIG_PORTFOLIO_TOTAL]
             else:
-                return await self.evaluate_value(currency, portfolio[currency][CONFIG_PORTFOLIO_TOTAL], raise_error)
+                return await self._evaluate_value(currency, portfolio[currency][CONFIG_PORTFOLIO_TOTAL], raise_error)
         return 0
 
