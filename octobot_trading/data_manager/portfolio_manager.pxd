@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.data.order cimport Order
 from octobot_trading.data.portfolio cimport Portfolio
 from octobot_trading.data.portfolio_profitability cimport PortfolioProfitabilty
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
@@ -33,3 +34,10 @@ cdef class PortfolioManager(Initializable):
 
     cdef public PortfolioProfitabilty portfolio_profitability
     cdef public Portfolio portfolio
+
+    cpdef bint handle_balance_update_from_order(self, Order order)
+    cpdef bint handle_balance_update(self, dict balance)
+
+    cdef void _reset_portfolio(self)
+    cdef void _load_portfolio(self)
+    cdef void _set_starting_simulated_portfolio(self)
