@@ -20,18 +20,18 @@ from octobot_trading.orders.types.limit.limit_order import LimitOrder
 class TakeProfitLimitOrder(LimitOrder):
     UNINITIALIZED_LIMIT_PRICE = -1
 
-    def __init__(self, trader, side=TradeOrderSide.SELL):
+    def __init__(self, trader, side=TradeOrderSide.SELL, limit_price=UNINITIALIZED_LIMIT_PRICE):
         super().__init__(trader, side)
-        self.limit_price = self.UNINITIALIZED_LIMIT_PRICE
+        self.limit_price = limit_price
 
     async def on_trade_creation(self):
         await super().on_trade_creation()
-        await self.exchange_manager.trader.create_artificial_order(TraderOrderType.SELL_LIMIT
-                                                                   if self.side is TradeOrderSide.SELL
-                                                                   else TraderOrderType.BUY_LIMIT,
-                                                                   self.symbol, self.origin_stop_price,
-                                                                   self.origin_quantity,
-                                                                   self.limit_price
-                                                                   if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE else
-                                                                   self.origin_stop_price,
-                                                                   self.linked_portfolio)
+        await self.trader.create_artificial_order(TraderOrderType.SELL_LIMIT
+                                                  if self.side is TradeOrderSide.SELL
+                                                  else TraderOrderType.BUY_LIMIT,
+                                                  self.symbol, self.origin_stop_price,
+                                                  self.origin_quantity,
+                                                  self.limit_price
+                                                  if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE else
+                                                  self.origin_stop_price,
+                                                  self.linked_portfolio)

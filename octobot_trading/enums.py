@@ -34,6 +34,8 @@ class TradeOrderType(Enum):
     STOP_LOSS_LIMIT = "stop_loss_limit"
     TAKE_PROFIT = "take_profit"
     TAKE_PROFIT_LIMIT = "take_profit_limit"
+    TRAILING_STOP = "trailing_stop"
+    TRAILING_STOP_LIMIT = "trailing_stop_limit"
     LIMIT_MAKER = "limit_maker"  # LIMIT_MAKER is a limit order that is rejected if would be filled as taker
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
