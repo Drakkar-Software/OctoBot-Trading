@@ -17,7 +17,7 @@ import pytest
 
 from octobot_trading.enums import TradeOrderSide
 from octobot_trading.orders.types import BuyLimitOrder, SellLimitOrder, SellMarketOrder, BuyMarketOrder, StopLossOrder, \
-    StopLossLimitOrder, TakeProfitOrder, TakeProfitLimitOrder
+    StopLossLimitOrder, TakeProfitOrder, TakeProfitLimitOrder, TrailingStopOrder, TrailingStopLimitOrder
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -59,10 +59,11 @@ def stop_loss_buy_order(event_loop, simulated_trader):
     return StopLossOrder(trader_instance, side=TradeOrderSide.BUY)
 
 
-@pytest.fixture()
+@pytest.yield_fixture()
 def stop_loss_limit_order(event_loop, simulated_trader):
-    _, _, trader_instance = simulated_trader
-    return StopLossLimitOrder(trader_instance)
+    _, exchange_manager, trader_instance = simulated_trader
+    yield StopLossLimitOrder(trader_instance)
+    exchange_manager.exchange_personal_data.orders_manager.clear()
 
 
 @pytest.fixture()
@@ -77,7 +78,21 @@ def take_profit_buy_order(event_loop, simulated_trader):
     return TakeProfitOrder(trader_instance, side=TradeOrderSide.BUY)
 
 
-@pytest.fixture()
+@pytest.yield_fixture()
 def take_profit_limit_order(event_loop, simulated_trader):
+    _, exchange_manager, trader_instance = simulated_trader
+    yield TakeProfitLimitOrder(trader_instance)
+    exchange_manager.exchange_personal_data.orders_manager.clear()
+
+
+@pytest.fixture()
+def trailing_stop_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return TakeProfitLimitOrder(trader_instance)
+    return TrailingStopOrder(trader_instance)
+
+
+@pytest.yield_fixture()
+def trailing_stop_limit_order(event_loop, simulated_trader):
+    _, exchange_manager, trader_instance = simulated_trader
+    yield TrailingStopLimitOrder(trader_instance)
+    exchange_manager.exchange_personal_data.orders_manager.clear()

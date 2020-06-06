@@ -21,11 +21,11 @@ class TakeProfitOrder(LimitOrder):
     def __init__(self, trader, side=TradeOrderSide.SELL):
         super().__init__(trader, side)
 
-    async def on_fill(self):
+    async def on_trade_creation(self):
+        await super().on_trade_creation()
         await self.trader.create_artificial_order(TraderOrderType.SELL_LIMIT
                                                   if self.side is TradeOrderSide.SELL
                                                   else TraderOrderType.BUY_LIMIT,
                                                   self.symbol, self.origin_stop_price,
                                                   self.origin_quantity, self.origin_stop_price,
                                                   self.linked_portfolio)
-        await super().on_fill()
