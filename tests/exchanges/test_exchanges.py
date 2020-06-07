@@ -17,6 +17,7 @@ import pytest
 from mock import patch
 from datetime import datetime
 
+from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.constants import MSECONDS_TO_MINUTE
 from octobot_commons.enums import TimeFrames, TimeFramesMinutes
 from octobot_commons.tests.test_config import load_test_config
@@ -61,6 +62,8 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
     async def test_get_exchange(self):
         config = await self.init_default()
@@ -87,6 +90,8 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
     async def test_del_exchange(self):
         config = await self.init_default()
@@ -116,6 +121,8 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
     async def test_get_all_exchanges(self):
         config = await self.init_default()
@@ -140,6 +147,8 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+        # let updaters gracefully shutdown
+        await wait_asyncio_next_cycle()
 
     async def test_ms_timestamp_operations(self):
         config = await self.init_default()
