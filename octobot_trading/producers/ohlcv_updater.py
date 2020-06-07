@@ -86,7 +86,7 @@ class OHLCVUpdater(OHLCVProducer):
                 .handle_candles_update(time_frame, candles[:-1], replace_all=True, partial=False)
         else:
             # When candle history cannot be loaded, retry to load it later
-            self.logger.error(f"Failed to init candle history for {self.channel.exchange_manager.exchange_name}")
+            self.logger.error(f"Failed to init candle history")
             asyncio.get_event_loop().call_later(self.OHLCV_INITIALIZATION_RETRY_DELAY,
                                                 asyncio.create_task,
                                                 self._initialize_candles(time_frame, pair))
