@@ -15,6 +15,7 @@
 #  License along with this library.
 import pytest
 
+from octobot_trading.enums import TradeOrderSide
 from octobot_trading.orders.types import BuyLimitOrder, SellLimitOrder, SellMarketOrder, BuyMarketOrder, StopLossOrder, \
     StopLossLimitOrder, TakeProfitOrder, TakeProfitLimitOrder
 
@@ -47,9 +48,15 @@ def sell_market_order(event_loop, simulated_trader):
 
 
 @pytest.fixture()
-def stop_loss_order(event_loop, simulated_trader):
+def stop_loss_sell_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return StopLossOrder(trader_instance)
+    return StopLossOrder(trader_instance, side=TradeOrderSide.SELL)
+
+
+@pytest.fixture()
+def stop_loss_buy_order(event_loop, simulated_trader):
+    _, _, trader_instance = simulated_trader
+    return StopLossOrder(trader_instance, side=TradeOrderSide.BUY)
 
 
 @pytest.fixture()
@@ -59,9 +66,15 @@ def stop_loss_limit_order(event_loop, simulated_trader):
 
 
 @pytest.fixture()
-def take_profit_order(event_loop, simulated_trader):
+def take_profit_sell_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return TakeProfitOrder(trader_instance)
+    return TakeProfitOrder(trader_instance, side=TradeOrderSide.SELL)
+
+
+@pytest.fixture()
+def take_profit_buy_order(event_loop, simulated_trader):
+    _, _, trader_instance = simulated_trader
+    return TakeProfitOrder(trader_instance, side=TradeOrderSide.BUY)
 
 
 @pytest.fixture()

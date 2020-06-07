@@ -13,10 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
-
-from tests.util.random_numbers import random_recent_trade, random_price
 
 
 async def fill_limit_or_stop_order(limit_or_stop_order):

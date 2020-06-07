@@ -35,7 +35,7 @@ class TrailingStopOrder(Order):
         if self.trailing_stop_price_hit_event is None:
             self.trailing_stop_price_hit_event = self.exchange_manager.exchange_symbols_data.\
                 get_exchange_symbol_data(self.symbol).price_events_manager.\
-                add_event(self.origin_price, self.creation_time, self.side == TradeOrderSide.SELL)
+                add_event(self.origin_price, self.creation_time, self.side is TradeOrderSide.SELL)
 
         if self.wait_for_hit_event_task is None and self.trailing_stop_price_hit_event is not None:
             self.wait_for_hit_event_task = asyncio.create_task(self.wait_for_price_hit())

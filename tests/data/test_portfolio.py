@@ -19,7 +19,7 @@ from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
 from octobot_trading.constants import CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR, \
     CONFIG_SIMULATOR_FEES
-from octobot_trading.enums import TraderOrderType
+from octobot_trading.enums import TraderOrderType, TradeOrderSide
 from octobot_trading.orders.types.limit.buy_limit_order import BuyLimitOrder
 from octobot_trading.orders.types.limit.sell_limit_order import SellLimitOrder
 from octobot_trading.orders.types.limit.stop_loss_order import StopLossOrder
@@ -298,7 +298,7 @@ async def test_update_portfolio_with_cancelled_orders(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
 
 
-async def test_update_portfolio_with_stop_loss_orders(backtesting_trader):
+async def test_update_portfolio_with_stop_loss_sell_orders(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
@@ -319,7 +319,7 @@ async def test_update_portfolio_with_stop_loss_orders(backtesting_trader):
                      price=50)
 
     # Test stop loss order
-    stop_loss = StopLossOrder(trader)
+    stop_loss = StopLossOrder(trader, side=TradeOrderSide.SELL)
     stop_loss.update(order_type=TraderOrderType.STOP_LOSS,
                      symbol="BTC/USDT",
                      current_price=60,
@@ -347,6 +347,57 @@ async def test_update_portfolio_with_stop_loss_orders(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1240
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 6
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1240
+
+
+async def test_update_portfolio_with_stop_loss_buy_orders(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    # Test buy order
+    limit_sell = SellLimitOrder(trader)
+    limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
+                      symbol="BTC/USDT",
+                      current_price=90,
+                      quantity=4,
+                      price=90)
+
+    # Test buy order
+    limit_buy = BuyLimitOrder(trader)
+    limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
+                     symbol="BTC/USDT",
+                     current_price=50,
+                     quantity=4,
+                     price=50)
+
+    # Test stop loss order
+    stop_loss = StopLossOrder(trader, side=TradeOrderSide.BUY)
+    stop_loss.update(order_type=TraderOrderType.STOP_LOSS,
+                     symbol="BTC/USDT",
+                     current_price=60,
+                     quantity=4,
+                     price=60)
+
+    portfolio_manager.portfolio.update_portfolio_available(stop_loss, True)
+    portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
+    portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
+
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE), 1) == 6
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 800
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+
+    # cancel limits
+    portfolio_manager.portfolio.update_portfolio_available(limit_buy, False)
+    portfolio_manager.portfolio.update_portfolio_available(limit_sell, False)
+
+    await fill_limit_or_stop_order(stop_loss)
+
+    # filling stop loss
+    # typical stop loss behavior --> update available before update portfolio
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 14
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 760
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 14
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 760
 
 
 async def test_update_portfolio_with_some_filled_orders(backtesting_trader):
@@ -422,8 +473,32 @@ async def test_update_portfolio_with_some_filled_orders(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
 
+    # Test stop loss order
+    stop_loss_4 = StopLossOrder(trader, side=TradeOrderSide.BUY)
+    stop_loss_4.update(order_type=TraderOrderType.STOP_LOSS,
+                       symbol="BTC/USDT",
+                       current_price=20,
+                       quantity=4,
+                       price=20)
+
+    # Test stop loss order
+    stop_loss_5 = StopLossOrder(trader, side=TradeOrderSide.BUY)
+    stop_loss_5.update(order_type=TraderOrderType.STOP_LOSS,
+                       symbol="BTC/USDT",
+                       current_price=200,
+                       quantity=4,
+                       price=20)
+    portfolio_manager.portfolio.update_portfolio_available(stop_loss_5, True)
+
+    # portfolio did not change as stop losses are not affecting available funds
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE), 1) == 3
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 680
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+
     # cancels
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_3, False)
+    portfolio_manager.portfolio.update_portfolio_available(stop_loss_5, False)
     portfolio_manager.portfolio.update_portfolio_available(limit_sell_2, False)
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, False)
 
@@ -437,6 +512,12 @@ async def test_update_portfolio_with_some_filled_orders(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1200
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 7
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1200
+
+    await fill_limit_or_stop_order(stop_loss_4)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 11
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1120
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 11
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1120
 
 
 async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
@@ -540,7 +621,7 @@ async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
                         price=50)
 
     # Test stop loss order
-    stop_loss_4 = StopLossOrder(trader)
+    stop_loss_4 = StopLossOrder(trader, side=TradeOrderSide.BUY)
     stop_loss_4.update(order_type=TraderOrderType.STOP_LOSS,
                        symbol="BTC/USDT",
                        current_price=45,
@@ -562,6 +643,7 @@ async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
                        current_price=9,
                        quantity=0.7,
                        price=9)
+
 
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_2, True)
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_3, True)
@@ -604,10 +686,10 @@ async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
     await fill_limit_or_stop_order(limit_buy_5)
     await fill_limit_or_stop_order(limit_buy_6)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 12.65448
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 692.22
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 12.65448
-    assert round(portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL), 7) == 691.4295063
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 13.05448
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 674.22
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 13.05448
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL), 7) == 673.4295063
 
 
 async def test_update_portfolio_with_multiple_symbols_orders(backtesting_trader):

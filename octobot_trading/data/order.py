@@ -253,11 +253,11 @@ class Order(Initializable):
         if self.filled_price != 0 and self.created_last_price != 0:
             if self.filled_price >= self.created_last_price:
                 self.order_profitability = 1 - self.filled_price / self.created_last_price
-                if self.side == TradeOrderSide.SELL:
+                if self.side is TradeOrderSide.SELL:
                     self.order_profitability *= -1
             else:
                 self.order_profitability = 1 - self.created_last_price / self.filled_price
-                if self.side == TradeOrderSide.BUY:
+                if self.side is TradeOrderSide.BUY:
                     self.order_profitability *= -1
         return self.order_profitability
 
