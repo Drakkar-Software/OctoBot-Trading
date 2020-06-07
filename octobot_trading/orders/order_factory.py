@@ -29,8 +29,10 @@ def create_order_instance_from_raw(trader, raw_order):
     return order
 
 
-def create_order_from_type(trader, order_type):
-    return TraderOrderTypeClasses[order_type](trader)
+def create_order_from_type(trader, order_type, side=None):
+    if side is None:
+        return TraderOrderTypeClasses[order_type](trader)
+    return TraderOrderTypeClasses[order_type](trader, side=side)
 
 
 def create_order_instance(trader,
@@ -47,9 +49,12 @@ def create_order_instance(trader,
                           quantity_filled=0.0,
                           total_cost=0.0,
                           timestamp=0,
-                          linked_portfolio=None):
+                          linked_portfolio=None,
+                          side=None):
     order = create_order_from_type(trader=trader,
-                                   order_type=order_type)
+                                   order_type=order_type,
+                                   side=side
+    )
     order.update(order_type=order_type,
                  symbol=symbol,
                  current_price=current_price,

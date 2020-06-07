@@ -96,7 +96,7 @@ class TestTrader:
         assert trader_2.risk == 0.5
         await self.stop(exchange_manager)
 
-    async def test_cancel_order(self):
+    async def test_cancel_limit_order(self):
         _, exchange_manager, trader_inst = await self.init_default()
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
 
@@ -117,6 +117,30 @@ class TestTrader:
         await trader_inst.cancel_order(limit_buy)
 
         assert limit_buy not in orders_manager.get_open_orders()
+
+        await self.stop(exchange_manager)
+
+    async def test_cancel_stop_order(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+        orders_manager = exchange_manager.exchange_personal_data.orders_manager
+
+        # Test buy order
+        stop_order = StopLossOrder(trader_inst)
+        stop_order.update(order_type=TraderOrderType.STOP_LOSS,
+                          symbol=self.DEFAULT_SYMBOL,
+                          current_price=70,
+                          quantity=10,
+                          price=70)
+
+        assert stop_order not in orders_manager.get_open_orders()
+
+        assert await trader_inst.create_order(stop_order)
+
+        assert stop_order in orders_manager.get_open_orders()
+
+        await trader_inst.cancel_order(stop_order)
+
+        assert stop_order not in orders_manager.get_open_orders()
 
         await self.stop(exchange_manager)
 
@@ -401,6 +425,70 @@ class TestTrader:
         # added filled orders as filled trades
         assert len(trades_manager.trades) == 1
         assert all(trade.status is limit_buy.status for trade in trades_manager.trades.values())
+
+        await self.stop(exchange_manager)
+
+    async def test_close_filled_stop_sell_order(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+        portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+        initial_portfolio = copy.deepcopy(portfolio_manager.portfolio.portfolio)
+        orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
+
+        # Test buy order
+        stop_order = create_order_instance(trader=trader_inst,
+                                           order_type=TraderOrderType.BUY_LIMIT,
+                                           symbol="BQX/BTC",
+                                           current_price=4,
+                                           quantity=2,
+                                           price=4,
+                                           side=TradeOrderSide.SELL)
+
+        await trader_inst.create_order(stop_order, portfolio_manager.portfolio)
+
+        assert not trades_manager.trades
+
+        await trader_inst.close_filled_order(stop_order)
+
+        assert stop_order not in orders_manager.get_open_orders()
+
+        assert not initial_portfolio == portfolio_manager.portfolio.portfolio
+
+        # added filled orders as filled trades
+        assert len(trades_manager.trades) == 1
+        assert all(trade.status is stop_order.status for trade in trades_manager.trades.values())
+
+        await self.stop(exchange_manager)
+
+    async def test_close_filled_stop_buy_order(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+        portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+        initial_portfolio = copy.deepcopy(portfolio_manager.portfolio.portfolio)
+        orders_manager = exchange_manager.exchange_personal_data.orders_manager
+        trades_manager = exchange_manager.exchange_personal_data.trades_manager
+
+        # Test buy order
+        stop_order = create_order_instance(trader=trader_inst,
+                                           order_type=TraderOrderType.BUY_LIMIT,
+                                           symbol="BQX/BTC",
+                                           current_price=4,
+                                           quantity=2,
+                                           price=4,
+                                           side=TradeOrderSide.BUY)
+
+        await trader_inst.create_order(stop_order, portfolio_manager.portfolio)
+
+        assert not trades_manager.trades
+
+        await trader_inst.close_filled_order(stop_order)
+
+        assert stop_order not in orders_manager.get_open_orders()
+
+        assert not initial_portfolio == portfolio_manager.portfolio.portfolio
+
+        # added filled orders as filled trades
+        assert len(trades_manager.trades) == 1
+        assert all(trade.status is stop_order.status for trade in trades_manager.trades.values())
 
         await self.stop(exchange_manager)
 

@@ -22,7 +22,7 @@ cpdef Order create_order_from_raw(Trader trader, dict raw_order)
 
 cpdef Order create_order_instance_from_raw(Trader trader, dict raw_order)
 
-cpdef Order create_order_from_type(Trader trader, object order_type)
+cpdef Order create_order_from_type(Trader trader, object order_type, object side=*)
 
 cpdef Order create_order_instance(Trader trader,
                                   object order_type,
@@ -38,4 +38,5 @@ cpdef Order create_order_instance(Trader trader,
                                   double quantity_filled=*,
                                   double total_cost=*,
                                   double timestamp=*,
-                                  object linked_portfolio=*)
+                                  object linked_portfolio=*,
+                                  object side=*)
