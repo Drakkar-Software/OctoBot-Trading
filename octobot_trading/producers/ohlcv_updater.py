@@ -46,13 +46,14 @@ class OHLCVUpdater(OHLCVProducer):
         """
         if not self.is_initialized:
             await self._initialize()
-        if self.channel.is_paused:
-            await self.pause()
-        else:
-            self.tasks = [
-                asyncio.create_task(self._candle_callback(time_frame, pair))
-                for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames
-                for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs]
+        if self.channel is not None:
+            if self.channel.is_paused:
+                await self.pause()
+            else:
+                self.tasks = [
+                    asyncio.create_task(self._candle_callback(time_frame, pair))
+                    for time_frame in self.channel.exchange_manager.exchange_config.traded_time_frames
+                    for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs]
 
     def _get_traded_pairs(self):
         return self.channel.exchange_manager.exchange_config.traded_symbol_pairs

@@ -13,22 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import time
-
 import pytest
-from octobot_trading.constants import SIMULATOR_LAST_PRICES_TO_CHECK
-
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType
-
 from octobot_trading.data.order import Order
-
 from tests.exchanges import exchange_manager
 from tests.traders import trader_simulator
 from tests.traders import trader
-
-# All test coroutines will be treated as marked.
 from tests.util.random_numbers import random_price
 
+# All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 

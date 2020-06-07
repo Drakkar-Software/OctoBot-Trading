@@ -14,14 +14,12 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import os
-from asyncio import Event
-
 import pytest
-from mock import AsyncMock, patch
+from asyncio import Event
+from mock import patch, Mock
 
 from tests.data_manager import price_events_manager
 from tests import event_loop
-
 from tests.util.random_numbers import random_recent_trade, random_price, random_timestamp
 
 # All test coroutines will be treated as marked.
@@ -48,7 +46,7 @@ async def test_handle_recent_trades(price_events_manager):
     random_price_1 = random_price()
     random_timestamp_1 = random_timestamp(max_value=1000)
     price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
-    with patch.object(price_event_1, 'set', new=AsyncMock()) as price_event_1_set:
+    with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set:
         price_events_manager.handle_recent_trades([])
         with pytest.raises(AssertionError):
             price_event_1_set.assert_called_once()
@@ -77,8 +75,8 @@ async def test_handle_recent_trades_multiple_events(price_events_manager):
     random_timestamp_2 = random_timestamp(min_value=random_timestamp_1 + 2, max_value=5000)
     price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
     price_event_2 = price_events_manager.add_event(random_price_2, random_timestamp_2, True)
-    with patch.object(price_event_1, 'set', new=AsyncMock()) as price_event_1_set, \
-            patch.object(price_event_2, 'set', new=AsyncMock()) as price_event_2_set:
+    with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set, \
+            patch.object(price_event_2, 'set', new=Mock()) as price_event_2_set:
         price_events_manager.handle_recent_trades(
             [random_recent_trade(price=random_price(max_value=random_price_1 - 1)),
              random_recent_trade(price=random_price(max_value=random_price_1 - 1)),
@@ -104,8 +102,8 @@ async def test_handle_recent_trades_multiple_events(price_events_manager):
 
     price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
     price_event_2 = price_events_manager.add_event(random_price_2, random_timestamp_2, True)
-    with patch.object(price_event_1, 'set', new=AsyncMock()) as price_event_1_set, \
-            patch.object(price_event_2, 'set', new=AsyncMock()) as price_event_2_set:
+    with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set, \
+            patch.object(price_event_2, 'set', new=Mock()) as price_event_2_set:
         price_events_manager.handle_recent_trades(
             [random_recent_trade(price=random_price(max_value=random_price_1 - 1),
                                  timestamp=random_timestamp(max_value=random_timestamp_1 - 1)),
@@ -116,8 +114,8 @@ async def test_handle_recent_trades_multiple_events(price_events_manager):
 
     price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
     price_event_2 = price_events_manager.add_event(random_price_2, random_timestamp_2, True)
-    with patch.object(price_event_1, 'set', new=AsyncMock()) as price_event_1_set, \
-            patch.object(price_event_2, 'set', new=AsyncMock()) as price_event_2_set:
+    with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set, \
+            patch.object(price_event_2, 'set', new=Mock()) as price_event_2_set:
         price_events_manager.handle_recent_trades(
             [random_recent_trade(price=random_price(min_value=random_price_1, max_value=random_price_2 - 1),
                                  timestamp=random_timestamp(min_value=random_timestamp_1 - 1)),
@@ -132,7 +130,7 @@ async def test_handle_price(price_events_manager):
     random_price_1 = random_price()
     random_timestamp_1 = random_timestamp(max_value=1000)
     price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
-    with patch.object(price_event_1, 'set', new=AsyncMock()) as price_event_1_set:
+    with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set:
         price_events_manager.handle_price(0, random_timestamp())
         with pytest.raises(AssertionError):
             price_event_1_set.assert_called_once()

@@ -14,12 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER
-
 from octobot_trading.traders.trader_simulator import TraderSimulator
-
 from octobot_trading.traders.trader import Trader
 from tests.exchanges import exchange_manager
 

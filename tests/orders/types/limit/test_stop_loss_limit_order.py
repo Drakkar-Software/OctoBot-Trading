@@ -13,8 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-
 import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
@@ -22,8 +20,7 @@ from octobot_trading.enums import TradeOrderType
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.orders import stop_loss_limit_order
-
-from tests.util.random_numbers import random_price, random_quantity, random_recent_trade, random_timestamp
+from tests.util.random_numbers import random_price, random_quantity, random_recent_trade
 
 pytestmark = pytest.mark.asyncio
 

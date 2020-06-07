@@ -20,6 +20,7 @@ import pytest
 from octobot_backtesting.backtesting import Backtesting
 from octobot_backtesting.constants import CONFIG_BACKTESTING
 from octobot_backtesting.data_manager.time_manager import TimeManager
+from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.enums import TimeFrames
 
@@ -48,6 +49,8 @@ async def exchange_manager(request):
     await exchange_manager_instance.initialize()
     yield exchange_manager_instance
     await exchange_manager_instance.stop()
+    # let updaters gracefully shutdown
+    await wait_asyncio_next_cycle()
 
 
 @pytest.yield_fixture
@@ -101,6 +104,8 @@ async def simulated_exchange_manager(request):
     await exchange_manager_instance.initialize()
     yield exchange_manager_instance
     await exchange_manager_instance.stop()
+    # let updaters gracefully shutdown
+    await wait_asyncio_next_cycle()
 
 
 @pytest.fixture
