@@ -63,6 +63,7 @@ class ExchangeManager(Initializable):
         self.is_margin: bool = False
         self.is_future: bool = False
         self.is_sandboxed: bool = False
+        self.is_trading: bool = True
         self.without_auth: bool = False
 
         # exchange_only is True when exchange channels are not required (therefore not created)
@@ -279,7 +280,7 @@ class ExchangeManager(Initializable):
                     await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
         if self.exchange.is_authenticated \
-                and self.trader \
+                and self.trader and self.is_trading \
                 and not (self.is_simulated or self.is_backtesting or self.is_collecting):
             for updater in AUTHENTICATED_UPDATER_PRODUCERS:
                 if not self._is_managed_by_websocket(updater.CHANNEL_NAME):
@@ -287,7 +288,7 @@ class ExchangeManager(Initializable):
 
         # Simulated producers
         if (not self.exchange.is_authenticated or self.is_simulated or self.is_backtesting) \
-                and self.trader \
+                and self.trader and self.is_trading \
                 and not self.is_collecting:
             for updater in AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
                 await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()

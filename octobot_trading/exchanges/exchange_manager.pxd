@@ -50,6 +50,7 @@ cdef class ExchangeManager(Initializable):
     cdef public bint is_margin
     cdef public bint is_future
     cdef public bint is_sandboxed
+    cdef public bint is_trading
     cdef public bint has_websocket
     cdef public bint exchange_only
     cdef public bint without_auth

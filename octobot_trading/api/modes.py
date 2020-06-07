@@ -40,9 +40,9 @@ def get_activated_trading_mode(tentacles_setup_config) -> AbstractTradingMode.__
 
 async def create_trading_modes(config: dict,
                                exchange_manager: ExchangeManager,
-                               tentacles_setup_config: object,
+                               trading_mode_class: AbstractTradingMode.__class__,
                                bot_id: str) -> list:
-    return await _create_trading_modes(trading_mode_class=util_get_activated_trading_mode(tentacles_setup_config),
+    return await _create_trading_modes(trading_mode_class=trading_mode_class,
                                        config=config,
                                        exchange_manager=exchange_manager,
                                        cryptocurrencies=exchange_manager.exchange_config.traded_cryptocurrencies,

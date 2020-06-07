@@ -62,6 +62,11 @@ def get_exchange_managers_from_exchange_ids(exchange_ids) -> list:
     return [get_exchange_manager_from_exchange_id(manager_id) for manager_id in exchange_ids]
 
 
+def get_trading_exchanges(exchange_managers) -> list:
+    return [exchange_manager for exchange_manager in exchange_managers
+            if exchange_manager.is_trading]
+
+
 def get_exchange_manager_id(exchange_manager) -> str:
     return exchange_manager.id
 

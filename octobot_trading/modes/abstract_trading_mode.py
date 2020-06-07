@@ -89,6 +89,14 @@ class AbstractTradingMode(AbstractTentacle):
         return True
 
     @classmethod
+    def get_is_trading_on_exchange(cls, exchange_name) -> bool:
+        """
+        :return: When returning false, the associated exchange_manager.is_trading will be set to false, which will
+        prevent the initialization of trade related elements. Default is True
+        """
+        return True
+
+    @classmethod
     def get_parent_trading_mode_classes(cls, higher_parent_class_limit=None) -> list:
         return [
             class_type

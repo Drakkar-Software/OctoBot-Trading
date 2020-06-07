@@ -23,6 +23,7 @@ from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.traders.trader import Trader
 from octobot_trading.traders.trader_simulator import TraderSimulator
 from octobot_trading.util import is_trader_simulator_enabled, is_trader_enabled
+from octobot_trading.util.trading_config_util import get_activated_trading_mode
 
 
 class ExchangeBuilder:
@@ -52,6 +53,11 @@ class ExchangeBuilder:
         return self.exchange_manager
 
     async def _build_exchange_manager(self):
+        if self._is_using_trading_modes:
+            trading_mode_class = get_activated_trading_mode(self._tentacles_setup_config)
+            # handle exchange related requirements if the activated trading mode has any
+            self._register_trading_modes_requirements(trading_mode_class)
+
         await self.exchange_manager.initialize()
 
         # initialize exchange for trading if not collecting
@@ -63,7 +69,10 @@ class ExchangeBuilder:
 
             # create trading modes
             if self._is_using_trading_modes:
-                self.exchange_manager.trading_modes = await self._build_modes()
+                if self.exchange_manager.is_trading:
+                    self.exchange_manager.trading_modes = await self._build_trading_modes(trading_mode_class)
+                else:
+                    self.logger.info(f"{self.exchange_name} exchange is online and won't be trading")
 
         # add to global exchanges
         Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
@@ -80,11 +89,14 @@ class ExchangeBuilder:
             self.logger.error(f"An error occurred when creating trader : {e}")
             raise e
 
-    async def _build_modes(self):
+    def _register_trading_modes_requirements(self, trading_mode_class):
+        self.exchange_manager.is_trading = trading_mode_class.get_is_trading_on_exchange(self.exchange_name)
+
+    async def _build_trading_modes(self, trading_mode_class):
         try:
             return await create_trading_modes(self.config,
                                               self.exchange_manager,
-                                              self._tentacles_setup_config,
+                                              trading_mode_class,
                                               self._bot_id)
         except Exception as e:
             self.logger.error(f"An error occurred when initializing trading mode : {e}")

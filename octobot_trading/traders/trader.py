@@ -51,13 +51,13 @@ class Trader(Initializable):
 
         if not hasattr(self, 'simulate'):
             self.simulate = False
-
         self.is_enabled = self.__class__.enabled(self.config)
-        self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange_name}")
 
     async def initialize_impl(self):
+        self.is_enabled = self.is_enabled and self.exchange_manager.is_trading
         if self.is_enabled:
             await self.exchange_manager.register_trader(self)
+        self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange_name}")
 
     @classmethod
     def enabled(cls, config):
