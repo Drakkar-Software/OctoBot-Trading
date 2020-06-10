@@ -16,7 +16,7 @@
 import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
-from octobot_trading.enums import TradeOrderType
+from octobot_trading.enums import TraderOrderType
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.orders import stop_loss_sell_order, stop_loss_buy_order
@@ -33,10 +33,14 @@ async def test_stop_loss_sell_order_trigger(stop_loss_sell_order):
         price=order_price,
         quantity=random_quantity(),
         symbol=DEFAULT_SYMBOL_ORDER,
-        order_type=TradeOrderType.STOP_LOSS,
+        order_type=TraderOrderType.STOP_LOSS,
+
     )
     stop_loss_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
     await stop_loss_sell_order.initialize()
+    stop_loss_sell_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+        stop_loss_sell_order
+    )
     price_events_manager = stop_loss_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
@@ -63,10 +67,13 @@ async def test_stop_loss_buy_order_trigger(stop_loss_buy_order):
         price=order_price,
         quantity=random_quantity(),
         symbol=DEFAULT_SYMBOL_ORDER,
-        order_type=TradeOrderType.STOP_LOSS,
+        order_type=TraderOrderType.STOP_LOSS,
     )
     stop_loss_buy_order.exchange_manager.is_backtesting = True  # force update_order_status
     await stop_loss_buy_order.initialize()
+    stop_loss_buy_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+        stop_loss_buy_order
+    )
     price_events_manager = stop_loss_buy_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     # stop loss buy order triggers when price is above or equal to its trigger price

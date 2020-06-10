@@ -18,6 +18,7 @@ import pytest
 from octobot_commons.tests.test_config import load_test_config
 from octobot_commons.constants import CONFIG_CRYPTO_CURRENCIES
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
+from tests.exchanges import cancel_ccxt_throttle_task
 
 pytestmark = pytest.mark.asyncio
 
@@ -56,6 +57,7 @@ class TestExchangeConfig:
             "Icon": ["ICX/BTC"],
             "Neo": ["NEO/BTC"]
         }
+        cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 
     async def test_traded_pairs_with_wildcard(self):
@@ -76,6 +78,7 @@ class TestExchangeConfig:
         assert "BTC/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "NEO/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 
     async def test_traded_pairs_with_add(self):
@@ -98,4 +101,5 @@ class TestExchangeConfig:
         assert "BTC/USDT" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "NEO/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        cancel_ccxt_throttle_task()
         await exchange_manager.stop()

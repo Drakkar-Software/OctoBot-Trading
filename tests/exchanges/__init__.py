@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 import os
 from shutil import copyfile
 
@@ -49,6 +50,7 @@ async def exchange_manager(request):
     await exchange_manager_instance.initialize()
     yield exchange_manager_instance
     await exchange_manager_instance.stop()
+    cancel_ccxt_throttle_task()
     # let updaters gracefully shutdown
     await wait_asyncio_next_cycle()
 
@@ -103,6 +105,7 @@ async def simulated_exchange_manager(request):
     exchange_manager_instance.is_simulated = True
     await exchange_manager_instance.initialize()
     yield exchange_manager_instance
+    cancel_ccxt_throttle_task()
     await exchange_manager_instance.stop()
     # let updaters gracefully shutdown
     await wait_asyncio_next_cycle()
@@ -145,3 +148,10 @@ async def backtesting_trader(backtesting_config, backtesting_exchange_manager):
     trader_instance = TraderSimulator(backtesting_config, backtesting_exchange_manager)
     await trader_instance.initialize()
     return backtesting_config, backtesting_exchange_manager, trader_instance
+
+
+def cancel_ccxt_throttle_task():
+    for task in asyncio.all_tasks():
+        # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise
+        if str(task._coro).startswith("<coroutine object throttle.<locals>.run at"):
+            task.cancel()

@@ -23,7 +23,7 @@ from octobot_trading.enums import FeePropertyColumns, ExchangeConstantsMarketPro
 from tests import event_loop
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_config, backtesting_exchange_manager, \
     DEFAULT_BACKTESTING_SYMBOL, DEFAULT_BACKTESTING_TF, DEFAULT_BACKTESTING_SPLIT_SYMBOL, DEFAULT_BACKTESTING_CURRENCY, \
-    DEFAULT_BACKTESTING_MARKET, fake_backtesting
+    DEFAULT_BACKTESTING_MARKET, fake_backtesting, cancel_ccxt_throttle_task
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -85,5 +85,6 @@ async def test_get_trade_fee(backtesting_trader):
 async def test_stop(backtesting_trader):
     _, exchange_manager, trader_inst = backtesting_trader
     await exchange_manager.exchange.stop()
+    cancel_ccxt_throttle_task()
     assert not exchange_manager.exchange.backtesting
     assert not exchange_manager.exchange.exchange_importers

@@ -38,6 +38,8 @@ from octobot_trading.traders.trader import Trader
 from octobot_trading.traders.trader_simulator import TraderSimulator
 
 # All test coroutines will be treated as marked.
+from tests.exchanges import cancel_ccxt_throttle_task
+
 pytestmark = pytest.mark.asyncio
 
 
@@ -62,6 +64,7 @@ class TestTrader:
 
     @staticmethod
     async def stop(exchange_manager):
+        cancel_ccxt_throttle_task()
         await exchange_manager.stop()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()

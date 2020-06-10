@@ -19,7 +19,7 @@ from octobot_commons.errors import ConfigTradingError
 
 # Import required fixtures
 from tests import event_loop, install_tentacles
-from tests.exchanges import create_test_tentacles_config, exchange_builder
+from tests.exchanges import create_test_tentacles_config, exchange_builder, cancel_ccxt_throttle_task
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -58,4 +58,5 @@ async def test_create_basic(exchange_builder):
     assert exchange_manager is not None
     assert exchange_manager.exchange_name == "bitmex"
 
+    cancel_ccxt_throttle_task()
     await exchange_manager.stop()

@@ -17,7 +17,7 @@ import asyncio
 from asyncio import wait_for
 
 from octobot_trading.data.order import Order
-from octobot_trading.enums import TradeOrderSide, ExchangeConstantsMarketPropertyColumns, OrderStatus
+from octobot_trading.enums import TradeOrderSide, ExchangeConstantsMarketPropertyColumns
 
 
 class LimitOrder(Order):
@@ -55,8 +55,7 @@ class LimitOrder(Order):
 
     def clear(self):
         if self.wait_for_hit_event_task is not None:
-            # event tasks on filled orders are about to get done and might be in current call stack, do not cancel them
-            if self.status is not OrderStatus.FILLED:
+            if not self.limit_price_hit_event.is_set():
                 self.wait_for_hit_event_task.cancel()
             self.wait_for_hit_event_task = None
         if self.limit_price_hit_event is not None:
