@@ -50,5 +50,6 @@ class TrailingStopOrder(Order):
 
     def clear(self):
         super().clear()
-        self.wait_for_hit_event_task.cancel()
+        if not self.trailing_stop_price_hit_event.is_set():
+            self.wait_for_hit_event_task.cancel()
         self.wait_for_hit_event_task = None

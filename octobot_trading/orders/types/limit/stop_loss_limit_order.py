@@ -26,7 +26,6 @@ class StopLossLimitOrder(LimitOrder):
         self.limit_price = self.UNINITIALIZED_LIMIT_PRICE
 
     async def on_fill(self):
-        await super().on_fill()
         await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET
                                                   if self.side is TradeOrderSide.SELL
                                                   else TraderOrderType.BUY_MARKET,
@@ -36,3 +35,4 @@ class StopLossLimitOrder(LimitOrder):
                                                   if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE else
                                                   self.origin_stop_price,
                                                   self.linked_portfolio)
+        await super().on_fill()

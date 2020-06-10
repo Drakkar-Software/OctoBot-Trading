@@ -13,13 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
 import asyncio
 from os import path
 
 import aiohttp
 import pytest
 import requests
+
+from octobot_commons.asyncio_tools import ErrorContainer
 from octobot_commons.tests.test_config import load_test_config
 from octobot_tentacles_manager.api.installer import install_all_tentacles
 from octobot_tentacles_manager.constants import TENTACLES_PATH
@@ -31,7 +32,12 @@ TENTACLES_LATEST_URL = "https://www.tentacles.octobot.online/repository/tentacle
 @pytest.yield_fixture
 def event_loop():
     loop = asyncio.new_event_loop()
+    # use ErrorContainer to catch otherwise hidden exceptions occurring in async scheduled tasks
+    error_container = ErrorContainer()
+    loop.set_exception_handler(error_container.exception_handler)
     yield loop
+    # will fail if exceptions have been silently raised
+    loop.run_until_complete(error_container.check())
     loop.close()
 
 

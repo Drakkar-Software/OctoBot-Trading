@@ -21,6 +21,8 @@ from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.rest_exchange import RestExchange
 
 # All test coroutines will be treated as marked.
+from tests.exchanges import cancel_ccxt_throttle_task
+
 pytestmark = pytest.mark.asyncio
 
 
@@ -61,10 +63,12 @@ class TestExchangeManager:
         assert exchange_manager.config is config
 
         assert isinstance(exchange_manager.exchange, RestExchange)
+        cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 
     async def test_ready(self):
         _, exchange_manager = await self.init_default()
 
         assert exchange_manager.is_ready
+        cancel_ccxt_throttle_task()
         await exchange_manager.stop()

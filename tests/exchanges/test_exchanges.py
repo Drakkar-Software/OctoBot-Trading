@@ -23,6 +23,7 @@ from octobot_commons.enums import TimeFrames, TimeFramesMinutes
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
+from tests.exchanges import cancel_ccxt_throttle_task
 
 pytestmark = pytest.mark.asyncio
 
@@ -62,6 +63,7 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+        cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
 
@@ -90,6 +92,7 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+        cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
 
@@ -121,6 +124,7 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+        cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
 
@@ -147,6 +151,7 @@ class TestExchanges:
         await exchange_manager_binance.stop()
         await exchange_manager_bitmex.stop()
         await exchange_manager_poloniex.stop()
+        cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
 

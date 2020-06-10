@@ -16,7 +16,7 @@
 import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
-from octobot_trading.enums import TradeOrderType
+from octobot_trading.enums import TraderOrderType
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.orders import take_profit_sell_order, take_profit_buy_order
@@ -34,10 +34,13 @@ async def test_take_profit_sell_order_trigger(take_profit_sell_order):
         price=order_price,
         quantity=random_quantity(),
         symbol=DEFAULT_SYMBOL_ORDER,
-        order_type=TradeOrderType.TAKE_PROFIT,
+        order_type=TraderOrderType.TAKE_PROFIT,
     )
     take_profit_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
     await take_profit_sell_order.initialize()
+    take_profit_sell_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+        take_profit_sell_order
+    )
     price_events_manager = take_profit_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     price_events_manager.handle_recent_trades(
@@ -53,6 +56,8 @@ async def test_take_profit_sell_order_trigger(take_profit_sell_order):
     price_events_manager.handle_recent_trades([random_recent_trade(price=order_price,
                                                                    timestamp=take_profit_sell_order.timestamp)])
 
+    # wait for 2 cycles as secondary orders are created
+    await wait_asyncio_next_cycle()
     await wait_asyncio_next_cycle()
     assert take_profit_sell_order.is_filled()
 
@@ -63,10 +68,13 @@ async def test_take_profit_buy_order_trigger(take_profit_buy_order):
         price=order_price,
         quantity=random_quantity(),
         symbol=DEFAULT_SYMBOL_ORDER,
-        order_type=TradeOrderType.TAKE_PROFIT,
+        order_type=TraderOrderType.TAKE_PROFIT,
     )
     take_profit_buy_order.exchange_manager.is_backtesting = True  # force update_order_status
     await take_profit_buy_order.initialize()
+    take_profit_buy_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+        take_profit_buy_order
+    )
     price_events_manager = take_profit_buy_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     price_events_manager.handle_recent_trades(
@@ -82,6 +90,8 @@ async def test_take_profit_buy_order_trigger(take_profit_buy_order):
     price_events_manager.handle_recent_trades([random_recent_trade(price=order_price,
                                                                    timestamp=take_profit_buy_order.timestamp)])
 
+    # wait for 2 cycles as secondary orders are created
+    await wait_asyncio_next_cycle()
     await wait_asyncio_next_cycle()
     assert take_profit_buy_order.is_filled()
 

@@ -15,7 +15,7 @@
 #  License along with this library.
 import pytest
 
-from octobot_trading.enums import TradeOrderType
+from octobot_trading.enums import TraderOrderType
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -33,10 +33,13 @@ async def test_buy_limit_order_trigger(buy_limit_order):
         price=order_price,
         quantity=random_quantity(),
         symbol=DEFAULT_SYMBOL_ORDER,
-        order_type=TradeOrderType.LIMIT,
+        order_type=TraderOrderType.BUY_LIMIT,
     )
     buy_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
     await buy_limit_order.initialize()
+    buy_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+        buy_limit_order
+    )
     price_events_manager = buy_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     price_events_manager.handle_recent_trades(

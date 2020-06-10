@@ -16,7 +16,7 @@
 import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
-from octobot_trading.enums import TradeOrderType
+from octobot_trading.enums import TraderOrderType
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.orders import sell_market_order
@@ -33,10 +33,13 @@ async def test_sell_market_order_trigger(sell_market_order):
         price=order_price,
         quantity=random_quantity(),
         symbol=DEFAULT_SYMBOL_ORDER,
-        order_type=TradeOrderType.MARKET,
+        order_type=TraderOrderType.SELL_MARKET,
     )
     sell_market_order.exchange_manager.is_backtesting = True  # force update_order_status
     await sell_market_order.initialize()
+    sell_market_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+        sell_market_order
+    )
     price_events_manager = sell_market_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     price_events_manager.handle_recent_trades(
