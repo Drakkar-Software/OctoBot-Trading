@@ -449,3 +449,15 @@ class ExchangeManager(Initializable):
 
     def get_symbol_data(self, symbol):
         return self.exchange_symbols_data.get_exchange_symbol_data(symbol)
+
+    def __str__(self):
+        exchange_type = 'rest'
+        exchange_type = 'spot only' if self.is_spot_only else exchange_type
+        exchange_type = 'margin' if self.is_margin else exchange_type
+        exchange_type = 'future' if self.is_future else exchange_type
+        return f"[{self.__class__.__name__}] with {self.exchange.__class__.__name__ if self.exchange else '?'} " \
+               f"exchange class on {self.get_exchange_name()} | {exchange_type} | " \
+               f"{'authenticated | ' if self.exchange and self.exchange.is_authenticated else 'unauthenticated | '}" \
+               f"{'backtesting | ' if self.backtesting else ''}{'sandboxed | ' if self.is_sandboxed else ''}" \
+               f"{'' if self.is_trading else 'not trading | '}" \
+               f"{'websocket | ' if self.has_websocket else 'no websocket | '} id: {self.id}"
