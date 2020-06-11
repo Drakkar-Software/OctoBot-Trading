@@ -73,6 +73,9 @@ class RestExchange(AbstractExchange):
                 key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.name)
                 if key and secret:
                     self.is_authenticated = True
+                elif not self.exchange_manager.is_simulated:
+                    self.logger.warning(f"No exchange API key set for {self.exchange_manager.exchange_name}. "
+                                        f"Enter your account details to enable real trading on this exchange.")
 
                 self.client = self.exchange_type({
                     'apiKey': key,
