@@ -38,6 +38,5 @@ cdef class PortfolioManager(Initializable):
     cpdef bint handle_balance_update_from_order(self, Order order)
     cpdef bint handle_balance_update(self, dict balance)
 
-    cdef void _reset_portfolio(self)
     cdef void _load_portfolio(self)
     cdef void _set_starting_simulated_portfolio(self)
