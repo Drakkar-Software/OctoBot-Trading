@@ -67,6 +67,10 @@ def get_trading_exchanges(exchange_managers) -> list:
             if exchange_manager.is_trading]
 
 
+def is_exchange_trading(exchange_manager) -> bool:
+    return exchange_manager.is_trading
+
+
 def get_exchange_manager_id(exchange_manager) -> str:
     return exchange_manager.id
 
