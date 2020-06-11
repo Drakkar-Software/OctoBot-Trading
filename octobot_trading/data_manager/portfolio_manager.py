@@ -40,7 +40,7 @@ class PortfolioManager(Initializable):
         """
         Reset the portfolio instance
         """
-        self._reset_portfolio()
+        await self._reset_portfolio()
 
     def handle_balance_update(self, balance):
         """
@@ -63,7 +63,7 @@ class PortfolioManager(Initializable):
             return True
         return False
 
-    def _reset_portfolio(self):
+    async def _reset_portfolio(self):
         """
         Reset the portfolio and portfolio profitability instances
         """
@@ -71,6 +71,7 @@ class PortfolioManager(Initializable):
             self.portfolio = MarginPortfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
         else:
             self.portfolio = Portfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
+        await self.portfolio.initialize()
         self._load_portfolio()
 
         self.portfolio_profitability = PortfolioProfitabilty(self.config, self.trader, self, self.exchange_manager)
