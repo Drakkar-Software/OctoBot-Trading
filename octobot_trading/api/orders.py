@@ -13,9 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.api.exchange import get_exchange_ids
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.channels.orders import OrdersChannel
 from octobot_trading.data.order import Order
 from octobot_trading.api import LOGGER_TAG
 from octobot_commons.logging.logging_util import get_logger
@@ -78,9 +75,3 @@ def get_order_profitability(exchange_manager, order_id) -> float:
     except KeyError:
         # try in trades (order might be filled and stored in trades)
         return exchange_manager.exchange_personal_data.trades_manager.get_trade(order_id).trade_profitability
-
-
-async def subscribe_to_order_channel(callback, exchange_id):
-    order_channel_name = OrdersChannel.get_name()
-    channel = get_chan(order_channel_name, exchange_id)
-    await channel.new_consumer(callback)
