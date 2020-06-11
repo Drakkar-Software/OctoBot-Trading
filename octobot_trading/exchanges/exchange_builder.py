@@ -111,8 +111,7 @@ class ExchangeBuilder:
         return self
 
     def is_sandboxed(self, sandboxed: bool):
-        self.exchange_manager.is_sandboxed = \
-            sandboxed or self.config[CONFIG_EXCHANGES][self.exchange_name].get(CONFIG_EXCHANGE_SANDBOXED, False)
+        self.exchange_manager.is_sandboxed = sandboxed
         return self
 
     def is_simulated(self):
