@@ -13,9 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.api.exchange import get_exchange_ids
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.channels.trades import TradesChannel
 from octobot_trading.enums import TraderOrderType, OrderStatus
 from octobot_trading.data.order import parse_order_type as order_parse_order_type
 
@@ -58,9 +55,3 @@ def parse_trade_type(dict_trade) -> TraderOrderType:
 
 def trade_to_dict(trade) -> dict:
     return trade.to_dict()
-
-
-async def subscribe_to_trades_channel(callback, exchange_id):
-    trades_channel_name = TradesChannel.get_name()
-    channel = get_chan(trades_channel_name, exchange_id)
-    await channel.new_consumer(callback)
