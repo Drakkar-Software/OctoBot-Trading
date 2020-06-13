@@ -285,7 +285,7 @@ class Order(Initializable):
     def update_from_raw(self, raw_order):
         if self.side is None or self.order_type is None:
             try:
-                self.__update_type_from_raw(raw_order)
+                self._update_type_from_raw(raw_order)
                 if self.taker_or_maker is None:
                     self.__update_taker_maker_from_raw()
             except KeyError:
@@ -329,7 +329,7 @@ class Order(Initializable):
         self.executed_time = self.trader.exchange.get_uniform_timestamp(
             raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value])
 
-    def __update_type_from_raw(self, raw_order):
+    def _update_type_from_raw(self, raw_order):
         try:
             self.exchange_order_type = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
         except ValueError:

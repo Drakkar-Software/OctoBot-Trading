@@ -86,7 +86,7 @@ cdef class Order(Initializable):
             object linked_portfolio=*,
             object order_type=*)
 
-    cdef void __update_type_from_raw(self, dict raw_order)
+    cdef void _update_type_from_raw(self, dict raw_order)
     cdef void __update_taker_maker_from_raw(self)
 
     cpdef str to_string(self)
