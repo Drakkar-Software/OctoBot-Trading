@@ -20,7 +20,7 @@ import pytest
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 
 from octobot_trading.data_manager.price_events_manager import PriceEventsManager
-from octobot_trading.enums import TradeOrderType
+from octobot_trading.enums import TradeOrderType, TradeOrderSide
 from octobot_trading.orders.types import TrailingStopOrder
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -37,8 +37,12 @@ async def test_trailing_stop_trigger(trailing_stop_order):
     trailing_stop_order, order_price, price_events_manager = await initialize_trailing_stop(trailing_stop_order)
     await trailing_stop_order.set_trailing_percent(10)
     max_trailing_hit_price = get_price_percent(order_price, trailing_stop_order.trailing_percent)
+
+    # set mark price
+    set_mark_price(trailing_stop_order, order_price)
+
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(min_value=max_trailing_hit_price * 1.0001, max_value=order_price - 1),
+        [random_recent_trade(price=random_price(min_value=max_trailing_hit_price, max_value=order_price - 1),
                              timestamp=trailing_stop_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not trailing_stop_order.is_filled()
@@ -64,10 +68,7 @@ async def test_trailing_stop_with_new_price(trailing_stop_order):
     new_trailing_price = random_price(min_value=order_price + 1)
 
     # set mark price
-    prices_manager = trailing_stop_order.exchange_manager.exchange_symbols_data.\
-        get_exchange_symbol_data(trailing_stop_order.symbol).prices_manager
-    prices_manager.set_mark_price(new_trailing_price)
-    prices_manager.mark_price_set_time = trailing_stop_order.timestamp
+    set_mark_price(trailing_stop_order, new_trailing_price)
 
     # move trailing price
     price_events_manager.handle_recent_trades(
@@ -90,10 +91,7 @@ async def test_trailing_stop_with_new_old_price(trailing_stop_order):
     new_trailing_price = random_price(min_value=order_price + 1)
 
     # set mark price
-    prices_manager = trailing_stop_order.exchange_manager.exchange_symbols_data.\
-        get_exchange_symbol_data(trailing_stop_order.symbol).prices_manager
-    prices_manager.set_mark_price(new_trailing_price)
-    prices_manager.mark_price_set_time = trailing_stop_order.timestamp
+    set_mark_price(trailing_stop_order, new_trailing_price)
 
     # move trailing price
     price_events_manager.handle_recent_trades(
@@ -102,9 +100,34 @@ async def test_trailing_stop_with_new_old_price(trailing_stop_order):
     await wait_asyncio_next_cycle()
     assert not trailing_stop_order.is_filled()
 
-    # test fill stop loss on old price
+    # test fill stop loss with old price
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=get_price_percent(order_price, trailing_stop_order.trailing_percent) + 1,
+        [random_recent_trade(price=get_price_percent(order_price, trailing_stop_order.trailing_percent),
+                             timestamp=trailing_stop_order.timestamp)])
+    await wait_asyncio_next_cycle()
+    assert trailing_stop_order.is_filled()
+
+
+async def test_trailing_stop_with_new_price_inversed(trailing_stop_order):
+    trailing_stop_order, order_price, price_events_manager = await initialize_trailing_stop(trailing_stop_order)
+    trailing_stop_order.side = TradeOrderSide.BUY
+    await trailing_stop_order.set_trailing_percent(5)
+    new_trailing_price = random_price(max_value=order_price - 1)
+
+    # set mark price
+    set_mark_price(trailing_stop_order, new_trailing_price)
+
+    # move trailing price
+    price_events_manager.handle_recent_trades(
+        [random_recent_trade(price=new_trailing_price,
+                             timestamp=trailing_stop_order.timestamp)])
+    await wait_asyncio_next_cycle()
+    assert not trailing_stop_order.is_filled()
+
+    # test fill stop loss with new order price reference
+    price_events_manager.handle_recent_trades(
+        [random_recent_trade(price=get_price_percent(new_trailing_price, trailing_stop_order.trailing_percent,
+                                                     selling_side=False),
                              timestamp=trailing_stop_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert trailing_stop_order.is_filled()
@@ -126,5 +149,12 @@ async def initialize_trailing_stop(order) -> Tuple[TrailingStopOrder, float, Pri
     return order, order_price, price_events_manager
 
 
-def get_price_percent(price, percent):
-    return price * (1 - percent / 100)
+def get_price_percent(price, percent, selling_side=True):
+    return price * (1 + (percent / 100) * (-1 if selling_side else 1))
+
+
+def set_mark_price(order, mark_price):
+    prices_manager = order.exchange_manager.exchange_symbols_data. \
+        get_exchange_symbol_data(order.symbol).prices_manager
+    prices_manager.set_mark_price(mark_price)
+    prices_manager.mark_price_set_time = order.timestamp
