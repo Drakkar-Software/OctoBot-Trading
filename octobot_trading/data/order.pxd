@@ -87,7 +87,7 @@ cdef class Order(Initializable):
             object order_type=*)
 
     cdef void _update_type_from_raw(self, dict raw_order)
-    cdef void __update_taker_maker_from_raw(self)
+    cdef void _update_taker_maker(self)
 
     cpdef str to_string(self)
     cpdef cancel_order(self)

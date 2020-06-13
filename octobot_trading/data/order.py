@@ -165,6 +165,9 @@ class Order(Initializable):
             self.filled_price = self.total_cost / self.filled_quantity
             if timestamp is not None:
                 self.executed_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+
+        if self.taker_or_maker is None:
+            self._update_taker_maker()
         return changed
 
     async def initialize_impl(self):
@@ -292,7 +295,7 @@ class Order(Initializable):
             try:
                 self._update_type_from_raw(raw_order)
                 if self.taker_or_maker is None:
-                    self.__update_taker_maker_from_raw()
+                    self._update_taker_maker()
             except KeyError:
                 get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
@@ -327,7 +330,7 @@ class Order(Initializable):
         if not self.filled_price and self.filled_quantity:
             self.filled_price = self.total_cost / self.filled_quantity
 
-        self.__update_taker_maker_from_raw()
+        self._update_taker_maker()
 
         self.fee = raw_order[ExchangeConstantsOrderColumns.FEE.value]
 
@@ -341,7 +344,7 @@ class Order(Initializable):
             self.exchange_order_type = TradeOrderType.UNKNOWN
         self.side, self.order_type = parse_order_type(raw_order)
 
-    def __update_taker_maker_from_raw(self):
+    def _update_taker_maker(self):
         if self.order_type in [TraderOrderType.SELL_MARKET, TraderOrderType.BUY_MARKET, TraderOrderType.STOP_LOSS]:
             # always true
             self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
