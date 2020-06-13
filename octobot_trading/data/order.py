@@ -225,6 +225,11 @@ class Order(Initializable):
         except Exception as e:
             get_logger(self.get_logger_name()).exception(e, True, f"Fail to execute fill complete action : {e}.")
 
+    async def on_trade_creation(self):
+        """
+        On trade creation when the Order is closed
+        """
+
     def add_linked_order(self, order):
         self.linked_orders.append(order)
 

@@ -24,14 +24,14 @@ class TakeProfitLimitOrder(LimitOrder):
         super().__init__(trader, side)
         self.limit_price = self.UNINITIALIZED_LIMIT_PRICE
 
-    async def on_fill(self):
-        await self.trader.create_artificial_order(TraderOrderType.SELL_LIMIT
-                                                  if self.side is TradeOrderSide.SELL
-                                                  else TraderOrderType.BUY_LIMIT,
-                                                  self.symbol, self.origin_stop_price,
-                                                  self.origin_quantity,
-                                                  self.limit_price
-                                                  if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE else
-                                                  self.origin_stop_price,
-                                                  self.linked_portfolio)
-        await super().on_fill()
+    async def on_trade_creation(self):
+        await super().on_trade_creation()
+        await self.exchange_manager.trader.create_artificial_order(TraderOrderType.SELL_LIMIT
+                                                                   if self.side is TradeOrderSide.SELL
+                                                                   else TraderOrderType.BUY_LIMIT,
+                                                                   self.symbol, self.origin_stop_price,
+                                                                   self.origin_quantity,
+                                                                   self.limit_price
+                                                                   if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE else
+                                                                   self.origin_stop_price,
+                                                                   self.linked_portfolio)
