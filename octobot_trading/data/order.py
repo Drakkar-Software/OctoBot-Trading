@@ -235,10 +235,10 @@ class Order(Initializable):
         return get_fees_for_currency(self.fee, currency)
 
     def is_filled(self):
-        return self.status == OrderStatus.FILLED
+        return self.status is OrderStatus.FILLED
 
     def is_cancelled(self):
-        return self.status == OrderStatus.CANCELED
+        return self.status is OrderStatus.CANCELED
 
     def get_computed_fee(self, forced_value=None):
         computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,
@@ -265,9 +265,9 @@ class Order(Initializable):
         result = await self.exchange_manager.exchange.get_order(self.order_id, self.symbol)
         new_status = self.trader.parse_status(result)
         self.is_synchronized_with_exchange = True
-        if new_status == OrderStatus.FILLED:
+        if new_status is OrderStatus.FILLED:
             self.trader.parse_exchange_order_to_trade_instance(result, self)
-        elif new_status == OrderStatus.CANCELED:
+        elif new_status is OrderStatus.CANCELED:
             await self.trader.cancel_order(self)
 
     def generate_executed_time(self):
