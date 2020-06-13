@@ -59,11 +59,10 @@ def stop_loss_buy_order(event_loop, simulated_trader):
     return StopLossOrder(trader_instance, side=TradeOrderSide.BUY)
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def stop_loss_limit_order(event_loop, simulated_trader):
     _, exchange_manager, trader_instance = simulated_trader
-    yield StopLossLimitOrder(trader_instance)
-    exchange_manager.exchange_personal_data.orders_manager.clear()
+    return StopLossLimitOrder(trader_instance)
 
 
 @pytest.fixture()
@@ -78,11 +77,10 @@ def take_profit_buy_order(event_loop, simulated_trader):
     return TakeProfitOrder(trader_instance, side=TradeOrderSide.BUY)
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def take_profit_limit_order(event_loop, simulated_trader):
     _, exchange_manager, trader_instance = simulated_trader
-    yield TakeProfitLimitOrder(trader_instance)
-    exchange_manager.exchange_personal_data.orders_manager.clear()
+    return TakeProfitLimitOrder(trader_instance)
 
 
 @pytest.fixture()
@@ -91,8 +89,7 @@ def trailing_stop_order(event_loop, simulated_trader):
     return TrailingStopOrder(trader_instance)
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def trailing_stop_limit_order(event_loop, simulated_trader):
     _, exchange_manager, trader_instance = simulated_trader
-    yield TrailingStopLimitOrder(trader_instance)
-    exchange_manager.exchange_personal_data.orders_manager.clear()
+    return TrailingStopLimitOrder(trader_instance)

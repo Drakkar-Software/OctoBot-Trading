@@ -37,8 +37,7 @@ class TrailingStopOrder(Order):
     async def update_order_status(self, force_refresh=False):
         if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):
             await self.default_exchange_update_order_status()
-
-        await self._reset_events(self.origin_price, self.creation_time, force_reset=False)
+        await self._reset_events(self.origin_price, self.creation_time)
 
     async def set_trailing_percent(self, trailing_percent):
         """
@@ -46,32 +45,30 @@ class TrailingStopOrder(Order):
         :param trailing_percent: the new trailing percent
         """
         self.trailing_percent = trailing_percent
-        await self._reset_events(self.origin_price, self.creation_time, force_reset=True)
+        await self._reset_events(self.origin_price, self.creation_time)
 
-    async def _reset_events(self, new_price, new_price_time, force_reset=True):
+    async def _reset_events(self, new_price, new_price_time):
         """
         Reset events and tasks
         :param new_price: the new trailing price
-        :param force_reset: True if events and tasks should be replaced if exists
         """
+        self._clear_event_and_tasks()
         price_events_manager = self.exchange_manager.exchange_symbols_data. \
             get_exchange_symbol_data(self.symbol).price_events_manager
+        self._create_hit_events(price_events_manager, new_price, new_price_time)
+        self._create_hit_tasks()
 
-        self._create_hit_events(price_events_manager, new_price, new_price_time, force_reset=force_reset)
-        self._create_hit_tasks(force_reset=force_reset)
-
-    def _create_hit_events(self, price_events_manager, new_price, new_price_time, force_reset):
+    def _create_hit_events(self, price_events_manager, new_price, new_price_time):
         """
         Create prices hit events
         :param price_events_manager: the price events manager to use
         :param new_price: the new trailing price
-        :param force_reset: True if events should be replaced if exists
         """
-        if self.trailing_stop_price_hit_event is None or force_reset:
+        if self.trailing_stop_price_hit_event is None:
             self.trailing_stop_price_hit_event = price_events_manager.add_event(
                 self._calculate_stop_price(new_price), new_price_time,
                 self.side is TradeOrderSide.BUY)
-        if self.trailing_price_hit_event is None or force_reset:
+        if self.trailing_price_hit_event is None:
             self.trailing_price_hit_event = price_events_manager.add_event(new_price, new_price_time,
                                                                            self.side is TradeOrderSide.SELL)
 
@@ -87,43 +84,40 @@ class TrailingStopOrder(Order):
         trailing_price_factor *= 1 if self.side is TradeOrderSide.BUY else -1
         return new_price * (1 + trailing_price_factor)
 
-    def _create_hit_tasks(self, force_reset):
+    def _create_hit_tasks(self):
         """
         Create event hit waiting tasks
-        :param force_reset: if tasks should be replaced if exists
         """
-        if self.wait_for_price_hit_event_task is None or force_reset:
-            if self.trailing_price_hit_event is not None:
-                self.wait_for_price_hit_event_task = asyncio.create_task(
-                    _wait_for_price_hit(self.trailing_price_hit_event, self._on_price_hit))
+        if self.wait_for_price_hit_event_task is None and self.trailing_price_hit_event is not None:
+            self.wait_for_price_hit_event_task = asyncio.create_task(
+                _wait_for_price_hit(self.trailing_price_hit_event, self._on_price_hit))
 
-        if self.wait_for_stop_price_hit_event_task is None or force_reset:
-            if self.trailing_stop_price_hit_event is not None:
-                self.wait_for_stop_price_hit_event_task = asyncio.create_task(
-                    _wait_for_price_hit(self.trailing_stop_price_hit_event, self.on_fill))
+        if self.wait_for_stop_price_hit_event_task is None and self.trailing_stop_price_hit_event is not None:
+            self.wait_for_stop_price_hit_event_task = asyncio.create_task(
+                _wait_for_price_hit(self.trailing_stop_price_hit_event, self.on_fill))
 
     def _remove_events(self, price_events_manager):
         """
         Remove events from the price events manager
         :param price_events_manager: the price events manager to use
         """
-        if self.trailing_price_hit_event is not None:
-            price_events_manager.remove_event(self.trailing_stop_price_hit_event)
         if self.trailing_stop_price_hit_event is not None:
+            price_events_manager.remove_event(self.trailing_stop_price_hit_event)
+            self.trailing_stop_price_hit_event = None
+        if self.trailing_price_hit_event is not None:
             price_events_manager.remove_event(self.trailing_price_hit_event)
+            self.trailing_price_hit_event = None
 
     def _cancel_hit_tasks(self):
         """
         Cancel and destroy event hit waiting tasks
         """
         if self.wait_for_price_hit_event_task is not None:
-            if not self.trailing_price_hit_event.is_set():
-                self.wait_for_price_hit_event_task.cancel()
+            self.wait_for_price_hit_event_task.cancel()
             self.wait_for_price_hit_event_task = None
 
         if self.wait_for_stop_price_hit_event_task is not None:
-            if not self.trailing_stop_price_hit_event.is_set():
-                self.wait_for_stop_price_hit_event_task.cancel()
+            self.wait_for_stop_price_hit_event_task.cancel()
             self.wait_for_stop_price_hit_event_task = None
 
     async def _on_price_hit(self):
@@ -143,6 +137,9 @@ class TrailingStopOrder(Order):
         await self.on_fill_complete()
 
     async def on_trade_creation(self):
+        """
+        Create an artificial when trailing stop is filled
+        """
         await super().on_trade_creation()
         await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET
                                                   if self.side is TradeOrderSide.SELL
@@ -151,13 +148,19 @@ class TrailingStopOrder(Order):
                                                   self.origin_quantity, self.origin_stop_price,
                                                   self.linked_portfolio)
 
-    def clear(self):
+    def _clear_event_and_tasks(self):
         """
         Clear prices hit events and their related tasks
         """
         self._cancel_hit_tasks()
         self._remove_events(self.exchange_manager.exchange_symbols_data.
                             get_exchange_symbol_data(self.symbol).price_events_manager)
+
+    def clear(self):
+        """
+        Clear prices hit events and their related tasks and call super clear
+        """
+        self._clear_event_and_tasks()
         super().clear()
 
 

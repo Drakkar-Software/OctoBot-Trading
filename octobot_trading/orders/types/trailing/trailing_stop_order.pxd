@@ -27,9 +27,9 @@ cdef class TrailingStopOrder(Order):
 
     cdef void _create_hit_events(self, object price_events_manager,
                                  double new_price,
-                                 double new_price_time,
-                                 bint force_reset)
+                                 double new_price_time)
     cdef double _calculate_stop_price(self, double new_price)
-    cdef void _create_hit_tasks(self, bint force_reset)
+    cdef void _create_hit_tasks(self)
     cdef void _remove_events(self, object price_events_manager)
+    cdef void _clear_event_and_tasks(self)
     cdef void _cancel_hit_tasks(self)
