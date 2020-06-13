@@ -424,20 +424,22 @@ def parse_order_type(raw_order):
 
 
 def _get_trade_order_type(order_type: TraderOrderType) -> TradeOrderType:
-    if order_type == TraderOrderType.BUY_LIMIT \
-            or order_type == TraderOrderType.SELL_LIMIT:
+    if order_type == TraderOrderType.BUY_LIMIT or order_type == TraderOrderType.SELL_LIMIT:
         return TradeOrderType.LIMIT
-    if order_type == TraderOrderType.BUY_MARKET \
-            or order_type == TraderOrderType.SELL_MARKET:
+    if order_type == TraderOrderType.BUY_MARKET or order_type == TraderOrderType.SELL_MARKET:
         return TradeOrderType.MARKET
-    elif order_type == TraderOrderType.STOP_LOSS_LIMIT:
-        return TradeOrderType.STOP_LOSS_LIMIT
-    elif order_type == TraderOrderType.TAKE_PROFIT_LIMIT:
-        return TradeOrderType.TAKE_PROFIT_LIMIT
     elif order_type == TraderOrderType.TAKE_PROFIT:
         return TradeOrderType.TAKE_PROFIT
+    elif order_type == TraderOrderType.TAKE_PROFIT_LIMIT:
+        return TradeOrderType.TAKE_PROFIT_LIMIT
     elif order_type == TraderOrderType.STOP_LOSS:
         return TradeOrderType.STOP_LOSS
+    elif order_type == TraderOrderType.STOP_LOSS_LIMIT:
+        return TradeOrderType.STOP_LOSS_LIMIT
+    elif order_type == TraderOrderType.TRAILING_STOP:
+        return TradeOrderType.TRAILING_STOP
+    elif order_type == TraderOrderType.TRAILING_STOP_LIMIT:
+        return TradeOrderType.TRAILING_STOP_LIMIT
     return None
 
 
@@ -450,6 +452,10 @@ def _get_sell_and_buy_types(order_type) -> TraderOrderType:
         return TraderOrderType.TAKE_PROFIT
     elif order_type == TradeOrderType.TAKE_PROFIT_LIMIT:
         return TraderOrderType.TAKE_PROFIT_LIMIT
+    elif order_type == TradeOrderType.TRAILING_STOP:
+        return TraderOrderType.TRAILING_STOP
+    elif order_type == TradeOrderType.TRAILING_STOP_LIMIT:
+        return TraderOrderType.TRAILING_STOP_LIMIT
     return None
 
 
