@@ -174,6 +174,9 @@ class Trader(Initializable):
         await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
             create_trade_from_order(order))
 
+        # notify order trade created
+        await order.on_trade_creation()
+
         # remove order from open_orders
         self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
 
