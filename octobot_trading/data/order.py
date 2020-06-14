@@ -175,6 +175,12 @@ class Order(Initializable):
         Initialize order status update tasks
         """
         if not self.exchange_manager.is_backtesting:
+            if not self.exchange_manager.is_simulated:
+                # Create a task to synchronize order data with exchange
+                asyncio.create_task(get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer().
+                                    update_order_from_exchange(self))
+
+            # Create a task that supervise order status
             asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY,
                                                 asyncio.create_task,
                                                 self.update_order_status())

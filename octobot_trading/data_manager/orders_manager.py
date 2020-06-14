@@ -54,12 +54,12 @@ class OrdersManager(Initializable):
             self.orders[order_id] = self._create_order_from_raw(raw_order)
             self._check_orders_size()
             return True
-        return self._update_order_from_raw(self.orders[order_id], raw_order)
+        return _update_order_from_raw(self.orders[order_id], raw_order)
 
     def upsert_order_close_from_raw(self, order_id, raw_order) -> Order:
         if self.has_order(order_id):
             order = self.orders[order_id]
-            self._update_order_from_raw(self.orders[order_id], raw_order)
+            _update_order_from_raw(self.orders[order_id], raw_order)
             return order
         return None
 
@@ -97,9 +97,6 @@ class OrdersManager(Initializable):
         order.update_from_raw(raw_order)
         return order
 
-    def _update_order_from_raw(self, order, raw_order):
-        return order.update_from_raw(raw_order)
-
     def _select_orders(self, state=None, symbol=None, since=-1, limit=-1):
         orders = [
             order
@@ -120,3 +117,13 @@ class OrdersManager(Initializable):
         for order in self.orders.values():
             order.clear()
         self._reset_orders()
+
+
+def _update_order_from_raw(order, raw_order):
+    """
+    Calling order update from raw method
+    :param order: the order to update
+    :param raw_order: the order raw value to use for updating
+    :return: the result of order.update_from_raw
+    """
+    return order.update_from_raw(raw_order)
