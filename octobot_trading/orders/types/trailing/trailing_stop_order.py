@@ -136,14 +136,14 @@ class TrailingStopOrder(Order):
         """
         Is called when the stop price is hit
         """
-        await super().on_fill()
+        await Order.on_fill(self)
         await self.on_fill_complete()
 
     async def on_trade_creation(self):
         """
         Create an artificial when trailing stop is filled
         """
-        await super().on_trade_creation()
+        await Order.on_trade_creation(self)
         await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET
                                                   if self.side is TradeOrderSide.SELL
                                                   else TraderOrderType.BUY_MARKET,
@@ -164,7 +164,7 @@ class TrailingStopOrder(Order):
         Clear prices hit events and their related tasks and call super clear
         """
         self._clear_event_and_tasks()
-        super().clear()
+        Order.clear(self)
 
 
 async def _wait_for_price_hit(event_to_wait, callback):

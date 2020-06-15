@@ -46,7 +46,7 @@ class LimitOrder(Order):
         await self.on_fill()
 
     async def on_fill(self):
-        await super().on_fill()
+        await Order.on_fill(self)
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
         self.filled_price = self.origin_price
         self.filled_quantity = self.origin_quantity
@@ -61,4 +61,4 @@ class LimitOrder(Order):
         if self.limit_price_hit_event is not None:
             self.exchange_manager.exchange_symbols_data. \
                 get_exchange_symbol_data(self.symbol).price_events_manager.remove_event(self.limit_price_hit_event)
-        super().clear()
+        Order.clear(self)

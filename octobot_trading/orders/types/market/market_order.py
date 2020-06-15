@@ -26,7 +26,7 @@ class MarketOrder(Order):
         await self.on_fill()
 
     async def on_fill(self):
-        await super().on_fill()
+        await Order.on_fill(self)
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
         self.origin_price = self.created_last_price
         self.filled_price = self.created_last_price
