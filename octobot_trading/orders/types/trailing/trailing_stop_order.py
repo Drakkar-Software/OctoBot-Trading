@@ -114,11 +114,13 @@ class TrailingStopOrder(Order):
         Cancel and destroy event hit waiting tasks
         """
         if self.wait_for_price_hit_event_task is not None:
-            self.wait_for_price_hit_event_task.cancel()
+            if not self.trailing_price_hit_event.is_set():
+                self.wait_for_price_hit_event_task.cancel()
             self.wait_for_price_hit_event_task = None
 
         if self.wait_for_stop_price_hit_event_task is not None:
-            self.wait_for_stop_price_hit_event_task.cancel()
+            if not self.trailing_stop_price_hit_event.is_set():
+                self.wait_for_stop_price_hit_event_task.cancel()
             self.wait_for_stop_price_hit_event_task = None
 
     async def _on_price_hit(self):
