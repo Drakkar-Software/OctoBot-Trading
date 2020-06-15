@@ -26,7 +26,7 @@ class TrailingStopLimitOrder(TrailingStopOrder):
         self.limit_price = limit_price
 
     async def on_trade_creation(self):
-        await super().on_trade_creation()
+        await TrailingStopOrder.on_trade_creation(self)
         await self.trader.create_artificial_order(TraderOrderType.SELL_LIMIT
                                                   if self.side is TradeOrderSide.SELL else TraderOrderType.BUY_LIMIT,
                                                   self.symbol, self.origin_stop_price,
