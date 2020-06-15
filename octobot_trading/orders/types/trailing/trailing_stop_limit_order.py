@@ -22,6 +22,7 @@ class TrailingStopLimitOrder(TrailingStopOrder):
 
     def __init__(self, trader, side=TradeOrderSide.SELL, limit_price=UNINITIALIZED_LIMIT_PRICE):
         super().__init__(trader, side)
+        self.order_type = TraderOrderType.TRAILING_STOP_LIMIT
         self.limit_price = limit_price
 
     async def on_trade_creation(self):
