@@ -28,6 +28,7 @@ class TrailingStopOrder(Order):
 
     def __init__(self, trader, side=TradeOrderSide.SELL, trailing_percent=UNINITIALIZED_TRAILING_PERCENT):
         super().__init__(trader, side=side)
+        self.order_type = TraderOrderType.TRAILING_STOP
         self.trailing_stop_price_hit_event = None
         self.trailing_price_hit_event = None
         self.wait_for_stop_price_hit_event_task = None

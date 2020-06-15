@@ -286,7 +286,9 @@ class Order(Initializable):
         if self.order_type in [TraderOrderType.TAKE_PROFIT,
                                TraderOrderType.TAKE_PROFIT_LIMIT,
                                TraderOrderType.STOP_LOSS,
-                               TraderOrderType.STOP_LOSS_LIMIT]:
+                               TraderOrderType.STOP_LOSS_LIMIT,
+                               TraderOrderType.TRAILING_STOP,
+                               TraderOrderType.TRAILING_STOP_LIMIT]:
             return True
         return False
 
