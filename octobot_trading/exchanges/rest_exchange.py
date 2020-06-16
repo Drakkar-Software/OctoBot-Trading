@@ -20,7 +20,7 @@ import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
 from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, RequestTimeout, NotSupported
 
-from octobot_commons.constants import MSECONDS_TO_MINUTE
+from octobot_commons.constants import MSECONDS_TO_MINUTE, MSECONDS_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
@@ -345,7 +345,7 @@ class RestExchange(AbstractExchange):
             }
 
     def get_uniform_timestamp(self, timestamp):
-        return timestamp / 1000
+        return timestamp / MSECONDS_TO_SECONDS
 
     def get_exchange_current_time(self):
         return self.get_uniform_timestamp(self.client.milliseconds())
