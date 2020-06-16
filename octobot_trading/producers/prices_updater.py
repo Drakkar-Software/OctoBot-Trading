@@ -37,17 +37,17 @@ class MarkPriceUpdater(MarkPriceProducer):
         self.refresh_time = MarkPriceUpdater.MARK_PRICE_REFRESH_TIME
 
     async def start(self):
-        if not self.channel.exchange_manager.is_future:
-            await self.subscribe()
-        elif self._should_run():
-            refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()
-            if refresh_threshold is RestExchangePairsRefreshMaxThresholds.MEDIUM:
-                self.refresh_time = 12
-            elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
-                self.refresh_time = 17
-            if self.channel.is_paused:
-                await self.pause()
-            else:
+        refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()
+        if refresh_threshold is RestExchangePairsRefreshMaxThresholds.MEDIUM:
+            self.refresh_time = 12
+        elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
+            self.refresh_time = 17
+        if self.channel.is_paused:
+            await self.pause()
+        else:
+            if not self.channel.exchange_manager.is_future:
+                await self.subscribe()
+            elif self._should_run():
                 await self.start_fetching()
 
     async def subscribe(self):
