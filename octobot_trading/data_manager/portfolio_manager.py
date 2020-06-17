@@ -48,7 +48,7 @@ class PortfolioManager(Initializable):
         :param balance: the new balance
         :return: True if the portfolio was updated
         """
-        if self.trader.is_enabled:
+        if self.trader.is_enabled and balance is not None:
             return self.portfolio.update_portfolio_from_balance(balance)
         return False
 
