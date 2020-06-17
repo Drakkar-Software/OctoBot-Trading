@@ -116,9 +116,11 @@ class RestExchange(AbstractExchange):
             return {}
 
     # total (free + used), by currency
-    async def get_balance(self):
+    async def get_balance(self, params=None):
+        if params is None:
+            params = {'recvWindow': 10000000}
         try:
-            balance = await self.client.fetch_balance(params={'recvWindow': 10000000})
+            balance = await self.client.fetch_balance(params=params)
 
             # store portfolio global info
             self.info_list = balance[CONFIG_PORTFOLIO_INFO]
@@ -143,12 +145,15 @@ class RestExchange(AbstractExchange):
         self.logger.debug(f"get_candle_since_timestamp({time_frame}, {count})")
         return self.client.milliseconds() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * count
 
-    async def get_symbol_prices(self, symbol, time_frame, limit=None):
+    async def get_symbol_prices(self, symbol, time_frame, limit=None, params=None):
+        if params is None:
+            params = {}
         try:
             # TODO remove these logs when C typing issues are fixed
             if limit:
                 candles = await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit,
-                                                        since=self.get_candle_since_timestamp(time_frame, limit))
+                                                        since=self.get_candle_since_timestamp(time_frame, limit),
+                                                        params=params)
             else:
                 candles = await self.client.fetch_ohlcv(symbol, time_frame.value)
             self.logger.debug(f"get_symbol_prices({symbol}, {time_frame}, {limit}): {candles}")
@@ -157,11 +162,13 @@ class RestExchange(AbstractExchange):
             self.logger.error(f"Failed to get_symbol_prices {e}")
             return None
 
-    async def get_kline_price(self, symbol, time_frame):
+    async def get_kline_price(self, symbol, time_frame, params=None):
+        if params is None:
+            params = {}
         try:
             # TODO remove these logs when C typing issues are fixed
             # default implementation
-            kline = await self.get_symbol_prices(symbol, time_frame, limit=1)
+            kline = await self.get_symbol_prices(symbol, time_frame, limit=1, params=params)
             self.logger.debug(f"get_kline_price({symbol}, {time_frame}): {kline}")
             return kline
         except BaseError as e:
@@ -169,17 +176,21 @@ class RestExchange(AbstractExchange):
             return None
 
     # return up to ten bidasks on each side of the order book stack
-    async def get_order_book(self, symbol, limit=5):
+    async def get_order_book(self, symbol, limit=5, params=None):
+        if params is None:
+            params = {}
         try:
-            return await self.client.fetch_order_book(symbol, limit)
+            return await self.client.fetch_order_book(symbol, limit=limit, params=params)
         except BaseError as e:
             self.logger.error(f"Failed to get_order_book {e}")
             return None
 
-    async def get_recent_trades(self, symbol, limit=50):
+    async def get_recent_trades(self, symbol, limit=50, params=None):
+        if params is None:
+            params = {}
         try:
             # TODO remove these logs when C typing issues are fixed
-            rt = await self.client.fetch_trades(symbol, limit=limit)
+            rt = await self.client.fetch_trades(symbol, limit=limit, params=params)
             self.logger.debug(f"get_recent_trades({symbol}, {limit}): {rt}")
             return rt
         except BaseError as e:
@@ -187,29 +198,35 @@ class RestExchange(AbstractExchange):
             return None
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
-    async def get_price_ticker(self, symbol):
+    async def get_price_ticker(self, symbol, params=None):
+        if params is None:
+            params = {}
         try:
             # TODO remove these logs when C typing issues are fixed
-            ticker = await self.client.fetch_ticker(symbol)
+            ticker = await self.client.fetch_ticker(symbol, params=params)
             self.logger.debug(f"get_price_ticker({symbol}): {ticker}")
             return ticker
         except BaseError as e:
             self.logger.error(f"Failed to get_price_ticker {e}")
             return None
 
-    async def get_all_currencies_price_ticker(self):
+    async def get_all_currencies_price_ticker(self, params=None):
+        if params is None:
+            params = {}
         try:
-            self.all_currencies_price_ticker = await self.client.fetch_tickers()
+            self.all_currencies_price_ticker = await self.client.fetch_tickers(params=params)
             return self.all_currencies_price_ticker
         except BaseError as e:
             self.logger.error(f"Failed to get_all_currencies_price_ticker {e}")
             return None
 
     # ORDERS
-    async def get_order(self, order_id, symbol=None):
+    async def get_order(self, order_id, symbol=None, params=None):
+        if params is None:
+            params = {}
         if self.client.has['fetchOrder']:
             try:
-                return await self.client.fetch_order(order_id, symbol)
+                return await self.client.fetch_order(order_id, symbol, params=params)
                 # self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order) TODO
             except OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
@@ -218,25 +235,33 @@ class RestExchange(AbstractExchange):
         else:
             raise Exception("This exchange doesn't support fetchOrder")
 
-    async def get_all_orders(self, symbol=None, since=None, limit=None, params={}):
+    async def get_all_orders(self, symbol=None, since=None, limit=None, params=None):
+        if params is None:
+            params = {}
         if self.client.has['fetchOrders']:
             return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchOrders")
 
-    async def get_open_orders(self, symbol=None, since=None, limit=None, params={}):
+    async def get_open_orders(self, symbol=None, since=None, limit=None, params=None):
+        if params is None:
+            params = {}
         if self.client.has['fetchOpenOrders']:
             return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchOpenOrders")
 
-    async def get_closed_orders(self, symbol=None, since=None, limit=None, params={}):
+    async def get_closed_orders(self, symbol=None, since=None, limit=None, params=None):
+        if params is None:
+            params = {}
         if self.client.has['fetchClosedOrders']:
             return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
             raise Exception("This exchange doesn't support fetchClosedOrders")
 
-    async def get_my_recent_trades(self, symbol=None, since=None, limit=None, params={}):
+    async def get_my_recent_trades(self, symbol=None, since=None, limit=None, params=None):
+        if params is None:
+            params = {}
         if self.client.has['fetchMyTrades'] or self.client.has['fetchTrades']:
             if self.client.has['fetchMyTrades']:
                 return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=params)
@@ -245,16 +270,20 @@ class RestExchange(AbstractExchange):
         else:
             raise Exception("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
-    async def cancel_order(self, order_id, symbol=None):
+    async def cancel_order(self, order_id, symbol=None, params=None):
+        if params is None:
+            params = {}
         try:
-            return await self.client.cancel_order(order_id, symbol=symbol)
+            return await self.client.cancel_order(order_id, symbol=symbol, params=params)
         except OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
         except Exception as e:
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
         return None
 
-    async def create_order(self, order_type, symbol, quantity, price=None, stop_price=None):
+    async def create_order(self, order_type, symbol, quantity, price=None, stop_price=None, params=None):
+        if params is None:
+            params = {}
         try:
             created_order = await self._create_specific_order(order_type, symbol, quantity, price)
             # some exchanges are not returning the full order details on creation: fetch it if necessary
@@ -262,7 +291,7 @@ class RestExchange(AbstractExchange):
                 if ecoc.ID.value in created_order:
                     order_symbol = created_order[ecoc.SYMBOL.value] if ecoc.SYMBOL.value in created_order else None
                     created_order = await self.exchange_manager.get_exchange().get_order(created_order[ecoc.ID.value],
-                                                                                         order_symbol)
+                                                                                         order_symbol, params=params)
 
             # on some exchange, market order are not not including price, add it manually to ensure uniformity
             if created_order[ecoc.PRICE.value] is None and price is not None:
