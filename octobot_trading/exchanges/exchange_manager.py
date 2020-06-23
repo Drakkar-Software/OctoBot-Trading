@@ -49,6 +49,7 @@ class ExchangeManager(Initializable):
         super().__init__()
         self.id = str(uuid.uuid4())
         self.config = config
+        self.tentacles_setup_config = None
         self.exchange_class_string = exchange_class_string
         self.exchange_name = exchange_class_string
         self._logger = get_logger(self.__class__.__name__)
@@ -219,7 +220,7 @@ class ExchangeManager(Initializable):
     """
 
     async def _search_and_create_rest_exchange(self):
-        rest_exchange_class = get_rest_exchange_class(self.exchange_type)
+        rest_exchange_class = get_rest_exchange_class(self.exchange_type, self.tentacles_setup_config)
         if rest_exchange_class:
             self.exchange = rest_exchange_class(config=self.config,
                                                 exchange_type=self.exchange_type,
@@ -231,7 +232,7 @@ class ExchangeManager(Initializable):
     """
 
     async def _search_and_create_spot_exchange(self):
-        spot_exchange_class = get_spot_exchange_class(self.exchange_type)
+        spot_exchange_class = get_spot_exchange_class(self.exchange_type, self.tentacles_setup_config)
         if spot_exchange_class:
             self.exchange = spot_exchange_class(config=self.config,
                                                 exchange_type=self.exchange_type,
@@ -243,7 +244,7 @@ class ExchangeManager(Initializable):
     """
 
     async def _search_and_create_margin_exchange(self):
-        margin_exchange_class = get_margin_exchange_class(self.exchange_type)
+        margin_exchange_class = get_margin_exchange_class(self.exchange_type, self.tentacles_setup_config)
         if margin_exchange_class:
             self.exchange = margin_exchange_class(config=self.config,
                                                   exchange_type=self.exchange_type,
@@ -255,7 +256,7 @@ class ExchangeManager(Initializable):
     """
 
     async def _search_and_create_future_exchange(self):
-        future_exchange_class = get_future_exchange_class(self.exchange_type)
+        future_exchange_class = get_future_exchange_class(self.exchange_type, self.tentacles_setup_config)
         if future_exchange_class:
             self.exchange = future_exchange_class(config=self.config,
                                                   exchange_type=self.exchange_type,

@@ -58,6 +58,7 @@ class ExchangeBuilder:
             # handle exchange related requirements if the activated trading mode has any
             self._register_trading_modes_requirements(trading_mode_class)
 
+        self.exchange_manager.tentacles_setup_config = self._tentacles_setup_config
         await self.exchange_manager.initialize()
 
         # initialize exchange for trading if not collecting

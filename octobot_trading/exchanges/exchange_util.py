@@ -13,33 +13,38 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_tentacles_manager.api.configurator import is_tentacle_activated_in_tentacles_setup_config
 from octobot_trading.exchanges.types.future_exchange import FutureExchange
 from octobot_trading.exchanges.types.margin_exchange import MarginExchange
 from octobot_trading.exchanges.types.spot_exchange import SpotExchange
 from octobot_trading.exchanges.rest_exchange import RestExchange
 
 
-def get_margin_exchange_class(exchange_type):
-    return _search_exchange_class_from_exchange_type(exchange_type, MarginExchange)
+def get_margin_exchange_class(exchange_type, tentacles_setup_config):
+    return _search_exchange_class_from_exchange_type(exchange_type, MarginExchange, tentacles_setup_config)
 
 
-def get_future_exchange_class(exchange_type):
-    return _search_exchange_class_from_exchange_type(exchange_type, FutureExchange)
+def get_future_exchange_class(exchange_type, tentacles_setup_config):
+    return _search_exchange_class_from_exchange_type(exchange_type, FutureExchange, tentacles_setup_config)
 
 
-def get_spot_exchange_class(exchange_type):
-    return _search_exchange_class_from_exchange_type(exchange_type, SpotExchange)
+def get_spot_exchange_class(exchange_type, tentacles_setup_config):
+    return _search_exchange_class_from_exchange_type(exchange_type, SpotExchange, tentacles_setup_config)
 
 
-def get_rest_exchange_class(exchange_type):
-    exchange_class_candidate: RestExchange = _search_exchange_class_from_exchange_type(exchange_type, RestExchange)
+def get_rest_exchange_class(exchange_type, tentacles_setup_config):
+    exchange_class_candidate: RestExchange = _search_exchange_class_from_exchange_type(exchange_type,
+                                                                                       RestExchange,
+                                                                                       tentacles_setup_config)
     return exchange_class_candidate if exchange_class_candidate is not None else RestExchange
 
 
-def _search_exchange_class_from_exchange_type(exchange_type, exchange_class):
+def _search_exchange_class_from_exchange_type(exchange_type, exchange_class, tentacles_setup_config):
     for exchange_candidate in exchange_class.__subclasses__():
         try:
-            if exchange_candidate.get_name() == exchange_type.__name__:
+            if exchange_candidate.get_name() == exchange_type.__name__ and \
+                    is_tentacle_activated_in_tentacles_setup_config(tentacles_setup_config,
+                                                                    exchange_candidate.__name__):
                 return exchange_candidate
         except NotImplementedError:
             # A subclass of AbstractExchange will raise a NotImplementedError when calling its get_name() method
