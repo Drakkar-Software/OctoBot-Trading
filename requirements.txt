@@ -6,7 +6,7 @@ numpy==1.18.5
 OctoBot-Backtesting>=1.5.17, <1.6
 OctoBot-Channels>=1.4.9, <1.5
 OctoBot-Commons>=1.3.38, <1.4
-OctoBot-Tentacles-Manager>=2.1.7, <2.2
+OctoBot-Tentacles-Manager>=2.2, <2.3
 
 # Exchange connection requirements
 ccxt==1.30.24
