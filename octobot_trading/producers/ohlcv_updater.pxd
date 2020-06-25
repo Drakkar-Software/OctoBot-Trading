@@ -22,6 +22,8 @@ cdef class OHLCVUpdater(OHLCVProducer):
     cdef list tasks
 
     cdef bint is_initialized
+    cdef dict initialized_candles_by_tf_by_symbol
 
     cdef list _get_traded_pairs(self)
     cdef list _get_time_frames(self)
+    cdef void _set_initialized(self, str pair, object time_frame, bint initialized)

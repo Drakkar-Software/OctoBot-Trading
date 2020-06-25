@@ -39,6 +39,7 @@ class OHLCVUpdater(OHLCVProducer):
         super().__init__(channel)
         self.tasks = []
         self.is_initialized = False
+        self.initialized_candles_by_tf_by_symbol = {}
 
     async def start(self):
         """
@@ -64,72 +65,94 @@ class OHLCVUpdater(OHLCVProducer):
     async def _initialize(self):
         try:
             await asyncio.gather(*[
-                self._initialize_candles(time_frame, pair)
+                self._initialize_candles(time_frame, pair, True)
                 for time_frame in self._get_time_frames()
                 for pair in self._get_traded_pairs()
             ])
         except Exception as e:
             self.logger.exception(e, True, f"Error while initializing candles: {e}")
         finally:
-            self.logger.debug("Candle history loaded")
+            self.logger.debug("Candle history initial fetch completed")
             self.is_initialized = True
 
-    async def _initialize_candles(self, time_frame, pair):
+    async def _initialize_candles(self, time_frame, pair, should_retry):
         """
         Manage timeframe OHLCV data refreshing for all pairs
         """
+        self._set_initialized(pair, time_frame, False)
         # fetch history
         candles: list = await self.channel.exchange_manager.exchange \
             .get_symbol_prices(pair, time_frame, limit=self.OHLCV_OLD_LIMIT)
         self.channel.exchange_manager.uniformize_candles_if_necessary(candles)
-        if candles:
+        if len(candles) > 1:
+            self._set_initialized(pair, time_frame, True)
             await self.channel.exchange_manager.get_symbol_data(pair) \
                 .handle_candles_update(time_frame, candles[:-1], replace_all=True, partial=False)
-        else:
+            self.logger.debug(f"Candle history loaded for {pair} on {time_frame}")
+        elif should_retry:
             # When candle history cannot be loaded, retry to load it later
-            self.logger.error(f"Failed to init candle history")
-            asyncio.get_event_loop().call_later(self.OHLCV_INITIALIZATION_RETRY_DELAY,
-                                                asyncio.create_task,
-                                                self._initialize_candles(time_frame, pair))
+            self.logger.warning(f"Failed to initialize candle history for {pair} on {time_frame}. Retrying in "
+                                f"{self.OHLCV_INITIALIZATION_RETRY_DELAY} seconds")
+            # retry only once
+            await asyncio.sleep(self.OHLCV_INITIALIZATION_RETRY_DELAY)
+            await self._initialize_candles(time_frame, pair, False)
+        else:
+            self.logger.warning(f"Failed to initialize candle history for {pair} on {time_frame}. Retrying on "
+                                f"the next time frame update")
 
-    async def _candle_callback(self, time_frame, pair, should_initialize=False):
+    async def _ensure_candles_initialization(self, pair):
+        init_coroutines = tuple(
+            self._initialize_candles(time_frame, pair, False)
+            for time_frame, initialized in self.initialized_candles_by_tf_by_symbol[pair].items()
+            if not initialized
+        )
+        # call gather only if init_coroutines is not empty for optimization purposes
+        if init_coroutines:
+            await asyncio.gather(*init_coroutines)
+
+    async def _candle_callback(self, time_frame, pair):
         time_frame_sleep: int = TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS
         last_candle_timestamp: float = 0
 
-        if should_initialize:
-            await self._initialize_candles(time_frame, pair)
-
         while not self.should_stop and not self.channel.is_paused:
             try:
-                candles: list = await self.channel.exchange_manager.exchange.get_symbol_prices(pair,
-                                                                                               time_frame,
-                                                                                               limit=self.OHLCV_LIMIT)
-                if candles:
-                    last_candle: list = candles[-1]
-                    self.channel.exchange_manager.uniformize_candles_if_necessary(candles)
-                else:
-                    last_candle: list = []
-
-                if last_candle:
-                    current_candle_timestamp: float = last_candle[PriceIndexes.IND_PRICE_TIME.value]
-                    should_sleep_time: float = current_candle_timestamp + time_frame_sleep - time.time()
-
-                    if last_candle_timestamp == current_candle_timestamp:
-                        should_sleep_time = OHLCVUpdater.OHLCV_MIN_REFRESH_TIME
+                start_update_time = time.time()
+                await self._ensure_candles_initialization(pair)
+                # skip uninitialized candles
+                if self.initialized_candles_by_tf_by_symbol[pair][time_frame]:
+                    candles: list = await self.channel.exchange_manager.exchange.get_symbol_prices(
+                        pair,
+                        time_frame,
+                        limit=self.OHLCV_LIMIT)
+                    if candles:
+                        last_candle: list = candles[-1]
+                        self.channel.exchange_manager.uniformize_candles_if_necessary(candles)
                     else:
-                        # A fresh candle happened
-                        last_candle_timestamp = current_candle_timestamp
-                        await self.push(time_frame, pair, candles[:-1], partial=True)   # push only completed candles
+                        last_candle: list = []
 
-                        if should_sleep_time < OHLCVUpdater.OHLCV_MIN_REFRESH_TIME:
+                    if last_candle:
+                        current_candle_timestamp: float = last_candle[PriceIndexes.IND_PRICE_TIME.value]
+                        should_sleep_time: float = current_candle_timestamp + time_frame_sleep - time.time()
+
+                        if last_candle_timestamp == current_candle_timestamp:
                             should_sleep_time = OHLCVUpdater.OHLCV_MIN_REFRESH_TIME
-                        elif should_sleep_time > time_frame_sleep:
-                            should_sleep_time = time_frame_sleep
+                        else:
+                            # A fresh candle happened
+                            last_candle_timestamp = current_candle_timestamp
+                            await self.push(time_frame, pair, candles[:-1], partial=True)   # push only completed candles
 
-                    await asyncio.sleep(should_sleep_time)
+                            if should_sleep_time < OHLCVUpdater.OHLCV_MIN_REFRESH_TIME:
+                                should_sleep_time = OHLCVUpdater.OHLCV_MIN_REFRESH_TIME
+                            elif should_sleep_time > time_frame_sleep:
+                                should_sleep_time = time_frame_sleep
+
+                        await asyncio.sleep(should_sleep_time)
+                    else:
+                        # TODO think about asyncio.call_at or call_later
+                        await asyncio.sleep(time_frame_sleep)
                 else:
-                    # TODO think about asyncio.call_at or call_later
-                    await asyncio.sleep(time_frame_sleep)
+                    # candles on this time frame have not been initialized: sleep until the next candle update
+                    await asyncio.sleep(max(0.0, time_frame_sleep - (time.time() - start_update_time)))
             except NotSupported:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
@@ -137,6 +160,11 @@ class OHLCVUpdater(OHLCVProducer):
             except Exception as e:
                 self.logger.exception(e, True, f"Failed to update ohlcv data for {pair} on {time_frame} : {e}")
                 await asyncio.sleep(self.OHLCV_ON_ERROR_TIME)
+
+    def _set_initialized(self, pair, time_frame, initialized):
+        if pair not in self.initialized_candles_by_tf_by_symbol:
+            self.initialized_candles_by_tf_by_symbol[pair] = {}
+        self.initialized_candles_by_tf_by_symbol[pair][time_frame] = initialized
 
     async def resume(self) -> None:
         await super().resume()
