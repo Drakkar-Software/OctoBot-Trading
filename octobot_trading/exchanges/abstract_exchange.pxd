@@ -23,7 +23,6 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class AbstractExchange(Initializable):
     cdef public dict config
 
-    cdef public object client
     cdef public object exchange_type
     cdef public object logger
     cdef public double allowed_time_lag

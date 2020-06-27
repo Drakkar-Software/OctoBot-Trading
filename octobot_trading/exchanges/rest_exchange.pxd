@@ -28,6 +28,7 @@ cdef class RestExchange(AbstractExchange):
     cdef double total
 
     cdef object all_currencies_price_ticker
+    cdef public object client
 
     cdef public object current_account
 
