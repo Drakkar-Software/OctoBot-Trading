@@ -28,7 +28,8 @@ class LimitOrder(Order):
         self.trigger_above = self.side is TradeOrderSide.SELL
 
     async def update_order_status(self, force_refresh=False):
-        if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):
+        if not self.trader.simulate and not self.is_self_managed() and \
+                (not self.is_synchronized_with_exchange or force_refresh):
             await self.default_exchange_update_order_status()
 
         if self.limit_price_hit_event is None:

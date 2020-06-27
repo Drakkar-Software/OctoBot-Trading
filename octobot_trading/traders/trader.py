@@ -103,7 +103,7 @@ class Trader(Initializable):
                 self.logger.error(f"Fail to create not loaded order : {e}")
                 return None
 
-        if new_order.status in [OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]:
+        if new_order.is_open():
             # notify order manager of a new open order
             await self.exchange_manager.exchange_personal_data.handle_order_instance_update(new_order)
         else:
@@ -190,7 +190,7 @@ class Trader(Initializable):
         a filled order)
         :return: None
         """
-        if order and not order.is_cancelled() and not order.is_filled():
+        if order and ((not order.is_cancelled() and not order.is_filled()) or is_cancelled_from_exchange):
             async with order.lock:
                 # always cancel this order first to avoid infinite loop followed by deadlock
                 order.cancel_order()

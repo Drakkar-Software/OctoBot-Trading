@@ -475,6 +475,12 @@ class RestExchange(AbstractExchange):
     def parse_currency(self, currency):
         return self.client.safe_currency_code(currency)
 
+    def parse_order_id(self, order):
+        return order.get(ecoc.ID.value, None)
+
+    def parse_order_symbol(self, order):
+        return order.get(ecoc.SYMBOL.value, None)
+
     def parse_status(self, status):
         return OrderStatus(self.client.parse_order_status(status))
 
