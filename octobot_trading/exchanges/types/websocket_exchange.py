@@ -29,12 +29,13 @@ from ccxt.base.exchange import Exchange as ccxtExchange
 
 from octobot_commons.constants import HOURS_TO_SECONDS, MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFrames, TimeFramesMinutes
-from octobot_commons.logging.logging_util import get_logger
+from octobot_commons.logging.logging_util import get_logger, set_logging_level
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.enums import WebsocketFeeds as Feeds
 
 
 class WebsocketExchange:
+    LOGGERS = ["websockets.client", "websockets.server", "websockets.protocol"]
     MAX_DELAY = HOURS_TO_SECONDS
     EXCHANGE_FEEDS = {}
 
@@ -49,9 +50,8 @@ class WebsocketExchange:
                  api_password: str = None,
                  timeout: int = 120,
                  timeout_interval: int = 5):
+        set_logging_level(self.LOGGERS, logging.WARNING)
         self.logger = get_logger(self.__class__.__name__)
-        logging.getLogger('websockets.server').setLevel(logging.ERROR)
-        logging.getLogger('websockets.protocol').setLevel(logging.ERROR)
 
         self.exchange_manager = exchange_manager
         self.exchange = self.exchange_manager.exchange
