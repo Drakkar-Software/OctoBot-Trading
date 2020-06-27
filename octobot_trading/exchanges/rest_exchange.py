@@ -48,6 +48,10 @@ class RestExchange(AbstractExchange):
         self.is_authenticated = False
         self.is_sandboxed = is_sandboxed
         self.current_account = AccountTypes.CASH
+
+        self.client = None
+        self.all_currencies_price_ticker = None
+
         self._create_client()
 
     async def initialize_impl(self):
