@@ -115,7 +115,8 @@ class WebsocketExchange:
 
             try:
                 async with websockets.connect(self.get_ws_endpoint()
-                                              if not self.use_testnet else self.get_ws_testnet_endpoint()) as websocket:
+                                              if not self.use_testnet else self.get_ws_testnet_endpoint(),
+                                              subprotocols=self.get_sub_protocol()) as websocket:
                     self.websocket = websocket
                     self.on_open()
                     self._watch_task = asyncio.create_task(self._watch())
@@ -201,6 +202,9 @@ class WebsocketExchange:
 
     async def prepare(self):
         pass
+
+    def get_sub_protocol(self):
+        return []
 
     @classmethod
     def is_handling_spot(cls) -> bool:
