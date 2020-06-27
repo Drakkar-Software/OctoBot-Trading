@@ -47,6 +47,7 @@ class Order(Initializable):
         self.linked_orders = []
 
         self.is_synchronized_with_exchange = False
+        self.is_from_this_octobot = True
         self.order_id = trader.parse_order_id(None)
         self.simulated = trader.simulate
 
@@ -175,7 +176,7 @@ class Order(Initializable):
         Initialize order status update tasks
         """
         if not self.exchange_manager.is_backtesting:
-            if not self.exchange_manager.is_simulated:
+            if not self.exchange_manager.is_simulated and not self.is_self_managed():
                 # Create a task to synchronize order data with exchange
                 asyncio.create_task(get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer().
                                     update_order_from_exchange(self))
@@ -248,11 +249,17 @@ class Order(Initializable):
     def get_total_fees(self, currency):
         return get_fees_for_currency(self.fee, currency)
 
+    def is_open(self):
+        return self.status in {OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED}
+
     def is_filled(self):
         return self.status is OrderStatus.FILLED
 
     def is_cancelled(self):
         return self.status is OrderStatus.CANCELED
+
+    def is_closed(self):
+        return self.status in {OrderStatus.CANCELED, OrderStatus.FILLED, OrderStatus.CLOSED}
 
     def get_computed_fee(self, forced_value=None):
         computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,

@@ -21,8 +21,6 @@ from octobot_trading.data_manager.orders_manager import OrdersManager
 from octobot_trading.data_manager.portfolio_manager import PortfolioManager
 from octobot_trading.data_manager.positions_manager import PositionsManager
 from octobot_trading.data_manager.trades_manager import TradesManager
-from octobot_trading.enums import OrderStatus
-from octobot_trading.trades.trade_factory import create_trade_from_order
 from octobot_trading.util.initializable import Initializable
 
 
@@ -102,14 +100,15 @@ class ExchangePersonalData(Initializable):
     async def handle_order_update_from_raw(self, symbol, order_id, raw_order, should_notify: bool = True) -> bool:
         try:
             changed: bool = self.orders_manager.upsert_order_from_raw(order_id, raw_order)
-            if should_notify:
-                await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
-                          symbol=symbol,
-                          order=raw_order,
-                          is_from_bot=True,
-                          is_closed=False,
-                          is_updated=changed)
+
+            if changed:
+                if await self._handle_order_post_update(self.orders_manager.get_order(order_id)):
+                    # when the order is removed from orders_manager
+                    return changed
+
+                if should_notify:
+                    await self._handle_order_update_notification(self.orders_manager.get_order(order_id), changed)
+
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
@@ -118,26 +117,56 @@ class ExchangePersonalData(Initializable):
     async def handle_order_instance_update(self, order, should_notify: bool = True):
         try:
             changed: bool = self.orders_manager.upsert_order_instance(order)
-            if should_notify:
-                await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
-                          symbol=order.symbol,
-                          order=order.to_dict(),
-                          is_from_bot=True,
-                          is_closed=False,
-                          is_updated=changed)
+
+            if changed:
+                if await self._handle_order_post_update(order):
+                    # when the order is removed from orders_manager
+                    return changed
+
+                if should_notify:
+                    await self._handle_order_update_notification(order, changed)
+
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order instance : {e}")
             return False
 
-    async def handle_closed_order_update(self, symbol, order_id, raw_order, should_notify: bool = True) -> bool:
+    async def _handle_order_update_notification(self, order, changed):
+        """
+        Notify Orders channel for Order update
+        :param order: the updated order
+        :param changed: True if the order was updated
+        """
+        await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+            .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
+                  symbol=order.symbol,
+                  order=order.to_dict(),
+                  is_from_bot=order.is_from_this_octobot,
+                  is_closed=order.is_open(),
+                  is_updated=changed)
+
+    async def _handle_order_post_update(self, order) -> bool:
+        """
+        Handle order status updates (OrderStatus.FILLED, OrderStatus.CLOSED)
+        :param order: the updated order
+        :return True if an action was performed
+        """
+        # TODO manage OrderStatus.PARTIALLY_FILLED
+        if order.is_closed():
+            return await self.handle_closed_order_update(order.symbol, order.order_id, order.to_dict(),
+                                                         should_notify=True)
+        return False
+
+    async def handle_closed_order_update(self, symbol, order_id, raw_order,
+                                         should_notify: bool = True,
+                                         is_cancelled_from_exchange: bool = True) -> bool:
         try:
             existing_order = self.orders_manager.upsert_order_close_from_raw(order_id, raw_order)
             if existing_order is not None:
-                if existing_order.status is OrderStatus.CANCELED:
-                    await self.trader.cancel_order(existing_order)
-                elif existing_order.status is OrderStatus.FILLED:
+                if existing_order.is_cancelled():
+                    await self.trader.cancel_order(existing_order,
+                                                   is_cancelled_from_exchange=is_cancelled_from_exchange)
+                elif existing_order.is_filled() or existing_order.is_closed():
                     await self.trader.close_filled_order(existing_order)
                 else:
                     self.logger.error(f"Unknown closed order status: {existing_order.status} for order: {raw_order}")
@@ -146,8 +175,8 @@ class ExchangePersonalData(Initializable):
                         .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                               symbol=symbol,
                               order=existing_order.to_dict(),
-                              is_from_bot=True,
-                              is_closed=True,
+                              is_from_bot=existing_order.is_from_this_octobot,
+                              is_closed=existing_order.is_closed(),
                               is_updated=True)
                 return True
             return False
