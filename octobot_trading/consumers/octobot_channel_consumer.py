@@ -24,7 +24,7 @@ from octobot_trading.api.exchange import create_exchange_builder
 
 from octobot_commons.enums import OctoBotChannelSubjects
 from octobot_trading.constants import CONFIG_EXCHANGE_SANDBOXED, CONFIG_EXCHANGES, CONFIG_EXCHANGE_FUTURE, \
-    CONFIG_EXCHANGE_MARGIN, CONFIG_EXCHANGE_SPOT
+    CONFIG_EXCHANGE_MARGIN, CONFIG_EXCHANGE_SPOT, CONFIG_EXCHANGE_REST_ONLY
 
 OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG = "OctoBotChannelTradingConsumer"
 
@@ -83,8 +83,6 @@ async def _handle_creation(bot_id, action, data):
 
 
 def _set_exchange_type_details(exchange_builder, config, backtesting):
-    # rest, web socket
-    exchange_builder.is_rest_only()
     # real, simulator, backtesting
     if is_trader_enabled_in_config(config):
         exchange_builder.is_real()
@@ -104,3 +102,7 @@ def _set_exchange_type_details(exchange_builder, config, backtesting):
     elif config[CONFIG_EXCHANGES][exchange_builder.exchange_name].get(CONFIG_EXCHANGE_SPOT, True):
         # Use spot trading as default trading type
         exchange_builder.is_spot_only(True)
+
+    # rest, web socket
+    if config[CONFIG_EXCHANGES][exchange_builder.exchange_name].get(CONFIG_EXCHANGE_REST_ONLY, False):
+        exchange_builder.is_rest_only()
