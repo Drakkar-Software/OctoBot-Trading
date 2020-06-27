@@ -119,7 +119,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
     def _get_time_frames(self):
         return self.channel.exchange.get_time_frames(self.exchange_data_importer)
 
-    async def _initialize_candles(self, time_frame, pair):
+    async def _initialize_candles(self, time_frame, pair, should_retry):
         # fetch history
         ohlcv_data = None
         try:
