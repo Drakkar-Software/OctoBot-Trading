@@ -20,7 +20,7 @@ import pytest
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 
 from octobot_trading.data_manager.price_events_manager import PriceEventsManager
-from octobot_trading.enums import TradeOrderType, TradeOrderSide
+from octobot_trading.enums import TradeOrderType, TradeOrderSide, MarkPriceSources
 from octobot_trading.orders.types import TrailingStopOrder
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -156,5 +156,5 @@ def get_price_percent(price, percent, selling_side=True):
 def set_mark_price(order, mark_price):
     prices_manager = order.exchange_manager.exchange_symbols_data. \
         get_exchange_symbol_data(order.symbol).prices_manager
-    prices_manager.set_mark_price(mark_price)
+    prices_manager.set_mark_price(mark_price, MarkPriceSources.EXCHANGE_MARK_PRICE.value)
     prices_manager.mark_price_set_time = order.timestamp

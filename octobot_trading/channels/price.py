@@ -18,17 +18,18 @@ from asyncio import CancelledError
 from octobot_channels.constants import CHANNEL_WILDCARD
 
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
+from octobot_trading.enums import MarkPriceSources
 
 
 class MarkPriceProducer(ExchangeChannelProducer):
-    async def push(self, symbol, mark_price):
-        await self.perform(symbol, mark_price)
+    async def push(self, symbol, mark_price, mark_price_source=MarkPriceSources.EXCHANGE_MARK_PRICE.value):
+        await self.perform(symbol, mark_price, mark_price_source=mark_price_source)
 
-    async def perform(self, symbol, mark_price):
+    async def perform(self, symbol, mark_price, mark_price_source=MarkPriceSources.EXCHANGE_MARK_PRICE.value):
         try:
             if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
-                    symbol=symbol):  # and symbol_data.order_book_is_initialized()
-                self.channel.exchange_manager.get_symbol_data(symbol).handle_mark_price_update(mark_price)
+                    symbol=symbol):
+                self.channel.exchange_manager.get_symbol_data(symbol).handle_mark_price_update(mark_price, mark_price_source)
 
                 # mark_price attribute access required to send calculation result
                 await self.send(cryptocurrency=self.channel.exchange_manager.exchange.get_pair_cryptocurrency(symbol),

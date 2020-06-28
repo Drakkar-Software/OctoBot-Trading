@@ -285,6 +285,12 @@ class AccountTypes(Enum):
     FUTURE = "future"
 
 
+class MarkPriceSources(Enum):
+    EXCHANGE_MARK_PRICE = "exchange_mark_price"
+    RECENT_TRADE_AVERAGE = "recent_trade_average"
+    TICKER_CLOSE_PRICE = "ticker_close_price"
+
+
 class WebsocketFeeds(Enum):
     L2_BOOK = 'l2_book'
     L3_BOOK = 'l3_book'
