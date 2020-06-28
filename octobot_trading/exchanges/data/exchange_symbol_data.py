@@ -78,8 +78,8 @@ class ExchangeSymbolData:
     def handle_liquidations(self, liquidations):
         self.recent_trades_manager.add_new_liquidations(liquidations)
 
-    def handle_mark_price_update(self, mark_price):
-        self.prices_manager.set_mark_price(mark_price)
+    def handle_mark_price_update(self, mark_price, mark_price_source):
+        self.prices_manager.set_mark_price(mark_price, mark_price_source)
         self.price_events_manager.handle_price(mark_price, self.exchange_manager.exchange.get_exchange_current_time())
 
     def handle_order_book_update(self, asks, bids):

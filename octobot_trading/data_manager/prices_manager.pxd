@@ -26,9 +26,13 @@ cdef class PricesManager(Initializable):
     cdef public double mark_price
     cdef public double mark_price_set_time
 
+    cdef dict mark_price_from_sources
+
+    cdef void _set_mark_price_value(self, double mark_price)
     cdef void _reset_prices(self)
     cdef void _ensure_price_validity(self)
+    cdef bint _are_other_sources_valid(self, str mark_price_source)
 
-    cpdef list set_mark_price(self, double mark_price)
+    cpdef list set_mark_price(self, double mark_price, str mark_price_source)
 
 cpdef double calculate_mark_price_from_recent_trade_prices(list recent_trade_prices)
