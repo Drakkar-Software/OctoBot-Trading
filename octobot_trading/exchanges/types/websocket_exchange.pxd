@@ -56,7 +56,6 @@ cdef class WebsocketExchange:
     cdef double fix_timestamp(self, double ts)
     cdef double timestamp_normalize(self, double ts)
     cdef str feed_to_exchange(self, feed)
-    cdef double safe_float(self, dict dictionary, key, default_value)
 
     cpdef start(self)
     cpdef stop(self)
