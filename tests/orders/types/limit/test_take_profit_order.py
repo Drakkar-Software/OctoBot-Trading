@@ -29,7 +29,7 @@ DEFAULT_SYMBOL_ORDER = "BTC/USDT"
 
 
 async def test_take_profit_sell_order_trigger(take_profit_sell_order):
-    order_price = random_price(min_value=1)
+    order_price = random_price(min_value=2)
     take_profit_sell_order.update(
         price=order_price,
         quantity=random_quantity(),
