@@ -29,13 +29,15 @@ class MarkPriceProducer(ExchangeChannelProducer):
         try:
             if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
                     symbol=symbol):
-                self.channel.exchange_manager.get_symbol_data(symbol).handle_mark_price_update(mark_price, mark_price_source)
-
-                # mark_price attribute access required to send calculation result
-                await self.send(cryptocurrency=self.channel.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
-                                symbol=symbol,
-                                mark_price=self.channel.exchange_manager.get_symbol_data(
-                                    symbol).prices_manager.mark_price)
+                if self.channel.exchange_manager.get_symbol_data(symbol).handle_mark_price_update(mark_price,
+                                                                                                  mark_price_source):
+                    # only send mark price if price got updated
+                    # mark_price attribute access required to send calculation result
+                    await self.send(cryptocurrency=self.channel.exchange_manager.exchange.get_pair_cryptocurrency(
+                                        symbol),
+                                    symbol=symbol,
+                                    mark_price=self.channel.exchange_manager.get_symbol_data(
+                                        symbol).prices_manager.mark_price)
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
