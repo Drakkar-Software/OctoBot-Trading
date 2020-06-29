@@ -65,15 +65,15 @@ async def test_set_mark_price_for_exchange_source(prices_manager):
 
 
 async def test_set_mark_price_for_ticker_source_only(prices_manager):
-    prices_manager.set_mark_price(10, MarkPriceSources.TICKER_CLOSE_PRICE.value)
+    assert prices_manager.set_mark_price(10, MarkPriceSources.TICKER_CLOSE_PRICE.value) is True
     assert prices_manager.mark_price == 10
     check_event_is_set(prices_manager)
 
 
 async def test_set_mark_price_for_rt_source_only(prices_manager):
-    prices_manager.set_mark_price(10, MarkPriceSources.RECENT_TRADE_AVERAGE.value)
+    assert prices_manager.set_mark_price(10, MarkPriceSources.RECENT_TRADE_AVERAGE.value) is False
     assert prices_manager.mark_price == 0  # drop first RT mark price
-    prices_manager.set_mark_price(25, MarkPriceSources.RECENT_TRADE_AVERAGE.value)
+    assert prices_manager.set_mark_price(25, MarkPriceSources.RECENT_TRADE_AVERAGE.value) is True
     assert prices_manager.mark_price == 25
     check_event_is_set(prices_manager)
 
@@ -81,27 +81,29 @@ async def test_set_mark_price_for_rt_source_only(prices_manager):
 async def test_set_mark_price_for_ticker_with_rt_source_outdated(prices_manager):
     prices_manager.set_mark_price(5, MarkPriceSources.RECENT_TRADE_AVERAGE.value)
     assert prices_manager.mark_price == 0  # Drop first RT update
-    prices_manager.set_mark_price(10, MarkPriceSources.RECENT_TRADE_AVERAGE.value)
+    assert prices_manager.set_mark_price(10, MarkPriceSources.RECENT_TRADE_AVERAGE.value) is True
     assert prices_manager.mark_price == 10
     check_event_is_set(prices_manager)
-    prices_manager.set_mark_price(40, MarkPriceSources.TICKER_CLOSE_PRICE.value)
+    assert prices_manager.set_mark_price(40, MarkPriceSources.TICKER_CLOSE_PRICE.value) is False
     assert prices_manager.mark_price == 10  # should not be updated because RECENT_TRADE_AVERAGE has not expired
     check_event_is_set(prices_manager)
-    prices_manager.set_mark_price(20, MarkPriceSources.TICKER_CLOSE_PRICE.value)
+    assert prices_manager.set_mark_price(20, MarkPriceSources.TICKER_CLOSE_PRICE.value) is False
     assert prices_manager.mark_price == 10  # should not be updated because RECENT_TRADE_AVERAGE has not expired
     check_event_is_set(prices_manager)
     # force rt source expiration
     if not os.getenv('CYTHON_IGNORE'):
         prices_manager.mark_price_from_sources[MarkPriceSources.RECENT_TRADE_AVERAGE.value] = None
-        prices_manager.set_mark_price(40, MarkPriceSources.TICKER_CLOSE_PRICE.value)
+        assert prices_manager.set_mark_price(40, MarkPriceSources.TICKER_CLOSE_PRICE.value) is True
         assert prices_manager.mark_price == 40  # should be updated because RECENT_TRADE_AVERAGE has expired
         check_event_is_set(prices_manager)
-        prices_manager.set_mark_price(8, MarkPriceSources.RECENT_TRADE_AVERAGE.value)
+        assert prices_manager.set_mark_price(8, MarkPriceSources.RECENT_TRADE_AVERAGE.value) is False
         assert prices_manager.mark_price == 40  # Drop first RT update after reset
-        prices_manager.set_mark_price(15, MarkPriceSources.RECENT_TRADE_AVERAGE.value)
+        assert prices_manager.mark_price_from_sources[MarkPriceSources.RECENT_TRADE_AVERAGE.value][1] == 0
+        assert prices_manager.set_mark_price(15, MarkPriceSources.RECENT_TRADE_AVERAGE.value) is True
         assert prices_manager.mark_price == 15
+        assert prices_manager.mark_price_from_sources[MarkPriceSources.RECENT_TRADE_AVERAGE.value][1] != 0
         check_event_is_set(prices_manager)
-        prices_manager.set_mark_price(20, MarkPriceSources.TICKER_CLOSE_PRICE.value)
+        assert prices_manager.set_mark_price(20, MarkPriceSources.TICKER_CLOSE_PRICE.value) is False
         assert prices_manager.mark_price == 15  # should not be updated because RECENT_TRADE_AVERAGE has not expired
         check_event_is_set(prices_manager)
 

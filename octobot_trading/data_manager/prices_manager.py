@@ -42,7 +42,7 @@ class PricesManager(Initializable):
         """
         self._reset_prices()
 
-    def set_mark_price(self, mark_price, mark_price_source):
+    def set_mark_price(self, mark_price, mark_price_source) -> bool:
         """
         Set the mark price if the mark price come from MarkPriceSources.EXCHANGE_MARK_PRICE
         Set the mark price if the mark price come from MarkPriceSources.RECENT_TRADE_AVERAGE and
@@ -51,22 +51,32 @@ class PricesManager(Initializable):
         if other sources have expired
         :param mark_price: the mark price value from mark_price_source
         :param mark_price_source: the mark_price source (from MarkPriceSources)
+        :return True if mark price got updated
         """
+        is_mark_price_updated = False
         if mark_price_source == MarkPriceSources.EXCHANGE_MARK_PRICE.value:
             self._set_mark_price_value(mark_price)
+            is_mark_price_updated = True
 
         # set mark price value if MarkPriceSources.RECENT_TRADE_AVERAGE.value has already been updated
-        elif mark_price_source == MarkPriceSources.RECENT_TRADE_AVERAGE.value and \
-                self.mark_price_from_sources.get(MarkPriceSources.RECENT_TRADE_AVERAGE.value, None) is not None:
-            self._set_mark_price_value(mark_price)
+        elif mark_price_source == MarkPriceSources.RECENT_TRADE_AVERAGE.value:
+            if self.mark_price_from_sources.get(MarkPriceSources.RECENT_TRADE_AVERAGE.value, None) is not None:
+                self._set_mark_price_value(mark_price)
+                is_mark_price_updated = True
+            else:
+                # set time at 0 to ensure invalid price but keep track of initialization
+                self.mark_price_from_sources[mark_price_source] = (mark_price, 0)
 
         # set mark price value if other sources have expired
         elif mark_price_source == MarkPriceSources.TICKER_CLOSE_PRICE.value and not \
                 self._are_other_sources_valid(MarkPriceSources.TICKER_CLOSE_PRICE.value):
             self._set_mark_price_value(mark_price)
+            is_mark_price_updated = True
 
-        self.mark_price_from_sources[mark_price_source] = (mark_price,
-                                                           self.exchange_manager.exchange.get_exchange_current_time())
+        if is_mark_price_updated:
+            self.mark_price_from_sources[mark_price_source] = \
+                (mark_price, self.exchange_manager.exchange.get_exchange_current_time())
+        return is_mark_price_updated
 
     async def get_mark_price(self, timeout=MARK_PRICE_VALIDITY):
         """
@@ -113,7 +123,7 @@ class PricesManager(Initializable):
         :return: True if the difference between mark_price_updated_time and now is < MARK_PRICE_VALIDITY
         """
         return self.exchange_manager.exchange.get_exchange_current_time() - mark_price_updated_time < \
-               self.MARK_PRICE_VALIDITY
+            self.MARK_PRICE_VALIDITY
 
     def _reset_prices(self):
         """

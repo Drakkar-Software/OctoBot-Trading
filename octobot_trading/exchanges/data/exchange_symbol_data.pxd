@@ -41,6 +41,6 @@ cdef class ExchangeSymbolData:
     cpdef void handle_order_book_update(self, list asks, list bids)
     cpdef void handle_order_book_ticker_update(self, double ask_quantity, double ask_price,
                                                double bid_quantity, double bid_price)
-    cpdef void handle_mark_price_update(self, double mark_price, str mark_price_source)
+    cpdef bint handle_mark_price_update(self, double mark_price, str mark_price_source)
     cpdef void handle_ticker_update(self, dict ticker)
     cpdef void handle_mini_ticker_update(self, dict mini_ticker)
