@@ -21,14 +21,15 @@ from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeC
 
 
 class OrderBookProducer(ExchangeChannelProducer):
-    async def push(self, symbol, asks, bids):
-        await self.perform(symbol, asks, bids)
+    async def push(self, symbol, asks, bids, update_order_book=True):
+        await self.perform(symbol, asks, bids, update_order_book)
 
-    async def perform(self, symbol, asks, bids):
+    async def perform(self, symbol, asks, bids, update_order_book):
         try:
             if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
-                    symbol=symbol):  # and symbol_data.order_book_is_initialized()
-                self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_update(asks, bids)
+                    symbol=symbol):
+                if update_order_book:
+                    self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_update(asks, bids)
                 await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
                                 get_pair_cryptocurrency(symbol),
                                 symbol=symbol,
