@@ -15,17 +15,15 @@
 #  License along with this library.
 import asyncio
 import logging
-
+import websockets
 import time
+import ccxt
+
+from ccxt.base.errors import BadSymbol
 from abc import abstractmethod
 from asyncio import CancelledError
 from datetime import datetime
 from typing import List
-
-import ccxt
-import websockets
-from ccxt.base.errors import BadSymbol
-from ccxt.base.exchange import Exchange as ccxtExchange
 
 from octobot_commons.constants import HOURS_TO_SECONDS, MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFrames, TimeFramesMinutes
@@ -96,14 +94,15 @@ class WebsocketExchange:
     def start(self):
         self.websocket_task = self.loop.run_until_complete(self._connect())
 
-    async def _watch(self):
-        if self.last_msg:
-            if datetime.utcnow() - datetime.timedelta(seconds=self.timeout) > self.last_msg:
-                self.logger.warning("No messages received within timeout, restarting connection")
-                await self.reconnect()
-        await self.ping()
-        self.logger.debug("Sending keepalive...")
-        await asyncio.sleep(self.timeout_interval)
+    async def _watcher(self):
+        while True:
+            if self.last_msg:
+                if datetime.utcnow() - datetime.timedelta(seconds=self.timeout) > self.last_msg:
+                    self.logger.warning("No messages received within timeout, restarting connection")
+                    await self.reconnect()
+            await self.ping()
+            self.logger.debug("Sending keepalive...")
+            await asyncio.sleep(self.timeout_interval)
 
     async def _connect(self):
         delay: int = 1
@@ -119,10 +118,12 @@ class WebsocketExchange:
                                               subprotocols=self.get_sub_protocol()) as websocket:
                     self.websocket = websocket
                     self.on_open()
-                    self._watch_task = asyncio.create_task(self._watch())
-                    # connection was successful, reset retry count and delay
+                    self._watch_task = asyncio.create_task(self._watcher())
+                    # connection was successful, reset delay
                     delay = 1
-                    if not self.exchange_manager.without_auth and self.api_key and self.api_secret:
+                    if not self.exchange_manager.without_auth \
+                            and not self.exchange_manager.is_trader_simulated \
+                            and self.api_key and self.api_secret:
                         await self.do_auth()
 
                     await self.prepare()
@@ -130,13 +131,10 @@ class WebsocketExchange:
                     await self._handler()
             except (websockets.ConnectionClosed, ConnectionAbortedError, ConnectionResetError, CancelledError) as e:
                 self.logger.warning(f"{self.get_name()} encountered connection issue ({e}) - reconnecting...")
-                await asyncio.sleep(delay)
-                delay *= 2
             except Exception as e:
-                self.logger.error(f"{self.get_name()} encountered an exception ({e}), reconnecting...")
-                await asyncio.sleep(delay)
-                delay *= 2
-                raise e
+                self.logger.exception(e, True, f"{self.get_name()} encountered an exception ({e}), reconnecting...")
+            await asyncio.sleep(delay)
+            delay *= 2
 
     async def _handler(self):
         async for message in self.websocket:
@@ -308,9 +306,6 @@ class WebsocketExchange:
                 raise KeyError(f'{pair} is not supported on {self.get_name()}')
         else:
             raise ValueError(f'{pair} is not supported on {self.get_name()}')
-
-    def safe_float(self, dictionary, key, default_value):
-        return ccxtExchange.safe_float(dictionary, key, default_value)
 
     @staticmethod
     def _convert_seconds_to_time_frame(time_frame_seconds):
