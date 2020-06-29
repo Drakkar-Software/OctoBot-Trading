@@ -33,7 +33,7 @@ DEFAULT_SYMBOL_ORDER = "BTC/USDT"
 
 
 async def test_sell_limit_order_trigger(sell_limit_order):
-    order_price = random_price(min_value=1)
+    order_price = random_price(min_value=2)
     sell_limit_order.update(
         price=order_price,
         quantity=random_quantity(),

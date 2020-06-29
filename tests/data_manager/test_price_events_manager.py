@@ -43,8 +43,8 @@ async def test_add_event(price_events_manager):
 
 
 async def test_handle_recent_trades(price_events_manager):
-    random_price_1 = random_price(min_value=1)
-    random_timestamp_1 = random_timestamp(min_value=1, max_value=1000)
+    random_price_1 = random_price(min_value=2)
+    random_timestamp_1 = random_timestamp(min_value=2, max_value=1000)
     price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
     with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set:
         price_events_manager.handle_recent_trades([])
@@ -69,9 +69,9 @@ async def test_handle_recent_trades(price_events_manager):
 
 
 async def test_handle_recent_trades_multiple_events(price_events_manager):
-    random_price_1 = random_price(min_value=1)
+    random_price_1 = random_price(min_value=2)
     random_price_2 = random_price(min_value=random_price_1)
-    random_timestamp_1 = random_timestamp(min_value=1, max_value=1000)
+    random_timestamp_1 = random_timestamp(min_value=2, max_value=1000)
     random_timestamp_2 = random_timestamp(min_value=random_timestamp_1 + 2, max_value=5000)
     price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
     price_event_2 = price_events_manager.add_event(random_price_2, random_timestamp_2, True)
@@ -128,7 +128,7 @@ async def test_handle_recent_trades_multiple_events(price_events_manager):
 
 async def test_handle_price(price_events_manager):
     random_price_1 = random_price()
-    random_timestamp_1 = random_timestamp(min_value=1, max_value=1000)
+    random_timestamp_1 = random_timestamp(min_value=2, max_value=1000)
     price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
     with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set:
         price_events_manager.handle_price(0, random_timestamp())
