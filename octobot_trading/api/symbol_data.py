@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.data_manager.candles_manager import CandlesManager
+from octobot_trading.enums import MarkPriceSources
 from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
 from octobot_trading.data_adapters.candles_adapter import \
     get_symbol_close_candles as adapter_get_symbol_close_candles, \
@@ -81,7 +82,8 @@ def create_new_candles_manager(candles=None) -> CandlesManager:
 
 
 def force_set_mark_price(exchange_manager, symbol, price):
-    exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol).prices_manager.set_mark_price(price)
+    exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol).prices_manager.\
+        set_mark_price(price, MarkPriceSources.EXCHANGE_MARK_PRICE.value)
 
 
 def is_mark_price_initialized(exchange_manager, symbol: str) -> bool:
