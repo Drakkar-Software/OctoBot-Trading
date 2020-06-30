@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.data_manager.order_book_manager cimport OrderBookManager
 
 cdef class WebsocketExchange:
     cdef public str exchange_id
@@ -34,6 +35,7 @@ cdef class WebsocketExchange:
     cdef public list pairs
     cdef public list time_frames
     cdef public list channels
+    cdef public list books
 
     # objects
     cdef public object exchange_manager
@@ -60,6 +62,7 @@ cdef class WebsocketExchange:
     cpdef start(self)
     cpdef stop(self)
     cpdef close(self)
+    cpdef OrderBookManager get_book_instance(self, str symbol)
 
     @staticmethod
     cdef object _convert_seconds_to_time_frame(int time_frame_seconds)

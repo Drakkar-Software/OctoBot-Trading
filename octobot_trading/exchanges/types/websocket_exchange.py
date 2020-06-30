@@ -28,6 +28,8 @@ from typing import List
 from octobot_commons.constants import HOURS_TO_SECONDS, MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFrames, TimeFramesMinutes
 from octobot_commons.logging.logging_util import get_logger, set_logging_level
+from octobot_trading.data_manager.order_book_manager import OrderBookManager
+
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.enums import WebsocketFeeds as Feeds
 
@@ -73,6 +75,7 @@ class WebsocketExchange:
         self.currencies = currencies if currencies else []
         self.pairs = []
         self.channels = []
+        self.books = []
         self.time_frames = time_frames if time_frames is not None else []
 
         self.websocket = None
@@ -203,6 +206,13 @@ class WebsocketExchange:
 
     def get_sub_protocol(self):
         return []
+
+    def get_book_instance(self, symbol):
+        try:
+            return self.books[symbol]
+        except KeyError:
+            self.books[symbol] = OrderBookManager()
+            return self.books[symbol]
 
     @classmethod
     def is_handling_spot(cls) -> bool:
