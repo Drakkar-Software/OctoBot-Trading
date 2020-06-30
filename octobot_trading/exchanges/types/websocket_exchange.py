@@ -75,7 +75,7 @@ class WebsocketExchange:
         self.currencies = currencies if currencies else []
         self.pairs = []
         self.channels = []
-        self.books = []
+        self.books = {}
         self.time_frames = time_frames if time_frames is not None else []
 
         self.websocket = None
