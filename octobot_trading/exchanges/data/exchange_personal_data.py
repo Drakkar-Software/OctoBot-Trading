@@ -102,7 +102,8 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.orders_manager.upsert_order_from_raw(order_id, raw_order)
 
             if changed:
-                if await self._handle_order_post_update(self.orders_manager.get_order(order_id)):
+                if await self._handle_order_post_update(self.orders_manager.get_order(order_id),
+                                                        should_notify=should_notify):
                     # when the order is removed from orders_manager
                     return changed
 
@@ -145,7 +146,7 @@ class ExchangePersonalData(Initializable):
                   is_closed=order.is_open(),
                   is_updated=changed)
 
-    async def _handle_order_post_update(self, order) -> bool:
+    async def _handle_order_post_update(self, order, should_notify: bool=True) -> bool:
         """
         Handle order status updates (OrderStatus.FILLED, OrderStatus.CLOSED)
         :param order: the updated order
@@ -154,7 +155,7 @@ class ExchangePersonalData(Initializable):
         # TODO manage OrderStatus.PARTIALLY_FILLED
         if order.is_closed():
             return await self.handle_closed_order_update(order.symbol, order.order_id, order.to_dict(),
-                                                         should_notify=True)
+                                                         should_notify=should_notify)
         return False
 
     async def handle_closed_order_update(self, symbol, order_id, raw_order,
