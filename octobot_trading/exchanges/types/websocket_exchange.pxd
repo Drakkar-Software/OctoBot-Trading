@@ -35,7 +35,8 @@ cdef class WebsocketExchange:
     cdef public list pairs
     cdef public list time_frames
     cdef public list channels
-    cdef public list books
+
+    cdef public dict books
 
     # objects
     cdef public object exchange_manager
