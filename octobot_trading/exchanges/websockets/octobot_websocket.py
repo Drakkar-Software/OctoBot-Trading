@@ -81,8 +81,7 @@ class OctoBotWebSocketClient(AbstractWebsocket):
             self.handled_feeds[feed_name] = True
         else:
             self.handled_feeds[feed_name] = False
-            self.logger.warning(f"{self.exchange_manager.exchange_name}'s "
-                                f"websocket is not handling {feed_name.value}")
+            self.logger.debug(f"{self.exchange_manager.exchange_name}'s websocket is not handling {feed_name.value}")
 
     def is_feed_available(self, feed):
         try:
