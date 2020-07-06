@@ -55,4 +55,5 @@ cdef class OrderBookManager(Initializable):
     cdef void _remove_bids(self, double price)
 
 cdef int _order_id_index(str order_id, list order_list)
-
+cdef list _convert_price_size_list_to_order(list price_size_list, str side)
+cdef dict _convert_price_size_to_order(list price_size, str side)

@@ -53,8 +53,8 @@ async def test_reset(order_book_manager):
 
 async def test_handle_new_books(order_book_manager):
     ts = random_timestamp()
-    asks = list(random_order_book_side(count=100))
-    bids = list(random_order_book_side(count=100))
+    asks = random_order_book_side(count=100)
+    bids = random_order_book_side(count=100)
     order_book_manager.handle_new_books(asks, bids, timestamp=ts)
     assert order_book_manager.order_book_initialized
     assert order_book_manager.timestamp == ts
@@ -94,8 +94,8 @@ async def test_handle_new_book(order_book_manager):
     }
     """
     ts = random_timestamp()
-    asks = list(random_order_book_side(count=100))
-    bids = list(random_order_book_side(count=100))
+    asks = random_order_book_side(count=100)
+    bids = random_order_book_side(count=100)
     order_book_manager.handle_new_book({
         ECOBIC.ASKS.value: asks,
         ECOBIC.BIDS.value: bids,

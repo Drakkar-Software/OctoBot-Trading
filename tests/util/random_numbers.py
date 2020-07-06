@@ -53,8 +53,8 @@ def random_funding_rate(min_value=0):
 
 
 def random_order_book_side(min_value=0, count=2):
-    return zip(random_prices(min_value=min_value, count=count),
-               random_quantities(min_value=min_value, count=count))
+    return [list(pair) for pair in zip(random_prices(min_value=min_value, count=count),
+                                       random_quantities(min_value=min_value, count=count))]
 
 
 def random_candle_tuple():

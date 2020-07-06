@@ -60,8 +60,8 @@ class OrderBookManager(Initializable):
 
     def handle_new_books(self, asks, bids, timestamp=None):
         self.reset_order_book()
-        self.asks.update(asks)
-        self.bids.update(bids)
+        self.handle_book_adds(_convert_price_size_list_to_order(asks, TradeOrderSide.SELL.value))
+        self.handle_book_adds(_convert_price_size_list_to_order(bids, TradeOrderSide.BUY.value))
         if timestamp:
             self.timestamp = timestamp
         self.order_book_initialized = True
@@ -192,3 +192,31 @@ def _order_id_index(order_id, order_list):
             if order[ECOBIC.ORDER_ID.value] == order_id:
                 return index
     return ORDER_ID_NOT_FOUND
+
+
+def _convert_price_size_list_to_order(price_size_list, side):
+    """
+    Convert a [price, size] list to the book order format
+    :param price_size_list: the list of [price, size]
+    :param side: the order side
+    :return: the converted list
+    """
+    return [
+        _convert_price_size_to_order(price_size, side)
+        for price_size in price_size_list
+    ]
+
+
+def _convert_price_size_to_order(price_size, side):
+    """
+    Convert a pair of price and size to an order book dict format
+    :param price_size: the pair, size pair to convert
+    :param side: the order side
+    :return: the converted pair dict
+    """
+    return {
+        ECOBIC.SIDE.value: side,
+        ECOBIC.PRICE.value: price_size[0],
+        ECOBIC.SIZE.value: price_size[1],
+        ECOBIC.ORDER_ID.value: None
+    }
