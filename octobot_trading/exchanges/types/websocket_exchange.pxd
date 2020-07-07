@@ -59,6 +59,7 @@ cdef class WebsocketExchange:
     cdef double fix_timestamp(self, double ts)
     cdef double timestamp_normalize(self, double ts)
     cdef str feed_to_exchange(self, feed)
+    cdef bint _should_authenticate(self)
 
     cpdef start(self)
     cpdef stop(self)

@@ -124,9 +124,7 @@ class WebsocketExchange:
                     self._watch_task = asyncio.create_task(self._watcher())
                     # connection was successful, reset delay
                     delay = 1
-                    if not self.exchange_manager.without_auth \
-                            and not self.exchange_manager.is_trader_simulated \
-                            and self.api_key and self.api_secret:
+                    if self._should_authenticate():
                         await self.do_auth()
 
                     await self.prepare()
@@ -149,6 +147,11 @@ class WebsocketExchange:
                 # exception will be logged with traceback when connection handler
                 # retries the connection
                 raise
+
+    def _should_authenticate(self):
+        return not self.exchange_manager.without_auth \
+            and not self.exchange_manager.is_trader_simulated \
+            and self.api_key and self.api_secret
 
     async def push_to_channel(self, channel_name, **kwargs):
         try:
