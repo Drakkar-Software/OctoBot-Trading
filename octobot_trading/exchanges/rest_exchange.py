@@ -464,7 +464,7 @@ class RestExchange(AbstractExchange):
         return self.client.parse_ticker(ticker)
 
     def parse_ohlcv(self, ohlcv):
-        return self.client.parse_ohlcv(ohlcv)
+        return self.exchange_manager.uniformize_candles_if_necessary(self.client.parse_ohlcv(ohlcv))
 
     def parse_order_book(self, order_book):
         return self.client.parse_order_book(order_book)
