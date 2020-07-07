@@ -178,11 +178,11 @@ class WebsocketExchange:
 
     async def on_ping(self):
         self.logger.debug("Ping received. Sending pong...")
-        self.websocket.pong()
+        await self.websocket.pong()
 
     async def ping(self):
         self.last_ping_time = time.time()
-        self.websocket.ping()
+        await self.websocket.ping()
 
     def on_close(self):
         self.logger.info('Closed')
