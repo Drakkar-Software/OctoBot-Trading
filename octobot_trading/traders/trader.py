@@ -97,7 +97,7 @@ class Trader(Initializable):
             self.logger.debug(f"Order loaded : {new_order.to_string()} ")
         else:
             try:
-                new_order = await self._create_not_loaded_order(new_order, portfolio)
+                new_order = await self._create_new_order(new_order, portfolio)
                 self.logger.debug(f"Order creation : {new_order.to_string()} ")
             except TypeError as e:
                 self.logger.error(f"Fail to create not loaded order : {e}")
@@ -107,6 +107,8 @@ class Trader(Initializable):
             # notify order manager of a new open order
             await self.exchange_manager.exchange_personal_data.handle_order_instance_update(new_order)
         else:
+            # notify order channel than an order has been created even though it's already closed
+            await self.exchange_manager.exchange_personal_data.handle_order_update_notification(new_order, True)
             await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
                 create_trade_from_order(new_order))
 
@@ -130,7 +132,7 @@ class Trader(Initializable):
                                                       price=price,
                                                       linked_portfolio=linked_portfolio))
 
-    async def _create_not_loaded_order(self, new_order: Order, portfolio) -> Order:
+    async def _create_new_order(self, new_order: Order, portfolio) -> Order:
         """
         Creates an exchange managed order, it might be a simulated or a real order. Then updates the portfolio.
         """

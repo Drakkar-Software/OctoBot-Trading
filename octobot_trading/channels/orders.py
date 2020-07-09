@@ -71,7 +71,7 @@ class OrdersProducer(ExchangeChannelProducer):
         :param should_notify: if Orders channel consumers should be notified
         :return: True if the order was updated
         """
-        self.logger.debug(f"Requested update for {order.get_name()}")
+        self.logger.debug(f"Requested update for {order} on {order.exchange_manager.exchange_name}")
         raw_order = await self.channel.exchange_manager.exchange.get_order(order.order_id, order.symbol)
 
         if raw_order is not None:
