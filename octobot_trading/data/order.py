@@ -113,6 +113,9 @@ class Order(Initializable):
                 self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
             self.timestamp = self.creation_time
 
+        if status in {OrderStatus.FILLED, OrderStatus.CLOSED} and not self.executed_time:
+            self.executed_time = self.timestamp
+
         if price and self.origin_price != price:
             self.origin_price = price
             changed = True
