@@ -31,7 +31,6 @@ class Trade:
         self.currency = None
         self.market = None
         self.taker_or_maker = None
-        self.timestamp = 0
         self.origin_price = 0
         self.origin_quantity = 0
         self.trade_type = None

@@ -108,7 +108,7 @@ class ExchangePersonalData(Initializable):
                     return changed
 
                 if should_notify:
-                    await self._handle_order_update_notification(self.orders_manager.get_order(order_id), changed)
+                    await self.handle_order_update_notification(self.orders_manager.get_order(order_id), changed)
 
             return changed
         except Exception as e:
@@ -125,14 +125,14 @@ class ExchangePersonalData(Initializable):
                     return changed
 
                 if should_notify:
-                    await self._handle_order_update_notification(order, changed)
+                    await self.handle_order_update_notification(order, changed)
 
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order instance : {e}")
             return False
 
-    async def _handle_order_update_notification(self, order, changed):
+    async def handle_order_update_notification(self, order, changed):
         """
         Notify Orders channel for Order update
         :param order: the updated order
