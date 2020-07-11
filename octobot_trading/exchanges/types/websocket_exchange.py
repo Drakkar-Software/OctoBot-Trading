@@ -18,18 +18,15 @@ import logging
 import websockets
 import time
 import ccxt
-
-from ccxt.base.errors import BadSymbol
 from abc import abstractmethod
 from asyncio import CancelledError
 from datetime import datetime
 from typing import List
 
-from octobot_commons.constants import HOURS_TO_SECONDS, MINUTE_TO_SECONDS
-from octobot_commons.enums import TimeFrames, TimeFramesMinutes
+from octobot_commons.constants import HOURS_TO_SECONDS
+from octobot_commons.enums import TimeFrames
 from octobot_commons.logging.logging_util import get_logger, set_logging_level
 from octobot_trading.data_manager.order_book_manager import OrderBookManager
-
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.enums import WebsocketFeeds as Feeds
 
@@ -270,12 +267,6 @@ class WebsocketExchange:
     def get_ccxt_async_client(cls):
         raise NotImplementedError("get_ccxt_async_client is not implemented")
 
-    def fix_timestamp(self, ts):
-        return ts
-
-    def timestamp_normalize(self, ts):
-        return ts
-
     @classmethod
     def get_feeds(cls) -> dict:
         return cls.EXCHANGE_FEEDS
@@ -299,17 +290,10 @@ class WebsocketExchange:
     CCXT methods
     """
 
-    @classmethod
-    def get_ccxt(cls) -> object:
-        getattr(ccxt, cls.get_name())
-
-    def get_pairs(self):
-        return self.ccxt_client.symbols
-
     def get_pair_from_exchange(self, pair: str) -> str:
         try:
             return self.ccxt_client.market(pair)["symbol"]
-        except BadSymbol:
+        except ccxt.errors.BadSymbol:
             try:
                 return self.ccxt_client.markets_by_id[pair]["symbol"]
             except KeyError:
@@ -324,16 +308,3 @@ class WebsocketExchange:
                 raise KeyError(f'{pair} is not supported on {self.get_name()}')
         else:
             raise ValueError(f'{pair} is not supported on {self.get_name()}')
-
-    @staticmethod
-    def _convert_seconds_to_time_frame(time_frame_seconds):
-        return [tf for tf, tf_min in TimeFramesMinutes.items() if tf_min == time_frame_seconds / MINUTE_TO_SECONDS][0]
-
-    @staticmethod
-    def _convert_time_frame_minutes_to_seconds(time_frame):
-        if isinstance(time_frame, TimeFramesMinutes.__class__):
-            return time_frame.value * MINUTE_TO_SECONDS
-        elif isinstance(time_frame, int):
-            return time_frame * MINUTE_TO_SECONDS
-        else:
-            return time_frame
