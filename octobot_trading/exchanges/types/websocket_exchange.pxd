@@ -55,9 +55,6 @@ cdef class WebsocketExchange:
     cdef void on_auth(self, bint status)
     cdef void on_close(self)
     cdef void on_error(self, str error)
-    cdef list get_pairs(self)
-    cdef double fix_timestamp(self, double ts)
-    cdef double timestamp_normalize(self, double ts)
     cdef str feed_to_exchange(self, feed)
     cdef bint _should_authenticate(self)
 
@@ -65,9 +62,3 @@ cdef class WebsocketExchange:
     cpdef stop(self)
     cpdef close(self)
     cpdef OrderBookManager get_book_instance(self, str symbol)
-
-    @staticmethod
-    cdef object _convert_seconds_to_time_frame(int time_frame_seconds)
-
-    @staticmethod
-    cdef int _convert_time_frame_minutes_to_seconds(object time_frame)
