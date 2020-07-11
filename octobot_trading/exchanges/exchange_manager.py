@@ -112,8 +112,7 @@ class ExchangeManager(Initializable):
 
     async def stop_exchange_channels(self):
         try:
-            chan_names = list(get_exchange_channels(self.id).keys())
-            for channel_name in chan_names:
+            for channel_name in list(get_exchange_channels(self.id)):
                 channel = get_chan(channel_name, self.id)
                 await channel.stop()
                 for consumer in channel.consumers:
@@ -300,6 +299,7 @@ class ExchangeManager(Initializable):
 
     def _is_managed_by_websocket(self, channel):  # TODO improve checker
         return not self.rest_only and self.has_websocket and \
+               channel in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS and \
                any([self.exchange_web_socket.is_feed_available(feed)
                     for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
 

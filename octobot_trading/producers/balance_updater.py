@@ -19,7 +19,7 @@ import asyncio
 from ccxt.base.errors import NotSupported
 
 from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.constants import BALANCE_CHANNEL, MARK_PRICE_CHANNEL
+from octobot_trading.constants import BALANCE_CHANNEL, MARK_PRICE_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.channels.balance import (
     BalanceProducer,
     BalanceProfitabilityProducer,
@@ -82,7 +82,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
     """
     The updater related channel name
     """
-    CHANNEL_NAME = BALANCE_CHANNEL
+    CHANNEL_NAME = BALANCE_PROFITABILITY_CHANNEL
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -109,9 +109,13 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         Stop and remove the balance profitability consumers
         """
         await super().stop()
-        await get_chan(
-            BALANCE_CHANNEL, self.channel.exchange_manager.id
-        ).remove_consumer(self.balance_consumer)
+        try:
+            await get_chan(
+                BALANCE_CHANNEL, self.channel.exchange_manager.id
+            ).remove_consumer(self.balance_consumer)
+        except KeyError:
+            # balance channel might already be stopped and removed from available channels
+            pass
         await get_chan(
             MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
         ).remove_consumer(self.mark_price_consumer)
