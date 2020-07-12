@@ -62,8 +62,11 @@ class TestCoinbaseProRealExchangeTester(RealExchangeTester):
 
     async def test_get_kline_price(self):
         kline_price = await self.get_kline_price()
-        # kline is not handled by coinbase pro
-        assert kline_price == []
+        assert len(kline_price) == 1
+        assert len(kline_price[0]) == 6
+        kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
+        # assert kline is the current candle
+        assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
         order_book = await self.get_order_book()
