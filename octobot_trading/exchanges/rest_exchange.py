@@ -156,9 +156,7 @@ class RestExchange(AbstractExchange):
         try:
             # TODO remove these logs when C typing issues are fixed
             if limit:
-                candles = await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit,
-                                                        since=self.get_candle_since_timestamp(time_frame, limit),
-                                                        params=params)
+                candles = await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, params=params)
             else:
                 candles = await self.client.fetch_ohlcv(symbol, time_frame.value)
             self.logger.debug(f"get_symbol_prices({symbol}, {time_frame}, {limit}): {candles}")
