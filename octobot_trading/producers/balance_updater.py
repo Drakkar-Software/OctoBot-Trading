@@ -48,7 +48,7 @@ class BalanceUpdater(BalanceProducer):
         """
         while not self.should_stop:
             try:
-                await self.push((await self.fetch_portfolio()))
+                await self.fetch_and_push()
                 await asyncio.sleep(self.BALANCE_REFRESH_TIME)
             except NotSupported:
                 self.logger.warning(
@@ -57,6 +57,9 @@ class BalanceUpdater(BalanceProducer):
                 await self.pause()
             except Exception as e:
                 self.logger.error(f"Failed to update balance : {e}")
+
+    async def fetch_and_push(self):
+        await self.push((await self.fetch_portfolio()))
 
     async def fetch_portfolio(self):
         """

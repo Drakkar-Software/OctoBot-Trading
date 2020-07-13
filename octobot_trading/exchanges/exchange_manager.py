@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import uuid
-
 from ccxt import AuthenticationError
 
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
@@ -273,16 +272,15 @@ class ExchangeManager(Initializable):
                                                 exchange_manager=self)
 
     async def _create_exchange_producers(self):
-        # Real data producers
-        if not self.is_backtesting:
-            for updater in UNAUTHENTICATED_UPDATER_PRODUCERS:
-                if not self._is_managed_by_websocket(updater.CHANNEL_NAME):
-                    await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
-
+        # Always init exchange user data first on real trading
         if self.exchange.is_authenticated \
                 and self.trader and self.is_trading \
                 and not (self.is_simulated or self.is_backtesting or self.is_collecting):
-            for updater in AUTHENTICATED_UPDATER_PRODUCERS:
+            await self._create_authenticated_producers()
+
+        # Real data producers
+        if not self.is_backtesting:
+            for updater in UNAUTHENTICATED_UPDATER_PRODUCERS:
                 if not self._is_managed_by_websocket(updater.CHANNEL_NAME):
                     await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
@@ -293,6 +291,20 @@ class ExchangeManager(Initializable):
             for updater in AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
                 await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
+    async def _create_authenticated_producers(self):
+        for updater in AUTHENTICATED_UPDATER_PRODUCERS:
+            if self._is_managed_by_websocket(updater.CHANNEL_NAME):
+                # websocket is handling this channel: initialize data if required
+                if self._is_websocket_feed_requiring_init(updater.CHANNEL_NAME):
+                    try:
+                        updater(get_chan(updater.CHANNEL_NAME, self.id)).trigger_single_update()
+                    except Exception as e:
+                        self._logger.exception(e, True, f"Error when initializing data for {updater.CHANNEL_NAME} "
+                                                        f"channel required by websocket: {e}")
+            else:
+                # no websocket for this channel: start an updater
+                await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
+
     """
     Websocket
     """
@@ -301,6 +313,10 @@ class ExchangeManager(Initializable):
         return not self.rest_only and self.has_websocket and \
                channel in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS and \
                any([self.exchange_web_socket.is_feed_available(feed)
+                    for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
+
+    def _is_websocket_feed_requiring_init(self, channel):
+        return any([self.exchange_web_socket.is_feed_requiring_init(feed)
                     for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
 
     async def _search_and_create_websocket(self):

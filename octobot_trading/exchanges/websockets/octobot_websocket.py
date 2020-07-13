@@ -90,6 +90,9 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         except (KeyError, ValueError):
             return False
 
+    def is_feed_requiring_init(self, feed):
+        return self.exchange_class.is_feed_requiring_init(feed)
+
     def _create_octobot_feed_feeds(self):
         try:
             key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_name)

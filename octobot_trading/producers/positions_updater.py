@@ -36,14 +36,10 @@ class PositionsUpdater(PositionsProducer):
 
         # First fetch to define should_use_open_position_per_symbol
         try:
-            await self.fetch_positions()
+            await self.fetch_and_push()
         except NotImplementedError:
-            try:
-                self.should_use_open_position_per_symbol = True
-                await self.fetch_position_per_symbol()
-            except NotImplementedError:
-                self.logger.warning("Position updater cannot fetch positions : required methods are not implemented")
-                await self.stop()
+            self.logger.warning("Position updater cannot fetch positions : required methods are not implemented")
+            await self.stop()
 
         while not self.should_stop:
             await asyncio.sleep(self.POSITIONS_REFRESH_TIME)
@@ -58,6 +54,13 @@ class PositionsUpdater(PositionsProducer):
                 await self.stop()
             except Exception as e:
                 self.logger.exception(e, True, f"Fail to update positions : {e}")
+
+    async def fetch_and_push(self):
+        try:
+            await self.fetch_positions()
+        except NotImplementedError:
+            self.should_use_open_position_per_symbol = True
+            await self.fetch_position_per_symbol()
 
     def _should_run(self) -> bool:
         return self.channel.exchange_manager.is_future

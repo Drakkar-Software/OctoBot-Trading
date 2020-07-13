@@ -14,13 +14,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from asyncio import create_task
 
 from octobot_channels.channels.channel import Channel
 from octobot_channels.channels.channel_instances import ChannelInstances
 from octobot_channels.constants import CHANNEL_WILDCARD
 from octobot_channels.consumer import Consumer, InternalConsumer, SupervisedConsumer
 from octobot_channels.producer import Producer
-
 from octobot_commons.enums import ChannelConsumerPriorityLevels
 from octobot_commons.logging.logging_util import get_logger
 
@@ -50,6 +50,12 @@ class ExchangeChannelProducer(Producer):
     def __init__(self, channel):
         super().__init__(channel)
         self.logger = get_logger(f"{self.__class__.__name__}[{channel.exchange_manager.exchange_name}]")
+
+    async def fetch_and_push(self):
+        self.logger.error("self.fetch_and_push() is not implemented")
+
+    def trigger_single_update(self):
+        create_task(self.fetch_and_push())
 
 
 class ExchangeChannel(Channel):
