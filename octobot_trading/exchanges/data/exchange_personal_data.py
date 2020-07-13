@@ -99,7 +99,7 @@ class ExchangePersonalData(Initializable):
 
     async def handle_order_update_from_raw(self, symbol, order_id, raw_order, should_notify: bool = True) -> bool:
         try:
-            changed: bool = self.orders_manager.upsert_order_from_raw(order_id, raw_order)
+            changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order)
 
             if changed:
                 if await self._handle_order_post_update(self.orders_manager.get_order(order_id),
@@ -143,7 +143,7 @@ class ExchangePersonalData(Initializable):
                   symbol=order.symbol,
                   order=order.to_dict(),
                   is_from_bot=order.is_from_this_octobot,
-                  is_closed=order.is_open(),
+                  is_closed=order.is_closed(),
                   is_updated=changed)
 
     async def _handle_order_post_update(self, order, should_notify: bool=True) -> bool:
@@ -162,11 +162,13 @@ class ExchangePersonalData(Initializable):
                                          should_notify: bool = True,
                                          is_cancelled_from_exchange: bool = True) -> bool:
         try:
-            existing_order = self.orders_manager.upsert_order_close_from_raw(order_id, raw_order)
+            existing_order = await self.orders_manager.upsert_order_close_from_raw(order_id, raw_order)
             if existing_order is not None:
                 if existing_order.is_cancelled():
                     await self.trader.cancel_order(existing_order,
                                                    is_cancelled_from_exchange=is_cancelled_from_exchange)
+                    # self.trader.cancel_order will already notify
+                    should_notify = False
                 elif existing_order.is_filled() or existing_order.is_closed():
                     await self.trader.close_filled_order(existing_order)
                 else:

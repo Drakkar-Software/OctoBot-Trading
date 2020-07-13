@@ -24,7 +24,7 @@ from octobot_trading.constants import ORDERS_CHANNEL
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns, TradeOrderType
-from octobot_trading.orders.order_util import get_fees_for_currency
+from octobot_trading.orders.order_util import get_fees_for_currency, parse_order_status
 from octobot_trading.util.initializable import Initializable
 
 
@@ -475,10 +475,3 @@ def _get_sell_and_buy_types(order_type) -> TraderOrderType:
     elif order_type == TradeOrderType.TRAILING_STOP_LIMIT:
         return TraderOrderType.TRAILING_STOP_LIMIT
     return None
-
-
-def parse_order_status(raw_order):
-    try:
-        return OrderStatus(raw_order[ExchangeConstantsOrderColumns.STATUS.value])
-    except KeyError:
-        return KeyError("Could not parse new order status")

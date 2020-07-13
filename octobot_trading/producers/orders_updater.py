@@ -74,7 +74,7 @@ class CloseOrdersUpdater(OrdersProducer):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
-                self.logger.error(f"Fail to update close orders : {e}")
+                self.logger.error(f"Fail to update closed orders : {e}")
 
             await asyncio.sleep(self.ORDERS_REFRESH_TIME)
 

@@ -49,17 +49,17 @@ class OrdersManager(Initializable):
     def get_order(self, order_id):
         return self.orders[order_id]
 
-    def upsert_order_from_raw(self, order_id, raw_order) -> bool:
+    async def upsert_order_from_raw(self, order_id, raw_order) -> bool:
         if not self.has_order(order_id):
             self.orders[order_id] = self._create_order_from_raw(raw_order)
             self._check_orders_size()
             return True
-        return _update_order_from_raw(self.orders[order_id], raw_order)
+        return await _update_order_from_raw(self.orders[order_id], raw_order)
 
-    def upsert_order_close_from_raw(self, order_id, raw_order) -> Order:
+    async def upsert_order_close_from_raw(self, order_id, raw_order) -> Order:
         if self.has_order(order_id):
             order = self.orders[order_id]
-            _update_order_from_raw(self.orders[order_id], raw_order)
+            await _update_order_from_raw(self.orders[order_id], raw_order)
             return order
         return None
 
@@ -119,11 +119,15 @@ class OrdersManager(Initializable):
         self._reset_orders()
 
 
-def _update_order_from_raw(order, raw_order):
+async def _update_order_from_raw(order, raw_order):
     """
     Calling order update from raw method
     :param order: the order to update
     :param raw_order: the order raw value to use for updating
     :return: the result of order.update_from_raw
     """
-    return order.update_from_raw(raw_order)
+    async with order.lock:
+        # warning: can return True if an order is being cancelled when waiting for this lock to release (raw_data is
+        # the open order that just got cancelled => this will re-open the just cancelled order). Order state management
+        # will fix this.
+        return order.update_from_raw(raw_order)

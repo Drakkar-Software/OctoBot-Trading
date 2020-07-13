@@ -108,8 +108,6 @@ cdef class Order(Initializable):
     cpdef void clear(self)
     cpdef str get_logger_name(self)
 
-cpdef object parse_order_status(dict raw_order)
-
 cdef object _get_sell_and_buy_types(object order_type)
 
 cpdef tuple parse_order_type(dict raw_order)
