@@ -16,11 +16,9 @@
 import asyncio
 
 from octobot_commons.symbol_util import split_symbol
-
 from octobot_commons.logging.logging_util import get_logger
-
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, ExchangeConstantsOrderColumns, \
-    FeePropertyColumns
+    FeePropertyColumns, OrderStatus
 from octobot_trading.exchanges.util.exchange_market_status_fixer import is_ms_valid
 
 
@@ -124,3 +122,18 @@ def get_fees_for_currency(fee, currency):
     if fee and fee[FeePropertyColumns.CURRENCY.value] == currency:
         return fee[FeePropertyColumns.COST.value]
     return 0
+
+
+def parse_order_status(raw_order):
+    try:
+        return OrderStatus(raw_order[ExchangeConstantsOrderColumns.STATUS.value])
+    except KeyError:
+        return KeyError("Could not parse new order status")
+
+
+def parse_is_closed(raw_order):
+    return parse_order_status(raw_order) in {OrderStatus.CANCELED, OrderStatus.CLOSED}
+
+
+def parse_is_cancelled(raw_order):
+    return parse_order_status(raw_order) in {OrderStatus.CANCELED, OrderStatus.CLOSED}

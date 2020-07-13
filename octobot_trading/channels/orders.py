@@ -16,8 +16,8 @@
 from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
-
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
+from octobot_trading.orders.order_util import parse_is_closed
 
 
 class OrdersProducer(ExchangeChannelProducer):
@@ -54,7 +54,7 @@ class OrdersProducer(ExchangeChannelProducer):
                                         get_pair_cryptocurrency(symbol),
                                         symbol=symbol, order=order,
                                         is_from_bot=is_from_bot,
-                                        is_closed=is_closed,
+                                        is_closed=parse_is_closed(order),
                                         is_updated=changed)
 
             if symbol is not None:
@@ -76,14 +76,17 @@ class OrdersProducer(ExchangeChannelProducer):
 
         if raw_order is not None:
             raw_order = self.channel.exchange_manager.exchange.clean_order(raw_order)
+            self.logger.debug(f"Received update for {order} on {order.exchange_manager.exchange_name}: {raw_order}")
+            should_notify = should_notify or parse_is_closed(raw_order)
             return await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
                 order.symbol,
                 order.order_id,
                 raw_order,
                 should_notify=should_notify)
         else:
-            self.logger.warning(f"Order with id {order.order_id} does not exist")
-            self.channel.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
+            self.logger.warning(f"Order with id {order.order_id} does not exist: will be considered as cancelled")
+            # cancel order
+            await self.channel.exchange_manager.trader.cancel_order(order, is_cancelled_from_exchange=True)
         return True
 
     async def _check_missing_open_orders(self, symbol, orders):

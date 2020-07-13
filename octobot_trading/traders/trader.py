@@ -199,21 +199,24 @@ class Trader(Initializable):
                 for linked_order in order.linked_orders:
                     if linked_order is not ignored_order:
                         await self.cancel_order(linked_order, ignored_order=ignored_order)
-                raw_cancelled_order = await self._handle_order_cancellation(order, is_cancelled_from_exchange)
-                self.logger.info(f"{order.symbol} {order.get_name()} at {order.origin_price}"
-                                 f" (ID : {order.order_id}) cancelled on {self.exchange_manager.exchange_name}")
+                if await self._handle_order_cancellation(order, is_cancelled_from_exchange):
+                    self.logger.info(f"{order.symbol} {order.get_name()} at {order.origin_price}"
+                                     f" (ID : {order.order_id}) cancelled on {self.exchange_manager.exchange_name}")
 
-                # nothing to update in case of a simulated order
-                if raw_cancelled_order is not None:
-                    await self.exchange_manager.exchange_personal_data.handle_order_update_from_raw(order.symbol,
-                                                                                                    order.order_id,
-                                                                                                    raw_cancelled_order)
+                    await self.exchange_manager.exchange_personal_data.handle_order_update_notification(order, True)
 
-    async def _handle_order_cancellation(self, order: Order, is_cancelled_from_exchange: bool) -> dict:
-        raw_cancelled_order = None
+    async def _handle_order_cancellation(self, order: Order, is_cancelled_from_exchange: bool) -> bool:
+        success = True
         # if real order: cancel on exchange
         if not self.simulate and not order.is_self_managed() and not is_cancelled_from_exchange:
-            raw_cancelled_order = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
+            success = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
+            if not success:
+                # retry to cancel order
+                success = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
+            if not success:
+                raise RuntimeError(f"Failed to cancel order {order}")
+            else:
+                self.logger.debug(f"Order with id={order.order_id} cancelled")
 
         # add to trade history and notify
         await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
@@ -229,7 +232,7 @@ class Trader(Initializable):
         # remove order from open_orders
         self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
 
-        return raw_cancelled_order
+        return success
 
     async def cancel_order_with_id(self, order_id):
         """

@@ -24,6 +24,7 @@ from octobot_commons.constants import MSECONDS_TO_MINUTE, MSECONDS_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
+from octobot_trading.orders.order_util import parse_is_cancelled
 from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
@@ -278,12 +279,13 @@ class RestExchange(AbstractExchange):
         if params is None:
             params = {}
         try:
-            return await self.client.cancel_order(order_id, symbol=symbol, params=params)
+            await self.client.cancel_order(order_id, symbol=symbol, params=params)
+            return parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=params))
         except OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
         except Exception as e:
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
-        return None
+        return False
 
     async def create_order(self, order_type, symbol, quantity, price=None, stop_price=None, params=None):
         if params is None:
