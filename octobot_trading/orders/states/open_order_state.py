@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,14 +13,22 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.util.initializable cimport Initializable
+from octobot_trading.enums import OrderStates
+from octobot_trading.orders.order_state import OrderState
 
-cdef class OrderState(Initializable):
-    cdef object Order # instance of Order
 
-    cdef public object state # item of OrderStates
+class OpenOrderState(OrderState):
+    def __init__(self, order, from_exchange_data):
+        super().__init__(order, from_exchange_data)
+        self.state = OrderStates.OPENED if from_exchange_data else OrderStates.OPENING
 
-    cpdef bint is_pending(self)
-    cpdef bint is_filled(self)
-    cpdef bint is_closed(self)
-    cpdef bint is_canceled(self)
+    async def synchronize(self) -> None:
+        # Should ask exchange if the order is properly created and still OrderStatus.OPEN
+        pass
+
+    async def terminate(self):
+        # Should be replaced by a FillOrderState or a CancelOrderState
+        pass
+
+    def is_pending(self) -> bool:
+        return self.state is OrderStates.OPENING
