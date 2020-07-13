@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -13,3 +14,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.util.initializable cimport Initializable
+
+cdef class OrderState(Initializable):
+    cdef object Order # instance of Order
+
+    cdef public object state # item of OrderStates
+
+    cpdef bint is_pending(self)
+    cpdef bint is_filled(self)
+    cpdef bint is_closed(self)
+    cpdef bint is_cancelled(self)

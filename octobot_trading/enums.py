@@ -59,6 +59,20 @@ class OrderStatus(Enum):
     FILLED = "filled"
     CANCELED = "canceled"
     CLOSED = "closed"
+    UNKNOWN = "unknown"
+
+
+class OrderStates(Enum):
+    OPENING = "opening"
+    OPENED = "opened"
+    FILLING = "filling"
+    PARTIALLY_FILLED = "partially_filled"
+    FILLED = "filled"
+    CANCELING = "canceling"
+    CANCELED = "canceled"
+    CLOSING = "closing"
+    CLOSED = "closed"
+    UNKNOWN = "unknown"
 
 
 class PositionStatus(Enum):
