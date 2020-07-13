@@ -13,14 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
+import os
 import pytest
 
+from tests.util.random_numbers import random_quantity, random_price
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 
 # All test coroutines will be treated as marked.
-from tests.util.random_numbers import random_quantity, random_price
-
 pytestmark = pytest.mark.asyncio
 
 
@@ -122,50 +121,56 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
 
     exchange_manager.client_symbols.append("XLM/BTC")
     exchange_manager.client_symbols.append("XRP/BTC")
-    await portfolio_profitability.handle_mark_price_update("XRP/BTC", 0.005)
-    exchange_manager.client_symbols.append("NANO/BTC")
-    await portfolio_profitability.handle_mark_price_update("NANO/BTC", 0.05)
-    exchange_manager.client_symbols.append("BTC/USDT")
+    if not os.getenv('CYTHON_IGNORE'):
+        portfolio_profitability.missing_currency_data_in_exchange.remove("XRP")
+        await portfolio_profitability.handle_mark_price_update("XRP/BTC", 0.005)
+        exchange_manager.client_symbols.append("NANO/BTC")
+        portfolio_profitability.missing_currency_data_in_exchange.remove("NANO")
+        await portfolio_profitability.handle_mark_price_update("NANO/BTC", 0.05)
+        exchange_manager.client_symbols.append("BTC/USDT")
 
-    assert await portfolio_profitability.get_current_crypto_currencies_values() == {
-        'BTC': 1,
-        'ETH': 0,
-        'XRP': 0.005,
-        'NANO': 0.05,
-        'XLM': 0,
-        'USDT': 0
-    }
-    xlm_btc_price = random_price(max_value=0.05)
-    await portfolio_profitability.handle_mark_price_update("XLM/BTC", xlm_btc_price)
-    assert await portfolio_profitability.get_current_crypto_currencies_values() == {
-        'BTC': 1,
-        'ETH': 0,
-        'XRP': 0.005,
-        'NANO': 0.05,
-        'XLM': xlm_btc_price,
-        'USDT': 0
-    }
-    usdt_btc_price = random_price(max_value=0.01)
-    await portfolio_profitability.handle_mark_price_update("BTC/USDT", usdt_btc_price)
-    assert await portfolio_profitability.get_current_crypto_currencies_values() == {
-        'BTC': 1,
-        'ETH': 0,
-        'XRP': 0.005,
-        'NANO': 0.05,
-        'XLM': xlm_btc_price,
-        'USDT': 1 / usdt_btc_price
-    }
-    eth_btc_price = random_price(max_value=1)
-    exchange_manager.client_symbols.append("ETH/BTC")
-    await portfolio_profitability.handle_mark_price_update("ETH/BTC", eth_btc_price)
-    assert await portfolio_profitability.get_current_crypto_currencies_values() == {
-        'BTC': 1,
-        'ETH': eth_btc_price,
-        'XRP': 0.005,
-        'NANO': 0.05,
-        'XLM': xlm_btc_price,
-        'USDT': 1 / usdt_btc_price
-    }
+        assert await portfolio_profitability.get_current_crypto_currencies_values() == {
+            'BTC': 1,
+            'ETH': 0,
+            'XRP': 0.005,
+            'NANO': 0.05,
+            'XLM': 0,
+            'USDT': 0
+        }
+        xlm_btc_price = random_price(max_value=0.05)
+        portfolio_profitability.missing_currency_data_in_exchange.remove("XLM")
+        await portfolio_profitability.handle_mark_price_update("XLM/BTC", xlm_btc_price)
+        assert await portfolio_profitability.get_current_crypto_currencies_values() == {
+            'BTC': 1,
+            'ETH': 0,
+            'XRP': 0.005,
+            'NANO': 0.05,
+            'XLM': xlm_btc_price,
+            'USDT': 0
+        }
+        usdt_btc_price = random_price(max_value=0.01)
+        portfolio_profitability.missing_currency_data_in_exchange.remove("USDT")
+        await portfolio_profitability.handle_mark_price_update("BTC/USDT", usdt_btc_price)
+        assert await portfolio_profitability.get_current_crypto_currencies_values() == {
+            'BTC': 1,
+            'ETH': 0,
+            'XRP': 0.005,
+            'NANO': 0.05,
+            'XLM': xlm_btc_price,
+            'USDT': 1 / usdt_btc_price
+        }
+        eth_btc_price = random_price(max_value=1)
+        exchange_manager.client_symbols.append("ETH/BTC")
+        portfolio_profitability.missing_currency_data_in_exchange.remove("ETH")
+        await portfolio_profitability.handle_mark_price_update("ETH/BTC", eth_btc_price)
+        assert await portfolio_profitability.get_current_crypto_currencies_values() == {
+            'BTC': 1,
+            'ETH': eth_btc_price,
+            'XRP': 0.005,
+            'NANO': 0.05,
+            'XLM': xlm_btc_price,
+            'USDT': 1 / usdt_btc_price
+        }
 
 
 async def test_get_current_holdings_values(backtesting_trader):
@@ -206,22 +211,25 @@ async def test_get_current_holdings_values(backtesting_trader):
         'XRP': 0,
         'USDT': 0
     }
-    exchange_manager.client_symbols.append("XRP/BTC")
-    await portfolio_profitability.handle_mark_price_update("XRP/BTC", 0.00001)
-    assert await portfolio_profitability.get_current_holdings_values() == {
-        'BTC': 10,
-        'ETH': 5000,
-        'XRP': 0.1,
-        'USDT': 0
-    }
-    exchange_manager.client_symbols.append("BTC/USDT")
-    await portfolio_profitability.handle_mark_price_update("BTC/USDT", 5000)
-    assert await portfolio_profitability.get_current_holdings_values() == {
-        'BTC': 10,
-        'ETH': 5000,
-        'XRP': 0.1,
-        'USDT': 0.2
-    }
+    if not os.getenv('CYTHON_IGNORE'):
+        exchange_manager.client_symbols.append("XRP/BTC")
+        portfolio_profitability.missing_currency_data_in_exchange.remove("XRP")
+        await portfolio_profitability.handle_mark_price_update("XRP/BTC", 0.00001)
+        assert await portfolio_profitability.get_current_holdings_values() == {
+            'BTC': 10,
+            'ETH': 5000,
+            'XRP': 0.1,
+            'USDT': 0
+        }
+        exchange_manager.client_symbols.append("BTC/USDT")
+        portfolio_profitability.missing_currency_data_in_exchange.remove("USDT")
+        await portfolio_profitability.handle_mark_price_update("BTC/USDT", 5000)
+        assert await portfolio_profitability.get_current_holdings_values() == {
+            'BTC': 10,
+            'ETH': 5000,
+            'XRP': 0.1,
+            'USDT': 0.2
+        }
 
 
 def update_portfolio_balance(new_balance, exchange_manager):
