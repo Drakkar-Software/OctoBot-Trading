@@ -38,6 +38,7 @@ class WebsocketExchange:
     LOGGERS = ["websockets.client", "websockets.server", "websockets.protocol"]
     MAX_DELAY = HOURS_TO_SECONDS
     EXCHANGE_FEEDS = {}
+    INIT_REQUIRING_EXCHANGE_FEEDS = set()
 
     def __init__(self,
                  exchange_manager: object,
@@ -282,6 +283,10 @@ class WebsocketExchange:
     @classmethod
     def get_exchange_feed(cls, feed) -> str:
         return cls.EXCHANGE_FEEDS.get(feed, Feeds.UNSUPPORTED.value)
+
+    @classmethod
+    def is_feed_requiring_init(cls, feed) -> bool:
+        return feed in cls.INIT_REQUIRING_EXCHANGE_FEEDS
 
     def feed_to_exchange(self, feed):
         ret: str = self.get_exchange_feed(feed)

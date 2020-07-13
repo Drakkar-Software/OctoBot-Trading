@@ -45,20 +45,22 @@ class TradesUpdater(TradesProducer):
 
     async def init_old_trades(self):
         try:
-            for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
-                    symbol=symbol,
-                    limit=self.MAX_OLD_TRADES_TO_FETCH)
-
-                if trades:
-                    await self.push(trades=list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
-
+            await self.fetch_and_push()
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
         except NotSupported:
             self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
             await self.pause()
         except Exception as e:
             self.logger.error(f"Fail to initialize old trades : {e}")
+
+    async def fetch_and_push(self):
+        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            trades: list = await self.channel.exchange_manager.exchange.get_my_recent_trades(
+                symbol=symbol,
+                limit=self.MAX_OLD_TRADES_TO_FETCH)
+
+            if trades:
+                await self.push(trades=list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
 
     async def start(self):
         await self.init_old_trades()

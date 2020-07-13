@@ -34,7 +34,7 @@ cdef class ExchangeChannelConsumer(Consumer):
     pass
 
 cdef class ExchangeChannelProducer(Producer):
-    pass
+    cpdef void trigger_single_update(self)
 
 cdef class ExchangeChannelInternalConsumer(InternalConsumer):
     pass
