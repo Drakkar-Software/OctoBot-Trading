@@ -20,7 +20,7 @@ from octobot_commons.symbol_util import split_symbol, merge_currencies
 from octobot_trading.constants import TICKER_CHANNEL
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import CONFIG_PORTFOLIO_TOTAL
-from octobot_trading.util import get_reference_market
+from octobot_trading.util import get_reference_market, get_all_currencies
 
 
 class PortfolioProfitabilty:
@@ -44,6 +44,8 @@ class PortfolioProfitabilty:
         self.initial_portfolio_current_profitability = 0
         self.initializing_symbol_prices = set()
 
+        self.reference_market = get_reference_market(self.config)
+
         self.portfolio_origin_value = 0
         self.portfolio_current_value = 0
 
@@ -56,7 +58,12 @@ class PortfolioProfitabilty:
         # is market only => not used to compute market average profitability
         self.traded_currencies_without_market_specific = set()
 
-        self.reference_market = get_reference_market(self.config)
+        # set of currencies that should be traded because either present in config or as a reference market
+        self.traded_currencies = get_all_currencies(self.config)
+        self.traded_currencies.add(self.reference_market)
+
+        # set of currencies for which the current exchange is not providing any suitable price data
+        self.missing_currency_data_in_exchange = set()
 
     async def handle_mark_price_update(self, symbol, mark_price):
         """
@@ -180,8 +187,8 @@ class PortfolioProfitabilty:
         """
         values = currencies_values
         if values is None or fill_currencies_values:
-            self.current_crypto_currencies_values = \
-                await self._evaluate_config_crypto_currencies_and_portfolio_values(portfolio)
+            self.current_crypto_currencies_values.update(
+                await self._evaluate_config_crypto_currencies_and_portfolio_values(portfolio))
             if fill_currencies_values:
                 for currency, value in self.current_crypto_currencies_values.items():
                     if currency not in currencies_values:
@@ -227,8 +234,9 @@ class PortfolioProfitabilty:
 
     async def _init_origin_portfolio_and_currencies_value(self):
         self.origin_portfolio = self.origin_portfolio or await self.portfolio_manager.portfolio.copy()
-        self.origin_crypto_currencies_values = \
-            await self._evaluate_config_crypto_currencies_and_portfolio_values(self.origin_portfolio.portfolio)
+        self.origin_crypto_currencies_values.update(
+            await self._evaluate_config_crypto_currencies_and_portfolio_values(self.origin_portfolio.portfolio,
+                                                                               ignore_missing_currency_data=True))
         await self._recompute_origin_portfolio_initial_value()
 
     async def _recompute_origin_portfolio_initial_value(self):
@@ -239,8 +247,8 @@ class PortfolioProfitabilty:
 
     async def _get_origin_portfolio_current_value(self, refresh_values=False):
         if refresh_values:
-            self.current_crypto_currencies_values = \
-                await self._evaluate_config_crypto_currencies_and_portfolio_values(self.origin_portfolio.portfolio)
+            self.current_crypto_currencies_values.update(
+                await self._evaluate_config_crypto_currencies_and_portfolio_values(self.origin_portfolio.portfolio))
         return await self.update_portfolio_current_value(self.origin_portfolio.portfolio,
                                                          currencies_values=self.current_crypto_currencies_values)
 
@@ -260,8 +268,9 @@ class PortfolioProfitabilty:
             elif self.exchange_manager.symbol_exists(symbol_inverted) and \
                     self.currencies_last_prices[symbol_inverted] != 0:
                 return quantity / self.currencies_last_prices[symbol_inverted]
-
-            self._inform_no_matching_symbol(currency)
+            if currency not in self.missing_currency_data_in_exchange:
+                self._inform_no_matching_symbol(currency)
+                self.missing_currency_data_in_exchange.add(currency)
             return 0
         except KeyError as e:
             if not self.exchange_manager.is_backtesting:
@@ -281,9 +290,13 @@ class PortfolioProfitabilty:
     def _inform_no_matching_symbol(self, currency):
         # do not log warning in backtesting or tests
         if not self.exchange_manager.is_backtesting:
-            self.logger.warning(f"Can't find matching symbol for {currency} and {self.reference_market}")
+            self.logger.warning(f"No trading pair including {currency} and {self.reference_market} on "
+                                f"{self.exchange_manager.exchange_name}. {currency} can't be valued for portfolio and "
+                                f"profitability.")
 
-    async def _evaluate_config_crypto_currencies_and_portfolio_values(self, portfolio):
+    async def _evaluate_config_crypto_currencies_and_portfolio_values(self,
+                                                                      portfolio,
+                                                                      ignore_missing_currency_data=False):
         values_dict = {}
         evaluated_currencies = set()
         missing_tickers = set()
@@ -306,7 +319,8 @@ class PortfolioProfitabilty:
         # evaluate portfolio currencies
         for currency in portfolio:
             try:
-                if currency not in evaluated_currencies:
+                if currency not in evaluated_currencies and self._should_currency_be_considered(
+                        currency, portfolio, ignore_missing_currency_data):
                     values_dict[currency] = await self._evaluate_value(currency, 1)
                     evaluated_currencies.add(currency)
             except KeyError:
@@ -326,6 +340,7 @@ class PortfolioProfitabilty:
         return sum([
             await self._get_currency_value(portfolio, currency, currencies_values)
             for currency in portfolio
+            if currency not in self.missing_currency_data_in_exchange
         ])
 
     async def _get_currency_value(self, portfolio, currency, currencies_values=None, raise_error=False):
@@ -336,3 +351,6 @@ class PortfolioProfitabilty:
                 return await self._evaluate_value(currency, portfolio[currency][CONFIG_PORTFOLIO_TOTAL], raise_error)
         return 0
 
+    def _should_currency_be_considered(self, currency, portfolio, ignore_missing_currency_data):
+        return (currency not in self.missing_currency_data_in_exchange or ignore_missing_currency_data) and \
+               (portfolio[currency][PORTFOLIO_TOTAL] > 0 or currency in self.traded_currencies)
