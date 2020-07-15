@@ -18,9 +18,9 @@ from octobot_trading.orders.order_state import OrderState
 
 
 class CloseOrderState(OrderState):
-    def __init__(self, order, from_exchange_data, force_close=False):
-        super().__init__(order, from_exchange_data)
-        self.state = OrderStates.CLOSED if from_exchange_data or force_close else OrderStates.CLOSING
+    def __init__(self, order, is_from_exchange_data, force_close=False):
+        super().__init__(order, is_from_exchange_data)
+        self.state = OrderStates.CLOSED if is_from_exchange_data or force_close else OrderStates.CLOSING
 
     def is_pending(self) -> bool:
         return self.state is OrderStates.CLOSING
