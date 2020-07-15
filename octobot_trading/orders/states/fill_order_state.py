@@ -18,8 +18,8 @@ from octobot_trading.orders.order_state import OrderState
 
 
 class FillOrderState(OrderState):
-    def __init__(self, order, from_exchange_data):
-        super().__init__(order, from_exchange_data)
+    def __init__(self, order, is_from_exchange_data):
+        super().__init__(order, is_from_exchange_data)
         self.state = OrderStates.FILLING
 
     def is_pending(self) -> bool:

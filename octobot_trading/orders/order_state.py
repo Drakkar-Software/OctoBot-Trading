@@ -18,7 +18,7 @@ from octobot_trading.util.initializable import Initializable
 
 
 class OrderState(Initializable):
-    def __init__(self, order, from_exchange_data):
+    def __init__(self, order, is_from_exchange_data):
         super().__init__()
 
         # related order
@@ -28,7 +28,7 @@ class OrderState(Initializable):
         self.state = OrderStates.UNKNOWN
 
         # if this state has been created from exchange data or OctoBot internal mechanism
-        self.from_exchange_data = from_exchange_data
+        self.is_from_exchange_data = is_from_exchange_data
 
     def is_pending(self) -> bool:
         """
@@ -67,6 +67,10 @@ class OrderState(Initializable):
     async def synchronize(self) -> None:
         """
         Implement the exchange synchronization process
+        Should begin by setting the state to REFRESHING
+        Should end by :
+        - calling terminate if the state is terminated
+        - restoring the initial state if nothing has been changed with synchronization or if sync failed
         """
         raise NotImplementedError("synchronize not implemented")
 

@@ -64,7 +64,7 @@ class OrderStatus(Enum):
 
 class OrderStates(Enum):
     OPENING = "opening"
-    OPENED = "opened"
+    OPEN = "open"
     FILLING = "filling"
     PARTIALLY_FILLED = "partially_filled"
     FILLED = "filled"
@@ -72,6 +72,7 @@ class OrderStates(Enum):
     CANCELED = "canceled"
     CLOSING = "closing"
     CLOSED = "closed"
+    REFRESHING = "refreshing"
     UNKNOWN = "unknown"
 
 

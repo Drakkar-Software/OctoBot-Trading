@@ -18,9 +18,9 @@ from octobot_trading.orders.order_state import OrderState
 
 
 class OpenOrderState(OrderState):
-    def __init__(self, order, from_exchange_data):
-        super().__init__(order, from_exchange_data)
-        self.state = OrderStates.OPENED if from_exchange_data else OrderStates.OPENING
+    def __init__(self, order, is_from_exchange_data):
+        super().__init__(order, is_from_exchange_data)
+        self.state = OrderStates.OPEN if is_from_exchange_data else OrderStates.OPENING
 
     async def synchronize(self) -> None:
         # Should ask exchange if the order is properly created and still OrderStatus.OPEN
