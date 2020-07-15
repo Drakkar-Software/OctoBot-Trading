@@ -29,8 +29,12 @@ class CloseOrderState(OrderState):
         return self.state is OrderStates.CLOSED
 
     async def synchronize(self) -> None:
-        # Should ask exchange if the order is properly closed
-        pass
+        """
+        TODO Should ask exchange if the order is properly closed
+        """
+        async def on_sync_succeed():
+            pass
+        await self._synchronize_order_with_exchange(on_sync_succeed)
 
     async def terminate(self):
         # Should be create a Trade when fully closed

@@ -34,11 +34,15 @@ class FillOrderState(OrderState):
         return self.state is OrderStates.FILLED
 
     async def synchronize(self) -> None:
-        # Should synchronize the filling status with the exchange
-        # can be a partially filled
-        # can also be still pending
-        # or be fully filled
-        pass
+        """
+        TODO Should synchronize the filling status with the exchange
+        can be a partially filled
+        can also be still pending
+        or be fully filled
+        """
+        async def on_sync_succeed():
+            pass
+        await self._synchronize_order_with_exchange(on_sync_succeed)
 
     async def terminate(self):
         # Should be replaced by a CloseOrderState when completely filled

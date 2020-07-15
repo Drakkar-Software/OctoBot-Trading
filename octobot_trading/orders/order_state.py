@@ -13,6 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
+from octobot_trading.channels.exchange_channel import get_chan
+from octobot_trading.constants import ORDERS_CHANNEL
 from octobot_trading.enums import OrderStates
 from octobot_trading.util.initializable import Initializable
 
@@ -80,3 +84,29 @@ class OrderState(Initializable):
         Can be portfolio updates, fees request, linked order cancellation, Trade creation etc...
         """
         raise NotImplementedError("terminate not implemented")
+
+    async def _refresh_order_from_exchange(self) -> bool:
+        """
+        Ask OrdersChannel Internal producer to refresh the order from the exchange
+        :return: the result of OrdersProducer.update_order_from_exchange()
+        """
+        return (await get_chan(ORDERS_CHANNEL, self.order.exchange_manager.id).get_internal_producer().
+                update_order_from_exchange(self.order))
+
+    async def _synchronize_order_with_exchange(self, on_refresh_successful_callback):
+        """
+        Ask the exchange to update the order
+        Also manage the order state during the refreshing process
+        :param on_refresh_successful_callback: the callback to be called when the refresh succeed
+        """
+        previous_state = self.state
+        self.state = OrderStates.REFRESHING
+        if await self._refresh_order_from_exchange():
+            try:
+                await on_refresh_successful_callback()
+            except Exception:
+                pass  # TODO
+            finally:
+                self.state = previous_state
+        else:
+            self.state = previous_state

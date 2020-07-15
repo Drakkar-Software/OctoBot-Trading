@@ -32,8 +32,12 @@ class CancelOrderState(OrderState):
         return self.state is OrderStates.CANCELED
 
     async def synchronize(self) -> None:
-        # Should ask exchange if the order is properly canceled
-        pass
+        """
+        TODO Should ask exchange if the order is properly canceled
+        """
+        async def on_sync_succeed():
+            pass
+        await self._synchronize_order_with_exchange(on_sync_succeed)
 
     async def terminate(self):
         # Should be replaced by a CloseOrderState when completely canceled

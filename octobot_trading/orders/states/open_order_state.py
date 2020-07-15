@@ -23,8 +23,12 @@ class OpenOrderState(OrderState):
         self.state = OrderStates.OPEN if is_from_exchange_data else OrderStates.OPENING
 
     async def synchronize(self) -> None:
-        # Should ask exchange if the order is properly created and still OrderStatus.OPEN
-        pass
+        """
+        TODO Should ask exchange if the order is properly created and still OrderStatus.OPEN
+        """
+        async def on_sync_succeed():
+            pass
+        await self._synchronize_order_with_exchange(on_sync_succeed)
 
     async def terminate(self):
         # Should be replaced by a FillOrderState or a CancelOrderState
