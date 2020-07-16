@@ -182,7 +182,8 @@ class Trader(Initializable):
         # remove order from open_orders
         self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
 
-    async def cancel_order(self, order: Order, is_cancelled_from_exchange: bool = False, ignored_order: Order = None):
+    async def cancel_order(self, order: Order, is_cancelled_from_exchange: bool = False, ignored_order: Order = None,
+                           should_notify: bool = True):
         """
         Cancels the given order and its linked orders, and updates the portfolio, publish in order channel
         if order is from a real exchange.
@@ -202,8 +203,9 @@ class Trader(Initializable):
                 if await self._handle_order_cancellation(order, is_cancelled_from_exchange):
                     self.logger.info(f"{order.symbol} {order.get_name()} at {order.origin_price}"
                                      f" (ID : {order.order_id}) cancelled on {self.exchange_manager.exchange_name}")
-
-                    await self.exchange_manager.exchange_personal_data.handle_order_update_notification(order, True)
+                    if should_notify:
+                        await self.exchange_manager.exchange_personal_data.handle_order_update_notification(order,
+                                                                                                            True)
 
     async def _handle_order_cancellation(self, order: Order, is_cancelled_from_exchange: bool) -> bool:
         success = True

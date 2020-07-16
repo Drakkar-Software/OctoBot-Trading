@@ -166,7 +166,8 @@ class ExchangePersonalData(Initializable):
             if existing_order is not None:
                 if existing_order.is_cancelled():
                     await self.trader.cancel_order(existing_order,
-                                                   is_cancelled_from_exchange=is_cancelled_from_exchange)
+                                                   is_cancelled_from_exchange=is_cancelled_from_exchange,
+                                                   should_notify=should_notify)
                     # self.trader.cancel_order will already notify
                     should_notify = False
                 elif existing_order.is_filled() or existing_order.is_closed():
