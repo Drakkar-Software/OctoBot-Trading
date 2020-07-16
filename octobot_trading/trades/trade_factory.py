@@ -22,7 +22,10 @@ def create_trade_instance_from_raw(trader, raw_trade):
     try:
         order = create_order_from_raw(trader, raw_trade)
         order.update_from_raw(raw_trade)
-        order.consider_as_filled()
+        if order.status is OrderStatus.CANCELED:
+            order.cancel_order()
+        else:
+            order.consider_as_filled()
         return create_trade_from_order(order)
     except KeyError:
         # Funding trade candidate
