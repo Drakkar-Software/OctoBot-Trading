@@ -202,8 +202,7 @@ class Trader(Initializable):
                     if linked_order is not ignored_order:
                         await self.cancel_order(linked_order, ignored_order=ignored_order)
                 if await self._handle_order_cancellation(order, is_cancelled_from_exchange):
-                    self.logger.info(f"{order.symbol} {order.get_name()} at {order.origin_price}"
-                                     f" (ID : {order.order_id}) cancelled on {self.exchange_manager.exchange_name}")
+                    self.logger.info(f"Cancelled order: {order} on {self.exchange_manager.exchange_name}")
                     if should_notify:
                         await self.exchange_manager.exchange_personal_data.handle_order_update_notification(order,
                                                                                                             True)
@@ -219,7 +218,7 @@ class Trader(Initializable):
             if not success:
                 raise RuntimeError(f"Failed to cancel order {order}")
             else:
-                self.logger.debug(f"Order with id={order.order_id} cancelled")
+                self.logger.debug(f"Successfully cancelled order {order}")
 
         # add to trade history and notify
         await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
