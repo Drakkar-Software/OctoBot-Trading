@@ -15,6 +15,8 @@
 #  License along with this library.
 import asyncio
 
+from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import ORDERS_CHANNEL
 from octobot_trading.enums import OrderStates
@@ -22,6 +24,8 @@ from octobot_trading.util.initializable import Initializable
 
 
 class OrderState(Initializable):
+    DEFAULT_SYNC_RETRY_TIMEOUT = 5
+
     def __init__(self, order, is_from_exchange_data):
         super().__init__()
 
@@ -58,6 +62,12 @@ class OrderState(Initializable):
         """
         return False
 
+    def get_logger(self):
+        """
+        :return: the order logger
+        """
+        return get_logger(self.order.get_logger_name())
+
     async def initialize_impl(self) -> None:
         """
         Default OrderState initialization process
@@ -93,20 +103,33 @@ class OrderState(Initializable):
         return (await get_chan(ORDERS_CHANNEL, self.order.exchange_manager.id).get_internal_producer().
                 update_order_from_exchange(self.order))
 
-    async def _synchronize_order_with_exchange(self, on_refresh_successful_callback):
+    async def _synchronize_order_with_exchange(self, on_refresh_successful_callback,
+                                               retry_on_fail=True,
+                                               retry_timeout=DEFAULT_SYNC_RETRY_TIMEOUT):
         """
         Ask the exchange to update the order
         Also manage the order state during the refreshing process
         :param on_refresh_successful_callback: the callback to be called when the refresh succeed
+        :param retry_on_fail: if the synchronization process should be retried after failure
+        :param retry_timeout: the retry timeout
         """
         previous_state = self.state
         self.state = OrderStates.REFRESHING
         if await self._refresh_order_from_exchange():
             try:
-                await on_refresh_successful_callback()
+                return await on_refresh_successful_callback()
             except Exception:
-                pass  # TODO
-            finally:
+                # TODO : manage exception message
                 self.state = previous_state
         else:
             self.state = previous_state
+        if retry_on_fail:
+            return await self.postpone_synchronization(timeout=retry_timeout)
+        return None
+
+    async def postpone_synchronization(self, timeout=0):
+        """
+        Postpone the synchronization process
+        :param timeout: the time to wait before retrying synchronization
+        """
+        asyncio.get_event_loop().call_later(timeout, self.synchronize, asyncio.get_event_loop())
