@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import OrderStates
+from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
 from octobot_trading.orders.states.close_order_state import CloseOrderState
 
@@ -36,11 +36,15 @@ class FillOrderState(OrderState):
 
     async def on_order_refresh_successful(self):
         """
-        TODO Should synchronize the filling status with the exchange
+        Synchronize the filling status with the exchange
         can be a partially filled
         can also be still pending
         or be fully filled
         """
+        if self.order.status is OrderStatus.FILLED:
+            self.state = OrderStates.FILLED
+
+        # TODO manage partially filled
 
     async def terminate(self):
         """
@@ -48,6 +52,9 @@ class FillOrderState(OrderState):
         Replace the order state by a close state
         `force_close = True` because we know that the order is successfully filled.
         """
+        self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
+                               f" (ID: {self.order.order_id}) filled on {self.order.exchange_manager.exchange_name}")
+
         # Cancel linked orders
         for linked_order in self.order.linked_orders:
             await self.order.trader.cancel_order(linked_order, ignored_order=self.order)

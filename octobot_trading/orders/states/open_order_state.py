@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import OrderStates
+from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
 
 
@@ -24,13 +24,17 @@ class OpenOrderState(OrderState):
 
     async def on_order_refresh_successful(self):
         """
-        TODO Verify the order is properly created and still OrderStatus.OPEN
+        Verify the order is properly created and still OrderStatus.OPEN
         """
+        if self.order.status is OrderStatus.OPEN:
+            self.state = OrderStates.OPEN
 
     async def terminate(self):
         """
         Should wait for being replaced by a FillOrderState or a CancelOrderState
         """
+        self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
+                               f" (ID: {self.order.order_id}) open on {self.order.exchange_manager.exchange_name}")
 
     def is_pending(self) -> bool:
         return self.state is OrderStates.OPENING
