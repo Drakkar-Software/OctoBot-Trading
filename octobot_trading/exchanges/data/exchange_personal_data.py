@@ -69,7 +69,7 @@ class ExchangePersonalData(Initializable):
 
     async def handle_portfolio_update_from_order(self, order, should_notify: bool = True) -> bool:
         try:
-            changed: bool = self.portfolio_manager.handle_balance_update_from_order(order)
+            changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order)
             if should_notify:
                 await get_chan(BALANCE_CHANNEL, self.exchange_manager.id). \
                     get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
