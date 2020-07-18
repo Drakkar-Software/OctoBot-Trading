@@ -31,6 +31,8 @@ cdef class WebsocketExchange:
     cdef bint use_testnet
     cdef bint is_authenticated
 
+    cdef public dict endpoint_args
+
     cdef public list currencies
     cdef public list pairs
     cdef public list time_frames

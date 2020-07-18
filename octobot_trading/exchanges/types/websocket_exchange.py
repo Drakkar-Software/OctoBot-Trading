@@ -70,6 +70,9 @@ class WebsocketExchange:
         self.is_authenticated = False
         self.should_stop = False
 
+        # keyword arguments to be given to get_ws_endpoint
+        self.endpoint_args = {}
+
         self.currencies = currencies if currencies else []
         self.pairs = []
         self.channels = []
@@ -112,9 +115,12 @@ class WebsocketExchange:
             # manage max delay
             if delay >= self.MAX_DELAY:
                 delay = self.MAX_DELAY
-
             try:
-                async with websockets.connect(self.get_ws_endpoint()
+                await self.before_connect()
+            except Exception as e:
+                self.logger.exception(e, True, f"Error on before_connect {e}")
+            try:
+                async with websockets.connect(self.get_ws_endpoint(**self.endpoint_args)
                                               if not self.use_testnet else self.get_ws_testnet_endpoint(),
                                               subprotocols=self.get_sub_protocol()) as websocket:
                     self.websocket = websocket
@@ -201,6 +207,9 @@ class WebsocketExchange:
         self.is_connected = False
         self.websocket.close()
         self.on_close()
+
+    async def before_connect(self):
+        pass
 
     async def prepare(self):
         pass
