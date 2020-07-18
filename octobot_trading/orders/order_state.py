@@ -86,7 +86,7 @@ class OrderState(Initializable):
         Update the order state
         Try to fix the pending state or terminate
         """
-        if self.is_pending():
+        if self.is_pending() and self.state is not OrderStates.REFRESHING:
             await self.synchronize()
         else:
             await self.terminate()
