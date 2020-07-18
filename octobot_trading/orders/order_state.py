@@ -103,13 +103,17 @@ class OrderState(Initializable):
         return (await get_chan(ORDERS_CHANNEL, self.order.exchange_manager.id).get_internal_producer().
                 update_order_from_exchange(self.order))
 
-    async def _synchronize_order_with_exchange(self, on_refresh_successful_callback,
-                                               retry_on_fail=True,
+    async def on_order_refresh_successful(self):
+        """
+        Called when _synchronize_order_with_exchange succeed to update the order
+        """
+        raise NotImplementedError("_on_order_refresh_successful not implemented")
+
+    async def _synchronize_order_with_exchange(self, retry_on_fail=True,
                                                retry_timeout=DEFAULT_SYNC_RETRY_TIMEOUT):
         """
         Ask the exchange to update the order
         Also manage the order state during the refreshing process
-        :param on_refresh_successful_callback: the callback to be called when the refresh succeed
         :param retry_on_fail: if the synchronization process should be retried after failure
         :param retry_timeout: the retry timeout
         """
@@ -117,7 +121,7 @@ class OrderState(Initializable):
         self.state = OrderStates.REFRESHING
         if await self._refresh_order_from_exchange():
             try:
-                return await on_refresh_successful_callback()
+                return await self.on_order_refresh_successful()
             except Exception:
                 # TODO : manage exception message
                 self.state = previous_state
