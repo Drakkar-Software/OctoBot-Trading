@@ -20,7 +20,7 @@ from octobot_trading.orders.order_state import OrderState
 class FillOrderState(OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.FILLING
+        self.state = OrderStates.FILLING if not self.order.is_simulated else OrderStates.FILLED
 
     def is_pending(self) -> bool:
         # TODO : Should also include OrderStates.PARTIALLY_FILLED ?
