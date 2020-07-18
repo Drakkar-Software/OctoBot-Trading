@@ -15,6 +15,7 @@
 #  License along with this library.
 from octobot_trading.enums import OrderStates
 from octobot_trading.orders.order_state import OrderState
+from octobot_trading.orders.states.close_order_state import CloseOrderState
 
 
 class FillOrderState(OrderState):
@@ -42,5 +43,21 @@ class FillOrderState(OrderState):
         """
 
     async def terminate(self):
-        # Should be replaced by a CloseOrderState when completely filled
-        pass
+        """
+        Perform order filling updates
+        Replace the order state by a close state
+        `force_close = True` because we know that the order is successfully filled.
+        """
+        # Cancel linked orders
+        for linked_order in self.order.linked_orders:
+            await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
+
+        # update portfolio with filled order
+        async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
+            await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
+
+        # set close state
+        self.order.state = CloseOrderState(self.order,
+                                           is_from_exchange_data=self.is_from_exchange_data,
+                                           force_close=True)
+        await self.order.state.initialize()

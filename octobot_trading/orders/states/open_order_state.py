@@ -28,8 +28,9 @@ class OpenOrderState(OrderState):
         """
 
     async def terminate(self):
-        # Should be replaced by a FillOrderState or a CancelOrderState
-        pass
+        """
+        Should wait for being replaced by a FillOrderState or a CancelOrderState
+        """
 
     def is_pending(self) -> bool:
         return self.state is OrderStates.OPENING
