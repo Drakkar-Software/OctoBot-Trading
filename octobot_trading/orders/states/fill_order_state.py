@@ -33,6 +33,9 @@ class FillOrderState(OrderState):
     def is_closed(self) -> bool:
         return self.state is OrderStates.FILLED
 
+    async def on_order_refresh_successful(self):
+        pass
+
     async def synchronize(self) -> None:
         """
         TODO Should synchronize the filling status with the exchange
@@ -42,7 +45,7 @@ class FillOrderState(OrderState):
         """
         async def on_sync_succeed():
             pass
-        await self._synchronize_order_with_exchange(on_sync_succeed)
+        await self._synchronize_order_with_exchange()
 
     async def terminate(self):
         # Should be replaced by a CloseOrderState when completely filled

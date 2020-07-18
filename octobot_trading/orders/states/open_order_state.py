@@ -22,13 +22,14 @@ class OpenOrderState(OrderState):
         super().__init__(order, is_from_exchange_data)
         self.state = OrderStates.OPEN if is_from_exchange_data or self.order.is_simulated else OrderStates.OPENING
 
+    async def on_order_refresh_successful(self):
+        pass
+
     async def synchronize(self) -> None:
         """
         TODO Should ask exchange if the order is properly created and still OrderStatus.OPEN
         """
-        async def on_sync_succeed():
-            pass
-        await self._synchronize_order_with_exchange(on_sync_succeed)
+        await self._synchronize_order_with_exchange()
 
     async def terminate(self):
         # Should be replaced by a FillOrderState or a CancelOrderState
