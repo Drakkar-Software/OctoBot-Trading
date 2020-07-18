@@ -56,7 +56,7 @@ class CancelOrderState(OrderState):
         """
         self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
                                f" (ID: {self.order.order_id}) cancelled on {self.order.exchange_manager.exchange_name}")
-        
+
         self.order.state = CloseOrderState(self.order,
                                            is_from_exchange_data=self.is_from_exchange_data,
                                            force_close=True)
