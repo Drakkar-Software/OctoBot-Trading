@@ -79,6 +79,7 @@ cdef class Order(Initializable):
             double stop_price=*,
             double quantity_filled=*,
             double filled_price=*,
+            double average_price=*,
             dict fee=*,
             double total_cost=*,
             object timestamp=*,

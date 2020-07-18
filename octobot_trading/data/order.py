@@ -86,7 +86,7 @@ class Order(Initializable):
 
     def update(self, symbol, order_id="", status=OrderStatus.OPEN,
                current_price=0.0, quantity=0.0, price=0.0, stop_price=0.0,
-               quantity_filled=0.0, filled_price=0.0, fee=None, total_cost=0.0,
+               quantity_filled=0.0, filled_price=0.0, average_price=0.0, fee=None, total_cost=0.0,
                timestamp=None, linked_to=None, linked_portfolio=None, order_type=None) -> bool:
         changed: bool = False
 
@@ -138,8 +138,13 @@ class Order(Initializable):
         if total_cost and self.total_cost != total_cost:
             self.total_cost = total_cost
 
-        if filled_price and self.filled_price != filled_price:
-            self.filled_price = filled_price
+        if average_price:
+            # try using average price first
+            if self.filled_price != average_price:
+                self.filled_price = average_price
+        else:
+            if filled_price and self.filled_price != filled_price:
+                self.filled_price = filled_price
 
         if self.trader.simulate:
             if quantity and not self.filled_quantity:
@@ -326,6 +331,7 @@ class Order(Initializable):
             order_id=str(raw_order.get(ExchangeConstantsOrderColumns.ID.value, None)),
             quantity_filled=raw_order.get(ExchangeConstantsOrderColumns.FILLED.value, 0.0),
             filled_price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            average_price=raw_order.get(ExchangeConstantsOrderColumns.AVERAGE.value, 0.0),
             total_cost=raw_order.get(ExchangeConstantsOrderColumns.COST.value, 0.0),
             fee=raw_order.get(ExchangeConstantsOrderColumns.FEE.value, None),
             timestamp=raw_order.get(ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
