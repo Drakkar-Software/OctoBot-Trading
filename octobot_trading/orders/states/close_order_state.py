@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import OrderStates
+from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
 from octobot_trading.trades.trade_factory import create_trade_from_order
 
@@ -32,13 +32,18 @@ class CloseOrderState(OrderState):
 
     async def on_order_refresh_successful(self):
         """
-        TODO Verify the order is properly closed
+        Verify the order is properly closed
         """
+        if self.order.status is OrderStatus.CLOSED:
+            self.state = OrderStates.CLOSED
 
     async def terminate(self):
         """
         Handle order to trade conversion
         """
+        self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
+                               f" (ID: {self.order.order_id}) closed on {self.order.exchange_manager.exchange_name}")
+
         # add to trade history and notify
         await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
             create_trade_from_order(self.order))
