@@ -40,6 +40,7 @@ class CancelOrderState(OrderState):
     async def terminate(self):
         """
         Replace the order state by a close state
+        `force_close = True` because we know that the order is successfully cancelled.
         """
         self.order.state = CloseOrderState(self.order,
                                            is_from_exchange_data=self.is_from_exchange_data,
