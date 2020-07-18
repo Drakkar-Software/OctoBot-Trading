@@ -399,7 +399,8 @@ class Order(Initializable):
                 f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
                 f"Price : {self.origin_price} | "
                 f"Quantity : {self.origin_quantity} | "
-                f"Status : {self.status.name if self.status is not None else 'Unknown'}")
+                f"Status : {self.status.name if self.status is not None else 'Unknown'} | "
+                f"id : {self.order_id}")
 
     def __str__(self):
         return self.to_string()
