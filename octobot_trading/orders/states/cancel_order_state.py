@@ -15,6 +15,7 @@
 #  License along with this library.
 from octobot_trading.enums import OrderStates
 from octobot_trading.orders.order_state import OrderState
+from octobot_trading.orders.states.close_order_state import CloseOrderState
 
 
 class CancelOrderState(OrderState):
@@ -32,14 +33,15 @@ class CancelOrderState(OrderState):
         return self.state is OrderStates.CANCELED
 
     async def on_order_refresh_successful(self):
-        pass
-
-    async def synchronize(self) -> None:
         """
-        TODO Should ask exchange if the order is properly canceled
+        TODO Verify the order is properly canceled
         """
-        await self._synchronize_order_with_exchange()
 
     async def terminate(self):
-        # Should be replaced by a CloseOrderState when completely canceled
-        pass
+        """
+        Replace the order state by a close state
+        """
+        self.order.state = CloseOrderState(self.order,
+                                           is_from_exchange_data=self.is_from_exchange_data,
+                                           force_close=True)
+        await self.order.state.initialize()
