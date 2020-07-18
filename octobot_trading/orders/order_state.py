@@ -71,6 +71,19 @@ class OrderState(Initializable):
     async def initialize_impl(self) -> None:
         """
         Default OrderState initialization process
+        """
+        await self.update()
+
+    async def terminate(self) -> None:
+        """
+        Implement the state ending process
+        Can be portfolio updates, fees request, linked order cancellation, Trade creation etc...
+        """
+        raise NotImplementedError("terminate not implemented")
+
+    async def update(self) -> None:
+        """
+        Update the order state
         Try to fix the pending state or terminate
         """
         if self.is_pending():
@@ -86,14 +99,7 @@ class OrderState(Initializable):
         - calling terminate if the state is terminated
         - restoring the initial state if nothing has been changed with synchronization or if sync failed
         """
-        raise NotImplementedError("synchronize not implemented")
-
-    async def terminate(self) -> None:
-        """
-        Implement the state ending process
-        Can be portfolio updates, fees request, linked order cancellation, Trade creation etc...
-        """
-        raise NotImplementedError("terminate not implemented")
+        await self._synchronize_order_with_exchange()
 
     async def _refresh_order_from_exchange(self) -> bool:
         """
@@ -122,8 +128,8 @@ class OrderState(Initializable):
         if await self._refresh_order_from_exchange():
             try:
                 return await self.on_order_refresh_successful()
-            except Exception:
-                # TODO : manage exception message
+            except Exception as e:
+                self.get_logger().warning(f"Error during order synchronization process : {e}, restoring previous...")
                 self.state = previous_state
         else:
             self.state = previous_state

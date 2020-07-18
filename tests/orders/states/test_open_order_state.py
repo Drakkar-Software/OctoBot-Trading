@@ -13,23 +13,3 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import OrderStates
-from octobot_trading.orders.order_state import OrderState
-
-
-class OpenOrderState(OrderState):
-    def __init__(self, order, is_from_exchange_data):
-        super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.OPEN if is_from_exchange_data or self.order.is_simulated else OrderStates.OPENING
-
-    async def on_order_refresh_successful(self):
-        """
-        TODO Verify the order is properly created and still OrderStatus.OPEN
-        """
-
-    async def terminate(self):
-        # Should be replaced by a FillOrderState or a CancelOrderState
-        pass
-
-    def is_pending(self) -> bool:
-        return self.state is OrderStates.OPENING
