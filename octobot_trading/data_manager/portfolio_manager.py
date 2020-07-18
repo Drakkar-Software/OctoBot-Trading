@@ -14,9 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
-
+from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, \
-    CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING
+    CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING, BALANCE_CHANNEL
 from octobot_trading.data.margin_portfolio import MarginPortfolio
 from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.data.portfolio_profitability import PortfolioProfitabilty
@@ -52,15 +52,20 @@ class PortfolioManager(Initializable):
             return self.portfolio.update_portfolio_from_balance(balance)
         return False
 
-    def handle_balance_update_from_order(self, order):
+    async def handle_balance_update_from_order(self, order):
         """
         Handle a balance update from an order request
         :param order: the order
         :return: True if the portfolio was updated
         """
-        if self.trader.is_enabled and self.trader.simulate:
-            self.portfolio.update_portfolio_from_order(order)
-            return True
+        if self.trader.is_enabled:
+            if self.trader.simulate:
+                self.portfolio.update_portfolio_from_order(order)
+                return True
+            else:
+                # on real trading: reload portfolio to ensure portfolio sync
+                return await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer().\
+                    update_portfolio_from_exchange(self)
         return False
 
     async def _reset_portfolio(self):

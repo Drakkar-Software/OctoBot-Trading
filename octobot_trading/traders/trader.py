@@ -164,6 +164,7 @@ class Trader(Initializable):
         :param order: Already filled order
         :return: None
         """
+        self.logger.info(f"Filled order: {order}")
         # Cancel linked orders
         for linked_order in order.linked_orders:
             await self.cancel_order(linked_order, ignored_order=order)

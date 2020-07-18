@@ -45,6 +45,16 @@ class BalanceProducer(ExchangeChannelProducer):
                 "balance": balance
             })
 
+    async def update_portfolio_from_exchange(self, should_notify=False) -> bool:
+        """
+        Update portfolio from exchange
+        :param should_notify: if Orders channel consumers should be notified
+        :return: True if the portfolio was updated
+        """
+        balance = await self.channel.exchange_manager.exchange.get_balance()
+        return await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update(
+            balance=balance, should_notify=should_notify)
+
 
 class BalanceChannel(ExchangeChannel):
     PRODUCER_CLASS = BalanceProducer
