@@ -29,3 +29,7 @@ def get_portfolio_currency(exchange_manager, currency, portfolio_type=PORTFOLIO_
 
 def get_origin_portfolio(exchange_manager) -> dict:
     return exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability.origin_portfolio.portfolio
+
+
+async def refresh_real_trader_portfolio(exchange_manager) -> bool:
+    return await exchange_manager.exchange_personal_data.portfolio_manager.refresh_real_trader_portfolio()

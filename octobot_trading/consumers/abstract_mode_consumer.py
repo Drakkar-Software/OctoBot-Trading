@@ -52,7 +52,8 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
                     except InsufficientFunds:
                         try:
                             # second chance: force portfolio update and retry
-                            await self.exchange_manager.force_refresh_orders_and_portfolio(pf)
+                            await self.exchange_manager.exchange_personal_data.portfolio_manager.\
+                                refresh_real_trader_portfolio(pf)
                             return await self.create_new_orders(symbol, final_note, state, **kwargs)
                         except InsufficientFunds as e:
                             self.logger.error(f"Failed to create order on second attempt : {e})")

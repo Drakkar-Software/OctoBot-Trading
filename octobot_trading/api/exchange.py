@@ -149,10 +149,6 @@ def get_watched_timeframes(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_time_frames
 
 
-async def force_refresh_orders_and_portfolio(exchange_manager):
-    return await exchange_manager.trader.force_refresh_orders_and_portfolio()
-
-
 def get_base_currency(exchange_manager, pair) -> str:
     return exchange_manager.exchange.get_pair_cryptocurrency(pair)
 
