@@ -93,3 +93,4 @@ cdef class ExchangeManager(Initializable):
     cpdef tuple get_exchange_credentials(self, object logger, str exchange_name)
     cpdef bint should_decrypt_token(self, object logger)
     cpdef ExchangeSymbolData get_symbol_data(self, str symbol)
+    cpdef bint requires_refresh_trigger(self, str channel)

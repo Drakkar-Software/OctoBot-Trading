@@ -16,6 +16,7 @@
 from ccxt import InsufficientFunds
 
 from octobot_commons.symbol_util import split_symbol
+from octobot_trading.channels import get_chan, BALANCE_CHANNEL
 from octobot_trading.channels.mode import ModeChannelConsumer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, EvaluatorStates
 
@@ -52,8 +53,9 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
                     except InsufficientFunds:
                         try:
                             # second chance: force portfolio update and retry
-                            await self.exchange_manager.exchange_personal_data.portfolio_manager.\
-                                refresh_real_trader_portfolio(pf)
+                            await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer(). \
+                                refresh_real_trader_portfolio(True)
+
                             return await self.create_new_orders(symbol, final_note, state, **kwargs)
                         except InsufficientFunds as e:
                             self.logger.error(f"Failed to create order on second attempt : {e})")

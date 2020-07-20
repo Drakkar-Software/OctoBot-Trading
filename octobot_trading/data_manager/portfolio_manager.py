@@ -64,13 +64,9 @@ class PortfolioManager(Initializable):
                 return True
             else:
                 # on real trading: reload portfolio to ensure portfolio sync
-                return await self.refresh_real_trader_portfolio()
+                return await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer().\
+                    refresh_real_trader_portfolio()
         return False
-
-    async def refresh_real_trader_portfolio(self) -> bool:
-        self.logger.debug(f"Refreshing portfolio from {self.exchange_manager.get_exchange_name()} exchange")
-        return await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer(). \
-            update_portfolio_from_exchange(self)
 
     async def _reset_portfolio(self):
         """

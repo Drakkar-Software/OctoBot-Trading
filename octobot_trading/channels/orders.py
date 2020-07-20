@@ -16,7 +16,9 @@
 from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
+from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer, \
+    get_chan
+from octobot_trading.constants import BALANCE_CHANNEL
 from octobot_trading.orders.order_util import parse_is_closed
 
 
@@ -27,6 +29,7 @@ class OrdersProducer(ExchangeChannelProducer):
     async def perform(self, orders, is_closed=False, is_from_bot=True):
         try:
             symbol = None
+            possible_new_order = False
             for order in orders:
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
                     self.channel.exchange_manager.exchange.parse_order_symbol(order))
@@ -48,6 +51,8 @@ class OrdersProducer(ExchangeChannelProducer):
                                 order_id,
                                 order,
                                 should_notify=False)
+                        if changed:
+                            possible_new_order = True
 
                     if changed:
                         await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
@@ -58,7 +63,11 @@ class OrdersProducer(ExchangeChannelProducer):
                                         is_updated=changed)
 
             if symbol is not None:
-                await self._check_missing_open_orders(symbol, orders)
+                possible_new_order = await self._check_missing_open_orders(symbol, orders) or possible_new_order
+            if possible_new_order:
+                # possibility new order: refresh portfolio to ensure available funds are up to date
+                await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+                    refresh_real_trader_portfolio()
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
@@ -113,6 +122,8 @@ class OrdersProducer(ExchangeChannelProducer):
                         should_notify=True)
                 except KeyError:
                     self.logger.error(f"Order with id {missing_order_id} could not be synchronized")
+            return True
+        return False
 
     async def send(self, cryptocurrency, symbol, order, is_from_bot=True, is_closed=False, is_updated=False):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
