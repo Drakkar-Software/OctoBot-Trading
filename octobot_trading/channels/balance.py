@@ -20,6 +20,7 @@ Handles balance changes
 from asyncio import CancelledError
 
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
+from octobot_trading.constants import BALANCE_CHANNEL
 
 
 class BalanceProducer(ExchangeChannelProducer):
@@ -45,7 +46,16 @@ class BalanceProducer(ExchangeChannelProducer):
                 "balance": balance
             })
 
-    async def update_portfolio_from_exchange(self, should_notify=False) -> bool:
+    async def refresh_real_trader_portfolio(self, force_manual_refresh=False) -> bool:
+        if force_manual_refresh or self.channel.exchange_manager.requires_refresh_trigger(BALANCE_CHANNEL):
+            self.logger.debug(f"Refreshing portfolio from {self.channel.exchange_manager.get_exchange_name()} exchange")
+            return await self._update_portfolio_from_exchange()
+        else:
+            self.logger.debug(f"Portfolio refresh from {self.channel.exchange_manager.get_exchange_name()} exchange "
+                              f"will automatically be performed")
+        return False
+
+    async def _update_portfolio_from_exchange(self, should_notify=False) -> bool:
         """
         Update portfolio from exchange
         :param should_notify: if Orders channel consumers should be notified

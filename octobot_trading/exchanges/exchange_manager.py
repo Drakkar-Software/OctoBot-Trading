@@ -305,6 +305,17 @@ class ExchangeManager(Initializable):
                 # no websocket for this channel: start an updater
                 await updater(get_chan(updater.CHANNEL_NAME, self.id)).run()
 
+    def requires_refresh_trigger(self, channel):
+        """
+        Return True if the given channel is to be updated artificially (ex: via channel updater). In this case it
+        is necessary to trigger a manual update to get the exact picture at a given time (last updater push might
+        have been a few seconds ago)
+        Return False if this channels updates by itself and manual refresh trigger is not necessary (ex: websocket feed)
+        :param channel: name of the channel
+        :return: True if it should be refreshed via a manual trigger to be exactly up to date
+        """
+        return not self._is_managed_by_websocket(channel)
+
     """
     Websocket
     """
