@@ -25,6 +25,7 @@ from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, 
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns, TradeOrderType
 from octobot_trading.orders.order_util import get_fees_for_currency, parse_order_status
+from octobot_trading.orders.states.fill_order_state import FillOrderState
 from octobot_trading.orders.states.open_order_state import OpenOrderState
 from octobot_trading.util.initializable import Initializable
 
@@ -225,6 +226,16 @@ class Order(Initializable):
 
     def is_closed(self):
         return self.state.is_closed()
+
+    async def on_fill(self, force_fill=False):
+        self.state = FillOrderState(self, is_from_exchange_data=force_fill)
+        await self.state.initialize(force=force_fill)
+
+    async def on_filled(self):
+        """
+        Filled complete callback
+        """
+        # nothing to do by default
 
     def get_computed_fee(self, forced_value=None):
         computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,

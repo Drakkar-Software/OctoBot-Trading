@@ -132,18 +132,10 @@ class TrailingStopOrder(Order):
         get_logger(self.get_logger_name()).debug(f"New price hit {prices_manager.mark_price}, replacing stop...")
         await self._reset_events(prices_manager.mark_price, prices_manager.mark_price_set_time)
 
-    async def on_fill(self):
-        """
-        Is called when the stop price is hit
-        """
-        await Order.on_fill(self)
-        await self.on_fill_complete()
-
-    async def on_trade_creation(self):
+    async def on_filled(self):
         """
         Create an artificial when trailing stop is filled
         """
-        await Order.on_trade_creation(self)
         await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET
                                                   if self.side is TradeOrderSide.SELL
                                                   else TraderOrderType.BUY_MARKET,

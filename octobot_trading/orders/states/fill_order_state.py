@@ -77,6 +77,11 @@ class FillOrderState(OrderState):
             self.order.state = CloseOrderState(self.order,
                                                is_from_exchange_data=self.is_from_exchange_data,
                                                force_close=True)  # TODO force ?
+
+            # call order on_filled callback
+            await self.order.on_filled()
+
+            # finalize trade creation
             await self.order.state.initialize()
         except Exception as e:
             get_logger(self.get_logger()).exception(e, True, f"Fail to execute fill complete action : {e}.")

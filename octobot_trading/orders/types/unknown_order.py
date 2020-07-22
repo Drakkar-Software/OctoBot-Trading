@@ -24,6 +24,3 @@ class UnknownOrder(Order):
         else:
             # SHOULD NEVER HAPPEN
             raise RuntimeError(f"{self.get_name()} can't be updated and should not appear in simulation mode")
-
-    async def on_fill(self):
-        await self.on_fill_complete()
