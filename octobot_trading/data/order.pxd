@@ -19,6 +19,7 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
+from octobot_trading.orders.order_state cimport OrderState
 from octobot_trading.util.initializable cimport Initializable
 
 from octobot_trading.data.portfolio cimport Portfolio
@@ -34,6 +35,7 @@ cdef class Order(Initializable):
 
     cdef public Order linked_to
     cdef public Portfolio linked_portfolio
+    cdef public OrderState state
 
     cdef public bint is_simulated
     cdef public bint is_synchronized_with_exchange

@@ -25,6 +25,7 @@ from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, 
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns, TradeOrderType
 from octobot_trading.orders.order_util import get_fees_for_currency, parse_order_status
+from octobot_trading.orders.states.open_order_state import OpenOrderState
 from octobot_trading.util.initializable import Initializable
 
 
@@ -74,6 +75,9 @@ class Order(Initializable):
 
         # raw exchange order type, used to create order dict
         self.exchange_order_type = None
+
+        # default order state
+        self.state = OpenOrderState(self, not self.is_from_this_octobot)
 
     @classmethod
     def get_name(cls):
@@ -183,12 +187,8 @@ class Order(Initializable):
         """
         Initialize order status update tasks
         """
+        await self.state.initialize()
         if not self.exchange_manager.is_backtesting:
-            if not self.exchange_manager.is_simulated and not self.is_self_managed():
-                # Create a task to synchronize order data with exchange
-                asyncio.create_task(get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer().
-                                    update_order_from_exchange(self))
-
             # Create a task that supervise order status
             asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY,
                                                 asyncio.create_task,
@@ -205,49 +205,6 @@ class Order(Initializable):
         """
         raise NotImplementedError("Update_order_status not implemented")
 
-    def cancel_order(self):
-        """
-        Set cancelled status and keep track of cancellation time.
-        """
-        self.status = OrderStatus.CANCELED
-        self.canceled_time = self.exchange_manager.exchange.get_exchange_current_time()
-
-    async def on_fill(self):
-        """
-        Set filled status
-        """
-        self.status = OrderStatus.FILLED
-        self.executed_time = self.generate_executed_time()
-
-    async def on_fill_complete(self):
-        """
-        Post fill actions
-        """
-        try:
-            # compute order fees
-            self.fee = self.get_computed_fee()
-
-            get_logger(self.get_logger_name()).debug(f"{self.symbol} of size {self.origin_quantity} {self.currency} "
-                                                     f"filled {self.filled_quantity} {self.currency} "
-                                                     f"on {self.exchange_manager.exchange_name} "
-                                                     f"at {self.filled_price}")
-
-            await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                .send(cryptocurrency=self.currency,
-                      symbol=self.symbol,
-                      order=self.to_dict(),
-                      is_from_bot=True,
-                      is_closed=True,
-                      is_updated=False)
-            await self.exchange_manager.trader.close_filled_order(self)
-        except Exception as e:
-            get_logger(self.get_logger_name()).exception(e, True, f"Fail to execute fill complete action : {e}.")
-
-    async def on_trade_creation(self):
-        """
-        On trade creation when the Order is closed
-        """
-
     def add_linked_order(self, order):
         self.linked_orders.append(order)
 
@@ -258,16 +215,16 @@ class Order(Initializable):
         return get_fees_for_currency(self.fee, currency)
 
     def is_open(self):
-        return self.status in {OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED}
+        return self.state.is_open()
 
     def is_filled(self):
-        return self.status is OrderStatus.FILLED
+        return self.state.is_filled()
 
     def is_cancelled(self):
-        return self.status is OrderStatus.CANCELED
+        return self.state.is_canceled()
 
     def is_closed(self):
-        return self.status in {OrderStatus.CANCELED, OrderStatus.FILLED, OrderStatus.CLOSED}
+        return self.state.is_closed()
 
     def get_computed_fee(self, forced_value=None):
         computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,
