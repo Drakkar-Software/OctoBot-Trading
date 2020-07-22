@@ -59,8 +59,7 @@ class FillOrderState(OrderState):
         `force_close = True` because we know that the order is successfully filled.
         """
         try:
-            self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
-                                   f" (ID: {self.order.order_id}) filled on {self.order.exchange_manager.exchange_name}")
+            self.log_order_event_message("filled")
 
             # Cancel linked orders
             for linked_order in self.order.linked_orders:

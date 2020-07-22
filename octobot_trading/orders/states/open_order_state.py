@@ -56,8 +56,7 @@ class OpenOrderState(OrderState):
         """
         Should wait for being replaced by a FillOrderState or a CancelOrderState
         """
-        self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
-                               f" (ID: {self.order.order_id}) open on {self.order.exchange_manager.exchange_name}")
+        self.log_order_event_message("open")
 
         # notify order manager of a new open order
         await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(self.order)

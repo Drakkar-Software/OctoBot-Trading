@@ -30,3 +30,4 @@ cdef class OrderState(Initializable):
     cpdef bint is_canceled(self)
     cpdef void cancel_synchronization(self)
     cpdef void clear(self)
+    cpdef void log_order_event_message(self, str state_message)

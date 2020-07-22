@@ -83,6 +83,14 @@ class OrderState(Initializable):
         """
         return get_logger(self.order.get_logger_name())
 
+    def log_order_event_message(self, state_message):
+        """
+        Log an order state event
+        """
+        self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
+                               f" (ID: {self.order.order_id}) {state_message}"
+                               f" on {self.order.exchange_manager.exchange_name}")
+
     async def initialize_impl(self) -> None:
         """
         Default OrderState initialization process
