@@ -13,10 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import copy
-import time
 
 from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.constants import REAL_TRADER_STR, CONFIG_TRADER_RISK, CONFIG_TRADING, CONFIG_TRADER_RISK_MIN, \
     CONFIG_TRADER_RISK_MAX
 from octobot_trading.data.order import Order
@@ -25,7 +24,7 @@ from octobot_trading.enums import OrderStatus, TraderOrderType
 from octobot_trading.orders.order_adapter import check_and_adapt_order_details_if_necessary
 from octobot_trading.orders.order_factory import create_order_instance
 from octobot_trading.orders.order_util import get_pre_order_data
-from octobot_trading.trades.trade_factory import create_trade_from_order
+from octobot_trading.orders.states.cancel_order_state import CancelOrderState
 from octobot_trading.util import is_trader_enabled, get_pairs, get_market_pair
 from octobot_trading.util.initializable import Initializable
 
@@ -103,15 +102,6 @@ class Trader(Initializable):
                 self.logger.error(f"Fail to create not loaded order : {e}")
                 return None
 
-        if new_order.is_open():
-            # notify order manager of a new open order
-            await self.exchange_manager.exchange_personal_data.handle_order_instance_update(new_order)
-        else:
-            # notify order channel than an order has been created even though it's already closed
-            await self.exchange_manager.exchange_personal_data.handle_order_update_notification(new_order, True)
-            await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-                create_trade_from_order(new_order))
-
         # if this order is linked to another
         if linked_order is not None:
             new_order.linked_orders.append(linked_order)
@@ -151,37 +141,7 @@ class Trader(Initializable):
 
             # rebind linked portfolio to new order instance
             new_order.linked_portfolio = portfolio
-
-        # update the availability of the currency in the portfolio
-        portfolio.update_portfolio_available(new_order, is_new_order=True)
-
         return new_order
-
-    async def close_filled_order(self, order):
-        """
-        Closes the given filled order starting buy cancelling its linked orders, updating the portfolio, creating
-        the new trade and finally removing the order from order manager. Does not update the order attributes.
-        :param order: Already filled order
-        :return: None
-        """
-        self.logger.info(f"Filled order: {order}")
-        # Cancel linked orders
-        for linked_order in order.linked_orders:
-            await self.cancel_order(linked_order, ignored_order=order)
-
-        # update portfolio with filled order
-        async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
-            await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
-
-        # add to trade history and notify
-        await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-            create_trade_from_order(order))
-
-        # notify order trade created
-        await order.on_trade_creation()
-
-        # remove order from open_orders
-        self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
 
     async def cancel_order(self, order: Order, is_cancelled_from_exchange: bool = False, ignored_order: Order = None,
                            should_notify: bool = True):
@@ -197,10 +157,8 @@ class Trader(Initializable):
         if order and ((not order.is_cancelled() and not order.is_filled()) or is_cancelled_from_exchange):
             async with order.lock:
                 # always cancel this order first to avoid infinite loop followed by deadlock
-                order.cancel_order()
-                for linked_order in order.linked_orders:
-                    if linked_order is not ignored_order:
-                        await self.cancel_order(linked_order, ignored_order=ignored_order)
+                order.state = CancelOrderState(order, is_cancelled_from_exchange)
+                await order.state.initialize(ignored_order=ignored_order)
                 if await self._handle_order_cancellation(order, is_cancelled_from_exchange):
                     self.logger.info(f"Cancelled order: {order} on {self.exchange_manager.exchange_name}")
                     if should_notify:
@@ -220,20 +178,9 @@ class Trader(Initializable):
             else:
                 self.logger.debug(f"Successfully cancelled order {order}")
 
-        # add to trade history and notify
-        await self.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-            create_trade_from_order(order,
-                                    close_status=OrderStatus.CANCELED,
-                                    canceled_time=self.exchange_manager.exchange.get_exchange_current_time()))
-
-        # update portfolio with cancelled funds order
-        async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
-            self.exchange_manager.exchange_personal_data.get_order_portfolio(order) \
-                .update_portfolio_available(order, is_new_order=False)
-
-        # remove order from open_orders
-        self.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(order)
-
+        # call CancelState termination
+        await order.state.on_order_refresh_successful()
+        await order.state.terminate()
         return success
 
     async def cancel_order_with_id(self, order_id):

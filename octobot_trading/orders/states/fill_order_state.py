@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
 from octobot_trading.orders.states.close_order_state import CloseOrderState
@@ -43,6 +45,10 @@ class FillOrderState(OrderState):
         """
         if self.order.status is OrderStatus.FILLED:
             self.state = OrderStates.FILLED
+            self.order.executed_time = self.order.generate_executed_time()
+
+            # TODO compute order fees
+            self.order.fee = self.order.get_computed_fee()
 
         # TODO manage partially filled
 
@@ -52,19 +58,25 @@ class FillOrderState(OrderState):
         Replace the order state by a close state
         `force_close = True` because we know that the order is successfully filled.
         """
-        self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
-                               f" (ID: {self.order.order_id}) filled on {self.order.exchange_manager.exchange_name}")
+        try:
+            self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
+                                   f" (ID: {self.order.order_id}) filled on {self.order.exchange_manager.exchange_name}")
 
-        # Cancel linked orders
-        for linked_order in self.order.linked_orders:
-            await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
+            # Cancel linked orders
+            for linked_order in self.order.linked_orders:
+                await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
 
-        # update portfolio with filled order
-        async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
-            await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
+            # update portfolio with filled order
+            async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
+                await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
 
-        # set close state
-        self.order.state = CloseOrderState(self.order,
-                                           is_from_exchange_data=self.is_from_exchange_data,
-                                           force_close=True)
-        await self.order.state.initialize()
+            # notify order filled
+            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, True)
+
+            # set close state
+            self.order.state = CloseOrderState(self.order,
+                                               is_from_exchange_data=self.is_from_exchange_data,
+                                               force_close=True)  # TODO force ?
+            await self.order.state.initialize()
+        except Exception as e:
+            get_logger(self.get_logger()).exception(e, True, f"Fail to execute fill complete action : {e}.")
