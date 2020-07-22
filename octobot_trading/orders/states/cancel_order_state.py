@@ -54,8 +54,7 @@ class CancelOrderState(OrderState):
         Replace the order state by a close state
         `force_close = True` because we know that the order is successfully cancelled.
         """
-        self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
-                               f" (ID: {self.order.order_id}) cancelled on {self.order.exchange_manager.exchange_name}")
+        self.log_order_event_message("cancelled")
 
         self.order.state = CloseOrderState(self.order,
                                            is_from_exchange_data=self.is_from_exchange_data,

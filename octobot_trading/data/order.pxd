@@ -93,7 +93,6 @@ cdef class Order(Initializable):
     cdef void _update_taker_maker(self)
 
     cpdef str to_string(self)
-    cpdef cancel_order(self)
     cpdef add_linked_order(self, Order order)
     cpdef tuple get_currency_and_market(self)
     cpdef double get_total_fees(self, str currency)

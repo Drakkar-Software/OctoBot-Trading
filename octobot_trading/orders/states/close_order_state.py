@@ -41,8 +41,7 @@ class CloseOrderState(OrderState):
         """
         Handle order to trade conversion
         """
-        self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
-                               f" (ID: {self.order.order_id}) closed on {self.order.exchange_manager.exchange_name}")
+        self.log_order_event_message("closed")
 
         # add to trade history and notify
         await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
