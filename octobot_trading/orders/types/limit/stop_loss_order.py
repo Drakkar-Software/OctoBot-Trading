@@ -22,8 +22,8 @@ class StopLossOrder(LimitOrder):
         super().__init__(trader, side)
         self.trigger_above = self.side is TradeOrderSide.BUY
 
-    async def on_trade_creation(self):
-        await LimitOrder.on_trade_creation(self)
+    async def on_filled(self):
+        await LimitOrder.on_filled(self)
         if not self.trader.simulate:
             await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET
                                                       if self.side is TradeOrderSide.SELL

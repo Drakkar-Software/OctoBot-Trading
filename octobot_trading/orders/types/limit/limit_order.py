@@ -46,13 +46,12 @@ class LimitOrder(Order):
         await wait_for(self.limit_price_hit_event.wait(), timeout=None)
         await self.on_fill()
 
-    async def on_fill(self):
-        await Order.on_fill(self)
+    async def on_fill(self, force_fill=False):
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
         self.filled_price = self.origin_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
-        await self.on_fill_complete()
+        await Order.on_fill(self, force_fill=force_fill)
 
     def clear(self):
         if self.wait_for_hit_event_task is not None:
