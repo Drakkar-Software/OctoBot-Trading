@@ -38,6 +38,9 @@ class OrderState(Initializable):
         # if this state has been created from exchange data or OctoBot internal mechanism
         self.is_from_exchange_data = is_from_exchange_data
 
+        # the updating task
+        self.updating_task = None
+
     def is_pending(self) -> bool:
         """
         :return: True if the state is pending for update
@@ -98,7 +101,7 @@ class OrderState(Initializable):
         Update the order state
         Try to fix the pending state or terminate
         """
-        if self.is_pending() and self.state is not OrderStates.REFRESHING:
+        if self.is_pending() and self.state is not OrderStates.REFRESHING and self.updating_task is None:
             await self.synchronize()
         else:
             await self.terminate()
@@ -146,7 +149,7 @@ class OrderState(Initializable):
         else:
             self.state = previous_state
         if retry_on_fail:
-            return await self.postpone_synchronization(timeout=retry_timeout)
+            self.updating_task = asyncio.create_task(self.postpone_synchronization(timeout=retry_timeout))
         return None
 
     async def postpone_synchronization(self, timeout=0):
@@ -154,4 +157,20 @@ class OrderState(Initializable):
         Postpone the synchronization process
         :param timeout: the time to wait before retrying synchronization
         """
-        asyncio.get_event_loop().call_later(timeout, self.synchronize, asyncio.get_event_loop())
+        await asyncio.sleep(timeout)
+        await self.synchronize()
+
+    def cancel_synchronization(self):
+        """
+        Cancel the synchronization task if exists
+        """
+        if self.updating_task is not None:
+            self.updating_task.cancel()
+            self.updating_task = None
+
+    async def clear(self):
+        """
+        Clear references
+        """
+        self.cancel_synchronization()
+        self.order = None
