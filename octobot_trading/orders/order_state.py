@@ -44,6 +44,18 @@ class OrderState(Initializable):
         """
         return self.state is OrderStates.UNKNOWN
 
+    def is_refreshing(self) -> bool:
+        """
+        :return: True if the state is updating
+        """
+        return self.state is OrderStates.REFRESHING
+
+    def is_open(self) -> bool:
+        """
+        :return: True if the Order is considered as open
+        """
+        return not (self.is_filled() or self.is_canceled() or self.is_closed())
+
     def is_filled(self) -> bool:
         """
         :return: True if the Order is considered as filled

@@ -21,6 +21,8 @@ cdef class OrderState(Initializable):
 
     cdef public object state # item of OrderStates
 
+    cpdef bint is_refreshing(self)
+    cpdef bint is_open(self)
     cpdef bint is_pending(self)
     cpdef bint is_filled(self)
     cpdef bint is_closed(self)
