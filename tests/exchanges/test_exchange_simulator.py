@@ -18,12 +18,13 @@ import pytest
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES_MAKER, \
     CONFIG_SIMULATOR_FEES_TAKER
 from octobot_trading.enums import FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, TraderOrderType
+from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
 # Import required fixtures
 from tests import event_loop
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_config, backtesting_exchange_manager, \
     DEFAULT_BACKTESTING_SYMBOL, DEFAULT_BACKTESTING_TF, DEFAULT_BACKTESTING_SPLIT_SYMBOL, DEFAULT_BACKTESTING_CURRENCY, \
-    DEFAULT_BACKTESTING_MARKET, fake_backtesting, cancel_ccxt_throttle_task
+    DEFAULT_BACKTESTING_MARKET, fake_backtesting
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

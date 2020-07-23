@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
 from octobot_trading.constants import OHLCV_CHANNEL
 from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
@@ -155,3 +157,10 @@ def get_base_currency(exchange_manager, pair) -> str:
 
 def get_fees(exchange_manager, symbol) -> dict:
     return exchange_manager.exchange.get_fees(symbol)
+
+
+def cancel_ccxt_throttle_task():
+    for task in asyncio.all_tasks():
+        # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise
+        if str(task._coro).startswith("<coroutine object throttle.<locals>.run at"):
+            task.cancel()

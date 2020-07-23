@@ -19,7 +19,8 @@ from octobot_commons.errors import ConfigTradingError
 
 # Import required fixtures
 from tests import event_loop, install_tentacles
-from tests.exchanges import create_test_tentacles_config, exchange_builder, cancel_ccxt_throttle_task
+from tests.exchanges import create_test_tentacles_config, exchange_builder
+from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
