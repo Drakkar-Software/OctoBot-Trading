@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 import os
 from shutil import copyfile
 
@@ -27,7 +26,7 @@ from octobot_commons.enums import TimeFrames
 
 from octobot_commons.tests.test_config import load_test_config, TEST_CONFIG_FOLDER
 from octobot_tentacles_manager.constants import USER_TENTACLE_CONFIG_PATH, CONFIG_TENTACLES_FILE
-from octobot_trading.api.exchange import create_exchange_builder
+from octobot_trading.api.exchange import create_exchange_builder, cancel_ccxt_throttle_task
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.traders.trader_simulator import TraderSimulator
 
@@ -148,10 +147,3 @@ async def backtesting_trader(backtesting_config, backtesting_exchange_manager):
     trader_instance = TraderSimulator(backtesting_config, backtesting_exchange_manager)
     await trader_instance.initialize()
     return backtesting_config, backtesting_exchange_manager, trader_instance
-
-
-def cancel_ccxt_throttle_task():
-    for task in asyncio.all_tasks():
-        # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise
-        if str(task._coro).startswith("<coroutine object throttle.<locals>.run at"):
-            task.cancel()

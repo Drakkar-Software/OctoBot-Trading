@@ -18,7 +18,7 @@ import pytest
 from octobot_commons.tests.test_config import load_test_config
 from octobot_commons.constants import CONFIG_CRYPTO_CURRENCIES
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from tests.exchanges import cancel_ccxt_throttle_task
+from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
 pytestmark = pytest.mark.asyncio
 

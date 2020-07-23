@@ -19,10 +19,9 @@ import pytest
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.rest_exchange import RestExchange
+from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
 # All test coroutines will be treated as marked.
-from tests.exchanges import cancel_ccxt_throttle_task
-
 pytestmark = pytest.mark.asyncio
 
 

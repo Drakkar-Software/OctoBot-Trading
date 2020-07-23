@@ -28,7 +28,7 @@ from octobot_trading.trades.trade_factory import create_trade_instance_from_raw,
     create_trade_instance
 
 # All test coroutines will be treated as marked.
-from tests.exchanges import cancel_ccxt_throttle_task
+from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
 pytestmark = pytest.mark.asyncio
 

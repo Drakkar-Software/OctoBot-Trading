@@ -20,7 +20,7 @@ from octobot_trading.data.order import Order, parse_order_type
 from octobot_trading.enums import TradeOrderSide, TradeOrderType, TraderOrderType
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.traders.trader_simulator import TraderSimulator
-from tests.exchanges import cancel_ccxt_throttle_task
+from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
 pytestmark = pytest.mark.asyncio
 
