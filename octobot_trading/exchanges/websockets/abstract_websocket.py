@@ -48,7 +48,7 @@ class AbstractWebsocket:
         raise NotImplementedError("is_handling not implemented")
 
     @abstractmethod
-    async def init_websocket(self, time_frames, trader_pairs):
+    async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
         raise NotImplementedError("init_websocket not implemented")
 
     @abstractmethod

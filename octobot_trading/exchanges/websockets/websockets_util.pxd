@@ -17,4 +17,4 @@
 
 cpdef bint force_disable_web_socket(dict config, str exchange_name)
 cpdef bint check_web_socket_config(dict config, str exchange_name)
-cpdef object search_websocket_class(object websocket_class, str exchange_name)
+cpdef object search_websocket_class(object websocket_class, str exchange_name, object tentacles_setup_config)

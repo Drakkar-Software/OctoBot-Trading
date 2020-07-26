@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_commons.tentacles_management.class_inspector import get_all_classes_from_parent
 from octobot_tentacles_manager.api.configurator import is_tentacle_activated_in_tentacles_setup_config
 from octobot_trading.exchanges.types.future_exchange import FutureExchange
 from octobot_trading.exchanges.types.margin_exchange import MarginExchange
@@ -40,9 +41,10 @@ def get_rest_exchange_class(exchange_type, tentacles_setup_config):
 
 
 def _search_exchange_class_from_exchange_type(exchange_type, exchange_class, tentacles_setup_config):
-    for exchange_candidate in exchange_class.__subclasses__():
+    for exchange_candidate in get_all_classes_from_parent(exchange_class):
         try:
             if exchange_candidate.get_name() == exchange_type.__name__ and \
+                    tentacles_setup_config is not None and \
                     is_tentacle_activated_in_tentacles_setup_config(tentacles_setup_config,
                                                                     exchange_candidate.__name__):
                 return exchange_candidate

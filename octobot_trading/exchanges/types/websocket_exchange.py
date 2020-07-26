@@ -36,6 +36,7 @@ class WebsocketExchange:
     MAX_DELAY = HOURS_TO_SECONDS
     EXCHANGE_FEEDS = {}
     INIT_REQUIRING_EXCHANGE_FEEDS = set()
+    REQUIRED_ACTIVATED_TENTACLES = []
 
     def __init__(self,
                  exchange_manager: object,
