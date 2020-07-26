@@ -15,13 +15,12 @@
 #  License along with this library.
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
-from octobot_trading.trades.trade_factory import create_trade_from_order
 
 
 class CloseOrderState(OrderState):
     def __init__(self, order, is_from_exchange_data, force_close=False):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.CLOSED if is_from_exchange_data or force_close or self.order.is_simulated \
+        self.state = OrderStates.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
             else OrderStates.CLOSING
 
     def is_pending(self) -> bool:
@@ -45,10 +44,7 @@ class CloseOrderState(OrderState):
 
         # add to trade history and notify
         await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-            create_trade_from_order(self.order))
-
-        # notify order trade created
-        await self.order.on_trade_creation()
+            self.order.trader.convert_order_to_trade())
 
         # remove order from open_orders
         self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)

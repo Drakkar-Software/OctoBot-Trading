@@ -15,13 +15,12 @@
 #  License along with this library.
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
-from octobot_trading.orders.states.close_order_state import CloseOrderState
 
 
 class OpenOrderState(OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.OPEN if is_from_exchange_data or self.order.is_simulated or self.order.is_self_managed() else OrderStates.OPENING
+        self.state = OrderStates.OPEN if is_from_exchange_data or self.order.simulated or self.order.is_self_managed() else OrderStates.OPENING
 
     def is_open(self) -> bool:
         """
@@ -47,10 +46,7 @@ class OpenOrderState(OrderState):
             await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, True)
 
             # set close state
-            self.order.state = CloseOrderState(self.order,
-                                               is_from_exchange_data=self.is_from_exchange_data,
-                                               force_close=True)
-            await self.order.state.initialize()
+            self.order.on_close(force_close=True)  # TODO force ?
 
     async def terminate(self):
         """

@@ -24,7 +24,7 @@ from octobot_trading.enums import OrderStatus, TraderOrderType
 from octobot_trading.orders.order_adapter import check_and_adapt_order_details_if_necessary
 from octobot_trading.orders.order_factory import create_order_instance
 from octobot_trading.orders.order_util import get_pre_order_data
-from octobot_trading.orders.states.cancel_order_state import CancelOrderState
+from octobot_trading.trades.trade_factory import create_trade_from_order
 from octobot_trading.util import is_trader_enabled, get_pairs, get_market_pair
 from octobot_trading.util.initializable import Initializable
 
@@ -157,8 +157,7 @@ class Trader(Initializable):
         if order and ((not order.is_cancelled() and not order.is_filled()) or is_cancelled_from_exchange):
             async with order.lock:
                 # always cancel this order first to avoid infinite loop followed by deadlock
-                order.state = CancelOrderState(order, is_cancelled_from_exchange)
-                await order.state.initialize(ignored_order=ignored_order)
+                await order.on_cancel(is_from_exchange_data=is_cancelled_from_exchange, ignored_order=ignored_order)
                 if await self._handle_order_cancellation(order, is_cancelled_from_exchange):
                     self.logger.info(f"Cancelled order: {order} on {self.exchange_manager.exchange_name}")
                     if should_notify:
@@ -296,3 +295,11 @@ class Trader(Initializable):
 
     def parse_order_id(self, order_id):
         return order_id
+
+
+def convert_order_to_trade(order):
+    """
+    Convert an order instance to Trade
+    :return: the new Trade instance from order
+    """
+    return create_trade_from_order(order)

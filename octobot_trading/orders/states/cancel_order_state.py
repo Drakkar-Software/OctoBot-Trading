@@ -13,16 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
-from octobot_trading.orders.states.close_order_state import CloseOrderState
 
 
 class CancelOrderState(OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.CANCELING if not self.order.is_simulated else OrderStates.CANCELED
+        self.state = OrderStates.CANCELING if not self.order.simulated else OrderStates.CANCELED
 
     def is_pending(self) -> bool:
         return self.state is OrderStates.CANCELING
@@ -33,7 +31,7 @@ class CancelOrderState(OrderState):
     def is_canceled(self) -> bool:
         return self.state is OrderStates.CANCELED
 
-    async def initialize_impl(self, ignored_order: Order = None) -> None:
+    async def initialize_impl(self, ignored_order = None) -> None:
         # always cancel this order first to avoid infinite loop followed by deadlock
         for linked_order in self.order.linked_orders:
             if linked_order is not ignored_order:
@@ -56,10 +54,8 @@ class CancelOrderState(OrderState):
         """
         self.log_order_event_message("cancelled")
 
-        self.order.state = CloseOrderState(self.order,
-                                           is_from_exchange_data=self.is_from_exchange_data,
-                                           force_close=True)
-        await self.order.state.initialize()
+        # set close state
+        self.order.on_close(force_close=True)  # TODO force ?
 
         # update portfolio after close
         async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:

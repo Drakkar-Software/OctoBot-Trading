@@ -19,12 +19,12 @@ from asyncio import Lock
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.constants import ORDERS_CHANNEL
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns, TradeOrderType
 from octobot_trading.orders.order_util import get_fees_for_currency, parse_order_status
+from octobot_trading.orders.states.cancel_order_state import CancelOrderState
+from octobot_trading.orders.states.close_order_state import CloseOrderState
 from octobot_trading.orders.states.fill_order_state import FillOrderState
 from octobot_trading.orders.states.open_order_state import OpenOrderState
 from octobot_trading.util.initializable import Initializable
@@ -228,8 +228,17 @@ class Order(Initializable):
         return self.state.is_closed()
 
     async def on_fill(self, force_fill=False):
-        self.state = FillOrderState(self, is_from_exchange_data=force_fill)
+        self.state = FillOrderState(self, is_from_exchange_data=self.state.is_from_exchange_data)
         await self.state.initialize(force=force_fill)
+
+    async def on_close(self, force_close=False):
+        self.state = CloseOrderState(self, is_from_exchange_data=self.state.is_from_exchange_data)
+        await self.state.initialize(force=force_close)
+
+    async def on_cancel(self, is_from_exchange_data=False, force_cancel=False, ignored_order=None):
+        self.state = CancelOrderState(self,
+                                      is_from_exchange_data=self.state.is_from_exchange_data or is_from_exchange_data)
+        await self.state.initialize(force=force_cancel, ignored_order=ignored_order)
 
     async def on_filled(self):
         """

@@ -13,17 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
-from octobot_trading.orders.states.close_order_state import CloseOrderState
 
 
 class FillOrderState(OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.FILLING if not self.order.is_simulated else OrderStates.FILLED
+        self.state = OrderStates.FILLING if not self.order.simulated else OrderStates.FILLED
 
     def is_pending(self) -> bool:
         # TODO : Should also include OrderStates.PARTIALLY_FILLED ?
@@ -73,9 +71,7 @@ class FillOrderState(OrderState):
             await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, True)
 
             # set close state
-            self.order.state = CloseOrderState(self.order,
-                                               is_from_exchange_data=self.is_from_exchange_data,
-                                               force_close=True)  # TODO force ?
+            self.order.on_close(force_close=True)  # TODO force ?
 
             # call order on_filled callback
             await self.order.on_filled()
@@ -83,4 +79,4 @@ class FillOrderState(OrderState):
             # finalize trade creation
             await self.order.state.initialize()
         except Exception as e:
-            get_logger(self.get_logger()).exception(e, True, f"Fail to execute fill complete action : {e}.")
+            self.get_logger().exception(e, True, f"Fail to execute fill complete action : {e}.")
