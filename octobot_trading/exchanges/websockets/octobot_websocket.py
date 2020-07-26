@@ -42,8 +42,9 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         self.is_websocket_running = False
         self.is_websocket_authenticated = False
 
-    async def init_websocket(self, time_frames, trader_pairs):
-        self.exchange_class = get_exchange_websocket_from_name(self.exchange_manager.exchange_name)
+    async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
+        self.exchange_class = get_exchange_websocket_from_name(self.exchange_manager.exchange_name,
+                                                               self.exchange_manager.tentacles_setup_config)
         self.trader_pairs = trader_pairs
         self.time_frames = time_frames
 
@@ -112,8 +113,8 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         return cls.__name__
 
     @classmethod
-    def has_name(cls, name: str):
-        return get_exchange_websocket_from_name(name) is not None
+    def has_name(cls, name: str, tentacles_setup_config: object):
+        return get_exchange_websocket_from_name(name, tentacles_setup_config) is not None
 
     async def start_sockets(self):
         if any(self.handled_feeds.values()):
