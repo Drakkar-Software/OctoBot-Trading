@@ -46,7 +46,7 @@ class OpenOrderState(OrderState):
             await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, True)
 
             # set close state
-            self.order.on_close(force_close=True)  # TODO force ?
+            await self.order.on_close(force_close=True)  # TODO force ?
 
     async def terminate(self):
         """

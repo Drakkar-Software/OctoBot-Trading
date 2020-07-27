@@ -164,7 +164,7 @@ class OrderState(Initializable):
         await asyncio.sleep(timeout)
         await self.synchronize()
 
-    async def clear(self):
+    def clear(self):
         """
         Clear references
         """
