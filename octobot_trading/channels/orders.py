@@ -23,6 +23,8 @@ from octobot_trading.orders.order_util import parse_is_closed
 
 
 class OrdersProducer(ExchangeChannelProducer):
+    SHOULD_CHECK_MISSING_OPEN_ORDERS = False
+
     async def push(self, orders, is_closed=False, is_from_bot=True):
         await self.perform(orders, is_closed=is_closed, is_from_bot=is_from_bot)
 
@@ -62,12 +64,13 @@ class OrdersProducer(ExchangeChannelProducer):
                                         is_closed=parse_is_closed(order),
                                         is_updated=changed)
 
-            if symbol is not None:
-                possible_new_order = await self._check_missing_open_orders(symbol, orders) or possible_new_order
-            if possible_new_order:
-                # possibility new order: refresh portfolio to ensure available funds are up to date
-                await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
-                    refresh_real_trader_portfolio()
+            if self.SHOULD_CHECK_MISSING_OPEN_ORDERS:
+                if symbol is not None:
+                    possible_new_order = await self._check_missing_open_orders(symbol, orders) or possible_new_order
+                if possible_new_order:
+                    # possibility new order: refresh portfolio to ensure available funds are up to date
+                    await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+                        refresh_real_trader_portfolio()
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
