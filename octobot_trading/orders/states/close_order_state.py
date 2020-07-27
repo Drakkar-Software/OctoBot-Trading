@@ -23,6 +23,11 @@ class CloseOrderState(OrderState):
         self.state = OrderStates.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
             else OrderStates.CLOSING
 
+    async def initialize_impl(self, forced=False) -> None:
+        if forced:
+            self.state = OrderStates.CLOSED
+        return await super().initialize_impl()
+
     def is_pending(self) -> bool:
         return self.state is OrderStates.CLOSING
 

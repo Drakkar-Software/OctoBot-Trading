@@ -22,6 +22,17 @@ class CancelOrderState(OrderState):
         super().__init__(order, is_from_exchange_data)
         self.state = OrderStates.CANCELING if not self.order.simulated else OrderStates.CANCELED
 
+    async def initialize_impl(self, forced=False, ignored_order=None) -> None:
+        if forced:
+            self.state = OrderStates.CANCELED
+
+        # always cancel this order first to avoid infinite loop followed by deadlock
+        for linked_order in self.order.linked_orders:
+            if linked_order is not ignored_order:
+                await self.order.trader.cancel_order(linked_order, ignored_order=ignored_order)
+
+        await super().initialize_impl()
+
     def is_pending(self) -> bool:
         return self.state is OrderStates.CANCELING
 
@@ -30,14 +41,6 @@ class CancelOrderState(OrderState):
 
     def is_canceled(self) -> bool:
         return self.state is OrderStates.CANCELED
-
-    async def initialize_impl(self, ignored_order = None) -> None:
-        # always cancel this order first to avoid infinite loop followed by deadlock
-        for linked_order in self.order.linked_orders:
-            if linked_order is not ignored_order:
-                await self.order.trader.cancel_order(linked_order, ignored_order=ignored_order)
-
-        await super().initialize_impl()
 
     async def on_order_refresh_successful(self):
         """

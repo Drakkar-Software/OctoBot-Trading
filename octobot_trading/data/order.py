@@ -229,16 +229,16 @@ class Order(Initializable):
 
     async def on_fill(self, force_fill=False):
         self.state = FillOrderState(self, is_from_exchange_data=self.state.is_from_exchange_data)
-        await self.state.initialize(force=force_fill)
+        await self.state.initialize(forced=force_fill)
 
     async def on_close(self, force_close=False):
         self.state = CloseOrderState(self, is_from_exchange_data=self.state.is_from_exchange_data)
-        await self.state.initialize(force=force_close)
+        await self.state.initialize(forced=force_close)
 
     async def on_cancel(self, is_from_exchange_data=False, force_cancel=False, ignored_order=None):
         self.state = CancelOrderState(self,
                                       is_from_exchange_data=self.state.is_from_exchange_data or is_from_exchange_data)
-        await self.state.initialize(force=force_cancel, ignored_order=ignored_order)
+        await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
 
     async def on_filled(self):
         """
