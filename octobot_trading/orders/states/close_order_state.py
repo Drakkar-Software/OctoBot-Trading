@@ -40,6 +40,7 @@ class CloseOrderState(OrderState):
         """
         if self.order.status is OrderStatus.CLOSED:
             self.state = OrderStates.CLOSED
+            await self.update()
 
     async def terminate(self):
         """

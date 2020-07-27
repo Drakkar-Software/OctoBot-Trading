@@ -53,6 +53,7 @@ class FillOrderState(OrderState):
             # TODO compute order fees
             self.order.fee = self.order.get_computed_fee()
 
+            await self.update()
         # TODO manage partially filled
 
     async def terminate(self):
