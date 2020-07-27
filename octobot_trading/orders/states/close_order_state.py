@@ -45,11 +45,14 @@ class CloseOrderState(OrderState):
         """
         Handle order to trade conversion
         """
-        self.log_order_event_message("closed")
+        try:
+            self.log_order_event_message("closed")
 
-        # add to trade history and notify
-        await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-            self.order.trader.convert_order_to_trade(self.order))
+            # add to trade history and notify
+            await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
+                self.order.trader.convert_order_to_trade(self.order))
 
-        # remove order from open_orders
-        self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)
+            # remove order from open_orders
+            self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)
+        except Exception as e:
+            self.get_logger().exception(e, True, f"Fail to execute close state termination : {e}.")
