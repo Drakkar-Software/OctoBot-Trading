@@ -296,10 +296,13 @@ class Trader(Initializable):
     def parse_order_id(self, order_id):
         return order_id
 
+    """
+    Order tools
+    """
 
-def convert_order_to_trade(order):
-    """
-    Convert an order instance to Trade
-    :return: the new Trade instance from order
-    """
-    return create_trade_from_order(order)
+    def convert_order_to_trade(self, order):
+        """
+        Convert an order instance to Trade
+        :return: the new Trade instance from order
+        """
+        return create_trade_from_order(order)

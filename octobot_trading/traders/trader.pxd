@@ -40,7 +40,5 @@ cdef class Trader(Initializable):
 
     # methods
     cpdef str parse_order_id(self, str order_id)
-
     cpdef double set_risk(self, double risk)
-
-cpdef Order convert_order_to_trade(Order order)
+    cpdef Order convert_order_to_trade(self, Order order)
