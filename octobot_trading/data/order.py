@@ -225,7 +225,7 @@ class Order(Initializable):
         return self.state.is_canceled()
 
     def is_closed(self):
-        return self.state.is_closed()
+        return self.state.is_closed() if self.state is not None else self.status == OrderStatus.CLOSED
 
     async def on_fill(self, force_fill=False):
         self.state = FillOrderState(self, is_from_exchange_data=self.state.is_from_exchange_data)

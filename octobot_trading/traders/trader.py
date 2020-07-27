@@ -148,6 +148,7 @@ class Trader(Initializable):
         """
         Cancels the given order and its linked orders, and updates the portfolio, publish in order channel
         if order is from a real exchange.
+        :param should_notify: if a notification should be sent
         :param order: Order to cancel
         :param is_cancelled_from_exchange: When True, will not try to cancel this order on real exchange
         :param ignored_order: Order not to cancel if found in linked orders recursive cancels (ex: avoid cancelling
@@ -157,14 +158,16 @@ class Trader(Initializable):
         if order and ((not order.is_cancelled() and not order.is_filled()) or is_cancelled_from_exchange):
             async with order.lock:
                 # always cancel this order first to avoid infinite loop followed by deadlock
-                await order.on_cancel(is_from_exchange_data=is_cancelled_from_exchange, ignored_order=ignored_order)
-                if await self._handle_order_cancellation(order, is_cancelled_from_exchange):
-                    self.logger.info(f"Cancelled order: {order} on {self.exchange_manager.exchange_name}")
-                    if should_notify:
-                        await self.exchange_manager.exchange_personal_data.handle_order_update_notification(order,
-                                                                                                            True)
+                await self._handle_order_cancellation(order,
+                                                      is_cancelled_from_exchange,
+                                                      ignored_order,
+                                                      should_notify)
 
-    async def _handle_order_cancellation(self, order: Order, is_cancelled_from_exchange: bool) -> bool:
+    async def _handle_order_cancellation(self,
+                                         order: Order,
+                                         is_cancelled_from_exchange: bool,
+                                         ignored_order: Order,
+                                         should_notify: bool):
         success = True
         # if real order: cancel on exchange
         if not self.simulate and not order.is_self_managed() and not is_cancelled_from_exchange:
@@ -178,9 +181,11 @@ class Trader(Initializable):
                 self.logger.debug(f"Successfully cancelled order {order}")
 
         # call CancelState termination
-        await order.state.on_order_refresh_successful()
-        await order.state.terminate()
-        return success
+        await order.on_cancel(force_cancel=success,
+                              is_from_exchange_data=is_cancelled_from_exchange,
+                              ignored_order=ignored_order)
+        if success and should_notify:
+            await self.exchange_manager.exchange_personal_data.handle_order_update_notification(order, True)
 
     async def cancel_order_with_id(self, order_id):
         """

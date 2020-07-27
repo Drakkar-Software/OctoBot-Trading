@@ -27,9 +27,9 @@ class CancelOrderState(OrderState):
             self.state = OrderStates.CANCELED
 
         # always cancel this order first to avoid infinite loop followed by deadlock
-        for linked_order in self.order.linked_orders:
-            if linked_order is not ignored_order:
-                await self.order.trader.cancel_order(linked_order, ignored_order=ignored_order)
+        # for linked_order in self.order.linked_orders:
+        #     if linked_order is not ignored_order:
+        #         await self.order.trader.cancel_order(linked_order, ignored_order=ignored_order)
 
         await super().initialize_impl()
 
@@ -55,12 +55,15 @@ class CancelOrderState(OrderState):
         Replace the order state by a close state
         `force_close = True` because we know that the order is successfully cancelled.
         """
-        self.log_order_event_message("cancelled")
+        try:
+            self.log_order_event_message("cancelled")
 
-        # set close state
-        await self.order.on_close(force_close=True)  # TODO force ?
+            # update portfolio after close
+            async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
+                self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order) \
+                    .update_portfolio_available(self.order, is_new_order=False)
 
-        # update portfolio after close
-        async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
-            self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order) \
-                .update_portfolio_available(self.order, is_new_order=False)
+            # set close state
+            await self.order.on_close(force_close=True)  # TODO force ?
+        except Exception as e:
+            self.get_logger().exception(e, True, f"Fail to execute cancel state termination : {e}.")

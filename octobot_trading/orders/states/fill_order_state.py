@@ -75,10 +75,10 @@ class FillOrderState(OrderState):
             # notify order filled
             await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, True)
 
-            # set close state
-            await self.order.on_close(force_close=True)  # TODO force ?
-
             # call order on_filled callback
             await self.order.on_filled()
+
+            # set close state
+            await self.order.on_close(force_close=True)  # TODO force ?
         except Exception as e:
-            self.get_logger().exception(e, True, f"Fail to execute fill complete action : {e}.")
+            self.get_logger().exception(e, True, f"Fail to execute fill state termination : {e}.")
