@@ -27,6 +27,7 @@ class OpenOrdersUpdater(OrdersProducer):
     ORDERS_STARTING_REFRESH_TIME = 10
     ORDERS_REFRESH_TIME = 20
     ORDERS_UPDATE_LIMIT = 200
+    SHOULD_CHECK_MISSING_OPEN_ORDERS = True
 
     async def initialize(self):
         try:
