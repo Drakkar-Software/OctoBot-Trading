@@ -23,13 +23,13 @@ class Initializable:
         self.is_initialized = False
 
     # calls initialize_impl if not initialized
-    async def initialize(self, force=False):
+    async def initialize(self, force=False, **kwargs):
         if not self.is_initialized or force:
-            await self.initialize_impl()
+            await self.initialize_impl(**kwargs)
             self.is_initialized = True
             return True
         return False
 
     @abstractmethod
-    async def initialize_impl(self):
+    async def initialize_impl(self, **kwargs):
         raise NotImplementedError("initialize_impl not implemented")

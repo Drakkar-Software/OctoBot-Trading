@@ -23,6 +23,11 @@ class FillOrderState(OrderState):
         super().__init__(order, is_from_exchange_data)
         self.state = OrderStates.FILLING if not self.order.simulated else OrderStates.FILLED
 
+    async def initialize_impl(self, forced=False) -> None:
+        if forced:
+            self.state = OrderStates.FILLED
+        return await super().initialize_impl()
+
     def is_pending(self) -> bool:
         # TODO : Should also include OrderStates.PARTIALLY_FILLED ?
         return self.state is OrderStates.FILLING
@@ -75,8 +80,5 @@ class FillOrderState(OrderState):
 
             # call order on_filled callback
             await self.order.on_filled()
-
-            # finalize trade creation
-            await self.order.state.initialize()
         except Exception as e:
             self.get_logger().exception(e, True, f"Fail to execute fill complete action : {e}.")
