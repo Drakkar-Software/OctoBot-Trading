@@ -38,9 +38,6 @@ class OrderState(Initializable):
         # if this state has been created from exchange data or OctoBot internal mechanism
         self.is_from_exchange_data = is_from_exchange_data
 
-        # the updating task
-        self.updating_task = None
-
     def is_pending(self) -> bool:
         """
         :return: True if the state is pending for update
@@ -87,8 +84,7 @@ class OrderState(Initializable):
         """
         Log an order state event
         """
-        self.get_logger().info(f"{self.order.symbol} {self.order.get_name()} at {self.order.origin_price}"
-                               f" (ID: {self.order.order_id}) {state_message}"
+        self.get_logger().info(f"{self.order} {state_message}"
                                f" on {self.order.exchange_manager.exchange_name}")
 
     async def initialize_impl(self) -> None:
@@ -157,7 +153,7 @@ class OrderState(Initializable):
         else:
             self.state = previous_state
         if retry_on_fail:
-            self.updating_task = asyncio.create_task(self.postpone_synchronization(timeout=retry_timeout))
+            await self.postpone_synchronization(timeout=retry_timeout)
         return None
 
     async def postpone_synchronization(self, timeout=0):
@@ -168,17 +164,8 @@ class OrderState(Initializable):
         await asyncio.sleep(timeout)
         await self.synchronize()
 
-    def cancel_synchronization(self):
-        """
-        Cancel the synchronization task if exists
-        """
-        if self.updating_task is not None:
-            self.updating_task.cancel()
-            self.updating_task = None
-
     async def clear(self):
         """
         Clear references
         """
-        self.cancel_synchronization()
         self.order = None

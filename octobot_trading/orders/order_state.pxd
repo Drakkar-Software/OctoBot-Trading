@@ -20,7 +20,6 @@ cdef class OrderState(Initializable):
     cdef object Order # instance of Order
 
     cdef public object state # item of OrderStates
-    cdef object updating_task # asyncio.Task
 
     cpdef bint is_refreshing(self)
     cpdef bint is_open(self)
@@ -28,6 +27,5 @@ cdef class OrderState(Initializable):
     cpdef bint is_filled(self)
     cpdef bint is_closed(self)
     cpdef bint is_canceled(self)
-    cpdef void cancel_synchronization(self)
     cpdef void clear(self)
     cpdef void log_order_event_message(self, str state_message)
