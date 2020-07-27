@@ -49,6 +49,7 @@ class CancelOrderState(OrderState):
         if self.order.status is OrderStatus.CANCELED:
             self.state = OrderStates.CANCELED
             self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()
+            await self.update()
 
     async def terminate(self):
         """
