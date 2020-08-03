@@ -31,6 +31,7 @@ class OHLCVUpdater(OHLCVProducer):
     OHLCV_OLD_LIMIT = 200  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_ON_ERROR_TIME = 5
     OHLCV_MIN_REFRESH_TIME = 1
+    OHLCV_REFRESH_TIME_THRESHOLD = 1.5  # to prevent spamming at candle closing
 
     OHLCV_INITIALIZATION_TIMEOUT = 60
     OHLCV_INITIALIZATION_RETRY_DELAY = 10
@@ -134,19 +135,17 @@ class OHLCVUpdater(OHLCVProducer):
                         current_candle_timestamp: float = last_candle[PriceIndexes.IND_PRICE_TIME.value]
                         should_sleep_time: float = current_candle_timestamp + time_frame_sleep - time.time()
 
+                        # if we're trying to refresh the current candle => useless
                         if last_candle_timestamp == current_candle_timestamp:
-                            should_sleep_time = OHLCVUpdater.OHLCV_MIN_REFRESH_TIME
+                            should_sleep_time = self._ensure_correct_sleep_time(
+                                should_sleep_time + time_frame_sleep + self.OHLCV_REFRESH_TIME_THRESHOLD,
+                                time_frame_sleep)
                         else:
                             # A fresh candle happened
                             last_candle_timestamp = current_candle_timestamp
-                            await self.push(time_frame, pair, candles[:-1], partial=True)   # push only completed candles
+                            await self.push(time_frame, pair, candles[:-1], partial=True)  # push only completed candles
 
-                            if should_sleep_time < OHLCVUpdater.OHLCV_MIN_REFRESH_TIME:
-                                should_sleep_time = OHLCVUpdater.OHLCV_MIN_REFRESH_TIME
-                            elif should_sleep_time > time_frame_sleep:
-                                should_sleep_time = time_frame_sleep
-
-                        await asyncio.sleep(should_sleep_time)
+                        await asyncio.sleep(self._ensure_correct_sleep_time(should_sleep_time, time_frame_sleep))
                     else:
                         # TODO think about asyncio.call_at or call_later
                         await asyncio.sleep(time_frame_sleep)
@@ -160,6 +159,13 @@ class OHLCVUpdater(OHLCVProducer):
             except Exception as e:
                 self.logger.exception(e, True, f"Failed to update ohlcv data for {pair} on {time_frame} : {e}")
                 await asyncio.sleep(self.OHLCV_ON_ERROR_TIME)
+
+    def _ensure_correct_sleep_time(self, sleep_time_candidate, time_frame_sleep):
+        if sleep_time_candidate < OHLCVUpdater.OHLCV_MIN_REFRESH_TIME:
+            return OHLCVUpdater.OHLCV_MIN_REFRESH_TIME
+        elif sleep_time_candidate > time_frame_sleep:
+            return time_frame_sleep
+        return sleep_time_candidate
 
     def _set_initialized(self, pair, time_frame, initialized):
         if pair not in self.initialized_candles_by_tf_by_symbol:
