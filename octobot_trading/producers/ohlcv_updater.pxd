@@ -26,4 +26,5 @@ cdef class OHLCVUpdater(OHLCVProducer):
 
     cdef list _get_traded_pairs(self)
     cdef list _get_time_frames(self)
+    cdef double _ensure_correct_sleep_time(self, double sleep_time_candidate, double time_frame_sleep)
     cdef void _set_initialized(self, str pair, object time_frame, bint initialized)
