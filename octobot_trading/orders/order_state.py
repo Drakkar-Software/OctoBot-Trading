@@ -38,6 +38,9 @@ class OrderState(Initializable):
         # if this state has been created from exchange data or OctoBot internal mechanism
         self.is_from_exchange_data = is_from_exchange_data
 
+        # order state lock
+        self.lock = asyncio.Lock()
+
     def is_pending(self) -> bool:
         """
         :return: True if the state is pending for update
@@ -109,7 +112,8 @@ class OrderState(Initializable):
             self.log_order_event_message("synchronizing")
             await self.synchronize()
         else:
-            await self.terminate()
+            async with self.lock:
+                await self.terminate()
 
     async def synchronize(self) -> None:
         """
@@ -144,7 +148,8 @@ class OrderState(Initializable):
         :param retry_timeout: the retry timeout
         """
         previous_state = self.state
-        self.state = OrderStates.REFRESHING
+        async with self.lock:
+            self.state = OrderStates.REFRESHING
         if await self._refresh_order_from_exchange():
             try:
                 return await self.on_order_refresh_successful()

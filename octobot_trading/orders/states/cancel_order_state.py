@@ -15,6 +15,7 @@
 #  License along with this library.
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
+from octobot_trading.orders.states.order_state_factory import create_order_state
 
 
 class CancelOrderState(OrderState):
@@ -50,6 +51,8 @@ class CancelOrderState(OrderState):
             self.state = OrderStates.CANCELED
             self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()
             await self.update()
+        else:
+            await create_order_state(self.order, is_from_exchange_data=True, ignore_states=[OrderStates.OPEN])
 
     async def terminate(self):
         """

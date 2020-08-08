@@ -16,6 +16,7 @@
 
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
+from octobot_trading.orders.states.order_state_factory import create_order_state
 
 
 class FillOrderState(OrderState):
@@ -54,7 +55,12 @@ class FillOrderState(OrderState):
             self.order.fee = self.order.get_computed_fee()
 
             await self.update()
-        # TODO manage partially filled
+
+        elif self.order.status is OrderStatus.PARTIALLY_FILLED:
+            # TODO manage partially filled
+            pass
+        else:
+            await create_order_state(self.order, is_from_exchange_data=True, ignore_states=[OrderStates.OPEN])
 
     async def terminate(self):
         """
@@ -74,7 +80,7 @@ class FillOrderState(OrderState):
                 await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
 
             # notify order filled
-            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, True)
+            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, False)
 
             # call order on_filled callback
             await self.order.on_filled()

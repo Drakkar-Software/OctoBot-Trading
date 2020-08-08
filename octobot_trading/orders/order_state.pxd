@@ -20,6 +20,7 @@ cdef class OrderState(Initializable):
     cdef object Order # instance of Order
 
     cdef public object state # item of OrderStates
+    cdef public object lock # item of asyncio.Lock
 
     cpdef bint is_refreshing(self)
     cpdef bint is_open(self)
