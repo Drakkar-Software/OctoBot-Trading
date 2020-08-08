@@ -15,10 +15,11 @@
 #  License along with this library.
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
+from octobot_trading.orders.states.order_state_factory import create_order_state
 
 
 class CloseOrderState(OrderState):
-    def __init__(self, order, is_from_exchange_data, force_close=False):
+    def __init__(self, order, is_from_exchange_data, force_close=True):
         super().__init__(order, is_from_exchange_data)
         self.state = OrderStates.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
             else OrderStates.CLOSING
