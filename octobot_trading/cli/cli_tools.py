@@ -72,16 +72,11 @@ async def trades_callback(exchange: str, exchange_id: str, symbol: str, trade: d
                      f"|| OLD_TRADE = {old_trade}")
 
 
-async def orders_callback(exchange: str, exchange_id: str, symbol: str,  order: dict, is_closed, is_updated, is_from_bot):
+async def orders_callback(exchange: str, exchange_id: str, symbol: str,  order: dict, is_new, is_from_bot):
     if get_should_display_callbacks_logs():
         order_string = f"ORDERS : EXCHANGE = {exchange} || SYMBOL = {symbol} ||"
-        if is_closed:
-            # order_string += PrettyPrinter.trade_pretty_printer(exchange, order)
-            order_string += PrettyPrinter.open_order_pretty_printer(exchange, order)
-        else:
-            order_string += PrettyPrinter.open_order_pretty_printer(exchange, order)
-
-        order_string += f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}"
+        order_string += PrettyPrinter.open_order_pretty_printer(exchange, order)
+        order_string += f"|| CREATED = {is_new} || FROM_BOT = {is_from_bot}"
         logging.info(order_string)
 
 

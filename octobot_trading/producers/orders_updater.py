@@ -86,8 +86,8 @@ class CloseOrdersUpdater(OrdersProducer):
                 limit=self.ORDERS_UPDATE_LIMIT)
 
             if close_orders:
-                await self.push(orders=list(map(self.channel.exchange_manager.exchange.clean_order,
-                                                close_orders)),
+                await self.push(orders=list(map(self.channel.exchange_manager.exchange.clean_order, close_orders)),
+                                are_closed=True)
                                 is_closed=True)
 
     async def resume(self) -> None:

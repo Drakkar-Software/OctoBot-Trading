@@ -16,22 +16,20 @@
 from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
+
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer, \
     get_chan
 from octobot_trading.constants import BALANCE_CHANNEL
-from octobot_trading.orders.order_util import parse_is_closed
 
 
 class OrdersProducer(ExchangeChannelProducer):
-    SHOULD_CHECK_MISSING_OPEN_ORDERS = False
+    async def push(self, orders, is_from_bot=False, are_closed=False):
+        await self.perform(orders, is_from_bot=is_from_bot, are_closed=are_closed)
 
-    async def push(self, orders, is_closed=False, is_from_bot=True):
-        await self.perform(orders, is_closed=is_closed, is_from_bot=is_from_bot)
-
-    async def perform(self, orders, is_closed=False, is_from_bot=True):
+    async def perform(self, orders, is_from_bot=False, are_closed=False):
         try:
             symbol = None
-            possible_new_order = False
+            has_new_order = False
             for order in orders:
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
                     self.channel.exchange_manager.exchange.parse_order_symbol(order))
@@ -39,42 +37,67 @@ class OrdersProducer(ExchangeChannelProducer):
                         symbol=symbol):
                     order_id: str = self.channel.exchange_manager.exchange.parse_order_id(order)
 
-                    if is_closed:
-                        # Only possible if closed by OctoBot or if updating closed orders
-                        changed = await self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(
-                            symbol,
-                            order_id,
-                            order,
-                            should_notify=False)
+                    # is this order was not managed by order_manager before
+                    is_new_order = not self.channel.exchange_manager.exchange_personal_data.orders_manager. \
+                        has_order(order_id)
+                    has_new_order |= is_new_order
+
+                    # update this order
+                    if are_closed:
+                        await self._handle_close_order_update(symbol, order_id)
                     else:
-                        changed = \
-                            await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
-                                symbol,
-                                order_id,
-                                order,
-                                should_notify=False)
-                        if changed:
-                            possible_new_order = True
+                        await self._handle_open_order_update(symbol, order, order_id, is_from_bot, is_new_order)
 
-                    if changed:
-                        await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
-                                        get_pair_cryptocurrency(symbol),
-                                        symbol=symbol, order=order,
-                                        is_from_bot=is_from_bot,
-                                        is_closed=parse_is_closed(order),
-                                        is_updated=changed)
+            if not are_closed:
+                await self._handle_post_open_order_update(symbol, orders, has_new_order)
 
-            if self.SHOULD_CHECK_MISSING_OPEN_ORDERS:
-                if symbol is not None:
-                    possible_new_order = await self._check_missing_open_orders(symbol, orders) or possible_new_order
-                if possible_new_order:
-                    # possibility new order: refresh portfolio to ensure available funds are up to date
-                    await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
-                        refresh_real_trader_portfolio()
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
+
+    async def _handle_open_order_update(self, symbol, order, order_id, is_from_bot, is_new_order):
+        """
+        Create or update an open Order from exchange data
+        :param symbol: the order symbol
+        :param order: the order dict
+        :param order_id: the order id
+        :param is_from_bot: If the order was created by OctoBot
+        :param is_new_order: True if this open order has been created
+        """
+        if (await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
+                order_id, order, is_new_order=is_new_order, should_notify=False)):
+            await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                            get_pair_cryptocurrency(symbol),
+                            symbol=symbol, order=order,
+                            is_from_bot=is_from_bot,
+                            is_new=is_new_order)
+
+    async def _handle_close_order_update(self, order, order_id):
+        """
+        Create or update a close Order from exchange data
+        :param order: the order dict
+        :param order_id: the order id
+        """
+        await self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(order_id, order)
+
+    async def _handle_post_open_order_update(self, symbol, orders, has_new_order):
+        """
+        Perform post open Order update actions :
+        - Check if some previously known open order has not been found during update
+        - Force portfolio refresh if a new order has been loaded
+        :param symbol: the update symbol
+        :param orders: the update order dicts
+        :param has_new_order: if a new order has been loaded
+        :return:
+        """
+        if symbol is not None:
+            await self._check_missing_open_orders(symbol, orders) or has_new_order
+
+            # if a new order have been loaded : refresh portfolio to ensure available funds are up to date
+            if has_new_order:
+                await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+                    refresh_real_trader_portfolio()
 
     async def update_order_from_exchange(self, order, should_notify=False) -> bool:
         """
@@ -89,17 +112,10 @@ class OrdersProducer(ExchangeChannelProducer):
         if raw_order is not None:
             raw_order = self.channel.exchange_manager.exchange.clean_order(raw_order)
             self.logger.debug(f"Received update for {order} on {order.exchange_manager.exchange_name}: {raw_order}")
-            should_notify = should_notify or parse_is_closed(raw_order)
+
             return await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
-                order.symbol,
-                order.order_id,
-                raw_order,
-                should_notify=should_notify)
-        else:
-            self.logger.warning(f"Order with id {order.order_id} does not exist: will be considered as cancelled")
-            # cancel order
-            await self.channel.exchange_manager.trader.cancel_order(order, is_cancelled_from_exchange=True)
-        return True
+                order.order_id, raw_order, should_notify=should_notify)
+        return False
 
     async def _check_missing_open_orders(self, symbol, orders):
         """
@@ -120,15 +136,14 @@ class OrdersProducer(ExchangeChannelProducer):
             self.logger.warning("Open orders are missing, synchronizing with exchange...")
             for missing_order_id in missing_order_ids:
                 try:
-                    await self.update_order_from_exchange(
-                        self.channel.exchange_manager.exchange_personal_data.orders_manager.get_order(missing_order_id),
-                        should_notify=True)
+                    order_to_update = self.channel.exchange_manager.exchange_personal_data.orders_manager.\
+                        get_order(missing_order_id)
+                    if order_to_update.state is not None:
+                        await order_to_update.state.synchronize()
                 except KeyError:
                     self.logger.error(f"Order with id {missing_order_id} could not be synchronized")
-            return True
-        return False
 
-    async def send(self, cryptocurrency, symbol, order, is_from_bot=True, is_closed=False, is_updated=False):
+    async def send(self, cryptocurrency, symbol, order, is_from_bot=True, is_new=False):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
@@ -136,8 +151,7 @@ class OrdersProducer(ExchangeChannelProducer):
                 "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "order": order,
-                "is_closed": is_closed,
-                "is_updated": is_updated,
+                "is_new": is_new,
                 "is_from_bot": is_from_bot
             })
 
