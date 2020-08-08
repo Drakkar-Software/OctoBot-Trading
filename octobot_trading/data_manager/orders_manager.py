@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 from collections import OrderedDict
 
 from octobot_commons.logging.logging_util import get_logger
@@ -51,7 +52,9 @@ class OrdersManager(Initializable):
 
     async def upsert_order_from_raw(self, order_id, raw_order) -> bool:
         if not self.has_order(order_id):
-            self.orders[order_id] = self._create_order_from_raw(raw_order)
+            new_order = self._create_order_from_raw(raw_order)
+            await new_order.initialize()
+            self.orders[order_id] = new_order
             self._check_orders_size()
             return True
         return await _update_order_from_raw(self.orders[order_id], raw_order)
