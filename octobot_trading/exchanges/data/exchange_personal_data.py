@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import BALANCE_CHANNEL, ORDERS_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, \
@@ -97,93 +99,61 @@ class ExchangePersonalData(Initializable):
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update portfolio profitability : {e}")
 
-    async def handle_order_update_from_raw(self, symbol, order_id, raw_order, should_notify: bool = True) -> bool:
+    async def handle_order_update_from_raw(self, order_id, raw_order,
+                                           is_new_order: bool = False,
+                                           should_notify: bool = True) -> bool:
         try:
             changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order)
 
             if changed:
-                if await self._handle_order_post_update(self.orders_manager.get_order(order_id),
-                                                        should_notify=should_notify):
-                    # when the order is removed from orders_manager
-                    return changed
+                updated_order = self.orders_manager.get_order(order_id)
+                asyncio.create_task(updated_order.state.on_order_refresh_successful())
 
                 if should_notify:
-                    await self.handle_order_update_notification(self.orders_manager.get_order(order_id), changed)
+                    await self.handle_order_update_notification(updated_order, is_new_order)
 
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
             return False
 
-    async def handle_order_instance_update(self, order, should_notify: bool = True):
+    async def handle_order_instance_update(self, order, is_new_order: bool = False, should_notify: bool = True):
         try:
             changed: bool = self.orders_manager.upsert_order_instance(order)
 
             if changed:
-                if await self._handle_order_post_update(order):
-                    # when the order is removed from orders_manager
-                    return changed
+                asyncio.create_task(order.state.on_order_refresh_successful())
 
                 if should_notify:
-                    await self.handle_order_update_notification(order, changed)
+                    await self.handle_order_update_notification(order, is_new_order)
 
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order instance : {e}")
             return False
 
-    async def handle_order_update_notification(self, order, changed):
+    async def handle_order_update_notification(self, order, is_new_order):
         """
         Notify Orders channel for Order update
         :param order: the updated order
-        :param changed: True if the order was updated
+        :param is_new_order: True if the order was created during update
         """
         await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
             .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
                   symbol=order.symbol,
                   order=order.to_dict(),
                   is_from_bot=order.is_from_this_octobot,
-                  is_closed=order.is_closed(),
-                  is_updated=changed)
+                  is_new=is_new_order)
 
-    async def _handle_order_post_update(self, order, should_notify: bool=True) -> bool:
+    async def handle_closed_order_update(self, order_id, raw_order) -> bool:
         """
-        Handle order status updates (OrderStatus.FILLED, OrderStatus.CLOSED)
-        :param order: the updated order
-        :return True if an action was performed
+        Handle closed order creation or update
+        :param order_id: the closed order id
+        :param raw_order: the closed order dict
+        :return: True if the closed order has been created or updated
         """
-        # TODO manage OrderStatus.PARTIALLY_FILLED
-        if order.is_closed():
-            return await self.handle_closed_order_update(order.symbol, order.order_id, order.to_dict(),
-                                                         should_notify=should_notify)
-        return False
-
-    async def handle_closed_order_update(self, symbol, order_id, raw_order,
-                                         should_notify: bool = True,
-                                         is_cancelled_from_exchange: bool = True) -> bool:
         try:
-            existing_order = await self.orders_manager.upsert_order_close_from_raw(order_id, raw_order)
-            if existing_order is not None:
-                if existing_order.is_cancelled():
-                    await self.trader.cancel_order(existing_order,
-                                                   is_cancelled_from_exchange=is_cancelled_from_exchange,
-                                                   should_notify=should_notify)
-                    # self.trader.cancel_order will already notify
-                    should_notify = False
-                elif existing_order.is_filled() or existing_order.is_closed():
-                    await self.trader.close_filled_order(existing_order)
-                else:
-                    self.logger.error(f"Unknown closed order status: {existing_order.status} for order: {raw_order}")
-                if should_notify:
-                    await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-                        .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
-                              symbol=symbol,
-                              order=existing_order.to_dict(),
-                              is_from_bot=existing_order.is_from_this_octobot,
-                              is_closed=existing_order.is_closed(),
-                              is_updated=True)
-                return True
-            return False
+            return await self.orders_manager.upsert_order_close_from_raw(order_id, raw_order) is not None
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
             return False
