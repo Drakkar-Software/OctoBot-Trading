@@ -27,6 +27,7 @@ from octobot_trading.orders.states.cancel_order_state import CancelOrderState
 from octobot_trading.orders.states.close_order_state import CloseOrderState
 from octobot_trading.orders.states.fill_order_state import FillOrderState
 from octobot_trading.orders.states.open_order_state import OpenOrderState
+from octobot_trading.orders.states.order_state_factory import create_order_state
 from octobot_trading.util.initializable import Initializable
 
 
@@ -77,8 +78,8 @@ class Order(Initializable):
         # raw exchange order type, used to create order dict
         self.exchange_order_type = None
 
-        # default order state
-        self.state = OpenOrderState(self, not self.is_from_this_octobot)
+        # order state is initialized in initialize_impl()
+        self.state = None
 
     @classmethod
     def get_name(cls):
@@ -188,7 +189,7 @@ class Order(Initializable):
         """
         Initialize order status update tasks
         """
-        await self.state.initialize()
+        await create_order_state(self)
         if not self.exchange_manager.is_backtesting:
             # Create a task that supervise order status
             asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY,
@@ -227,22 +228,25 @@ class Order(Initializable):
     def is_closed(self):
         return self.state.is_closed() if self.state is not None else self.status == OrderStatus.CLOSED
 
-    async def on_fill(self, force_fill=False):
-        self.state = FillOrderState(self, is_from_exchange_data=self.state.is_from_exchange_data)
+    async def on_open(self, force_open=False, is_from_exchange_data=False):
+        self.state = OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        await self.state.initialize(forced=force_open)
+
+    async def on_fill(self, force_fill=False, is_from_exchange_data=False):
+        self.state = FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_fill)
 
-    async def on_close(self, force_close=False):
-        self.state = CloseOrderState(self, is_from_exchange_data=self.state.is_from_exchange_data)
+    async def on_close(self, force_close=False, is_from_exchange_data=False):
+        self.state = CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_close)
 
     async def on_cancel(self, is_from_exchange_data=False, force_cancel=False, ignored_order=None):
-        self.state = CancelOrderState(self,
-                                      is_from_exchange_data=self.state.is_from_exchange_data or is_from_exchange_data)
+        self.state = CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
 
     async def on_filled(self):
         """
-        Filled complete callback
+        Filling complete callback
         """
         # nothing to do by default
 
