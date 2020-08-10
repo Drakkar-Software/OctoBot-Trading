@@ -13,12 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from ccxt import InsufficientFunds
-
 from octobot_commons.symbol_util import split_symbol
 from octobot_trading.channels import get_chan, BALANCE_CHANNEL
 from octobot_trading.channels.mode import ModeChannelConsumer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, EvaluatorStates
+from octobot_trading.errors import MissingFunds
 
 
 class AbstractTradingModeConsumer(ModeChannelConsumer):
@@ -50,14 +49,14 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
                 if await self.can_create_order(symbol, state):
                     try:
                         return await self.create_new_orders(symbol, final_note, state, **kwargs)
-                    except InsufficientFunds:
+                    except MissingFunds:
                         try:
                             # second chance: force portfolio update and retry
                             await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer(). \
                                 refresh_real_trader_portfolio(True)
 
                             return await self.create_new_orders(symbol, final_note, state, **kwargs)
-                        except InsufficientFunds as e:
+                        except MissingFunds as e:
                             self.logger.error(f"Failed to create order on second attempt : {e})")
                     except Exception as e:
                         self.logger.exception(e, True, f"Error when creating order: {e}")

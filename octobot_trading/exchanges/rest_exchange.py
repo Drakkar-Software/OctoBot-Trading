@@ -24,6 +24,7 @@ from octobot_commons.constants import MSECONDS_TO_MINUTE, MSECONDS_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
+from octobot_trading.errors import MissingFunds
 from octobot_trading.orders.order_util import parse_is_cancelled
 from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes
@@ -306,6 +307,7 @@ class RestExchange(AbstractExchange):
         except InsufficientFunds as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(e)
+            raise MissingFunds(e)
         except Exception as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.error(e)
