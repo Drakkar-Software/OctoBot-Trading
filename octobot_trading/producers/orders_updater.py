@@ -25,7 +25,7 @@ from octobot_trading.constants import ORDERS_CHANNEL
 class OpenOrdersUpdater(OrdersProducer):
     CHANNEL_NAME = ORDERS_CHANNEL
     ORDERS_STARTING_REFRESH_TIME = 10
-    ORDERS_REFRESH_TIME = 20
+    ORDERS_REFRESH_TIME = 14
     ORDERS_UPDATE_LIMIT = 200
     SHOULD_CHECK_MISSING_OPEN_ORDERS = True
 
@@ -64,8 +64,8 @@ class OpenOrdersUpdater(OrdersProducer):
 
 class CloseOrdersUpdater(OrdersProducer):
     CHANNEL_NAME = ORDERS_CHANNEL
-    ORDERS_REFRESH_TIME = 72
-    ORDERS_UPDATE_LIMIT = 10
+    ORDERS_REFRESH_TIME = 32
+    ORDERS_UPDATE_LIMIT = 200
 
     async def start(self):
         while not self.should_stop:
@@ -88,7 +88,6 @@ class CloseOrdersUpdater(OrdersProducer):
             if close_orders:
                 await self.push(orders=list(map(self.channel.exchange_manager.exchange.clean_order, close_orders)),
                                 are_closed=True)
-                                is_closed=True)
 
     async def resume(self) -> None:
         await super().resume()
