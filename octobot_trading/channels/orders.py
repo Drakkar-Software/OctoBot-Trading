@@ -44,7 +44,7 @@ class OrdersProducer(ExchangeChannelProducer):
 
                     # update this order
                     if are_closed:
-                        await self._handle_close_order_update(symbol, order_id)
+                        await self._handle_close_order_update(order_id, order)
                     else:
                         await self._handle_open_order_update(symbol, order, order_id, is_from_bot, is_new_order)
 
@@ -73,7 +73,7 @@ class OrdersProducer(ExchangeChannelProducer):
                             is_from_bot=is_from_bot,
                             is_new=is_new_order)
 
-    async def _handle_close_order_update(self, order, order_id):
+    async def _handle_close_order_update(self, order_id, order):
         """
         Create or update a close Order from exchange data
         :param order: the order dict
