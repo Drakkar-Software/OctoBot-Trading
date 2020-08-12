@@ -138,12 +138,15 @@ class ExchangePersonalData(Initializable):
         :param order: the updated order
         :param is_new_order: True if the order was created during update
         """
-        await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
-            .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
-                  symbol=order.symbol,
-                  order=order.to_dict(),
-                  is_from_bot=order.is_from_this_octobot,
-                  is_new=is_new_order)
+        try:
+            await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+                .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
+                      symbol=order.symbol,
+                      order=order.to_dict(),
+                      is_from_bot=order.is_from_this_octobot,
+                      is_new=is_new_order)
+        except ValueError as e:
+            self.logger.error(f"Failed to send order update notification : {e}")
 
     async def handle_closed_order_update(self, order_id, raw_order) -> bool:
         """
