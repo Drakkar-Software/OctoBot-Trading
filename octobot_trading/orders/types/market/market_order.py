@@ -25,10 +25,10 @@ class MarketOrder(Order):
         # TODO for real orders : add post sync
         await self.on_fill()
 
-    async def on_fill(self, force_fill=False):
+    async def on_fill(self, force_fill=False, is_from_exchange_data=False):
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
         self.origin_price = self.created_last_price
         self.filled_price = self.created_last_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
-        await Order.on_fill(self, force_fill=force_fill)
+        await Order.on_fill(self, force_fill=force_fill, is_from_exchange_data=is_from_exchange_data)
