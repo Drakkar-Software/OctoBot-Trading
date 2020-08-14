@@ -220,10 +220,10 @@ class Order(Initializable):
         return self.state.is_open()
 
     def is_filled(self):
-        return self.state.is_filled()
+        return self.state.is_filled() or (self.state.is_closed() and self.status is OrderStatus.FILLED)
 
     def is_cancelled(self):
-        return self.state.is_canceled()
+        return self.state.is_canceled() or (self.state.is_closed() and self.status is OrderStatus.CANCELED)
 
     def is_closed(self):
         return self.state.is_closed() if self.state is not None else self.status == OrderStatus.CLOSED
@@ -376,7 +376,6 @@ class Order(Initializable):
 
     def clear(self):
         self.state.clear()
-        self.state = None
         self.trader = None
         self.exchange_manager = None
         self.linked_to = None

@@ -15,17 +15,17 @@
 #  License along with this library.
 
 from octobot_trading.data.order import Order
-from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns
+from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns, OrderStatus
 
 
 class MarketOrder(Order):
     async def update_order_status(self, force_refresh=False):
         if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):
             await self.default_exchange_update_order_status()
-        # TODO for real orders : add post sync
-        await self.on_fill()
+        await self.on_fill(force_fill=True)
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
+        self.status = OrderStatus.FILLED
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
         self.origin_price = self.created_last_price
         self.filled_price = self.created_last_price

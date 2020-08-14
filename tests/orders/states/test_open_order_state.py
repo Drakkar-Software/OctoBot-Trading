@@ -31,4 +31,4 @@ async def test_on_order_refresh_successful(buy_limit_order):
     assert buy_limit_order.state.state is OrderStates.OPEN
     buy_limit_order.status = OrderStatus.FILLED
     await buy_limit_order.state.on_order_refresh_successful()
-    assert buy_limit_order.state.state is OrderStates.FILLED
+    assert buy_limit_order.is_filled()
