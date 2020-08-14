@@ -385,7 +385,7 @@ class TestTrader:
 
         assert len(trades_manager.trades) == 1
 
-        await trader_inst.close_filled_order(limit_sell)
+        await limit_sell.on_fill(force_fill=True)
 
         # market orders not in open orders as they are instantly filled
         assert market_buy not in orders_manager.get_open_orders()
@@ -419,7 +419,7 @@ class TestTrader:
 
         assert not trades_manager.trades
 
-        await trader_inst.close_filled_order(limit_buy)
+        await limit_buy.on_fill(force_fill=True)
 
         assert limit_buy not in orders_manager.get_open_orders()
 
@@ -451,7 +451,7 @@ class TestTrader:
 
         assert not trades_manager.trades
 
-        await trader_inst.close_filled_order(stop_order)
+        await stop_order.on_fill(force_fill=True)
 
         assert stop_order not in orders_manager.get_open_orders()
 
@@ -483,7 +483,7 @@ class TestTrader:
 
         assert not trades_manager.trades
 
-        await trader_inst.close_filled_order(stop_order)
+        await stop_order.on_fill(force_fill=True)
 
         assert stop_order not in orders_manager.get_open_orders()
 
@@ -531,7 +531,7 @@ class TestTrader:
         # Fill only 1st one
         limit_buy.filled_price = 4
         limit_buy.status = OrderStatus.FILLED
-        await trader_inst.close_filled_order(limit_buy)
+        await limit_buy.on_fill(force_fill=True)
 
         # added filled orders as filled trades
         assert len(trades_manager.trades) == 1
@@ -570,7 +570,7 @@ class TestTrader:
 
         assert not trades_manager.trades
 
-        await trader_inst.close_filled_order(limit_buy)
+        await limit_buy.on_fill(force_fill=True)
 
         assert limit_buy not in orders_manager.get_open_orders()
 
@@ -626,7 +626,7 @@ class TestTrader:
 
         limit_sell.filled_price = limit_sell.origin_price
         limit_sell.status = OrderStatus.FILLED
-        await trader_inst.close_filled_order(limit_sell)
+        await limit_sell.on_fill(force_fill=True)
 
         assert market_buy not in orders_manager.get_open_orders()
         assert stop_loss not in orders_manager.get_open_orders()
