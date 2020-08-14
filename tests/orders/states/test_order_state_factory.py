@@ -33,13 +33,15 @@ async def test_create_order_state_open(buy_limit_order):
 async def test_create_order_state_cancel(buy_limit_order):
     buy_limit_order.status = OrderStatus.CANCELED
     await create_order_state(buy_limit_order)
-    assert buy_limit_order.state.state is OrderStates.CLOSED  # (should be OrderStates.FILLED), but instant closed
+    # can be CANCELED or instant CLOSED
+    assert buy_limit_order.state.state in [OrderStates.FILLED, OrderStates.CLOSED]
 
 
 async def test_create_order_state_fill(buy_limit_order):
     buy_limit_order.status = OrderStatus.FILLED
     await create_order_state(buy_limit_order)
-    assert buy_limit_order.state.state is OrderStates.CLOSED  # (should be OrderStates.FILLED), but instant closed
+    # can be FILLED or instant CLOSED
+    assert buy_limit_order.state.state in [OrderStates.FILLED, OrderStates.CLOSED]
 
 
 async def test_create_order_state_close(buy_limit_order):
@@ -61,7 +63,8 @@ async def test_create_order_state_fill_to_open_with_ignore(buy_limit_order):
     await create_order_state(buy_limit_order)
     buy_limit_order.status = OrderStatus.OPEN
     await create_order_state(buy_limit_order, ignore_states=[OrderStates.OPEN])
-    assert buy_limit_order.state.state is OrderStates.CLOSED  # (should be OrderStates.CANCELLED), but instant closed
+    # can be FILLED or instant CLOSED
+    assert buy_limit_order.state.state in [OrderStates.FILLED, OrderStates.CLOSED]
 
 
 async def test_create_order_state_cancel_to_open_with_ignore(buy_limit_order):
@@ -69,4 +72,5 @@ async def test_create_order_state_cancel_to_open_with_ignore(buy_limit_order):
     await create_order_state(buy_limit_order)
     buy_limit_order.status = OrderStatus.OPEN
     await create_order_state(buy_limit_order, ignore_states=[OrderStates.OPEN])
-    assert buy_limit_order.state.state is OrderStates.CLOSED  # currently instant closed
+    # can be CANCELED or instant CLOSED
+    assert buy_limit_order.state.state in [OrderStates.CANCELED, OrderStates.CLOSED]
