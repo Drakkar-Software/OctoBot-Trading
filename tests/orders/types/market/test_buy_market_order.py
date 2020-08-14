@@ -37,13 +37,4 @@ async def test_buy_market_order_trigger(buy_market_order):
     )
     buy_market_order.exchange_manager.is_backtesting = True  # force update_order_status
     await buy_market_order.initialize()
-    buy_market_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
-        buy_market_order
-    )
-    price_events_manager = buy_market_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
-    price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(),
-                             timestamp=buy_market_order.timestamp)])
-    await wait_asyncio_next_cycle()
     assert buy_market_order.is_filled()
