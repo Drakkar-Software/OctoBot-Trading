@@ -37,7 +37,7 @@ class OrdersProducer(ExchangeChannelProducer):
                         symbol=symbol):
                     order_id: str = self.channel.exchange_manager.exchange.parse_order_id(order)
 
-                    # is this order was not managed by order_manager before
+                    # if this order was not managed by order_manager before
                     is_new_order = not self.channel.exchange_manager.exchange_personal_data.orders_manager. \
                         has_order(order_id)
                     has_new_order |= is_new_order

@@ -13,10 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 from collections import OrderedDict
 
 from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus
 from octobot_trading.util.initializable import Initializable
