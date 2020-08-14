@@ -49,13 +49,7 @@ class FillOrderState(OrderState):
         """
         if self.order.status is OrderStatus.FILLED:
             self.state = OrderStates.FILLED
-            self.order.executed_time = self.order.generate_executed_time()
-
-            # TODO compute order fees
-            self.order.fee = self.order.get_computed_fee()
-
             await self.update()
-
         elif self.order.status is OrderStatus.PARTIALLY_FILLED:
             # TODO manage partially filled
             pass
@@ -79,7 +73,10 @@ class FillOrderState(OrderState):
                 await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
 
             # compute trading fees
-            self.order.fee = self.order.get_computed_fee()
+            try:
+                self.order.fee = self.order.get_computed_fee()
+            except KeyError:
+                self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
             # update portfolio with filled order
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:

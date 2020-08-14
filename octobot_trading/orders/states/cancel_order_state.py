@@ -49,7 +49,6 @@ class CancelOrderState(OrderState):
         """
         if self.order.status is OrderStatus.CANCELED:
             self.state = OrderStates.CANCELED
-            self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()
             await self.update()
         else:
             await create_order_state(self.order, is_from_exchange_data=True, ignore_states=[OrderStates.OPEN])
