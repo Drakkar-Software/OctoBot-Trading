@@ -62,6 +62,9 @@ class CancelOrderState(OrderState):
         try:
             self.log_order_event_message("cancelled")
 
+            # set cancel time
+            self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()
+
             # update portfolio after close
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
                 self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order) \

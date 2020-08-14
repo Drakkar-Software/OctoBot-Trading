@@ -136,6 +136,7 @@ class TrailingStopOrder(Order):
         """
         Create an artificial when trailing stop is filled
         """
+        await Order.on_filled(self)
         await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET
                                                   if self.side is TradeOrderSide.SELL
                                                   else TraderOrderType.BUY_MARKET,

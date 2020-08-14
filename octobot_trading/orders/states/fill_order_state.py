@@ -71,9 +71,15 @@ class FillOrderState(OrderState):
         try:
             self.log_order_event_message("filled")
 
+            # set executed time
+            self.order.executed_time = self.order.generate_executed_time()
+
             # Cancel linked orders
             for linked_order in self.order.linked_orders:
                 await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
+
+            # compute trading fees
+            self.order.fee = self.order.get_computed_fee()
 
             # update portfolio with filled order
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
