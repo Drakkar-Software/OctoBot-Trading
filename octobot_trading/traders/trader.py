@@ -153,7 +153,7 @@ class Trader(Initializable):
         a filled order)
         :return: None
         """
-        if order and not order.is_cancelled() and not order.is_filled():
+        if order and order.is_open():
             async with order.lock:
                 # always cancel this order first to avoid infinite loop followed by deadlock
                 await self._handle_order_cancellation(order,
@@ -175,6 +175,8 @@ class Trader(Initializable):
                 self.logger.error(f"Failed to cancel order {order}")
             else:
                 self.logger.debug(f"Successfully cancelled order {order}")
+        else:
+            order.status = OrderStatus.CANCELED
 
         # call CancelState termination
         await order.on_cancel(force_cancel=success,

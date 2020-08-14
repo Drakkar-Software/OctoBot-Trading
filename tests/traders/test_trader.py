@@ -395,8 +395,7 @@ class TestTrader:
         # added filled orders as filled trades
         assert len(trades_manager.trades) == 2
         assert trades_manager.get_trade(market_buy.order_id).status is OrderStatus.FILLED
-        # did not previously update order status therefore it stayed as open
-        assert trades_manager.get_trade(limit_sell.order_id).status is OrderStatus.OPEN
+        assert trades_manager.get_trade(limit_sell.order_id).status is OrderStatus.FILLED
 
         await self.stop(exchange_manager)
 
