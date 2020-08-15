@@ -92,7 +92,7 @@ class OrdersProducer(ExchangeChannelProducer):
         :return:
         """
         if symbol is not None:
-            await self._check_missing_open_orders(symbol, orders) or has_new_order
+            await self._check_missing_open_orders(symbol, orders)
 
             # if a new order have been loaded : refresh portfolio to ensure available funds are up to date
             if has_new_order:

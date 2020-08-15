@@ -17,9 +17,11 @@
 from octobot_trading.util.initializable cimport Initializable
 
 cdef class OrderState(Initializable):
-    cdef public object Order  # instance of Order
+    cdef public object order  # instance of Order
     cdef public object state  # item of OrderStates
     cdef public object lock  # item of asyncio.Lock
+
+    cdef public bint is_from_exchange_data
 
     cpdef bint is_refreshing(self)
     cpdef bint is_open(self)
