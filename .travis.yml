@@ -24,6 +24,7 @@ jobs:
       language: python
       script:
         - pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests
+        - if [ "$TRAVIS_EVENT_TYPE" == "cron" ]; then pytest --durations=0 -rw tests_additional; fi
       after_success:
         - if [ $TRAVIS_PULL_REQUEST == "false" ]; then coveralls; fi
 
@@ -38,6 +39,7 @@ jobs:
         - python3 setup.py install
         - rm -rf $PACKAGE_FOLDER
         - pytest tests
+        - if [ "$TRAVIS_EVENT_TYPE" == "cron" ]; then pytest tests_additional; fi
 
     - name: "Linux amd64 - Python 3.8-dev - Pylint"
       stage: test

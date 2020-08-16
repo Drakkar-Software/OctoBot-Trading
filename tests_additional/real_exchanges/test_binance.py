@@ -19,7 +19,7 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
-from tests.exchanges.real_exchanges.real_exchange_tester import RealExchangeTester
+from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
 # required to catch async loop context exceptions
 from tests import event_loop
 
@@ -27,8 +27,8 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestKucoinRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "kucoin"
+class TestBinanceRealExchangeTester(RealExchangeTester):
+    EXCHANGE_NAME = "binance"
     SYMBOL = "BTC/USDT"
 
     async def test_time_frames(self):
@@ -46,7 +46,9 @@ class TestKucoinRealExchangeTester(RealExchangeTester):
             TimeFrames.HEIGHT_HOURS.value,
             TimeFrames.TWELVE_HOURS.value,
             TimeFrames.ONE_DAY.value,
-            TimeFrames.ONE_WEEK.value
+            TimeFrames.THREE_DAYS.value,
+            TimeFrames.ONE_WEEK.value,
+            TimeFrames.ONE_MONTH.value
         ))
 
     async def test_get_market_status(self):
@@ -63,7 +65,7 @@ class TestKucoinRealExchangeTester(RealExchangeTester):
 
     async def test_get_symbol_prices(self):
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 1500
+        assert len(symbol_prices) == 500
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -78,16 +80,13 @@ class TestKucoinRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
-        # kucoin requires a limit of None, 20 or 100 in order book
-        order_book = await self.get_order_book(limit=20)
-        assert len(order_book[Ecobic.ASKS.value]) == 20
+        order_book = await self.get_order_book()
+        assert len(order_book[Ecobic.ASKS.value]) == 5
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
-        assert len(order_book[Ecobic.BIDS.value]) == 20
+        assert len(order_book[Ecobic.BIDS.value]) == 5
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
-        # note: on ccxt kucoin recent trades are received in reverse order from exchange and therefore should never be
-        # filtered by limit before reversing (or most recent trades are lost)
         recent_trades = await self.get_recent_trades()
         assert len(recent_trades) == 50
         # check trades order (oldest first)
@@ -121,11 +120,11 @@ class TestKucoinRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.HIGH.value]
             assert ticker[Ectc.LOW.value]
             assert ticker[Ectc.BID.value]
-            assert ticker[Ectc.BID_VOLUME.value] is None
+            assert ticker[Ectc.BID_VOLUME.value]
             assert ticker[Ectc.ASK.value]
-            assert ticker[Ectc.ASK_VOLUME.value] is None
-            assert ticker[Ectc.OPEN.value] is None
+            assert ticker[Ectc.ASK_VOLUME.value]
+            assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
-            assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
+            assert ticker[Ectc.PREVIOUS_CLOSE.value]
             assert ticker[Ectc.BASE_VOLUME.value]

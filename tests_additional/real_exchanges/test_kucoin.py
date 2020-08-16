@@ -19,7 +19,7 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
-from tests.exchanges.real_exchanges.real_exchange_tester import RealExchangeTester
+from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
 # required to catch async loop context exceptions
 from tests import event_loop
 
@@ -27,19 +27,26 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestCoinbaseProRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "coinbasepro"
-    SYMBOL = "BTC/USD"
+class TestKucoinRealExchangeTester(RealExchangeTester):
+    EXCHANGE_NAME = "kucoin"
+    SYMBOL = "BTC/USDT"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
         assert all(time_frame in time_frames for time_frame in (
             TimeFrames.ONE_MINUTE.value,
+            TimeFrames.THREE_MINUTES.value,
             TimeFrames.FIVE_MINUTES.value,
             TimeFrames.FIFTEEN_MINUTES.value,
+            TimeFrames.THIRTY_MINUTES.value,
             TimeFrames.ONE_HOUR.value,
+            TimeFrames.TWO_HOURS.value,
+            TimeFrames.FOUR_HOURS.value,
             TimeFrames.SIX_HOURS.value,
-            TimeFrames.ONE_DAY.value
+            TimeFrames.HEIGHT_HOURS.value,
+            TimeFrames.TWELVE_HOURS.value,
+            TimeFrames.ONE_DAY.value,
+            TimeFrames.ONE_WEEK.value
         ))
 
     async def test_get_market_status(self):
@@ -56,7 +63,7 @@ class TestCoinbaseProRealExchangeTester(RealExchangeTester):
 
     async def test_get_symbol_prices(self):
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 300
+        assert len(symbol_prices) == 1500
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -71,13 +78,16 @@ class TestCoinbaseProRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
-        order_book = await self.get_order_book()
-        assert len(order_book[Ecobic.ASKS.value]) == 50
+        # kucoin requires a limit of None, 20 or 100 in order book
+        order_book = await self.get_order_book(limit=20)
+        assert len(order_book[Ecobic.ASKS.value]) == 20
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
-        assert len(order_book[Ecobic.BIDS.value]) == 50
+        assert len(order_book[Ecobic.BIDS.value]) == 20
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
+        # note: on ccxt kucoin recent trades are received in reverse order from exchange and therefore should never be
+        # filtered by limit before reversing (or most recent trades are lost)
         recent_trades = await self.get_recent_trades()
         assert len(recent_trades) == 50
         # check trades order (oldest first)
@@ -89,8 +99,8 @@ class TestCoinbaseProRealExchangeTester(RealExchangeTester):
 
     async def test_get_all_currencies_price_ticker(self):
         tickers = await self.get_all_currencies_price_ticker()
-        # not supported
-        assert tickers is None
+        for symbol, ticker in tickers.items():
+            self._check_ticker(ticker, symbol)
 
     @staticmethod
     def _check_ticker(ticker, symbol, check_content=False):
@@ -108,8 +118,8 @@ class TestCoinbaseProRealExchangeTester(RealExchangeTester):
             Ectc.PREVIOUS_CLOSE.value
         ))
         if check_content:
-            assert ticker[Ectc.HIGH.value] is None
-            assert ticker[Ectc.LOW.value] is None
+            assert ticker[Ectc.HIGH.value]
+            assert ticker[Ectc.LOW.value]
             assert ticker[Ectc.BID.value]
             assert ticker[Ectc.BID_VOLUME.value] is None
             assert ticker[Ectc.ASK.value]

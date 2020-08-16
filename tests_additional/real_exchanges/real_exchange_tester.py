@@ -17,7 +17,7 @@ from ccxt import Exchange
 
 from octobot_commons.constants import MINUTE_TO_SECONDS, MSECONDS_TO_SECONDS
 from octobot_commons.enums import TimeFrames, TimeFramesMinutes
-from tests.exchanges.real_exchanges import get_exchange_manager
+from tests_additional.real_exchanges import get_exchange_manager
 
 
 class RealExchangeTester:
