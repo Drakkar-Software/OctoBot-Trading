@@ -19,7 +19,7 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
-from tests.exchanges.real_exchanges.real_exchange_tester import RealExchangeTester
+from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
 # required to catch async loop context exceptions
 from tests import event_loop
 
@@ -27,15 +27,14 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestBinanceRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "binance"
+class TestBitMaxRealExchangeTester(RealExchangeTester):
+    EXCHANGE_NAME = "bitmax"
     SYMBOL = "BTC/USDT"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
         assert all(time_frame in time_frames for time_frame in (
             TimeFrames.ONE_MINUTE.value,
-            TimeFrames.THREE_MINUTES.value,
             TimeFrames.FIVE_MINUTES.value,
             TimeFrames.FIFTEEN_MINUTES.value,
             TimeFrames.THIRTY_MINUTES.value,
@@ -43,10 +42,8 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
             TimeFrames.TWO_HOURS.value,
             TimeFrames.FOUR_HOURS.value,
             TimeFrames.SIX_HOURS.value,
-            TimeFrames.HEIGHT_HOURS.value,
             TimeFrames.TWELVE_HOURS.value,
             TimeFrames.ONE_DAY.value,
-            TimeFrames.THREE_DAYS.value,
             TimeFrames.ONE_WEEK.value,
             TimeFrames.ONE_MONTH.value
         ))
@@ -56,8 +53,9 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
         assert market_status
         assert market_status[Ecmsc.SYMBOL.value] == self.SYMBOL
         assert market_status[Ecmsc.PRECISION.value]
-        assert market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] >= 1
-        assert market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value] >= 1
+        # on BitMax, precision is a decimal instead of a number of digits
+        assert 0 < market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] < 1
+        assert 0 < market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value] < 1
         assert all(elem in market_status[Ecmsc.LIMITS.value]
                    for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                 Ecmsc.LIMITS_PRICE.value,
@@ -65,7 +63,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
 
     async def test_get_symbol_prices(self):
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 500
+        assert len(symbol_prices) == 10
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -80,10 +78,11 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
+        # limit param is not yet handled on bitmax, consider orderbook with a least 6 bids and asks
         order_book = await self.get_order_book()
-        assert len(order_book[Ecobic.ASKS.value]) == 5
+        assert len(order_book[Ecobic.ASKS.value]) > 5
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
-        assert len(order_book[Ecobic.BIDS.value]) == 5
+        assert len(order_book[Ecobic.BIDS.value]) > 5
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
@@ -126,5 +125,5 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
-            assert ticker[Ectc.PREVIOUS_CLOSE.value]
+            assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value]
