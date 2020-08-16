@@ -59,15 +59,16 @@ class Exchanges(Singleton):
     def get_exchanges_list(self, exchange_name) -> list:
         return list(self.exchanges[exchange_name].values())
 
-    def del_exchange(self, exchange_name, exchange_manager_id) -> None:
+    def del_exchange(self, exchange_name, exchange_manager_id, should_warn=True) -> None:
         try:
             self.exchanges[exchange_name].pop(exchange_manager_id, None)
 
             if not self.exchanges[exchange_name]:
                 self.exchanges.pop(exchange_name, None)
         except KeyError:
-            get_logger(self.__class__.__name__).warning(f"Can't del exchange {exchange_name} "
-                                                        f"with id {exchange_manager_id}")
+            if should_warn:
+                get_logger(self.__class__.__name__).warning(f"Can't del exchange {exchange_name} "
+                                                            f"with id {exchange_manager_id}")
 
     def get_exchange_names(self) -> KeysView:
         return self.exchanges.keys()

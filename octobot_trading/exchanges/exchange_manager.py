@@ -91,14 +91,14 @@ class ExchangeManager(Initializable):
     async def initialize_impl(self):
         await self.create_exchanges()
 
-    async def stop(self):
+    async def stop(self, warning_on_missing_on_exchanges=True):
         for trading_mode in self.trading_modes:
             await trading_mode.stop()
         if self.exchange is not None:
             if not self.exchange_only:
                 await self.stop_exchange_channels()
             await self.exchange.stop()
-            Exchanges.instance().del_exchange(self.exchange.name, self.id)
+            Exchanges.instance().del_exchange(self.exchange.name, self.id, should_warn=warning_on_missing_on_exchanges)
             self.exchange.exchange_manager = None
         if self.exchange_personal_data is not None:
             self.exchange_personal_data.clear()

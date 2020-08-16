@@ -93,7 +93,7 @@ class ExchangeConfig(Initializable):
                 if not self.traded_cryptocurrencies[cryptocurrency]:
                     self._logger.error(
                         f"{self.exchange_manager.exchange_name} is not supporting any {cryptocurrency} trading pair "
-                        f"from current configuration.")
+                        f"from the current configuration.")
                 self.traded_symbol_pairs += self.traded_cryptocurrencies[cryptocurrency]
             else:
                 self._logger.error(f"Current configuration for {cryptocurrency} is not including any trading pair, "
