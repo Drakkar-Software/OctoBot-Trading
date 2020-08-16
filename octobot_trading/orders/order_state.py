@@ -25,6 +25,7 @@ from octobot_trading.util.initializable import Initializable
 
 class OrderState(Initializable):
     DEFAULT_SYNC_RETRY_TIMEOUT = 5
+    MANAGED_STATES = []
 
     def __init__(self, order, is_from_exchange_data):
         super().__init__()
@@ -80,6 +81,12 @@ class OrderState(Initializable):
         """
         return False
 
+    def is_valid(self) -> bool:
+        """
+        :return: True if the Order state matches the current state instance
+        """
+        return self.order.state and self.order.state.state in self.MANAGED_STATES
+
     def get_logger(self):
         """
         :return: the order logger
@@ -101,10 +108,23 @@ class OrderState(Initializable):
 
     async def terminate(self) -> None:
         """
+        Check and prepare terminate_impl environment before calling it
+        """
+        try:
+            async with self.lock:
+                if self.has_terminated or not self.is_valid():
+                    return
+                await self.terminate_impl()
+                self.has_terminated = True
+        except Exception as e:
+            self.get_logger().exception(e, True, f"Fail to execute {self.__class__.__name__} termination : {e}.")
+
+    async def terminate_impl(self) -> None:
+        """
         Implement the state ending process
         Can be portfolio updates, fees request, linked order cancellation, Trade creation etc...
         """
-        raise NotImplementedError("terminate not implemented")
+        raise NotImplementedError("terminate_impl not implemented")
 
     async def update(self) -> None:
         """

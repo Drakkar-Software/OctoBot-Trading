@@ -30,5 +30,6 @@ cdef class OrderState(Initializable):
     cpdef bint is_filled(self)
     cpdef bint is_closed(self)
     cpdef bint is_canceled(self)
+    cpdef bint is_valid(self)
     cpdef void clear(self)
     cpdef void log_order_event_message(self, str state_message)

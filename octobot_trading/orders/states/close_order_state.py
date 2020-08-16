@@ -18,6 +18,8 @@ from octobot_trading.orders.order_state import OrderState
 
 
 class CloseOrderState(OrderState):
+    MANAGED_STATES = [OrderStates.CLOSING, OrderStates.CLOSED]
+
     def __init__(self, order, is_from_exchange_data, force_close=True):
         super().__init__(order, is_from_exchange_data)
         self.state = OrderStates.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
@@ -42,23 +44,15 @@ class CloseOrderState(OrderState):
             self.state = OrderStates.CLOSED
             await self.update()
 
-    async def terminate(self):
+    async def terminate_impl(self):
         """
         Handle order to trade conversion
         """
-        if self.has_terminated:
-            return
+        self.log_order_event_message("closed")
 
-        try:
-            self.log_order_event_message("closed")
+        # add to trade history and notify
+        await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
+            self.order.trader.convert_order_to_trade(self.order))
 
-            # add to trade history and notify
-            await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-                self.order.trader.convert_order_to_trade(self.order))
-
-            self.has_terminated = True
-
-            # remove order from open_orders
-            self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)
-        except Exception as e:
-            self.get_logger().exception(e, True, f"Fail to execute close state termination : {e}.")
+        # remove order from open_orders
+        self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)

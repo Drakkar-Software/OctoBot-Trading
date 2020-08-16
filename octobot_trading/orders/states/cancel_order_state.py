@@ -19,6 +19,8 @@ from octobot_trading.orders.states.order_state_factory import create_order_state
 
 
 class CancelOrderState(OrderState):
+    MANAGED_STATES = [OrderStates.CANCELING, OrderStates.CANCELED]
+
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = OrderStates.CANCELING if not self.order.simulated else OrderStates.CANCELED
@@ -53,28 +55,20 @@ class CancelOrderState(OrderState):
         else:
             await create_order_state(self.order, is_from_exchange_data=True, ignore_states=[OrderStates.OPEN])
 
-    async def terminate(self):
+    async def terminate_impl(self):
         """
         Replace the order state by a close state
         `force_close = True` because we know that the order is successfully cancelled.
         """
-        if self.has_terminated:
-            return
+        self.log_order_event_message("cancelled")
 
-        try:
-            self.log_order_event_message("cancelled")
+        # set cancel time
+        self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()
 
-            # set cancel time
-            self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()
+        # update portfolio after close
+        async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
+            self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order) \
+                .update_portfolio_available(self.order, is_new_order=False)
 
-            # update portfolio after close
-            async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
-                self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order) \
-                    .update_portfolio_available(self.order, is_new_order=False)
-
-            self.has_terminated = True
-
-            # set close state
-            await self.order.on_close(force_close=True)  # TODO force ?
-        except Exception as e:
-            self.get_logger().exception(e, True, f"Fail to execute cancel state termination : {e}.")
+        # set close state
+        await self.order.on_close(force_close=True)  # TODO force ?

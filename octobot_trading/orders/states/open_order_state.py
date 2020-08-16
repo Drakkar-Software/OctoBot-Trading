@@ -19,6 +19,8 @@ from octobot_trading.orders.states.order_state_factory import create_order_state
 
 
 class OpenOrderState(OrderState):
+    MANAGED_STATES = [OrderStates.OPENING, OrderStates.OPEN]
+
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = OrderStates.OPEN if is_from_exchange_data or self.order.simulated or self.order.is_self_managed() \
@@ -29,13 +31,6 @@ class OpenOrderState(OrderState):
         :return: True if the Order is considered as open
         """
         return not (self.is_pending() or self.is_refreshing())
-
-    def is_valid(self) -> bool:
-        """
-        :return: True if the Order state is still open
-        """
-        return self.order.state and self.order.state in [OrderStates.OPEN,
-                                                         OrderStates.OPENING]
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:
@@ -61,18 +56,14 @@ class OpenOrderState(OrderState):
 
             await create_order_state(self.order, is_from_exchange_data=True)
 
-    async def terminate(self):
+    async def terminate_impl(self):
         """
         Should wait for being replaced by a FillOrderState or a CancelOrderState
         """
-        if self.has_terminated:
-            return
         self.log_order_event_message("open")
 
         # notify order manager of a new open order
         await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(self.order)
-
-        self.has_terminated = True
 
     def is_pending(self) -> bool:
         return self.state is OrderStates.OPENING

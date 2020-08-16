@@ -20,6 +20,8 @@ from octobot_trading.orders.states.order_state_factory import create_order_state
 
 
 class FillOrderState(OrderState):
+    MANAGED_STATES = [OrderStates.FILLING, OrderStates.PARTIALLY_FILLED, OrderStates.FILLED]
+
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = OrderStates.FILLING if not self.order.simulated else OrderStates.FILLED
@@ -56,43 +58,36 @@ class FillOrderState(OrderState):
         else:
             await create_order_state(self.order, is_from_exchange_data=True, ignore_states=[OrderStates.OPEN])
 
-    async def terminate(self):
+    async def terminate_impl(self):
         """
         Perform order filling updates
         Replace the order state by a close state
         `force_close = True` because we know that the order is successfully filled.
         """
-        if self.has_terminated:
-            return
+        self.log_order_event_message("filled")
 
+        # set executed time
+        self.order.executed_time = self.order.generate_executed_time()
+
+        # Cancel linked orders
+        for linked_order in self.order.linked_orders:
+            await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
+
+        # compute trading fees
         try:
-            self.log_order_event_message("filled")
+            self.order.fee = self.order.get_computed_fee()
+        except KeyError:
+            self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
-            # set executed time
-            self.order.executed_time = self.order.generate_executed_time()
+        # update portfolio with filled order
+        async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
+            await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
 
-            # Cancel linked orders
-            for linked_order in self.order.linked_orders:
-                await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
+        # notify order filled
+        await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, False)
 
-            # compute trading fees
-            try:
-                self.order.fee = self.order.get_computed_fee()
-            except KeyError:
-                self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
+        # call order on_filled callback
+        await self.order.on_filled()
 
-            # update portfolio with filled order
-            async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
-                await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
-            self.has_terminated = True
-
-            # notify order filled
-            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, False)
-
-            # call order on_filled callback
-            await self.order.on_filled()
-
-            # set close state
-            await self.order.on_close(force_close=True)  # TODO force ?
-        except Exception as e:
-            self.get_logger().exception(e, True, f"Fail to execute fill state termination : {e}.")
+        # set close state
+        await self.order.on_close(force_close=True)  # TODO force ?
