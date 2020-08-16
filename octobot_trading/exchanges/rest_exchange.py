@@ -433,9 +433,12 @@ class RestExchange(AbstractExchange):
     def set_sandbox_mode(self, is_sandboxed):
         try:
             self.client.setSandboxMode(is_sandboxed)
-        except NotSupported:
-            self.logger.warning(f"setSandboxMode is not supported for {self.name} "
-                                f"in type {self.client.options['defaultType']}")
+        except NotSupported as e:
+            default_type = self.client.options.get('defaultType', None)
+            additional_info = f" in type {default_type}" if default_type else ""
+            self.logger.warning(f"{self.name} does not support sandboxing {additional_info}: {e}")
+            # raise exception to stop this exchange and prevent dealing with a real funds exchange
+            raise e
 
     @staticmethod
     def _get_side(order_type):

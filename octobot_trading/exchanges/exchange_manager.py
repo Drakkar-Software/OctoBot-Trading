@@ -91,14 +91,14 @@ class ExchangeManager(Initializable):
     async def initialize_impl(self):
         await self.create_exchanges()
 
-    async def stop(self, warning_on_missing_on_exchanges=True):
+    async def stop(self, warning_on_missing_elements=True):
         for trading_mode in self.trading_modes:
             await trading_mode.stop()
         if self.exchange is not None:
             if not self.exchange_only:
-                await self.stop_exchange_channels()
+                await self.stop_exchange_channels(should_warn=warning_on_missing_elements)
             await self.exchange.stop()
-            Exchanges.instance().del_exchange(self.exchange.name, self.id, should_warn=warning_on_missing_on_exchanges)
+            Exchanges.instance().del_exchange(self.exchange.name, self.id, should_warn=warning_on_missing_elements)
             self.exchange.exchange_manager = None
         if self.exchange_personal_data is not None:
             self.exchange_personal_data.clear()
@@ -109,7 +109,7 @@ class ExchangeManager(Initializable):
         self.trading_modes = []
         self.backtesting = None
 
-    async def stop_exchange_channels(self):
+    async def stop_exchange_channels(self, should_warn=True):
         try:
             for channel_name in list(get_exchange_channels(self.id)):
                 channel = get_chan(channel_name, self.id)
@@ -120,7 +120,8 @@ class ExchangeManager(Initializable):
                 del_chan(channel_name, self.id)
             del_exchange_channel_container(self.id)
         except KeyError:
-            self._logger.error(f"No exchange channel for this exchange (id: {self.id})")
+            if should_warn:
+                self._logger.error(f"No exchange channel for this exchange (id: {self.id})")
 
     async def register_trader(self, trader):
         self.trader = trader

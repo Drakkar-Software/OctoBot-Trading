@@ -49,7 +49,7 @@ class ExchangeBuilder:
             await self._build_exchange_manager()
         except Exception as e:
             # stop exchange manager if an exception occurred when building it
-            await self.exchange_manager.stop(warning_on_missing_on_exchanges=False)
+            await self.exchange_manager.stop(warning_on_missing_elements=False)
             raise e
         return self.exchange_manager
 
