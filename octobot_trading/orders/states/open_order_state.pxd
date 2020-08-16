@@ -17,4 +17,4 @@
 from octobot_trading.orders.order_state cimport OrderState
 
 cdef class OpenOrderState(OrderState):
-    cdef bint has_terminated
+    pass

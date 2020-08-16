@@ -45,7 +45,6 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
         self.logger.debug(f"Entering create_order_if_possible for {symbol}")
         try:
             async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-                pf = self.exchange_manager.exchange_personal_data.portfolio_manager
                 if await self.can_create_order(symbol, state):
                     try:
                         return await self.create_new_orders(symbol, final_note, state, **kwargs)

@@ -41,6 +41,9 @@ class OrderState(Initializable):
         # order state lock
         self.lock = asyncio.Lock()
 
+        # True if terminate() has already been called
+        self.has_terminated = False
+
     def is_pending(self) -> bool:
         """
         :return: True if the state is pending for update

@@ -22,6 +22,7 @@ cdef class OrderState(Initializable):
     cdef public object lock  # item of asyncio.Lock
 
     cdef public bint is_from_exchange_data
+    cdef public bint has_terminated
 
     cpdef bint is_refreshing(self)
     cpdef bint is_open(self)

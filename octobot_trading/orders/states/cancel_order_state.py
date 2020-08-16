@@ -58,6 +58,9 @@ class CancelOrderState(OrderState):
         Replace the order state by a close state
         `force_close = True` because we know that the order is successfully cancelled.
         """
+        if self.has_terminated:
+            return
+
         try:
             self.log_order_event_message("cancelled")
 
@@ -68,6 +71,8 @@ class CancelOrderState(OrderState):
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
                 self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order) \
                     .update_portfolio_available(self.order, is_new_order=False)
+
+            self.has_terminated = True
 
             # set close state
             await self.order.on_close(force_close=True)  # TODO force ?

@@ -24,13 +24,18 @@ class OpenOrderState(OrderState):
         self.state = OrderStates.OPEN if is_from_exchange_data or self.order.simulated or self.order.is_self_managed() \
             else OrderStates.OPENING
 
-        self.has_terminated = False
-
     def is_open(self) -> bool:
         """
         :return: True if the Order is considered as open
         """
         return not (self.is_pending() or self.is_refreshing())
+
+    def is_valid(self) -> bool:
+        """
+        :return: True if the Order state is still open
+        """
+        return self.order.state and self.order.state in [OrderStates.OPEN,
+                                                         OrderStates.OPENING]
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:
@@ -60,13 +65,14 @@ class OpenOrderState(OrderState):
         """
         Should wait for being replaced by a FillOrderState or a CancelOrderState
         """
-        if not self.has_terminated:
-            self.log_order_event_message("open")
+        if self.has_terminated:
+            return
+        self.log_order_event_message("open")
 
-            # notify order manager of a new open order
-            await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(self.order)
+        # notify order manager of a new open order
+        await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(self.order)
 
-            self.has_terminated = True
+        self.has_terminated = True
 
     def is_pending(self) -> bool:
         return self.state is OrderStates.OPENING

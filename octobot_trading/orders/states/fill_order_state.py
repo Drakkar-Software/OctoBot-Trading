@@ -62,6 +62,9 @@ class FillOrderState(OrderState):
         Replace the order state by a close state
         `force_close = True` because we know that the order is successfully filled.
         """
+        if self.has_terminated:
+            return
+
         try:
             self.log_order_event_message("filled")
 
@@ -81,6 +84,7 @@ class FillOrderState(OrderState):
             # update portfolio with filled order
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
                 await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
+            self.has_terminated = True
 
             # notify order filled
             await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, False)
