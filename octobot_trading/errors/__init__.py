@@ -25,3 +25,9 @@ class MissingMinimalExchangeTradeVolume(Exception):
     """
     Raised when a new order is impossible to create due to exchange minimal funds restrictions
     """
+
+
+class TradingModeIncompatibility(Exception):
+    """
+    Raised when a trading mode is incompatible with the current situation
+    """

@@ -25,6 +25,7 @@ from octobot_trading.api.exchange import create_exchange_builder
 from octobot_commons.enums import OctoBotChannelSubjects
 from octobot_trading.constants import CONFIG_EXCHANGE_SANDBOXED, CONFIG_EXCHANGES, CONFIG_EXCHANGE_FUTURE, \
     CONFIG_EXCHANGE_MARGIN, CONFIG_EXCHANGE_SPOT, CONFIG_EXCHANGE_REST_ONLY
+from octobot_trading.errors import TradingModeIncompatibility
 
 OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG = "OctoBotChannelTradingConsumer"
 
@@ -78,8 +79,12 @@ async def _handle_creation(bot_id, action, data):
                       subject=OctoBotChannelSubjects.NOTIFICATION.value,
                       action=action,
                       data={OctoBotChannelTradingDataKeys.EXCHANGE_ID.value: exchange_builder.exchange_manager.id})
+        except TradingModeIncompatibility as e:
+            get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
+                f"Error when initializing trading mode, {data[OctoBotChannelTradingDataKeys.EXCHANGE_NAME.value]} "
+                f"exchange connection is closed to increase performances: {e}")
         except Exception as e:
-            get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(f"Error when creating new exchange {e}")
+            get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(f"Error when creating new exchange: {e}")
 
 
 def _set_exchange_type_details(exchange_builder, config, backtesting):

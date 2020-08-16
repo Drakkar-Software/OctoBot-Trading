@@ -17,6 +17,7 @@ from octobot_commons.constants import CONFIG_WILDCARD
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.api import LOGGER_TAG
+from octobot_trading.errors import TradingModeIncompatibility
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.modes import AbstractTradingMode
 from octobot_trading.util.trading_config_util import get_activated_trading_mode as util_get_activated_trading_mode
@@ -42,13 +43,19 @@ async def create_trading_modes(config: dict,
                                exchange_manager: ExchangeManager,
                                trading_mode_class: AbstractTradingMode.__class__,
                                bot_id: str) -> list:
-    return await _create_trading_modes(trading_mode_class=trading_mode_class,
-                                       config=config,
-                                       exchange_manager=exchange_manager,
-                                       cryptocurrencies=exchange_manager.exchange_config.traded_cryptocurrencies,
-                                       symbols=exchange_manager.exchange_config.traded_symbol_pairs,
-                                       time_frames=exchange_manager.exchange_config.traded_time_frames,
-                                       bot_id=bot_id)
+    is_symbol_wildcard = trading_mode_class.get_is_symbol_wildcard()
+    if is_symbol_wildcard or (not is_symbol_wildcard and exchange_manager.exchange_config.traded_symbol_pairs):
+        return await _create_trading_modes(trading_mode_class=trading_mode_class,
+                                           config=config,
+                                           exchange_manager=exchange_manager,
+                                           cryptocurrencies=exchange_manager.exchange_config.traded_cryptocurrencies,
+                                           symbols=exchange_manager.exchange_config.traded_symbol_pairs,
+                                           time_frames=exchange_manager.exchange_config.traded_time_frames,
+                                           bot_id=bot_id)
+    # Do not create no symbol wildcard trading mode if no trading pair is available
+    raise TradingModeIncompatibility(f"As non symbol-wildcard trading mode, {trading_mode_class.get_name()} requires "
+                                     f"at least one exchange trading pair to be initialized. "
+                                     f"None of the required pairs are available on {exchange_manager.exchange_name}.")
 
 
 async def _create_trading_modes(trading_mode_class: AbstractTradingMode.__class__,
