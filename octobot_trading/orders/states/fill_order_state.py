@@ -80,6 +80,8 @@ class FillOrderState(OrderState):
 
             # update portfolio with filled order
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
+                if not self.is_valid():
+                    return
                 await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
 
             # notify order filled

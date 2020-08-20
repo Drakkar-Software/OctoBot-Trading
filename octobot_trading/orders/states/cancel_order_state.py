@@ -66,6 +66,8 @@ class CancelOrderState(OrderState):
 
             # update portfolio after close
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
+                if not self.is_valid():
+                    return
                 self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order) \
                     .update_portfolio_available(self.order, is_new_order=False)
 

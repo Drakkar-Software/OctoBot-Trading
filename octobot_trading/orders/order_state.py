@@ -170,6 +170,13 @@ class OrderState(Initializable):
         await asyncio.sleep(timeout)
         await self.synchronize()
 
+    def is_valid(self):
+        """
+        Ensure order state is correct
+        :return: True if the order state match the current order
+        """
+        return self.order.state is not self
+
     def clear(self):
         """
         Clear references
