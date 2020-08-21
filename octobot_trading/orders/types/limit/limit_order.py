@@ -14,8 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-from asyncio import wait_for
 
+from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.data.order import Order
 from octobot_trading.enums import TradeOrderSide, ExchangeConstantsMarketPropertyColumns, OrderStatus
 
@@ -41,8 +41,12 @@ class LimitOrder(Order):
             self.wait_for_hit_event_task = asyncio.create_task(self.wait_for_price_hit())
 
     async def wait_for_price_hit(self):
-        await wait_for(self.limit_price_hit_event.wait(), timeout=None)
-        await self.on_fill(force_fill=True)
+        await asyncio.wait_for(self.limit_price_hit_event.wait(), timeout=None)
+        if self.is_open():
+            await self.on_fill(force_fill=True)
+        else:
+            get_logger(self.get_logger_name()).debug(f"Trying to fill a previously filled or canceled order: "
+                                                     f"ignored fill call for {self}")
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
         self.status = OrderStatus.FILLED
