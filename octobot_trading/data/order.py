@@ -217,7 +217,7 @@ class Order(Initializable):
         return get_fees_for_currency(self.fee, currency)
 
     def is_open(self):
-        return self.state.is_open()
+        return self.state is None or self.state.is_open()
 
     def is_filled(self):
         return self.state.is_filled() or (self.state.is_closed() and self.status is OrderStatus.FILLED)
@@ -233,8 +233,10 @@ class Order(Initializable):
         await self.state.initialize(forced=force_open)
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
-        self.state = FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
-        await self.state.initialize(forced=force_fill)
+        if self.is_open():
+            self.on_fill_actions()
+            self.state = FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            await self.state.initialize(forced=force_fill)
 
     async def on_close(self, force_close=False, is_from_exchange_data=False):
         self.state = CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
@@ -243,6 +245,12 @@ class Order(Initializable):
     async def on_cancel(self, is_from_exchange_data=False, force_cancel=False, ignored_order=None):
         self.state = CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
+
+    def on_fill_actions(self):
+        """
+        Perform on_fill actions
+        """
+        self.status = OrderStatus.FILLED
 
     async def on_filled(self):
         """

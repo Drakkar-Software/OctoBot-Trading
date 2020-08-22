@@ -15,7 +15,7 @@
 #  License along with this library.
 
 from octobot_trading.data.order import Order
-from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns, OrderStatus
+from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns
 
 
 class MarketOrder(Order):
@@ -24,11 +24,10 @@ class MarketOrder(Order):
             await self.default_exchange_update_order_status()
         await self.on_fill(force_fill=True)
 
-    async def on_fill(self, force_fill=False, is_from_exchange_data=False):
-        self.status = OrderStatus.FILLED
+    def on_fill_actions(self):
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
         self.origin_price = self.created_last_price
         self.filled_price = self.created_last_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
-        await Order.on_fill(self, force_fill=force_fill, is_from_exchange_data=is_from_exchange_data)
+        Order.on_fill_actions(self)
