@@ -17,7 +17,7 @@ import asyncio
 from asyncio import wait_for
 
 from octobot_trading.data.order import Order
-from octobot_trading.enums import TradeOrderSide, ExchangeConstantsMarketPropertyColumns, OrderStatus
+from octobot_trading.enums import TradeOrderSide, ExchangeConstantsMarketPropertyColumns
 
 
 class LimitOrder(Order):
@@ -44,13 +44,12 @@ class LimitOrder(Order):
         await wait_for(self.limit_price_hit_event.wait(), timeout=None)
         await self.on_fill(force_fill=True)
 
-    async def on_fill(self, force_fill=False, is_from_exchange_data=False):
-        self.status = OrderStatus.FILLED
+    def on_fill_actions(self):
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
         self.filled_price = self.origin_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
-        return await Order.on_fill(self, force_fill=force_fill, is_from_exchange_data=is_from_exchange_data)
+        Order.on_fill_actions(self)
 
     def clear(self):
         if self.wait_for_hit_event_task is not None:
