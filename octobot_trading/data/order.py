@@ -237,6 +237,9 @@ class Order(Initializable):
             self.on_fill_actions()
             self.state = FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
             await self.state.initialize(forced=force_fill)
+        else:
+            get_logger(self.get_logger_name()).debug(f"Trying to fill a previously filled or canceled order: "
+                                                     f"ignored fill call for {self}")
 
     async def on_close(self, force_close=False, is_from_exchange_data=False):
         self.state = CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
