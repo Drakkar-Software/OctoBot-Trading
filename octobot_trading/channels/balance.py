@@ -47,6 +47,9 @@ class BalanceProducer(ExchangeChannelProducer):
             })
 
     async def refresh_real_trader_portfolio(self, force_manual_refresh=False) -> bool:
+        if self.channel.exchange_manager.is_simulated:
+            # simulated portfolio can't be out of sync
+            return True
         if force_manual_refresh or self.channel.exchange_manager.requires_refresh_trigger(BALANCE_CHANNEL):
             self.logger.debug(f"Refreshing portfolio from {self.channel.exchange_manager.get_exchange_name()} exchange")
             return await self._update_portfolio_from_exchange()
