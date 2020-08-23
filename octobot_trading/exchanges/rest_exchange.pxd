@@ -20,13 +20,6 @@ cdef class RestExchange(AbstractExchange):
     cdef public bint is_authenticated
     cdef public bint is_sandboxed
 
-    cdef list info_list
-
-    # balance additional info
-    cdef double free
-    cdef double used
-    cdef double total
-
     cdef object all_currencies_price_ticker
     cdef public object client
 

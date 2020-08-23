@@ -121,18 +121,16 @@ class RestExchange(AbstractExchange):
             self.logger.error(f"Fail to get market status of {symbol}: {e}")
             return {}
 
-    # total (free + used), by currency
     async def get_balance(self, params=None):
+        """
+        fetch balance (free + used) by currency
+        :param params:
+        :return: balance dict
+        """
         if params is None:
             params = {'recvWindow': 10000000}
         try:
             balance = await self.client.fetch_balance(params=params)
-
-            # store portfolio global info
-            self.info_list = balance[CONFIG_PORTFOLIO_INFO]
-            self.free = balance[CONFIG_PORTFOLIO_FREE]
-            self.used = balance[CONFIG_PORTFOLIO_USED]
-            self.total = balance[CONFIG_PORTFOLIO_TOTAL]
 
             # remove not currency specific keys
             balance.pop(CONFIG_PORTFOLIO_INFO, None)
