@@ -314,6 +314,10 @@ class Order(Initializable):
             except KeyError:
                 get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
+        filled_price = raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0)
+        # set average price with real average price if available, use filled_price otherwise
+        average_price = raw_order.get(ExchangeConstantsOrderColumns.AVERAGE.value, 0.0) or filled_price
+
         return self.update(
             symbol=str(raw_order.get(ExchangeConstantsOrderColumns.SYMBOL.value, None)),
             current_price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
@@ -322,8 +326,8 @@ class Order(Initializable):
             status=parse_order_status(raw_order),
             order_id=str(raw_order.get(ExchangeConstantsOrderColumns.ID.value, None)),
             quantity_filled=raw_order.get(ExchangeConstantsOrderColumns.FILLED.value, 0.0),
-            filled_price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
-            average_price=raw_order.get(ExchangeConstantsOrderColumns.AVERAGE.value, 0.0),
+            filled_price=filled_price,
+            average_price=average_price,
             total_cost=raw_order.get(ExchangeConstantsOrderColumns.COST.value, 0.0),
             fee=raw_order.get(ExchangeConstantsOrderColumns.FEE.value, None),
             timestamp=raw_order.get(ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
