@@ -151,16 +151,12 @@ class OrderState(Initializable):
         async with self.lock:
             self.state = OrderStates.REFRESHING
         if await self._refresh_order_from_exchange():
-            try:
-                return await self.on_order_refresh_successful()
-            except Exception as e:
-                self.get_logger().warning(f"Error during order synchronization process : {e}, restoring previous...")
-                self.state = previous_state
+            return
         else:
             self.state = previous_state
         if retry_on_fail:
             await self.postpone_synchronization(timeout=retry_timeout)
-        return None
+        return
 
     async def postpone_synchronization(self, timeout=0):
         """
