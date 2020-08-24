@@ -36,7 +36,7 @@ cdef class Portfolio(Initializable):
     cpdef double get_currency_from_given_portfolio(self, str currency, str portfolio_type=*)
     cpdef bint update_portfolio_from_balance(self, dict balance)
     cpdef void update_portfolio_available(self, Order order, bint is_new_order=*)
-    cpdef void update_portfolio_from_order(self, Order order)
+    cpdef void update_portfolio_from_filled_order(self, Order order)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
     # cpdef dict get_portfolio_from_amount_dict(self, dict amount_dict) can't be cythonized for now
     cpdef void reset(self)
