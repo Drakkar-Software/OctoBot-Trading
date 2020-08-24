@@ -156,7 +156,10 @@ class ExchangePersonalData(Initializable):
         :return: True if the closed order has been created or updated
         """
         try:
-            return await self.orders_manager.upsert_order_close_from_raw(order_id, raw_order) is not None
+            order = await self.orders_manager.upsert_order_close_from_raw(order_id, raw_order)
+            if order is not None:
+                order.state.on_order_refresh_successful()
+            return order is not None
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
             return False

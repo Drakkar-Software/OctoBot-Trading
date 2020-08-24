@@ -48,8 +48,7 @@ class OrdersProducer(ExchangeChannelProducer):
                     else:
                         await self._handle_open_order_update(symbol, order, order_id, is_from_bot, is_new_order)
 
-            if not are_closed:
-                await self._handle_post_open_order_update(symbol, orders, has_new_order)
+            await self._handle_post_open_order_update(symbol, orders, has_new_order)
 
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
