@@ -49,7 +49,7 @@ class OrdersProducer(ExchangeChannelProducer):
                         await self._handle_open_order_update(symbol, order, order_id, is_from_bot, is_new_order)
 
             if not are_closed:
-                await self._handle_post_open_order_update(symbol, orders, has_new_order)
+                await self.handle_post_open_order_update(symbol, orders, has_new_order)
 
         except CancelledError:
             self.logger.info("Update tasks cancelled.")
@@ -81,7 +81,7 @@ class OrdersProducer(ExchangeChannelProducer):
         """
         await self.channel.exchange_manager.exchange_personal_data.handle_closed_order_update(order_id, order)
 
-    async def _handle_post_open_order_update(self, symbol, orders, has_new_order):
+    async def handle_post_open_order_update(self, symbol, orders, has_new_order):
         """
         Perform post open Order update actions :
         - Check if some previously known open order has not been found during update
