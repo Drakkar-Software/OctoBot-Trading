@@ -99,7 +99,7 @@ class Portfolio(Initializable):
         """
         return self.get_currency_from_given_portfolio(currency, portfolio_type)
 
-    def update_portfolio_from_order(self, order):
+    def update_portfolio_from_filled_order(self, order):
         """
         update_portfolio performs the update of the total / available quantity of a currency
         It is called only when an order is filled to update the real quantity of the currency to be set in "total" field

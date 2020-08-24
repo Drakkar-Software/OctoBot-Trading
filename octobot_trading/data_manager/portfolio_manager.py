@@ -60,7 +60,10 @@ class PortfolioManager(Initializable):
         """
         if self.trader.is_enabled:
             if self.trader.simulate:
-                self.portfolio.update_portfolio_from_order(order)
+                if order.is_filled():
+                    self.portfolio.update_portfolio_from_filled_order(order)
+                else:
+                    self.portfolio.update_portfolio_available(order, is_new_order=False)
                 return True
             else:
                 # on real trading: reload portfolio to ensure portfolio sync

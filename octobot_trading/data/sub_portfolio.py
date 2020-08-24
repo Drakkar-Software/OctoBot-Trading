@@ -52,9 +52,9 @@ class SubPortfolio(Portfolio):
         else:
             self.percent = self.DEFAULT_SUB_PORTFOLIO_PERCENT
 
-    def update_portfolio_from_order(self, order):
-        super().update_portfolio_from_order(order)
-        self.parent_portfolio.update_portfolio_from_order(order)
+    def update_portfolio_from_filled_order(self, order):
+        super().update_portfolio_from_filled_order(order)
+        self.parent_portfolio.update_portfolio_from_filled_order(order)
 
     def update_portfolio_available(self, order, is_new_order=False):
         super().update_portfolio_available(order, is_new_order=is_new_order)
