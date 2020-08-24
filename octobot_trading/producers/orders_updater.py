@@ -55,6 +55,8 @@ class OpenOrdersUpdater(OrdersProducer):
             if open_orders:
                 await self.push(orders=list(map(self.channel.exchange_manager.exchange.clean_order, open_orders)),
                                 is_from_bot=is_from_bot)
+            else:
+                await self.handle_post_open_order_update(symbol, open_orders, False)
 
     async def resume(self) -> None:
         await super().resume()
