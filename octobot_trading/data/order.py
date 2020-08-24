@@ -286,7 +286,7 @@ class Order(Initializable):
         result = await self.exchange_manager.exchange.get_order(self.order_id, self.symbol)
         new_status = self.trader.parse_status(result)
         self.is_synchronized_with_exchange = True
-        if new_status is OrderStatus.FILLED:
+        if new_status in {OrderStatus.FILLED, OrderStatus.CLOSED}:
             await self.on_fill()
         elif new_status is OrderStatus.CANCELED:
             await self.trader.cancel_order(self)
