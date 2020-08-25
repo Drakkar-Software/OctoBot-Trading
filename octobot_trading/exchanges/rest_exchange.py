@@ -275,14 +275,15 @@ class RestExchange(AbstractExchange):
     async def cancel_order(self, order_id, symbol=None, params=None):
         if params is None:
             params = {}
+        cancel_resp = None
         try:
-            await self.client.cancel_order(order_id, symbol=symbol, params=params)
+            cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=params)
             return parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=params))
         except OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
         except Exception as e:
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
-        return False
+        return cancel_resp is not None
 
     async def create_order(self, order_type, symbol, quantity, price=None, stop_price=None, params=None):
         if params is None:
