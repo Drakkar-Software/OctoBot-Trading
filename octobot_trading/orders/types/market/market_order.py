@@ -20,9 +20,8 @@ from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns
 
 class MarketOrder(Order):
     async def update_order_status(self, force_refresh=False):
-        if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):
-            await self.default_exchange_update_order_status()
-        await self.on_fill(force_fill=True)
+        if self.trader.simulate:
+            await self.on_fill(force_fill=True)
 
     def on_fill_actions(self):
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value

@@ -19,6 +19,7 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus
+from octobot_trading.orders.order_factory import create_order_instance_from_raw
 from octobot_trading.util.initializable import Initializable
 
 
@@ -52,9 +53,9 @@ class OrdersManager(Initializable):
 
     async def upsert_order_from_raw(self, order_id, raw_order) -> bool:
         if not self.has_order(order_id):
-            new_order = self._create_order_from_raw(raw_order)
+            new_order = create_order_instance_from_raw(self.trader, raw_order)
             self.orders[order_id] = new_order
-            await new_order.initialize()
+            await new_order.initialize(is_from_exchange_data=True)
             self._check_orders_size()
             return True
         return await _update_order_from_raw(self.orders[order_id], raw_order)
@@ -94,11 +95,6 @@ class OrdersManager(Initializable):
     def _check_orders_size(self):
         if len(self.orders) > self.MAX_ORDERS_COUNT:
             self._remove_oldest_orders(int(self.MAX_ORDERS_COUNT / 2))
-
-    def _create_order_from_raw(self, raw_order):
-        order = Order(self.trader)
-        order.update_from_raw(raw_order)
-        return order
 
     def _select_orders(self, state=None, symbol=None, since=-1, limit=-1):
         orders = [

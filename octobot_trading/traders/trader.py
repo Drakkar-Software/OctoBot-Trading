@@ -22,7 +22,7 @@ from octobot_trading.data.order import Order
 from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.enums import OrderStatus, TraderOrderType
 from octobot_trading.orders.order_adapter import check_and_adapt_order_details_if_necessary
-from octobot_trading.orders.order_factory import create_order_instance
+from octobot_trading.orders.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.orders.order_util import get_pre_order_data
 from octobot_trading.trades.trade_factory import create_trade_from_order
 from octobot_trading.util import is_trader_enabled, get_pairs, get_market_pair
@@ -136,8 +136,7 @@ class Trader(Initializable):
             self.logger.info(f"Created order on {self.exchange_manager.exchange_name}: {created_order}")
 
             # get real order from exchange
-            new_order = Order(self)
-            new_order.update_from_raw(created_order)
+            new_order = create_order_instance_from_raw(self, created_order)
 
             # rebind linked portfolio to new order instance
             new_order.linked_portfolio = portfolio
