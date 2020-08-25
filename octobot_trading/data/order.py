@@ -185,20 +185,15 @@ class Order(Initializable):
             self._update_taker_maker()
         return changed
 
-    async def initialize_impl(self):
+    async def initialize_impl(self, **kwargs):
         """
         Initialize order status update tasks
         """
-        await create_order_state(self)
-        if not self.exchange_manager.is_backtesting:
-            # Create a task that supervise order status
-            asyncio.get_event_loop().call_later(self.CHECK_ORDER_STATUS_AFTER_INIT_DELAY,
-                                                asyncio.create_task,
-                                                self.update_order_status())
-        else:
+        await create_order_state(self, **kwargs)
+        await self.update_order_status()
+        if self.exchange_manager.is_backtesting:
             # In backtesting wait for the next asyncio loop iteration to ensure this order status
             # is updated before leaving this method
-            asyncio.create_task(self.update_order_status())
             await wait_asyncio_next_cycle()
 
     async def update_order_status(self, force_refresh=False):
