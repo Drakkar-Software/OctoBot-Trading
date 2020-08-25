@@ -101,14 +101,14 @@ class ExchangePersonalData(Initializable):
 
     async def handle_order_update_from_raw(self, order_id, raw_order,
                                            is_new_order: bool = False,
-                                           should_notify: bool = True) -> bool:
+                                           should_notify: bool = True,
+                                           allow_tasks: bool = True) -> bool:
         try:
             changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order)
 
             if changed:
                 updated_order = self.orders_manager.get_order(order_id)
-                asyncio.create_task(updated_order.state.on_order_refresh_successful())
-
+                await updated_order.trigger_ensure_post_update_synchronization(allow_tasks)
                 if should_notify:
                     await self.handle_order_update_notification(updated_order, is_new_order)
 
@@ -117,12 +117,15 @@ class ExchangePersonalData(Initializable):
             self.logger.exception(e, True, f"Failed to update order : {e}")
             return False
 
-    async def handle_order_instance_update(self, order, is_new_order: bool = False, should_notify: bool = True):
+    async def handle_order_instance_update(self, order,
+                                           is_new_order: bool = False,
+                                           should_notify: bool = True,
+                                           allow_tasks: bool = True):
         try:
             changed: bool = self.orders_manager.upsert_order_instance(order)
 
             if changed:
-                asyncio.create_task(order.state.on_order_refresh_successful())
+                await order.trigger_ensure_post_update_synchronization(allow_tasks)
 
                 if should_notify:
                     await self.handle_order_update_notification(order, is_new_order)
@@ -148,7 +151,7 @@ class ExchangePersonalData(Initializable):
         except ValueError as e:
             self.logger.error(f"Failed to send order update notification : {e}")
 
-    async def handle_closed_order_update(self, order_id, raw_order) -> bool:
+    async def handle_closed_order_update(self, order_id, raw_order):
         """
         Handle closed order creation or update
         :param order_id: the closed order id
@@ -156,10 +159,12 @@ class ExchangePersonalData(Initializable):
         :return: True if the closed order has been created or updated
         """
         try:
-            return await self.orders_manager.upsert_order_close_from_raw(order_id, raw_order) is not None
+            order = await self.orders_manager.upsert_order_close_from_raw(order_id, raw_order)
+            if order is not None and order.state is not None:
+                await order.trigger_ensure_post_update_synchronization(True)
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
-            return False
+            return None
 
     async def handle_trade_update(self, symbol, trade_id, trade, should_notify: bool = True):
         try:

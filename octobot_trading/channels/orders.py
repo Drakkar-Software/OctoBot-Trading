@@ -99,11 +99,12 @@ class OrdersProducer(ExchangeChannelProducer):
                 await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
                     refresh_real_trader_portfolio()
 
-    async def update_order_from_exchange(self, order, should_notify=False) -> bool:
+    async def update_order_from_exchange(self, order, should_notify=False, allow_tasks=False) -> bool:
         """
         Update Order from exchange
         :param order: the order to update
         :param should_notify: if Orders channel consumers should be notified
+        :param allow_tasks: if a task can be created in this order update process
         :return: True if the order was updated
         """
         self.logger.debug(f"Requested update for {order} on {order.exchange_manager.exchange_name}")
@@ -114,7 +115,7 @@ class OrdersProducer(ExchangeChannelProducer):
             self.logger.debug(f"Received update for {order} on {order.exchange_manager.exchange_name}: {raw_order}")
 
             return await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
-                order.order_id, raw_order, should_notify=should_notify)
+                order.order_id, raw_order, should_notify=should_notify, allow_tasks=allow_tasks)
         return False
 
     async def _check_missing_open_orders(self, symbol, orders):

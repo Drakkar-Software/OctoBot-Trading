@@ -135,7 +135,10 @@ class OrderState(Initializable):
 
     async def on_order_refresh_successful(self):
         """
-        Called when _synchronize_order_with_exchange succeed to update the order
+        Called after a successful update of the order.
+        Warning:
+            - should never be called concurrently in multiple tasks
+            - should never create a task related to order state transitions
         """
         raise NotImplementedError("_on_order_refresh_successful not implemented")
 

@@ -81,6 +81,8 @@ class Order(Initializable):
         # order state is initialized in initialize_impl()
         self.state = None
 
+        self._ensuring_post_update_task = None
+
     @classmethod
     def get_name(cls):
         return cls.__name__
@@ -255,6 +257,29 @@ class Order(Initializable):
         Filling complete callback
         """
         # nothing to do by default
+
+    async def trigger_ensure_post_update_synchronization(self, allow_tasks):
+        if allow_tasks:
+            asyncio.create_task(self._ensure_post_update_synchronization())
+        else:
+            await self._ensure_post_update_synchronization()
+
+    async def _ensure_post_update_synchronization(self):
+        """
+        Called after a successful update of the order: will trigger state transition if required
+        """
+        if self._ensuring_post_update_task is not None \
+                and self._ensuring_post_update_task is not asyncio.current_task():
+            get_logger(self.get_logger_name()).debug("Called ensure_post_update_synchronization while this method is "
+                                                     "already running in another context: ignoring call.")
+
+        else:
+            try:
+                if self._ensuring_post_update_task is None:
+                    self._ensuring_post_update_task = asyncio.current_task()
+                await self.state.on_order_refresh_successful()
+            finally:
+                self._ensuring_post_update_task = None
 
     def get_computed_fee(self, forced_value=None):
         computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,

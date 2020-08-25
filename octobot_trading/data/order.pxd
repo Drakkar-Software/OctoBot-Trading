@@ -71,6 +71,8 @@ cdef class Order(Initializable):
 
     cdef public object exchange_order_type # raw exchange order type, used to create order dict
 
+    cdef object _ensuring_post_update_task
+
     cpdef bint update(self,
             str symbol,
             str order_id=*,
