@@ -99,6 +99,8 @@ class OrdersProducer(ExchangeChannelProducer):
                 await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
                     refresh_real_trader_portfolio()
 
+    # should be removed or calling a scheduler update if we want to access the scheduler only from here (which might
+    # be better)
     async def update_order_from_exchange(self, order, should_notify=False) -> bool:
         """
         Update Order from exchange

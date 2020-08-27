@@ -278,6 +278,7 @@ class Order(Initializable):
         return self.order_profitability
 
     async def default_exchange_update_order_status(self):
+        # should not fetch order itself: only use order updater services => replace by a simple loop update trigger ?
         result = await self.exchange_manager.exchange.get_order(self.order_id, self.symbol)
         new_status = self.trader.parse_status(result)
         self.is_synchronized_with_exchange = True

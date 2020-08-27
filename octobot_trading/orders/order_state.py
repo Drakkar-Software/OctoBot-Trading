@@ -109,7 +109,8 @@ class OrderState(Initializable):
         Try to fix the pending state or terminate
         """
         if self.is_pending() and self.state is not OrderStates.REFRESHING:
-            self.log_order_event_message("synchronizing")
+            # not sure if we should call synchronize with a task=True param (see _synchronize_order_with_exchange
+            # comment)
             await self.synchronize()
         else:
             async with self.lock:
@@ -150,14 +151,18 @@ class OrderState(Initializable):
         previous_state = self.state
         async with self.lock:
             self.state = OrderStates.REFRESHING
+        # should be a call to the scheduler
+        # should the call be blocking or in a task ? I think it depends on the context: I would add it as a parameter
         if await self._refresh_order_from_exchange():
             return
         else:
             self.state = previous_state
+        # should be removed
         if retry_on_fail:
             await self.postpone_synchronization(timeout=retry_timeout)
         return
 
+    # should be removed
     async def postpone_synchronization(self, timeout=0):
         """
         Postpone the synchronization process
