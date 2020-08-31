@@ -17,8 +17,7 @@ from octobot_trading.constants import OHLCV_CHANNEL, RECENT_TRADES_CHANNEL, TICK
     KLINE_CHANNEL, MARK_PRICE_CHANNEL
 from octobot_trading.producers.balance_updater import BalanceProfitabilityUpdater
 from octobot_trading.producers.simulator.positions_updater_simulator import PositionsUpdaterSimulator
-from octobot_trading.producers.simulator.orders_updater_simulator import CloseOrdersUpdaterSimulator, \
-    OpenOrdersUpdaterSimulator
+from octobot_trading.producers.simulator.orders_updater_simulator import OrdersUpdaterSimulator
 from octobot_trading.producers.simulator.prices_updater_simulator import MarkPriceUpdaterSimulator
 from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
 from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
@@ -37,8 +36,7 @@ UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = {
 }
 
 AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [
-    CloseOrdersUpdaterSimulator,
-    OpenOrdersUpdaterSimulator,
+    OrdersUpdaterSimulator,
     BalanceProfitabilityUpdater,
     PositionsUpdaterSimulator
 ]

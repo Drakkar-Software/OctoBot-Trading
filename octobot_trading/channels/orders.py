@@ -13,13 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
 
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer, \
     get_chan
-from octobot_trading.constants import BALANCE_CHANNEL
+from octobot_trading.constants import BALANCE_CHANNEL, ORDERS_CHANNEL
 
 
 class OrdersProducer(ExchangeChannelProducer):
@@ -99,23 +100,23 @@ class OrdersProducer(ExchangeChannelProducer):
                 await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
                     refresh_real_trader_portfolio()
 
-    async def update_order_from_exchange(self, order, should_notify=False) -> bool:
+    async def update_order_from_exchange(self, order,
+                                         should_notify=False,
+                                         wait_for_refresh=False,
+                                         force_job_execution=False):
         """
-        Update Order from exchange
+        Update order from exchange
         :param order: the order to update
+        :param wait_for_refresh: if True, wait until the order refresh task to finish
         :param should_notify: if Orders channel consumers should be notified
+        :param force_job_execution: When True, order_update_job will bypass its dependencies check
         :return: True if the order was updated
         """
-        self.logger.debug(f"Requested update for {order} on {order.exchange_manager.exchange_name}")
-        raw_order = await self.channel.exchange_manager.exchange.get_order(order.order_id, order.symbol)
-
-        if raw_order is not None:
-            raw_order = self.channel.exchange_manager.exchange.clean_order(raw_order)
-            self.logger.debug(f"Received update for {order} on {order.exchange_manager.exchange_name}: {raw_order}")
-
-            return await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
-                order.order_id, raw_order, should_notify=should_notify)
-        return False
+        await get_chan(ORDERS_CHANNEL, self.channel.exchange_manager.id).producers[-1].\
+            update_order_from_exchange(order=order,
+                                       should_notify=should_notify,
+                                       force_job_execution=force_job_execution,
+                                       wait_for_refresh=wait_for_refresh)
 
     async def _check_missing_open_orders(self, symbol, orders):
         """
@@ -134,14 +135,16 @@ class OrdersProducer(ExchangeChannelProducer):
         )
         if missing_order_ids:
             self.logger.warning("Open orders are missing, synchronizing with exchange...")
+            synchronize_tasks = []
             for missing_order_id in missing_order_ids:
                 try:
                     order_to_update = self.channel.exchange_manager.exchange_personal_data.orders_manager.\
                         get_order(missing_order_id)
                     if order_to_update.state is not None:
-                        await order_to_update.state.synchronize()
+                        synchronize_tasks.append(order_to_update.state.synchronize(force_synchronization=True))
                 except KeyError:
                     self.logger.error(f"Order with id {missing_order_id} could not be synchronized")
+            await asyncio.gather(*synchronize_tasks)
 
     async def send(self, cryptocurrency, symbol, order, is_from_bot=True, is_new=False):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):

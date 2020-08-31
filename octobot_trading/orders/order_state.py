@@ -24,8 +24,6 @@ from octobot_trading.util.initializable import Initializable
 
 
 class OrderState(Initializable):
-    DEFAULT_SYNC_RETRY_TIMEOUT = 5
-
     def __init__(self, order, is_from_exchange_data):
         super().__init__()
 
@@ -115,23 +113,27 @@ class OrderState(Initializable):
             async with self.lock:
                 await self.terminate()
 
-    async def synchronize(self) -> None:
+    async def synchronize(self, force_synchronization=False) -> None:
         """
         Implement the exchange synchronization process
         Should begin by setting the state to REFRESHING
         Should end by :
         - calling terminate if the state is terminated
         - restoring the initial state if nothing has been changed with synchronization or if sync failed
+        :param force_synchronization: When True, for the update of the order from the exchange
         """
-        await self._synchronize_order_with_exchange()
+        await self._synchronize_order_with_exchange(force_synchronization=force_synchronization)
 
-    async def _refresh_order_from_exchange(self) -> bool:
+    async def _refresh_order_from_exchange(self, force_synchronization=False) -> bool:
         """
         Ask OrdersChannel Internal producer to refresh the order from the exchange
+        :param force_synchronization: When True, for the update of the order from the exchange
         :return: the result of OrdersProducer.update_order_from_exchange()
         """
         return (await get_chan(ORDERS_CHANNEL, self.order.exchange_manager.id).get_internal_producer().
-                update_order_from_exchange(self.order))
+                update_order_from_exchange(order=self.order,
+                                           wait_for_refresh=True,
+                                           force_job_execution=force_synchronization))
 
     async def on_order_refresh_successful(self):
         """
@@ -139,32 +141,19 @@ class OrderState(Initializable):
         """
         raise NotImplementedError("_on_order_refresh_successful not implemented")
 
-    async def _synchronize_order_with_exchange(self, retry_on_fail=True,
-                                               retry_timeout=DEFAULT_SYNC_RETRY_TIMEOUT):
+    async def _synchronize_order_with_exchange(self, force_synchronization=False):
         """
         Ask the exchange to update the order
         Also manage the order state during the refreshing process
-        :param retry_on_fail: if the synchronization process should be retried after failure
-        :param retry_timeout: the retry timeout
+        :param force_synchronization: When True, for the update of the order from the exchange
         """
         previous_state = self.state
         async with self.lock:
             self.state = OrderStates.REFRESHING
-        if await self._refresh_order_from_exchange():
-            return
-        else:
-            self.state = previous_state
-        if retry_on_fail:
-            await self.postpone_synchronization(timeout=retry_timeout)
-        return
-
-    async def postpone_synchronization(self, timeout=0):
-        """
-        Postpone the synchronization process
-        :param timeout: the time to wait before retrying synchronization
-        """
-        await asyncio.sleep(timeout)
-        await self.synchronize()
+        await self._refresh_order_from_exchange(force_synchronization=force_synchronization)
+        async with self.lock:
+            if self.state is OrderStates.REFRESHING:
+                self.state = previous_state
 
     def clear(self):
         """

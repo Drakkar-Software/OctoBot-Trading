@@ -14,12 +14,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
+from octobot_commons.async_job cimport AsyncJob
 from octobot_trading.channels.orders cimport OrdersProducer
 
 
-cdef class OpenOrdersUpdater(OrdersProducer):
-    pass
-
-cdef class CloseOrdersUpdater(OrdersProducer):
-    pass
+cdef class OrdersUpdater(OrdersProducer):
+    cdef AsyncJob open_orders_job
+    cdef AsyncJob closed_orders_job
+    cdef AsyncJob order_update_job
