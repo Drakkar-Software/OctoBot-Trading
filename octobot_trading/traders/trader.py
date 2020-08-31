@@ -173,6 +173,7 @@ class Trader(Initializable):
             if not success:
                 self.logger.error(f"Failed to cancel order {order}")
             else:
+                order.status = OrderStatus.CLOSED
                 self.logger.debug(f"Successfully cancelled order {order}")
         else:
             order.status = OrderStatus.CANCELED
