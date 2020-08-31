@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.producers.funding_updater import FundingUpdater
-from octobot_trading.producers.orders_updater import OpenOrdersUpdater, CloseOrdersUpdater
+from octobot_trading.producers.orders_updater import OrdersUpdater
 from octobot_trading.producers.prices_updater import MarkPriceUpdater
 
 from octobot_trading.producers.trades_updater import TradesUpdater
@@ -37,5 +37,5 @@ class MissingOrderException(Exception):
 
 UNAUTHENTICATED_UPDATER_PRODUCERS = [OHLCVUpdater, OrderBookUpdater, RecentTradeUpdater, TickerUpdater, KlineUpdater,
                                      MarkPriceUpdater, FundingUpdater]
-AUTHENTICATED_UPDATER_PRODUCERS = [BalanceUpdater, CloseOrdersUpdater, OpenOrdersUpdater, TradesUpdater,
+AUTHENTICATED_UPDATER_PRODUCERS = [BalanceUpdater, OrdersUpdater, TradesUpdater,
                                    PositionsUpdater, BalanceProfitabilityUpdater]

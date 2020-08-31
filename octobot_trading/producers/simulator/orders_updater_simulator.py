@@ -17,10 +17,10 @@
 
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import RECENT_TRADES_CHANNEL
-from octobot_trading.producers.orders_updater import OpenOrdersUpdater, CloseOrdersUpdater
+from octobot_trading.producers.orders_updater import OrdersUpdater
 
 
-class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
+class OrdersUpdaterSimulator(OrdersUpdater):
     async def start(self):
         await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.ignore_recent_trades_update)
@@ -30,8 +30,3 @@ class OpenOrdersUpdaterSimulator(OpenOrdersUpdater):
         """
         Used to subscribe at least one recent trades consumer during backtesting
         """
-
-
-class CloseOrdersUpdaterSimulator(CloseOrdersUpdater):
-    async def start(self):
-        pass
