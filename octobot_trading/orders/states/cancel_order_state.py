@@ -72,3 +72,7 @@ class CancelOrderState(OrderState):
             await self.order.on_close(force_close=True)  # TODO force ?
         except Exception as e:
             self.get_logger().exception(e, True, f"Fail to execute cancel state termination : {e}.")
+
+    async def _synchronize_order_with_exchange(self, force_synchronization=False):
+        # Nothing to synchronize
+        pass
