@@ -126,7 +126,6 @@ async def _update_order_from_raw(order, raw_order):
     :return: the result of order.update_from_raw
     """
     async with order.lock:
-        # warning: can return True if an order is being cancelled when waiting for this lock to release (raw_data is
-        # the open order that just got cancelled => this will re-open the just cancelled order). Order state management
-        # will fix this.
-        return order.update_from_raw(raw_order)
+        if order.is_to_be_maintained():
+            return order.update_from_raw(raw_order)
+    return False

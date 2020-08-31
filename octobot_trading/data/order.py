@@ -403,6 +403,9 @@ class Order(Initializable):
     def __str__(self):
         return self.to_string()
 
+    def is_to_be_maintained(self):
+        return self.trader is not None
+
 
 def parse_order_type(raw_order):
     try:
