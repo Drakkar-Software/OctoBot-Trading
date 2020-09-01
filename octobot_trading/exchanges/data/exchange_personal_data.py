@@ -113,9 +113,11 @@ class ExchangePersonalData(Initializable):
                     await self.handle_order_update_notification(updated_order, is_new_order)
 
             return changed
+        except KeyError as ke:
+            self.logger.debug(f"Failed to update order : Order was not found ({ke})")
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update order : {e}")
-            return False
+        return False
 
     async def handle_order_instance_update(self, order, is_new_order: bool = False, should_notify: bool = True):
         try:

@@ -38,7 +38,7 @@ class LimitOrder(Order):
 
     async def wait_for_price_hit(self):
         await wait_for(self.limit_price_hit_event.wait(), timeout=None)
-        await self.on_fill(force_fill=True)
+        await self.on_fill()
 
     def on_fill_actions(self):
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
