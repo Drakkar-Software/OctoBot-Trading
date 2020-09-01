@@ -30,9 +30,9 @@ class CancelOrderState(OrderState):
             self.order.status = OrderStatus.CANCELED
 
         # always cancel this order first to avoid infinite loop followed by deadlock
-        # for linked_order in self.order.linked_orders:
-        #     if linked_order is not ignored_order:
-        #         await self.order.trader.cancel_order(linked_order, ignored_order=ignored_order)
+        for linked_order in self.order.linked_orders:
+            if linked_order is not ignored_order and linked_order.is_open():
+                await self.order.trader.cancel_order(linked_order, ignored_order=ignored_order)
 
         await super().initialize_impl()
 
