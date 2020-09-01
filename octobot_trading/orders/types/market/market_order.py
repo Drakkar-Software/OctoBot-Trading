@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 
 from octobot_trading.data.order import Order
 from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns
@@ -21,7 +23,10 @@ from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns
 class MarketOrder(Order):
     async def update_order_status(self, force_refresh=False):
         if self.trader.simulate:
-            await self.on_fill(force_fill=True)
+            asyncio.create_task(self.on_fill(force_fill=True))
+            # In backtesting wait for the next asyncio loop iteration to ensure this order status
+            # is updated before leaving this method
+            await wait_asyncio_next_cycle()
 
     def on_fill_actions(self):
         self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value

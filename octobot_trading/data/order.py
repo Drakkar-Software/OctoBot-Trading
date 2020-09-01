@@ -16,7 +16,6 @@
 import asyncio
 from asyncio import Lock
 
-from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
