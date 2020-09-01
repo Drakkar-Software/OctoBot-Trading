@@ -191,10 +191,6 @@ class Order(Initializable):
         """
         await create_order_state(self, **kwargs)
         await self.update_order_status()
-        if self.exchange_manager.is_backtesting:
-            # In backtesting wait for the next asyncio loop iteration to ensure this order status
-            # is updated before leaving this method
-            await wait_asyncio_next_cycle()
 
     async def update_order_status(self, force_refresh=False):
         """

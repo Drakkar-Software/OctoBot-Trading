@@ -48,20 +48,15 @@ async def test_stop_loss_and_limit(stop_loss_sell_order, sell_limit_order):
     stop_loss_sell_order.linked_orders.append(sell_limit_order)
     sell_limit_order.linked_orders.append(stop_loss_sell_order)
     stop_loss_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
-    await sell_limit_order.initialize()
+    # initialize stop loss first
     await stop_loss_sell_order.initialize()
-    sell_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
-        sell_limit_order
-    )
-    stop_loss_sell_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
-        stop_loss_sell_order
-    )
+    await sell_limit_order.initialize()
     price_events_manager = stop_loss_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
     # sell limit order triggers when price is above or equal to its trigger price
-    # here trigger both: stop order is triggered first: sell limit order should be cancelled and not filled even
-    # though its price has been hit
+    # here trigger both: stop order is triggered first (initialized first): sell limit order should be
+    # cancelled and not filled even though its price has been hit
     price_events_manager.handle_recent_trades(
          [
             random_recent_trade(price=random_price(max_value=stop_order_price - 1),
@@ -96,26 +91,21 @@ async def test_limit_and_stop_loss(stop_loss_sell_order, sell_limit_order):
     stop_loss_sell_order.linked_orders.append(sell_limit_order)
     sell_limit_order.linked_orders.append(stop_loss_sell_order)
     stop_loss_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
+    # initialize limit order first
     await sell_limit_order.initialize()
     await stop_loss_sell_order.initialize()
-    sell_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
-        sell_limit_order
-    )
-    stop_loss_sell_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
-        stop_loss_sell_order
-    )
     price_events_manager = stop_loss_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
     # sell limit order triggers when price is above or equal to its trigger price
-    # here trigger both: limit is triggered first: sell stop loss order should be cancelled and not filled even
-    # though its price has been hit
+    # here trigger both: limit is triggered first (initialized first): sell stop loss order should be
+    # cancelled and not filled even though its price has been hit
     price_events_manager.handle_recent_trades(
          [
-            random_recent_trade(price=random_price(min_value=limit_order_price + 1),
-                                timestamp=stop_loss_sell_order.timestamp),
             random_recent_trade(price=random_price(max_value=stop_order_price - 1),
-                                timestamp=sell_limit_order.timestamp)
+                                timestamp=sell_limit_order.timestamp),
+            random_recent_trade(price=random_price(min_value=limit_order_price + 1),
+                                timestamp=stop_loss_sell_order.timestamp)
          ]
     )
     await wait_asyncio_next_cycle()
