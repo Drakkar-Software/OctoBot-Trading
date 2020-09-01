@@ -67,6 +67,10 @@ class CancelOrderState(OrderState):
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
                 await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
 
+            # notify order filled
+            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order,
+                                                                                                      False)
+
             # set close state
             await self.order.on_close(force_close=True)  # TODO force ?
         except Exception as e:

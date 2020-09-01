@@ -142,11 +142,10 @@ class Trader(Initializable):
             new_order.linked_portfolio = portfolio
         return new_order
 
-    async def cancel_order(self, order: Order, ignored_order: Order = None, should_notify: bool = True):
+    async def cancel_order(self, order: Order, ignored_order: Order = None):
         """
         Cancels the given order and its linked orders, and updates the portfolio, publish in order channel
         if order is from a real exchange.
-        :param should_notify: if a notification should be sent
         :param order: Order to cancel
         :param ignored_order: Order not to cancel if found in linked orders recursive cancels (ex: avoid cancelling
         a filled order)
@@ -154,14 +153,11 @@ class Trader(Initializable):
         """
         if order and order.is_open():
             # always cancel this order first to avoid infinite loop followed by deadlock
-            await self._handle_order_cancellation(order,
-                                                  ignored_order,
-                                                  should_notify)
+            await self._handle_order_cancellation(order, ignored_order)
 
     async def _handle_order_cancellation(self,
                                          order: Order,
-                                         ignored_order: Order,
-                                         should_notify: bool):
+                                         ignored_order: Order):
         success = True
         async with order.lock:
             # if real order: cancel on exchange
@@ -182,8 +178,6 @@ class Trader(Initializable):
         await order.on_cancel(force_cancel=success,
                               is_from_exchange_data=False,
                               ignored_order=ignored_order)
-        if success and should_notify:
-            await self.exchange_manager.exchange_personal_data.handle_order_update_notification(order, False)
 
     async def cancel_order_with_id(self, order_id):
         """
