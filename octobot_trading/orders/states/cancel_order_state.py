@@ -39,9 +39,6 @@ class CancelOrderState(OrderState):
     def is_pending(self) -> bool:
         return self.state is OrderStates.CANCELING
 
-    def is_closed(self) -> bool:
-        return self.state is OrderStates.CANCELED
-
     def is_canceled(self) -> bool:
         return self.state is OrderStates.CANCELED
 
