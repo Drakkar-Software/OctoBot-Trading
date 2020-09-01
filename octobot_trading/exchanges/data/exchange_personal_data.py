@@ -146,7 +146,8 @@ class ExchangePersonalData(Initializable):
                       symbol=order.symbol,
                       order=order.to_dict(),
                       is_from_bot=order.is_from_this_octobot,
-                      is_new=is_new_order)
+                      is_new=is_new_order,
+                      is_closed=order.is_closed())
         except ValueError as e:
             self.logger.error(f"Failed to send order update notification : {e}")
 
