@@ -110,13 +110,9 @@ class RestExchange(AbstractExchange):
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         try:
-            # TODO remove these logs when C typing issues are fixed
             if with_fixer:
-                ms = ExchangeMarketStatusFixer(self.client.market(symbol), price_example).market_status
-            else:
-                ms = self.client.market(symbol)
-            self.logger.debug(f"get_market_status({symbol}, {price_example}, {with_fixer}): {ms}")
-            return ms
+                return ExchangeMarketStatusFixer(self.client.market(symbol), price_example).market_status
+            return self.client.market(symbol)
         except Exception as e:
             self.logger.error(f"Fail to get market status of {symbol}: {e}")
             return {}
@@ -145,21 +141,15 @@ class RestExchange(AbstractExchange):
             raise e
 
     def get_candle_since_timestamp(self, time_frame, count):
-        # TODO remove these logs when C typing issues are fixed
-        self.logger.debug(f"get_candle_since_timestamp({time_frame}, {count})")
         return self.client.milliseconds() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * count
 
     async def get_symbol_prices(self, symbol, time_frame, limit=None, params=None):
         if params is None:
             params = {}
         try:
-            # TODO remove these logs when C typing issues are fixed
             if limit:
-                candles = await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, params=params)
-            else:
-                candles = await self.client.fetch_ohlcv(symbol, time_frame.value)
-            self.logger.debug(f"get_symbol_prices({symbol}, {time_frame}, {limit}): {candles}")
-            return candles
+                return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, params=params)
+            return await self.client.fetch_ohlcv(symbol, time_frame.value)
         except BaseError as e:
             self.logger.error(f"Failed to get_symbol_prices {e}")
             return None
@@ -168,11 +158,8 @@ class RestExchange(AbstractExchange):
         if params is None:
             params = {}
         try:
-            # TODO remove these logs when C typing issues are fixed
             # default implementation
-            kline = await self.get_symbol_prices(symbol, time_frame, limit=1, params=params)
-            self.logger.debug(f"get_kline_price({symbol}, {time_frame}): {kline}")
-            return kline
+            return await self.get_symbol_prices(symbol, time_frame, limit=1, params=params)
         except BaseError as e:
             self.logger.error(f"Failed to get_kline_price {e}")
             return None
@@ -191,10 +178,7 @@ class RestExchange(AbstractExchange):
         if params is None:
             params = {}
         try:
-            # TODO remove these logs when C typing issues are fixed
-            rt = await self.client.fetch_trades(symbol, limit=limit, params=params)
-            self.logger.debug(f"get_recent_trades({symbol}, {limit}): {rt}")
-            return rt
+            return await self.client.fetch_trades(symbol, limit=limit, params=params)
         except BaseError as e:
             self.logger.error(f"Failed to get_recent_trades {e}")
             return None
@@ -204,10 +188,7 @@ class RestExchange(AbstractExchange):
         if params is None:
             params = {}
         try:
-            # TODO remove these logs when C typing issues are fixed
-            ticker = await self.client.fetch_ticker(symbol, params=params)
-            self.logger.debug(f"get_price_ticker({symbol}): {ticker}")
-            return ticker
+            return await self.client.fetch_ticker(symbol, params=params)
         except BaseError as e:
             self.logger.error(f"Failed to get_price_ticker {e}")
             return None
