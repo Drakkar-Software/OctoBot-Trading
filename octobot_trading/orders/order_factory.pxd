@@ -20,7 +20,7 @@ from octobot_trading.traders.trader cimport Trader
 
 cpdef Order create_order_from_raw(Trader trader, dict raw_order)
 
-cpdef Order create_order_instance_from_raw(Trader trader, dict raw_order)
+cpdef Order create_order_instance_from_raw(Trader trader, dict raw_order, bint force_open=*)
 
 cpdef Order create_order_from_type(Trader trader, object order_type, object side=*)
 

@@ -21,7 +21,7 @@ async def create_order_state(order, is_from_exchange_data=False, ignore_states=N
         ignore_states = []
 
     if order.status is OrderStatus.OPEN and OrderStates.OPEN not in ignore_states:
-        await order.on_open(force_open=True, is_from_exchange_data=is_from_exchange_data)
+        await order.on_open(force_open=False, is_from_exchange_data=is_from_exchange_data)
     elif order.status in [OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED] and OrderStates.FILLED not in ignore_states:
         await order.on_fill(force_fill=True, is_from_exchange_data=is_from_exchange_data)
     elif order.status is OrderStatus.CANCELED and OrderStates.CANCELED not in ignore_states:
