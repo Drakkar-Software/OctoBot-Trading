@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
 from octobot_trading.orders.states.order_state_factory import create_order_state
@@ -21,7 +22,10 @@ from octobot_trading.orders.states.order_state_factory import create_order_state
 class OpenOrderState(OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.OPEN if is_from_exchange_data or self.order.simulated or self.order.is_self_managed() \
+        self.state = OrderStates.OPEN if is_from_exchange_data \
+                                         or self.order.simulated \
+                                         or self.order.is_self_managed() \
+                                         or self.order.status is OrderStatus.OPEN \
             else OrderStates.OPENING
 
         self.has_terminated = False
@@ -50,11 +54,6 @@ class OpenOrderState(OrderState):
             self.state = OrderStates.OPEN
             await self.update()
         else:
-            if self.order.exchange_manager is not None:
-                # notify order channel than an order has been created even though it's already closed
-                await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order,
-                                                                                                          True)
-
             if self.order.status is OrderStatus.CLOSED:
                 self.order.status = OrderStatus.FILLED
                 self.order.state = None
@@ -68,8 +67,8 @@ class OpenOrderState(OrderState):
             self.log_order_event_message("open")
 
             # notify order manager of a new open order
-            await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(self.order)
-
+            await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(self.order,
+                                                                                                  should_notify=True)
             self.has_terminated = True
 
     def is_pending(self) -> bool:
