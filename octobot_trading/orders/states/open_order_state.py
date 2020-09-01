@@ -52,9 +52,10 @@ class OpenOrderState(OrderState):
         else:
             if self.order.exchange_manager is not None:
                 # notify order channel than an order has been created even though it's already closed
-                await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, True)
+                await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order,
+                                                                                                          True)
 
-            if self.order.status == OrderStatus.CLOSED:
+            if self.order.status is OrderStatus.CLOSED:
                 self.order.status = OrderStatus.FILLED
                 self.order.state = None
             await create_order_state(self.order, is_from_exchange_data=True)

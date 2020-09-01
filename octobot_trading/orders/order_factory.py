@@ -23,9 +23,11 @@ def create_order_from_raw(trader, raw_order):
     return create_order_from_type(trader, order_type)
 
 
-def create_order_instance_from_raw(trader, raw_order):
+def create_order_instance_from_raw(trader, raw_order, force_open=False):
     order = create_order_from_raw(trader, raw_order)
     order.update_from_raw(raw_order)
+    if force_open:
+        order.status = OrderStatus.OPEN
     return order
 
 

@@ -136,7 +136,7 @@ class Trader(Initializable):
             self.logger.info(f"Created order on {self.exchange_manager.exchange_name}: {created_order}")
 
             # get real order from exchange
-            new_order = create_order_instance_from_raw(self, created_order)
+            new_order = create_order_instance_from_raw(self, created_order, force_open=True)
 
             # rebind linked portfolio to new order instance
             new_order.linked_portfolio = portfolio
