@@ -27,6 +27,7 @@ class CancelOrderState(OrderState):
     async def initialize_impl(self, forced=False, ignored_order=None) -> None:
         if forced:
             self.state = OrderStates.CANCELED
+            self.order.status = OrderStatus.CANCELED
 
         # always cancel this order first to avoid infinite loop followed by deadlock
         # for linked_order in self.order.linked_orders:

@@ -22,13 +22,14 @@ from octobot_trading.orders.states.order_state_factory import create_order_state
 class FillOrderState(OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.FILLING if not self.order.simulated and \
-                                            self.order.status not in [OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED] \
+        self.state = OrderStates.FILLING \
+            if not self.order.simulated and self.order.status not in [OrderStatus.FILLED, OrderStatus.CLOSED] \
             else OrderStates.FILLED
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:
             self.state = OrderStates.FILLED
+            self.order.status = OrderStatus.FILLED
         return await super().initialize_impl()
 
     def is_pending(self) -> bool:
@@ -49,7 +50,7 @@ class FillOrderState(OrderState):
         can also be still pending
         or be fully filled
         """
-        if self.order.status is OrderStatus.FILLED:
+        if self.order.status in [OrderStatus.FILLED, OrderStatus.CLOSED]:
             self.state = OrderStates.FILLED
             await self.update()
         elif self.order.status is OrderStatus.PARTIALLY_FILLED:
@@ -66,6 +67,9 @@ class FillOrderState(OrderState):
         """
         try:
             self.log_order_event_message("filled")
+
+            # call filling actions
+            self.order.on_fill_actions()
 
             # set executed time
             self.order.executed_time = self.order.generate_executed_time()

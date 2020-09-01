@@ -225,7 +225,6 @@ class Order(Initializable):
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
         if self.is_open():
-            self.on_fill_actions()
             self.state = FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
             await self.state.initialize(forced=force_fill)
         else:
