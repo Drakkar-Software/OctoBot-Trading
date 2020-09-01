@@ -72,7 +72,8 @@ class OrdersProducer(ExchangeChannelProducer):
                             get_pair_cryptocurrency(symbol),
                             symbol=symbol, order=order,
                             is_from_bot=is_from_bot,
-                            is_new=is_new_order)
+                            is_new=is_new_order,
+                            is_closed=False)
 
     async def _handle_close_order_update(self, order_id, order):
         """
@@ -146,7 +147,10 @@ class OrdersProducer(ExchangeChannelProducer):
                     self.logger.error(f"Order with id {missing_order_id} could not be synchronized")
             await asyncio.gather(*synchronize_tasks)
 
-    async def send(self, cryptocurrency, symbol, order, is_from_bot=True, is_new=False):
+    async def send(self, cryptocurrency, symbol, order, is_from_bot=True, is_new=False, is_closed=False):
+        if is_closed:
+            # do not push closed orders
+            return
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
