@@ -153,30 +153,30 @@ class Trader(Initializable):
         :return: None
         """
         if order and order.is_open():
-            async with order.lock:
-                # always cancel this order first to avoid infinite loop followed by deadlock
-                await self._handle_order_cancellation(order,
-                                                      ignored_order,
-                                                      should_notify)
+            # always cancel this order first to avoid infinite loop followed by deadlock
+            await self._handle_order_cancellation(order,
+                                                  ignored_order,
+                                                  should_notify)
 
     async def _handle_order_cancellation(self,
                                          order: Order,
                                          ignored_order: Order,
                                          should_notify: bool):
         success = True
-        # if real order: cancel on exchange
-        if not self.simulate and not order.is_self_managed():
-            success = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
-            if not success:
-                # retry to cancel order
+        async with order.lock:
+            # if real order: cancel on exchange
+            if not self.simulate and not order.is_self_managed():
                 success = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
-            if not success:
-                self.logger.error(f"Failed to cancel order {order}")
+                if not success:
+                    # retry to cancel order
+                    success = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
+                if not success:
+                    self.logger.error(f"Failed to cancel order {order}")
+                else:
+                    order.status = OrderStatus.CLOSED
+                    self.logger.debug(f"Successfully cancelled order {order}")
             else:
-                order.status = OrderStatus.CLOSED
-                self.logger.debug(f"Successfully cancelled order {order}")
-        else:
-            order.status = OrderStatus.CANCELED
+                order.status = OrderStatus.CANCELED
 
         # call CancelState termination
         await order.on_cancel(force_cancel=success,
