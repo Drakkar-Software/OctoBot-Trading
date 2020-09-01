@@ -40,9 +40,6 @@ class FillOrderState(OrderState):
         # TODO : Should also include OrderStates.PARTIALLY_FILLED ?
         return self.state is OrderStates.FILLED
 
-    def is_closed(self) -> bool:
-        return self.state is OrderStates.FILLED
-
     async def on_order_refresh_successful(self):
         """
         Synchronize the filling status with the exchange
