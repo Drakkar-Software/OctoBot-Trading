@@ -189,7 +189,8 @@ class Order(Initializable):
         Initialize order status update tasks
         """
         await create_order_state(self, **kwargs)
-        await self.update_order_status()
+        if not self.is_closed():
+            await self.update_order_status()
 
     async def update_order_status(self, force_refresh=False):
         """

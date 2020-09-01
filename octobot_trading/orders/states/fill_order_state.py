@@ -22,7 +22,9 @@ from octobot_trading.orders.states.order_state_factory import create_order_state
 class FillOrderState(OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.FILLING if not self.order.simulated else OrderStates.FILLED
+        self.state = OrderStates.FILLING if not self.order.simulated and \
+                                            self.order.status not in [OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED] \
+            else OrderStates.FILLED
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:

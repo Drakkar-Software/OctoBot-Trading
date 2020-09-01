@@ -24,7 +24,7 @@ class MarketOrder(Order):
     async def update_order_status(self, force_refresh=False):
         if self.trader.simulate:
             asyncio.create_task(self.on_fill(force_fill=True))
-            # In backtesting wait for the next asyncio loop iteration to ensure this order status
+            # In trading simulation wait for the next asyncio loop iteration to ensure this order status
             # is updated before leaving this method
             await wait_asyncio_next_cycle()
 

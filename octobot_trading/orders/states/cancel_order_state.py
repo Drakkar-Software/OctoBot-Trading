@@ -21,7 +21,8 @@ from octobot_trading.orders.states.order_state_factory import create_order_state
 class CancelOrderState(OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.CANCELING if not self.order.simulated else OrderStates.CANCELED
+        self.state = OrderStates.CANCELING if not self.order.simulated and \
+                                              self.order.status is not OrderStatus.CANCELED else OrderStates.CANCELED
 
     async def initialize_impl(self, forced=False, ignored_order=None) -> None:
         if forced:
@@ -72,7 +73,3 @@ class CancelOrderState(OrderState):
             await self.order.on_close(force_close=True)  # TODO force ?
         except Exception as e:
             self.get_logger().exception(e, True, f"Fail to execute cancel state termination : {e}.")
-
-    async def _synchronize_order_with_exchange(self, force_synchronization=False):
-        # Nothing to synchronize
-        pass
