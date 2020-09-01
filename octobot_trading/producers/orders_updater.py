@@ -32,8 +32,8 @@ class OrdersUpdater(OrdersProducer):
     CHANNEL_NAME = ORDERS_CHANNEL
     ORDERS_UPDATE_LIMIT = 200
     ORDERS_STARTING_REFRESH_TIME = 10
-    OPEN_ORDER_REFRESH_TIME = 14
-    CLOSE_ORDER_REFRESH_TIME = 33
+    OPEN_ORDER_REFRESH_TIME = 9
+    CLOSE_ORDER_REFRESH_TIME = 81
     TIME_BETWEEN_ORDERS_REFRESH = 2
 
     def __init__(self, channel):
@@ -50,11 +50,7 @@ class OrdersUpdater(OrdersProducer):
                                          is_periodic=False,
                                          enable_multiple_runs=True)
         self.order_update_job.add_job_dependency(self.open_orders_job)
-        self.order_update_job.add_job_dependency(self.closed_orders_job)
-        self.open_orders_job.add_job_dependency(self.closed_orders_job)
         self.open_orders_job.add_job_dependency(self.order_update_job)
-        self.closed_orders_job.add_job_dependency(self.open_orders_job)
-        self.closed_orders_job.add_job_dependency(self.order_update_job)
 
     async def initialize(self) -> None:
         """
@@ -75,7 +71,7 @@ class OrdersUpdater(OrdersProducer):
         await self.initialize()
         await asyncio.sleep(self.ORDERS_STARTING_REFRESH_TIME)
         await self.open_orders_job.run()
-        await self.closed_orders_job.run()
+        # await self.closed_orders_job.run()
 
     async def fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT):
         """
