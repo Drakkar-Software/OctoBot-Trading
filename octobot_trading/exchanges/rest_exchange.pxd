@@ -27,7 +27,7 @@ cdef class RestExchange(AbstractExchange):
 
     # private
     cdef void _create_client(self)
-    cdef void _log_error(self, str error, object order_type, str symbol, double quantity, double price, double stop_price)
+    cdef void _log_error(self, object error, object order_type, str symbol, double quantity, double price, double stop_price)
 
     # @staticmethod TODO
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
