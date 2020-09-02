@@ -371,7 +371,8 @@ class Order(Initializable):
             ExchangeConstantsOrderColumns.PRICE.value: filled_price,
             ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
             ExchangeConstantsOrderColumns.TIMESTAMP.value: self.timestamp,
-            ExchangeConstantsOrderColumns.TYPE.value: self.exchange_order_type.value,
+            ExchangeConstantsOrderColumns.TYPE.value: self.exchange_order_type.value
+            if self.exchange_order_type else None,
             ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
             ExchangeConstantsOrderColumns.AMOUNT.value: self.origin_quantity,
             ExchangeConstantsOrderColumns.COST.value: self.total_cost,
