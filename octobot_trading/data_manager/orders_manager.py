@@ -83,7 +83,8 @@ class OrdersManager(Initializable):
             self.orders.pop(order.order_id, None)
             order.clear()
         else:
-            self.logger.warning(f"Attempt to remove an order that is not in orders_manager: {order.order_type.name} "
+            self.logger.warning(f"Attempt to remove an order that is not in orders_manager: "
+                                f"{order.order_type.name if order.order_type else ''} "
                                 f"{order.symbol}: {order.origin_quantity} at {order.origin_price} "
                                 f"(id: {order.order_id})")
 
