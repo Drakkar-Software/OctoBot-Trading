@@ -95,3 +95,4 @@ class FillOrderState(OrderState):
             await self.order.on_close(force_close=True)  # TODO force ?
         except Exception as e:
             self.get_logger().exception(e, True, f"Fail to execute fill state termination : {e}.")
+            raise
