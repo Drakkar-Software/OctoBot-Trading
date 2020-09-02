@@ -50,14 +50,20 @@ class OpenOrderState(OrderState):
         """
         Verify the order is properly created and still OrderStatus.OPEN
         """
-        if self.order.status is OrderStatus.OPEN:
-            self.state = OrderStates.OPEN
-            await self.update()
+        # skip refresh process if the current order state is not the same as the one triggering this
+        # on_order_refresh_successful to avoid synchronization issues (state already got refreshed by another mean)
+        if self.state is self.order.state.state:
+            if self.order.status is OrderStatus.OPEN:
+                self.state = OrderStates.OPEN
+                await self.update()
+            else:
+                if self.order.status is OrderStatus.CLOSED:
+                    self.order.status = OrderStatus.FILLED
+                    self.order.state = None
+                await create_order_state(self.order, is_from_exchange_data=True)
         else:
-            if self.order.status is OrderStatus.CLOSED:
-                self.order.status = OrderStatus.FILLED
-                self.order.state = None
-            await create_order_state(self.order, is_from_exchange_data=True)
+            self.get_logger().debug(f"on_order_refresh_successful triggered from previous state "
+                                    f"after state change on {self.order}")
 
     async def terminate(self):
         """
