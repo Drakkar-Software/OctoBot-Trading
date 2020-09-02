@@ -143,7 +143,9 @@ class OrdersProducer(ExchangeChannelProducer):
                     order_to_update = self.channel.exchange_manager.exchange_personal_data.orders_manager.\
                         get_order(missing_order_id)
                     if order_to_update.state is not None:
-                        synchronize_tasks.append(order_to_update.state.synchronize(force_synchronization=True))
+                        # catch exception not to prevent multiple synchronize to be cancelled in asyncio.gather
+                        synchronize_tasks.append(order_to_update.state.synchronize(force_synchronization=True,
+                                                                                   catch_exception=True))
                 except KeyError:
                     self.logger.error(f"Order with id {missing_order_id} could not be synchronized")
             await asyncio.gather(*synchronize_tasks)
