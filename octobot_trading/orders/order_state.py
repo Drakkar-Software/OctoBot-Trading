@@ -113,7 +113,7 @@ class OrderState(Initializable):
             async with self.lock:
                 await self.terminate()
 
-    async def synchronize(self, force_synchronization=False) -> None:
+    async def synchronize(self, force_synchronization=False, catch_exception=False) -> None:
         """
         Implement the exchange synchronization process
         Should begin by setting the state to REFRESHING
@@ -122,7 +122,13 @@ class OrderState(Initializable):
         - restoring the initial state if nothing has been changed with synchronization or if sync failed
         :param force_synchronization: When True, for the update of the order from the exchange
         """
-        await self._synchronize_order_with_exchange(force_synchronization=force_synchronization)
+        try:
+            await self._synchronize_order_with_exchange(force_synchronization=force_synchronization)
+        except Exception as e:
+            if catch_exception:
+                self.get_logger().exception(e, True, f"Error when synchronizing order {self.order}: {e}")
+            else:
+                raise
 
     async def _refresh_order_from_exchange(self, force_synchronization=False) -> bool:
         """

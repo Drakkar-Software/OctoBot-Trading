@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.10.1] - 2020-09-02
 ### Fixed
 - [Exchange] Error logger typing issue
+- [OrderState] Multiple open order updates
 
 ### Updated
 - [OrderState] Raise exceptions in finalize
