@@ -135,7 +135,8 @@ class OrdersProducer(ExchangeChannelProducer):
                 for order in orders)
         )
         if missing_order_ids:
-            self.logger.warning("Open orders are missing, synchronizing with exchange...")
+            self.logger.debug(f"{len(missing_order_ids)} open orders are missing on exchange, "
+                              f"synchronizing with exchange...")
             synchronize_tasks = []
             for missing_order_id in missing_order_ids:
                 try:
