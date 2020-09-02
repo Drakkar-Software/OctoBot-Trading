@@ -57,6 +57,7 @@ class CloseOrderState(OrderState):
             self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)
         except Exception as e:
             self.get_logger().exception(e, True, f"Fail to execute close state termination : {e}.")
+            raise
 
     async def _synchronize_order_with_exchange(self, force_synchronization=False):
         # Nothing to synchronize
