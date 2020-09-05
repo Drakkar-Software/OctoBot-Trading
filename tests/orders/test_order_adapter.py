@@ -122,6 +122,12 @@ async def test_get_additional_dusts_to_quantity_if_necessary():
                                               symbol_market,
                                               current_symbol_holding) == 0.88
 
+    # price = 0 => no dust
+    assert add_dusts_to_quantity_if_necessary(quantity,
+                                              0,
+                                              symbol_market,
+                                              current_symbol_holding) == quantity
+
 
 async def test_check_and_adapt_order_details_if_necessary():
     symbol_market = {
@@ -283,6 +289,11 @@ async def test_check_and_adapt_order_details_if_necessary():
                 (100.0, 0.001), (100.0, 0.001), (100.0, 0.001), (100.0, 0.001), (100.0, 0.001), (100.0, 0.001),
                 (100.0, 0.001), (100.0, 0.001)]
     assert check_and_adapt_order_details_if_necessary(quantity, price, symbol_market) == expected
+
+    # price = 0 => no order
+    quantity = 10
+    price = 0
+    assert check_and_adapt_order_details_if_necessary(quantity, price, symbol_market) == []
 
     symbol_market_without_max = {
         Ecmsc.LIMITS.value: {
