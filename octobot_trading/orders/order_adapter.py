@@ -116,7 +116,7 @@ def check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, f
     :param fixed_symbol_data:
     :return:
     """
-    if math.isnan(quantity) or math.isnan(price):
+    if math.isnan(quantity) or math.isnan(price) or price == 0:
         return []
 
     symbol_market_limits = symbol_market[Ecmsc.LIMITS.value]
@@ -206,6 +206,9 @@ def add_dusts_to_quantity_if_necessary(quantity, price, symbol_market, current_s
     :param current_symbol_holding:
     :return:
     """
+    if price == 0:
+        return quantity
+
     remaining_portfolio_amount = float("{1:.{0}f}".format(CURRENCY_DEFAULT_MAX_PRICE_DIGITS,
                                                           current_symbol_holding - quantity))
     remaining_max_total_order_price = remaining_portfolio_amount * price
