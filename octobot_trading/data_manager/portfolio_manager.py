@@ -17,7 +17,8 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, \
     CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING, BALANCE_CHANNEL
-from octobot_trading.data.margin_portfolio import MarginPortfolio
+from octobot_trading.portfolios.portfolio_factory import create_portfolio_from_exchange_manager
+from octobot_trading.portfolios.types.margin_portfolio import MarginPortfolio
 from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.data.portfolio_profitability import PortfolioProfitabilty
 from octobot_trading.util.initializable import Initializable
@@ -75,10 +76,7 @@ class PortfolioManager(Initializable):
         """
         Reset the portfolio and portfolio profitability instances
         """
-        if self.exchange_manager.is_margin:
-            self.portfolio = MarginPortfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
-        else:
-            self.portfolio = Portfolio(self.exchange_manager.get_exchange_name(), self.trader.simulate)
+        self.portfolio = create_portfolio_from_exchange_manager(self.exchange_manager)
         await self.portfolio.initialize()
         self._load_portfolio()
 
