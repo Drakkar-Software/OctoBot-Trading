@@ -131,9 +131,5 @@ def parse_order_status(raw_order):
         return KeyError("Could not parse new order status")
 
 
-def parse_is_closed(raw_order):
-    return parse_order_status(raw_order) in {OrderStatus.CANCELED, OrderStatus.CLOSED}
-
-
 def parse_is_cancelled(raw_order):
     return parse_order_status(raw_order) in {OrderStatus.CANCELED, OrderStatus.CLOSED}
