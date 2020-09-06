@@ -27,6 +27,8 @@ class TradesProducer(ExchangeChannelProducer):
     async def perform(self, trades, old_trade=False):
         try:
             for trade in trades:
+                if not trade:
+                    continue
                 symbol: str = self.channel.exchange_manager.get_exchange_symbol(
                     trade[ExchangeConstantsOrderColumns.SYMBOL.value])
                 if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
