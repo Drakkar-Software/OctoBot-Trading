@@ -332,7 +332,7 @@ class ExchangeManager(Initializable):
                     for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
 
     async def _search_and_create_websocket(self):
-        socket_manager = search_websocket_class(AbstractWebsocket, self.exchange_name, self.tentacles_setup_config)
+        socket_manager = search_websocket_class(AbstractWebsocket, self)
         if socket_manager is not None:
             await self._create_websocket(AbstractWebsocket.__name__, socket_manager)
 
