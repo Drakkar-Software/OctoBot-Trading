@@ -15,7 +15,7 @@
 #  License along with this library.
 from octobot_trading.enums import OrderStates, OrderStatus
 from octobot_trading.orders.order_state import OrderState
-from octobot_trading.orders.states.order_state_factory import create_order_state
+from octobot_trading.data_factories.order_state_factory import create_order_state
 
 
 class CancelOrderState(OrderState):

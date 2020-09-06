@@ -21,10 +21,10 @@ import pytest
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.enums import TraderOrderType, OrderStatus
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.orders.order_factory import create_order_instance_from_raw
+from octobot_trading.data_factories.order_factory import create_order_instance_from_raw
 from octobot_trading.traders.trader_simulator import TraderSimulator
 
-from octobot_trading.trades.trade_factory import create_trade_instance_from_raw, create_trade_from_order, \
+from octobot_trading.data_factories.trade_factory import create_trade_instance_from_raw, create_trade_from_order, \
     create_trade_instance
 
 # All test coroutines will be treated as marked.

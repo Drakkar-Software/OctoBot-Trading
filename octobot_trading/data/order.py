@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 from asyncio import Lock
 
 from octobot_commons.logging.logging_util import get_logger
@@ -26,7 +25,7 @@ from octobot_trading.orders.states.cancel_order_state import CancelOrderState
 from octobot_trading.orders.states.close_order_state import CloseOrderState
 from octobot_trading.orders.states.fill_order_state import FillOrderState
 from octobot_trading.orders.states.open_order_state import OpenOrderState
-from octobot_trading.orders.states.order_state_factory import create_order_state
+from octobot_trading.data_factories.order_state_factory import create_order_state
 from octobot_trading.util.initializable import Initializable
 
 

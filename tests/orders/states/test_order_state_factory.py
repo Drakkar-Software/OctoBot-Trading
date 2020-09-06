@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.enums import OrderStatus, OrderStates
-from octobot_trading.orders.states.order_state_factory import create_order_state
+from octobot_trading.data_factories.order_state_factory import create_order_state
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.orders import buy_limit_order

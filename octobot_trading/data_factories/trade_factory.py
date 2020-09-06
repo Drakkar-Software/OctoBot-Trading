@@ -15,7 +15,7 @@
 #  License along with this library.
 from octobot_trading.data.trade import Trade
 from octobot_trading.enums import OrderStatus
-from octobot_trading.orders.order_factory import create_order_from_raw, create_order_from_type
+from octobot_trading.data_factories.order_factory import create_order_from_raw, create_order_from_type
 
 
 def create_trade_instance_from_raw(trader, raw_trade):

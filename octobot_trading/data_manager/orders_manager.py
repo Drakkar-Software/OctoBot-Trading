@@ -19,7 +19,7 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.data.order import Order
 from octobot_trading.enums import OrderStatus
-from octobot_trading.orders.order_factory import create_order_instance_from_raw
+from octobot_trading.data_factories.order_factory import create_order_instance_from_raw
 from octobot_trading.util.initializable import Initializable
 
 

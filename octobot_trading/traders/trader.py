@@ -22,9 +22,9 @@ from octobot_trading.data.order import Order
 from octobot_trading.data.portfolio import Portfolio
 from octobot_trading.enums import OrderStatus, TraderOrderType
 from octobot_trading.data_adapters.order_adapter import check_and_adapt_order_details_if_necessary
-from octobot_trading.orders.order_factory import create_order_instance, create_order_instance_from_raw
+from octobot_trading.data_factories.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.orders.order_util import get_pre_order_data
-from octobot_trading.trades.trade_factory import create_trade_from_order
+from octobot_trading.data_factories.trade_factory import create_trade_from_order
 from octobot_trading.util import is_trader_enabled, get_pairs, get_market_pair
 from octobot_trading.util.initializable import Initializable
 

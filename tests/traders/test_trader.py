@@ -28,7 +28,7 @@ from octobot_trading.constants import CONFIG_TRADER, CONFIG_TRADER_RISK, CONFIG_
 from octobot_trading.data.order import Order
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.orders.order_factory import create_order_instance, create_order_instance_from_raw
+from octobot_trading.data_factories.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.orders.types.limit.buy_limit_order import BuyLimitOrder
 from octobot_trading.orders.types.market.buy_market_order import BuyMarketOrder
 from octobot_trading.orders.types.limit.sell_limit_order import SellLimitOrder
