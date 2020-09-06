@@ -18,16 +18,16 @@ from octobot_trading.exchanges.types.websocket_exchange import WebsocketExchange
 from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_WEB_SOCKET
 
 
-def force_disable_web_socket(config: dict, exchange_name: str) -> bool:
+def force_disable_web_socket(config, exchange_name) -> bool:
     return CONFIG_EXCHANGE_WEB_SOCKET in config[CONFIG_EXCHANGES][exchange_name] \
            and not config[CONFIG_EXCHANGES][exchange_name][CONFIG_EXCHANGE_WEB_SOCKET]
 
 
-def check_web_socket_config(config: dict, exchange_name: str) -> bool:
+def check_web_socket_config(config, exchange_name) -> bool:
     return not force_disable_web_socket(config, exchange_name)
 
 
-def search_websocket_class(websocket_class, exchange_manager: object):
+def search_websocket_class(websocket_class, exchange_manager):
     for socket_manager in websocket_class.__subclasses__():
         # return websocket exchange if available
         if socket_manager.has_name(exchange_manager):
