@@ -27,6 +27,8 @@ class PositionsProducer(ExchangeChannelProducer):
     async def perform(self, positions, is_closed=False, is_liquidated=False, is_from_bot=True):
         try:
             for position in positions:
+                if not position:
+                    continue
                 symbol: str = self.channel.exchange_manager.get_exchange_symbol(
                     position[ExchangeConstantsPositionColumns.SYMBOL.value])
                 if self.channel.get_filtered_consumers(
