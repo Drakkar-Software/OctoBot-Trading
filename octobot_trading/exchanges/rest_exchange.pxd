@@ -36,6 +36,7 @@ cdef class RestExchange(AbstractExchange):
     cdef str _get_side(object order_type)
 
     # public
+    cpdef dict get_ccxt_client_login_options(self)
     cpdef get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
     cpdef dict get_trade_fee(self, str symbol, object order_type, double quantity, double price, str taker_or_maker)
     cpdef dict get_fees(self, str symbol)

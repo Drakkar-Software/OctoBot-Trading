@@ -42,8 +42,6 @@ class RestExchange(AbstractExchange):
 
     ACCOUNTS = {}
 
-    CCXT_CLIENT_LOGIN_OPTIONS = {}
-
     def __init__(self, config, exchange_type, exchange_manager, is_sandboxed=False):
         super().__init__(config, exchange_type, exchange_manager)
         # We will need to create the rest client and fetch exchange config
@@ -69,6 +67,12 @@ class RestExchange(AbstractExchange):
             return getattr(ccxt, exchange_class_string)
         return exchange_class_string
 
+    def get_ccxt_client_login_options(self):
+        """
+        :return: ccxt client login option dict, can be overwritten to custom exchange login
+        """
+        return {}
+
     def _create_client(self):
         """
         Exchange instance creation
@@ -89,7 +93,7 @@ class RestExchange(AbstractExchange):
                     'password': password,
                     'verbose': False,
                     'enableRateLimit': True,
-                    'options': self.CCXT_CLIENT_LOGIN_OPTIONS
+                    'options': self.get_ccxt_client_login_options()
                 })
             except Exception as e:
                 self.is_authenticated = False
@@ -97,13 +101,13 @@ class RestExchange(AbstractExchange):
                 self.client = self.exchange_type({
                     'verbose': False,
                     'enableRateLimit': True,
-                    'options': self.CCXT_CLIENT_LOGIN_OPTIONS
+                    'options': self.get_ccxt_client_login_options()
                 })
         else:
             self.client = self.exchange_type({
                 'verbose': False,
                 'enableRateLimit': True,
-                'options': self.CCXT_CLIENT_LOGIN_OPTIONS
+                'options': self.get_ccxt_client_login_options()
             })
             self.logger.error("configuration issue: missing login information !")
         self.client.logger.setLevel(logging.INFO)
