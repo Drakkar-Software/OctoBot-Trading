@@ -36,12 +36,12 @@ async def test_stop_loss_sell_order_trigger(stop_loss_sell_order):
         order_type=TraderOrderType.STOP_LOSS,
 
     )
-    stop_loss_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
+    stop_loss_sell_order.exchange_manager().is_backtesting = True  # force update_order_status
     await stop_loss_sell_order.initialize()
-    stop_loss_sell_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+    stop_loss_sell_order.exchange_manager().exchange_personal_data.orders_manager.upsert_order_instance(
         stop_loss_sell_order
     )
-    price_events_manager = stop_loss_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+    price_events_manager = stop_loss_sell_order.exchange_manager().exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
     price_events_manager.handle_recent_trades(
@@ -69,12 +69,12 @@ async def test_stop_loss_buy_order_trigger(stop_loss_buy_order):
         symbol=DEFAULT_SYMBOL_ORDER,
         order_type=TraderOrderType.STOP_LOSS,
     )
-    stop_loss_buy_order.exchange_manager.is_backtesting = True  # force update_order_status
+    stop_loss_buy_order.exchange_manager().is_backtesting = True  # force update_order_status
     await stop_loss_buy_order.initialize()
-    stop_loss_buy_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+    stop_loss_buy_order.exchange_manager().exchange_personal_data.orders_manager.upsert_order_instance(
         stop_loss_buy_order
     )
-    price_events_manager = stop_loss_buy_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+    price_events_manager = stop_loss_buy_order.exchange_manager().exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     # stop loss buy order triggers when price is above or equal to its trigger price
     price_events_manager.handle_recent_trades(

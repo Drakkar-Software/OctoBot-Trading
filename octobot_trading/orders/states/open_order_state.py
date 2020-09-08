@@ -41,7 +41,7 @@ class OpenOrderState(OrderState):
             self.state = OrderStates.OPEN
 
         # update the availability of the currency in the portfolio
-        self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio. \
+        self.order.exchange_manager().exchange_personal_data.portfolio_manager.portfolio. \
             update_portfolio_available(self.order, is_new_order=True)
 
         return await super().initialize_impl()
@@ -73,7 +73,7 @@ class OpenOrderState(OrderState):
             self.log_order_event_message("open")
 
             # notify order manager of a new open order
-            await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(self.order,
+            await self.order.exchange_manager().exchange_personal_data.handle_order_instance_update(self.order,
                                                                                                   should_notify=True)
             self.has_terminated = True
 

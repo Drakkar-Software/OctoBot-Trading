@@ -86,7 +86,7 @@ class OrderState(Initializable):
         Log an order state event
         """
         self.get_logger().info(f"{self.order} {state_message}"
-                               f" on {self.order.exchange_manager.exchange_name}")
+                               f" on {self.order.exchange_manager().exchange_name}")
 
     async def initialize_impl(self) -> None:
         """
@@ -136,7 +136,7 @@ class OrderState(Initializable):
         :param force_synchronization: When True, for the update of the order from the exchange
         :return: the result of OrdersProducer.update_order_from_exchange()
         """
-        return (await get_chan(ORDERS_CHANNEL, self.order.exchange_manager.id).get_internal_producer().
+        return (await get_chan(ORDERS_CHANNEL, self.order.exchange_manager().id).get_internal_producer().
                 update_order_from_exchange(order=self.order,
                                            wait_for_refresh=True,
                                            force_job_execution=force_synchronization))

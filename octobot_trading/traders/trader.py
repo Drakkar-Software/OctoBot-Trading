@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import weakref
 
 from octobot_commons.logging.logging_util import get_logger
 
@@ -139,7 +140,7 @@ class Trader(Initializable):
             new_order = create_order_instance_from_raw(self, created_order, force_open=True)
 
             # rebind linked portfolio to new order instance
-            new_order.linked_portfolio = portfolio
+            new_order.linked_portfolio = weakref.ref(portfolio)
         return new_order
 
     async def cancel_order(self, order: Order, ignored_order: Order = None):

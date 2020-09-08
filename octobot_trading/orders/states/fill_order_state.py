@@ -73,7 +73,7 @@ class FillOrderState(OrderState):
 
             # Cancel linked orders
             for linked_order in self.order.linked_orders:
-                await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
+                await self.order.trader().cancel_order(linked_order, ignored_order=self.order)
 
             # compute trading fees
             try:
@@ -82,11 +82,11 @@ class FillOrderState(OrderState):
                 self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
             # update portfolio with filled order
-            async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
-                await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
+            async with self.order.exchange_manager().exchange_personal_data.get_order_portfolio(self.order).lock:
+                await self.order.exchange_manager().exchange_personal_data.handle_portfolio_update_from_order(self.order)
 
             # notify order filled
-            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, False)
+            await self.order.exchange_manager().exchange_personal_data.handle_order_update_notification(self.order, False)
 
             # call order on_filled callback
             await self.order.on_filled()

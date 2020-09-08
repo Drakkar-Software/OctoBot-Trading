@@ -141,11 +141,11 @@ async def initialize_trailing_stop(order) -> Tuple[TrailingStopOrder, float, Pri
         symbol=DEFAULT_SYMBOL_ORDER,
         order_type=TradeOrderType.TRAILING_STOP,
     )
-    order.exchange_manager.is_backtesting = True  # force update_order_status
+    order.exchange_manager().is_backtesting = True  # force update_order_status
     await order.initialize()
-    price_events_manager = order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+    price_events_manager = order.exchange_manager().exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
-    order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order)
+    order.exchange_manager().exchange_personal_data.orders_manager.upsert_order_instance(order)
     return order, order_price, price_events_manager
 
 
@@ -154,7 +154,7 @@ def get_price_percent(price, percent, selling_side=True):
 
 
 def set_mark_price(order, mark_price):
-    prices_manager = order.exchange_manager.exchange_symbols_data. \
+    prices_manager = order.exchange_manager().exchange_symbols_data. \
         get_exchange_symbol_data(order.symbol).prices_manager
     prices_manager.set_mark_price(mark_price, MarkPriceSources.EXCHANGE_MARK_PRICE.value)
     prices_manager.mark_price_set_time = order.timestamp

@@ -36,12 +36,12 @@ async def test_take_profit_sell_order_trigger(take_profit_sell_order):
         symbol=DEFAULT_SYMBOL_ORDER,
         order_type=TraderOrderType.TAKE_PROFIT,
     )
-    take_profit_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
+    take_profit_sell_order.exchange_manager().is_backtesting = True  # force update_order_status
     await take_profit_sell_order.initialize()
-    take_profit_sell_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+    take_profit_sell_order.exchange_manager().exchange_personal_data.orders_manager.upsert_order_instance(
         take_profit_sell_order
     )
-    price_events_manager = take_profit_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+    price_events_manager = take_profit_sell_order.exchange_manager().exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(max_value=order_price - 1),
@@ -70,12 +70,12 @@ async def test_take_profit_buy_order_trigger(take_profit_buy_order):
         symbol=DEFAULT_SYMBOL_ORDER,
         order_type=TraderOrderType.TAKE_PROFIT,
     )
-    take_profit_buy_order.exchange_manager.is_backtesting = True  # force update_order_status
+    take_profit_buy_order.exchange_manager().is_backtesting = True  # force update_order_status
     await take_profit_buy_order.initialize()
-    take_profit_buy_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+    take_profit_buy_order.exchange_manager().exchange_personal_data.orders_manager.upsert_order_instance(
         take_profit_buy_order
     )
-    price_events_manager = take_profit_buy_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+    price_events_manager = take_profit_buy_order.exchange_manager().exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(min_value=order_price - 1),

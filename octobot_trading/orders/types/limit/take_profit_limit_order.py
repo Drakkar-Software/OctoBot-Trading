@@ -26,7 +26,7 @@ class TakeProfitLimitOrder(LimitOrder):
 
     async def on_filled(self):
         await LimitOrder.on_filled(self)
-        await self.trader.create_artificial_order(TraderOrderType.SELL_LIMIT
+        await self.trader().create_artificial_order(TraderOrderType.SELL_LIMIT
                                                   if self.side is TradeOrderSide.SELL
                                                   else TraderOrderType.BUY_LIMIT,
                                                   self.symbol, self.origin_stop_price,
@@ -34,4 +34,4 @@ class TakeProfitLimitOrder(LimitOrder):
                                                   self.limit_price
                                                   if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE else
                                                   self.origin_stop_price,
-                                                  self.linked_portfolio)
+                                                  self.linked_portfolio())

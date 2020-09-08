@@ -19,7 +19,7 @@ from octobot_trading.data.order import Order
 class UnknownOrder(Order):
     """UnknownOrder is used when an exchange is giving an order without a type (ex: binance 2yo+ orders)"""
     async def update_order_status(self, force_refresh=False):
-        if not self.trader.simulate:
+        if not self.trader().simulate:
             await self.default_exchange_update_order_status()
         else:
             # SHOULD NEVER HAPPEN

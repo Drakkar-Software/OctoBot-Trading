@@ -29,7 +29,7 @@ class LimitOrder(Order):
 
     async def update_order_status(self, force_refresh=False):
         if self.limit_price_hit_event is None:
-            self.limit_price_hit_event = self.exchange_manager.exchange_symbols_data.\
+            self.limit_price_hit_event = self.exchange_manager().exchange_symbols_data.\
                 get_exchange_symbol_data(self.symbol).price_events_manager.\
                 add_event(self.origin_price, self.creation_time, self.trigger_above)
 
@@ -53,6 +53,6 @@ class LimitOrder(Order):
                 self.wait_for_hit_event_task.cancel()
             self.wait_for_hit_event_task = None
         if self.limit_price_hit_event is not None:
-            self.exchange_manager.exchange_symbols_data. \
+            self.exchange_manager().exchange_symbols_data. \
                 get_exchange_symbol_data(self.symbol).price_events_manager.remove_event(self.limit_price_hit_event)
         Order.clear(self)

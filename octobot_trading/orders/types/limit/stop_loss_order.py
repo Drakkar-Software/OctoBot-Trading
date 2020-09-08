@@ -24,10 +24,10 @@ class StopLossOrder(LimitOrder):
 
     async def on_filled(self):
         await LimitOrder.on_filled(self)
-        if not self.trader.simulate:
-            await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET
+        if not self.trader().simulate:
+            await self.trader().create_artificial_order(TraderOrderType.SELL_MARKET
                                                       if self.side is TradeOrderSide.SELL
                                                       else TraderOrderType.BUY_MARKET,
                                                       self.symbol, self.origin_stop_price,
                                                       self.origin_quantity, self.origin_stop_price,
-                                                      self.linked_portfolio)
+                                                      self.linked_portfolio())

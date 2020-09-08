@@ -47,11 +47,11 @@ async def test_stop_loss_and_limit(stop_loss_sell_order, sell_limit_order):
     )
     stop_loss_sell_order.linked_orders.append(sell_limit_order)
     sell_limit_order.linked_orders.append(stop_loss_sell_order)
-    stop_loss_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
+    stop_loss_sell_order.exchange_manager().is_backtesting = True  # force update_order_status
     # initialize stop loss first
     await stop_loss_sell_order.initialize()
     await sell_limit_order.initialize()
-    price_events_manager = stop_loss_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+    price_events_manager = stop_loss_sell_order.exchange_manager().exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
     # sell limit order triggers when price is above or equal to its trigger price
@@ -90,11 +90,11 @@ async def test_limit_and_stop_loss(stop_loss_sell_order, sell_limit_order):
     )
     stop_loss_sell_order.linked_orders.append(sell_limit_order)
     sell_limit_order.linked_orders.append(stop_loss_sell_order)
-    stop_loss_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
+    stop_loss_sell_order.exchange_manager().is_backtesting = True  # force update_order_status
     # initialize limit order first
     await sell_limit_order.initialize()
     await stop_loss_sell_order.initialize()
-    price_events_manager = stop_loss_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+    price_events_manager = stop_loss_sell_order.exchange_manager().exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
     # sell limit order triggers when price is above or equal to its trigger price

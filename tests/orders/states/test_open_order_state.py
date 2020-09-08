@@ -25,7 +25,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_on_order_refresh_successful(buy_limit_order):
-    buy_limit_order.exchange_manager.is_backtesting = True
+    buy_limit_order.exchange_manager().is_backtesting = True
     await buy_limit_order.initialize()
     await buy_limit_order.state.on_order_refresh_successful()
     assert buy_limit_order.state.state is OrderStates.OPEN

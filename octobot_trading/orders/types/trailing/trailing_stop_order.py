@@ -36,7 +36,7 @@ class TrailingStopOrder(Order):
         self.trailing_percent = trailing_percent
 
     async def update_order_status(self, force_refresh=False):
-        if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):
+        if not self.trader().simulate and (not self.is_synchronized_with_exchange or force_refresh):
             await self.default_exchange_update_order_status()
         await self._reset_events(self.origin_price, self.creation_time)
 
@@ -54,7 +54,7 @@ class TrailingStopOrder(Order):
         :param new_price: the new trailing price
         """
         self._clear_event_and_tasks()
-        price_events_manager = self.exchange_manager.exchange_symbols_data. \
+        price_events_manager = self.exchange_manager().exchange_symbols_data. \
             get_exchange_symbol_data(self.symbol).price_events_manager
         self._create_hit_events(price_events_manager, new_price, new_price_time)
         self._create_hit_tasks()
@@ -127,7 +127,7 @@ class TrailingStopOrder(Order):
         """
         Is called when the trailing price is hit
         """
-        prices_manager = self.exchange_manager.exchange_symbols_data. \
+        prices_manager = self.exchange_manager().exchange_symbols_data. \
             get_exchange_symbol_data(self.symbol).prices_manager
         get_logger(self.get_logger_name()).debug(f"New price hit {prices_manager.mark_price}, replacing stop...")
         await self._reset_events(prices_manager.mark_price, prices_manager.mark_price_set_time)
@@ -137,19 +137,19 @@ class TrailingStopOrder(Order):
         Create an artificial when trailing stop is filled
         """
         await Order.on_filled(self)
-        await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET
+        await self.trader().create_artificial_order(TraderOrderType.SELL_MARKET
                                                   if self.side is TradeOrderSide.SELL
                                                   else TraderOrderType.BUY_MARKET,
                                                   self.symbol, self.origin_stop_price,
                                                   self.origin_quantity, self.origin_stop_price,
-                                                  self.linked_portfolio)
+                                                  self.linked_portfolio())
 
     def _clear_event_and_tasks(self):
         """
         Clear prices hit events and their related tasks
         """
         self._cancel_hit_tasks()
-        self._remove_events(self.exchange_manager.exchange_symbols_data.
+        self._remove_events(self.exchange_manager().exchange_symbols_data.
                             get_exchange_symbol_data(self.symbol).price_events_manager)
 
     def clear(self):

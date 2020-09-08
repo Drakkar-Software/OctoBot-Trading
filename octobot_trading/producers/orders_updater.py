@@ -133,12 +133,12 @@ class OrdersUpdater(OrdersProducer):
         :param should_notify: if Orders channel consumers should be notified
         :return: True if the order was updated
         """
-        self.logger.debug(f"Requested update for {order} on {order.exchange_manager.exchange_name}")
+        self.logger.debug(f"Requested update for {order} on {order.exchange_manager().exchange_name}")
         raw_order = await self.channel.exchange_manager.exchange.get_order(order.order_id, order.symbol)
 
         if raw_order is not None:
             raw_order = self.channel.exchange_manager.exchange.clean_order(raw_order)
-            self.logger.debug(f"Received update for {order} on {order.exchange_manager.exchange_name}: {raw_order}")
+            self.logger.debug(f"Received update for {order} on {order.exchange_manager().exchange_name}: {raw_order}")
 
             await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
                 order.order_id, raw_order, should_notify=should_notify)

@@ -22,7 +22,7 @@ from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns
 
 class MarketOrder(Order):
     async def update_order_status(self, force_refresh=False):
-        if self.trader.simulate:
+        if self.trader().simulate:
             asyncio.create_task(self.on_fill(force_fill=True))
             # In trading simulation wait for the next asyncio loop iteration to ensure this order status
             # is updated before leaving this method

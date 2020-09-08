@@ -228,7 +228,7 @@ class ExchangePersonalData(Initializable):
             return False
 
     def get_order_portfolio(self, order):
-        return order.linked_portfolio if order.linked_portfolio is not None else self.portfolio_manager.portfolio
+        return order.linked_portfolio() if order.linked_portfolio is not None else self.portfolio_manager.portfolio
 
     def clear(self):
         if self.portfolio_manager is not None:

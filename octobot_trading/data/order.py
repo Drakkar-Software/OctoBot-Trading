@@ -44,7 +44,7 @@ class Order(Initializable):
         self.trader = weakref.ref(trader)
         self.exchange_manager = weakref.ref(trader.exchange_manager)
         self.status = OrderStatus.OPEN
-        self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
+        self.creation_time = self.exchange_manager().exchange.get_exchange_current_time()
         self.executed_time = 0
         self.lock = Lock()
         self.linked_orders = []
@@ -100,7 +100,7 @@ class Order(Initializable):
             self.order_id = order_id
 
         if symbol and self.symbol != symbol:
-            self.currency, self.market = self.exchange_manager.get_exchange_quote_and_base(symbol)
+            self.currency, self.market = self.exchange_manager().get_exchange_quote_and_base(symbol)
             self.symbol = symbol
 
         if status and self.status != status:
@@ -113,10 +113,10 @@ class Order(Initializable):
             self.timestamp = timestamp
         if not self.timestamp:
             if not timestamp:
-                self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
+                self.creation_time = self.exchange_manager().exchange.get_exchange_current_time()
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
-                self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+                self.creation_time = self.exchange_manager().exchange.get_uniform_timestamp(timestamp)
             self.timestamp = self.creation_time
 
         if status in {OrderStatus.FILLED, OrderStatus.CLOSED} and not self.executed_time:
@@ -152,7 +152,7 @@ class Order(Initializable):
             if filled_price and self.filled_price != filled_price:
                 self.filled_price = filled_price
 
-        if self.trader.simulate:
+        if self.trader().simulate:
             if quantity and not self.filled_quantity:
                 self.filled_quantity = quantity
                 changed = True
@@ -179,7 +179,7 @@ class Order(Initializable):
         if not self.filled_price and self.filled_quantity and self.total_cost:
             self.filled_price = self.total_cost / self.filled_quantity
             if timestamp is not None:
-                self.executed_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+                self.executed_time = self.exchange_manager().exchange.get_uniform_timestamp(timestamp)
 
         if self.taker_or_maker is None:
             self._update_taker_maker()
@@ -253,7 +253,7 @@ class Order(Initializable):
         # nothing to do by default
 
     def get_computed_fee(self, forced_value=None):
-        computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,
+        computed_fee = self.exchange_manager().exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,
                                                                     self.filled_price, self.taker_or_maker)
         return {
             FeePropertyColumns.COST.value:
@@ -274,16 +274,16 @@ class Order(Initializable):
         return self.order_profitability
 
     async def default_exchange_update_order_status(self):
-        result = await self.exchange_manager.exchange.get_order(self.order_id, self.symbol)
-        new_status = self.trader.parse_status(result)
+        result = await self.exchange_manager().exchange.get_order(self.order_id, self.symbol)
+        new_status = self.trader().parse_status(result)
         self.is_synchronized_with_exchange = True
         if new_status in {OrderStatus.FILLED, OrderStatus.CLOSED}:
             await self.on_fill()
         elif new_status is OrderStatus.CANCELED:
-            await self.trader.cancel_order(self)
+            await self.trader().cancel_order(self)
 
     def generate_executed_time(self):
-        return self.exchange_manager.exchange.get_exchange_current_time()
+        return self.exchange_manager().exchange.get_exchange_current_time()
 
     def is_self_managed(self):
         # stop losses and take profits are self managed by the bot
@@ -345,7 +345,7 @@ class Order(Initializable):
 
         self.fee = raw_order[ExchangeConstantsOrderColumns.FEE.value]
 
-        self.executed_time = self.trader.exchange.get_uniform_timestamp(
+        self.executed_time = self.trader().exchange.get_uniform_timestamp(
             raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value])
 
     def _update_type_from_raw(self, raw_order):
@@ -398,7 +398,7 @@ class Order(Initializable):
         return self.to_string()
 
     def is_to_be_maintained(self):
-        return self.trader is not None
+        return self.trader() is not None
 
 
 def parse_order_type(raw_order):

@@ -39,7 +39,7 @@ def create_trade_from_order(order,
                             executed_time=0):
     if close_status is not None:
         order.status = close_status
-    trade = Trade(order.trader)
+    trade = Trade(order.trader())
     trade.update_from_order(order,
                             canceled_time=canceled_time,
                             creation_time=creation_time,

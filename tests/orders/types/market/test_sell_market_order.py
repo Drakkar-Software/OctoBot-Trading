@@ -36,6 +36,6 @@ async def test_sell_market_order_trigger(sell_market_order):
         symbol=DEFAULT_SYMBOL_ORDER,
         order_type=TraderOrderType.SELL_MARKET,
     )
-    sell_market_order.exchange_manager.is_backtesting = True  # force update_order_status
+    sell_market_order.exchange_manager().is_backtesting = True  # force update_order_status
     await sell_market_order.initialize()
     assert sell_market_order.is_filled()

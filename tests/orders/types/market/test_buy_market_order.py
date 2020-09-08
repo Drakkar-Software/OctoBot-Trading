@@ -35,6 +35,6 @@ async def test_buy_market_order_trigger(buy_market_order):
         symbol=DEFAULT_SYMBOL_ORDER,
         order_type=TraderOrderType.BUY_MARKET,
     )
-    buy_market_order.exchange_manager.is_backtesting = True  # force update_order_status
+    buy_market_order.exchange_manager().is_backtesting = True  # force update_order_status
     await buy_market_order.initialize()
     assert buy_market_order.is_filled()

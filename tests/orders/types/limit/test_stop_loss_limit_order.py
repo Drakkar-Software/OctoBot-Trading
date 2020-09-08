@@ -35,12 +35,12 @@ async def test_stop_loss_limit_order_trigger(stop_loss_limit_order):
         symbol=DEFAULT_SYMBOL_ORDER,
         order_type=TraderOrderType.STOP_LOSS_LIMIT,
     )
-    stop_loss_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
+    stop_loss_limit_order.exchange_manager().is_backtesting = True  # force update_order_status
     await stop_loss_limit_order.initialize()
-    stop_loss_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+    stop_loss_limit_order.exchange_manager().exchange_personal_data.orders_manager.upsert_order_instance(
         stop_loss_limit_order
     )
-    price_events_manager = stop_loss_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+    price_events_manager = stop_loss_limit_order.exchange_manager().exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_SYMBOL_ORDER).price_events_manager
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(min_value=order_price + 1),

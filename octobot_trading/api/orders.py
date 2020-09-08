@@ -54,7 +54,7 @@ async def cancel_order_with_id(exchange_manager, order_id) -> bool:
 
 
 def get_order_exchange_name(order) -> str:
-    return order.exchange_manager.get_exchange_name()
+    return order.exchange_manager().get_exchange_name()
 
 
 def order_to_dict(order) -> dict:
