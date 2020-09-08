@@ -36,6 +36,7 @@ cdef class Trader(Initializable):
     cdef public bint is_enabled
 
     cdef public object logger
+    cdef public object __weakref__
 
     cdef public ExchangeManager exchange_manager
 

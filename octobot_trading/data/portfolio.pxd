@@ -27,6 +27,7 @@ cdef class Portfolio(Initializable):
     cdef public object lock # asyncio.Lock
 
     cdef public dict portfolio
+    cdef public object __weakref__
 
     cdef str _exchange_name
 

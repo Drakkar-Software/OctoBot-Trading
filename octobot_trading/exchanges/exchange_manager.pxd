@@ -27,9 +27,10 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class ExchangeManager(Initializable):
     cdef public str id
     cdef public dict config
-    cdef object tentacles_setup_config
 
+    cdef public object __weakref__
     cdef public object exchange_type
+    cdef object tentacles_setup_config
     cdef object _logger
 
     cdef public Trader trader

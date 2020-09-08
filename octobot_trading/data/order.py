@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import weakref
 from asyncio import Lock
 
 from octobot_commons.logging.logging_util import get_logger
@@ -40,8 +41,8 @@ class Order(Initializable):
 
     def __init__(self, trader, side=None):
         super().__init__()
-        self.trader = trader
-        self.exchange_manager = trader.exchange_manager
+        self.trader = weakref.ref(trader)
+        self.exchange_manager = weakref.ref(trader.exchange_manager)
         self.status = OrderStatus.OPEN
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
         self.executed_time = 0
@@ -168,7 +169,7 @@ class Order(Initializable):
             self.linked_to = linked_to
 
         if linked_portfolio:
-            self.linked_portfolio = linked_portfolio
+            self.linked_portfolio = weakref.ref(linked_portfolio)
 
         if order_type:
             self.order_type = order_type
@@ -382,10 +383,7 @@ class Order(Initializable):
 
     def clear(self):
         self.state.clear()
-        self.trader = None
-        self.exchange_manager = None
         self.linked_to = None
-        self.linked_portfolio = None
         self.linked_orders = []
 
     def to_string(self):
