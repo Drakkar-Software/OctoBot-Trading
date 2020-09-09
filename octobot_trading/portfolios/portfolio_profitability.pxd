@@ -53,6 +53,7 @@ cdef class PortfolioProfitabilty:
     cdef set traded_currencies
     cdef set missing_currency_data_in_exchange
 
+    cdef double _calculate_average_market_profitability(self)
     cdef dict _only_symbol_currency_filter(self, dict currency_dict)
     cdef void _init_traded_currencies_without_market_specific(self)
     cdef void _inform_no_matching_symbol(self, str currency)

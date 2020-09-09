@@ -82,10 +82,9 @@ class PortfolioProfitabilty:
         self.currencies_last_prices[symbol] = mark_price
         return await self._update_profitability(force_recompute_origin_portfolio)
 
-    async def handle_balance_update(self, balance):
+    async def handle_balance_update(self):
         """
         Handle balance update notification
-        :param balance: the updated balance
         :return: True if profitability changed
         """
         return await self._update_profitability()
@@ -128,11 +127,11 @@ class PortfolioProfitabilty:
             self.market_profitability_percent = await self.get_average_market_profitability()
 
             return self.profitability_diff != 0
-        except KeyError as e:
+        except KeyError as missing_data_exception:
             self.logger.warning(f"Missing ticker data to calculate profitability")
-            self.logger.warning(f"Missing {e} ticker data to calculate profitability")
-        except Exception as e:
-            self.logger.exception(e, True, str(e))
+            self.logger.warning(f"Missing {missing_data_exception} ticker data to calculate profitability")
+        except Exception as missing_data_exception:
+            self.logger.exception(missing_data_exception, True, str(missing_data_exception))
 
     async def get_average_market_profitability(self):
         """
@@ -140,7 +139,13 @@ class PortfolioProfitabilty:
         :return: the average market profitability
         """
         await self.get_current_crypto_currencies_values()
+        return self._calculate_average_market_profitability()
 
+    def _calculate_average_market_profitability(self):
+        """
+        Calculate the average of all the watched cryptocurrencies between bot's start time and now
+        :return: the calculation result
+        """
         origin_values = [value / self.origin_crypto_currencies_values[currency]
                          for currency, value
                          in self._only_symbol_currency_filter(self.current_crypto_currencies_values).items()
@@ -265,14 +270,15 @@ class PortfolioProfitabilty:
             if self.exchange_manager.symbol_exists(symbol):
                 return self.currencies_last_prices[symbol] * quantity
 
-            elif self.exchange_manager.symbol_exists(symbol_inverted) and \
+            if self.exchange_manager.symbol_exists(symbol_inverted) and \
                     self.currencies_last_prices[symbol_inverted] != 0:
                 return quantity / self.currencies_last_prices[symbol_inverted]
+
             if currency not in self.missing_currency_data_in_exchange:
                 self._inform_no_matching_symbol(currency)
                 self.missing_currency_data_in_exchange.add(currency)
             return 0
-        except KeyError as e:
+        except KeyError as missing_data_exception:
             if not self.exchange_manager.is_backtesting:
                 symbols_to_add = []
                 if self.exchange_manager.symbol_exists(symbol):
@@ -284,7 +290,7 @@ class PortfolioProfitabilty:
                     await get_chan(TICKER_CHANNEL, self.exchange_manager.id).modify(added_pairs=symbols_to_add)
                     self.initializing_symbol_prices.add(currency)
                 if raise_error:
-                    raise e
+                    raise missing_data_exception
             return 0
 
     def _inform_no_matching_symbol(self, currency):
@@ -347,8 +353,7 @@ class PortfolioProfitabilty:
         if currency in portfolio and portfolio[currency][CONFIG_PORTFOLIO_TOTAL] != 0:
             if currencies_values and currency in currencies_values:
                 return currencies_values[currency] * portfolio[currency][CONFIG_PORTFOLIO_TOTAL]
-            else:
-                return await self._evaluate_value(currency, portfolio[currency][CONFIG_PORTFOLIO_TOTAL], raise_error)
+            return await self._evaluate_value(currency, portfolio[currency][CONFIG_PORTFOLIO_TOTAL], raise_error)
         return 0
 
     def _should_currency_be_considered(self, currency, portfolio, ignore_missing_currency_data):

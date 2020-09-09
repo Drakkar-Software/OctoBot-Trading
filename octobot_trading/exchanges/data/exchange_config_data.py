@@ -47,11 +47,8 @@ class ExchangeConfig(Initializable):
         return self.traded_time_frames[-1]
 
     def get_traded_pairs(self, cryptocurrency=None):
-        if cryptocurrency:
-            if cryptocurrency in self.traded_cryptocurrencies:
-                return self.traded_cryptocurrencies[cryptocurrency]
-            else:
-                return []
+        if cryptocurrency is not None:
+            return self.traded_cryptocurrencies.get(cryptocurrency, [])
         return self.traded_symbol_pairs
 
     async def handle_symbol_update(self, exchange: str, exchange_id: str, crypto_currency: str, symbols: list) -> tuple:

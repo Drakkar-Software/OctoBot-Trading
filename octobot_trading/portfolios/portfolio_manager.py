@@ -114,7 +114,8 @@ class PortfolioManager(Initializable):
 
         try:
             self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
-        except Exception as e:
-            self.logger.exception(e, True, f"Error when loading trading history, will reset history. ({e})")
+        except Exception as balance_update_exception:
+            self.logger.exception(balance_update_exception, True, f"Error when loading trading history, "
+                                                                  f"will reset history. ({balance_update_exception})")
             self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(
                 self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]))
