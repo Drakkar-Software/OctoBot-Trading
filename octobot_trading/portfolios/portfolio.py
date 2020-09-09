@@ -16,12 +16,13 @@
 from asyncio import Lock
 from copy import deepcopy
 
+from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
+from octobot_commons.logging.logging_util import get_logger
+
+from octobot_trading.constants import CURRENT_PORTFOLIO_STRING, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL
+from octobot_trading.enums import TraderOrderType
 from octobot_trading.orders.types import TraderOrderTypeClasses
 from octobot_trading.util.initializable import Initializable
-from octobot_trading.constants import CURRENT_PORTFOLIO_STRING, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL
-from octobot_trading.enums import TradeOrderSide, TraderOrderType
-from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
 
 class Portfolio(Initializable):
@@ -33,6 +34,7 @@ class Portfolio(Initializable):
     - When an order is created it will subtract the quantity of the total
     - When an order is filled or canceled restore the availability with the real quantity
     """
+
     def __init__(self, exchange_name, is_simulated=False):
         super().__init__()
         self._exchange_name = exchange_name
@@ -99,6 +101,32 @@ class Portfolio(Initializable):
         """
         return self.get_currency_from_given_portfolio(currency, portfolio_type)
 
+    def update_portfolio_data_from_order(self, order, currency, market):
+        """
+        Call update_portfolio_data for order currency and market
+        :param order: the order that updated the portfolio
+        :param currency: the order currency
+        :param market: the order market
+        """
+        raise NotImplementedError("update_portfolio_data_from_order is not implemented")
+
+    def update_portfolio_available_from_order(self, order, factor=1):
+        """
+        Realise portfolio availability update
+        :param order: the order that triggers the portfolio update
+        :param factor: should be 1 or -1 to increase or decrease available currency portfolio
+        """
+        raise NotImplementedError("update_portfolio_available_from_order is not implemented")
+
+    def log_portfolio_update_from_order(self, order, currency, market):
+        """
+        Log a portfolio update from an order
+        :param order: the order that updated the portfolio
+        :param currency: the order currency
+        :param market: the order market
+        """
+        raise NotImplementedError("log_portfolio_update_from_order is not implemented")
+
     def update_portfolio_from_filled_order(self, order):
         """
         update_portfolio performs the update of the total / available quantity of a currency
@@ -107,11 +135,11 @@ class Portfolio(Initializable):
         """
         # stop losses and take profits aren't using available portfolio
         if not _check_available_should_update(order):
-            self._update_portfolio_available(order)
+            self.update_portfolio_available_from_order(order)
 
         currency, market = order.get_currency_and_market()
-        self._update_portfolio_data_from_order(order, currency, market)
-        self._log_portfolio_update(order, currency, market)
+        self.update_portfolio_data_from_order(order, currency, market)
+        self.log_portfolio_update_from_order(order, currency, market)
 
     def update_portfolio_available(self, order, is_new_order=False):
         """
@@ -124,7 +152,7 @@ class Portfolio(Initializable):
         :return: None
         """
         if _check_available_should_update(order):
-            self._update_portfolio_available(order, 1 if is_new_order else -1)
+            self.update_portfolio_available_from_order(order, 1 if is_new_order else -1)
 
     def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
         """
@@ -173,47 +201,6 @@ class Portfolio(Initializable):
         else:
             self._set_currency_portfolio(currency=currency, available=value, total=value)
 
-    def _update_portfolio_data_from_order(self, order, currency, market):
-        """
-        Call update_portfolio_data for order currency and market
-        :param order: the order that updated the portfolio
-        :param currency: the order currency
-        :param market: the order market
-        """
-        # update currency
-        if order.side == TradeOrderSide.BUY:
-            new_quantity = order.filled_quantity - order.get_total_fees(currency)
-            self._update_portfolio_data(currency, new_quantity, True, True)
-        else:
-            new_quantity = -order.filled_quantity
-            self._update_portfolio_data(currency, new_quantity, True, False)
-
-        # update market
-        if order.side == TradeOrderSide.BUY:
-            new_quantity = -(order.filled_quantity * order.filled_price)
-            self._update_portfolio_data(market, new_quantity, True, False)
-        else:
-            new_quantity = (order.filled_quantity * order.filled_price) - order.get_total_fees(market)
-            self._update_portfolio_data(market, new_quantity, True, True)
-
-    def _update_portfolio_available(self, order, factor=1):
-        """
-        Realise portfolio availability update
-        :param order: the order that triggers the portfolio update
-        :param factor: should be 1 or -1 to increase or decrease available currency portfolio
-        """
-        currency, market = order.get_currency_and_market()
-
-        # when buy order
-        if order.side == TradeOrderSide.BUY:
-            new_quantity = - order.origin_quantity * order.origin_price * factor
-            self._update_portfolio_data(market, new_quantity, False, True)
-
-        # when sell order
-        else:
-            new_quantity = - order.origin_quantity * factor
-            self._update_portfolio_data(currency, new_quantity, False, True)
-
     def _parse_currency_balance(self, currency_balance):
         """
         Parse the exchange balance from the default ccxt format
@@ -221,10 +208,8 @@ class Portfolio(Initializable):
         :return: the updated currency portfolio
         """
         return self._create_currency_portfolio(
-            available=currency_balance[CONFIG_PORTFOLIO_FREE]
-            if CONFIG_PORTFOLIO_FREE in currency_balance else currency_balance[PORTFOLIO_AVAILABLE],
-            total=currency_balance[CONFIG_PORTFOLIO_TOTAL]
-            if CONFIG_PORTFOLIO_TOTAL in currency_balance else currency_balance[PORTFOLIO_TOTAL])
+            available=currency_balance.get(CONFIG_PORTFOLIO_FREE, currency_balance.get(PORTFOLIO_AVAILABLE, 0)),
+            total=currency_balance.get(CONFIG_PORTFOLIO_TOTAL, currency_balance.get(PORTFOLIO_TOTAL, 0)))
 
     def _create_currency_portfolio(self, available, total):
         """
@@ -260,23 +245,6 @@ class Portfolio(Initializable):
         """
         self.portfolio[currency][PORTFOLIO_AVAILABLE] += available
         self.portfolio[currency][PORTFOLIO_TOTAL] += total
-
-    def _log_portfolio_update(self, order, currency, market):
-        """
-        Log a portfolio update from an order
-        :param order: the order that updated the portfolio
-        :param currency: the order currency
-        :param market: the order market
-        """
-        if order.side == TradeOrderSide.BUY:
-            currency_portfolio_num = order.filled_quantity - order.get_total_fees(currency)
-            market_portfolio_num = -order.filled_quantity * order.filled_price
-        else:
-            currency_portfolio_num = -order.filled_quantity
-            market_portfolio_num = order.filled_quantity * order.filled_price - order.get_total_fees(market)
-
-        self.logger.debug(f"Portfolio updated from order | {currency} {currency_portfolio_num} | {market} "
-                          f"{market_portfolio_num} | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
 
 
 def _check_available_should_update(order):

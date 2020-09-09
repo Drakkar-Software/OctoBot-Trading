@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
+
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, \
     CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING, BALANCE_CHANNEL
@@ -26,6 +27,7 @@ class PortfolioManager(Initializable):
     """
     Manage the portfolio and portfolio profitability instances
     """
+
     def __init__(self, config, trader, exchange_manager):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)
@@ -51,7 +53,7 @@ class PortfolioManager(Initializable):
             return self.portfolio.update_portfolio_from_balance(balance)
         return False
 
-    async def handle_balance_update_from_order(self, order):
+    async def handle_balance_update_from_order(self, order) -> bool:
         """
         Handle a balance update from an order request
         :param order: the order
@@ -59,16 +61,18 @@ class PortfolioManager(Initializable):
         """
         if self.trader.is_enabled:
             if self.trader.simulate:
-                if order.is_filled():
-                    self.portfolio.update_portfolio_from_filled_order(order)
-                else:
-                    self.portfolio.update_portfolio_available(order, is_new_order=False)
-                return True
-            else:
-                # on real trading: reload portfolio to ensure portfolio sync
-                return await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer().\
-                    refresh_real_trader_portfolio()
+                return self._refresh_simulated_trader_portfolio_from_order(order)
+            # on real trading: reload portfolio to ensure portfolio sync
+            return await self._refresh_real_trader_portfolio()
         return False
+
+    async def _refresh_real_trader_portfolio(self) -> bool:
+        """
+        Call BALANCE_CHANNEL producer to refresh real trader portfolio
+        :return: True if the portfolio was updated
+        """
+        return await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer(). \
+            refresh_real_trader_portfolio()
 
     async def _reset_portfolio(self):
         """
@@ -80,6 +84,18 @@ class PortfolioManager(Initializable):
 
         self.portfolio_profitability = PortfolioProfitabilty(self.config, self.trader, self, self.exchange_manager)
         self.reference_market = self.portfolio_profitability.reference_market
+
+    def _refresh_simulated_trader_portfolio_from_order(self, order):
+        """
+        Handle a balance update from an order request when simulating
+        :param order: the order that should update portfolio
+        :return: True if the portfolio was updated
+        """
+        if order.is_filled():
+            self.portfolio.update_portfolio_from_filled_order(order)
+        else:
+            self.portfolio.update_portfolio_available(order, is_new_order=False)
+        return True
 
     def _load_portfolio(self):
         """

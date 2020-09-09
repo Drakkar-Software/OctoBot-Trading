@@ -42,13 +42,13 @@ cdef class Portfolio(Initializable):
     cpdef void reset(self)
 
     cdef void _update_portfolio_data(self, str currency, double value, bint total=*, bint available=*)
-    cdef void _update_portfolio_data_from_order(self, Order order, str currency, str market)
-    cdef void _update_portfolio_available(self, Order order, int factor=*)
+    cdef void update_portfolio_data_from_order(self, Order order, str currency, str market)
+    cdef void update_portfolio_available_from_order(self, Order order, int factor=*)
     cdef void _reset_currency_portfolio(self, str currency)
     cdef dict _parse_currency_balance(self, dict currency_balance)
     cdef dict _create_currency_portfolio(self, double available, double total)
     cdef void _set_currency_portfolio(self, str currency, double available, double total)
     cdef void _update_currency_portfolio(self, str currency, double available=*, double total=*)
-    cdef void _log_portfolio_update(self, Order order, str currency, str market)
+    cdef void log_portfolio_update_from_order(self, Order order, str currency, str market)
 
 cdef bint _check_available_should_update(Order order)
