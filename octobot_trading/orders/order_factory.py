@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.order import parse_order_type
+from octobot_trading.orders.order import parse_order_type
 from octobot_trading.enums import OrderStatus
 from octobot_trading.orders.types import TraderOrderTypeClasses
 

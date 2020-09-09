@@ -14,27 +14,27 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.portfolio cimport Portfolio
-from octobot_trading.data.portfolio_profitability cimport PortfolioProfitabilty
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.traders.trader cimport Trader
+from octobot_trading.trades.trade cimport Trade
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class PortfolioManager(Initializable):
+cdef class TradesManager(Initializable):
     cdef object logger
+    cdef object exchange_manager
+    cdef object trader
 
-    cdef public dict config
+    cdef public object trades
 
-    cdef public str reference_market
+    cdef dict config
 
-    cdef public ExchangeManager exchange_manager
-    cdef public Trader trader
+    cdef public bint trades_initialized
 
-    cdef public PortfolioProfitabilty portfolio_profitability
-    cdef public Portfolio portfolio
+    cdef void _check_trades_size(self)
+    cdef void _reset_trades(self)
+    cdef void _remove_oldest_trades(self, int nb_to_remove)
 
-    cpdef bint handle_balance_update(self, dict balance)
-
-    cdef void _load_portfolio(self)
-    cdef void _set_starting_simulated_portfolio(self)
+    cpdef Trade get_trade(self, str trade_id)
+    cpdef bint upsert_trade(self, str trade_id, dict raw_trade)
+    cpdef void upsert_trade_instance(self, Trade trade)
+    cpdef dict get_total_paid_fees(self)
+    cpdef void clear(self)

@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.data.order cimport Order
+from octobot_trading.orders.order cimport Order
 from octobot_trading.traders.trader cimport Trader
 
 cpdef Order create_order_from_raw(Trader trader, dict raw_order)

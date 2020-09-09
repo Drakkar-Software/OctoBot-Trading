@@ -15,7 +15,7 @@
 #  License along with this library.
 from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL, MARGIN_PORTFOLIO
 from octobot_trading.constants import CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL, CONFIG_PORTFOLIO_MARGIN
-from octobot_trading.data.portfolio import Portfolio
+from octobot_trading.portfolios.portfolio import Portfolio
 
 
 class MarginPortfolio(Portfolio):

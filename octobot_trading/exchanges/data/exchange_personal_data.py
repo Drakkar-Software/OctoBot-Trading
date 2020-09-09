@@ -19,10 +19,10 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import BALANCE_CHANNEL, ORDERS_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, \
     BALANCE_PROFITABILITY_CHANNEL
-from octobot_trading.data_manager.orders_manager import OrdersManager
-from octobot_trading.data_manager.portfolio_manager import PortfolioManager
-from octobot_trading.data_manager.positions_manager import PositionsManager
-from octobot_trading.data_manager.trades_manager import TradesManager
+from octobot_trading.orders.orders_manager import OrdersManager
+from octobot_trading.portfolios.portfolio_manager import PortfolioManager
+from octobot_trading.positions.positions_manager import PositionsManager
+from octobot_trading.trades.trades_manager import TradesManager
 from octobot_trading.util.initializable import Initializable
 
 

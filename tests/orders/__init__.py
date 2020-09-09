@@ -18,9 +18,24 @@ import pytest
 from octobot_trading.enums import TradeOrderSide
 from octobot_trading.orders.types import BuyLimitOrder, SellLimitOrder, SellMarketOrder, BuyMarketOrder, StopLossOrder, \
     StopLossLimitOrder, TakeProfitOrder, TakeProfitLimitOrder, TrailingStopOrder, TrailingStopLimitOrder
+from octobot_trading.orders.order import Order
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
+from tests.traders import trader
+from tests.traders import trader_simulator
+
+
+@pytest.fixture()
+async def order(trader):
+    config, trader_inst, exchange_manager = trader
+    return config, trader_inst, exchange_manager, Order(trader_inst)
+
+
+@pytest.fixture()
+async def order_simulator(trader_simulator):
+    config, trader_inst, exchange_manager = trader_simulator
+    return config, trader_inst, exchange_manager, Order(trader_inst)
 
 
 @pytest.fixture()

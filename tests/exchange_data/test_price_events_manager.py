@@ -18,7 +18,7 @@ import pytest
 from asyncio import Event
 from mock import patch, Mock
 
-from tests.data_manager import price_events_manager
+from tests.exchange_data import price_events_manager
 from tests import event_loop
 from tests.util.random_numbers import random_recent_trade, random_price, random_timestamp
 

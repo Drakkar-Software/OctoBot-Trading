@@ -26,7 +26,7 @@ from typing import List
 from octobot_commons.constants import HOURS_TO_SECONDS
 from octobot_commons.enums import TimeFrames
 from octobot_commons.logging.logging_util import get_logger, set_logging_level
-from octobot_trading.data_manager.order_book_manager import OrderBookManager
+from octobot_trading.exchange_data.order_book_manager import OrderBookManager
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.enums import WebsocketFeeds as Feeds
 

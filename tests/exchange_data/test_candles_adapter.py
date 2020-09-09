@@ -18,11 +18,11 @@ import numpy as np
 
 from octobot_commons.enums import PriceIndexes, TimeFrames
 from octobot_trading.api.symbol_data import get_symbol_candles_manager
-from octobot_trading.data_adapters.candles_adapter import get_symbol_close_candles, get_symbol_open_candles, \
+from octobot_trading.exchange_data.candles_adapter import get_symbol_close_candles, get_symbol_open_candles, \
     get_symbol_low_candles, get_symbol_high_candles, get_symbol_time_candles, get_symbol_volume_candles, \
     get_candle_as_list
-from octobot_trading.data_manager.candles_manager import CandlesManager
-from octobot_trading.data_manager.kline_manager import KlineManager
+from octobot_trading.exchange_data.candles_manager import CandlesManager
+from octobot_trading.exchange_data.kline_manager import KlineManager
 from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 

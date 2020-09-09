@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.enums import TraderOrderType, OrderStatus
-from octobot_trading.data.order import parse_order_type as order_parse_order_type
+from octobot_trading.orders.order import parse_order_type as order_parse_order_type
 
 
 def get_trade_history(exchange_manager, symbol=None, since=None, as_dict=False, include_cancelled=False) -> list:

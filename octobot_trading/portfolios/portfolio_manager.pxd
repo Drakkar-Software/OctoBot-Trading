@@ -14,31 +14,27 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.position cimport Position
+from octobot_trading.portfolios.portfolio cimport Portfolio
+from octobot_trading.portfolios.portfolio_profitability cimport PortfolioProfitabilty
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class PositionsManager(Initializable):
+cdef class PortfolioManager(Initializable):
     cdef object logger
 
-    cdef dict config
+    cdef public dict config
 
-    cdef public bint positions_initialized
+    cdef public str reference_market
 
-    cdef Trader trader
-    cdef ExchangeManager exchange_manager
+    cdef public ExchangeManager exchange_manager
+    cdef public Trader trader
 
-    cdef public object positions
+    cdef public PortfolioProfitabilty portfolio_profitability
+    cdef public Portfolio portfolio
 
-    cdef void _reset_positions(self)
-    cdef void _check_positions_size(self)
-    cdef Position _create_position_from_raw(self, dict raw_position)
-    cdef void _remove_oldest_positions(self, int nb_to_remove)
-    cdef list _select_positions(self, object status=*, str symbol=*, int since=*, int limit=*)
+    cpdef bint handle_balance_update(self, dict balance)
 
-    cpdef bint upsert_position(self, str position_id, dict raw_position)
-    cpdef bint upsert_position_instance(self, Position position)
-    cpdef list get_open_positions(self, str symbol=*, int since=*, int limit=*)
-    cpdef list get_closed_positions(self, str symbol=*, int since=*, int limit=*)
+    cdef void _load_portfolio(self)
+    cdef void _set_starting_simulated_portfolio(self)

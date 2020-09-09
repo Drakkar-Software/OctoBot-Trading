@@ -19,8 +19,8 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
-from octobot_trading.data.portfolio cimport Portfolio
-from octobot_trading.data_manager.portfolio_manager cimport PortfolioManager
+from octobot_trading.portfolios.portfolio cimport Portfolio
+from octobot_trading.portfolios.portfolio_manager cimport PortfolioManager
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.traders.trader cimport Trader
 

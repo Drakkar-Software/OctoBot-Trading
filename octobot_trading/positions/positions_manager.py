@@ -17,7 +17,7 @@ from collections import OrderedDict
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.data.position import Position
+from octobot_trading.positions.position import Position
 from octobot_trading.enums import PositionStatus
 from octobot_trading.util.initializable import Initializable
 

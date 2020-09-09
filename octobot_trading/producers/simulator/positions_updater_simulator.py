@@ -19,7 +19,7 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import MARK_PRICE_CHANNEL, POSITIONS_CHANNEL
-from octobot_trading.data.position import Position
+from octobot_trading.positions.position import Position
 from octobot_trading.enums import PositionStatus
 from octobot_trading.producers.positions_updater import PositionsUpdater
 

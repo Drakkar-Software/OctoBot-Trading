@@ -18,9 +18,7 @@ from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, \
     CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING, BALANCE_CHANNEL
 from octobot_trading.portfolios.portfolio_factory import create_portfolio_from_exchange_manager
-from octobot_trading.portfolios.types.margin_portfolio import MarginPortfolio
-from octobot_trading.data.portfolio import Portfolio
-from octobot_trading.data.portfolio_profitability import PortfolioProfitabilty
+from octobot_trading.portfolios.portfolio_profitability import PortfolioProfitabilty
 from octobot_trading.util.initializable import Initializable
 
 

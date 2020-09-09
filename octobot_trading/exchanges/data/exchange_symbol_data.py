@@ -16,14 +16,14 @@
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.data_manager.candles_manager import CandlesManager
-from octobot_trading.data_manager.funding_manager import FundingManager
-from octobot_trading.data_manager.kline_manager import KlineManager
-from octobot_trading.data_manager.order_book_manager import OrderBookManager
-from octobot_trading.data_manager.price_events_manager import PriceEventsManager
-from octobot_trading.data_manager.prices_manager import PricesManager
-from octobot_trading.data_manager.recent_trades_manager import RecentTradesManager
-from octobot_trading.data_manager.ticker_manager import TickerManager
+from octobot_trading.exchange_data.candles_manager import CandlesManager
+from octobot_trading.exchange_data.funding_manager import FundingManager
+from octobot_trading.exchange_data.kline_manager import KlineManager
+from octobot_trading.exchange_data.order_book_manager import OrderBookManager
+from octobot_trading.exchange_data.price_events_manager import PriceEventsManager
+from octobot_trading.exchange_data.prices_manager import PricesManager
+from octobot_trading.exchange_data.recent_trades_manager import RecentTradesManager
+from octobot_trading.exchange_data.ticker_manager import TickerManager
 
 
 class ExchangeSymbolData:

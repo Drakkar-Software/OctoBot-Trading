@@ -22,7 +22,7 @@ It is also use to store creation & fill values of the order """
 from octobot_trading.orders.order_state cimport OrderState
 from octobot_trading.util.initializable cimport Initializable
 
-from octobot_trading.data.portfolio cimport Portfolio
+from octobot_trading.portfolios.portfolio cimport Portfolio
 
 cdef class Order(Initializable):
     cdef public object trader
