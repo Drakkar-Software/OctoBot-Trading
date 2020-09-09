@@ -83,9 +83,7 @@ class ExchangePersonalData(Initializable):
     async def handle_portfolio_profitability_update(self, balance, mark_price, symbol, should_notify: bool = True):
         try:
             portfolio_profitability = self.portfolio_manager.portfolio_profitability
-
-            if balance is not None:
-                await portfolio_profitability.handle_balance_update(balance)
+            await portfolio_profitability.handle_balance_update()
 
             if mark_price is not None and symbol is not None:
                 await portfolio_profitability.handle_mark_price_update(symbol=symbol, mark_price=mark_price)

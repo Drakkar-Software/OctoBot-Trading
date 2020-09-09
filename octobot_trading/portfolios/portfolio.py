@@ -61,10 +61,10 @@ class Portfolio(Initializable):
         Copy the portfolio object
         :return: the copied portfolio object
         """
-        pf: Portfolio = Portfolio(self._exchange_name, self._is_simulated)
-        await pf.initialize()
-        pf.portfolio = deepcopy(self.portfolio)
-        return pf
+        new_portfolio: Portfolio = Portfolio(self._exchange_name, self._is_simulated)
+        await new_portfolio.initialize()
+        new_portfolio.portfolio = deepcopy(self.portfolio)
+        return new_portfolio
 
     def update_portfolio_from_balance(self, balance):
         """
@@ -154,27 +154,6 @@ class Portfolio(Initializable):
         if _check_available_should_update(order):
             self.update_portfolio_available_from_order(order, 1 if is_new_order else -1)
 
-    def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
-        """
-        Resets available amount with total amount
-        CAREFUL: if no currency is given, resets all the portfolio !
-        :param reset_currency: the currency to be reset
-        :param reset_quantity: the quantity to reset
-        """
-        if not reset_currency:
-            self.portfolio.update({currency: self._create_currency_portfolio(
-                available=self.portfolio[currency][PORTFOLIO_TOTAL],
-                total=self.portfolio[currency][PORTFOLIO_TOTAL])
-                for currency in self.portfolio})
-        else:
-            if reset_currency in self.portfolio:
-                if reset_quantity is None:
-                    self._set_currency_portfolio(currency=reset_currency,
-                                                 available=self.portfolio[reset_currency][PORTFOLIO_TOTAL],
-                                                 total=self.portfolio[reset_currency][PORTFOLIO_TOTAL])
-                else:
-                    self._update_currency_portfolio(currency=reset_currency, available=reset_quantity)
-
     def get_portfolio_from_amount_dict(self, amount_dict):
         """
         Create a portfolio from an amount dictionary
@@ -245,6 +224,45 @@ class Portfolio(Initializable):
         """
         self.portfolio[currency][PORTFOLIO_AVAILABLE] += available
         self.portfolio[currency][PORTFOLIO_TOTAL] += total
+
+    def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
+        """
+        Resets available amount with total amount
+        CAREFUL: if no currency is given, resets all the portfolio !
+        :param reset_currency: the currency to be reset
+        :param reset_quantity: the quantity to reset
+        """
+        if not reset_currency:
+            self._reset_all_portfolio_available()
+        else:
+            if reset_currency in self.portfolio:
+                self._reset_currency_portfolio_available(currency_to_reset=reset_currency,
+                                                         reset_quantity=reset_quantity)
+
+    def _reset_all_portfolio_available(self):
+        """
+        Reset all portfolio currencies to available
+        """
+        self.portfolio.update(
+            {
+                currency: self._create_currency_portfolio(
+                    available=self.portfolio[currency][PORTFOLIO_TOTAL],
+                    total=self.portfolio[currency][PORTFOLIO_TOTAL])
+                for currency in self.portfolio
+            })
+
+    def _reset_currency_portfolio_available(self, currency_to_reset, reset_quantity):
+        """
+        Reset currency portfolio to available
+        :param currency_to_reset: the currency to reset
+        :param reset_quantity: the quantity to reset
+        """
+        if reset_quantity is None:
+            self._set_currency_portfolio(currency=currency_to_reset,
+                                         available=self.portfolio[currency_to_reset][PORTFOLIO_TOTAL],
+                                         total=self.portfolio[currency_to_reset][PORTFOLIO_TOTAL])
+        else:
+            self._update_currency_portfolio(currency=currency_to_reset, available=reset_quantity)
 
 
 def _check_available_should_update(order):

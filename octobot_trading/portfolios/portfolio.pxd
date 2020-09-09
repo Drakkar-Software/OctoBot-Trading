@@ -32,6 +32,7 @@ cdef class Portfolio(Initializable):
 
     cdef bint _is_simulated
 
+    # public methods
     cpdef double get_currency_portfolio(self, str currency, str portfolio_type=*)
     cpdef double get_currency_from_given_portfolio(self, str currency, str portfolio_type=*)
     cpdef bint update_portfolio_from_balance(self, dict balance)
@@ -41,14 +42,19 @@ cdef class Portfolio(Initializable):
     # cpdef dict get_portfolio_from_amount_dict(self, dict amount_dict) can't be cythonized for now
     cpdef void reset(self)
 
-    cdef void _update_portfolio_data(self, str currency, double value, bint total=*, bint available=*)
+    # abstract methods
     cdef void update_portfolio_data_from_order(self, Order order, str currency, str market)
     cdef void update_portfolio_available_from_order(self, Order order, int factor=*)
+    cdef void log_portfolio_update_from_order(self, Order order, str currency, str market)
+
+    # private methods
+    cdef void _update_portfolio_data(self, str currency, double value, bint total=*, bint available=*)
     cdef void _reset_currency_portfolio(self, str currency)
     cdef dict _parse_currency_balance(self, dict currency_balance)
     cdef dict _create_currency_portfolio(self, double available, double total)
     cdef void _set_currency_portfolio(self, str currency, double available, double total)
     cdef void _update_currency_portfolio(self, str currency, double available=*, double total=*)
-    cdef void log_portfolio_update_from_order(self, Order order, str currency, str market)
+    cdef void _reset_all_portfolio_available(self)
+    cdef void _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 
 cdef bint _check_available_should_update(Order order)

@@ -62,6 +62,23 @@ async def test_get_currency_portfolio(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("NANO", PORTFOLIO_TOTAL) == 0
 
 
+async def test_update_portfolio_from_balance(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    test_portfolio = {"zyx": {PORTFOLIO_AVAILABLE: 0.1,
+                              PORTFOLIO_TOTAL: 0.1},
+                      "BTC": {PORTFOLIO_AVAILABLE: 1,
+                              PORTFOLIO_TOTAL: 1},
+                      "ETH": {PORTFOLIO_AVAILABLE: 50,
+                              PORTFOLIO_TOTAL: 150}}
+
+    assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio)
+    assert portfolio_manager.portfolio.portfolio == test_portfolio
+
+    # should return False when no update made
+    assert not portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio)
+
+
 async def test_update_portfolio_available_from_order(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
@@ -644,7 +661,6 @@ async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
                        quantity=0.7,
                        price=9)
 
-
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_2, True)
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_3, True)
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_4, True)
@@ -837,3 +853,15 @@ async def test_reset_portfolio_available(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+
+
+async def test_default_impl(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    order = BuyMarketOrder(trader)
+
+    # should not raise NotImplemented
+    portfolio_manager.portfolio.update_portfolio_data_from_order(order, "BTC", "USD")
+    portfolio_manager.portfolio.update_portfolio_available_from_order(order)
+    portfolio_manager.portfolio.log_portfolio_update_from_order(order, "BTC", "USD")

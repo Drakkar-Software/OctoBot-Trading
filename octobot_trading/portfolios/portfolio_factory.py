@@ -19,9 +19,13 @@ from octobot_trading.portfolios.types.spot_portfolio import SpotPortfolio
 
 
 def create_portfolio_from_exchange_manager(exchange_manager):
+    """
+    Create a portfolio from an exchange manager
+    :param exchange_manager: the exchange manager related to the new portfolio instance
+    :return: the created portfolio instance
+    """
     if exchange_manager.is_future:
         return FuturePortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
     if exchange_manager.is_margin:
         return MarginPortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
     return SpotPortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
-
