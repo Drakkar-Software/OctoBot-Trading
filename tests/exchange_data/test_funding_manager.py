@@ -17,7 +17,7 @@
 import pytest
 from math import isnan
 
-from octobot_trading.data_manager.funding_manager import FundingManager
+from octobot_trading.exchange_data.funding_manager import FundingManager
 from tests.util.random_numbers import random_timestamp, random_funding_rate
 
 pytestmark = pytest.mark.asyncio

@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.trade import Trade
+from octobot_trading.trades.trade import Trade
 from octobot_trading.enums import OrderStatus
 from octobot_trading.orders.order_factory import create_order_from_raw, create_order_from_type
 

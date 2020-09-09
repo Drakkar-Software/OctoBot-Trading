@@ -16,7 +16,7 @@
 import asyncio
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 
-from octobot_trading.data.order import Order
+from octobot_trading.orders.order import Order
 from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns
 
 

@@ -16,7 +16,7 @@
 import numpy as np
 
 from octobot_commons.enums import PriceIndexes
-from octobot_trading.data_manager.candles_manager import CandlesManager
+from octobot_trading.exchange_data.candles_manager import CandlesManager
 
 
 def test_constructor():

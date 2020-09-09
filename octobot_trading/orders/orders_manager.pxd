@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.order cimport Order
+from octobot_trading.orders.order cimport Order
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable

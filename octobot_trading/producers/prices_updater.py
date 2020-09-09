@@ -20,7 +20,7 @@ from ccxt import NotSupported
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.price import MarkPriceProducer
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, FUNDING_CHANNEL
-from octobot_trading.data_manager.prices_manager import calculate_mark_price_from_recent_trade_prices
+from octobot_trading.exchange_data.prices_manager import calculate_mark_price_from_recent_trade_prices
 from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsOrderColumns, \
     ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns, RestExchangePairsRefreshMaxThresholds, \
     MarkPriceSources

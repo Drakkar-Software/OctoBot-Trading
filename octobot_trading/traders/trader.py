@@ -18,8 +18,8 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.constants import REAL_TRADER_STR, CONFIG_TRADER_RISK, CONFIG_TRADING, CONFIG_TRADER_RISK_MIN, \
     CONFIG_TRADER_RISK_MAX
-from octobot_trading.data.order import Order
-from octobot_trading.data.portfolio import Portfolio
+from octobot_trading.orders.order import Order
+from octobot_trading.portfolios.portfolio import Portfolio
 from octobot_trading.enums import OrderStatus, TraderOrderType
 from octobot_trading.orders.order_adapter import check_and_adapt_order_details_if_necessary
 from octobot_trading.orders.order_factory import create_order_instance, create_order_instance_from_raw

@@ -19,7 +19,7 @@ import pytest
 from math import nan
 from octobot_commons.enums import PriceIndexes
 
-from octobot_trading.data_manager.kline_manager import KlineManager
+from octobot_trading.exchange_data.kline_manager import KlineManager
 from tests.util.random_numbers import random_kline, random_price, random_timestamp, random_quantity
 
 pytestmark = pytest.mark.asyncio

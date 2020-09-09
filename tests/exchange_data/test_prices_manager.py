@@ -20,8 +20,8 @@ import asyncio
 
 from octobot_trading.enums import MarkPriceSources
 from tests.exchanges import backtesting_exchange_manager, backtesting_config, fake_backtesting
-from tests.data_manager import price_events_manager, prices_manager
-from octobot_trading.data_manager.prices_manager import PricesManager, calculate_mark_price_from_recent_trade_prices
+from tests.exchange_data import price_events_manager, prices_manager
+from octobot_trading.exchange_data.prices_manager import PricesManager, calculate_mark_price_from_recent_trade_prices
 from tests import event_loop
 
 # All test coroutines will be treated as marked.

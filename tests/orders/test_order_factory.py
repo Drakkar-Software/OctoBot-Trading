@@ -16,7 +16,7 @@
 import pytest
 from octobot_commons.tests.test_config import load_test_config
 
-from octobot_trading.data.order import Order, parse_order_type
+from octobot_trading.orders.order import Order, parse_order_type
 from octobot_trading.enums import TradeOrderSide, TradeOrderType, TraderOrderType
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.traders.trader_simulator import TraderSimulator

@@ -13,10 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data_manager.candles_manager import CandlesManager
+from octobot_trading.exchange_data.candles_manager import CandlesManager
 from octobot_trading.enums import MarkPriceSources
 from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
-from octobot_trading.data_adapters.candles_adapter import \
+from octobot_trading.exchange_data.candles_adapter import \
     get_symbol_close_candles as adapter_get_symbol_close_candles, \
     get_symbol_open_candles as adapter_get_symbol_open_candles, \
     get_symbol_high_candles as adapter_get_symbol_high_candles, \

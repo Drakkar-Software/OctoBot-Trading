@@ -25,7 +25,7 @@ from octobot_commons.constants import CONFIG_ENABLED_OPTION, PORTFOLIO_AVAILABLE
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_TRADER_RISK, CONFIG_TRADING, CONFIG_TRADER_RISK_MIN, \
     CONFIG_TRADER_RISK_MAX
-from octobot_trading.data.order import Order
+from octobot_trading.orders.order import Order
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.orders.order_factory import create_order_instance, create_order_instance_from_raw
@@ -655,7 +655,7 @@ class TestTrader:
         }
 
         if not os.getenv('CYTHON_IGNORE'):
-            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+            with patch('octobot_trading.exchange_data.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all()
 
@@ -693,7 +693,7 @@ class TestTrader:
         }
 
         if not os.getenv('CYTHON_IGNORE'):
-            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+            with patch('octobot_trading.exchange_data.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all(currencies_to_sell=["USDT"], timeout=1)
             assert len(orders) == 1
@@ -704,7 +704,7 @@ class TestTrader:
             assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
 
         if not os.getenv('CYTHON_IGNORE'):
-            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+            with patch('octobot_trading.exchange_data.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all(currencies_to_sell=["ADA"])
             assert len(orders) == 1
@@ -717,7 +717,7 @@ class TestTrader:
 
         if not os.getenv('CYTHON_IGNORE'):
             # currency not in portfolio
-            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+            with patch('octobot_trading.exchange_data.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all(currencies_to_sell=["XBT"])
             assert len(orders) == 0
@@ -729,14 +729,14 @@ class TestTrader:
 
         if not os.getenv('CYTHON_IGNORE'):
             # currency in portfolio but with 0 quantity
-            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+            with patch('octobot_trading.exchange_data.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all(currencies_to_sell=["XRP"])
             assert len(orders) == 0
 
         if not os.getenv('CYTHON_IGNORE'):
             # invalid currency
-            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+            with patch('octobot_trading.exchange_data.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all(currencies_to_sell=[""])
             assert len(orders) == 0
@@ -748,7 +748,7 @@ class TestTrader:
 
         if not os.getenv('CYTHON_IGNORE'):
             # currency in portfolio but with close to 0 quantity
-            with patch('octobot_trading.data_manager.prices_manager.PricesManager.get_mark_price',
+            with patch('octobot_trading.exchange_data.prices_manager.PricesManager.get_mark_price',
                        new=AsyncMock(return_value=1)):
                 orders = await trader_inst.sell_all(currencies_to_sell=["ICX"])
             assert len(orders) == 0

@@ -18,7 +18,7 @@ from asyncio import wait_for
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.data.order import Order
+from octobot_trading.orders.order import Order
 from octobot_trading.enums import TradeOrderSide, TraderOrderType
 
 

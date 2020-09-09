@@ -16,7 +16,7 @@
 #  License along with this library.
 
 
-from octobot_trading.data.portfolio cimport Portfolio
+from octobot_trading.portfolios.portfolio cimport Portfolio
 
 cdef class MarginPortfolio(Portfolio):
     cdef void _reset_currency_portfolio(self, str currency)

@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.data.portfolio import Portfolio
+from octobot_trading.portfolios.portfolio import Portfolio
 
 
 class FuturePortfolio(Portfolio):

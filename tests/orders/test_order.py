@@ -15,7 +15,8 @@
 #  License along with this library.
 import pytest
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType
-from octobot_trading.data.order import Order
+from octobot_trading.orders.order import Order
+
 from tests.exchanges import exchange_manager
 from tests.traders import trader_simulator
 from tests.traders import trader

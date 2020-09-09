@@ -13,12 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
 import pytest
-from octobot_trading.data_manager.recent_trades_manager import RecentTradesManager
+from octobot_trading.exchange_data.recent_trades_manager import RecentTradesManager
 
-from octobot_trading.data_manager.prices_manager import PricesManager
+from octobot_trading.exchange_data.prices_manager import PricesManager
 
-from octobot_trading.data_manager.price_events_manager import PriceEventsManager
+from octobot_trading.exchange_data.price_events_manager import PriceEventsManager
 
 from tests import event_loop
 

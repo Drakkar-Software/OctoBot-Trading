@@ -17,7 +17,7 @@ from copy import deepcopy
 
 import pytest
 
-from octobot_trading.data_manager.order_book_manager import OrderBookManager
+from octobot_trading.exchange_data.order_book_manager import OrderBookManager
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC
 from octobot_trading.enums import TradeOrderSide
 from tests.util.random_numbers import random_price_list, random_price, random_quantity, random_order_book_side
