@@ -62,7 +62,7 @@ async def test_get_currency_portfolio(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("NANO", PORTFOLIO_TOTAL) == 0
 
 
-async def test_update_portfolio_available(backtesting_trader):
+async def test_update_portfolio_available_from_order(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
