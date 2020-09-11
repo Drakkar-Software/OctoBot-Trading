@@ -1,0 +1,20 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: "daily"
+  open-pull-requests-limit: 10
+  allow:
+    - dependency-name: "OctoBot*"
+    - dependency-name: "cython"
+    - dependency-name: "numpy"
+    - dependency-name: "ccxt"
+    - dependency-name: "websockets"
+    - dependency-name: "sortedcontainers"
+  reviewers:
+  - Herklos
+  - GuillaumeDSM
+  assignees:
+  - Herklos
+  - GuillaumeDSM
