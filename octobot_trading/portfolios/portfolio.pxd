@@ -43,9 +43,9 @@ cdef class Portfolio(Initializable):
     cpdef void reset(self)
 
     # abstract methods
-    cdef void update_portfolio_data_from_order(self, Order order, str currency, str market)
-    cdef void update_portfolio_available_from_order(self, Order order, int factor=*)
-    cdef void log_portfolio_update_from_order(self, Order order, str currency, str market)
+    cpdef void update_portfolio_data_from_order(self, Order order, str currency, str market)
+    cpdef void update_portfolio_available_from_order(self, Order order, int factor=*)
+    cpdef void log_portfolio_update_from_order(self, Order order, str currency, str market)
 
     # private methods
     cdef void _update_portfolio_data(self, str currency, double value, bint total=*, bint available=*)
