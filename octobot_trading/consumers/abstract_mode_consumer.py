@@ -90,11 +90,11 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
         return False
 
     async def get_holdings_ratio(self, currency):
-        return await self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability \
-            .holdings_ratio(currency)
+        return self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_manager \
+            .get_currency_holding_ratio(currency)
 
     def get_number_of_traded_assets(self):
-        return len(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability
+        return len(self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_manager
                    .origin_crypto_currencies_values)
 
 
