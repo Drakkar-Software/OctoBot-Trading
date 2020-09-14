@@ -232,7 +232,7 @@ class ExchangePersonalData(Initializable):
 
     def clear(self):
         if self.portfolio_manager is not None:
-            self.portfolio_manager.portfolio_profitability = None
+            self.portfolio_manager.clear()
         if self.orders_manager is not None:
             self.orders_manager.clear()
         if self.trades_manager is not None:
