@@ -14,12 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
+from octobot_commons.symbol_util import split_symbol
 
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import CONFIG_SIMULATOR, \
     CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING, BALANCE_CHANNEL
 from octobot_trading.portfolios.portfolio_factory import create_portfolio_from_exchange_manager
-from octobot_trading.portfolios.portfolio_profitability import PortfolioProfitabilty
+from octobot_trading.portfolios.portfolio_profitability import PortfolioProfitability
+from octobot_trading.portfolios.portfolio_value_manager import PortfolioValueManager
+from octobot_trading.util import get_reference_market
 from octobot_trading.util.initializable import Initializable
 
 
@@ -35,6 +38,7 @@ class PortfolioManager(Initializable):
 
         self.portfolio = None
         self.portfolio_profitability = None
+        self.portfolio_value_manager = None
         self.reference_market = None
 
     async def initialize_impl(self):
@@ -66,6 +70,32 @@ class PortfolioManager(Initializable):
             return await self._refresh_real_trader_portfolio()
         return False
 
+    async def handle_balance_updated(self):
+        """
+        Handle balance update notification
+        :return: True if profitability changed
+        """
+        return await self.portfolio_profitability.update_profitability()
+
+    async def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
+        """
+        Called before PortfolioProfitability's portfolio profitability recalculation
+        to ensure portfolio values are available
+        :param force_recompute_origin_portfolio: when True, force origin portfolio computation
+        """
+        await self.portfolio_value_manager.handle_profitability_recalculation(force_recompute_origin_portfolio)
+
+    async def handle_mark_price_update(self, symbol, mark_price):
+        """
+        Handle a mark price update notification
+        :param symbol: the update symbol
+        :param mark_price: the updated mark price
+        :return: True if profitability changed
+        """
+        return await self.portfolio_profitability. \
+            update_profitability(force_recompute_origin_portfolio=self.portfolio_value_manager.
+                                 update_origin_crypto_currencies_values(symbol, mark_price))
+
     async def _refresh_real_trader_portfolio(self) -> bool:
         """
         Call BALANCE_CHANNEL producer to refresh real trader portfolio
@@ -82,8 +112,9 @@ class PortfolioManager(Initializable):
         await self.portfolio.initialize()
         self._load_portfolio()
 
-        self.portfolio_profitability = PortfolioProfitabilty(self.config, self.trader, self, self.exchange_manager)
-        self.reference_market = self.portfolio_profitability.reference_market
+        self.reference_market = get_reference_market(self.config)
+        self.portfolio_value_manager = PortfolioValueManager(self)
+        self.portfolio_profitability = PortfolioProfitability(self)
 
     def _refresh_simulated_trader_portfolio_from_order(self, order):
         """

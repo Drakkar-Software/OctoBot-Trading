@@ -19,42 +19,27 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
-from octobot_trading.portfolios.portfolio cimport Portfolio
 from octobot_trading.portfolios.portfolio_manager cimport PortfolioManager
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.traders.trader cimport Trader
+from octobot_trading.portfolios.portfolio_value_manager cimport PortfolioValueManager
 
-cdef class PortfolioProfitabilty:
+cdef class PortfolioProfitability:
     cdef object logger
-    cdef object config
 
     cdef PortfolioManager portfolio_manager
-    cdef ExchangeManager exchange_manager
-    cdef Trader trader
+    cdef PortfolioValueManager value_manager
 
     cdef public double profitability
     cdef public double profitability_percent
     cdef public double profitability_diff
     cdef public double market_profitability_percent
-    cdef public double portfolio_origin_value
-    cdef public double portfolio_current_value
     cdef public double initial_portfolio_current_profitability
-    cdef public set initializing_symbol_prices
-
-    cdef public str reference_market
-
-    cdef public dict currencies_last_prices
-    cdef public dict origin_crypto_currencies_values
-    cdef public dict current_crypto_currencies_values
-
-    cdef public Portfolio origin_portfolio
 
     cdef set traded_currencies_without_market_specific
-    cdef set traded_currencies
-    cdef set missing_currency_data_in_exchange
+    cdef public set traded_currencies
 
     cdef double _calculate_average_market_profitability(self)
+    cdef void _reset_before_profitability_calculation(self)
+    cdef void _update_profitability_calculation(self)
+    cdef void _update_portfolio_delta(self)
     cdef dict _only_symbol_currency_filter(self, dict currency_dict)
-    cdef void _init_traded_currencies_without_market_specific(self)
-    cdef void _inform_no_matching_symbol(self, str currency)
-    cdef bint _should_currency_be_considered(self, str currency, dict portfolio, bint ignore_missing_currency_data)
+    # cdef void _init_traded_currencies_without_market_specific(self) can't be cythonized for now
