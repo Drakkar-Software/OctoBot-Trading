@@ -150,3 +150,10 @@ class PortfolioManager(Initializable):
                                                                   f"will reset history. ({balance_update_exception})")
             self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(
                 self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]))
+
+    def clear(self):
+        """
+        Clear portfolio manager objects
+        """
+        self.portfolio_profitability = None
+        self.portfolio_value = None

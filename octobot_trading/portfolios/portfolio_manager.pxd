@@ -37,6 +37,7 @@ cdef class PortfolioManager(Initializable):
     cdef public Portfolio portfolio
 
     cpdef bint handle_balance_update(self, dict balance)
+    cpdef void clear(self)
 
     cdef void _load_portfolio(self)
     cdef void _set_starting_simulated_portfolio(self)
