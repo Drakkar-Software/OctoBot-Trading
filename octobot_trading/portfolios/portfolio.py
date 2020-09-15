@@ -66,16 +66,21 @@ class Portfolio(Initializable):
         new_portfolio.portfolio = deepcopy(self.portfolio)
         return new_portfolio
 
-    def update_portfolio_from_balance(self, balance):
+    def update_portfolio_from_balance(self, balance, force_replace=True):
         """
         Update portfolio from a balance dict
         :param balance: the portfolio dict
+        :param force_replace: force to update portfolio. Should be False when using deltas
         :return: True if the portfolio has been updated
         """
         if balance == self.portfolio:
             # when the portfolio shouldn't be updated
             return False
-        self.portfolio = {currency: self._parse_currency_balance(balance[currency]) for currency in balance}
+        new_balance = {currency: self._parse_currency_balance(balance[currency]) for currency in balance}
+        if force_replace:
+            self.portfolio = new_balance
+        else:
+            self.portfolio.update(new_balance)
         self.logger.debug(f"Portfolio updated | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
         return True
 

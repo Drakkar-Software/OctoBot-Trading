@@ -35,7 +35,7 @@ cdef class Portfolio(Initializable):
     # public methods
     cpdef double get_currency_portfolio(self, str currency, str portfolio_type=*)
     cpdef double get_currency_from_given_portfolio(self, str currency, str portfolio_type=*)
-    cpdef bint update_portfolio_from_balance(self, dict balance)
+    cpdef bint update_portfolio_from_balance(self, dict balance, bint force_replace=*)
     cpdef void update_portfolio_available(self, Order order, bint is_new_order=*)
     cpdef void update_portfolio_from_filled_order(self, Order order)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
