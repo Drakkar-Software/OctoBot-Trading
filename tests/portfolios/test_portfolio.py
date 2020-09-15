@@ -79,6 +79,42 @@ async def test_update_portfolio_from_balance(backtesting_trader):
     assert not portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio)
 
 
+async def test_update_portfolio_from_balance_with_deltas(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    test_portfolio = {"BTC": {PORTFOLIO_AVAILABLE: 1,
+                              PORTFOLIO_TOTAL: 1}}
+
+    assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio, force_replace=False)
+    assert portfolio_manager.portfolio.portfolio == {
+        'BTC': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 1},
+        'USDT': {PORTFOLIO_AVAILABLE: 1000, PORTFOLIO_TOTAL: 1000}
+    }
+
+    test_portfolio_2 = {"NANO": {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 2}}
+
+    assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio_2, force_replace=False)
+    assert portfolio_manager.portfolio.portfolio == {
+        'BTC': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 1},
+        'USDT': {PORTFOLIO_AVAILABLE: 1000, PORTFOLIO_TOTAL: 1000},
+        'NANO': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 2}
+    }
+
+    test_portfolio_3 = {"USDT": {PORTFOLIO_AVAILABLE: 250, PORTFOLIO_TOTAL: 500}}
+
+    assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio_3, force_replace=False)
+    assert portfolio_manager.portfolio.portfolio == {
+        'BTC': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 1},
+        'USDT': {PORTFOLIO_AVAILABLE: 250, PORTFOLIO_TOTAL: 500},
+        'NANO': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 2}
+    }
+
+    test_portfolio_4 = {"USDT": {PORTFOLIO_AVAILABLE: 100, PORTFOLIO_TOTAL: 100}}
+
+    assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio_4, force_replace=True)
+    assert portfolio_manager.portfolio.portfolio == test_portfolio_4
+
+
 async def test_update_portfolio_available_from_order(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager

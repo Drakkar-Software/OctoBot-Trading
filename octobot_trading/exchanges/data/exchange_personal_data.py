@@ -59,9 +59,9 @@ class ExchangePersonalData(Initializable):
                                                f"{self.exchange.name} personal data disabled.")
 
     # updates
-    async def handle_portfolio_update(self, balance, should_notify: bool = True) -> bool:
+    async def handle_portfolio_update(self, balance, should_notify: bool = True, is_diff_update=False) -> bool:
         try:
-            changed: bool = self.portfolio_manager.handle_balance_update(balance)
+            changed: bool = self.portfolio_manager.handle_balance_update(balance, is_diff_update=is_diff_update)
             if should_notify:
                 await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer().send(balance)
             return changed

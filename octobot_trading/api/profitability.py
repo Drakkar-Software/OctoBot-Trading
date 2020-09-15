@@ -35,7 +35,7 @@ def get_current_portfolio_value(exchange_manager) -> float:
 
 def get_current_holdings_values(exchange_manager) -> float:
     return exchange_manager.exchange_personal_data.portfolio_manager.\
-        portfolio_profitability.get_current_holdings_values()
+        portfolio_value_holder.get_current_holdings_values()
 
 
 def get_reference_market(config) -> str:
@@ -44,4 +44,4 @@ def get_reference_market(config) -> str:
 
 def get_initializing_currencies_prices(exchange_manager) -> set:
     return exchange_manager.exchange_personal_data.portfolio_manager.\
-        portfolio_profitability.initializing_symbol_prices
+        portfolio_value_holder.initializing_symbol_prices

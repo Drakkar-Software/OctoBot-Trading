@@ -26,8 +26,8 @@ class SubPortfolio(Portfolio):
         super().__init__(config, trader)
 
     # overwrite parent update_portfolio_balance
-    async def update_portfolio_from_balance(self, balance):
-        modified = self.parent_portfolio.update_portfolio_from_balance(balance)
+    def update_portfolio_from_balance(self, balance, force_replace=True):
+        modified = self.parent_portfolio.update_portfolio_from_balance(balance, force_replace=force_replace)
         self.update_from_parent()
         return modified
 

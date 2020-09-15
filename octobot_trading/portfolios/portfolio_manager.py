@@ -47,14 +47,15 @@ class PortfolioManager(Initializable):
         """
         await self._reset_portfolio()
 
-    def handle_balance_update(self, balance):
+    def handle_balance_update(self, balance, is_diff_update=False):
         """
         Handle a balance update request
         :param balance: the new balance
+        :param is_diff_update: True when the update is a partial portfolio
         :return: True if the portfolio was updated
         """
         if self.trader.is_enabled and balance is not None:
-            return self.portfolio.update_portfolio_from_balance(balance)
+            return self.portfolio.update_portfolio_from_balance(balance, force_replace=not is_diff_update)
         return False
 
     async def handle_balance_update_from_order(self, order) -> bool:
