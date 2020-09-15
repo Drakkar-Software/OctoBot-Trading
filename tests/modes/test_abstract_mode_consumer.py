@@ -128,9 +128,9 @@ async def test_valid_create_new_order():
 async def test_get_holdings_ratio():
     exchange_manager, symbol, consumer = await _get_tools()
     exchange_manager.client_symbols = [symbol]
-    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_manager.currencies_last_prices[symbol] = \
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.currencies_last_prices[symbol] = \
         1000
-    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_manager.portfolio_current_value = 11
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.portfolio_current_value = 11
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio = {
         "BTC": {
             PORTFOLIO_TOTAL: 10
@@ -145,7 +145,7 @@ async def test_get_holdings_ratio():
     assert round(ratio, 8) == 0.09090909
 
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio.pop("USDT")
-    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_manager.portfolio_current_value = 10
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.portfolio_current_value = 10
     ratio = await consumer.get_holdings_ratio("BTC")
     assert round(ratio, 8) == 1
     # add ETH and try to get ratio without symbol price
@@ -167,7 +167,7 @@ async def test_get_holdings_ratio():
 
 async def test_get_number_of_traded_assets():
     exchange_manager, symbol, consumer = await _get_tools()
-    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_manager.\
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
         origin_crypto_currencies_values = {
             symbol: 1,
             "xyz": 2,

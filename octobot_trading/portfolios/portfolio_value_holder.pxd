@@ -22,7 +22,7 @@ It is also use to store creation & fill values of the order """
 from octobot_trading.portfolios.portfolio cimport Portfolio
 from octobot_trading.portfolios.portfolio_manager cimport PortfolioManager
 
-cdef class PortfolioValueManager:
+cdef class PortfolioValueHolder:
     cdef object logger
     cdef object config
 
@@ -43,16 +43,14 @@ cdef class PortfolioValueManager:
     cpdef bint update_origin_crypto_currencies_values(self, str symbol, double mark_price)
     cpdef dict get_current_crypto_currencies_values(self)
     cpdef dict get_current_holdings_values(self)
-    cpdef double get_currency_holding_ratio(self, str currency)
     cpdef double get_origin_portfolio_current_value(self, bint refresh_values=*)
+    # cpdef double get_currency_holding_ratio(self, str currency)
 
     cdef double _update_portfolio_current_value(self, dict portfolio, dict currencies_values=*, bint fill_currencies_values=*)
     cdef void _fill_currencies_values(self, dict currencies_values)
     cdef dict _update_portfolio_and_currencies_current_value(self)
-    cdef double _evaluate_value(self, str currency, double quantity, bint raise_error=*)
     cdef double _check_currency_initialization(self, str currency, double currency_value)
     cdef void _recompute_origin_portfolio_initial_value(self)
-    cdef double _try_get_value_of_currency(self, str currency, double quantity, bint raise_error)
     cdef void _try_to_ask_ticker_missing_symbol_data(self, str currency, str symbol, str reversed_symbol)
     cdef void _ask_ticker_data_for_currency(self, list symbols_to_add)
     cdef void _inform_no_matching_symbol(self, str currency)
@@ -71,5 +69,7 @@ cdef class PortfolioValueManager:
                                                     bint ignore_missing_currency_data)
     cdef double _evaluate_portfolio_value(self, dict portfolio, dict currencies_values=*)
     cdef double _evaluate_portfolio_value(self, dict portfolio, dict currencies_values=*)
-    cdef double _get_currency_value(self, dict portfolio, str currency, dict currencies_values=*, bint raise_error=*)
     cdef bint _should_currency_be_considered(self, str currency, dict portfolio, bint ignore_missing_currency_data)
+    # cdef double _evaluate_value(self, str currency, double quantity, bint raise_error=*)
+    # cdef double _try_get_value_of_currency(self, str currency, double quantity, bint raise_error)
+    # cdef double _get_currency_value(self, dict portfolio, str currency, dict currencies_values=*, bint raise_error=*)

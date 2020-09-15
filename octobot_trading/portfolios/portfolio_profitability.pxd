@@ -20,13 +20,13 @@
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 from octobot_trading.portfolios.portfolio_manager cimport PortfolioManager
-from octobot_trading.portfolios.portfolio_value_manager cimport PortfolioValueManager
+from octobot_trading.portfolios.portfolio_value_holder cimport PortfolioValueHolder
 
 cdef class PortfolioProfitability:
     cdef object logger
 
     cdef PortfolioManager portfolio_manager
-    cdef PortfolioValueManager value_manager
+    cdef PortfolioValueHolder value_manager
 
     cdef public double profitability
     cdef public double profitability_percent

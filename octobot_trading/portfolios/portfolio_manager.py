@@ -21,7 +21,7 @@ from octobot_trading.constants import CONFIG_SIMULATOR, \
     CONFIG_STARTING_PORTFOLIO, CURRENT_PORTFOLIO_STRING, BALANCE_CHANNEL
 from octobot_trading.portfolios.portfolio_factory import create_portfolio_from_exchange_manager
 from octobot_trading.portfolios.portfolio_profitability import PortfolioProfitability
-from octobot_trading.portfolios.portfolio_value_manager import PortfolioValueManager
+from octobot_trading.portfolios.portfolio_value_holder import PortfolioValueHolder
 from octobot_trading.util import get_reference_market
 from octobot_trading.util.initializable import Initializable
 
@@ -38,7 +38,7 @@ class PortfolioManager(Initializable):
 
         self.portfolio = None
         self.portfolio_profitability = None
-        self.portfolio_value_manager = None
+        self.portfolio_value_holder = None
         self.reference_market = None
 
     async def initialize_impl(self):
@@ -83,7 +83,7 @@ class PortfolioManager(Initializable):
         to ensure portfolio values are available
         :param force_recompute_origin_portfolio: when True, force origin portfolio computation
         """
-        await self.portfolio_value_manager.handle_profitability_recalculation(force_recompute_origin_portfolio)
+        await self.portfolio_value_holder.handle_profitability_recalculation(force_recompute_origin_portfolio)
 
     async def handle_mark_price_update(self, symbol, mark_price):
         """
@@ -93,7 +93,7 @@ class PortfolioManager(Initializable):
         :return: True if profitability changed
         """
         return await self.portfolio_profitability. \
-            update_profitability(force_recompute_origin_portfolio=self.portfolio_value_manager.
+            update_profitability(force_recompute_origin_portfolio=self.portfolio_value_holder.
                                  update_origin_crypto_currencies_values(symbol, mark_price))
 
     async def _refresh_real_trader_portfolio(self) -> bool:
@@ -113,7 +113,7 @@ class PortfolioManager(Initializable):
         self._load_portfolio()
 
         self.reference_market = get_reference_market(self.config)
-        self.portfolio_value_manager = PortfolioValueManager(self)
+        self.portfolio_value_holder = PortfolioValueHolder(self)
         self.portfolio_profitability = PortfolioProfitability(self)
 
     def _refresh_simulated_trader_portfolio_from_order(self, order):
@@ -156,4 +156,4 @@ class PortfolioManager(Initializable):
         Clear portfolio manager objects
         """
         self.portfolio_profitability = None
-        self.portfolio_value = None
+        self.portfolio_value_holder = None

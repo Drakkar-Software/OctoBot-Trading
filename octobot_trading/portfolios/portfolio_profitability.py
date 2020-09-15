@@ -29,7 +29,7 @@ class PortfolioProfitability:
 
     def __init__(self, portfolio_manager):
         self.portfolio_manager = portfolio_manager
-        self.value_manager = portfolio_manager.portfolio_value_manager
+        self.value_manager = portfolio_manager.portfolio_value_holder
         self.logger = get_logger(f"{self.__class__.__name__}[{self.portfolio_manager.exchange_manager.exchange_name}]")
 
         # profitability attributes
@@ -52,7 +52,7 @@ class PortfolioProfitability:
         Returns the % move average of all the watched cryptocurrencies between bot's start time and now
         :return: the average market profitability
         """
-        self.portfolio_manager.portfolio_value_manager.get_current_crypto_currencies_values()
+        self.portfolio_manager.portfolio_value_holder.get_current_crypto_currencies_values()
         return self._calculate_average_market_profitability()
 
     async def update_profitability(self, force_recompute_origin_portfolio=False) -> bool:
