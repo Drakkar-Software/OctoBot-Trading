@@ -17,7 +17,7 @@
 from octobot_trading.portfolios.portfolio cimport Portfolio
 from octobot_trading.portfolios.portfolio_profitability cimport PortfolioProfitability
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.portfolios.portfolio_value_manager cimport PortfolioValueManager
+from octobot_trading.portfolios.portfolio_value_holder cimport PortfolioValueHolder
 from octobot_trading.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
@@ -33,7 +33,7 @@ cdef class PortfolioManager(Initializable):
     cdef public Trader trader
 
     cdef public PortfolioProfitability portfolio_profitability
-    cdef public PortfolioValueManager portfolio_value_manager
+    cdef public PortfolioValueHolder portfolio_value_holder
     cdef public Portfolio portfolio
 
     cpdef bint handle_balance_update(self, dict balance)

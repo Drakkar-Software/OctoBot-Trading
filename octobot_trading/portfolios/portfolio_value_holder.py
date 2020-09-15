@@ -24,9 +24,9 @@ from octobot_trading.constants import CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.constants import TICKER_CHANNEL
 
 
-class PortfolioValueManager:
+class PortfolioValueHolder:
     """
-    PortfolioValueManager calculates the current and the origin portfolio value in reference market for each updates
+    PortfolioValueHolder calculates the current and the origin portfolio value in reference market for each updates
     """
 
     def __init__(self, portfolio_manager):
@@ -221,12 +221,12 @@ class PortfolioValueManager:
             if currency not in self.missing_currency_data_in_exchange:
                 self._inform_no_matching_symbol(currency)
                 self.missing_currency_data_in_exchange.add(currency)
-            return 0
         except KeyError as missing_data_exception:
-            self._try_to_ask_ticker_missing_symbol_data(currency, symbol, reversed_symbol)
-            if raise_error:
-                raise missing_data_exception
-            return 0
+            if not self.portfolio_manager.exchange_manager.is_backtesting:
+                self._try_to_ask_ticker_missing_symbol_data(currency, symbol, reversed_symbol)
+                if raise_error:
+                    raise missing_data_exception
+        return 0
 
     def _try_to_ask_ticker_missing_symbol_data(self, currency, symbol, reversed_symbol):
         """
@@ -350,12 +350,12 @@ class PortfolioValueManager:
 
     def _get_currency_value(self, portfolio, currency, currencies_values=None, raise_error=False):
         """
-
-        :param portfolio:
-        :param currency:
-        :param currencies_values:
-        :param raise_error:
-        :return:
+        Return the currency value
+        :param portfolio: the specified portfolio
+        :param currency: the currency to evaluate
+        :param currencies_values: currencies values dict
+        :param raise_error: When True, forward exceptions
+        :return: the currency value
         """
         if currency in portfolio and portfolio[currency][CONFIG_PORTFOLIO_TOTAL] != 0:
             if currencies_values and currency in currencies_values:
@@ -365,11 +365,12 @@ class PortfolioValueManager:
 
     def _should_currency_be_considered(self, currency, portfolio, ignore_missing_currency_data):
         """
-
-        :param currency:
-        :param portfolio:
-        :param ignore_missing_currency_data:
-        :return:
+        Return True if enough data is available to evaluate currency value
+        :param currency: the currency to evaluate
+        :param portfolio: the specified portfolio
+        :param ignore_missing_currency_data: When True, ignore check of currency presence
+        in missing_currency_data_in_exchange
+        :return: True if enough data is available to evaluate currency value
         """
         return (currency not in self.missing_currency_data_in_exchange or ignore_missing_currency_data) and \
                (portfolio[currency][PORTFOLIO_TOTAL] > 0 or currency in
