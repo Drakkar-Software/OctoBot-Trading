@@ -65,7 +65,7 @@ class KlineUpdater(KlineProducer):
                     candle: list = await self.channel.exchange_manager.exchange.get_kline_price(pair, time_frame)
                     try:
                         candle = candle[0]
-                        self.channel.exchange_manager.uniformize_candles_if_necessary(candle)
+                        self.channel.exchange_manager.exchange.uniformize_candles_if_necessary(candle)
                         await self.push(time_frame, pair, candle)
                     except TypeError:
                         pass

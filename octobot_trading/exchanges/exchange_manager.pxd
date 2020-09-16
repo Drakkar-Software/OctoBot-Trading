@@ -26,19 +26,20 @@ from octobot_trading.util.initializable cimport Initializable
 
 cdef class ExchangeManager(Initializable):
     cdef public str id
-    cdef public dict config
-    cdef object tentacles_setup_config
-
-    cdef public object exchange_type
-    cdef object _logger
-
-    cdef public Trader trader
-    cdef public list trading_modes
-
     cdef public str exchange_class_string
     cdef public str exchange_name
 
+    cdef public dict config
+
+    cdef public object tentacles_setup_config
+    cdef public object exchange_type
+    cdef public object logger
     cdef public object backtesting
+    cdef public Trader trader
+
+    cdef public list client_time_frames
+    cdef public list client_symbols
+    cdef public list trading_modes
 
     cdef public bint rest_only
     cdef public bint ignore_config
@@ -62,23 +63,15 @@ cdef class ExchangeManager(Initializable):
     cdef public ExchangePersonalData exchange_personal_data
     cdef public ExchangeSymbolsData exchange_symbols_data
 
-    cdef public list client_time_frames
-    cdef public list client_symbols
-
     # private
     cdef void _load_config_symbols_and_time_frames(self)
-    cdef void _load_constants(self)
     cdef void _load_config_symbols_and_time_frames(self)
-    cdef void _initialize_simulator_time_frames(self)
-    cdef object _uniformize_candles_timestamps(self, list candles)
-    cdef void _uniformize_candle_timestamps(self, list candle)
     cdef void _raise_exchange_load_error(self)
-    cdef bint _is_managed_by_websocket(self, object channel)
 
     # public
     cpdef bint enabled(self)
+    cpdef void load_constants(self)
     cpdef str get_exchange_symbol(self, str symbol)
-    cpdef str get_exchange_symbol_id(self, str symbol)
     cpdef tuple get_exchange_quote_and_base(self, str symbol)
     cpdef object get_rest_pairs_refresh_threshold(self)
     cpdef bint need_user_stream(self)
@@ -88,9 +81,7 @@ cdef class ExchangeManager(Initializable):
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame)
     cpdef int get_rate_limit(self)
-    cpdef object uniformize_candles_if_necessary(self, object candle_or_candles)
     cpdef str get_exchange_name(self)
     cpdef tuple get_exchange_credentials(self, object logger, str exchange_name)
     cpdef bint should_decrypt_token(self, object logger)
     cpdef ExchangeSymbolData get_symbol_data(self, str symbol)
-    cpdef bint requires_refresh_trigger(self, str channel)

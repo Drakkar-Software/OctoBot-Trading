@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.channels import OrdersChannel
+from octobot_trading.channels.orders import OrdersChannel
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.ohlcv import OHLCVChannel
 from octobot_trading.channels.trades import TradesChannel

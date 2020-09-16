@@ -22,8 +22,8 @@ import time
 from ccxt.base.errors import NotSupported
 from octobot_commons.constants import HOURS_TO_SECONDS
 
-from octobot_trading.constants import FUNDING_CHANNEL
 from octobot_trading.channels.funding import FundingProducer
+from octobot_trading.constants import FUNDING_CHANNEL
 from octobot_trading.enums import ExchangeConstantsFundingColumns
 
 

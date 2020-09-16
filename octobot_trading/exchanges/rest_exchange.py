@@ -453,7 +453,7 @@ class RestExchange(AbstractExchange):
         return self.client.parse_ticker(ticker)
 
     def parse_ohlcv(self, ohlcv):
-        return self.exchange_manager.uniformize_candles_if_necessary(self.client.parse_ohlcv(ohlcv))
+        return self.uniformize_candles_if_necessary(self.client.parse_ohlcv(ohlcv))
 
     def parse_order_book(self, order_book):
         return self.client.parse_order_book(order_book)
@@ -497,7 +497,7 @@ class RestExchange(AbstractExchange):
             recent_trade.pop(ecoc.TYPE.value)
             recent_trade.pop(ecoc.TAKERORMAKER.value)
             recent_trade[ecoc.TIMESTAMP.value] = \
-                self.exchange_manager.get_uniformized_timestamp(recent_trade[ecoc.TIMESTAMP.value])
+                self.get_uniformized_timestamp(recent_trade[ecoc.TIMESTAMP.value])
         except KeyError as e:
             self.logger.error(f"Fail to clean recent_trade dict ({e})")
         return recent_trade
@@ -506,7 +506,7 @@ class RestExchange(AbstractExchange):
         try:
             trade.pop(ecoc.INFO.value)
             trade[ecoc.TIMESTAMP.value] = \
-                self.exchange_manager.get_uniformized_timestamp(trade[ecoc.TIMESTAMP.value])
+                self.get_uniformized_timestamp(trade[ecoc.TIMESTAMP.value])
         except KeyError as e:
             self.logger.error(f"Fail to clean trade dict ({e})")
         return trade
@@ -516,7 +516,7 @@ class RestExchange(AbstractExchange):
             order.pop(ecoc.INFO.value)
             exchange_timestamp = order[ecoc.TIMESTAMP.value]
             order[ecoc.TIMESTAMP.value] = \
-                self.exchange_manager.get_uniformized_timestamp(exchange_timestamp)
+                self.get_uniformized_timestamp(exchange_timestamp)
         except KeyError as e:
             self.logger.error(f"Fail to cleanup order dict ({e})")
         return order

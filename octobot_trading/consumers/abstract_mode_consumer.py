@@ -14,7 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_commons.symbol_util import split_symbol
-from octobot_trading.channels import get_chan, BALANCE_CHANNEL
+from octobot_trading.channels.exchange_channel import get_chan
+from octobot_trading.channels.balance import BALANCE_CHANNEL
 from octobot_trading.channels.mode import ModeChannelConsumer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, EvaluatorStates
 from octobot_trading.errors import MissingFunds

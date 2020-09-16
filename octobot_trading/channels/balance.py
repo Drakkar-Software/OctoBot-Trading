@@ -21,6 +21,7 @@ from asyncio import CancelledError
 
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
 from octobot_trading.constants import BALANCE_CHANNEL
+from octobot_trading.exchanges.exchange_channels import requires_refresh_trigger
 
 
 class BalanceProducer(ExchangeChannelProducer):
@@ -50,7 +51,7 @@ class BalanceProducer(ExchangeChannelProducer):
         if self.channel.exchange_manager.is_simulated:
             # simulated portfolio can't be out of sync
             return True
-        if force_manual_refresh or self.channel.exchange_manager.requires_refresh_trigger(BALANCE_CHANNEL):
+        if force_manual_refresh or requires_refresh_trigger(self.channel.exchange_manager, BALANCE_CHANNEL):
             self.logger.debug(f"Refreshing portfolio from {self.channel.exchange_manager.get_exchange_name()} exchange")
             return await self._update_portfolio_from_exchange()
         else:
