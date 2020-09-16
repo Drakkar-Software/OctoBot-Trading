@@ -16,26 +16,5 @@
 #  License along with this library.
 
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.traders.trader cimport Trader
-from octobot_trading.util.initializable cimport Initializable
 
-
-cdef class AbstractExchange(Initializable):
-    cdef public dict config
-
-    cdef public object exchange_type
-    cdef public object logger
-    cdef public double allowed_time_lag
-
-    cdef public Trader trader
-    cdef public ExchangeManager exchange_manager
-
-    cdef public str name
-
-    cpdef double get_exchange_current_time(self)
-    cpdef str get_name(cls)
-    cpdef object uniformize_candles_if_necessary(self, object candle_or_candles)
-    cpdef object get_uniformized_timestamp(self, object candle_or_candles)
-
-    cdef object _uniformize_candles_timestamps(self, list candles)
-    cdef void _uniformize_candle_timestamps(self, list candle)
+cpdef bint requires_refresh_trigger(ExchangeManager exchange_manager, str channel)
