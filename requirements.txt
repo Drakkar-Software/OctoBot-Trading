@@ -1,6 +1,6 @@
 # Setup requirements
 cython==0.29.21
-numpy==1.19.1
+numpy==1.19.2
 
 # Drakkar-Software requirements
 OctoBot-Backtesting>=1.5.19, <1.6
