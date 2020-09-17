@@ -16,6 +16,7 @@
 
 from .balance import *
 from .kline import *
+from .funding import *
 from .mode import *
 from .ohlcv import *
 from .order_book import *
