@@ -26,8 +26,8 @@ from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
     TraderOrderType, FeePropertyColumns
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
-from octobot_trading.producers.simulator import UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS, \
-    SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE, SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE
+from octobot_trading.producers.simulator import SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE, \
+    SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE, get_unauthenticated_updater_simulator_producers
 
 
 class ExchangeSimulator(AbstractExchange):
@@ -71,7 +71,7 @@ class ExchangeSimulator(AbstractExchange):
         for importer in self.exchange_importers:
             available_data_types = get_available_data_types(importer)
             at_least_one_updater = False
-            for channel_type, updater in UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS.items():
+            for channel_type, updater in get_unauthenticated_updater_simulator_producers().items():
                 if self._are_required_data_available(channel_type, available_data_types):
                     await updater(get_trading_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
                     at_least_one_updater = True

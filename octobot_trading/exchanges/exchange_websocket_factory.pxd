@@ -14,9 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_channels.channels.channel cimport Channel
-
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 
-cpdef bint is_exchange_managed_by_websocket(ExchangeManager exchange_manager, Channel channel)
-cpdef bint is_websocket_feed_requiring_init(ExchangeManager exchange_manager, Channel channel)
+cpdef bint is_exchange_managed_by_websocket(ExchangeManager exchange_manager, str channel)
+cpdef bint is_websocket_feed_requiring_init(ExchangeManager exchange_manager, str channel)

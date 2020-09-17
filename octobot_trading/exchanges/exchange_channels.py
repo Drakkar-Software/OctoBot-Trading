@@ -19,8 +19,8 @@ from octobot_trading.channels.exchange_channel import set_chan, get_chan, \
     ExchangeChannel, TimeFrameExchangeChannel, get_exchange_channels, del_chan, del_exchange_channel_container
 from octobot_trading.exchanges.exchange_websocket_factory import is_exchange_managed_by_websocket, \
     is_websocket_feed_requiring_init
-from octobot_trading.producers import UNAUTHENTICATED_UPDATER_PRODUCERS, AUTHENTICATED_UPDATER_PRODUCERS
-from octobot_trading.producers.simulator import AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS
+from octobot_trading.producers import get_unauthenticated_updater_producers, get_authenticated_updater_producers
+from octobot_trading.producers.simulator import get_authenticated_updater_simulator_producers
 
 
 async def create_exchange_channels(exchange_manager) -> None:
@@ -50,7 +50,7 @@ async def create_exchange_producers(exchange_manager) -> None:
 
     # Real data producers
     if not exchange_manager.is_backtesting:
-        for updater in UNAUTHENTICATED_UPDATER_PRODUCERS:
+        for updater in get_unauthenticated_updater_producers():
             if not is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
                 await updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
@@ -61,7 +61,7 @@ async def create_exchange_producers(exchange_manager) -> None:
             or exchange_manager.is_backtesting) \
             and exchange_manager.trader and exchange_manager.is_trading \
             and not exchange_manager.is_collecting:
-        for updater in AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
+        for updater in get_authenticated_updater_simulator_producers():
             await updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
 
@@ -70,7 +70,7 @@ async def _create_authenticated_producers(exchange_manager) -> None:
     Create real authenticated producers
     :param exchange_manager: the related exchange manager
     """
-    for updater in AUTHENTICATED_UPDATER_PRODUCERS:
+    for updater in get_authenticated_updater_producers():
         if is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
             # websocket is handling this channel: initialize data if required
             if is_websocket_feed_requiring_init(exchange_manager, updater.CHANNEL_NAME):
