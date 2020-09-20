@@ -21,6 +21,7 @@ from octobot_channels.constants import CHANNEL_WILDCARD
 from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer, \
     get_chan
 from octobot_trading.constants import BALANCE_CHANNEL, ORDERS_CHANNEL
+from octobot_trading.exchanges.exchange_channels import create_authenticated_producer_from_parent
 
 
 class OrdersProducer(ExchangeChannelProducer):
@@ -104,20 +105,34 @@ class OrdersProducer(ExchangeChannelProducer):
     async def update_order_from_exchange(self, order,
                                          should_notify=False,
                                          wait_for_refresh=False,
-                                         force_job_execution=False):
+                                         force_job_execution=False,
+                                         create_order_producer_if_missing=True):
         """
         Update order from exchange
         :param order: the order to update
         :param wait_for_refresh: if True, wait until the order refresh task to finish
         :param should_notify: if Orders channel consumers should be notified
         :param force_job_execution: When True, order_update_job will bypass its dependencies check
+        :param create_order_producer_if_missing: Should be set to False when called by self to prevent spamming
         :return: True if the order was updated
         """
-        await get_chan(ORDERS_CHANNEL, self.channel.exchange_manager.id).producers[-1].\
-            update_order_from_exchange(order=order,
-                                       should_notify=should_notify,
-                                       force_job_execution=force_job_execution,
-                                       wait_for_refresh=wait_for_refresh)
+        try:
+            await (get_chan(ORDERS_CHANNEL, self.channel.exchange_manager.id).producers[-1].
+                   update_order_from_exchange(order=order,
+                                              should_notify=should_notify,
+                                              force_job_execution=force_job_execution,
+                                              wait_for_refresh=wait_for_refresh))
+        except IndexError:
+            if not self.channel.exchange_manager.is_simulated and create_order_producer_if_missing:
+                self.logger.debug("Missing orders producer, starting one...")
+                await create_authenticated_producer_from_parent(self.channel.exchange_manager,
+                                                                self.__class__,
+                                                                force_register_producer=True)
+                await self.update_order_from_exchange(order=order,
+                                                      should_notify=should_notify,
+                                                      wait_for_refresh=wait_for_refresh,
+                                                      force_job_execution=force_job_execution,
+                                                      create_order_producer_if_missing=False)
 
     async def _check_missing_open_orders(self, symbol, orders):
         """
@@ -140,7 +155,7 @@ class OrdersProducer(ExchangeChannelProducer):
             synchronize_tasks = []
             for missing_order_id in missing_order_ids:
                 try:
-                    order_to_update = self.channel.exchange_manager.exchange_personal_data.orders_manager.\
+                    order_to_update = self.channel.exchange_manager.exchange_personal_data.orders_manager. \
                         get_order(missing_order_id)
                     if order_to_update.state is not None:
                         # catch exception not to prevent multiple synchronize to be cancelled in asyncio.gather
