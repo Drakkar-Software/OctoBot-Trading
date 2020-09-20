@@ -33,7 +33,7 @@ def get_current_portfolio_value(exchange_manager) -> float:
     return exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.portfolio_current_value
 
 
-def get_current_holdings_values(exchange_manager) -> float:
+def get_current_holdings_values(exchange_manager) -> dict:
     return exchange_manager.exchange_personal_data.portfolio_manager.\
         portfolio_value_holder.get_current_holdings_values()
 

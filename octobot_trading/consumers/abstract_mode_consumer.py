@@ -18,7 +18,7 @@ from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.balance import BALANCE_CHANNEL
 from octobot_trading.channels.mode import ModeChannelConsumer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, EvaluatorStates
-from octobot_trading.errors import MissingFunds
+from octobot_trading.errors import MissingFunds, MissingMinimalExchangeTradeVolume
 
 
 class AbstractTradingModeConsumer(ModeChannelConsumer):
@@ -46,10 +46,11 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
         self.logger.debug(f"Entering create_order_if_possible for {symbol}")
         try:
             async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-                pf = self.exchange_manager.exchange_personal_data.portfolio_manager
                 if await self.can_create_order(symbol, state):
                     try:
                         return await self.create_new_orders(symbol, final_note, state, **kwargs)
+                    except MissingMinimalExchangeTradeVolume:
+                        raise
                     except MissingFunds:
                         try:
                             # second chance: force portfolio update and retry
