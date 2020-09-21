@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.rest_exchange cimport RestExchange
+from octobot_trading.exchanges.rest_exchange cimport CCXTExchange
 
-cdef class FutureExchange(RestExchange):
+cdef class FutureExchange(CCXTExchange):
     cpdef dict parse_position(self, dict position_dict)
     cpdef dict parse_funding(self, dict funding_dict, bint from_ticker=*)
     cpdef dict parse_mark_price(self, dict mark_price_dict, bint from_ticker=*)

@@ -14,7 +14,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.rest_exchange cimport CCXTExchange
+from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
 
-cdef class SpotExchange(CCXTExchange):
-    pass
+cdef class CCXTExchange(AbstractExchange):
+    cdef object all_currencies_price_ticker
+    cdef public object client
+
+    # private
+    cdef void _create_client(self)
+    cdef void _log_error(self, object error, object order_type, str symbol, double quantity, double price, double stop_price)
+
+    # @staticmethod TODO
+    # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
+
+    @staticmethod
+    cdef str _get_side(object order_type)
+
+    cpdef dict get_ccxt_client_login_options(self)
+    cpdef void set_sandbox_mode(self, bint is_sandboxed)

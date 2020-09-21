@@ -16,18 +16,18 @@
 
 from octobot_trading.errors import AuthenticationError
 from octobot_trading.exchanges.exchange_channels import create_exchange_producers, create_exchange_channels
-from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
+from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchange_util import get_margin_exchange_class, get_rest_exchange_class, \
     get_future_exchange_class, get_spot_exchange_class
 from octobot_trading.exchanges.exchange_websocket_factory import search_and_create_websocket
-from octobot_trading.exchanges.rest_exchange import RestExchange
+from octobot_trading.exchanges.implementations.ccxt_exchange import CCXTExchange
 from octobot_trading.exchanges.websockets.websockets_util import check_web_socket_config
 
 
 async def create_exchanges(exchange_manager):
     if exchange_manager.is_sandboxed:
         exchange_manager.logger.info(f"Using sandbox exchange for {exchange_manager.exchange_name}")
-    exchange_manager.exchange_type = RestExchange.create_exchange_type(exchange_manager.exchange_class_string)
+    exchange_manager.exchange_type = CCXTExchange.create_exchange_type(exchange_manager.exchange_class_string)
 
     if not exchange_manager.is_backtesting:
         # real : create a rest or websocket exchange instance
@@ -108,7 +108,7 @@ async def init_simulated_exchange(exchange_manager):
 
 async def _search_and_create_rest_exchange(exchange_manager) -> None:
     """
-    Create a rest exchange if a RestExchange matching class is found
+    Create a rest exchange if a CCXTExchange matching class is found
     :param exchange_manager: the related exchange manager
     """
     rest_exchange_class = get_rest_exchange_class(exchange_manager.exchange_type,
