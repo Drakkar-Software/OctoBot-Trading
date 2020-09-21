@@ -18,7 +18,7 @@ import asyncio
 from octobot_trading.constants import OHLCV_CHANNEL
 from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
+from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchanges import Exchanges, ExchangeConfiguration
 from octobot_trading.producers.simulator import SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE
 

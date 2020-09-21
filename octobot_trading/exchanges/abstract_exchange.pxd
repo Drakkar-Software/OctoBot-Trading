@@ -25,17 +25,56 @@ cdef class AbstractExchange(Initializable):
 
     cdef public object exchange_type
     cdef public object logger
+    cdef public object current_account
+
     cdef public double allowed_time_lag
+
+    cdef public bint is_authenticated
+    cdef public bint is_sandboxed
 
     cdef public Trader trader
     cdef public ExchangeManager exchange_manager
 
     cdef public str name
 
-    cpdef double get_exchange_current_time(self)
     cpdef str get_name(cls)
+
+    # exchange requests
+    cpdef get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
+    cpdef dict get_trade_fee(self, str symbol, object order_type, double quantity, double price, str taker_or_maker)
+    cpdef dict get_fees(self, str symbol)
+    cpdef double get_uniform_timestamp(self, double timestamp)
+    cpdef str get_pair_from_exchange(self, str pair)
+    cpdef str get_exchange_pair(self, str pair)
+    cpdef str get_pair_cryptocurrency(self, str pair)
+    cpdef tuple get_split_pair_from_exchange(self, str pair)
+    cpdef dict get_default_balance(self)
+
+    # parsers
+    cpdef dict parse_balance(self, dict balance)
+    cpdef dict parse_trade(self, dict trade)
+    cpdef dict parse_order(self, dict order)
+    cpdef dict parse_ticker(self, dict ticker)
+    cpdef dict parse_ohlcv(self, dict ohlcv)
+    cpdef dict parse_order_book(self, dict order_book)
+    cpdef dict parse_order_book_ticker(self, dict order_book_ticker)
+    cpdef double parse_timestamp(self, dict data_dict, str timestamp_key, object default_value=*, bint ms=*)
+    cpdef str parse_currency(self, str currency)
+    cpdef str parse_order_id(self, dict order)
+    cpdef object parse_status(self, str status)
+    cpdef object parse_side(self, str side)
+    cpdef object parse_account(self, str account)
+
+    # cleaners
+    cpdef dict clean_recent_trade(self, dict recent_trade)
+    cpdef dict clean_trade(self, dict trade)
+    cpdef dict clean_order(self, dict order)
+
+    # uniformization
+    cpdef double get_exchange_current_time(self)
     cpdef object uniformize_candles_if_necessary(self, object candle_or_candles)
     cpdef object get_uniformized_timestamp(self, object candle_or_candles)
+    cpdef long long get_candle_since_timestamp(self, object time_frame, int count)
 
     cdef object _uniformize_candles_timestamps(self, list candles)
     cdef void _uniformize_candle_timestamps(self, list candle)

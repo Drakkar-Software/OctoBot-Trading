@@ -21,7 +21,7 @@ from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
 from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, RequestTimeout, NotSupported
 
 from octobot_commons.constants import MSECONDS_TO_MINUTE, MSECONDS_TO_SECONDS
-from octobot_commons.enums import TimeFramesMinutes
+from octobot_commons.enums import TimeFramesMinutes, TimeFrames
 
 from octobot_trading import errors
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
@@ -34,23 +34,13 @@ from octobot_trading.exchanges.abstract_exchange import AbstractExchange
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
 
 
-class RestExchange(AbstractExchange):
+class CCXTExchange(AbstractExchange):
     """
     CCXT library wrapper
     """
 
-    BUY_STR = TradeOrderSide.BUY.value
-    SELL_STR = TradeOrderSide.SELL.value
-
-    ACCOUNTS = {}
-
     def __init__(self, config, exchange_type, exchange_manager, is_sandboxed=False):
-        super().__init__(config, exchange_type, exchange_manager)
-        # We will need to create the rest client and fetch exchange config
-        self.is_authenticated = False
-        self.is_sandboxed = is_sandboxed
-        self.current_account = AccountTypes.CASH
-
+        super().__init__(config, exchange_type, exchange_manager, is_sandboxed)
         self.client = None
         self.all_currencies_price_ticker = None
 
@@ -127,16 +117,15 @@ class RestExchange(AbstractExchange):
             self.logger.error(f"Fail to get market status of {symbol}: {e}")
             return {}
 
-    async def get_balance(self, params=None):
+    async def get_balance(self, **kwargs: dict):
         """
         fetch balance (free + used) by currency
-        :param params:
         :return: balance dict
         """
-        if params is None:
-            params = {'recvWindow': 10000000}
+        if not kwargs:
+            kwargs = {'recvWindow': 10000000}
         try:
-            balance = await self.client.fetch_balance(params=params)
+            balance = await self.client.fetch_balance(params=kwargs)
 
             # remove not currency specific keys
             balance.pop(CONFIG_PORTFOLIO_INFO, None)
@@ -152,15 +141,10 @@ class RestExchange(AbstractExchange):
         except NotSupported:
             raise errors.NotSupported
 
-    def get_candle_since_timestamp(self, time_frame, count):
-        return self.client.milliseconds() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * count
-
-    async def get_symbol_prices(self, symbol, time_frame, limit=None, params=None):
-        if params is None:
-            params = {}
+    async def get_symbol_prices(self, symbol: str, time_frame: TimeFrames, limit: int = None, **kwargs: dict) -> list:
         try:
             if limit:
-                return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, params=params)
+                return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, params=kwargs)
             return await self.client.fetch_ohlcv(symbol, time_frame.value)
         except NotSupported:
             raise errors.NotSupported
@@ -168,12 +152,10 @@ class RestExchange(AbstractExchange):
             self.logger.error(f"Failed to get_symbol_prices {e}")
             return None
 
-    async def get_kline_price(self, symbol, time_frame, params=None):
-        if params is None:
-            params = {}
+    async def get_kline_price(self, symbol: str, time_frame: TimeFrames, **kwargs: dict) -> list:
         try:
             # default implementation
-            return await self.get_symbol_prices(symbol, time_frame, limit=1, params=params)
+            return await self.get_symbol_prices(symbol, time_frame, limit=1, params=kwargs)
         except NotSupported:
             raise errors.NotSupported
         except BaseError as e:
@@ -181,22 +163,18 @@ class RestExchange(AbstractExchange):
             return None
 
     # return up to ten bidasks on each side of the order book stack
-    async def get_order_book(self, symbol, limit=5, params=None):
-        if params is None:
-            params = {}
+    async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> dict:
         try:
-            return await self.client.fetch_order_book(symbol, limit=limit, params=params)
+            return await self.client.fetch_order_book(symbol, limit=limit, params=kwargs)
         except NotSupported:
             raise errors.NotSupported
         except BaseError as e:
             self.logger.error(f"Failed to get_order_book {e}")
             return None
 
-    async def get_recent_trades(self, symbol, limit=50, params=None):
-        if params is None:
-            params = {}
+    async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> list:
         try:
-            return await self.client.fetch_trades(symbol, limit=limit, params=params)
+            return await self.client.fetch_trades(symbol, limit=limit, params=kwargs)
         except NotSupported:
             raise errors.NotSupported
         except BaseError as e:
@@ -204,22 +182,18 @@ class RestExchange(AbstractExchange):
             return None
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
-    async def get_price_ticker(self, symbol, params=None):
-        if params is None:
-            params = {}
+    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> dict:
         try:
-            return await self.client.fetch_ticker(symbol, params=params)
+            return await self.client.fetch_ticker(symbol, params=kwargs)
         except NotSupported:
             raise errors.NotSupported
         except BaseError as e:
             self.logger.error(f"Failed to get_price_ticker {e}")
             return None
 
-    async def get_all_currencies_price_ticker(self, params=None):
-        if params is None:
-            params = {}
+    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> list:
         try:
-            self.all_currencies_price_ticker = await self.client.fetch_tickers(params=params)
+            self.all_currencies_price_ticker = await self.client.fetch_tickers(params=kwargs)
             return self.all_currencies_price_ticker
         except NotSupported:
             raise errors.NotSupported
@@ -228,12 +202,10 @@ class RestExchange(AbstractExchange):
             return None
 
     # ORDERS
-    async def get_order(self, order_id, symbol=None, params=None):
-        if params is None:
-            params = {}
+    async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         if self.client.has['fetchOrder']:
             try:
-                return await self.client.fetch_order(order_id, symbol, params=params)
+                return await self.client.fetch_order(order_id, symbol, params=kwargs)
                 # self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order) TODO
             except OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
@@ -242,48 +214,42 @@ class RestExchange(AbstractExchange):
         else:
             raise errors.NotSupported("This exchange doesn't support fetchOrder")
 
-    async def get_all_orders(self, symbol=None, since=None, limit=None, params=None):
-        if params is None:
-            params = {}
+    async def get_all_orders(self, symbol: str = None, since: int = None,
+                             limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOrders']:
-            return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=params)
+            return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
             raise errors.NotSupported("This exchange doesn't support fetchOrders")
 
-    async def get_open_orders(self, symbol=None, since=None, limit=None, params=None):
-        if params is None:
-            params = {}
+    async def get_open_orders(self, symbol: str = None, since: int = None,
+                              limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOpenOrders']:
-            return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=params)
+            return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
             raise errors.NotSupported("This exchange doesn't support fetchOpenOrders")
 
-    async def get_closed_orders(self, symbol=None, since=None, limit=None, params=None):
-        if params is None:
-            params = {}
+    async def get_closed_orders(self, symbol: str = None, since: int = None,
+                                limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchClosedOrders']:
-            return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=params)
+            return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
             raise errors.NotSupported("This exchange doesn't support fetchClosedOrders")
 
-    async def get_my_recent_trades(self, symbol=None, since=None, limit=None, params=None):
-        if params is None:
-            params = {}
+    async def get_my_recent_trades(self, symbol: str = None, since: int = None,
+                                   limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchMyTrades'] or self.client.has['fetchTrades']:
             if self.client.has['fetchMyTrades']:
-                return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=params)
+                return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=kwargs)
             elif self.client.has['fetchTrades']:
-                return await self.client.fetch_trades(symbol=symbol, since=since, limit=limit, params=params)
+                return await self.client.fetch_trades(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
             raise errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
-    async def cancel_order(self, order_id, symbol=None, params=None):
-        if params is None:
-            params = {}
+    async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         cancel_resp = None
         try:
-            cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=params)
-            return parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=params))
+            cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
+            return parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=kwargs))
         except OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
         except NotSupported:
@@ -292,17 +258,16 @@ class RestExchange(AbstractExchange):
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
         return cancel_resp is not None
 
-    async def create_order(self, order_type, symbol, quantity, price=None, stop_price=None, params=None):
-        if params is None:
-            params = {}
+    async def create_order(self, order_type: TraderOrderType, symbol: str, quantity: float,
+                           price: float = None, stop_price=None, **kwargs: dict) -> dict:
         try:
             created_order = await self._create_specific_order(order_type, symbol, quantity, price)
             # some exchanges are not returning the full order details on creation: fetch it if necessary
-            if created_order and not RestExchange._ensure_order_details_completeness(created_order):
+            if created_order and not CCXTExchange._ensure_order_details_completeness(created_order):
                 if ecoc.ID.value in created_order:
                     order_symbol = created_order[ecoc.SYMBOL.value] if ecoc.SYMBOL.value in created_order else None
                     created_order = await self.exchange_manager.get_exchange().get_order(created_order[ecoc.ID.value],
-                                                                                         order_symbol, params=params)
+                                                                                         order_symbol, params=kwargs)
 
             # on some exchange, market order are not not including price, add it manually to ensure uniformity
             if created_order[ecoc.PRICE.value] is None and price is not None:
@@ -360,7 +325,7 @@ class RestExchange(AbstractExchange):
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
-                                         side=RestExchange._get_side(order_type),
+                                         side=CCXTExchange._get_side(order_type),
                                          amount=quantity,
                                          price=price,
                                          takerOrMaker=taker_or_maker)
@@ -395,7 +360,7 @@ class RestExchange(AbstractExchange):
     def get_exchange_current_time(self):
         return self.get_uniform_timestamp(self.client.milliseconds())
 
-    async def stop(self):
+    async def stop(self) -> None:
         self.logger.info(f"Closing connection.")
         await self.client.close()
         self.logger.info(f"Connection closed.")
@@ -454,13 +419,6 @@ class RestExchange(AbstractExchange):
     def _get_side(order_type):
         return TradeOrderSide.BUY.value if order_type in (TraderOrderType.BUY_LIMIT, TraderOrderType.BUY_MARKET) \
             else TradeOrderSide.SELL.value
-
-    """
-    Accounts
-    """
-
-    async def switch_to_account(self, account_type):
-        raise NotImplementedError("switch_to_account is not available on this exchange")
 
     """
     Parsers

@@ -14,10 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.rest_exchange import RestExchange
+from octobot_trading.exchanges.implementations.ccxt_exchange import CCXTExchange
 
 
-class SpotExchange(RestExchange):
+class SpotExchange(CCXTExchange):
     """
     CCXT spot library wrapper
     """
