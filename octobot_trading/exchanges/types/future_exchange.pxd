@@ -14,13 +14,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.rest_exchange cimport CCXTExchange
 
-cdef class FutureExchange(CCXTExchange):
+cdef class FutureExchange:
+    cpdef double calculate_position_value(self, double quantity, double mark_price)
+
+    """
+    Parsers
+    """
     cpdef dict parse_position(self, dict position_dict)
     cpdef dict parse_funding(self, dict funding_dict, bint from_ticker=*)
     cpdef dict parse_mark_price(self, dict mark_price_dict, bint from_ticker=*)
     cpdef dict parse_liquidation(self, dict liquidation_dict)
     cpdef str parse_position_status(self, str status)
     cpdef str parse_position_side(self, str side)
-    cpdef double calculate_position_value(self, double quantity, double mark_price)
