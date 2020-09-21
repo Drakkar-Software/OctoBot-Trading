@@ -31,3 +31,15 @@ class TradingModeIncompatibility(Exception):
     """
     Raised when a trading mode is incompatible with the current situation
     """
+
+
+class NotSupported(Exception):
+    """
+    Raised when an exchange doesn't support the endpoint
+    """
+
+
+class AuthenticationError(Exception):
+    """
+    Raised when an exchange failed to authenticate
+    """

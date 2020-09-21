@@ -22,6 +22,8 @@ from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, Requ
 
 from octobot_commons.constants import MSECONDS_TO_MINUTE, MSECONDS_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes
+
+from octobot_trading import errors
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.errors import MissingFunds
@@ -60,6 +62,8 @@ class RestExchange(AbstractExchange):
             await self.client.load_markets()
         except (ExchangeNotAvailable, RequestTimeout) as e:
             self.logger.error(f"initialization impossible: {e}")
+        except ccxt.AuthenticationError:
+            raise errors.AuthenticationError
 
     @staticmethod
     def create_exchange_type(exchange_class_string):
@@ -117,6 +121,8 @@ class RestExchange(AbstractExchange):
             if with_fixer:
                 return ExchangeMarketStatusFixer(self.client.market(symbol), price_example).market_status
             return self.client.market(symbol)
+        except NotSupported:
+            raise errors.NotSupported
         except Exception as e:
             self.logger.error(f"Fail to get market status of {symbol}: {e}")
             return {}
@@ -143,6 +149,8 @@ class RestExchange(AbstractExchange):
             self.logger.error(f"Error when loading {self.name} real trader portfolio: {e}. "
                               f"To fix this, please synchronize your computer's clock. ")
             raise e
+        except NotSupported:
+            raise errors.NotSupported
 
     def get_candle_since_timestamp(self, time_frame, count):
         return self.client.milliseconds() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * count
@@ -154,6 +162,8 @@ class RestExchange(AbstractExchange):
             if limit:
                 return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, params=params)
             return await self.client.fetch_ohlcv(symbol, time_frame.value)
+        except NotSupported:
+            raise errors.NotSupported
         except BaseError as e:
             self.logger.error(f"Failed to get_symbol_prices {e}")
             return None
@@ -164,6 +174,8 @@ class RestExchange(AbstractExchange):
         try:
             # default implementation
             return await self.get_symbol_prices(symbol, time_frame, limit=1, params=params)
+        except NotSupported:
+            raise errors.NotSupported
         except BaseError as e:
             self.logger.error(f"Failed to get_kline_price {e}")
             return None
@@ -174,6 +186,8 @@ class RestExchange(AbstractExchange):
             params = {}
         try:
             return await self.client.fetch_order_book(symbol, limit=limit, params=params)
+        except NotSupported:
+            raise errors.NotSupported
         except BaseError as e:
             self.logger.error(f"Failed to get_order_book {e}")
             return None
@@ -183,6 +197,8 @@ class RestExchange(AbstractExchange):
             params = {}
         try:
             return await self.client.fetch_trades(symbol, limit=limit, params=params)
+        except NotSupported:
+            raise errors.NotSupported
         except BaseError as e:
             self.logger.error(f"Failed to get_recent_trades {e}")
             return None
@@ -193,6 +209,8 @@ class RestExchange(AbstractExchange):
             params = {}
         try:
             return await self.client.fetch_ticker(symbol, params=params)
+        except NotSupported:
+            raise errors.NotSupported
         except BaseError as e:
             self.logger.error(f"Failed to get_price_ticker {e}")
             return None
@@ -203,6 +221,8 @@ class RestExchange(AbstractExchange):
         try:
             self.all_currencies_price_ticker = await self.client.fetch_tickers(params=params)
             return self.all_currencies_price_ticker
+        except NotSupported:
+            raise errors.NotSupported
         except BaseError as e:
             self.logger.error(f"Failed to get_all_currencies_price_ticker {e}")
             return None
@@ -220,7 +240,7 @@ class RestExchange(AbstractExchange):
                 # self.exchange_manager.exchange_personal_data().update_order_attribute(order_id, ecoc.STATUS.value, OrderStatus.CANCELED.value) TODO
                 pass
         else:
-            raise Exception("This exchange doesn't support fetchOrder")
+            raise errors.NotSupported("This exchange doesn't support fetchOrder")
 
     async def get_all_orders(self, symbol=None, since=None, limit=None, params=None):
         if params is None:
@@ -228,7 +248,7 @@ class RestExchange(AbstractExchange):
         if self.client.has['fetchOrders']:
             return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
-            raise Exception("This exchange doesn't support fetchOrders")
+            raise errors.NotSupported("This exchange doesn't support fetchOrders")
 
     async def get_open_orders(self, symbol=None, since=None, limit=None, params=None):
         if params is None:
@@ -236,7 +256,7 @@ class RestExchange(AbstractExchange):
         if self.client.has['fetchOpenOrders']:
             return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
-            raise Exception("This exchange doesn't support fetchOpenOrders")
+            raise errors.NotSupported("This exchange doesn't support fetchOpenOrders")
 
     async def get_closed_orders(self, symbol=None, since=None, limit=None, params=None):
         if params is None:
@@ -244,7 +264,7 @@ class RestExchange(AbstractExchange):
         if self.client.has['fetchClosedOrders']:
             return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=params)
         else:
-            raise Exception("This exchange doesn't support fetchClosedOrders")
+            raise errors.NotSupported("This exchange doesn't support fetchClosedOrders")
 
     async def get_my_recent_trades(self, symbol=None, since=None, limit=None, params=None):
         if params is None:
@@ -255,7 +275,7 @@ class RestExchange(AbstractExchange):
             elif self.client.has['fetchTrades']:
                 return await self.client.fetch_trades(symbol=symbol, since=since, limit=limit, params=params)
         else:
-            raise Exception("This exchange doesn't support fetchMyTrades nor fetchTrades")
+            raise errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
     async def cancel_order(self, order_id, symbol=None, params=None):
         if params is None:
@@ -266,6 +286,8 @@ class RestExchange(AbstractExchange):
             return parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=params))
         except OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
+        except NotSupported:
+            raise errors.NotSupported
         except Exception as e:
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
         return cancel_resp is not None
@@ -292,6 +314,8 @@ class RestExchange(AbstractExchange):
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(e)
             raise MissingFunds(e)
+        except NotSupported:
+            raise errors.NotSupported
         except Exception as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.error(e)
@@ -355,6 +379,8 @@ class RestExchange(AbstractExchange):
                     market_status.get(ExchangeConstantsMarketPropertyColumns.FEE.value,
                                       CONFIG_DEFAULT_FEES)
             }
+        except NotSupported:
+            raise errors.NotSupported
         except Exception as e:
             self.logger.error(f"Fees data for {symbol} was not found ({e})")
             return {
