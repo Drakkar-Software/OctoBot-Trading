@@ -17,7 +17,7 @@
 import asyncio
 import time
 
-from ccxt.base.errors import NotSupported
+from octobot_trading.errors import NotSupported
 
 from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes, PriceIndexes

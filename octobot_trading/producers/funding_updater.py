@@ -19,7 +19,7 @@ from typing import Optional
 
 import time
 
-from ccxt.base.errors import NotSupported
+from octobot_trading.errors import NotSupported
 from octobot_commons.constants import HOURS_TO_SECONDS
 
 from octobot_trading.channels.funding import FundingProducer
