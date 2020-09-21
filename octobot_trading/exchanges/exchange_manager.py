@@ -19,13 +19,13 @@ from octobot_commons.config_util import has_invalid_default_config_value, decryp
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.logging.logging_util import get_logger
 
+from octobot_trading.channels.exchange_channel import stop_exchange_channels
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
     CONFIG_EXCHANGE_PASSWORD
 from octobot_trading.enums import RestExchangePairsRefreshMaxThresholds
 from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
 from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
 from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
-from octobot_trading.exchanges.exchange_channels import stop_exchange_channels
 from octobot_trading.exchanges.exchange_factory import create_exchanges
 from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.util import is_trader_simulator_enabled
