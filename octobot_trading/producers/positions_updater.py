@@ -16,7 +16,7 @@
 #  License along with this library.
 import asyncio
 
-from ccxt.base.errors import NotSupported
+from octobot_trading.errors import NotSupported
 
 from octobot_trading.channels.positions import PositionsProducer
 from octobot_trading.constants import POSITIONS_CHANNEL

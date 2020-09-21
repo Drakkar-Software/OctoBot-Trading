@@ -16,7 +16,7 @@
 #  License along with this library.
 import asyncio
 
-from ccxt.base.errors import NotSupported
+from octobot_trading.errors import NotSupported
 
 from octobot_commons.async_job import AsyncJob
 from octobot_trading.channels.orders import OrdersProducer

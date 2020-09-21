@@ -14,8 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from ccxt import AuthenticationError
-
+from octobot_trading.errors import AuthenticationError
 from octobot_trading.exchanges.exchange_channels import create_exchange_producers, create_exchange_channels
 from octobot_trading.exchanges.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchange_util import get_margin_exchange_class, get_rest_exchange_class, \

@@ -16,7 +16,7 @@
 #  License along with this library.
 import asyncio
 
-from ccxt.base.errors import NotSupported
+from octobot_trading.errors import NotSupported
 
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.constants import BALANCE_CHANNEL, MARK_PRICE_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
