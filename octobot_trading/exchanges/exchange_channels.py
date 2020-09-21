@@ -18,7 +18,7 @@ from octobot_channels.util.channel_creator import create_all_subclasses_channel
 from octobot_commons.tentacles_management.class_inspector import default_parent_inspection
 
 from octobot_trading.channels.exchange_channel import set_chan, get_chan, \
-    ExchangeChannel, TimeFrameExchangeChannel, get_exchange_channels, del_chan, del_exchange_channel_container
+    ExchangeChannel, TimeFrameExchangeChannel
 from octobot_trading.exchanges.exchange_websocket_factory import is_exchange_managed_by_websocket, \
     is_websocket_feed_requiring_init
 from octobot_trading.producers import get_unauthenticated_updater_producers, get_authenticated_updater_producers
@@ -170,23 +170,3 @@ def requires_refresh_trigger(exchange_manager, channel):
     :return: True if it should be refreshed via a manual trigger to be exactly up to date
     """
     return not is_exchange_managed_by_websocket(exchange_manager, channel)
-
-
-async def stop_exchange_channels(exchange_manager, should_warn=True) -> None:
-    """
-    Stop exchange channels and producers
-    :param exchange_manager: the related exchange manager
-    :param should_warn: if an error message should be logged if an error happened during stopping process
-    """
-    try:
-        for channel_name in list(get_exchange_channels(exchange_manager.id)):
-            channel = get_chan(channel_name, exchange_manager.id)
-            await channel.stop()
-            for consumer in channel.consumers:
-                await channel.remove_consumer(consumer)
-            get_chan(channel_name, exchange_manager.id).flush()
-            del_chan(channel_name, exchange_manager.id)
-        del_exchange_channel_container(exchange_manager.id)
-    except KeyError:
-        if should_warn:
-            exchange_manager.logger.error(f"No exchange channel for this exchange (id: {exchange_manager.id})")

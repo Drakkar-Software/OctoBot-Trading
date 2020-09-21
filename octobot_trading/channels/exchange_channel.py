@@ -47,6 +47,7 @@ class ExchangeChannelProducer(Producer):
     """
     Producer adapted for ExchangeChannel
     """
+
     def __init__(self, channel):
         super().__init__(channel)
         self.logger = get_logger(f"{self.__class__.__name__}[{channel.exchange_manager.exchange_name}]")
@@ -187,3 +188,23 @@ def del_chan(chan_name, exchange_id) -> None:
         ChannelInstances.instance().channels[exchange_id].pop(chan_name, None)
     except KeyError:
         get_logger(ExchangeChannel.__name__).warning(f"Can't del chan {chan_name} on exchange with id: {exchange_id}")
+
+
+async def stop_exchange_channels(exchange_manager, should_warn=True) -> None:
+    """
+    Stop exchange channels and producers
+    :param exchange_manager: the related exchange manager
+    :param should_warn: if an error message should be logged if an error happened during stopping process
+    """
+    try:
+        for channel_name in list(get_exchange_channels(exchange_manager.id)):
+            channel = get_chan(channel_name, exchange_manager.id)
+            await channel.stop()
+            for consumer in channel.consumers:
+                await channel.remove_consumer(consumer)
+            get_chan(channel_name, exchange_manager.id).flush()
+            del_chan(channel_name, exchange_manager.id)
+        del_exchange_channel_container(exchange_manager.id)
+    except KeyError:
+        if should_warn:
+            exchange_manager.logger.error(f"No exchange channel for this exchange (id: {exchange_manager.id})")
