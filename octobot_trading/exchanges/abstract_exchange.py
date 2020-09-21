@@ -292,49 +292,49 @@ class AbstractExchange(Initializable):
         :param balance: the balance dict
         :return: the uniformized balance dict
         """
-        raise NotImplementedError("parse_balance is not available on this exchange")
+        raise NotImplementedError("parse_balance is not implemented")
 
     def parse_trade(self, trade):
         """
         :param trade: the trade dict
         :return: the uniformized trade dict
         """
-        raise NotImplementedError("parse_trade is not available on this exchange")
+        raise NotImplementedError("parse_trade is not implemented")
 
     def parse_order(self, order):
         """
         :param order: the order dict
         :return: the uniformized order dict
         """
-        raise NotImplementedError("parse_order is not available on this exchange")
+        raise NotImplementedError("parse_order is not implemented")
 
     def parse_ticker(self, ticker):
         """
         :param ticker: the ticker dict
         :return: the uniformized ticker dict
         """
-        raise NotImplementedError("parse_ticker is not available on this exchange")
+        raise NotImplementedError("parse_ticker is not implemented")
 
     def parse_ohlcv(self, ohlcv):
         """
         :param ohlcv: the ohlcv dict
         :return: the uniformized ohlcv dict
         """
-        raise NotImplementedError("parse_ohlcv is not available on this exchange")
+        raise NotImplementedError("parse_ohlcv is not implemented")
 
     def parse_order_book(self, order_book):
         """
         :param order_book: the order book data
         :return: the uniformized order book data
         """
-        raise NotImplementedError("parse_order_book is not available on this exchange")
+        raise NotImplementedError("parse_order_book is not implemented")
 
     def parse_order_book_ticker(self, order_book_ticker):
         """
         :param order_book_ticker: the order book ticker
         :return: the uniformized order book ticker
         """
-        raise NotImplementedError("parse_order_book_ticker is not available on this exchange")
+        raise NotImplementedError("parse_order_book_ticker is not implemented")
 
     def parse_timestamp(self, data_dict, timestamp_key, default_value=None, ms=False):
         """
@@ -345,49 +345,49 @@ class AbstractExchange(Initializable):
         :param ms: when True, return the timestamp in milliseconds
         :return: the uniformized timestamp
         """
-        raise NotImplementedError("parse_timestamp is not available on this exchange")
+        raise NotImplementedError("parse_timestamp is not implemented")
 
     def parse_currency(self, currency):
         """
         :param currency: the raw currency
         :return: the uniformized currency
         """
-        raise NotImplementedError("parse_currency is not available on this exchange")
+        raise NotImplementedError("parse_currency is not implemented")
 
     def parse_order_id(self, order):
         """
         :param order: the order dict
         :return: the order id
         """
-        raise NotImplementedError("parse_order_id is not available on this exchange")
+        raise NotImplementedError("parse_order_id is not implemented")
 
     def parse_order_symbol(self, order):
         """
         :param order: the order dict
         :return: the order symbol
         """
-        raise NotImplementedError("parse_order_symbol is not available on this exchange")
+        raise NotImplementedError("parse_order_symbol is not implemented")
 
     def parse_status(self, status):
         """
         :param status: the raw status
         :return: the OrderStatus instance related to the row status
         """
-        raise NotImplementedError("parse_status is not available on this exchange")
+        raise NotImplementedError("parse_status is not implemented")
 
     def parse_side(self, side):
         """
         :param side: the raw side
         :return: the TradeOrderSide related to the side
         """
-        raise NotImplementedError("parse_side is not available on this exchange")
+        raise NotImplementedError("parse_side is not implemented")
 
     def parse_account(self, account):
         """
         :param account: the raw account
         :return: the AccountTypes related to the account
         """
-        raise NotImplementedError("parse_account is not available on this exchange")
+        raise NotImplementedError("parse_account is not implemented")
 
     """
     Cleaners
@@ -399,7 +399,7 @@ class AbstractExchange(Initializable):
         :param recent_trade: the recent trade list
         :return: the cleaned recent trade list
         """
-        raise NotImplementedError("clean_recent_trade is not available on this exchange")
+        raise NotImplementedError("clean_recent_trade is not implemented")
 
     def clean_trade(self, trade):
         """
@@ -407,7 +407,7 @@ class AbstractExchange(Initializable):
         :param trade: the trade dict
         :return: the cleaned trade dict
         """
-        raise NotImplementedError("clean_trade is not available on this exchange")
+        raise NotImplementedError("clean_trade is not implemented")
 
     def clean_order(self, order):
         """
@@ -415,7 +415,7 @@ class AbstractExchange(Initializable):
         :param order: the order dict
         :return: the cleaned order dict
         """
-        raise NotImplementedError("clean_order is not available on this exchange")
+        raise NotImplementedError("clean_order is not implemented")
 
     """
     Uniformization
