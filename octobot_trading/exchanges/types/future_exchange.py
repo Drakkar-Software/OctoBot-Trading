@@ -14,10 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.enums import PositionSide
-from octobot_trading.exchanges.rest_exchange import RestExchange
+from octobot_trading.exchanges.implementations.ccxt_exchange import CCXTExchange
 
 
-class FutureExchange(RestExchange):
+class FutureExchange(CCXTExchange):
     LONG_STR = "long"
     SHORT_STR = "short"
 

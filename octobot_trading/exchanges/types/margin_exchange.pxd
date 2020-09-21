@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.rest_exchange cimport RestExchange
+from octobot_trading.exchanges.rest_exchange cimport CCXTExchange
 
-cdef class MarginExchange(RestExchange):
+cdef class MarginExchange(CCXTExchange):
     pass
