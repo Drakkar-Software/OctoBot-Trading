@@ -15,8 +15,7 @@
 #  License along with this library.
 import asyncio
 
-from ccxt import NotSupported
-
+from octobot_trading.errors import NotSupported
 from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.channels.price import MarkPriceProducer
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, FUNDING_CHANNEL
