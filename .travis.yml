@@ -69,12 +69,14 @@ jobs:
         - provider: script
           script: docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/pypi-builder:manylinux-i686
           cleanup: true
+          skip_existing: true
           on:
             repo: "$GH_REPO"
             branch: "$DEPLOY_BRANCH"
             tags: true
         - provider: script
           script: docker run -it -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -v $(pwd):/project drakkarsoftware/pypi-builder:manylinux-x86_64
+          skip_existing: true 
           cleanup: true
           on:
             repo: "$GH_REPO"
