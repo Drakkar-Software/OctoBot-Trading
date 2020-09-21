@@ -18,7 +18,7 @@ from octobot_tentacles_manager.api.configurator import is_tentacle_activated_in_
 from octobot_trading.exchanges.types.future_exchange import FutureExchange
 from octobot_trading.exchanges.types.margin_exchange import MarginExchange
 from octobot_trading.exchanges.types.spot_exchange import SpotExchange
-from octobot_trading.exchanges.rest_exchange import RestExchange
+from octobot_trading.exchanges.implementations.ccxt_exchange import CCXTExchange
 
 
 def get_margin_exchange_class(exchange_type, tentacles_setup_config):
@@ -34,10 +34,10 @@ def get_spot_exchange_class(exchange_type, tentacles_setup_config):
 
 
 def get_rest_exchange_class(exchange_type, tentacles_setup_config):
-    exchange_class_candidate: RestExchange = _search_exchange_class_from_exchange_type(exchange_type,
-                                                                                       RestExchange,
+    exchange_class_candidate: CCXTExchange = _search_exchange_class_from_exchange_type(exchange_type,
+                                                                                       CCXTExchange,
                                                                                        tentacles_setup_config)
-    return exchange_class_candidate if exchange_class_candidate is not None else RestExchange
+    return exchange_class_candidate if exchange_class_candidate is not None else CCXTExchange
 
 
 def _search_exchange_class_from_exchange_type(exchange_type, exchange_class, tentacles_setup_config):
