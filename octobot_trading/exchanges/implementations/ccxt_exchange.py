@@ -38,8 +38,8 @@ class CCXTExchange(AbstractExchange):
     CCXT library wrapper
     """
 
-    def __init__(self, config, exchange_manager, is_sandboxed=False):
-        super().__init__(config, exchange_manager, is_sandboxed)
+    def __init__(self, config, exchange_manager):
+        super().__init__(config, exchange_manager)
         self.client = None
         self.all_currencies_price_ticker = None
 
@@ -48,7 +48,7 @@ class CCXTExchange(AbstractExchange):
 
     async def initialize_impl(self):
         try:
-            self.set_sandbox_mode(self.is_sandboxed)
+            self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
             await self.client.load_markets()
         except (ExchangeNotAvailable, RequestTimeout) as e:
             self.logger.error(f"initialization impossible: {e}")

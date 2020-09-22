@@ -29,7 +29,6 @@ cdef class AbstractExchange(Initializable):
     cdef public double allowed_time_lag
 
     cdef public bint is_authenticated
-    cdef public bint is_sandboxed
 
     cdef public Trader trader
     cdef public ExchangeManager exchange_manager

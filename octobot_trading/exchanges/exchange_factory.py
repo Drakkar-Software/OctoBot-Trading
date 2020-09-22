@@ -124,8 +124,7 @@ async def _search_and_create_spot_exchange(exchange_manager) -> None:
                                                   exchange_manager.tentacles_setup_config)
     if spot_exchange_class:
         exchange_manager.exchange = spot_exchange_class(config=exchange_manager.config,
-                                                        exchange_manager=exchange_manager,
-                                                        is_sandboxed=exchange_manager.is_sandboxed)
+                                                        exchange_manager=exchange_manager)
 
 
 async def _search_and_create_margin_exchange(exchange_manager) -> None:
@@ -137,8 +136,7 @@ async def _search_and_create_margin_exchange(exchange_manager) -> None:
                                                       exchange_manager.tentacles_setup_config)
     if margin_exchange_class:
         exchange_manager.exchange = margin_exchange_class(config=exchange_manager.config,
-                                                          exchange_manager=exchange_manager,
-                                                          is_sandboxed=exchange_manager.is_sandboxed)
+                                                          exchange_manager=exchange_manager)
 
 
 async def _search_and_create_future_exchange(exchange_manager) -> None:
@@ -150,8 +148,7 @@ async def _search_and_create_future_exchange(exchange_manager) -> None:
                                                       exchange_manager.tentacles_setup_config)
     if future_exchange_class:
         exchange_manager.exchange = future_exchange_class(config=exchange_manager.config,
-                                                          exchange_manager=exchange_manager,
-                                                          is_sandboxed=exchange_manager.is_sandboxed)
+                                                          exchange_manager=exchange_manager)
 
 
 def _initialize_simulator_time_frames(exchange_manager):
