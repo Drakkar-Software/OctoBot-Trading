@@ -16,18 +16,17 @@
 
 from octobot_trading.errors import AuthenticationError
 from octobot_trading.exchanges.exchange_channels import create_exchange_producers, create_exchange_channels
-from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
-from octobot_trading.exchanges.exchange_util import get_margin_exchange_class, get_rest_exchange_class, \
-    get_future_exchange_class, get_spot_exchange_class
+from octobot_trading.exchanges.exchange_util import get_margin_exchange_class, get_future_exchange_class, \
+    get_spot_exchange_class
 from octobot_trading.exchanges.exchange_websocket_factory import search_and_create_websocket
-from octobot_trading.exchanges.implementations.ccxt_exchange import CCXTExchange
+from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
+from octobot_trading.exchanges.implementations.future_exchange_simulator import FutureExchangeSimulator
 from octobot_trading.exchanges.websockets.websockets_util import check_web_socket_config
 
 
 async def create_exchanges(exchange_manager):
     if exchange_manager.is_sandboxed:
         exchange_manager.logger.info(f"Using sandbox exchange for {exchange_manager.exchange_name}")
-    exchange_manager.exchange_type = CCXTExchange.create_exchange_type(exchange_manager.exchange_class_string)
 
     if not exchange_manager.is_backtesting:
         # real : create a rest or websocket exchange instance
@@ -89,12 +88,19 @@ async def _create_rest_exchange(exchange_manager) -> None:
         await _search_and_create_margin_exchange(exchange_manager)
 
     if not exchange_manager.exchange:
-        await _search_and_create_rest_exchange(exchange_manager)
+        raise Exception("Can't create an exchange instance that match the exchange configuration")
 
 
 async def create_simulated_exchange(exchange_manager):
-    exchange_manager.exchange = ExchangeSimulator(exchange_manager.config, exchange_manager.exchange_type,
-                                                  exchange_manager, exchange_manager.backtesting)
+    if exchange_manager.is_spot_only:
+        exchange_manager.exchange = ExchangeSimulator(exchange_manager.config, exchange_manager,
+                                                      exchange_manager.backtesting)
+    elif exchange_manager.is_future:
+        exchange_manager.exchange = FutureExchangeSimulator(exchange_manager.config, exchange_manager,
+                                                            exchange_manager.backtesting)
+    elif exchange_manager.is_margin:
+        raise NotImplemented("MarginExchangeSimulator is not implemented")
+
     await exchange_manager.exchange.initialize()
     _initialize_simulator_time_frames(exchange_manager)
     exchange_manager.exchange_config.set_config_time_frame()
@@ -106,30 +112,15 @@ async def init_simulated_exchange(exchange_manager):
     await exchange_manager.exchange.create_backtesting_exchange_producers()
 
 
-async def _search_and_create_rest_exchange(exchange_manager) -> None:
-    """
-    Create a rest exchange if a CCXTExchange matching class is found
-    :param exchange_manager: the related exchange manager
-    """
-    rest_exchange_class = get_rest_exchange_class(exchange_manager.exchange_type,
-                                                  exchange_manager.tentacles_setup_config)
-    if rest_exchange_class:
-        exchange_manager.exchange = rest_exchange_class(config=exchange_manager.config,
-                                                        exchange_type=exchange_manager.exchange_type,
-                                                        exchange_manager=exchange_manager,
-                                                        is_sandboxed=exchange_manager.is_sandboxed)
-
-
 async def _search_and_create_spot_exchange(exchange_manager) -> None:
     """
     Create a spot exchange if a SpotExchange matching class is found
     :param exchange_manager: the related exchange manager
     """
-    spot_exchange_class = get_spot_exchange_class(exchange_manager.exchange_type,
+    spot_exchange_class = get_spot_exchange_class(exchange_manager.exchange_name,
                                                   exchange_manager.tentacles_setup_config)
     if spot_exchange_class:
         exchange_manager.exchange = spot_exchange_class(config=exchange_manager.config,
-                                                        exchange_type=exchange_manager.exchange_type,
                                                         exchange_manager=exchange_manager,
                                                         is_sandboxed=exchange_manager.is_sandboxed)
 
@@ -139,11 +130,10 @@ async def _search_and_create_margin_exchange(exchange_manager) -> None:
     Create a margin exchange if a MarginExchange matching class is found
     :param exchange_manager: the related exchange manager
     """
-    margin_exchange_class = get_margin_exchange_class(exchange_manager.exchange_type,
+    margin_exchange_class = get_margin_exchange_class(exchange_manager.exchange_name,
                                                       exchange_manager.tentacles_setup_config)
     if margin_exchange_class:
         exchange_manager.exchange = margin_exchange_class(config=exchange_manager.config,
-                                                          exchange_type=exchange_manager.exchange_type,
                                                           exchange_manager=exchange_manager,
                                                           is_sandboxed=exchange_manager.is_sandboxed)
 
@@ -153,11 +143,10 @@ async def _search_and_create_future_exchange(exchange_manager) -> None:
     Create a future exchange if a FutureExchange matching class is found
     :param exchange_manager: the related exchange manager
     """
-    future_exchange_class = get_future_exchange_class(exchange_manager.exchange_type,
+    future_exchange_class = get_future_exchange_class(exchange_manager.exchange_name,
                                                       exchange_manager.tentacles_setup_config)
     if future_exchange_class:
         exchange_manager.exchange = future_exchange_class(config=exchange_manager.config,
-                                                          exchange_type=exchange_manager.exchange_type,
                                                           exchange_manager=exchange_manager,
                                                           is_sandboxed=exchange_manager.is_sandboxed)
 

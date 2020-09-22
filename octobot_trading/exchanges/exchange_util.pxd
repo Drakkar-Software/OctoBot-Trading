@@ -15,11 +15,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-cpdef object get_margin_exchange_class(object exchange_type, object tentacles_setup_config)
-cpdef object get_future_exchange_class(object exchange_type, object tentacles_setup_config)
-cpdef object get_spot_exchange_class(object exchange_type, object tentacles_setup_config)
-cpdef object get_rest_exchange_class(object exchange_type, object tentacles_setup_config)
+cpdef object get_margin_exchange_class(str exchange_name, object tentacles_setup_config)
+cpdef object get_future_exchange_class(str exchange_name, object tentacles_setup_config)
+cpdef object get_spot_exchange_class(str exchange_name, object tentacles_setup_config)
+cpdef str get_order_side(object order_type)
 
-cdef object _search_exchange_class_from_exchange_type(object exchange_type,
-                                                      object exchange_class,
-                                                      object tentacles_setup_config)
+cdef object search_exchange_class_from_exchange_name(object exchange_class,
+                                                     str exchange_name,
+                                                     object tentacles_setup_config,
+                                                     bint enable_default=*)
+cdef bint _is_exchange_candidate_matching(object exchange_candidate,
+                                          str exchange_name,
+                                          object tentacles_setup_config,
+                                          bint enable_default=*)

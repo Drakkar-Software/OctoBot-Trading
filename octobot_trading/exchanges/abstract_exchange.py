@@ -30,10 +30,9 @@ class AbstractExchange(Initializable):
 
     ACCOUNTS = {}
 
-    def __init__(self, config, exchange_type, exchange_manager, is_sandboxed=False):
+    def __init__(self, config, exchange_manager, is_sandboxed=False):
         super().__init__()
         self.config = config
-        self.exchange_type = exchange_type
         self.exchange_manager = exchange_manager
         self.is_sandboxed = is_sandboxed
 
@@ -41,7 +40,7 @@ class AbstractExchange(Initializable):
         self.is_authenticated = False
 
         # exchange name related attributes
-        self.name = self.exchange_type.__name__
+        self.name = self.exchange_manager.exchange_class_string
         self.logger = get_logger(f"{self.__class__.__name__}[{self.name}]")
 
         # exchange related constants
@@ -66,6 +65,28 @@ class AbstractExchange(Initializable):
         :return: the exchange name
         """
         raise NotImplementedError("get_name is not implemented")
+
+    @classmethod
+    def is_simulated_exchange(cls) -> bool:
+        """
+        :return: True if this implementation corresponds to a simulated exchange
+        """
+        return False
+
+    @classmethod
+    def is_default_exchange(cls) -> bool:
+        """
+        :return: True if this implementation corresponds to a default exchange implementation
+        """
+        return False
+
+    @classmethod
+    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
+        """
+        :param exchange_candidate_name: the exchange name
+        :return: True if this implementation supports the exchange name
+        """
+        raise NotImplementedError("is_supporting_exchange is not implemented")
 
     def get_exchange_current_time(self):
         """
@@ -273,6 +294,12 @@ class AbstractExchange(Initializable):
     def get_default_balance(self):
         """
         :return: the default balance dict from exchange
+        """
+        raise NotImplementedError("get_default_balance is not implemented")
+
+    def get_rate_limit(self):
+        """
+        :return: the exchange rate limit
         """
         raise NotImplementedError("get_default_balance is not implemented")
 
