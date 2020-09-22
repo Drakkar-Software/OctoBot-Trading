@@ -61,9 +61,8 @@ def _is_exchange_candidate_matching(exchange_candidate, exchange_name, tentacles
     return not exchange_candidate.is_simulated_exchange() and \
            (not exchange_candidate.is_default_exchange() or enable_default) and \
            exchange_candidate.is_supporting_exchange(exchange_name) and \
-           tentacles_setup_config is not None and \
-           is_tentacle_activated_in_tentacles_setup_config(tentacles_setup_config,
-                                                           exchange_candidate.__name__)
+           (tentacles_setup_config is None or
+            is_tentacle_activated_in_tentacles_setup_config(tentacles_setup_config, exchange_candidate.__name__))
 
 
 def get_order_side(order_type):
