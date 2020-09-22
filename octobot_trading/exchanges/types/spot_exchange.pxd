@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
 
-cdef class SpotExchange:
+cdef class SpotExchange(AbstractExchange):
     pass
