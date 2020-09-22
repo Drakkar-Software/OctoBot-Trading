@@ -115,55 +115,6 @@ async def test_update_portfolio_from_balance_with_deltas(backtesting_trader):
     assert portfolio_manager.portfolio.portfolio == test_portfolio_4
 
 
-async def test_update_portfolio_available_from_order(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-
-    # Test buy order
-    market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
-                      symbol="BTC/USDT",
-                      current_price=70,
-                      quantity=10,
-                      price=70)
-
-    # test buy order creation
-    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 300
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
-
-    # test buy order canceled --> return to init state and the update_portfolio will sync TOTAL with AVAILABLE
-    portfolio_manager.portfolio.update_portfolio_available(market_buy, False)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
-
-    # Test sell order
-    limit_sell = SellLimitOrder(trader)
-    limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
-                      symbol="BTC/USDT",
-                      current_price=60,
-                      quantity=8,
-                      price=60)
-
-    # test sell order creation
-    portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 2
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
-
-    # test sell order canceled --> return to init state and the update_portfolio will sync TOTAL with AVAILABLE
-    portfolio_manager.portfolio.update_portfolio_available(limit_sell, False)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
-
-
 async def test_update_portfolio(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager

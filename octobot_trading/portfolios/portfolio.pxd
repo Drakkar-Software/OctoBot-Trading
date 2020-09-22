@@ -44,7 +44,7 @@ cdef class Portfolio(Initializable):
 
     # abstract methods
     cpdef void update_portfolio_data_from_order(self, Order order, str currency, str market)
-    cpdef void update_portfolio_available_from_order(self, Order order, int factor=*)
+    cpdef void update_portfolio_available_from_order(self, Order order, bint increase_quantity=*)
     cpdef void log_portfolio_update_from_order(self, Order order, str currency, str market)
 
     # private methods

@@ -115,11 +115,11 @@ class Portfolio(Initializable):
         """
         raise NotImplementedError("update_portfolio_data_from_order is not implemented")
 
-    def update_portfolio_available_from_order(self, order, factor=1):
+    def update_portfolio_available_from_order(self, order, increase_quantity=True):
         """
-        Realise portfolio availability update
+        Realize portfolio availability update
         :param order: the order that triggers the portfolio update
-        :param factor: should be 1 or -1 to increase or decrease available currency portfolio
+        :param increase_quantity: True when increasing quantity
         """
         raise NotImplementedError("update_portfolio_available_from_order is not implemented")
 
@@ -157,7 +157,7 @@ class Portfolio(Initializable):
         :return: None
         """
         if _check_available_should_update(order):
-            self.update_portfolio_available_from_order(order, 1 if is_new_order else -1)
+            self.update_portfolio_available_from_order(order, is_new_order)
 
     def get_portfolio_from_amount_dict(self, amount_dict):
         """

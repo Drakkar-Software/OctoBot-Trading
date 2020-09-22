@@ -19,9 +19,6 @@ from octobot_trading.portfolios.portfolio import Portfolio
 
 
 class MarginPortfolio(Portfolio):
-    async def update_portfolio_from_position(self, position):
-        pass  # TODO
-
     # parse the exchange balance
     def _parse_currency_balance(self, currency_balance):
         return self._create_currency_portfolio(
