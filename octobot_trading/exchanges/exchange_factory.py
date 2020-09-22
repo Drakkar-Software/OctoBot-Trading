@@ -21,6 +21,8 @@ from octobot_trading.exchanges.exchange_util import get_margin_exchange_class, g
 from octobot_trading.exchanges.exchange_websocket_factory import search_and_create_websocket
 from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.implementations.future_exchange_simulator import FutureExchangeSimulator
+from octobot_trading.exchanges.implementations.margin_exchange_simulator import MarginExchangeSimulator
+from octobot_trading.exchanges.implementations.spot_exchange_simulator import SpotExchangeSimulator
 from octobot_trading.exchanges.websockets.websockets_util import check_web_socket_config
 
 
@@ -80,26 +82,27 @@ async def _create_rest_exchange(exchange_manager) -> None:
     create REST based on ccxt exchange
     :param exchange_manager: the related exchange manager
     """
-    if exchange_manager.is_spot_only:
-        await _search_and_create_spot_exchange(exchange_manager)
-    elif exchange_manager.is_future:
+    if exchange_manager.is_future and not exchange_manager.is_spot_only:
         await _search_and_create_future_exchange(exchange_manager)
-    elif exchange_manager.is_margin:
+    elif exchange_manager.is_margin and not exchange_manager.is_spot_only:
         await _search_and_create_margin_exchange(exchange_manager)
+    else:
+        await _search_and_create_spot_exchange(exchange_manager)
 
     if not exchange_manager.exchange:
         raise Exception("Can't create an exchange instance that match the exchange configuration")
 
 
 async def create_simulated_exchange(exchange_manager):
-    if exchange_manager.is_spot_only:
-        exchange_manager.exchange = ExchangeSimulator(exchange_manager.config, exchange_manager,
-                                                      exchange_manager.backtesting)
-    elif exchange_manager.is_future:
+    if exchange_manager.is_future and not exchange_manager.is_spot_only:
         exchange_manager.exchange = FutureExchangeSimulator(exchange_manager.config, exchange_manager,
                                                             exchange_manager.backtesting)
-    elif exchange_manager.is_margin:
-        raise NotImplemented("MarginExchangeSimulator is not implemented")
+    elif exchange_manager.is_margin and not exchange_manager.is_spot_only:
+        exchange_manager.exchange = MarginExchangeSimulator(exchange_manager.config, exchange_manager,
+                                                            exchange_manager.backtesting)
+    else:
+        exchange_manager.exchange = SpotExchangeSimulator(exchange_manager.config, exchange_manager,
+                                                          exchange_manager.backtesting)
 
     await exchange_manager.exchange.initialize()
     _initialize_simulator_time_frames(exchange_manager)

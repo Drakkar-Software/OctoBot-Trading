@@ -22,6 +22,9 @@ from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
 # All test coroutines will be treated as marked.
+from octobot_trading.exchanges.implementations import DefaultCCXTSpotExchange
+from octobot_trading.exchanges.implementations.spot_exchange_simulator import SpotExchangeSimulator
+
 pytestmark = pytest.mark.asyncio
 
 
@@ -50,7 +53,7 @@ class TestExchangeManager:
 
         assert exchange_manager.config is config
 
-        assert isinstance(exchange_manager.exchange, CCXTExchange)
+        assert isinstance(exchange_manager.exchange, SpotExchangeSimulator)
         await exchange_manager.stop()
 
         # real
@@ -61,7 +64,7 @@ class TestExchangeManager:
 
         assert exchange_manager.config is config
 
-        assert isinstance(exchange_manager.exchange, CCXTExchange)
+        assert isinstance(exchange_manager.exchange, DefaultCCXTSpotExchange)
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 

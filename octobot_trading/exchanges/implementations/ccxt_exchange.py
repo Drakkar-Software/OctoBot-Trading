@@ -17,22 +17,20 @@
 import logging
 
 import ccxt.async_support as ccxt
-from ccxt.async_support import OrderNotFound, BaseError, InsufficientFunds
+from ccxt.async_support import OrderNotFound, BaseError
 from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, RequestTimeout, NotSupported
-
-from octobot_commons.constants import MSECONDS_TO_MINUTE, MSECONDS_TO_SECONDS
-from octobot_commons.enums import TimeFramesMinutes, TimeFrames
+from octobot_commons.constants import MSECONDS_TO_SECONDS
+from octobot_commons.enums import TimeFrames
 
 from octobot_trading import errors
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
-from octobot_trading.errors import MissingFunds
-from octobot_trading.exchanges.exchange_util import get_order_side
-from octobot_trading.orders.order_util import parse_is_cancelled
-from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
+from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
+from octobot_trading.exchanges.exchange_util import get_order_side
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
+from octobot_trading.orders.order_util import parse_is_cancelled
 
 
 class CCXTExchange(AbstractExchange):
@@ -263,65 +261,6 @@ class CCXTExchange(AbstractExchange):
         except Exception as e:
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
         return cancel_resp is not None
-
-    async def create_order(self, order_type: TraderOrderType, symbol: str, quantity: float,
-                           price: float = None, stop_price=None, **kwargs: dict) -> dict:
-        try:
-            created_order = await self._create_specific_order(order_type, symbol, quantity, price)
-            # some exchanges are not returning the full order details on creation: fetch it if necessary
-            if created_order and not CCXTExchange._ensure_order_details_completeness(created_order):
-                if ecoc.ID.value in created_order:
-                    order_symbol = created_order[ecoc.SYMBOL.value] if ecoc.SYMBOL.value in created_order else None
-                    created_order = await self.exchange_manager.get_exchange().get_order(created_order[ecoc.ID.value],
-                                                                                         order_symbol, params=kwargs)
-
-            # on some exchange, market order are not not including price, add it manually to ensure uniformity
-            if created_order[ecoc.PRICE.value] is None and price is not None:
-                created_order[ecoc.PRICE.value] = price
-
-            return self.clean_order(created_order)
-
-        except InsufficientFunds as e:
-            self._log_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.warning(e)
-            raise MissingFunds(e)
-        except NotSupported:
-            raise errors.NotSupported
-        except Exception as e:
-            self._log_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.error(e)
-        return None
-
-    async def _create_specific_order(self, order_type, symbol, quantity, price=None):
-        created_order = None
-        if order_type == TraderOrderType.BUY_MARKET:
-            created_order = await self.client.create_market_buy_order(symbol, quantity)
-        elif order_type == TraderOrderType.BUY_LIMIT:
-            created_order = await self.client.create_limit_buy_order(symbol, quantity, price)
-        elif order_type == TraderOrderType.SELL_MARKET:
-            created_order = await self.client.create_market_sell_order(symbol, quantity)
-        elif order_type == TraderOrderType.SELL_LIMIT:
-            created_order = await self.client.create_limit_sell_order(symbol, quantity, price)
-        elif order_type == TraderOrderType.STOP_LOSS:
-            created_order = None
-        elif order_type == TraderOrderType.STOP_LOSS_LIMIT:
-            created_order = None
-        elif order_type == TraderOrderType.TAKE_PROFIT:
-            created_order = None
-        elif order_type == TraderOrderType.TAKE_PROFIT_LIMIT:
-            created_order = None
-        elif order_type == TraderOrderType.TRAILING_STOP:
-            created_order = None
-        elif order_type == TraderOrderType.TRAILING_STOP_LIMIT:
-            created_order = None
-        return created_order
-
-    @staticmethod
-    def _ensure_order_details_completeness(order, order_required_fields=None):
-        if order_required_fields is None:
-            order_required_fields = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
-                                     ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.REMAINING.value]
-        return all(key in order for key in order_required_fields)
 
     def _log_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
