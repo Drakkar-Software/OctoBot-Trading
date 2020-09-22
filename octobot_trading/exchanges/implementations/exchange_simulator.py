@@ -31,8 +31,8 @@ from octobot_trading.producers.simulator import SIMULATOR_PRODUCERS_TO_POSSIBLE_
 
 
 class ExchangeSimulator(AbstractExchange):
-    def __init__(self, config, exchange_type, exchange_manager, backtesting):
-        super().__init__(config, exchange_type, exchange_manager)
+    def __init__(self, config, exchange_manager, backtesting):
+        super().__init__(config, exchange_manager)
         self.backtesting = backtesting
         self.allowed_time_lag = DEFAULT_BACKTESTING_TIME_LAG
 
@@ -60,6 +60,14 @@ class ExchangeSimulator(AbstractExchange):
 
         # set exchange manager attributes
         self.exchange_manager.client_symbols = list(self.symbols)
+
+    @classmethod
+    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
+        return True
+
+    @classmethod
+    def is_simulated_exchange(cls) -> bool:
+        return True
 
     @staticmethod
     def handles_real_data_for_updater(channel_type, available_data):

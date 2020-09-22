@@ -32,7 +32,6 @@ cdef class ExchangeManager(Initializable):
     cdef public dict config
 
     cdef public object tentacles_setup_config
-    cdef public object exchange_type
     cdef public object logger
     cdef public object backtesting
     cdef public Trader trader
@@ -80,7 +79,6 @@ cdef class ExchangeManager(Initializable):
     cpdef bint check_config(self, str exchange_name)
     cpdef bint symbol_exists(self, str symbol)
     cpdef bint time_frame_exists(self, object time_frame)
-    cpdef int get_rate_limit(self)
     cpdef str get_exchange_name(self)
     cpdef tuple get_exchange_credentials(self, object logger, str exchange_name)
     cpdef bint should_decrypt_token(self, object logger)

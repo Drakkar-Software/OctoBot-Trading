@@ -23,7 +23,6 @@ from octobot_trading.util.initializable cimport Initializable
 cdef class AbstractExchange(Initializable):
     cdef public dict config
 
-    cdef public object exchange_type
     cdef public object logger
     cdef public object current_account
 
@@ -48,6 +47,7 @@ cdef class AbstractExchange(Initializable):
     cpdef str get_exchange_pair(self, str pair)
     cpdef str get_pair_cryptocurrency(self, str pair)
     cpdef tuple get_split_pair_from_exchange(self, str pair)
+    cpdef int get_rate_limit(self)
     cpdef dict get_default_balance(self)
 
     # parsers
