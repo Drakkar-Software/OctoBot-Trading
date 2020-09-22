@@ -27,8 +27,5 @@ cdef class CCXTExchange(AbstractExchange):
     # @staticmethod TODO
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
 
-    @staticmethod
-    cdef str _get_side(object order_type)
-
     cpdef dict get_ccxt_client_login_options(self)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)

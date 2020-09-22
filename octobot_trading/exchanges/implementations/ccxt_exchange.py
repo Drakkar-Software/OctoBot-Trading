@@ -27,6 +27,7 @@ from octobot_trading import errors
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.errors import MissingFunds
+from octobot_trading.exchanges.exchange_util import get_order_side
 from octobot_trading.orders.order_util import parse_is_cancelled
 from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes
@@ -39,11 +40,12 @@ class CCXTExchange(AbstractExchange):
     CCXT library wrapper
     """
 
-    def __init__(self, config, exchange_type, exchange_manager, is_sandboxed=False):
-        super().__init__(config, exchange_type, exchange_manager, is_sandboxed)
+    def __init__(self, config, exchange_manager, is_sandboxed=False):
+        super().__init__(config, exchange_manager, is_sandboxed)
         self.client = None
         self.all_currencies_price_ticker = None
 
+        self._create_exchange_type()
         self._create_client()
 
     async def initialize_impl(self):
@@ -55,11 +57,15 @@ class CCXTExchange(AbstractExchange):
         except ccxt.AuthenticationError:
             raise errors.AuthenticationError
 
-    @staticmethod
-    def create_exchange_type(exchange_class_string):
-        if isinstance(exchange_class_string, str):
-            return getattr(ccxt, exchange_class_string)
-        return exchange_class_string
+    @classmethod
+    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
+        return isinstance(exchange_candidate_name, str)
+
+    def _create_exchange_type(self):
+        if self.is_supporting_exchange(self.exchange_manager.exchange_class_string):
+            self.exchange_type = getattr(ccxt, self.exchange_manager.exchange_class_string)
+        else:
+            self.exchange_type = self.exchange_manager.exchange_class_string
 
     def get_ccxt_client_login_options(self):
         """
@@ -325,7 +331,7 @@ class CCXTExchange(AbstractExchange):
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
-                                         side=CCXTExchange._get_side(order_type),
+                                         side=get_order_side(order_type),
                                          amount=quantity,
                                          price=price,
                                          takerOrMaker=taker_or_maker)
@@ -405,6 +411,9 @@ class CCXTExchange(AbstractExchange):
     def get_default_balance(self):
         return self.client.account()
 
+    def get_rate_limit(self):
+        return self.exchange_type.rateLimit / 1000
+
     def set_sandbox_mode(self, is_sandboxed):
         try:
             self.client.setSandboxMode(is_sandboxed)
@@ -414,11 +423,6 @@ class CCXTExchange(AbstractExchange):
             self.logger.warning(f"{self.name} does not support sandboxing {additional_info}: {e}")
             # raise exception to stop this exchange and prevent dealing with a real funds exchange
             raise e
-
-    @staticmethod
-    def _get_side(order_type):
-        return TradeOrderSide.BUY.value if order_type in (TraderOrderType.BUY_LIMIT, TraderOrderType.BUY_MARKET) \
-            else TradeOrderSide.SELL.value
 
     """
     Parsers

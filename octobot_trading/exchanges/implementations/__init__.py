@@ -13,6 +13,3 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-from .ccxt_exchange import *
-from .exchange_simulator import *
