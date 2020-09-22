@@ -68,7 +68,6 @@ class ExchangeManager(Initializable):
         self.trading_modes = []
 
         self.exchange_web_socket = None
-        self.exchange_type = None
 
         self.client_symbols = []
         self.client_time_frames = []
@@ -174,15 +173,12 @@ class ExchangeManager(Initializable):
             return False
         return time_frame in self.client_time_frames
 
-    def get_rate_limit(self):
-        return self.exchange_type.rateLimit / 1000
-
     # Exceptions
     def _raise_exchange_load_error(self):
         raise Exception(f"{self.exchange} - Failed to load exchange instances")
 
     def get_exchange_name(self):
-        return self.exchange_type.__name__
+        return self.exchange_class_string
 
     def should_decrypt_token(self, logger):
         if has_invalid_default_config_value(
