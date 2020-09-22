@@ -30,11 +30,10 @@ class AbstractExchange(Initializable):
 
     ACCOUNTS = {}
 
-    def __init__(self, config, exchange_manager, is_sandboxed=False):
+    def __init__(self, config, exchange_manager):
         super().__init__()
         self.config = config
         self.exchange_manager = exchange_manager
-        self.is_sandboxed = is_sandboxed
 
         # We will need to create the rest client and fetch exchange config
         self.is_authenticated = False
