@@ -162,7 +162,7 @@ class TestExchanges:
         await exchange_manager_bitmex.stop()
 
         exchange = exchange_manager_bitmex.exchange
-        with patch.object(exchange.client, 'milliseconds', new=get_constant_ms_timestamp):
+        with patch.object(exchange, 'get_exchange_current_time', new=get_constant_ms_timestamp):
             expected_ms_timestamp = MS_TIMESTAMP - TimeFramesMinutes[TimeFrames.ONE_HOUR] * MSECONDS_TO_MINUTE * 200
             assert exchange.get_candle_since_timestamp(TimeFrames.ONE_HOUR, count=200) == expected_ms_timestamp
 
