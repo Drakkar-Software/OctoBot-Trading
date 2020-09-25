@@ -40,11 +40,6 @@ class TradeOrderType(Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
-class MarginType(Enum):
-    CROSS = "cross"
-    ISOLATE = "isolate"
-
-
 class EvaluatorStates(Enum):
     SHORT = "SHORT"
     VERY_SHORT = "VERY_SHORT"
@@ -329,3 +324,15 @@ class RestExchangePairsRefreshMaxThresholds(Enum):
     FAST = 5
     MEDIUM = 10
     SLOW = 20
+
+
+class MarginType(Enum):
+    CROSS = "cross"
+    ISOLATE = "isolate"
+
+
+class FutureContractType(Enum):
+    INVERSE_PERPETUAL = "inverse_perpetual"
+    PERPETUAL = "perpetual"
+    INVERSE_EXPIRABLE = "inverse_expirable"
+    EXPIRABLE = "expirable"

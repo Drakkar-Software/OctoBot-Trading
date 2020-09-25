@@ -16,14 +16,22 @@
 #  License along with this library.
 
 
-from octobot_trading.portfolios.portfolio cimport Portfolio
+""" Order class will represent an open order in the specified exchange
+In simulation it will also define rules to be filled / canceled
+It is also use to store creation & fill values of the order """
 
-cdef class FuturePortfolio(Portfolio):
-    cdef void _update_portfolio_from_future_order(self,
-                                                  object order,
-                                                  double order_quantity,
-                                                  double order_price,
-                                                  bint subtract_fees=*,
-                                                  bint inverse_calculation=*,
-                                                  bint update_available=*,
-                                                  bint update_total=*)
+cdef class FutureContract:
+    cdef str pair
+
+    cdef public object contract_type
+    cdef public object margin_type
+
+    cdef public double expiration_timestamp
+
+    cdef public int minimum_tick_size
+    cdef public int contract_size
+    cdef public int current_leverage
+    cdef public int maximum_leverage
+
+    cpdef bint is_inverse_contract(self)
+    cpdef bint is_isolated(self)

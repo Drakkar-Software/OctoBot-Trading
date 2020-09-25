@@ -16,9 +16,10 @@
 import pytest
 from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
-from octobot_trading.enums import TraderOrderType
-from octobot_trading.orders.types.limit.sell_limit_order import SellLimitOrder
+from octobot_trading.enums import TraderOrderType, FutureContractType
+from octobot_trading.futures.future_contract import FutureContract
 from octobot_trading.orders.types.market.buy_market_order import BuyMarketOrder
+from octobot_trading.orders.types.market.sell_market_order import SellMarketOrder
 from octobot_trading.portfolios.types.future_portfolio import FuturePortfolio
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting, \
@@ -43,6 +44,12 @@ async def test_update_portfolio_available_from_order_in_inverse_market(backtesti
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
+    # set future contract
+    btcusd_future_contract = FutureContract("BTC/USDT")
+    btcusd_future_contract.current_leverage = 1
+    btcusd_future_contract.contract_type = FutureContractType.INVERSE_PERPETUAL
+    exchange_manager.exchange.pair_contracts["BTC/USDT"] = btcusd_future_contract
+
     # Test buy order
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=TraderOrderType.BUY_MARKET,
@@ -58,6 +65,21 @@ async def test_update_portfolio_available_from_order_in_inverse_market(backtesti
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
 
+    # Test buy order
+    market_buy = BuyMarketOrder(trader)
+    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+                      symbol="BTC/USDT",
+                      current_price=74,
+                      quantity=23,
+                      price=74)
+
+    # test buy order creation
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 9.67918918918919
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
                          indirect=["backtesting_exchange_manager"])
@@ -65,8 +87,11 @@ async def test_update_portfolio_available_from_order_in_inverse_market_with_leve
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
-    # set leverage
-    exchange_manager.leverage_by_symbol["BTC/USDT"] = 10
+    # set future contract
+    btcusd_future_contract = FutureContract("BTC/USDT")
+    btcusd_future_contract.current_leverage = 10
+    btcusd_future_contract.contract_type = FutureContractType.INVERSE_PERPETUAL
+    exchange_manager.exchange.pair_contracts["BTC/USDT"] = btcusd_future_contract
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
@@ -78,7 +103,65 @@ async def test_update_portfolio_available_from_order_in_inverse_market_with_leve
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 9.99
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 9.999
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+
+
+@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
+                         indirect=["backtesting_exchange_manager"])
+async def test_update_portfolio_available_from_order_with_leverage(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    # set future contract
+    btcusd_future_contract = FutureContract("BTC/USDT")
+    btcusd_future_contract.current_leverage = 2
+    btcusd_future_contract.contract_type = FutureContractType.PERPETUAL
+    exchange_manager.exchange.pair_contracts["BTC/USDT"] = btcusd_future_contract
+
+    # Test buy order
+    market_buy = BuyMarketOrder(trader)
+    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+                      symbol="BTC/USDT",
+                      current_price=555,
+                      quantity=10,
+                      price=555)
+
+    # test buy order creation
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 995
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+
+    # Test sell order
+    market_sell = SellMarketOrder(trader)
+    market_sell.update(order_type=TraderOrderType.SELL_MARKET,
+                       symbol="BTC/USDT",
+                       current_price=555,
+                       quantity=3,
+                       price=555)
+
+    # test sell order creation
+    portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 993.5
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+
+    # Test limit order to restore initial portfolio with a is_new=False and a quantity of 10 + 3
+    market_buy = BuyMarketOrder(trader)
+    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+                      symbol="BTC/USDT",
+                      current_price=555,
+                      quantity=13,
+                      price=555)
+
+    # test buy order creation
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, False)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000

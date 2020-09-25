@@ -15,9 +15,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
+from octobot_trading.positions.future_contract cimport FutureContract
 
 cdef class FutureExchange(AbstractExchange):
+    cdef public dict pair_contracts
+
     cpdef double calculate_position_value(self, double quantity, double mark_price)
+    cpdef FutureContract get_pair_future_contract(self, str pair)
 
     """
     Parsers

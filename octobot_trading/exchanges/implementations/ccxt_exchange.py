@@ -25,8 +25,9 @@ from octobot_commons.enums import TimeFrames
 from octobot_trading import errors
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
-from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns, \
+from octobot_trading.enums import TraderOrderType, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes
+from octobot_trading.errors import MissingFunds
 from octobot_trading.exchanges.abstract_exchange import AbstractExchange
 from octobot_trading.exchanges.exchange_util import get_order_side
 from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer

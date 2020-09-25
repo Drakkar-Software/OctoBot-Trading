@@ -21,7 +21,7 @@ from octobot_trading.constants import BALANCE_CHANNEL, ORDERS_CHANNEL, TRADES_CH
     BALANCE_PROFITABILITY_CHANNEL
 from octobot_trading.orders.orders_manager import OrdersManager
 from octobot_trading.portfolios.portfolio_manager import PortfolioManager
-from octobot_trading.positions.positions_manager import PositionsManager
+from octobot_trading.futures.positions_manager import PositionsManager
 from octobot_trading.trades.trades_manager import TradesManager
 from octobot_trading.util.initializable import Initializable
 

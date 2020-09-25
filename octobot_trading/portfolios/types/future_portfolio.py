@@ -13,28 +13,84 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import TradeOrderSide
+from octobot_trading.constants import CURRENT_PORTFOLIO_STRING
 from octobot_trading.portfolios.portfolio import Portfolio
 
 
 class FuturePortfolio(Portfolio):
+    def update_portfolio_data_from_order(self, order, currency, market):
+        """
+        Call update_portfolio_data for order currency and market
+        :param order: the order that updated the portfolio
+        :param currency: the order currency
+        :param market: the order market
+        """
+        self._update_portfolio_from_future_order(order,
+                                                 order_quantity=order.filled_quantity,
+                                                 order_price=order.filled_price,
+                                                 subtract_fees=True,
+                                                 update_available=True)
+
     def update_portfolio_available_from_order(self, order, increase_quantity=True):
         """
         Realise portfolio availability update
-        TODO support leverage
         :param order: the order that triggers the portfolio update
         :param increase_quantity: True when increasing quantity
         """
-        currency, market = order.get_currency_and_market()
+        self._update_portfolio_from_future_order(order,
+                                                 order_quantity=order.origin_quantity,
+                                                 order_price=order.origin_price,
+                                                 inverse_calculation=not increase_quantity,
+                                                 update_available=True)
 
-        is_inverse_contract = True  # TODO
+    def _update_portfolio_from_future_order(self, order,
+                                            order_quantity,
+                                            order_price,
+                                            subtract_fees=False,
+                                            inverse_calculation=False,
+                                            update_available=False,
+                                            update_total=False):
+        """
+        Update future portfolio from an order
+        :param order: the order
+        :param order_quantity: the order quantity to use for calculation
+        :param order_price: the order price to use for calculation
+        :param subtract_fees: when True, subtract fees to order quantity
+        :param inverse_calculation: when True, inverse calculation (for example when a cancel occurred)
+        :param update_available: when True, update the available quantity of the portfolio
+        :param update_total: when True, update the total quantity of the portfolio
+        """
+        currency, market = order.get_currency_and_market()
+        pair_future_contract = order.exchange_manager.exchange.get_pair_future_contract(order.symbol)
+
+        # calculates the real order quantity depending on the current contract leverage
+        real_order_quantity = ((order_quantity - (order.get_total_fees(currency) if subtract_fees else 0))
+                               / pair_future_contract.current_leverage)
 
         # When inverse contract, decrease a currency market equivalent quantity from currency balance
-        if is_inverse_contract:
+        if pair_future_contract.is_inverse_contract():
             # decrease currency market equivalent quantity from currency available balance
-            self._update_portfolio_data(currency, -(order.origin_quantity / order.origin_price), False, True)
+            self._update_portfolio_data(currency,
+                                        -(real_order_quantity / order_price) * (-1 if inverse_calculation else 1),
+                                        total=update_total,
+                                        available=update_available)
 
         # When non-inverse contract, decrease directly market quantity
         else:
             # decrease market quantity from market available balance
-            self._update_portfolio_data(market, -order.origin_quantity, False, True)
+            self._update_portfolio_data(market,
+                                        -real_order_quantity * (-1 if inverse_calculation else 1),
+                                        total=update_total,
+                                        available=update_available)
+
+    def log_portfolio_update_from_order(self, order, currency, market):
+        """
+        TODO
+        :param order: the order to log
+        :param currency: the order currency
+        :param market: the order market
+        """
+        self.logger.debug(f"Portfolio updated from order "
+                          f"| {currency} TODO "
+                          f"| {market} TODO "
+                          f"| {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
