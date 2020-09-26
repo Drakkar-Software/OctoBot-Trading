@@ -28,10 +28,10 @@ jobs:
       after_success:
         - if [ $TRAVIS_PULL_REQUEST == "false" ]; then coveralls; fi
 
-    - name: "Linux - Python 3.8-dev - Installed"
+    - name: "Linux - Python 3.7-dev - Installed"
       stage: test
       os: linux
-      python: 3.8-dev
+      python: 3.7-dev
       language: python
       script:
         - export CYTHON_IGNORE=true

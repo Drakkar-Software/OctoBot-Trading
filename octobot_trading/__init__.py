@@ -14,5 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.channels import *
+from octobot_trading.producers import *
+
 PROJECT_NAME = "OctoBot-Trading"
 VERSION = "1.11.2"  # major.minor.revision

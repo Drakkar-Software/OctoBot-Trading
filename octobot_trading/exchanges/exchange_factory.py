@@ -15,11 +15,10 @@
 #  License along with this library.
 
 from octobot_trading.errors import AuthenticationError
-from octobot_trading.exchanges.exchange_channels import create_exchange_producers, create_exchange_channels
+from octobot_trading.exchanges.exchange_channels import create_exchange_channels, create_exchange_producers
 from octobot_trading.exchanges.exchange_util import get_margin_exchange_class, get_future_exchange_class, \
     get_spot_exchange_class
 from octobot_trading.exchanges.exchange_websocket_factory import search_and_create_websocket
-from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.implementations.future_exchange_simulator import FutureExchangeSimulator
 from octobot_trading.exchanges.implementations.margin_exchange_simulator import MarginExchangeSimulator
 from octobot_trading.exchanges.implementations.spot_exchange_simulator import SpotExchangeSimulator
