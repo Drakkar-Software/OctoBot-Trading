@@ -136,7 +136,7 @@ class ExchangeSimulator(AbstractExchange):
     def get_uniform_timestamp(self, timestamp):
         return timestamp / 1000
 
-    def get_fees(self, symbol=None):
+    def get_fees(self, symbol):
         result_fees = {
             ExchangeConstantsMarketPropertyColumns.TAKER.value: CONFIG_DEFAULT_SIMULATOR_FEES,
             ExchangeConstantsMarketPropertyColumns.MAKER.value: CONFIG_DEFAULT_SIMULATOR_FEES,
@@ -164,8 +164,9 @@ class ExchangeSimulator(AbstractExchange):
     #     'rate': percentage, // the fee rate, 0.05% = 0.0005, 1% = 0.01, ...
     #     'cost': feePaid, // the fee cost (amount * fee rate)
     # }
-    def get_trade_fee(self, symbol, order_type, quantity, price,
-                      taker_or_maker=ExchangeConstantsMarketPropertyColumns.TAKER.value):
+    def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
+        if not taker_or_maker:
+            taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
         symbol_fees = self.get_fees(symbol)
         rate = symbol_fees[taker_or_maker] / 100  # /100 because rate in used in %
         currency, market = split_symbol(symbol)
