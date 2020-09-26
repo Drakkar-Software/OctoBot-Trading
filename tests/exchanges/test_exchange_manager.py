@@ -15,6 +15,7 @@
 #  License along with this library.
 
 import pytest
+from octobot_backtesting.backtesting import Backtesting
 
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
@@ -22,7 +23,7 @@ from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
 # All test coroutines will be treated as marked.
-from octobot_trading.exchanges.implementations import DefaultCCXTSpotExchange
+from octobot_trading.exchanges.types.spot_exchange import SpotExchange
 from octobot_trading.exchanges.implementations.spot_exchange_simulator import SpotExchangeSimulator
 
 pytestmark = pytest.mark.asyncio
@@ -32,13 +33,15 @@ class TestExchangeManager:
     EXCHANGE_NAME = "binance"
 
     @staticmethod
-    async def init_default(config=None, simulated=True):
+    async def init_default(config=None, simulated=True, backtesting=False):
         if not config:
             config = load_test_config()
 
         exchange_manager = ExchangeManager(config, TestExchangeManager.EXCHANGE_NAME)
         exchange_manager.is_simulated = simulated
-        exchange_manager.is_backtesting = False
+        exchange_manager.is_backtesting = backtesting
+        if backtesting:
+            exchange_manager.backtesting = Backtesting(None, [exchange_manager.id], None, [])
         exchange_manager.rest_only = True
 
         await exchange_manager.initialize()
@@ -46,7 +49,7 @@ class TestExchangeManager:
 
     async def test_create_exchange(self):
         # simulated
-        config, exchange_manager = await self.init_default(simulated=True)
+        config, exchange_manager = await self.init_default(simulated=True, backtesting=True)
 
         assert exchange_manager is not None
         assert exchange_manager.exchange_name is TestExchangeManager.EXCHANGE_NAME
@@ -64,7 +67,7 @@ class TestExchangeManager:
 
         assert exchange_manager.config is config
 
-        assert isinstance(exchange_manager.exchange, DefaultCCXTSpotExchange)
+        assert isinstance(exchange_manager.exchange, SpotExchange)
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 

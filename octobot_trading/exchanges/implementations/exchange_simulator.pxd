@@ -22,19 +22,11 @@ cdef class ExchangeSimulator(AbstractExchange):
 
     cdef public list exchange_importers
 
-    cdef public bint is_authenticated
-
     cdef public set symbols
     cdef public set time_frames
 
     cdef public dict current_future_candles
 
-    cpdef dict get_market_status(self, str symbol, double price_example=*, bint with_fixer=*)
-    cpdef double get_uniform_timestamp(self, double timestamp)
-    cpdef dict get_fees(self, str symbol=*)
-    cpdef dict get_trade_fee(self, str symbol, object order_type, double quantity, double price, str taker_or_maker=*)
-    cpdef tuple get_split_pair_from_exchange(self, str pair)
-    cpdef double get_exchange_current_time(self)
     cpdef str get_pair_cryptocurrency(self, str pair)
     cpdef list get_available_time_frames(self)
     cpdef list get_time_frames(self, object importer)
