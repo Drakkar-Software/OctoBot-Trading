@@ -17,7 +17,6 @@ import asyncio
 
 from octobot_trading.constants import OHLCV_CHANNEL
 from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
-from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchanges import Exchanges, ExchangeConfiguration
 from octobot_trading.producers.simulator import SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE
@@ -35,7 +34,7 @@ def get_exchange_configurations_from_exchange_name(exchange_name) -> dict:
     return Exchanges.instance().get_exchanges(exchange_name)
 
 
-def get_exchange_manager_from_exchange_name_and_id(exchange_name, exchange_id) -> ExchangeManager:
+def get_exchange_manager_from_exchange_name_and_id(exchange_name, exchange_id) -> object:
     return Exchanges.instance().get_exchange(exchange_name, exchange_id).exchange_manager
 
 
@@ -53,7 +52,7 @@ def get_exchange_configuration_from_exchange_id(exchange_id) -> ExchangeConfigur
 
 
 # prefer get_exchange_manager_from_exchange_name_and_id when possible
-def get_exchange_manager_from_exchange_id(exchange_id) -> ExchangeManager:
+def get_exchange_manager_from_exchange_id(exchange_id) -> object:
     try:
         return get_exchange_configuration_from_exchange_id(exchange_id).exchange_manager
     except KeyError:
