@@ -13,3 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.traders import trader
+from octobot_trading.traders import trader_simulator
+
+from octobot_trading.traders.trader import (Trader,)
+from octobot_trading.traders.trader_simulator import (TraderSimulator,)
+
+__all__ = ['Trader', 'TraderSimulator', 'trader', 'trader_simulator']

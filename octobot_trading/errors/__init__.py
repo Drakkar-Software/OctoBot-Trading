@@ -43,3 +43,6 @@ class AuthenticationError(Exception):
     """
     Raised when an exchange failed to authenticate
     """
+
+
+__all__ = []

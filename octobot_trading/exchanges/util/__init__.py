@@ -13,3 +13,20 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges.util import exchange_market_status_fixer
+
+from octobot_trading.exchanges.util.exchange_market_status_fixer import (ExchangeMarketStatusFixer,
+                                                                         calculate_amounts,
+                                                                         calculate_costs,
+                                                                         calculate_prices,
+                                                                         check_market_status_limits,
+                                                                         check_market_status_values,
+                                                                         fix_market_status_limits_from_current_data,
+                                                                         get_markets_limit,
+                                                                         is_ms_valid,)
+
+__all__ = ['ExchangeMarketStatusFixer', 'calculate_amounts', 'calculate_costs',
+           'calculate_prices', 'check_market_status_limits',
+           'check_market_status_values', 'exchange_market_status_fixer',
+           'fix_market_status_limits_from_current_data', 'get_markets_limit',
+           'is_ms_valid']

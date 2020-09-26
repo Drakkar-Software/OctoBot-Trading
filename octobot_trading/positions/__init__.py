@@ -13,3 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.positions import position
+from octobot_trading.positions import positions_manager
+
+from octobot_trading.positions.position import (LongPosition, Position,
+                                                ShortPosition,)
+from octobot_trading.positions.positions_manager import (PositionsManager,)
+
+__all__ = ['LongPosition', 'Position', 'PositionsManager', 'ShortPosition',
+           'position', 'positions_manager']

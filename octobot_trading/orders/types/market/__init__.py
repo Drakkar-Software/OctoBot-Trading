@@ -13,3 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.orders.types.market import buy_market_order
+from octobot_trading.orders.types.market import market_order
+from octobot_trading.orders.types.market import sell_market_order
+
+from octobot_trading.orders.types.market.buy_market_order import (BuyMarketOrder,)
+from octobot_trading.orders.types.market.market_order import (MarketOrder,)
+from octobot_trading.orders.types.market.sell_market_order import (SellMarketOrder,)
+
+__all__ = ['BuyMarketOrder', 'MarketOrder', 'SellMarketOrder',
+           'buy_market_order', 'market_order', 'sell_market_order']

@@ -15,4 +15,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .abstract_trading_mode import *
+from octobot_trading.modes import abstract_trading_mode
+
+from octobot_trading.modes.abstract_trading_mode import (AbstractTradingMode,)
+
+__all__ = ['AbstractTradingMode', 'abstract_trading_mode']

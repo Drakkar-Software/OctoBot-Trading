@@ -13,3 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.trades import trade
+from octobot_trading.trades import trade_factory
+from octobot_trading.trades import trades_manager
+
+from octobot_trading.trades.trade import (Trade,)
+from octobot_trading.trades.trade_factory import (create_trade_from_order,
+                                                  create_trade_instance,
+                                                  create_trade_instance_from_raw,)
+from octobot_trading.trades.trades_manager import (TradesManager,)
+
+__all__ = ['Trade', 'TradesManager', 'create_trade_from_order',
+           'create_trade_instance', 'create_trade_instance_from_raw', 'trade',
+           'trade_factory', 'trades_manager']

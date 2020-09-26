@@ -14,29 +14,40 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.enums import TraderOrderType
-from octobot_trading.orders.types.limit.buy_limit_order import BuyLimitOrder
-from octobot_trading.orders.types.limit.take_profit_limit_order import TakeProfitLimitOrder
-from octobot_trading.orders.types.limit.take_profit_order import TakeProfitOrder
-from octobot_trading.orders.types.market.buy_market_order import BuyMarketOrder
-from octobot_trading.orders.types.limit.sell_limit_order import SellLimitOrder
-from octobot_trading.orders.types.market.sell_market_order import SellMarketOrder
-from octobot_trading.orders.types.limit.stop_loss_limit_order import StopLossLimitOrder
-from octobot_trading.orders.types.limit.stop_loss_order import StopLossOrder
-from octobot_trading.orders.types.trailing.trailing_stop_order import TrailingStopOrder
-from octobot_trading.orders.types.trailing.trailing_stop_limit_order import TrailingStopLimitOrder
-from octobot_trading.orders.types.unknown_order import UnknownOrder
+from octobot_trading.orders.types import limit
+from octobot_trading.orders.types import market
+from octobot_trading.orders.types import trailing
+from octobot_trading.orders.types import unknown_order
 
-TraderOrderTypeClasses = {
-    TraderOrderType.BUY_MARKET: BuyMarketOrder,
-    TraderOrderType.BUY_LIMIT: BuyLimitOrder,
-    TraderOrderType.TAKE_PROFIT: TakeProfitOrder,
-    TraderOrderType.TAKE_PROFIT_LIMIT: TakeProfitLimitOrder,
-    TraderOrderType.TRAILING_STOP: TrailingStopOrder,
-    TraderOrderType.TRAILING_STOP_LIMIT: TrailingStopLimitOrder,
-    TraderOrderType.STOP_LOSS: StopLossOrder,
-    TraderOrderType.STOP_LOSS_LIMIT: StopLossLimitOrder,
-    TraderOrderType.SELL_MARKET: SellMarketOrder,
-    TraderOrderType.SELL_LIMIT: SellLimitOrder,
-    TraderOrderType.UNKNOWN: UnknownOrder,
-}
+from octobot_trading.orders.types.limit import (BuyLimitOrder, LimitOrder,
+                                                SellLimitOrder,
+                                                StopLossLimitOrder,
+                                                StopLossOrder,
+                                                TakeProfitLimitOrder,
+                                                TakeProfitOrder,
+                                                buy_limit_order, limit_order,
+                                                sell_limit_order,
+                                                stop_loss_limit_order,
+                                                stop_loss_order,
+                                                take_profit_limit_order,
+                                                take_profit_order,)
+from octobot_trading.orders.types.market import (BuyMarketOrder, MarketOrder,
+                                                 SellMarketOrder,
+                                                 buy_market_order,
+                                                 market_order,
+                                                 sell_market_order,)
+from octobot_trading.orders.types.trailing import (TrailingStopLimitOrder,
+                                                   TrailingStopOrder,
+                                                   trailing_stop_limit_order,
+                                                   trailing_stop_order,)
+from octobot_trading.orders.types.unknown_order import (UnknownOrder,)
+
+__all__ = ['BuyLimitOrder', 'BuyMarketOrder', 'LimitOrder', 'MarketOrder',
+           'SellLimitOrder', 'SellMarketOrder', 'StopLossLimitOrder',
+           'StopLossOrder', 'TakeProfitLimitOrder', 'TakeProfitOrder',
+           'TrailingStopLimitOrder', 'TrailingStopOrder', 'UnknownOrder',
+           'buy_limit_order', 'buy_market_order', 'limit', 'limit_order',
+           'market', 'market_order', 'sell_limit_order', 'sell_market_order',
+           'stop_loss_limit_order', 'stop_loss_order',
+           'take_profit_limit_order', 'take_profit_order', 'trailing',
+           'trailing_stop_limit_order', 'trailing_stop_order', 'unknown_order']

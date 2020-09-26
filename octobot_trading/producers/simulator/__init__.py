@@ -18,14 +18,44 @@ from octobot_trading.constants import OHLCV_CHANNEL, RECENT_TRADES_CHANNEL, TICK
 
 from octobot_backtesting.enums import ExchangeDataTables
 
+from octobot_trading.producers.simulator import balance_updater_simulator
+from octobot_trading.producers.simulator import funding_updater_simulator
+from octobot_trading.producers.simulator import kline_updater_simulator
+from octobot_trading.producers.simulator import ohlcv_updater_simulator
+from octobot_trading.producers.simulator import order_book_updater_simulator
+from octobot_trading.producers.simulator import orders_updater_simulator
+from octobot_trading.producers.simulator import positions_updater_simulator
+from octobot_trading.producers.simulator import prices_updater_simulator
+from octobot_trading.producers.simulator import recent_trade_updater_simulator
+from octobot_trading.producers.simulator import simulator_updater_utils
+from octobot_trading.producers.simulator import ticker_updater_simulator
 
+from octobot_trading.producers.simulator.balance_updater_simulator import (BalanceProfitabilityUpdaterSimulator,
+                                                                           BalanceUpdaterSimulator,)
+from octobot_trading.producers.simulator.funding_updater_simulator import (FundingUpdaterSimulator,)
+from octobot_trading.producers.simulator.kline_updater_simulator import (KlineUpdaterSimulator,)
+from octobot_trading.producers.simulator.ohlcv_updater_simulator import (OHLCVUpdaterSimulator,)
+from octobot_trading.producers.simulator.order_book_updater_simulator import (OrderBookUpdaterSimulator,)
+from octobot_trading.producers.simulator.orders_updater_simulator import (OrdersUpdaterSimulator,)
+from octobot_trading.producers.simulator.positions_updater_simulator import (PositionsUpdaterSimulator,)
+from octobot_trading.producers.simulator.prices_updater_simulator import (MarkPriceUpdaterSimulator,)
+from octobot_trading.producers.simulator.recent_trade_updater_simulator import (RecentTradeUpdaterSimulator,)
+from octobot_trading.producers.simulator.ticker_updater_simulator import (TickerUpdaterSimulator,)
+
+__all__ = ['BalanceProfitabilityUpdaterSimulator', 'BalanceUpdaterSimulator',
+           'FundingUpdaterSimulator', 'KlineUpdaterSimulator',
+           'MarkPriceUpdaterSimulator', 'OHLCVUpdaterSimulator',
+           'OrderBookUpdaterSimulator', 'OrdersUpdaterSimulator',
+           'PositionsUpdaterSimulator', 'RecentTradeUpdaterSimulator',
+           'TickerUpdaterSimulator', 'balance_updater_simulator',
+           'funding_updater_simulator', 'kline_updater_simulator',
+           'ohlcv_updater_simulator', 'order_book_updater_simulator',
+           'orders_updater_simulator', 'positions_updater_simulator',
+           'prices_updater_simulator', 'recent_trade_updater_simulator',
+           'simulator_updater_utils', 'ticker_updater_simulator']
+
+# Required data to run real data updater (requires each per list)
 def get_unauthenticated_updater_simulator_producers():
-    from octobot_trading.producers.simulator.prices_updater_simulator import MarkPriceUpdaterSimulator
-    from octobot_trading.producers.simulator.ticker_updater_simulator import TickerUpdaterSimulator
-    from octobot_trading.producers.simulator.kline_updater_simulator import KlineUpdaterSimulator
-    from octobot_trading.producers.simulator.recent_trade_updater_simulator import RecentTradeUpdaterSimulator
-    from octobot_trading.producers.simulator.order_book_updater_simulator import OrderBookUpdaterSimulator
-    from octobot_trading.producers.simulator.ohlcv_updater_simulator import OHLCVUpdaterSimulator
     return {
         OHLCV_CHANNEL: OHLCVUpdaterSimulator,
         ORDER_BOOK_CHANNEL: OrderBookUpdaterSimulator,
@@ -37,12 +67,9 @@ def get_unauthenticated_updater_simulator_producers():
 
 
 def get_authenticated_updater_simulator_producers():
-    from octobot_trading.producers.balance_updater import BalanceProfitabilityUpdater
-    from octobot_trading.producers.simulator.positions_updater_simulator import PositionsUpdaterSimulator
-    from octobot_trading.producers.simulator.orders_updater_simulator import OrdersUpdaterSimulator
     return [
         OrdersUpdaterSimulator,
-        BalanceProfitabilityUpdater,
+        BalanceProfitabilityUpdaterSimulator,
         PositionsUpdaterSimulator
     ]
 

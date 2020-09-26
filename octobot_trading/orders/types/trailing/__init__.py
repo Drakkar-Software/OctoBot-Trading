@@ -13,3 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.orders.types.trailing import trailing_stop_limit_order
+from octobot_trading.orders.types.trailing import trailing_stop_order
+
+from octobot_trading.orders.types.trailing.trailing_stop_limit_order import (TrailingStopLimitOrder,)
+from octobot_trading.orders.types.trailing.trailing_stop_order import (TrailingStopOrder,)
+
+__all__ = ['TrailingStopLimitOrder', 'TrailingStopOrder',
+           'trailing_stop_limit_order', 'trailing_stop_order']

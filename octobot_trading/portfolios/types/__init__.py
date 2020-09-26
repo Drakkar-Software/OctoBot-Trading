@@ -13,3 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.portfolios.types import future_portfolio
+from octobot_trading.portfolios.types import margin_portfolio
+from octobot_trading.portfolios.types import spot_portfolio
+
+from octobot_trading.portfolios.types.future_portfolio import (FuturePortfolio,)
+from octobot_trading.portfolios.types.margin_portfolio import (MarginPortfolio,)
+from octobot_trading.portfolios.types.spot_portfolio import (SpotPortfolio,)
+
+__all__ = ['FuturePortfolio', 'MarginPortfolio', 'SpotPortfolio',
+           'future_portfolio', 'margin_portfolio', 'spot_portfolio']

@@ -14,37 +14,12 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-exchanges = {}
-config = {}
-should_display_callbacks_logs = False
+from octobot_trading.cli import cli_app
+from octobot_trading.cli import cli_tools
 
+from octobot_trading.cli.cli_app import (app, connect, create_order, hide,
+                                         orders, show,)
+from octobot_trading.cli.cli_tools import (start_cli_exchange,)
 
-def set_should_display_callbacks_logs(display_callbacks_logs):
-    global should_display_callbacks_logs
-    should_display_callbacks_logs = display_callbacks_logs
-
-
-def get_should_display_callbacks_logs():
-    return should_display_callbacks_logs
-
-
-def set_config(cli_config):
-    global config
-    config = cli_config
-
-
-def get_config():
-    return config
-
-
-def get_exchanges():
-    return exchanges
-
-
-def get_exchange(exchange_name):
-    return exchanges[exchange_name]
-
-
-def add_exchange(exchange_name, exchange):
-    global exchanges
-    exchanges[exchange_name] = exchange
+__all__ = ['app', 'cli_app', 'cli_tools', 'connect', 'create_order',
+           'hide', 'orders', 'show', 'start_cli_exchange']
