@@ -38,7 +38,7 @@ cdef class AbstractExchange(Initializable):
     cpdef str get_name(cls)
 
     # exchange requests
-    cpdef get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
+    cpdef dict get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
     cpdef dict get_trade_fee(self, str symbol, object order_type, double quantity, double price, str taker_or_maker)
     cpdef dict get_fees(self, str symbol)
     cpdef double get_uniform_timestamp(self, double timestamp)
