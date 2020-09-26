@@ -18,7 +18,6 @@ from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.api import LOGGER_TAG
 from octobot_trading.errors import TradingModeIncompatibility
-from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.modes import AbstractTradingMode
 from octobot_trading.util.trading_config_util import get_activated_trading_mode as util_get_activated_trading_mode
 
@@ -40,7 +39,7 @@ def get_activated_trading_mode(tentacles_setup_config) -> AbstractTradingMode.__
 
 
 async def create_trading_modes(config: dict,
-                               exchange_manager: ExchangeManager,
+                               exchange_manager: object,
                                trading_mode_class: AbstractTradingMode.__class__,
                                bot_id: str) -> list:
     is_symbol_wildcard = trading_mode_class.get_is_symbol_wildcard()
@@ -60,7 +59,7 @@ async def create_trading_modes(config: dict,
 
 async def _create_trading_modes(trading_mode_class: AbstractTradingMode.__class__,
                                 config: dict,
-                                exchange_manager: ExchangeManager,
+                                exchange_manager: object,
                                 cryptocurrencies: list = None,
                                 symbols: list = None,
                                 time_frames: list = None,
@@ -81,7 +80,7 @@ async def _create_trading_modes(trading_mode_class: AbstractTradingMode.__class_
 
 async def create_trading_mode(trading_mode_class: AbstractTradingMode.__class__,
                               config: dict,
-                              exchange_manager: ExchangeManager,
+                              exchange_manager: object,
                               cryptocurrency: str = None,
                               symbol: str = None,
                               time_frame: object = None,
