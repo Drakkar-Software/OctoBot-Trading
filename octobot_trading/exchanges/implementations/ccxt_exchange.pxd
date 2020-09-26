@@ -24,7 +24,7 @@ cdef class CCXTExchange(AbstractExchange):
     cdef void _create_client(self)
     cdef void _log_error(self, object error, object order_type, str symbol, double quantity, double price, double stop_price)
 
-    # @staticmethod TODO
+    # @staticmethod waiting for a future version of cython
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
 
     cpdef dict get_ccxt_client_login_options(self)

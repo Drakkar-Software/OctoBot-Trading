@@ -1,4 +1,4 @@
-#  Drakkar-Software OctoBot-Trading
+#  Drakkar-Software OctoBot-Private-Tentacles
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
 #  This library is free software; you can redistribute it and/or
@@ -13,9 +13,19 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
-from octobot_trading.exchanges.types.spot_exchange import SpotExchange
+from octobot_trading.enums import AccountTypes
+from octobot_trading.exchanges.implementations.spot_ccxt_exchange import SpotCCXTExchange
 
 
-class SpotExchangeSimulator(ExchangeSimulator, SpotExchange):
-    pass
+class DefaultCCXTSpotExchange(SpotCCXTExchange):
+    @classmethod
+    def get_name(cls) -> str:
+        return cls.__name__
+
+    @classmethod
+    def is_default_exchange(cls) -> bool:
+        return True
+
+    async def switch_to_account(self, account_type: AccountTypes):
+        # Currently not supported
+        pass
