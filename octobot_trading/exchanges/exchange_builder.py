@@ -17,7 +17,6 @@
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.api.modes import create_trading_modes
-from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_SANDBOXED
 from octobot_trading.errors import TradingModeIncompatibility
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges

@@ -14,15 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .balance import *
-from .kline import *
-from .funding import *
-from .mode import *
-from .ohlcv import *
-from .order_book import *
-from .orders import *
-from .positions import *
-from .price import *
-from .recent_trade import *
-from .ticker import *
-from .trades import *
+from octobot_trading.channels.balance import BalanceChannel, BalanceProfitabilityChannel
+from octobot_trading.channels.kline import KlineChannel
+from octobot_trading.channels.funding import FundingChannel
+from octobot_trading.channels.mode import ModeChannel
+from octobot_trading.channels.ohlcv import OHLCVChannel
+from octobot_trading.channels.order_book import OrderBookChannel, OrderBookTickerChannel
+from octobot_trading.channels.orders import OrdersChannel
+from octobot_trading.channels.positions import PositionsChannel
+from octobot_trading.channels.price import MarkPriceChannel
+from octobot_trading.channels.recent_trade import RecentTradeChannel, LiquidationsChannel
+from octobot_trading.channels.ticker import TickerChannel
+from octobot_trading.channels.trades import TradesChannel
