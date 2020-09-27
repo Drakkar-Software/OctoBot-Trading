@@ -15,14 +15,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.channels.exchange_channel import get_chan
+import octobot_trading.channels as channels
 from octobot_trading.constants import RECENT_TRADES_CHANNEL
-from octobot_trading.producers.orders_updater import OrdersUpdater
+import octobot_trading.producers as producers
 
 
-class OrdersUpdaterSimulator(OrdersUpdater):
+class OrdersUpdaterSimulator(producers.OrdersUpdater):
     async def start(self):
-        await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
+        await channels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.ignore_recent_trades_update)
 
     async def ignore_recent_trades_update(self, exchange: str, exchange_id: str,

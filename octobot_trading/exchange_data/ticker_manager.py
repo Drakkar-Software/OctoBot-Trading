@@ -17,10 +17,10 @@ from math import nan
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsMiniTickerColumns
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.util as util
 
 
-class TickerManager(Initializable):
+class TickerManager(util.Initializable):
     def __init__(self):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)

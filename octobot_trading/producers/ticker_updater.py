@@ -16,11 +16,9 @@
 #  License along with this library.
 import asyncio
 
-from octobot_trading.errors import NotSupported
-
-from octobot_trading.channels.exchange_channel import get_chan
+import octobot_trading.errors as errors
 from octobot_trading.constants import TICKER_CHANNEL, FUNDING_CHANNEL, MARK_PRICE_CHANNEL, MINI_TICKER_CHANNEL
-from octobot_trading.channels.ticker import TickerProducer
+import octobot_trading.channels as channels
 from octobot_trading.enums import ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns, \
     ExchangeConstantsMiniTickerColumns, ExchangeConstantsTickersColumns
 

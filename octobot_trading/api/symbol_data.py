@@ -13,24 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchange_data.candles_manager import CandlesManager
-from octobot_trading.enums import MarkPriceSources
-from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
-from octobot_trading.exchange_data.candles_adapter import \
-    get_symbol_close_candles as adapter_get_symbol_close_candles, \
-    get_symbol_open_candles as adapter_get_symbol_open_candles, \
-    get_symbol_high_candles as adapter_get_symbol_high_candles, \
-    get_symbol_low_candles as adapter_get_symbol_low_candles, \
-    get_symbol_volume_candles as adapter_get_symbol_volume_candles, \
-    get_symbol_time_candles as adapter_get_symbol_time_candles, get_candle_as_list as adapter_get_candle_as_list
 from octobot_commons.enums import TimeFrames
 
+from octobot_trading.enums import MarkPriceSources
+import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_data as exchange_data
 
-def get_symbol_data(exchange_manager, symbol, allow_creation=True) -> ExchangeSymbolData:
+
+def get_symbol_data(exchange_manager, symbol, allow_creation=True) -> exchanges.ExchangeSymbolData:
     return exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol, allow_creation=allow_creation)
 
 
-def get_symbol_candles_manager(symbol_data, time_frame) -> CandlesManager:
+def get_symbol_candles_manager(symbol_data, time_frame) -> exchange_data.CandlesManager:
     return symbol_data.symbol_candles[TimeFrames(time_frame)]
 
 
@@ -39,7 +33,7 @@ def get_symbol_historical_candles(symbol_data, time_frame, limit=-1) -> object:
 
 
 def get_candle_as_list(candles_arrays, candle_index=0) -> list:
-    return adapter_get_candle_as_list(candles_arrays, candle_index)
+    return exchange_data.get_candle_as_list(candles_arrays, candle_index)
 
 
 def has_symbol_klines(symbol_data, time_frame) -> bool:
@@ -51,31 +45,31 @@ def get_symbol_klines(symbol_data, time_frame) -> list:
 
 
 def get_symbol_close_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    return adapter_get_symbol_close_candles(symbol_data, time_frame, limit, include_in_construction)
+    return exchange_data.get_symbol_close_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_open_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    return adapter_get_symbol_open_candles(symbol_data, time_frame, limit, include_in_construction)
+    return exchange_data.get_symbol_open_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_high_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    return adapter_get_symbol_high_candles(symbol_data, time_frame, limit, include_in_construction)
+    return exchange_data.get_symbol_high_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_low_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    return adapter_get_symbol_low_candles(symbol_data, time_frame, limit, include_in_construction)
+    return exchange_data.get_symbol_low_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_volume_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    return adapter_get_symbol_volume_candles(symbol_data, time_frame, limit, include_in_construction)
+    return exchange_data.get_symbol_volume_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
 def get_symbol_time_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
-    return adapter_get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construction)
+    return exchange_data.get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
-def create_new_candles_manager(candles=None) -> CandlesManager:
-    manager = CandlesManager()
+def create_new_candles_manager(candles=None) -> exchange_data.CandlesManager:
+    manager = exchange_data.CandlesManager()
     if candles is not None:
         manager.replace_all_candles(candles)
     return manager

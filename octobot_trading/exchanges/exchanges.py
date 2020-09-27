@@ -16,7 +16,6 @@
 from typing import KeysView
 
 from octobot_commons.logging.logging_util import get_logger
-
 from octobot_commons.singleton.singleton_class import Singleton
 
 

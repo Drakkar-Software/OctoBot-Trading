@@ -18,11 +18,11 @@ from collections import OrderedDict
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.enums import FeePropertyColumns
-from octobot_trading.trades.trade_factory import create_trade_instance_from_raw
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.trades as trades
+import octobot_trading.util as util
 
 
-class TradesManager(Initializable):
+class TradesManager(util.Initializable):
     MAX_TRADES_COUNT = 500
 
     def __init__(self, config, trader, exchange_manager):
@@ -38,7 +38,7 @@ class TradesManager(Initializable):
 
     def upsert_trade(self, trade_id, raw_trade):
         if trade_id not in self.trades:
-            created_trade = create_trade_instance_from_raw(self.trader, raw_trade)
+            created_trade = trades.create_trade_instance_from_raw(self.trader, raw_trade)
             if created_trade:
                 self.trades[trade_id] = created_trade
                 self._check_trades_size()

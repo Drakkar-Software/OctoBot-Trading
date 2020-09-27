@@ -21,16 +21,11 @@ from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType, \
     FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns, TradeOrderType
-from octobot_trading.orders.order_util import get_fees_for_currency, parse_order_status
-from octobot_trading.orders.states.cancel_order_state import CancelOrderState
-from octobot_trading.orders.states.close_order_state import CloseOrderState
-from octobot_trading.orders.states.fill_order_state import FillOrderState
-from octobot_trading.orders.states.open_order_state import OpenOrderState
-from octobot_trading.orders.states.order_state_factory import create_order_state
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.orders as orders
+import octobot_trading.util as util
 
 
-class Order(Initializable):
+class Order(util.Initializable):
     """
     Order class will represent an open order in the specified exchange
     In simulation it will also define rules to be filled / canceled
@@ -188,7 +183,7 @@ class Order(Initializable):
         """
         Initialize order status update tasks
         """
-        await create_order_state(self, **kwargs)
+        await orders.create_order_state(self, **kwargs)
         if not self.is_closed():
             await self.update_order_status()
 
@@ -205,7 +200,7 @@ class Order(Initializable):
         return self.currency, self.market
 
     def get_total_fees(self, currency):
-        return get_fees_for_currency(self.fee, currency)
+        return orders.get_fees_for_currency(self.fee, currency)
 
     def is_open(self):
         return self.state is None or self.state.is_open()
@@ -220,23 +215,23 @@ class Order(Initializable):
         return self.state.is_closed() if self.state is not None else self.status == OrderStatus.CLOSED
 
     async def on_open(self, force_open=False, is_from_exchange_data=False):
-        self.state = OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state = orders.OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_open)
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
         if self.is_open():
-            self.state = FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            self.state = orders.FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
             await self.state.initialize(forced=force_fill)
         else:
             get_logger(self.get_logger_name()).debug(f"Trying to fill a previously filled or canceled order: "
                                                      f"ignored fill call for {self}")
 
     async def on_close(self, force_close=False, is_from_exchange_data=False):
-        self.state = CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state = orders.CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_close)
 
     async def on_cancel(self, is_from_exchange_data=False, force_cancel=False, ignored_order=None):
-        self.state = CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state = orders.CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
 
     def on_fill_actions(self):
@@ -313,7 +308,7 @@ class Order(Initializable):
             current_price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
             quantity=raw_order.get(ExchangeConstantsOrderColumns.AMOUNT.value, 0.0),
             price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
-            status=parse_order_status(raw_order),
+            status=orders.parse_order_status(raw_order),
             order_id=str(raw_order.get(ExchangeConstantsOrderColumns.ID.value, None)),
             quantity_filled=raw_order.get(ExchangeConstantsOrderColumns.FILLED.value, 0.0),
             filled_price=filled_price,
@@ -333,7 +328,7 @@ class Order(Initializable):
             self.filled_price = self.origin_price
 
     def update_order_from_raw(self, raw_order):
-        self.status = parse_order_status(raw_order)
+        self.status = orders.parse_order_status(raw_order)
         self.total_cost = raw_order[ExchangeConstantsOrderColumns.COST.value]
         self.filled_quantity = raw_order[ExchangeConstantsOrderColumns.FILLED.value]
         self.filled_price = raw_order[ExchangeConstantsOrderColumns.PRICE.value]

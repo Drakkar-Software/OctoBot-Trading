@@ -17,12 +17,12 @@ from collections import OrderedDict
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.positions.position import Position
 from octobot_trading.enums import PositionStatus
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.positions as positions
+import octobot_trading.util as util
 
 
-class PositionsManager(Initializable):
+class PositionsManager(util.Initializable):
     MAX_POSITIONS_COUNT = 2000
 
     def __init__(self, config, trader, exchange_manager):
@@ -63,7 +63,7 @@ class PositionsManager(Initializable):
             self._remove_oldest_positions(int(self.MAX_POSITIONS_COUNT / 2))
 
     def _create_position_from_raw(self, raw_position):
-        position = Position(self.trader)
+        position = positions.Position(self.trader)
         position.update_position_from_raw(raw_position)
         return position
 

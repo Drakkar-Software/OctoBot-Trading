@@ -16,18 +16,17 @@
 #  License along with this library.
 import asyncio
 from typing import Optional
-
 import time
 
-from octobot_trading.errors import NotSupported
 from octobot_commons.constants import HOURS_TO_SECONDS
 
-from octobot_trading.channels.funding import FundingProducer
+import octobot_trading.errors as errors
+import octobot_trading.channels as channels
 from octobot_trading.constants import FUNDING_CHANNEL
 from octobot_trading.enums import ExchangeConstantsFundingColumns
 
 
-class FundingUpdater(FundingProducer):
+class FundingUpdater(channels.FundingProducer):
     """
     The Funding Update fetch the exchange funding rate and send it to the Funding Channel
     """
@@ -67,7 +66,7 @@ class FundingUpdater(FundingProducer):
                     )
                     if next_funding_time_candidate is not None:
                         next_funding_time = next_funding_time_candidate
-            except (NotSupported, NotImplementedError):
+            except (errors.NotSupported, NotImplementedError):
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates"
                 )
@@ -115,7 +114,7 @@ class FundingUpdater(FundingProducer):
                     ],
                 )
                 return next_funding_time
-        except (NotSupported, NotImplementedError) as ne:
+        except (errors.NotSupported, NotImplementedError) as ne:
             raise ne
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update funding rate : {e}")

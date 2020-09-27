@@ -22,7 +22,6 @@ from octobot_trading.exchanges import exchange_manager
 from octobot_trading.exchanges import exchange_util
 from octobot_trading.exchanges import exchange_websocket_factory
 from octobot_trading.exchanges import exchanges
-from octobot_trading.exchanges import implementations
 from octobot_trading.exchanges import types
 from octobot_trading.exchanges import util
 from octobot_trading.exchanges import websockets
@@ -37,7 +36,10 @@ from octobot_trading.exchanges.data import (ExchangeConfig,
                                             exchange_symbol_data,
                                             exchange_symbols_data, )
 from octobot_trading.exchanges.exchange_builder import (ExchangeBuilder, )
-from octobot_trading.exchanges.exchange_channels import (requires_refresh_trigger, )
+from octobot_trading.exchanges.exchange_channels import (requires_refresh_trigger,
+                                                         create_exchange_producers,
+                                                         create_authenticated_producer_from_parent,
+                                                         create_exchange_channels, )
 from octobot_trading.exchanges.exchange_factory import (create_exchanges, create_real_exchange,
                                                         initialize_real_exchange, create_simulated_exchange,
                                                         init_simulated_exchange, )
@@ -52,20 +54,6 @@ from octobot_trading.exchanges.exchange_websocket_factory import (is_exchange_ma
                                                                   is_websocket_feed_requiring_init, )
 from octobot_trading.exchanges.exchanges import (ExchangeConfiguration,
                                                  Exchanges, )
-from octobot_trading.exchanges.implementations import (CCXTExchange,
-                                                       DefaultCCXTSpotExchange,
-                                                       ExchangeSimulator,
-                                                       FutureExchangeSimulator,
-                                                       MarginExchangeSimulator,
-                                                       SpotCCXTExchange,
-                                                       SpotExchangeSimulator,
-                                                       ccxt_exchange,
-                                                       default_spot_ccxt,
-                                                       exchange_simulator,
-                                                       future_exchange_simulator,
-                                                       margin_exchange_simulator,
-                                                       spot_ccxt_exchange,
-                                                       spot_exchange_simulator, )
 from octobot_trading.exchanges.types import (FutureExchange, MarginExchange,
                                              SpotExchange, WebsocketExchange,
                                              future_exchange, margin_exchange,
@@ -88,6 +76,22 @@ from octobot_trading.exchanges.websockets import (AbstractWebsocket,
                                                   octobot_websocket,
                                                   search_websocket_class,
                                                   websockets_util, )
+
+from octobot_trading.exchanges import implementations
+from octobot_trading.exchanges.implementations import (CCXTExchange,
+                                                       DefaultCCXTSpotExchange,
+                                                       ExchangeSimulator,
+                                                       FutureExchangeSimulator,
+                                                       MarginExchangeSimulator,
+                                                       SpotCCXTExchange,
+                                                       SpotExchangeSimulator,
+                                                       ccxt_exchange,
+                                                       default_spot_ccxt,
+                                                       exchange_simulator,
+                                                       future_exchange_simulator,
+                                                       margin_exchange_simulator,
+                                                       spot_ccxt_exchange,
+                                                       spot_exchange_simulator, )
 
 __all__ = ['AbstractExchange', 'AbstractWebsocket', 'CCXTExchange',
            'DefaultCCXTSpotExchange', 'ExchangeBuilder', 'ExchangeConfig',
@@ -113,8 +117,8 @@ __all__ = ['AbstractExchange', 'AbstractWebsocket', 'CCXTExchange',
            'get_margin_exchange_class', 'get_markets_limit', 'get_order_side',
            'get_spot_exchange_class', 'implementations', 'is_ms_valid',
            'margin_exchange', 'margin_exchange_simulator',
-           'octobot_websocket',
-           'requires_refresh_trigger',
+           'octobot_websocket', 'create_authenticated_producer_from_parent',
+           'requires_refresh_trigger', 'create_exchange_producers', 'create_exchange_channels',
            'search_exchange_class_from_exchange_name',
            'search_websocket_class',
            'create_exchanges', 'create_real_exchange', 'initialize_real_exchange',

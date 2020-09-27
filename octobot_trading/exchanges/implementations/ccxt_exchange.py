@@ -15,25 +15,23 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import logging
-
 import ccxt.async_support as ccxt
 from ccxt.async_support import OrderNotFound, BaseError
 from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, RequestTimeout, NotSupported
+
 from octobot_commons.constants import MSECONDS_TO_SECONDS
 from octobot_commons.enums import TimeFrames
 
-from octobot_trading import errors
 from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
     CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
 from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns, \
     ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes
-from octobot_trading.exchanges.abstract_exchange import AbstractExchange
-from octobot_trading.exchanges.exchange_util import get_order_side
-from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
-from octobot_trading.orders.order_util import parse_is_cancelled
+import octobot_trading.errors as errors
+import octobot_trading.exchanges as exchanges
+import octobot_trading.orders as orders
 
 
-class CCXTExchange(AbstractExchange):
+class CCXTExchange(exchanges.AbstractExchange):
     """
     CCXT library wrapper
     """
@@ -113,7 +111,7 @@ class CCXTExchange(AbstractExchange):
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         try:
             if with_fixer:
-                return ExchangeMarketStatusFixer(self.client.market(symbol), price_example).market_status
+                return exchanges.ExchangeMarketStatusFixer(self.client.market(symbol), price_example).market_status
             return self.client.market(symbol)
         except NotSupported:
             raise errors.NotSupported
@@ -253,7 +251,7 @@ class CCXTExchange(AbstractExchange):
         cancel_resp = None
         try:
             cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
-            return parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=kwargs))
+            return orders.parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=kwargs))
         except OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
         except NotSupported:
@@ -270,7 +268,7 @@ class CCXTExchange(AbstractExchange):
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
-                                         side=get_order_side(order_type),
+                                         side=exchanges.get_order_side(order_type),
                                          amount=quantity,
                                          price=price,
                                          takerOrMaker=taker_or_maker)

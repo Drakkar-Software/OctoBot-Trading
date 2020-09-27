@@ -15,12 +15,11 @@
 #  License along with this library.
 import uuid
 
+import octobot_trading.traders as traders
 from octobot_trading.constants import SIMULATOR_TRADER_STR
-from octobot_trading.traders.trader import Trader
-from octobot_trading.util import is_trader_simulator_enabled
 
 
-class TraderSimulator(Trader):
+class TraderSimulator(traders.Trader):
     """
     TraderSimulator has a role of exchange response simulator
     - During order creation / filling / canceling process
@@ -37,7 +36,7 @@ class TraderSimulator(Trader):
 
     @staticmethod
     def enabled(config):
-        return is_trader_simulator_enabled(config)
+        return traders.is_trader_simulator_enabled(config)
 
     def parse_order_id(self, order_id):
         return str(uuid.uuid4()) if order_id is None else order_id

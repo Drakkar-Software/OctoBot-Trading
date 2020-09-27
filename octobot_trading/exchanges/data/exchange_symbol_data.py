@@ -16,14 +16,7 @@
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.exchange_data.candles_manager import CandlesManager
-from octobot_trading.exchange_data.funding_manager import FundingManager
-from octobot_trading.exchange_data.kline_manager import KlineManager
-from octobot_trading.exchange_data.order_book_manager import OrderBookManager
-from octobot_trading.exchange_data.price_events_manager import PriceEventsManager
-from octobot_trading.exchange_data.prices_manager import PricesManager
-from octobot_trading.exchange_data.recent_trades_manager import RecentTradesManager
-from octobot_trading.exchange_data.ticker_manager import TickerManager
+import octobot_trading.exchange_data as exchange_data
 
 
 class ExchangeSymbolData:
@@ -34,12 +27,12 @@ class ExchangeSymbolData:
         self.symbol = symbol
         self.exchange_manager = exchange_manager
 
-        self.price_events_manager = PriceEventsManager()
-        self.order_book_manager = OrderBookManager()
-        self.prices_manager = PricesManager(self.exchange_manager)
-        self.recent_trades_manager = RecentTradesManager()
-        self.ticker_manager = TickerManager()
-        self.funding_manager = FundingManager() if self.exchange_manager.is_margin else None
+        self.price_events_manager = exchange_data.PriceEventsManager()
+        self.order_book_manager = exchange_data.OrderBookManager()
+        self.prices_manager = exchange_data.PricesManager(self.exchange_manager)
+        self.recent_trades_manager = exchange_data.RecentTradesManager()
+        self.ticker_manager = exchange_data.TickerManager()
+        self.funding_manager = exchange_data.FundingManager() if self.exchange_manager.is_margin else None
 
         self.symbol_candles = {}
         self.symbol_klines = {}
@@ -51,7 +44,7 @@ class ExchangeSymbolData:
         try:
             symbol_candles = self.symbol_candles[time_frame]
         except KeyError:
-            symbol_candles = CandlesManager()
+            symbol_candles = exchange_data.CandlesManager()
             await symbol_candles.initialize()
 
             if replace_all:
@@ -101,7 +94,7 @@ class ExchangeSymbolData:
         try:
             symbol_klines = self.symbol_klines[time_frame]
         except KeyError:
-            symbol_klines = KlineManager()
+            symbol_klines = exchange_data.KlineManager()
             try:
                 await symbol_klines.initialize()
                 symbol_klines.kline_update(kline)

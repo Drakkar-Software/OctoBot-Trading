@@ -19,12 +19,12 @@ Handles balance changes
 """
 from asyncio import CancelledError
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
-from octobot_trading.constants import BALANCE_CHANNEL
-from octobot_trading.exchanges.exchange_channels import requires_refresh_trigger
+import octobot_trading
+import octobot_trading.channels as channels
+import octobot_trading.exchanges as exchanges
 
 
-class BalanceProducer(ExchangeChannelProducer):
+class BalanceProducer(channels.ExchangeChannelProducer):
     async def push(self, balance, is_diff_update=False):
         await self.perform(balance, is_diff_update)
 
@@ -51,7 +51,8 @@ class BalanceProducer(ExchangeChannelProducer):
         if self.channel.exchange_manager.is_simulated:
             # simulated portfolio can't be out of sync
             return True
-        if force_manual_refresh or requires_refresh_trigger(self.channel.exchange_manager, BALANCE_CHANNEL):
+        if force_manual_refresh or exchanges.requires_refresh_trigger(self.channel.exchange_manager,
+                                                                      octobot_trading.BALANCE_CHANNEL):
             self.logger.debug(f"Refreshing portfolio from {self.channel.exchange_manager.get_exchange_name()} exchange")
             return await self._update_portfolio_from_exchange()
         else:
@@ -70,12 +71,12 @@ class BalanceProducer(ExchangeChannelProducer):
             balance=balance, should_notify=should_notify, is_diff_update=False)
 
 
-class BalanceChannel(ExchangeChannel):
+class BalanceChannel(channels.ExchangeChannel):
     PRODUCER_CLASS = BalanceProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = channels.ExchangeChannelConsumer
 
 
-class BalanceProfitabilityProducer(ExchangeChannelProducer):
+class BalanceProfitabilityProducer(channels.ExchangeChannelProducer):
     async def push(self, balance, mark_price):
         await self.perform(balance, mark_price)
 
@@ -102,6 +103,6 @@ class BalanceProfitabilityProducer(ExchangeChannelProducer):
             })
 
 
-class BalanceProfitabilityChannel(ExchangeChannel):
+class BalanceProfitabilityChannel(channels.ExchangeChannel):
     PRODUCER_CLASS = BalanceProfitabilityProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = channels.ExchangeChannelConsumer

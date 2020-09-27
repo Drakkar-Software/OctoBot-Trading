@@ -17,15 +17,15 @@ from octobot_commons.errors import ConfigTradingError
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.tentacles_management.class_inspector import get_deep_class_from_parent_subclasses
 from octobot_tentacles_manager.api.configurator import get_activated_tentacles
-from octobot_trading.modes import AbstractTradingMode
+import octobot_trading.modes as modes
 
 
-def get_activated_trading_mode(tentacles_setup_config) -> AbstractTradingMode.__class__:
+def get_activated_trading_mode(tentacles_setup_config) -> modes.AbstractTradingMode.__class__:
     if tentacles_setup_config is not None:
         try:
             trading_modes = [tentacle_class
                              for tentacle_class in get_activated_tentacles(tentacles_setup_config)
-                             if get_deep_class_from_parent_subclasses(tentacle_class, AbstractTradingMode)]
+                             if get_deep_class_from_parent_subclasses(tentacle_class, modes.AbstractTradingMode)]
 
             if len(trading_modes) > 1:
                 raise ConfigTradingError(
@@ -34,7 +34,7 @@ def get_activated_trading_mode(tentacles_setup_config) -> AbstractTradingMode.__
 
             elif trading_modes:
                 trading_mode_class = get_deep_class_from_parent_subclasses(trading_modes[0],
-                                                                           AbstractTradingMode)
+                                                                           modes.AbstractTradingMode)
 
                 if trading_mode_class is not None:
                     return trading_mode_class

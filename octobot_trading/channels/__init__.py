@@ -13,23 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.channels import balance
 from octobot_trading.channels import exchange_channel
-from octobot_trading.channels import funding
-from octobot_trading.channels import kline
-from octobot_trading.channels import mode
-from octobot_trading.channels import ohlcv
-from octobot_trading.channels import order_book
-from octobot_trading.channels import orders
-from octobot_trading.channels import positions
-from octobot_trading.channels import price
-from octobot_trading.channels import recent_trade
-from octobot_trading.channels import ticker
-from octobot_trading.channels import trades
-
-from octobot_trading.channels.balance import (BalanceChannel, BalanceProducer,
-                                              BalanceProfitabilityChannel,
-                                              BalanceProfitabilityProducer,)
 from octobot_trading.channels.exchange_channel import (ExchangeChannel,
                                                        ExchangeChannelConsumer,
                                                        ExchangeChannelInternalConsumer,
@@ -40,11 +24,31 @@ from octobot_trading.channels.exchange_channel import (ExchangeChannel,
                                                        del_exchange_channel_container,
                                                        get_chan,
                                                        get_exchange_channels,
-                                                       set_chan,)
-from octobot_trading.channels.funding import (FundingChannel, FundingProducer,)
-from octobot_trading.channels.kline import (KlineChannel, KlineProducer,)
+                                                       set_chan,
+                                                       stop_exchange_channels,)
+
+from octobot_trading.channels import mode
 from octobot_trading.channels.mode import (ModeChannel, ModeChannelConsumer,
                                            ModeChannelProducer,)
+
+from octobot_trading.channels import balance
+from octobot_trading.channels.balance import (BalanceChannel, BalanceProducer,
+                                              BalanceProfitabilityChannel,
+                                              BalanceProfitabilityProducer,)
+
+from octobot_trading.channels import funding
+from octobot_trading.channels import kline
+from octobot_trading.channels import ohlcv
+from octobot_trading.channels import order_book
+from octobot_trading.channels import orders
+from octobot_trading.channels import positions
+from octobot_trading.channels import price
+from octobot_trading.channels import recent_trade
+from octobot_trading.channels import ticker
+from octobot_trading.channels import trades
+
+from octobot_trading.channels.funding import (FundingChannel, FundingProducer,)
+from octobot_trading.channels.kline import (KlineChannel, KlineProducer,)
 from octobot_trading.channels.ohlcv import (OHLCVChannel, OHLCVProducer,)
 from octobot_trading.channels.order_book import (OrderBookChannel,
                                                  OrderBookProducer,
@@ -78,7 +82,7 @@ __all__ = ['BalanceChannel', 'BalanceProducer', 'BalanceProfitabilityChannel',
            'PositionsChannel', 'PositionsProducer', 'RecentTradeChannel',
            'RecentTradeProducer', 'TickerChannel', 'TickerProducer',
            'TimeFrameExchangeChannel', 'TradesChannel', 'TradesProducer',
-           'balance', 'del_chan', 'del_exchange_channel_container',
+           'balance', 'del_chan', 'del_exchange_channel_container', 'stop_exchange_channels',
            'exchange_channel', 'funding', 'get_chan', 'get_exchange_channels',
            'kline', 'mode', 'ohlcv', 'order_book', 'orders', 'positions',
            'price', 'recent_trade', 'set_chan', 'ticker', 'trades']

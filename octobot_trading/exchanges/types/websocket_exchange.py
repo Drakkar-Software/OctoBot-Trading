@@ -15,19 +15,20 @@
 #  License along with this library.
 import asyncio
 import logging
-import websockets
-import time
-import ccxt
 from abc import abstractmethod
 from asyncio import CancelledError
 from datetime import datetime
 from typing import List
 
+import ccxt
+import time
+import websockets
 from octobot_commons.constants import HOURS_TO_SECONDS
 from octobot_commons.enums import TimeFrames
 from octobot_commons.logging.logging_util import get_logger, set_logging_level
-from octobot_trading.exchange_data.order_book_manager import OrderBookManager
-from octobot_trading.channels.exchange_channel import get_chan
+
+import octobot_trading.channels as channels
+import octobot_trading.exchange_data as exchange_data
 from octobot_trading.enums import WebsocketFeeds as Feeds
 
 
@@ -161,7 +162,7 @@ class WebsocketExchange:
     async def push_to_channel(self, channel_name, **kwargs):
         try:
             asyncio.run_coroutine_threadsafe(
-                get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
+                channels.get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
                 asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Push to {channel_name} failed : {e}")
@@ -222,7 +223,7 @@ class WebsocketExchange:
         try:
             return self.books[symbol]
         except KeyError:
-            self.books[symbol] = OrderBookManager()
+            self.books[symbol] = exchange_data.OrderBookManager()
             return self.books[symbol]
 
     @classmethod

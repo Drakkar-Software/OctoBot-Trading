@@ -15,10 +15,10 @@
 #  License along with this library.
 from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL, MARGIN_PORTFOLIO
 from octobot_trading.constants import CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL, CONFIG_PORTFOLIO_MARGIN
-from octobot_trading.portfolios.portfolio import Portfolio
+import octobot_trading.portfolios as portfolios
 
 
-class MarginPortfolio(Portfolio):
+class MarginPortfolio(portfolios.Portfolio):
     async def update_portfolio_from_position(self, position):
         pass  # TODO
 

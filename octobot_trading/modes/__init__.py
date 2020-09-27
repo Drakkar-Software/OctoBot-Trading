@@ -18,5 +18,8 @@
 from octobot_trading.modes import abstract_trading_mode
 
 from octobot_trading.modes.abstract_trading_mode import (AbstractTradingMode,)
+from octobot_trading.modes.modes_factory import (create_trading_mode,
+                                                 create_trading_modes,)
 
-__all__ = ['AbstractTradingMode', 'abstract_trading_mode']
+__all__ = ['AbstractTradingMode', 'abstract_trading_mode',
+           'create_trading_mode', 'create_trading_modes']

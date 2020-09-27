@@ -16,11 +16,12 @@
 from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
+
+import octobot_trading.channels as channels
 from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
-class TradesProducer(ExchangeChannelProducer):
+class TradesProducer(channels.ExchangeChannelProducer):
     async def push(self, trades, old_trade=False):
         await self.perform(trades, old_trade=old_trade)
 
@@ -64,6 +65,6 @@ class TradesProducer(ExchangeChannelProducer):
             })
 
 
-class TradesChannel(ExchangeChannel):
+class TradesChannel(channels.ExchangeChannel):
     PRODUCER_CLASS = TradesProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = channels.ExchangeChannelConsumer

@@ -16,9 +16,8 @@
 #  License along with this library.
 import asyncio
 
-from octobot_trading.errors import NotSupported
-
-from octobot_trading.channels.trades import TradesProducer
+import octobot_trading.errors as errors
+import octobot_trading.channels as channels
 from octobot_trading.constants import TRADES_CHANNEL
 
 

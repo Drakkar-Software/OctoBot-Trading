@@ -17,17 +17,16 @@ from octobot_backtesting.api.importer import get_available_data_types
 from octobot_backtesting.data import DataBaseNotExists
 from octobot_backtesting.enums import ExchangeDataTables
 from octobot_channels.channels.channel import get_chan
-
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
 from octobot_commons.enums import PriceIndexes
+
 from octobot_trading.constants import OHLCV_CHANNEL
 from octobot_trading.enums import ExchangeConstantsOrderColumns
-from octobot_trading.channels.exchange_channel import get_chan as get_exchange_chan
-from octobot_trading.producers.recent_trade_updater import RecentTradeUpdater
-from octobot_trading.producers.simulator.simulator_updater_utils import stop_and_pause
+import octobot_trading.channels as channels
+import octobot_trading.producers as producers
 
 
-class RecentTradeUpdaterSimulator(RecentTradeUpdater):
+class RecentTradeUpdaterSimulator(producers.RecentTradeUpdater):
     SIMULATED_RECENT_TRADE_LIMIT = 2
 
     def __init__(self, channel, importer):
@@ -102,7 +101,7 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
         self.is_running = False
 
     async def stop(self):
-        await stop_and_pause(self)
+        await producers.stop_and_pause(self)
 
     async def resume(self):
         if not self.is_running:
@@ -111,8 +110,7 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
                     self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
                         self.handle_timestamp)
                 else:
-                    await get_exchange_chan(OHLCV_CHANNEL,
-                                            self.channel.exchange_manager.id)\
+                    await channels.get_chan(OHLCV_CHANNEL, self.channel.exchange_manager.id)\
                         .new_consumer(self._recent_trades_from_ohlcv_callback)
                     self.last_timestamp_pushed_by_symbol = {
                         symbol: 0

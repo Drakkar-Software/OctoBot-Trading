@@ -18,14 +18,12 @@ from enum import Enum
 from octobot_channels.channels.channel_instances import get_chan_at_id
 from octobot_commons.channels_name import OctoBotChannelsName
 from octobot_commons.logging.logging_util import get_logger
-
-from octobot_trading.api.trader import is_trader_enabled_in_config, is_trader_simulator_enabled_in_config
-from octobot_trading.api.exchange import create_exchange_builder
-
 from octobot_commons.enums import OctoBotChannelSubjects
+
 from octobot_trading.constants import CONFIG_EXCHANGE_SANDBOXED, CONFIG_EXCHANGES, CONFIG_EXCHANGE_FUTURE, \
     CONFIG_EXCHANGE_MARGIN, CONFIG_EXCHANGE_SPOT, CONFIG_EXCHANGE_REST_ONLY
-from octobot_trading.errors import TradingModeIncompatibility
+import octobot_trading.errors as errors
+import octobot_trading.api as api
 
 OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG = "OctoBotChannelTradingConsumer"
 
@@ -67,8 +65,8 @@ async def _handle_creation(bot_id, action, data):
     if action == OctoBotChannelTradingActions.EXCHANGE.value:
         try:
             config = data[OctoBotChannelTradingDataKeys.EXCHANGE_CONFIG.value]
-            exchange_builder = create_exchange_builder(config,
-                                                       data[OctoBotChannelTradingDataKeys.EXCHANGE_NAME.value]) \
+            exchange_builder = api.create_exchange_builder(config,
+                                                           data[OctoBotChannelTradingDataKeys.EXCHANGE_NAME.value]) \
                 .has_matrix(data[OctoBotChannelTradingDataKeys.MATRIX_ID.value]) \
                 .use_tentacles_setup_config(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value]) \
                 .set_bot_id(bot_id)
@@ -79,7 +77,7 @@ async def _handle_creation(bot_id, action, data):
                       subject=OctoBotChannelSubjects.NOTIFICATION.value,
                       action=action,
                       data={OctoBotChannelTradingDataKeys.EXCHANGE_ID.value: exchange_builder.exchange_manager.id})
-        except TradingModeIncompatibility as e:
+        except errors.TradingModeIncompatibility as e:
             get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
                 f"Error when initializing trading mode, {data[OctoBotChannelTradingDataKeys.EXCHANGE_NAME.value]} "
                 f"exchange connection is closed to increase performances: {e}")
@@ -89,9 +87,9 @@ async def _handle_creation(bot_id, action, data):
 
 def _set_exchange_type_details(exchange_builder, config, backtesting):
     # real, simulator, backtesting
-    if is_trader_enabled_in_config(config):
+    if api.is_trader_enabled_in_config(config):
         exchange_builder.is_real()
-    elif is_trader_simulator_enabled_in_config(config):
+    elif api.is_trader_simulator_enabled_in_config(config):
         exchange_builder.is_simulated()
     if backtesting is not None:
         exchange_builder.is_backtesting(backtesting)

@@ -13,9 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
-from octobot_trading.exchanges.types.spot_exchange import SpotExchange
+import octobot_trading.exchanges as exchanges
 
 
-class SpotExchangeSimulator(ExchangeSimulator, SpotExchange):
+class SpotExchangeSimulator(exchanges.ExchangeSimulator, exchanges.SpotExchange):
     pass

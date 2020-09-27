@@ -18,7 +18,7 @@ from octobot_commons.constants import CONFIG_CRYPTO_CURRENCIES
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol
 
-from octobot_trading.util import get_all_currencies
+import octobot_trading.util as util
 
 
 class PortfolioProfitability:
@@ -44,7 +44,7 @@ class PortfolioProfitability:
         self.traded_currencies_without_market_specific = set()
 
         # set of currencies that should be traded because either present in config or as a reference market
-        self.traded_currencies = get_all_currencies(self.portfolio_manager.config)
+        self.traded_currencies = util.get_all_currencies(self.portfolio_manager.config)
         self.traded_currencies.add(self.portfolio_manager.reference_market)
 
     def get_average_market_profitability(self):

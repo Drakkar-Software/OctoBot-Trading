@@ -14,10 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.producers.funding_updater import FundingUpdater
+import octobot_trading.producers as producers
 
 
-class FundingUpdaterSimulator(FundingUpdater):
+class FundingUpdaterSimulator(producers.FundingUpdater):
     """
     The Funding Update Simulator fetch the exchange funding rate and send it to the Funding Channel
     """

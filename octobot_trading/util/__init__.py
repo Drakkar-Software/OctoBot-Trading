@@ -13,36 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
-from octobot_trading.util import initializable
-from octobot_trading.util import trading_config_util
-
-from octobot_trading.util.initializable import (Initializable,)
-from octobot_trading.util.trading_config_util import (get_activated_trading_mode,)
-
-from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS
+from octobot_commons.constants import CONFIG_CRYPTO_CURRENCIES, CONFIG_CRYPTO_PAIRS
 from octobot_commons.symbol_util import split_symbol
 
-from octobot_trading.constants import CONFIG_TRADER, CONFIG_SIMULATOR, CONFIG_TRADING
-
-__all__ = ['Initializable', 'get_activated_trading_mode', 'initializable', 'trading_config_util']
-
-
-def is_trader_enabled(config):
-    return __is_trader_enabled(config, CONFIG_TRADER)
-
-
-def is_trader_simulator_enabled(config):
-    return __is_trader_enabled(config, CONFIG_SIMULATOR)
-
-
-def __is_trader_enabled(config, trader_key):
-    try:
-        return config[trader_key][CONFIG_ENABLED_OPTION]
-    except KeyError:
-        if trader_key not in config:
-            config[trader_key] = {}
-        config[trader_key][CONFIG_ENABLED_OPTION] = False
-        return False
+import octobot_trading
+from octobot_trading.util import initializable
+from octobot_trading.util import trading_config_util
+from octobot_trading.util.initializable import (Initializable, )
+from octobot_trading.util.trading_config_util import (get_activated_trading_mode, )
 
 
 def get_symbols(config):
@@ -70,7 +48,7 @@ def get_pairs(config, currency) -> []:
 
 
 def get_market_pair(config, currency) -> (str, bool):
-    if CONFIG_TRADING in config:
+    if octobot_trading.CONFIG_TRADING in config:
         reference_market = get_reference_market(config)
         for symbol in get_symbols(config):
             symbol_currency, symbol_market = split_symbol(symbol)
@@ -83,4 +61,9 @@ def get_market_pair(config, currency) -> (str, bool):
 
 def get_reference_market(config) -> str:
     # The reference market is the currency unit of the calculated quantity value
-    return config[CONFIG_TRADING].get(CONFIG_TRADER_REFERENCE_MARKET, DEFAULT_REFERENCE_MARKET)
+    return config[octobot_trading.CONFIG_TRADING].get(octobot_trading.CONFIG_TRADER_REFERENCE_MARKET,
+                                                      octobot_trading.DEFAULT_REFERENCE_MARKET)
+
+
+__all__ = ['Initializable', 'get_activated_trading_mode', 'initializable', 'trading_config_util',
+           'get_symbols', 'get_all_currencies', 'get_pairs', 'get_market_pair', 'get_reference_market']

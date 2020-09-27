@@ -16,18 +16,14 @@
 #  License along with this library.
 import asyncio
 
-from octobot_trading.errors import NotSupported
-
 from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.constants import BALANCE_CHANNEL, MARK_PRICE_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
-from octobot_trading.channels.balance import (
-    BalanceProducer,
-    BalanceProfitabilityProducer,
-)
-from octobot_trading.channels.exchange_channel import get_chan
+
+import octobot_trading
+import octobot_trading.errors as errors
+import octobot_trading.channels as channels
 
 
-class BalanceUpdater(BalanceProducer):
+class BalanceUpdater(channels.BalanceProducer):
     """
     The Balance Update fetch the exchange portfolio and send it to the Balance Channel
     """
@@ -40,7 +36,7 @@ class BalanceUpdater(BalanceProducer):
     """
     The updater related channel name
     """
-    CHANNEL_NAME = BALANCE_CHANNEL
+    CHANNEL_NAME = octobot_trading.BALANCE_CHANNEL
 
     async def start(self) -> None:
         """
@@ -50,7 +46,7 @@ class BalanceUpdater(BalanceProducer):
             try:
                 await self.fetch_and_push()
                 await asyncio.sleep(self.BALANCE_REFRESH_TIME)
-            except NotSupported:
+            except errors.NotSupported:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates"
                 )
@@ -76,7 +72,7 @@ class BalanceUpdater(BalanceProducer):
             await self.run()
 
 
-class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
+class BalanceProfitabilityUpdater(channels.BalanceProfitabilityProducer):
     """
     The Balance Profitability Updater triggers the portfolio profitability calculation
     by subscribing to Mark price and Balance channel updates
@@ -85,7 +81,7 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
     """
     The updater related channel name
     """
-    CHANNEL_NAME = BALANCE_PROFITABILITY_CHANNEL
+    CHANNEL_NAME = octobot_trading.BALANCE_PROFITABILITY_CHANNEL
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -100,11 +96,11 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         """
         Starts the balance profitability subscribing process
         """
-        self.balance_consumer = await get_chan(
-            BALANCE_CHANNEL, self.channel.exchange_manager.id
+        self.balance_consumer = await channels.get_chan(
+            octobot_trading.BALANCE_CHANNEL, self.channel.exchange_manager.id
         ).new_consumer(self.handle_balance_update)
-        self.mark_price_consumer = await get_chan(
-            MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
+        self.mark_price_consumer = await channels.get_chan(
+            octobot_trading.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
         ).new_consumer(self.handle_mark_price_update)
 
     async def stop(self) -> None:
@@ -113,14 +109,14 @@ class BalanceProfitabilityUpdater(BalanceProfitabilityProducer):
         """
         await super().stop()
         try:
-            await get_chan(
-                BALANCE_CHANNEL, self.channel.exchange_manager.id
+            await channels.get_chan(
+                octobot_trading.BALANCE_CHANNEL, self.channel.exchange_manager.id
             ).remove_consumer(self.balance_consumer)
         except KeyError:
             # balance channel might already be stopped and removed from available channels
             pass
-        await get_chan(
-            MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
+        await channels.get_chan(
+            octobot_trading.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
         ).remove_consumer(self.mark_price_consumer)
         self.balance_consumer = None
         self.mark_price_consumer = None

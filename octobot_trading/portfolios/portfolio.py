@@ -19,13 +19,12 @@ from copy import deepcopy
 from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.constants import CURRENT_PORTFOLIO_STRING, CONFIG_PORTFOLIO_FREE, CONFIG_PORTFOLIO_TOTAL
-from octobot_trading.enums import TraderOrderType
-from octobot_trading.orders.types import TraderOrderTypeClasses
-from octobot_trading.util.initializable import Initializable
+import octobot_trading
+import octobot_trading.orders as orders
+import octobot_trading.util as util
 
 
-class Portfolio(Initializable):
+class Portfolio(util.Initializable):
     """
     The Portfolio class manage an exchange portfolio
     This will begin by loading current exchange portfolio (by pulling user data)
@@ -81,7 +80,7 @@ class Portfolio(Initializable):
             self.portfolio = new_balance
         else:
             self.portfolio.update(new_balance)
-        self.logger.debug(f"Portfolio updated | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
+        self.logger.debug(f"Portfolio updated | {octobot_trading.CURRENT_PORTFOLIO_STRING} {self.portfolio}")
         return True
 
     def get_currency_from_given_portfolio(self, currency, portfolio_type=PORTFOLIO_AVAILABLE):
@@ -192,8 +191,10 @@ class Portfolio(Initializable):
         :return: the updated currency portfolio
         """
         return self._create_currency_portfolio(
-            available=currency_balance.get(CONFIG_PORTFOLIO_FREE, currency_balance.get(PORTFOLIO_AVAILABLE, 0)),
-            total=currency_balance.get(CONFIG_PORTFOLIO_TOTAL, currency_balance.get(PORTFOLIO_TOTAL, 0)))
+            available=currency_balance.get(octobot_trading.CONFIG_PORTFOLIO_FREE,
+                                           currency_balance.get(PORTFOLIO_AVAILABLE, 0)),
+            total=currency_balance.get(octobot_trading.CONFIG_PORTFOLIO_TOTAL,
+                                       currency_balance.get(PORTFOLIO_TOTAL, 0)))
 
     def _create_currency_portfolio(self, available, total):
         """
@@ -277,9 +278,9 @@ def _check_available_should_update(order):
     :return: True if the order should update available portfolio
     """
     # stop losses and take profits aren't using available portfolio
-    return order.__class__ not in [TraderOrderTypeClasses[TraderOrderType.STOP_LOSS],
-                                   TraderOrderTypeClasses[TraderOrderType.STOP_LOSS_LIMIT],
-                                   TraderOrderTypeClasses[TraderOrderType.TAKE_PROFIT],
-                                   TraderOrderTypeClasses[TraderOrderType.TAKE_PROFIT_LIMIT],
-                                   TraderOrderTypeClasses[TraderOrderType.TRAILING_STOP],
-                                   TraderOrderTypeClasses[TraderOrderType.TRAILING_STOP_LIMIT]]
+    return order.__class__ not in [orders.TraderOrderTypeClasses[octobot_trading.TraderOrderType.STOP_LOSS],
+                                   orders.TraderOrderTypeClasses[octobot_trading.TraderOrderType.STOP_LOSS_LIMIT],
+                                   orders.TraderOrderTypeClasses[octobot_trading.TraderOrderType.TAKE_PROFIT],
+                                   orders.TraderOrderTypeClasses[octobot_trading.TraderOrderType.TAKE_PROFIT_LIMIT],
+                                   orders.TraderOrderTypeClasses[octobot_trading.TraderOrderType.TRAILING_STOP],
+                                   orders.TraderOrderTypeClasses[octobot_trading.TraderOrderType.TRAILING_STOP_LIMIT]]

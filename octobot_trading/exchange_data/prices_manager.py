@@ -19,10 +19,10 @@ from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.logging.logging_util import get_logger
 
 from octobot_trading.enums import MarkPriceSources
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.util as util
 
 
-class PricesManager(Initializable):
+class PricesManager(util.Initializable):
     MARK_PRICE_VALIDITY = 5 * MINUTE_TO_SECONDS
 
     def __init__(self, exchange_manager):

@@ -16,15 +16,13 @@
 #  License along with this library.
 import asyncio
 
-from octobot_trading.errors import NotSupported
-
-from octobot_trading.channels.exchange_channel import get_chan
+import octobot_trading.errors as errors
+import octobot_trading.channels as channels
 from octobot_trading.constants import ORDER_BOOK_CHANNEL, ORDER_BOOK_TICKER_CHANNEL
-from octobot_trading.channels.order_book import OrderBookProducer
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns, RestExchangePairsRefreshMaxThresholds
 
 
-class OrderBookUpdater(OrderBookProducer):
+class OrderBookUpdater(channels.OrderBookProducer):
     CHANNEL_NAME = ORDER_BOOK_CHANNEL
     ORDER_BOOK_REFRESH_TIME = 5
 
@@ -57,7 +55,7 @@ class OrderBookUpdater(OrderBookProducer):
                     except TypeError as e:
                         self.logger.error(f"Failed to fetch order book for {pair} : {e}")
                 await asyncio.sleep(self.refresh_time)
-            except NotSupported:
+            except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
@@ -69,7 +67,8 @@ class OrderBookUpdater(OrderBookProducer):
         """
         try:
             if asks and bids:
-                await get_chan(ORDER_BOOK_TICKER_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+                await channels.get_chan(ORDER_BOOK_TICKER_CHANNEL,
+                                        self.channel.exchange_manager.id).get_internal_producer(). \
                     push(symbol=pair,
                          ask_quantity=asks[0][1], ask_price=asks[0][0],
                          bid_quantity=bids[0][1], bid_price=bids[0][0])

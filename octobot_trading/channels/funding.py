@@ -16,10 +16,11 @@
 from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
+
+import octobot_trading.channels as channels
 
 
-class FundingProducer(ExchangeChannelProducer):
+class FundingProducer(channels.ExchangeChannelProducer):
     async def push(self, symbol, funding_rate, next_funding_time, timestamp):
         await self.perform(symbol, funding_rate, next_funding_time, timestamp)
 
@@ -55,6 +56,6 @@ class FundingProducer(ExchangeChannelProducer):
             })
 
 
-class FundingChannel(ExchangeChannel):
+class FundingChannel(channels.ExchangeChannel):
     PRODUCER_CLASS = FundingProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = channels.ExchangeChannelConsumer

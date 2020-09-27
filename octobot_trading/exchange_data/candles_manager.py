@@ -19,10 +19,10 @@ from octobot_commons.data_util import shift_value_array
 from octobot_commons.enums import PriceIndexes
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.util as util
 
 
-class CandlesManager(Initializable):
+class CandlesManager(util.Initializable):
     MAX_CANDLES_COUNT = 1000
 
     def __init__(self):

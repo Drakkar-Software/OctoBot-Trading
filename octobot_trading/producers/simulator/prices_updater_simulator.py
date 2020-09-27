@@ -14,11 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.constants import TICKER_CHANNEL, RECENT_TRADES_CHANNEL
-from octobot_trading.producers.prices_updater import MarkPriceUpdater
-from octobot_trading.channels.exchange_channel import get_chan
+import octobot_trading.producers as producers
+import octobot_trading.channels as channels
 
 
-class MarkPriceUpdaterSimulator(MarkPriceUpdater):
+class MarkPriceUpdaterSimulator(producers.MarkPriceUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer
@@ -31,7 +31,8 @@ class MarkPriceUpdaterSimulator(MarkPriceUpdater):
         # if recent trades and ticker channels are both generated from ohlcv, do not watch them both,
         # prefer ticker
         if real_data_for_ticker or not (real_data_for_recent_trades or real_data_for_ticker):
-            await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_ticker_update)
+            await channels.get_chan(TICKER_CHANNEL,
+                                    self.channel.exchange_manager.id).new_consumer(self.handle_ticker_update)
         if real_data_for_recent_trades:
-            await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
+            await channels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
                 .new_consumer(self.handle_recent_trades_update)

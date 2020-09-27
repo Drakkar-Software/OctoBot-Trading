@@ -15,10 +15,10 @@
 #  License along with this library.
 from octobot_trading.constants import CURRENT_PORTFOLIO_STRING
 from octobot_trading.enums import TradeOrderSide
-from octobot_trading.portfolios.portfolio import Portfolio
+import octobot_trading.portfolios as portfolios
 
 
-class SpotPortfolio(Portfolio):
+class SpotPortfolio(portfolios.Portfolio):
     def update_portfolio_data_from_order(self, order, currency, market):
         """
         Call update_portfolio_data for order currency and market

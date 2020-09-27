@@ -13,12 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.api import LOGGER_TAG
-from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.util import is_trader_enabled as config_is_trader_enabled, is_trader_simulator_enabled as \
-    config_is_trader_simulator_enabled
 
-LOGGER = get_logger(LOGGER_TAG)
+import octobot_trading.util as util
 
 
 def is_trader_enabled_in_config_from_exchange_manager(exchange_manager) -> bool:
@@ -30,11 +26,11 @@ def is_trader_enabled(exchange_manager) -> bool:
 
 
 def is_trader_enabled_in_config(config) -> bool:
-    return config_is_trader_enabled(config)
+    return util.is_trader_enabled(config)
 
 
 def is_trader_simulator_enabled_in_config(config) -> bool:
-    return config_is_trader_simulator_enabled(config)
+    return util.is_trader_simulator_enabled(config)
 
 
 def set_trading_enabled(exchange_manager, enabled) -> None:

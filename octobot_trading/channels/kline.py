@@ -17,11 +17,10 @@ from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
 
-from octobot_trading.channels.exchange_channel import ExchangeChannelProducer, ExchangeChannelConsumer, \
-    TimeFrameExchangeChannel
+import octobot_trading.channels as channels
 
 
-class KlineProducer(ExchangeChannelProducer):
+class KlineProducer(channels.ExchangeChannelProducer):
     async def push(self, time_frame, symbol, kline):
         await self.perform(time_frame, symbol, kline)
 
@@ -54,6 +53,6 @@ class KlineProducer(ExchangeChannelProducer):
             })
 
 
-class KlineChannel(TimeFrameExchangeChannel):
+class KlineChannel(channels.TimeFrameExchangeChannel):
     PRODUCER_CLASS = KlineProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = channels.ExchangeChannelConsumer

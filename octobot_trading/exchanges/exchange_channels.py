@@ -17,12 +17,9 @@ from octobot_channels.producer import Producer
 from octobot_channels.util.channel_creator import create_all_subclasses_channel
 from octobot_commons.tentacles_management.class_inspector import default_parent_inspection
 
-from octobot_trading.channels.exchange_channel import set_chan, get_chan, \
-    ExchangeChannel, TimeFrameExchangeChannel
-from octobot_trading.exchanges.exchange_websocket_factory import is_exchange_managed_by_websocket, \
-    is_websocket_feed_requiring_init
-from octobot_trading.producers import get_unauthenticated_updater_producers, get_authenticated_updater_producers
-from octobot_trading.producers.simulator import get_authenticated_updater_simulator_producers
+import octobot_trading.channels as channels
+import octobot_trading.exchanges as exchanges
+import octobot_trading.producers as producers
 
 
 async def create_exchange_channels(exchange_manager) -> None:
@@ -31,8 +28,8 @@ async def create_exchange_channels(exchange_manager) -> None:
     # TODO filter creation --> not required if pause is managed
     :param exchange_manager: the related exchange manager
     """
-    for exchange_channel_class_type in [ExchangeChannel, TimeFrameExchangeChannel]:
-        await create_all_subclasses_channel(exchange_channel_class_type, set_chan,
+    for exchange_channel_class_type in [channels.ExchangeChannel, channels.TimeFrameExchangeChannel]:
+        await create_all_subclasses_channel(exchange_channel_class_type, channels.set_chan,
                                             is_synchronized=exchange_manager.is_backtesting,
                                             exchange_manager=exchange_manager)
 
@@ -49,14 +46,14 @@ async def create_exchange_producers(exchange_manager) -> None:
 
     # Real data producers
     if _should_create_unauthenticated_producers(exchange_manager):
-        for updater in get_unauthenticated_updater_producers():
-            if not is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
-                await updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+        for updater in producers.UNAUTHENTICATED_UPDATER_PRODUCERS:
+            if not exchanges.is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
+                await updater(channels.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
     # Simulated producers
     if _should_create_simulated_producers(exchange_manager):
-        for updater in get_authenticated_updater_simulator_producers():
-            await updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+        for updater in producers.AUTHENTICATED_UPDATER_PRODUCERS:
+            await updater(channels.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
 
 def _should_create_authenticated_producers(exchange_manager):
@@ -93,19 +90,19 @@ async def _create_authenticated_producers(exchange_manager) -> None:
     Create real authenticated producers
     :param exchange_manager: the related exchange manager
     """
-    for updater in get_authenticated_updater_producers():
-        if is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
+    for updater in producers.AUTHENTICATED_UPDATER_PRODUCERS:
+        if exchanges.is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
             # websocket is handling this channel: initialize data if required
-            if is_websocket_feed_requiring_init(exchange_manager, updater.CHANNEL_NAME):
+            if exchanges.is_websocket_feed_requiring_init(exchange_manager, updater.CHANNEL_NAME):
                 try:
-                    updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).trigger_single_update()
+                    updater(channels.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).trigger_single_update()
                 except Exception as e:
                     exchange_manager.logger.exception(e, True,
                                                       f"Error when initializing data for {updater.CHANNEL_NAME} "
                                                       f"channel required by websocket: {e}")
         else:
             # no websocket for this channel: start an updater
-            await updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+            await updater(channels.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
 
 async def _create_authenticated_producer(exchange_manager, producer) -> Producer:
@@ -115,10 +112,10 @@ async def _create_authenticated_producer(exchange_manager, producer) -> Producer
     :param producer: the producer to create
     :return: the producer instance created
     """
-    producer_instance = producer(get_chan(producer.CHANNEL_NAME, exchange_manager.id))
-    if is_exchange_managed_by_websocket(exchange_manager, producer.CHANNEL_NAME):
+    producer_instance = producer(channels.get_chan(producer.CHANNEL_NAME, exchange_manager.id))
+    if exchanges.is_exchange_managed_by_websocket(exchange_manager, producer.CHANNEL_NAME):
         # websocket is handling this channel: initialize data if required
-        if is_websocket_feed_requiring_init(exchange_manager, producer.CHANNEL_NAME):
+        if exchanges.is_websocket_feed_requiring_init(exchange_manager, producer.CHANNEL_NAME):
             try:
                 producer_instance.trigger_single_update()
             except Exception as e:
@@ -152,7 +149,7 @@ def _get_authenticated_producer_from_parent(parent_producer_class):
     :param parent_producer_class: the authenticated producer parent class
     :return: the authenticated producer that inherit from parent_producer_class
     """
-    for authenticated_producer_candidate in get_authenticated_updater_producers():
+    for authenticated_producer_candidate in producers.AUTHENTICATED_UPDATER_PRODUCERS:
         if default_parent_inspection(authenticated_producer_candidate, parent_producer_class):
             return authenticated_producer_candidate
     return None
@@ -169,4 +166,4 @@ def requires_refresh_trigger(exchange_manager, channel):
     :param channel: name of the channel
     :return: True if it should be refreshed via a manual trigger to be exactly up to date
     """
-    return not is_exchange_managed_by_websocket(exchange_manager, channel)
+    return not exchanges.is_exchange_managed_by_websocket(exchange_manager, channel)

@@ -16,17 +16,17 @@
 import asyncio
 
 from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.constants import BALANCE_CHANNEL, ORDERS_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, \
-    BALANCE_PROFITABILITY_CHANNEL
-from octobot_trading.orders.orders_manager import OrdersManager
-from octobot_trading.portfolios.portfolio_manager import PortfolioManager
-from octobot_trading.positions.positions_manager import PositionsManager
-from octobot_trading.trades.trades_manager import TradesManager
-from octobot_trading.util.initializable import Initializable
+
+import octobot_trading
+import octobot_trading.channels as channels
+import octobot_trading.orders as orders
+import octobot_trading.portfolios as portfolios
+import octobot_trading.positions as positions
+import octobot_trading.trades as trades
+import octobot_trading.util as util
 
 
-class ExchangePersonalData(Initializable):
+class ExchangePersonalData(util.Initializable):
     # note: symbol keys are without /
     def __init__(self, exchange_manager):
         super().__init__()
@@ -46,10 +46,10 @@ class ExchangePersonalData(Initializable):
         self.exchange = self.exchange_manager.exchange
         if self.trader.is_enabled:
             try:
-                self.portfolio_manager = PortfolioManager(self.config, self.trader, self.exchange_manager)
-                self.trades_manager = TradesManager(self.config, self.trader, self.exchange_manager)
-                self.orders_manager = OrdersManager(self.config, self.trader, self.exchange_manager)
-                self.positions_manager = PositionsManager(self.config, self.trader, self.exchange_manager)
+                self.portfolio_manager = portfolios.PortfolioManager(self.config, self.trader, self.exchange_manager)
+                self.trades_manager = trades.TradesManager(self.config, self.trader, self.exchange_manager)
+                self.orders_manager = orders.OrdersManager(self.config, self.trader, self.exchange_manager)
+                self.positions_manager = positions.PositionsManager(self.config, self.trader, self.exchange_manager)
                 await self.portfolio_manager.initialize()
                 await self.trades_manager.initialize()
                 await self.orders_manager.initialize()
@@ -63,7 +63,8 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.portfolio_manager.handle_balance_update(balance, is_diff_update=is_diff_update)
             if should_notify:
-                await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer().send(balance)
+                await channels.get_chan(octobot_trading.BALANCE_CHANNEL,
+                                        self.exchange_manager.id).get_internal_producer().send(balance)
             return changed
         except AttributeError as e:
             self.logger.exception(e, True, f"Failed to update balance : {e}")
@@ -73,7 +74,7 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order)
             if should_notify:
-                await get_chan(BALANCE_CHANNEL, self.exchange_manager.id). \
+                await channels.get_chan(octobot_trading.BALANCE_CHANNEL, self.exchange_manager.id). \
                     get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
             return changed
         except AttributeError as e:
@@ -91,7 +92,8 @@ class ExchangePersonalData(Initializable):
                 await self.portfolio_manager.handle_mark_price_update(symbol=symbol, mark_price=mark_price)
 
             if should_notify:
-                await get_chan(BALANCE_PROFITABILITY_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+                await channels.get_chan(octobot_trading.BALANCE_PROFITABILITY_CHANNEL,
+                                        self.exchange_manager.id).get_internal_producer() \
                     .send(profitability=portfolio_profitability.profitability,
                           profitability_percent=portfolio_profitability.profitability_percent,
                           market_profitability_percent=portfolio_profitability.market_profitability_percent,
@@ -141,7 +143,7 @@ class ExchangePersonalData(Initializable):
         :param is_new_order: True if the order was created during update
         """
         try:
-            await get_chan(ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+            await channels.get_chan(octobot_trading.ORDERS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
                 .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
                       symbol=order.symbol,
                       order=order.to_dict(),
@@ -168,7 +170,8 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.trades_manager.upsert_trade(trade_id, trade)
             if should_notify:
-                await get_chan(TRADES_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+                await channels.get_chan(octobot_trading.TRADES_CHANNEL,
+                                        self.exchange_manager.id).get_internal_producer() \
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                           symbol=symbol,
                           trade=trade.to_dict(),
@@ -182,7 +185,8 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.trades_manager.upsert_trade_instance(trade)
             if should_notify:
-                await get_chan(TRADES_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+                await channels.get_chan(octobot_trading.TRADES_CHANNEL,
+                                        self.exchange_manager.id).get_internal_producer() \
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(trade.symbol),
                           symbol=trade.symbol,
                           trade=trade.to_dict(),
@@ -197,7 +201,8 @@ class ExchangePersonalData(Initializable):
             changed: bool = self.positions_manager.upsert_position(position_id, position)
             if should_notify:
                 position_instance = self.positions_manager[position_id]
-                await get_chan(POSITIONS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+                await channels.get_chan(octobot_trading.POSITIONS_CHANNEL,
+                                        self.exchange_manager.id).get_internal_producer() \
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                           symbol=symbol,
                           position=position_instance.to_dict(),
@@ -214,7 +219,8 @@ class ExchangePersonalData(Initializable):
         try:
             changed: bool = self.positions_manager.upsert_position_instance(position)
             if should_notify:
-                await get_chan(POSITIONS_CHANNEL, self.exchange_manager.id).get_internal_producer() \
+                await channels.get_chan(octobot_trading.POSITIONS_CHANNEL,
+                                        self.exchange_manager.id).get_internal_producer() \
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(position.symbol),
                           symbol=position.symbol,
                           position=position,

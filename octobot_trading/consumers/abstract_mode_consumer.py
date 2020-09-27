@@ -14,14 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_commons.symbol_util import split_symbol
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.channels.balance import BALANCE_CHANNEL
-from octobot_trading.channels.mode import ModeChannelConsumer
+
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, EvaluatorStates
-from octobot_trading.errors import MissingFunds, MissingMinimalExchangeTradeVolume
+import octobot_trading
+import octobot_trading.channels as channels
+import octobot_trading.errors as errors
 
 
-class AbstractTradingModeConsumer(ModeChannelConsumer):
+class AbstractTradingModeConsumer(channels.ModeChannelConsumer):
     def __init__(self, trading_mode):
         super().__init__()
         self.trading_mode = trading_mode
@@ -49,16 +49,17 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
                 if await self.can_create_order(symbol, state):
                     try:
                         return await self.create_new_orders(symbol, final_note, state, **kwargs)
-                    except MissingMinimalExchangeTradeVolume:
+                    except errors.MissingMinimalExchangeTradeVolume:
                         raise
-                    except MissingFunds:
+                    except errors.MissingFunds:
                         try:
                             # second chance: force portfolio update and retry
-                            await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer(). \
+                            await channels.get_chan(octobot_trading.BALANCE_CHANNEL,
+                                                    self.exchange_manager.id).get_internal_producer(). \
                                 refresh_real_trader_portfolio(True)
 
                             return await self.create_new_orders(symbol, final_note, state, **kwargs)
-                        except MissingFunds as e:
+                        except errors.MissingFunds as e:
                             self.logger.error(f"Failed to create order on second attempt : {e})")
                     except Exception as e:
                         self.logger.exception(e, True, f"Error when creating order: {e}")

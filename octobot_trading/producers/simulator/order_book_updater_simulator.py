@@ -16,11 +16,11 @@
 from octobot_backtesting.data import DataBaseNotExists
 from octobot_channels.channels.channel import get_chan
 from octobot_commons.channels_name import OctoBotBacktestingChannelsName
-from octobot_trading.producers.order_book_updater import OrderBookUpdater
-from octobot_trading.producers.simulator.simulator_updater_utils import stop_and_pause
+
+import octobot_trading.producers as producers
 
 
-class OrderBookUpdaterSimulator(OrderBookUpdater):
+class OrderBookUpdaterSimulator(producers.OrderBookUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer
@@ -55,7 +55,7 @@ class OrderBookUpdaterSimulator(OrderBookUpdater):
             await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
 
     async def stop(self):
-        await stop_and_pause(self)
+        await producers.stop_and_pause(self)
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:

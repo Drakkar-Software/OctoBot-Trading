@@ -16,14 +16,14 @@
 #  License along with this library.
 import asyncio
 
-from octobot_trading.errors import NotSupported
-
 from octobot_commons.async_job import AsyncJob
-from octobot_trading.channels.orders import OrdersProducer
+
+import octobot_trading.errors as errors
+import octobot_trading.channels as channels
 from octobot_trading.constants import ORDERS_CHANNEL
 
 
-class OrdersUpdater(OrdersProducer):
+class OrdersUpdater(channels.OrdersProducer):
     """
     Update open and close orders from exchange
     Can also be used to update a specific order from exchange
@@ -58,7 +58,7 @@ class OrdersUpdater(OrdersProducer):
         """
         try:
             await self.fetch_and_push(is_from_bot=False)
-        except NotSupported:
+        except errors.NotSupported:
             self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
             await self.pause()
         except Exception as e:

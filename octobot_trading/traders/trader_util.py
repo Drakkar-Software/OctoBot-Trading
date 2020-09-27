@@ -13,17 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.portfolios as portfolios
+import octobot_trading
+from octobot_commons.constants import CONFIG_ENABLED_OPTION
 
 
-def create_portfolio_from_exchange_manager(exchange_manager):
-    """
-    Create a portfolio from an exchange manager
-    :param exchange_manager: the exchange manager related to the new portfolio instance
-    :return: the created portfolio instance
-    """
-    if exchange_manager.is_future:
-        return portfolios.FuturePortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
-    if exchange_manager.is_margin:
-        return portfolios.MarginPortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
-    return portfolios.SpotPortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
+def is_trader_enabled(config):
+    return _is_trader_enabled(config, octobot_trading.CONFIG_TRADER)
+
+
+def is_trader_simulator_enabled(config):
+    return _is_trader_enabled(config, octobot_trading.CONFIG_SIMULATOR)
+
+
+def _is_trader_enabled(config, trader_key):
+    try:
+        return config[trader_key][CONFIG_ENABLED_OPTION]
+    except KeyError:
+        if trader_key not in config:
+            config[trader_key] = {}
+        config[trader_key][CONFIG_ENABLED_OPTION] = False
+        return False

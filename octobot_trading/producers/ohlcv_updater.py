@@ -17,15 +17,15 @@
 import asyncio
 import time
 
-from octobot_trading.errors import NotSupported
-
 from octobot_commons.constants import MINUTE_TO_SECONDS
 from octobot_commons.enums import TimeFramesMinutes, PriceIndexes
+
 from octobot_trading.constants import OHLCV_CHANNEL
-from octobot_trading.channels.ohlcv import OHLCVProducer
+import octobot_trading.channels as channels
+import octobot_trading.errors as errors
 
 
-class OHLCVUpdater(OHLCVProducer):
+class OHLCVUpdater(channels.OHLCVProducer):
     CHANNEL_NAME = OHLCV_CHANNEL
     OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_OLD_LIMIT = 200  # should be < to candle manager's MAX_CANDLES_COUNT
@@ -152,7 +152,7 @@ class OHLCVUpdater(OHLCVProducer):
                 else:
                     # candles on this time frame have not been initialized: sleep until the next candle update
                     await asyncio.sleep(max(0.0, time_frame_sleep - (time.time() - start_update_time)))
-            except NotSupported:
+            except errors.NotSupported:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()

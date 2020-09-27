@@ -23,7 +23,8 @@ from octobot_trading.orders.states.cancel_order_state import (CancelOrderState,)
 from octobot_trading.orders.states.close_order_state import (CloseOrderState,)
 from octobot_trading.orders.states.fill_order_state import (FillOrderState,)
 from octobot_trading.orders.states.open_order_state import (OpenOrderState,)
+from octobot_trading.orders.states.order_state_factory import (create_order_state,)
 
 __all__ = ['CancelOrderState', 'CloseOrderState', 'FillOrderState',
-           'OpenOrderState', 'cancel_order_state', 'close_order_state',
+           'OpenOrderState', 'cancel_order_state', 'close_order_state', 'create_order_state',
            'fill_order_state', 'open_order_state', 'order_state_factory']

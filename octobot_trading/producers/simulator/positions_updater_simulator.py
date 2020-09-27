@@ -17,14 +17,14 @@ import copy
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import get_chan
+import octobot_trading.channels as channels
 from octobot_trading.constants import MARK_PRICE_CHANNEL, POSITIONS_CHANNEL
-from octobot_trading.positions.position import Position
 from octobot_trading.enums import PositionStatus
-from octobot_trading.producers.positions_updater import PositionsUpdater
+import octobot_trading.producers as producers
+import octobot_trading.positions as positions
 
 
-class PositionsUpdaterSimulator(PositionsUpdater):
+class PositionsUpdaterSimulator(producers.PositionsUpdater):
     def __init__(self, channel):
         super().__init__(channel)
         self.exchange_manager = None
@@ -32,7 +32,8 @@ class PositionsUpdaterSimulator(PositionsUpdater):
     async def start(self):
         self.exchange_manager = self.channel.exchange_manager
         self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
-        await get_chan(MARK_PRICE_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_mark_price)
+        await channels.get_chan(MARK_PRICE_CHANNEL,
+                                self.channel.exchange_manager.id).new_consumer(self.handle_mark_price)
 
     async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
         """
@@ -61,7 +62,8 @@ class PositionsUpdaterSimulator(PositionsUpdater):
             finally:
                 # ensure always call fill callback
                 if position_closed:
-                    await get_chan(POSITIONS_CHANNEL, self.channel.exchange_manager.id).get_internal_producer() \
+                    await channels.get_chan(POSITIONS_CHANNEL,
+                                            self.channel.exchange_manager.id).get_internal_producer() \
                         .send(cryptocurrency=cryptocurrency,
                               symbol=position.symbol,
                               order=position.to_dict(),
@@ -71,7 +73,7 @@ class PositionsUpdaterSimulator(PositionsUpdater):
                               is_updated=False)
 
     async def _update_position_status(self,
-                                      position: Position,
+                                      position: positions.Position,
                                       mark_price):
         """
         Call position status update

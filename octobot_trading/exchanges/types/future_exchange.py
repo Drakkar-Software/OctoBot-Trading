@@ -14,10 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.enums import PositionSide
-from octobot_trading.exchanges.abstract_exchange import AbstractExchange
+import octobot_trading.exchanges as exchanges
 
 
-class FutureExchange(AbstractExchange):
+class FutureExchange(exchanges.AbstractExchange):
     LONG_STR = "long"
     SHORT_STR = "short"
 

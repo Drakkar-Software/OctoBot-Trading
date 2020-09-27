@@ -19,7 +19,6 @@ from octobot_trading.portfolios import portfolio_manager
 from octobot_trading.portfolios import portfolio_profitability
 from octobot_trading.portfolios import portfolio_value_holder
 from octobot_trading.portfolios import sub_portfolio
-from octobot_trading.portfolios import types
 
 from octobot_trading.portfolios.portfolio import (Portfolio,)
 from octobot_trading.portfolios.portfolio_factory import (create_portfolio_from_exchange_manager,)
@@ -27,6 +26,8 @@ from octobot_trading.portfolios.portfolio_manager import (PortfolioManager,)
 from octobot_trading.portfolios.portfolio_profitability import (PortfolioProfitability,)
 from octobot_trading.portfolios.portfolio_value_holder import (PortfolioValueHolder,)
 from octobot_trading.portfolios.sub_portfolio import (SubPortfolio,)
+
+from octobot_trading.portfolios import types
 from octobot_trading.portfolios.types import (FuturePortfolio, MarginPortfolio,
                                               SpotPortfolio, future_portfolio,
                                               margin_portfolio,

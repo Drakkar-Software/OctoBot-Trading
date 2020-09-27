@@ -16,7 +16,7 @@
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
+import octobot_trading.exchanges as exchanges
 
 
 class ExchangeSymbolsData:
@@ -33,6 +33,6 @@ class ExchangeSymbolsData:
         except KeyError as e:
             if allow_creation:
                 # warning: should only be called in the async loop thread
-                self.exchange_symbol_data[symbol] = ExchangeSymbolData(self.exchange_manager, symbol)
+                self.exchange_symbol_data[symbol] = exchanges.ExchangeSymbolData(self.exchange_manager, symbol)
                 return self.exchange_symbol_data[symbol]
             raise e

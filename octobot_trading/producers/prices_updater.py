@@ -15,17 +15,16 @@
 #  License along with this library.
 import asyncio
 
-from octobot_trading.errors import NotSupported
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.channels.price import MarkPriceProducer
+import octobot_trading.errors as errors
+import octobot_trading.channels as channels
+import octobot_trading.exchange_data as exchange_data
 from octobot_trading.constants import MARK_PRICE_CHANNEL, RECENT_TRADES_CHANNEL, TICKER_CHANNEL, FUNDING_CHANNEL
-from octobot_trading.exchange_data.prices_manager import calculate_mark_price_from_recent_trade_prices
 from octobot_trading.enums import ExchangeConstantsTickersColumns, ExchangeConstantsOrderColumns, \
     ExchangeConstantsFundingColumns, ExchangeConstantsMarkPriceColumns, RestExchangePairsRefreshMaxThresholds, \
     MarkPriceSources
 
 
-class MarkPriceUpdater(MarkPriceProducer):
+class MarkPriceUpdater(channels.MarkPriceProducer):
     CHANNEL_NAME = MARK_PRICE_CHANNEL
 
     MARK_PRICE_REFRESH_TIME = 7
@@ -51,17 +50,17 @@ class MarkPriceUpdater(MarkPriceProducer):
                 await self.start_fetching()
 
     async def subscribe(self):
-        self.recent_trades_consumer = await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
+        self.recent_trades_consumer = await channels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.handle_recent_trades_update)
-        self.ticker_consumer = await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id) \
+        self.ticker_consumer = await channels.get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.handle_ticker_update)
 
     async def unsubscribe(self):
         if self.recent_trades_consumer:
-            await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
+            await channels.get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
                 .remove_consumer(self.recent_trades_consumer)
         if self.ticker_consumer:
-            await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id) \
+            await channels.get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id) \
                 .remove_consumer(self.ticker_consumer)
 
     async def resume(self) -> None:
@@ -80,7 +79,7 @@ class MarkPriceUpdater(MarkPriceProducer):
         Recent trades channel consumer callback
         """
         try:
-            mark_price = calculate_mark_price_from_recent_trade_prices(
+            mark_price = exchange_data.calculate_mark_price_from_recent_trade_prices(
                 [float(last_price[ExchangeConstantsOrderColumns.PRICE.value])
                  for last_price in recent_trades])
 
@@ -107,7 +106,7 @@ class MarkPriceUpdater(MarkPriceProducer):
             try:
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     await self.fetch_market_price(pair)
-            except (NotSupported, NotImplementedError):
+            except (errors.NotSupported, NotImplementedError):
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             finally:
@@ -124,7 +123,7 @@ class MarkPriceUpdater(MarkPriceProducer):
 
             if mark_price:
                 await self.push(symbol, mark_price[ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])
-        except (NotSupported, NotImplementedError) as ne:
+        except (errors.NotSupported, NotImplementedError) as ne:
             raise ne
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update funding rate : {e}")
@@ -132,7 +131,7 @@ class MarkPriceUpdater(MarkPriceProducer):
 
     async def push_funding_rate(self, symbol, funding_rate):
         if funding_rate:
-            await get_chan(FUNDING_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+            await channels.get_chan(FUNDING_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=symbol,
                      funding_rate=funding_rate[ExchangeConstantsFundingColumns.FUNDING_RATE.value],
                      next_funding_time=funding_rate[ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],

@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.util import get_reference_market as util_get_reference_market
+import octobot_trading.util as util
 
 
 def get_profitability_stats(exchange_manager) -> tuple:
@@ -39,7 +39,7 @@ def get_current_holdings_values(exchange_manager) -> dict:
 
 
 def get_reference_market(config) -> str:
-    return util_get_reference_market(config)
+    return util.get_reference_market(config)
 
 
 def get_initializing_currencies_prices(exchange_manager) -> set:

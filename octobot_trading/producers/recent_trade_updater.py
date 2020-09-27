@@ -16,9 +16,8 @@
 #  License along with this library.
 import asyncio
 
-from octobot_trading.errors import NotSupported
-
-from octobot_trading.channels.recent_trade import RecentTradeProducer
+import octobot_trading.errors as errors
+import octobot_trading.channels as channels
 from octobot_trading.constants import RECENT_TRADES_CHANNEL
 from octobot_trading.enums import RestExchangePairsRefreshMaxThresholds
 

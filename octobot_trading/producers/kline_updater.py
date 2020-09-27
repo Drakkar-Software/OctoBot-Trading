@@ -17,14 +17,13 @@
 import asyncio
 import time
 
-from octobot_trading.errors import NotSupported
-
+import octobot_trading.errors as errors
 from octobot_trading.constants import KLINE_CHANNEL
-from octobot_trading.channels.kline import KlineProducer
+import octobot_trading.channels as channels
 from octobot_trading.enums import RestExchangePairsRefreshMaxThresholds
 
 
-class KlineUpdater(KlineProducer):
+class KlineUpdater(channels.KlineProducer):
     CHANNEL_NAME = KLINE_CHANNEL
     KLINE_REFRESH_TIME = 8
     QUICK_KLINE_REFRESH_TIME = 3
@@ -77,7 +76,7 @@ class KlineUpdater(KlineProducer):
                 sleep_time = max((self.QUICK_KLINE_REFRESH_TIME if quick_sleep else self.refresh_time)
                                  - (time.time() - started_time), 0)
                 await asyncio.sleep(sleep_time)
-            except NotSupported:
+            except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:

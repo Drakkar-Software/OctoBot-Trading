@@ -13,18 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import time
 from octobot_commons.constants import MSECONDS_TO_MINUTE
 from octobot_commons.enums import PriceIndexes, TimeFramesMinutes, TimeFrames
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.timestamp_util import is_valid_timestamp
 
+import octobot_trading.util as util
 from octobot_trading.constants import DEFAULT_EXCHANGE_TIME_LAG
 from octobot_trading.enums import AccountTypes, TradeOrderSide, TraderOrderType
-from octobot_trading.util.initializable import Initializable
 
 
-class AbstractExchange(Initializable):
+class AbstractExchange(util.Initializable):
     BUY_STR = TradeOrderSide.BUY.value
     SELL_STR = TradeOrderSide.SELL.value
 

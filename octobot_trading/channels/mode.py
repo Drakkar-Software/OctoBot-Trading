@@ -17,16 +17,14 @@ from octobot_channels.channels.channel import CHANNEL_WILDCARD
 from octobot_commons.constants import INIT_EVAL_NOTE
 from octobot_commons.enums import ChannelConsumerPriorityLevels
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, \
-    ExchangeChannelInternalConsumer
-from octobot_trading.enums import EvaluatorStates
+import octobot_trading.channels as channels
 
 
-class ModeChannelConsumer(ExchangeChannelInternalConsumer):
+class ModeChannelConsumer(channels.ExchangeChannelInternalConsumer):
     pass
 
 
-class ModeChannelProducer(ExchangeChannelProducer):
+class ModeChannelProducer(channels.ExchangeChannelProducer):
     async def send(self,
                    final_note=INIT_EVAL_NOTE,
                    trading_mode_name=CHANNEL_WILDCARD,
@@ -51,7 +49,7 @@ class ModeChannelProducer(ExchangeChannelProducer):
             })
 
 
-class ModeChannel(ExchangeChannel):
+class ModeChannel(channels.ExchangeChannel):
     PRODUCER_CLASS = ModeChannelProducer
     CONSUMER_CLASS = ModeChannelConsumer
     DEFAULT_PRIORITY_LEVEL = ChannelConsumerPriorityLevels.MEDIUM.value

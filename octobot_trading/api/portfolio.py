@@ -14,8 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_commons.constants import PORTFOLIO_AVAILABLE
-from octobot_trading.channels.exchange_channel import get_chan
 from octobot_trading.constants import BALANCE_CHANNEL
+import octobot_trading.channels as channels
 
 
 def get_portfolio(exchange_manager) -> dict:
@@ -34,5 +34,5 @@ def get_origin_portfolio(exchange_manager) -> dict:
 
 
 async def refresh_real_trader_portfolio(exchange_manager) -> bool:
-    return await get_chan(BALANCE_CHANNEL, exchange_manager.id).get_internal_producer(). \
+    return await channels.get_chan(BALANCE_CHANNEL, exchange_manager.id).get_internal_producer(). \
         refresh_real_trader_portfolio(True)

@@ -14,19 +14,19 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from decimal import Decimal
-
-from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.enums import TradeOrderSide
 from sortedcontainers import SortedDict
 
+from octobot_commons.logging.logging_util import get_logger
+
+from octobot_trading.enums import TradeOrderSide
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.util as util
 
 ORDER_ID_NOT_FOUND = -1
 INVALID_PARSED_VALUE = -1
 
 
-class OrderBookManager(Initializable):
+class OrderBookManager(util.Initializable):
     def __init__(self):
         super().__init__()
         self.logger = get_logger(self.__class__.__name__)

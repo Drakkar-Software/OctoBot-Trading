@@ -17,12 +17,10 @@ import asyncio
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from octobot_trading.enums import WebsocketFeeds
-from octobot_trading.exchanges.types.websocket_exchange import WebsocketExchange
-from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
-from octobot_trading.exchanges.websockets.websockets_util import get_exchange_websocket_from_name
+import octobot_trading.exchanges as exchanges
 
 
-class OctoBotWebSocketClient(AbstractWebsocket):
+class OctoBotWebSocketClient(exchanges.AbstractWebsocket):
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.exchange_manager = exchange_manager
@@ -44,11 +42,12 @@ class OctoBotWebSocketClient(AbstractWebsocket):
         self.is_websocket_authenticated = False
 
     async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
-        self.exchange_class = get_exchange_websocket_from_name(self.exchange_manager.exchange_name,
-                                                               self.exchange_manager.tentacles_setup_config,
-                                                               self.get_class_method_name_to_get_compatible_websocket(
-                                                                   self.exchange_manager)
-                                                               )
+        self.exchange_class = exchanges.get_exchange_websocket_from_name(
+            self.exchange_manager.exchange_name,
+            self.exchange_manager.tentacles_setup_config,
+            self.get_class_method_name_to_get_compatible_websocket(
+                self.exchange_manager)
+        )
         self.trader_pairs = trader_pairs
         self.time_frames = time_frames
 
@@ -118,18 +117,18 @@ class OctoBotWebSocketClient(AbstractWebsocket):
 
     @classmethod
     def has_name(cls, exchange_manager: object) -> bool:
-        return get_exchange_websocket_from_name(exchange_manager.exchange_name,
-                                                exchange_manager.tentacles_setup_config,
-                                                cls.get_class_method_name_to_get_compatible_websocket(
-                                                    exchange_manager)) is not None
+        return exchanges.get_exchange_websocket_from_name(exchange_manager.exchange_name,
+                                                          exchange_manager.tentacles_setup_config,
+                                                          cls.get_class_method_name_to_get_compatible_websocket(
+                                                              exchange_manager)) is not None
 
     @classmethod
     def get_class_method_name_to_get_compatible_websocket(cls, exchange_manager: object) -> str:
         if exchange_manager.is_future:
-            return WebsocketExchange.is_handling_future.__name__
+            return exchanges.WebsocketExchange.is_handling_future.__name__
         if exchange_manager.is_margin:
-            return WebsocketExchange.is_handling_margin.__name__
-        return WebsocketExchange.is_handling_spot.__name__
+            return exchanges.WebsocketExchange.is_handling_margin.__name__
+        return exchanges.WebsocketExchange.is_handling_spot.__name__
 
     async def start_sockets(self):
         if any(self.handled_feeds.values()):

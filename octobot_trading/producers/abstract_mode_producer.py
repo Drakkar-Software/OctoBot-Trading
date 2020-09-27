@@ -17,12 +17,13 @@ from octobot_commons.channels_name import OctoBotEvaluatorsChannelsName
 from octobot_commons.constants import INIT_EVAL_NOTE, CONFIG_WILDCARD
 from octobot_commons.enums import ChannelConsumerPriorityLevels
 from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.channels.mode import ModeChannelProducer
-from octobot_trading.enums import EvaluatorStates
-from octobot_trading.exchanges.exchanges import Exchanges
+
+import octobot_trading
+import octobot_trading.channels as channels
+import octobot_trading.exchanges as exchanges
 
 
-class AbstractTradingModeProducer(ModeChannelProducer):
+class AbstractTradingModeProducer(channels.ModeChannelProducer):
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
         # the trading mode instance logger
@@ -60,14 +61,14 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         try:
             from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
             from octobot_evaluators.enums import EvaluatorMatrixTypes
-            matrix_id = Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                          self.exchange_manager.id).matrix_id
+            matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
+                                                                    self.exchange_manager.id).matrix_id
             self.matrix_consumer = await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
                                                             matrix_id).new_consumer(
                 callback=self.matrix_callback,
                 priority_level=self.priority_level,
-                matrix_id=Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                            self.exchange_manager.id).matrix_id,
+                matrix_id=exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
+                                                                      self.exchange_manager.id).matrix_id,
                 cryptocurrency=self.trading_mode.cryptocurrency if self.trading_mode.cryptocurrency else CONFIG_WILDCARD,
                 symbol=self.trading_mode.symbol if self.trading_mode.symbol else CONFIG_WILDCARD,
                 evaluator_type=EvaluatorMatrixTypes.STRATEGIES.value,
@@ -85,8 +86,9 @@ class AbstractTradingModeProducer(ModeChannelProducer):
             try:
                 from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
                 await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
-                                         Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                                           self.exchange_manager.id).matrix_id
+                                         exchanges.Exchanges.instance().get_exchange(
+                                             self.exchange_manager.exchange_name,
+                                             self.exchange_manager.id).matrix_id
                                          ).remove_consumer(self.matrix_consumer)
             except (KeyError, ImportError):
                 self.logger.error(f"Can't unregister matrix channel on {self.exchange_name}")
@@ -145,7 +147,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
 
     async def submit_trading_evaluation(self, cryptocurrency, symbol, time_frame,
                                         final_note=INIT_EVAL_NOTE,
-                                        state=EvaluatorStates.NEUTRAL,
+                                        state=octobot_trading.EvaluatorStates.NEUTRAL,
                                         data=None) -> None:
         await self.send(trading_mode_name=self.trading_mode.get_name(),
                         cryptocurrency=cryptocurrency,

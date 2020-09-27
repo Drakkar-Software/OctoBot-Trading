@@ -16,22 +16,21 @@
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.tentacles_management.class_inspector import get_all_classes_from_parent
 from octobot_tentacles_manager.api.configurator import is_tentacle_activated_in_tentacles_setup_config
+
 from octobot_trading.enums import TradeOrderSide, TraderOrderType
-from octobot_trading.exchanges.types.future_exchange import FutureExchange
-from octobot_trading.exchanges.types.margin_exchange import MarginExchange
-from octobot_trading.exchanges.types.spot_exchange import SpotExchange
+import octobot_trading.exchanges as exchanges
 
 
 def get_margin_exchange_class(exchange_name, tentacles_setup_config):
-    return search_exchange_class_from_exchange_name(MarginExchange, exchange_name, tentacles_setup_config)
+    return search_exchange_class_from_exchange_name(exchanges.MarginExchange, exchange_name, tentacles_setup_config)
 
 
 def get_future_exchange_class(exchange_name, tentacles_setup_config):
-    return search_exchange_class_from_exchange_name(FutureExchange, exchange_name, tentacles_setup_config)
+    return search_exchange_class_from_exchange_name(exchanges.FutureExchange, exchange_name, tentacles_setup_config)
 
 
 def get_spot_exchange_class(exchange_name, tentacles_setup_config):
-    return search_exchange_class_from_exchange_name(SpotExchange, exchange_name, tentacles_setup_config)
+    return search_exchange_class_from_exchange_name(exchanges.SpotExchange, exchange_name, tentacles_setup_config)
 
 
 def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
@@ -53,7 +52,7 @@ def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
         return None
 
     get_logger().warning(f"No specific exchange implementation for {exchange_name} found, searching for default one...")
-    return search_exchange_class_from_exchange_name(SpotExchange, exchange_name,
+    return search_exchange_class_from_exchange_name(exchanges.SpotExchange, exchange_name,
                                                     tentacles_setup_config, enable_default=True)
 
 

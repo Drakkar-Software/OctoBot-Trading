@@ -16,14 +16,12 @@
 #  License along with this library.
 from ccxt import NotSupported, InsufficientFunds
 
-from octobot_trading import errors
 from octobot_trading.enums import TraderOrderType, ExchangeConstantsOrderColumns as ecoc
-from octobot_trading.errors import MissingFunds
-from octobot_trading.exchanges.implementations.ccxt_exchange import CCXTExchange
-from octobot_trading.exchanges.types.spot_exchange import SpotExchange
+import octobot_trading.errors as errors
+import octobot_trading.exchanges as exchanges
 
 
-class SpotCCXTExchange(CCXTExchange, SpotExchange):
+class SpotCCXTExchange(exchanges.CCXTExchange, exchanges.SpotExchange):
     async def create_order(self, order_type: TraderOrderType, symbol: str, quantity: float,
                            price: float = None, stop_price=None, **kwargs: dict) -> dict:
         try:
@@ -44,7 +42,7 @@ class SpotCCXTExchange(CCXTExchange, SpotExchange):
         except InsufficientFunds as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(e)
-            raise MissingFunds(e)
+            raise errors.MissingFunds(e)
         except NotSupported:
             raise errors.NotSupported
         except Exception as e:

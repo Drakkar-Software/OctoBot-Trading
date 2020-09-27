@@ -28,17 +28,17 @@ from octobot_trading.producers import simulator
 from octobot_trading.producers import ticker_updater
 from octobot_trading.producers import trades_updater
 
-from octobot_trading.producers.abstract_mode_producer import (AbstractTradingModeProducer,)
+from octobot_trading.producers.abstract_mode_producer import (AbstractTradingModeProducer, )
 from octobot_trading.producers.balance_updater import (BalanceProfitabilityUpdater,
-                                                       BalanceUpdater,)
-from octobot_trading.producers.funding_updater import (FundingUpdater,)
-from octobot_trading.producers.kline_updater import (KlineUpdater,)
-from octobot_trading.producers.ohlcv_updater import (OHLCVUpdater,)
-from octobot_trading.producers.order_book_updater import (OrderBookUpdater,)
-from octobot_trading.producers.orders_updater import (OrdersUpdater,)
-from octobot_trading.producers.positions_updater import (PositionsUpdater,)
-from octobot_trading.producers.prices_updater import (MarkPriceUpdater,)
-from octobot_trading.producers.recent_trade_updater import (RecentTradeUpdater,)
+                                                       BalanceUpdater, )
+from octobot_trading.producers.funding_updater import (FundingUpdater, )
+from octobot_trading.producers.kline_updater import (KlineUpdater, )
+from octobot_trading.producers.ohlcv_updater import (OHLCVUpdater, )
+from octobot_trading.producers.order_book_updater import (OrderBookUpdater, )
+from octobot_trading.producers.orders_updater import (OrdersUpdater, )
+from octobot_trading.producers.positions_updater import (PositionsUpdater, )
+from octobot_trading.producers.prices_updater import (MarkPriceUpdater, )
+from octobot_trading.producers.recent_trade_updater import (RecentTradeUpdater, )
 from octobot_trading.producers.simulator import (BalanceProfitabilityUpdaterSimulator,
                                                  BalanceUpdaterSimulator,
                                                  FundingUpdaterSimulator,
@@ -60,11 +60,29 @@ from octobot_trading.producers.simulator import (BalanceProfitabilityUpdaterSimu
                                                  prices_updater_simulator,
                                                  recent_trade_updater_simulator,
                                                  simulator_updater_utils,
-                                                 ticker_updater_simulator,)
-from octobot_trading.producers.ticker_updater import (TickerUpdater,)
-from octobot_trading.producers.trades_updater import (TradesUpdater,)
+                                                 ticker_updater_simulator,
+                                                 SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE,
+                                                 SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE,
+                                                 stop_and_pause, )
+from octobot_trading.producers.ticker_updater import (TickerUpdater, )
+from octobot_trading.producers.trades_updater import (TradesUpdater, )
 
-__all__ = ['AbstractTradingModeProducer', 'BalanceProfitabilityUpdater',
+
+class MissingOrderException(Exception):
+    def __init__(self, order_id):
+        self.order_id = order_id
+
+
+AUTHENTICATED_UPDATER_PRODUCERS = [BalanceUpdater, OrdersUpdater, TradesUpdater,
+                                   PositionsUpdater, BalanceProfitabilityUpdater]
+
+UNAUTHENTICATED_UPDATER_PRODUCERS = [OHLCVUpdater, OrderBookUpdater, RecentTradeUpdater, TickerUpdater,
+                                     KlineUpdater, MarkPriceUpdater, FundingUpdater]
+
+__all__ = ['MissingOrderException',
+           'SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE', 'SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE',
+           'AUTHENTICATED_UPDATER_PRODUCERS', 'UNAUTHENTICATED_UPDATER_PRODUCERS',
+           'AbstractTradingModeProducer', 'BalanceProfitabilityUpdater',
            'BalanceProfitabilityUpdaterSimulator', 'BalanceUpdater',
            'BalanceUpdaterSimulator', 'FundingUpdater',
            'FundingUpdaterSimulator', 'KlineUpdater', 'KlineUpdaterSimulator',
@@ -85,4 +103,4 @@ __all__ = ['AbstractTradingModeProducer', 'BalanceProfitabilityUpdater',
            'prices_updater_simulator', 'recent_trade_updater',
            'recent_trade_updater_simulator', 'simulator',
            'simulator_updater_utils', 'ticker_updater',
-           'ticker_updater_simulator', 'trades_updater']
+           'ticker_updater_simulator', 'trades_updater', 'stop_and_pause']

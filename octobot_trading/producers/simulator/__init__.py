@@ -40,34 +40,21 @@ from octobot_trading.producers.simulator.orders_updater_simulator import (Orders
 from octobot_trading.producers.simulator.positions_updater_simulator import (PositionsUpdaterSimulator,)
 from octobot_trading.producers.simulator.prices_updater_simulator import (MarkPriceUpdaterSimulator,)
 from octobot_trading.producers.simulator.recent_trade_updater_simulator import (RecentTradeUpdaterSimulator,)
+from octobot_trading.producers.simulator.simulator_updater_utils import (stop_and_pause,)
 from octobot_trading.producers.simulator.ticker_updater_simulator import (TickerUpdaterSimulator,)
 
-__all__ = ['BalanceProfitabilityUpdaterSimulator', 'BalanceUpdaterSimulator',
-           'FundingUpdaterSimulator', 'KlineUpdaterSimulator',
-           'MarkPriceUpdaterSimulator', 'OHLCVUpdaterSimulator',
-           'OrderBookUpdaterSimulator', 'OrdersUpdaterSimulator',
-           'PositionsUpdaterSimulator', 'RecentTradeUpdaterSimulator',
-           'TickerUpdaterSimulator', 'balance_updater_simulator',
-           'funding_updater_simulator', 'kline_updater_simulator',
-           'ohlcv_updater_simulator', 'order_book_updater_simulator',
-           'orders_updater_simulator', 'positions_updater_simulator',
-           'prices_updater_simulator', 'recent_trade_updater_simulator',
-           'simulator_updater_utils', 'ticker_updater_simulator']
-
 # Required data to run real data updater (requires each per list)
-def get_unauthenticated_updater_simulator_producers():
-    return {
-        OHLCV_CHANNEL: OHLCVUpdaterSimulator,
-        ORDER_BOOK_CHANNEL: OrderBookUpdaterSimulator,
-        RECENT_TRADES_CHANNEL: RecentTradeUpdaterSimulator,
-        TICKER_CHANNEL: TickerUpdaterSimulator,
-        KLINE_CHANNEL: KlineUpdaterSimulator,
-        MARK_PRICE_CHANNEL: MarkPriceUpdaterSimulator
-    }
+UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = {
+    OHLCV_CHANNEL: OHLCVUpdaterSimulator,
+    ORDER_BOOK_CHANNEL: OrderBookUpdaterSimulator,
+    RECENT_TRADES_CHANNEL: RecentTradeUpdaterSimulator,
+    TICKER_CHANNEL: TickerUpdaterSimulator,
+    KLINE_CHANNEL: KlineUpdaterSimulator,
+    MARK_PRICE_CHANNEL: MarkPriceUpdaterSimulator
+}
 
 
-def get_authenticated_updater_simulator_producers():
-    return [
+AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [
         OrdersUpdaterSimulator,
         BalanceProfitabilityUpdaterSimulator,
         PositionsUpdaterSimulator
@@ -91,3 +78,17 @@ SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE = {
     TICKER_CHANNEL: [ExchangeDataTables.TICKER],
     KLINE_CHANNEL: [ExchangeDataTables.KLINE],
 }
+
+__all__ = ['AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS', 'UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS',
+           'SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE', 'SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE',
+           'BalanceProfitabilityUpdaterSimulator', 'BalanceUpdaterSimulator',
+           'FundingUpdaterSimulator', 'KlineUpdaterSimulator',
+           'MarkPriceUpdaterSimulator', 'OHLCVUpdaterSimulator',
+           'OrderBookUpdaterSimulator', 'OrdersUpdaterSimulator',
+           'PositionsUpdaterSimulator', 'RecentTradeUpdaterSimulator',
+           'TickerUpdaterSimulator', 'balance_updater_simulator',
+           'funding_updater_simulator', 'kline_updater_simulator',
+           'ohlcv_updater_simulator', 'order_book_updater_simulator',
+           'orders_updater_simulator', 'positions_updater_simulator',
+           'prices_updater_simulator', 'recent_trade_updater_simulator',
+           'simulator_updater_utils', 'ticker_updater_simulator', 'stop_and_pause']

@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -9,18 +10,12 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+#  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.traders import trader
-from octobot_trading.traders.trader import (Trader,)
 
-from octobot_trading.traders import trader_simulator
-from octobot_trading.traders.trader_simulator import (TraderSimulator,)
+cpdef bint is_trader_enabled(object config)
+cpdef bint is_trader_simulator_enabled(object config)
 
-from octobot_trading.traders.trader_util import (is_trader_enabled,
-                                                 is_trader_simulator_enabled,)
-
-__all__ = ['Trader', 'TraderSimulator', 'trader', 'trader_simulator',
-           'is_trader_enabled', 'is_trader_simulator_enabled',]
+cdef bint _is_trader_enabled(object config, str trader_key)

@@ -19,20 +19,16 @@ from octobot_commons.config_util import has_invalid_default_config_value, decryp
 from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.channels.exchange_channel import stop_exchange_channels
 from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
     CONFIG_EXCHANGE_PASSWORD
 from octobot_trading.enums import RestExchangePairsRefreshMaxThresholds
-from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
-from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
-from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
-from octobot_trading.exchanges.exchange_factory import create_exchanges
-from octobot_trading.exchanges.exchanges import Exchanges
-from octobot_trading.util import is_trader_simulator_enabled
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.channels as channels
+import octobot_trading.exchanges as exchanges
+import octobot_trading.traders as traders
+import octobot_trading.util as util
 
 
-class ExchangeManager(Initializable):
+class ExchangeManager(util.Initializable):
     def __init__(self, config, exchange_class_string):
         super().__init__()
         self.id = str(uuid.uuid4())
@@ -60,7 +56,7 @@ class ExchangeManager(Initializable):
 
         self.backtesting = None
 
-        self.is_trader_simulated = is_trader_simulator_enabled(self.config)
+        self.is_trader_simulated = traders.is_trader_simulator_enabled(self.config)
         self.has_websocket = False
 
         self.trader = None
@@ -72,21 +68,23 @@ class ExchangeManager(Initializable):
         self.client_symbols = []
         self.client_time_frames = []
 
-        self.exchange_config = ExchangeConfig(self)
-        self.exchange_personal_data = ExchangePersonalData(self)
-        self.exchange_symbols_data = ExchangeSymbolsData(self)
+        self.exchange_config = exchanges.ExchangeConfig(self)
+        self.exchange_personal_data = exchanges.ExchangePersonalData(self)
+        self.exchange_symbols_data = exchanges.ExchangeSymbolsData(self)
 
     async def initialize_impl(self):
-        await create_exchanges(self)
+        await exchanges.create_exchanges(self)
 
     async def stop(self, warning_on_missing_elements=True):
         for trading_mode in self.trading_modes:
             await trading_mode.stop()
         if self.exchange is not None:
             if not self.exchange_only:
-                await stop_exchange_channels(self, should_warn=warning_on_missing_elements)
+                await channels.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
             await self.exchange.stop()
-            Exchanges.instance().del_exchange(self.exchange.name, self.id, should_warn=warning_on_missing_elements)
+            exchanges.Exchanges.instance().del_exchange(self.exchange.name,
+                                                        self.id,
+                                                        should_warn=warning_on_missing_elements)
             self.exchange.exchange_manager = None
         if self.exchange_personal_data is not None:
             self.exchange_personal_data.clear()
@@ -111,10 +109,10 @@ class ExchangeManager(Initializable):
         return self.config[CONFIG_TRADER][CONFIG_ENABLED_OPTION]
 
     def reset_exchange_symbols_data(self):
-        self.exchange_symbols_data = ExchangeSymbolsData(self)
+        self.exchange_symbols_data = exchanges.ExchangeSymbolsData(self)
 
     def reset_exchange_personal_data(self):
-        self.exchange_personal_data = ExchangePersonalData(self)
+        self.exchange_personal_data = exchanges.ExchangePersonalData(self)
 
     """
     Exchange Configuration

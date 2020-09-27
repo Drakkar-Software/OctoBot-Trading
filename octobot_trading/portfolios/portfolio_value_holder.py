@@ -19,9 +19,8 @@ from octobot_commons.constants import PORTFOLIO_TOTAL, CONFIG_CRYPTO_CURRENCIES
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.symbol_util import split_symbol, merge_currencies
 
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.constants import CONFIG_PORTFOLIO_TOTAL
-from octobot_trading.constants import TICKER_CHANNEL
+from octobot_trading.constants import CONFIG_PORTFOLIO_TOTAL, TICKER_CHANNEL
+import octobot_trading.channels as channels
 
 
 class PortfolioValueHolder:
@@ -252,7 +251,8 @@ class PortfolioValueHolder:
         :param symbols_to_add: the list of symbol to add to the TICKER_CHANNEL producer watch list
         """
         asyncio.run_coroutine_threadsafe(
-            get_chan(TICKER_CHANNEL, self.portfolio_manager.exchange_manager.id).modify(added_pairs=symbols_to_add),
+            channels.get_chan(TICKER_CHANNEL,
+                              self.portfolio_manager.exchange_manager.id).modify(added_pairs=symbols_to_add),
             asyncio.get_running_loop())
 
     def _inform_no_matching_symbol(self, currency):

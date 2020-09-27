@@ -17,10 +17,10 @@ from asyncio import CancelledError
 
 from octobot_channels.constants import CHANNEL_WILDCARD
 
-from octobot_trading.channels.exchange_channel import ExchangeChannel, ExchangeChannelProducer, ExchangeChannelConsumer
+import octobot_trading.channels as channels
 
 
-class TickerProducer(ExchangeChannelProducer):
+class TickerProducer(channels.ExchangeChannelProducer):
     async def push(self, symbol, ticker):
         await self.perform(symbol, ticker)
 
@@ -50,12 +50,12 @@ class TickerProducer(ExchangeChannelProducer):
             })
 
 
-class TickerChannel(ExchangeChannel):
+class TickerChannel(channels.ExchangeChannel):
     PRODUCER_CLASS = TickerProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = channels.ExchangeChannelConsumer
 
 
-class MiniTickerProducer(ExchangeChannelProducer):
+class MiniTickerProducer(channels.ExchangeChannelProducer):
     async def push(self, symbol, mini_ticker):
         await self.perform(symbol, mini_ticker)
 
@@ -85,6 +85,6 @@ class MiniTickerProducer(ExchangeChannelProducer):
             })
 
 
-class MiniTickerChannel(ExchangeChannel):
+class MiniTickerChannel(channels.ExchangeChannel):
     PRODUCER_CLASS = MiniTickerProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = channels.ExchangeChannelConsumer

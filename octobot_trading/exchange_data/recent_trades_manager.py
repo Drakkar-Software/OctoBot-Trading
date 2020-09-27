@@ -17,10 +17,10 @@ from collections import deque
 
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.util as util
 
 
-class RecentTradesManager(Initializable):
+class RecentTradesManager(util.Initializable):
     MAX_RECENT_TRADES_COUNT = 100
     MAX_LIQUIDATIONS_COUNT = 20
 

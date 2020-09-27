@@ -19,7 +19,7 @@ from octobot_commons.symbol_util import split_symbol
 from octobot_commons.logging.logging_util import get_logger
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, ExchangeConstantsOrderColumns, \
     FeePropertyColumns, OrderStatus
-from octobot_trading.exchanges.util.exchange_market_status_fixer import is_ms_valid
+import octobot_trading.exchanges as exchanges
 
 
 def is_valid(element, key):
@@ -29,7 +29,7 @@ def is_valid(element, key):
     :param key:
     :return:
     """
-    return key in element and is_ms_valid(element[key])
+    return key in element and exchanges.is_ms_valid(element[key])
 
 
 def get_min_max_amounts(symbol_market, default_value=None):

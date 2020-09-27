@@ -13,22 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.orders.order import Order
-from octobot_trading.api import LOGGER_TAG
-from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.enums import TraderOrderType, OrderStatus
-from octobot_trading.orders.order import parse_order_type as order_parse_order_type, \
-    parse_order_status as order_parse_order_status
 
-LOGGER = get_logger(LOGGER_TAG)
+import octobot_trading
+import octobot_trading.orders as orders
 
 
 async def create_order(exchange_manager,
-                       order_type: TraderOrderType,
+                       order_type: octobot_trading.TraderOrderType,
                        symbol: str,
                        current_price: float,
                        quantity: float,
-                       price: float) -> Order:
+                       price: float) -> object:
     return await exchange_manager.trader.create_order(
         exchange_manager.trader.create_order_instance(order_type=order_type,
                                                       symbol=symbol,
@@ -61,12 +56,12 @@ def order_to_dict(order) -> dict:
     return order.to_dict()
 
 
-def parse_order_type(dict_order) -> TraderOrderType:
-    return order_parse_order_type(dict_order)[1]
+def parse_order_type(dict_order) -> octobot_trading.TraderOrderType:
+    return orders.parse_order_type(dict_order)[1]
 
 
-def parse_order_status(dict_order) -> OrderStatus:
-    return order_parse_order_status(dict_order)
+def parse_order_status(dict_order) -> octobot_trading.OrderStatus:
+    return orders.parse_order_status(dict_order)
 
 
 def get_order_profitability(exchange_manager, order_id) -> float:
