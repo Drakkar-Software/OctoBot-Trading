@@ -31,8 +31,13 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
         self.trading_mode = None
         self.exchange_manager = None
 
-    async def internal_callback(self, **kwargs):
-        raise NotImplementedError("internal_callback is not implemented")
+    async def internal_callback(self, trading_mode_name, cryptocurrency, symbol, time_frame, final_note, state, data):
+        # creates a new order (or multiple split orders), always check self.can_create_order() first.
+        try:
+            await self.create_order_if_possible(symbol, final_note, state, data=data)
+        except MissingMinimalExchangeTradeVolume:
+            self.logger.info("Not enough funds to create a new order: exchange minimal order volume has not been"
+                             " reached.")
 
     async def create_new_orders(self, symbol, final_note, state, **kwargs):
         raise NotImplementedError("create_new_orders is not implemented")
