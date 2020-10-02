@@ -15,6 +15,7 @@
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
 from octobot_commons.tentacles_management.class_inspector import get_all_classes_from_parent
+
 from octobot_tentacles_manager.api.configurator import is_tentacle_activated_in_tentacles_setup_config
 from octobot_trading.enums import TradeOrderSide, TraderOrderType
 from octobot_trading.exchanges.types.future_exchange import FutureExchange

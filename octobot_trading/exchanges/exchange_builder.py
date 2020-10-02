@@ -16,10 +16,10 @@
 #  License along with this library.
 from octobot_commons.logging.logging_util import get_logger
 
-from octobot_trading.api.modes import create_trading_modes
 from octobot_trading.errors import TradingModeIncompatibility
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
+from octobot_trading.modes.modes_factory import create_trading_modes
 from octobot_trading.traders.trader import Trader
 from octobot_trading.traders.trader_simulator import TraderSimulator
 from octobot_trading.util import is_trader_simulator_enabled, is_trader_enabled
@@ -108,6 +108,7 @@ class ExchangeBuilder:
     """
     Builder methods
     """
+
     def is_backtesting(self, backtesting_instance):
         self.exchange_manager.is_backtesting = True
         self.exchange_manager.backtesting = backtesting_instance
@@ -170,3 +171,7 @@ class ExchangeBuilder:
     def has_matrix(self, matrix_id):
         self._matrix_id = matrix_id
         return self
+
+
+def create_exchange_builder_instance(config, exchange_name):
+    return ExchangeBuilder(config, exchange_name)
