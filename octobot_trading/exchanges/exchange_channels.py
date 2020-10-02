@@ -21,8 +21,6 @@ from octobot_trading.channels.exchange_channel import set_chan, get_chan, \
     ExchangeChannel, TimeFrameExchangeChannel
 from octobot_trading.exchanges.exchange_websocket_factory import is_exchange_managed_by_websocket, \
     is_websocket_feed_requiring_init
-from octobot_trading.producers import get_unauthenticated_updater_producers, get_authenticated_updater_producers
-from octobot_trading.producers.simulator import get_authenticated_updater_simulator_producers
 
 
 async def create_exchange_channels(exchange_manager) -> None:
@@ -42,6 +40,8 @@ async def create_exchange_producers(exchange_manager) -> None:
     Create exchange channels producers according to exchange manager context (backtesting, simulator, real)
     :param exchange_manager: the related exchange manager
     """
+    from octobot_trading.producers import get_unauthenticated_updater_producers
+    from octobot_trading.producers.simulator import get_authenticated_updater_simulator_producers
 
     # Always init exchange user data first on real trading
     if _should_create_authenticated_producers(exchange_manager):
@@ -93,6 +93,8 @@ async def _create_authenticated_producers(exchange_manager) -> None:
     Create real authenticated producers
     :param exchange_manager: the related exchange manager
     """
+    from octobot_trading.producers import get_authenticated_updater_producers
+
     for updater in get_authenticated_updater_producers():
         if is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
             # websocket is handling this channel: initialize data if required
@@ -152,6 +154,8 @@ def _get_authenticated_producer_from_parent(parent_producer_class):
     :param parent_producer_class: the authenticated producer parent class
     :return: the authenticated producer that inherit from parent_producer_class
     """
+    from octobot_trading.producers import get_authenticated_updater_producers
+
     for authenticated_producer_candidate in get_authenticated_updater_producers():
         if default_parent_inspection(authenticated_producer_candidate, parent_producer_class):
             return authenticated_producer_candidate

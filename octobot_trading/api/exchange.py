@@ -17,13 +17,14 @@ import asyncio
 
 from octobot_trading.constants import OHLCV_CHANNEL
 from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
+from octobot_trading.exchanges.exchange_builder import create_exchange_builder_instance
 from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
 from octobot_trading.exchanges.exchanges import Exchanges, ExchangeConfiguration
 from octobot_trading.producers.simulator import SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE
 
 
 def create_exchange_builder(config, exchange_name) -> ExchangeBuilder:
-    return ExchangeBuilder(config, exchange_name)
+    return create_exchange_builder_instance(config, exchange_name)
 
 
 async def stop_exchange(exchange_manager) -> None:
