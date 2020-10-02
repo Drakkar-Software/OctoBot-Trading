@@ -1,3 +1,4 @@
+# pylint: disable=E0611
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -13,6 +14,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.producers import BalanceUpdater, BalanceProfitabilityUpdater
 
-PROJECT_NAME = "OctoBot-Trading"
-VERSION = "1.11.2"  # major.minor.revision
+
+class BalanceUpdaterSimulator(BalanceUpdater):
+    pass
+
+
+class BalanceProfitabilityUpdaterSimulator(BalanceProfitabilityUpdater):
+    pass
+
