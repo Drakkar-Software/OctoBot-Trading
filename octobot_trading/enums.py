@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
-from enum import Enum
+import enum 
 
 
 class TradeOrderSide(Enum):

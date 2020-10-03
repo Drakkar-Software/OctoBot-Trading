@@ -14,16 +14,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-from threading import Thread
+import threading 
 
 import click
-from click_shell import shell
+import click_shell 
 
-from octobot_trading.api.exchange import create_exchange_builder
-from octobot_trading.api.orders import get_open_orders, create_order as api_create_order
-from octobot_trading.cli import exchanges, get_config, set_should_display_callbacks_logs, add_exchange, get_exchange
-from octobot_trading.cli.cli_tools import start_cli_exchange
-from octobot_trading.enums import TraderOrderType
+import octobot_trading.api as exchange 
+import octobot_trading.api as orders 
+import octobot_trading.cli as cli
+import octobot_trading.cli as cli_tools 
+import octobot_trading.enums
 
 
 @shell(prompt='OctoBot-Trading > ', intro='Starting...')

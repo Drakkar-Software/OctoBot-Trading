@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.orders.order cimport Order
+from octobot_trading.personal_data.orders.order cimport Order
 
 
 cdef class TrailingStopOrder(Order):

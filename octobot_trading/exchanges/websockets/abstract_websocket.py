@@ -15,9 +15,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from abc import abstractmethod, ABCMeta
+import abc 
 
-from octobot_commons.logging.logging_util import get_logger
+import octobot_commons.logging as logging_util 
 
 
 class AbstractWebsocket:

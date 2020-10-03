@@ -13,11 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.errors import ConfigTradingError
-from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.tentacles_management.class_inspector import get_deep_class_from_parent_subclasses
-from octobot_tentacles_manager.api.configurator import get_activated_tentacles
-from octobot_trading.modes import AbstractTradingMode
+import octobot_commons.errors as errors
+import octobot_commons.logging as logging_util 
+import octobot_commons.tentacles_management as class_inspector 
+import octobot_tentacles_manager.api as configurator 
+import octobot_trading.modes as modes
 
 
 def get_activated_trading_mode(tentacles_setup_config) -> AbstractTradingMode.__class__:

@@ -14,12 +14,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchange_data.funding_manager cimport FundingManager
-from octobot_trading.exchange_data.order_book_manager cimport OrderBookManager
-from octobot_trading.exchange_data.price_events_manager cimport PriceEventsManager
-from octobot_trading.exchange_data.prices_manager cimport PricesManager
-from octobot_trading.exchange_data.recent_trades_manager cimport RecentTradesManager
-from octobot_trading.exchange_data.ticker_manager cimport TickerManager
+from octobot_trading.exchange_data.funding.funding_manager cimport FundingManager
+from octobot_trading.exchange_data.order_book.order_book_manager cimport OrderBookManager
+from octobot_trading.exchange_data.prices.price_events_manager cimport PriceEventsManager
+from octobot_trading.exchange_data.prices.prices_manager cimport PricesManager
+from octobot_trading.exchange_data.recent_trades.recent_trades_manager cimport RecentTradesManager
+from octobot_trading.exchange_data.ticker.ticker_manager cimport TickerManager
 
 cdef class ExchangeSymbolData:
     cdef public str symbol

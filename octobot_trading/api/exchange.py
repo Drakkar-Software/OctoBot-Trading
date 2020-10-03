@@ -15,16 +15,12 @@
 #  License along with this library.
 import asyncio
 
-from octobot_trading.constants import OHLCV_CHANNEL
-from octobot_trading.exchanges.exchange_builder import ExchangeBuilder
-from octobot_trading.exchanges.exchange_builder import create_exchange_builder_instance
-from octobot_trading.exchanges.implementations.exchange_simulator import ExchangeSimulator
-from octobot_trading.exchanges.exchanges import Exchanges, ExchangeConfiguration
-from octobot_trading.producers.simulator import SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE
+import octobot_trading.constants
+import octobot_trading.exchanges as exchanges
 
 
-def create_exchange_builder(config, exchange_name) -> ExchangeBuilder:
-    return create_exchange_builder_instance(config, exchange_name)
+def create_exchange_builder(config, exchange_name) -> exchanges.ExchangeBuilder:
+    return exchanges.create_exchange_builder_instance(config, exchange_name)
 
 
 async def stop_exchange(exchange_manager) -> None:
@@ -32,20 +28,20 @@ async def stop_exchange(exchange_manager) -> None:
 
 
 def get_exchange_configurations_from_exchange_name(exchange_name) -> dict:
-    return Exchanges.instance().get_exchanges(exchange_name)
+    return exchanges.Exchanges.instance().get_exchanges(exchange_name)
 
 
 def get_exchange_manager_from_exchange_name_and_id(exchange_name, exchange_id) -> object:
-    return Exchanges.instance().get_exchange(exchange_name, exchange_id).exchange_manager
+    return exchanges.Exchanges.instance().get_exchange(exchange_name, exchange_id).exchange_manager
 
 
 def get_exchange_time_frames_without_real_time(exchange_name, exchange_id) -> list:
-    return Exchanges.instance().get_exchange(exchange_name, exchange_id).time_frames_without_real_time
+    return exchanges.Exchanges.instance().get_exchange(exchange_name, exchange_id).time_frames_without_real_time
 
 
 # prefer get_exchange_configurations_from_exchange_name when possible
-def get_exchange_configuration_from_exchange_id(exchange_id) -> ExchangeConfiguration:
-    for exchange_configs in Exchanges.instance().exchanges.values():
+def get_exchange_configuration_from_exchange_id(exchange_id) -> exchanges.ExchangeConfiguration:
+    for exchange_configs in exchanges.Exchanges.instance().exchanges.values():
         for exchange_config in exchange_configs.values():
             if exchange_config.exchange_manager.id == exchange_id:
                 return exchange_config
@@ -102,13 +98,13 @@ def get_matrix_id_from_exchange_id(exchange_name, exchange_id) -> str:
 def get_all_exchange_ids_from_matrix_id(matrix_id) -> list:
     return [
         exchange_configuration.id
-        for exchange_configuration in Exchanges.instance().get_all_exchanges()
+        for exchange_configuration in exchanges.Exchanges.instance().get_all_exchanges()
         if exchange_configuration.matrix_id == matrix_id
     ]
 
 
-def get_exchange_configuration_from_exchange(exchange_name, exchange_id) -> ExchangeConfiguration:
-    return Exchanges.instance().get_exchange(exchange_name, exchange_id)
+def get_exchange_configuration_from_exchange(exchange_name, exchange_id) -> exchanges.ExchangeConfiguration:
+    return exchanges.Exchanges.instance().get_exchange(exchange_name, exchange_id)
 
 
 def get_all_exchange_ids_with_same_matrix_id(exchange_name, exchange_id) -> list:
@@ -123,11 +119,11 @@ def get_all_exchange_ids_with_same_matrix_id(exchange_name, exchange_id) -> list
 
 
 def get_exchange_names() -> list:
-    return Exchanges.instance().get_exchange_names()
+    return exchanges.Exchanges.instance().get_exchange_names()
 
 
 def get_exchange_ids() -> list:
-    return Exchanges.instance().get_exchange_ids()
+    return exchanges.Exchanges.instance().get_exchange_ids()
 
 
 def get_exchange_name(exchange_manager) -> str:
@@ -135,8 +131,8 @@ def get_exchange_name(exchange_manager) -> str:
 
 
 def has_only_ohlcv(exchange_importers):
-    return ExchangeSimulator.get_real_available_data(exchange_importers) == \
-           set(SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[OHLCV_CHANNEL])
+    return exchanges.ExchangeSimulator.get_real_available_data(exchange_importers) == \
+           set(oSIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[OHLCV_CHANNEL])
 
 
 def get_is_backtesting(exchange_manager) -> bool:

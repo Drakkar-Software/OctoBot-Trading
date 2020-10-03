@@ -21,7 +21,7 @@ from octobot_trading.exchanges.data.exchange_personal_data cimport ExchangePerso
 from octobot_trading.exchanges.data.exchange_symbol_data cimport ExchangeSymbolData
 from octobot_trading.exchanges.data.exchange_symbols_data cimport ExchangeSymbolsData
 from octobot_trading.exchanges.websockets.abstract_websocket cimport AbstractWebsocket
-from octobot_trading.traders.trader cimport Trader
+from octobot_trading.exchanges.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 cdef class ExchangeManager(Initializable):

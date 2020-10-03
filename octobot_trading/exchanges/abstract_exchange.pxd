@@ -16,7 +16,7 @@
 #  License along with this library.
 
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.traders.trader cimport Trader
+from octobot_trading.exchanges.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 
