@@ -19,7 +19,7 @@ import time
 
 import octobot_trading.errors as errors
 
-import octobot_commons.constants as constants
+import octobot_commons.constants
 import octobot_commons.enums as enums
 import octobot_trading.constants
 import octobot_trading.exchange_data as exchange_data

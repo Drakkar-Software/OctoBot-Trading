@@ -30,31 +30,31 @@ def get_trading_mode_current_state(trading_mode) -> tuple:
     return trading_mode.get_current_state()
 
 
-def get_activated_trading_mode(tentacles_setup_config) -> AbstractTradingMode.__class__:
-    return util_get_activated_trading_mode(tentacles_setup_config)
+def get_activated_trading_mode(tentacles_setup_config) -> modes.AbstractTradingMode.__class__:
+    return util.get_activated_trading_mode(tentacles_setup_config)
 
 
 async def create_trading_modes(config: dict,
                                exchange_manager: object,
-                               trading_mode_class: AbstractTradingMode.__class__,
+                               trading_mode_class: modes.AbstractTradingMode.__class__,
                                bot_id: str) -> list:
-    return await create_trading_modes_factory(config=config,
-                                              exchange_manager=exchange_manager,
-                                              trading_mode_class=trading_mode_class,
-                                              bot_id=bot_id)
+    return await modes.create_trading_modes(config=config,
+                                            exchange_manager=exchange_manager,
+                                            trading_mode_class=trading_mode_class,
+                                            bot_id=bot_id)
 
 
-async def create_trading_mode(trading_mode_class: AbstractTradingMode.__class__,
+async def create_trading_mode(trading_mode_class: modes.AbstractTradingMode.__class__,
                               config: dict,
                               exchange_manager: object,
                               cryptocurrency: str = None,
                               symbol: str = None,
                               time_frame: object = None,
-                              bot_id: str = None) -> AbstractTradingMode:
-    return await create_trading_mode_factory(trading_mode_class=trading_mode_class,
-                                             config=config,
-                                             exchange_manager=exchange_manager,
-                                             cryptocurrency=cryptocurrency,
-                                             symbol=symbol,
-                                             time_frame=time_frame,
-                                             bot_id=bot_id)
+                              bot_id: str = None) -> modes.AbstractTradingMode:
+    return await modes.create_trading_mode(trading_mode_class=trading_mode_class,
+                                           config=config,
+                                           exchange_manager=exchange_manager,
+                                           cryptocurrency=cryptocurrency,
+                                           symbol=symbol,
+                                           time_frame=time_frame,
+                                           bot_id=bot_id)
