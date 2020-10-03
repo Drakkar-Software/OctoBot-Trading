@@ -14,15 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
-import octobot_trading.exchange_data as exchange_data
-import octobot_trading.exchange_data as exchange_data
-import octobot_trading.exchange_data as exchange_data
-import octobot_trading.exchange_data as exchange_data
-import octobot_trading.exchange_data as exchange_data
-import octobot_trading.exchange_data as exchange_data
-import octobot_trading.exchange_data as exchange_data
 import octobot_trading.exchange_data as exchange_data
 
 
@@ -34,24 +27,24 @@ class ExchangeSymbolData:
         self.symbol = symbol
         self.exchange_manager = exchange_manager
 
-        self.price_events_manager = PriceEventsManager()
-        self.order_book_manager = OrderBookManager()
-        self.prices_manager = PricesManager(self.exchange_manager)
-        self.recent_trades_manager = RecentTradesManager()
-        self.ticker_manager = TickerManager()
-        self.funding_manager = FundingManager() if self.exchange_manager.is_margin else None
+        self.price_events_manager = exchange_data.PriceEventsManager()
+        self.order_book_manager = exchange_data.OrderBookManager()
+        self.prices_manager = exchange_data.PricesManager(self.exchange_manager)
+        self.recent_trades_manager = exchange_data.RecentTradesManager()
+        self.ticker_manager = exchange_data.TickerManager()
+        self.funding_manager = exchange_data.FundingManager() if self.exchange_manager.is_margin else None
 
         self.symbol_candles = {}
         self.symbol_klines = {}
 
-        self.logger = get_logger(f"{self.__class__.__name__} - {self.symbol}")
+        self.logger = logging.get_logger(f"{self.__class__.__name__} - {self.symbol}")
 
     # candle functions
     async def handle_candles_update(self, time_frame, new_symbol_candles_data, replace_all=False, partial=False):
         try:
             symbol_candles = self.symbol_candles[time_frame]
         except KeyError:
-            symbol_candles = CandlesManager()
+            symbol_candles = exchange_data.CandlesManager()
             await symbol_candles.initialize()
 
             if replace_all:
@@ -101,7 +94,7 @@ class ExchangeSymbolData:
         try:
             symbol_klines = self.symbol_klines[time_frame]
         except KeyError:
-            symbol_klines = KlineManager()
+            symbol_klines = exchange_data.KlineManager()
             try:
                 await symbol_klines.initialize()
                 symbol_klines.kline_update(kline)

@@ -13,23 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_backtesting.api as backtesting 
-import octobot_backtesting.api as importer 
-import octobot_backtesting.importers as exchanges
-import octobot_commons.number_util  as number_util 
-import octobot_commons.symbol_util  as symbol_util 
-import octobot_commons.time_frame_manager  as time_frame_manager 
+import octobot_backtesting.api as backtesting_api
+import octobot_backtesting.importers as importers
+
+import octobot_commons.number_util as number_util
+import octobot_commons.symbol_util as symbol_util
+import octobot_commons.time_frame_manager as time_frame_manager
+
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants
-import octobot_trading.enums  as enums
-import octobot_trading.exchanges as exchanges
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 
 
-class ExchangeSimulator(AbstractExchange):
+class ExchangeSimulator(exchanges.AbstractExchange):
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
         self.backtesting = backtesting
-        self.allowed_time_lag = DEFAULT_BACKTESTING_TIME_LAG
+        self.allowed_time_lag = constants.DEFAULT_BACKTESTING_TIME_LAG
 
         self.exchange_importers = []
 
@@ -41,7 +41,7 @@ class ExchangeSimulator(AbstractExchange):
         self.is_authenticated = False
 
     async def initialize_impl(self):
-        self.exchange_importers = self.backtesting.get_importers(ExchangeDataImporter)
+        self.exchange_importers = self.backtesting.get_importers(importers.ExchangeDataImporter)
         # load symbols and time frames
         for importer in self.exchange_importers:
             self.symbols.update(importer.symbols)
@@ -72,11 +72,11 @@ class ExchangeSimulator(AbstractExchange):
 
     async def create_backtesting_exchange_producers(self):
         for importer in self.exchange_importers:
-            available_data_types = get_available_data_types(importer)
+            available_data_types = backtesting_api.get_available_data_types(importer)
             at_least_one_updater = False
             for channel_type, updater in get_unauthenticated_updater_simulator_producers().items():
                 if self._are_required_data_available(channel_type, available_data_types):
-                    await updater(get_trading_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
+                    await updater(exchanges.get_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
                     at_least_one_updater = True
             if not at_least_one_updater:
                 self.logger.error(f"No updater created for {importer.symbols} backtesting")
@@ -97,33 +97,34 @@ class ExchangeSimulator(AbstractExchange):
         self.exchange_importers = []
 
     def get_exchange_current_time(self):
-        return get_backtesting_current_time(self.backtesting)
+        return backtesting_api.get_backtesting_current_time(self.backtesting)
 
     def get_available_time_frames(self):
         if self.exchange_importers:
-            return [time_frame.value for time_frame in get_available_time_frames(next(iter(self.exchange_importers)))]
+            return [time_frame.value
+                    for time_frame in backtesting_api.get_available_time_frames(next(iter(self.exchange_importers)))]
         return []
 
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
         return {
             # number of decimal digits "after the dot"
-            ExchangeConstantsMarketStatusColumns.PRECISION.value: {
-                ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value: 8,
-                ExchangeConstantsMarketStatusColumns.PRECISION_COST.value: 8,
-                ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value: 8,
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION.value: {
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value: 8,
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_COST.value: 8,
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value: 8,
             },
-            ExchangeConstantsMarketStatusColumns.LIMITS.value: {
-                ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT.value: {
-                    ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MIN.value: 0.00001,
-                    ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MAX.value: 1000000000000,
+            enums.ExchangeConstantsMarketStatusColumns.LIMITS.value: {
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT.value: {
+                    enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MIN.value: 0.00001,
+                    enums.ExchangeConstantsMarketStatusColumns.LIMITS_AMOUNT_MAX.value: 1000000000000,
                 },
-                ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value: {
-                    ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value: 0.000001,
-                    ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value: 1000000000000,
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value: {
+                    enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value: 0.000001,
+                    enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value: 1000000000000,
                 },
-                ExchangeConstantsMarketStatusColumns.LIMITS_COST.value: {
-                    ExchangeConstantsMarketStatusColumns.LIMITS_COST_MIN.value: 0.001,
-                    ExchangeConstantsMarketStatusColumns.LIMITS_COST_MAX.value: 1000000000000,
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_COST.value: {
+                    enums.ExchangeConstantsMarketStatusColumns.LIMITS_COST_MIN.value: 0.001,
+                    enums.ExchangeConstantsMarketStatusColumns.LIMITS_COST_MAX.value: 1000000000000,
                 },
             },
         }
@@ -133,23 +134,30 @@ class ExchangeSimulator(AbstractExchange):
 
     def get_fees(self, symbol):
         result_fees = {
-            ExchangeConstantsMarketPropertyColumns.TAKER.value: CONFIG_DEFAULT_SIMULATOR_FEES,
-            ExchangeConstantsMarketPropertyColumns.MAKER.value: CONFIG_DEFAULT_SIMULATOR_FEES,
-            ExchangeConstantsMarketPropertyColumns.FEE.value: CONFIG_DEFAULT_SIMULATOR_FEES
+            enums.ExchangeConstantsMarketPropertyColumns.TAKER.value: constants.CONFIG_DEFAULT_SIMULATOR_FEES,
+            enums.ExchangeConstantsMarketPropertyColumns.MAKER.value: constants.CONFIG_DEFAULT_SIMULATOR_FEES,
+            enums.ExchangeConstantsMarketPropertyColumns.FEE.value: constants.CONFIG_DEFAULT_SIMULATOR_FEES
         }
 
-        if CONFIG_SIMULATOR in self.config and CONFIG_SIMULATOR_FEES in self.config[CONFIG_SIMULATOR]:
-            if CONFIG_SIMULATOR_FEES_MAKER in self.config[CONFIG_SIMULATOR][CONFIG_SIMULATOR_FEES]:
-                result_fees[ExchangeConstantsMarketPropertyColumns.MAKER.value] = \
-                    self.config[CONFIG_SIMULATOR][CONFIG_SIMULATOR_FEES][CONFIG_SIMULATOR_FEES_MAKER]
+        if constants.CONFIG_SIMULATOR in self.config and \
+                constants.CONFIG_SIMULATOR_FEES in self.config[constants.CONFIG_SIMULATOR]:
+            if constants.CONFIG_SIMULATOR_FEES_MAKER in \
+                    self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES]:
+                result_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value] = \
+                    self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES][
+                        constants.CONFIG_SIMULATOR_FEES_MAKER]
 
-            if CONFIG_SIMULATOR_FEES_MAKER in self.config[CONFIG_SIMULATOR][CONFIG_SIMULATOR_FEES]:
-                result_fees[ExchangeConstantsMarketPropertyColumns.TAKER.value] = \
-                    self.config[CONFIG_SIMULATOR][CONFIG_SIMULATOR_FEES][CONFIG_SIMULATOR_FEES_TAKER]
+            if constants.CONFIG_SIMULATOR_FEES_MAKER in self.config[constants.CONFIG_SIMULATOR][
+                constants.CONFIG_SIMULATOR_FEES]:
+                result_fees[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value] = \
+                    self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES][
+                        constants.CONFIG_SIMULATOR_FEES_TAKER]
 
-            if CONFIG_SIMULATOR_FEES_WITHDRAW in self.config[CONFIG_SIMULATOR][CONFIG_SIMULATOR_FEES]:
-                result_fees[ExchangeConstantsMarketPropertyColumns.FEE.value] = \
-                    self.config[CONFIG_SIMULATOR][CONFIG_SIMULATOR_FEES][CONFIG_SIMULATOR_FEES_WITHDRAW]
+            if constants.CONFIG_SIMULATOR_FEES_WITHDRAW in self.config[constants.CONFIG_SIMULATOR][
+                constants.CONFIG_SIMULATOR_FEES]:
+                result_fees[enums.ExchangeConstantsMarketPropertyColumns.FEE.value] = \
+                    self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES][
+                        constants.CONFIG_SIMULATOR_FEES_WITHDRAW]
 
         return result_fees
 
@@ -161,34 +169,34 @@ class ExchangeSimulator(AbstractExchange):
     # }
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         if not taker_or_maker:
-            taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
+            taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
         symbol_fees = self.get_fees(symbol)
         rate = symbol_fees[taker_or_maker] / 100  # /100 because rate in used in %
-        currency, market = split_symbol(symbol)
+        currency, market = symbol_util.split_symbol(symbol)
         fee_currency = currency
 
-        precision = self.get_market_status(symbol)[ExchangeConstantsMarketStatusColumns.PRECISION.value] \
-            [ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
-        cost = float(round_into_str_with_max_digits(quantity * rate, precision))
+        precision = self.get_market_status(symbol)[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value] \
+            [enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
+        cost = float(number_util.round_into_str_with_max_digits(quantity * rate, precision))
 
-        if order_type == TraderOrderType.SELL_MARKET or order_type == TraderOrderType.SELL_LIMIT:
-            cost = float(round_into_str_with_max_digits(cost * price, precision))
+        if order_type == enums.TraderOrderType.SELL_MARKET or order_type == enums.TraderOrderType.SELL_LIMIT:
+            cost = float(number_util.round_into_str_with_max_digits(cost * price, precision))
             fee_currency = market
 
         return {
-            FeePropertyColumns.TYPE.value: taker_or_maker,
-            FeePropertyColumns.CURRENCY.value: fee_currency,
-            FeePropertyColumns.RATE.value: rate,
-            FeePropertyColumns.COST.value: cost
+            enums.FeePropertyColumns.TYPE.value: taker_or_maker,
+            enums.FeePropertyColumns.CURRENCY.value: fee_currency,
+            enums.FeePropertyColumns.RATE.value: rate,
+            enums.FeePropertyColumns.COST.value: cost
         }
 
     def get_time_frames(self, importer):
-        return sort_time_frames(list(set(get_available_time_frames(importer)) &
-                                set(self.exchange_manager.exchange_config.traded_time_frames)),
-                                reverse=True)
+        return time_frame_manager.sort_time_frames(list(set(backtesting_api.get_available_time_frames(importer)) &
+                                                        set(self.exchange_manager.exchange_config.traded_time_frames)),
+                                                   reverse=True)
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
-        return split_symbol(pair)
+        return symbol_util.split_symbol(pair)
 
     def get_pair_cryptocurrency(self, pair) -> str:
         return self.get_split_pair_from_exchange(pair)[0]
@@ -197,5 +205,5 @@ class ExchangeSimulator(AbstractExchange):
     def get_real_available_data(exchange_importers):
         available_data = set()
         for importer in exchange_importers:
-            available_data = available_data.union(get_available_data_types(importer))
+            available_data = available_data.union(backtesting_api.get_available_data_types(importer))
         return available_data

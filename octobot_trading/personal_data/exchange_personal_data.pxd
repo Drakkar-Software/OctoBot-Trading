@@ -23,7 +23,7 @@ from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.exchanges.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
-cdef class ExchangePersonalData(Initializable):
+cdef class ExchangePersonalData(util.Initializable):
     cdef public object logger
     cdef public object exchange
 

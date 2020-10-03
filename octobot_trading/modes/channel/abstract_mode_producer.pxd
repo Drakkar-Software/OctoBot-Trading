@@ -14,17 +14,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
-from octobot_trading.exchanges.data.exchange_symbol_data cimport ExchangeSymbolData
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+from octobot_trading.modes.channel.mode cimport ModeChannelProducer
 
-cdef class ExchangeSymbolsData:
-    cdef public object logger
+cdef class AbstractTradingModeProducer(ModeChannelProducer):
+    cdef public object trading_mode
+    cdef public object config
+    cdef public object exchange_manager
+    cdef public object final_eval
+    cdef public object state
+    cdef public object matrix_consumer
 
-    cdef public dict exchange_symbol_data
-    cdef public dict config
+    cdef public str exchange_name
 
-    cdef public AbstractExchange exchange
-    cdef public ExchangeManager exchange_manager
+    cdef public int priority_level
 
-    cpdef public ExchangeSymbolData get_exchange_symbol_data(self, str symbol, bint allow_creation=*)
+    cpdef void flush(self)

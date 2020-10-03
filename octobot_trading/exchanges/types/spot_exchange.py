@@ -16,5 +16,5 @@
 import octobot_trading.exchanges as exchanges
 
 
-class SpotExchange(AbstractExchange):
+class SpotExchange(exchanges.AbstractExchange):
     pass

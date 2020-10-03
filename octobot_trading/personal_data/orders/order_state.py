@@ -15,15 +15,15 @@
 #  License along with this library.
 import asyncio
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants 
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 import octobot_trading.util as util
+import octobot_trading.constants
 
 
-class OrderState(Initializable):
+class OrderState(util.Initializable):
     def __init__(self, order, is_from_exchange_data):
         super().__init__()
 
@@ -31,7 +31,7 @@ class OrderState(Initializable):
         self.order = order
 
         # default state
-        self.state = OrderStates.UNKNOWN
+        self.state = enums.OrderStates.UNKNOWN
 
         # if this state has been created from exchange data or OctoBot internal mechanism
         self.is_from_exchange_data = is_from_exchange_data
@@ -43,13 +43,13 @@ class OrderState(Initializable):
         """
         :return: True if the state is pending for update
         """
-        return self.state is OrderStates.UNKNOWN
+        return self.state is enums.OrderStates.UNKNOWN
 
     def is_refreshing(self) -> bool:
         """
         :return: True if the state is updating
         """
-        return self.state is OrderStates.REFRESHING
+        return self.state is enums.OrderStates.REFRESHING
 
     def is_open(self) -> bool:
         """
@@ -79,7 +79,7 @@ class OrderState(Initializable):
         """
         :return: the order logger
         """
-        return get_logger(self.order.get_logger_name())
+        return logging.get_logger(self.order.get_logger_name())
 
     def log_order_event_message(self, state_message):
         """
@@ -106,7 +106,7 @@ class OrderState(Initializable):
         Update the order state
         Try to fix the pending state or terminate
         """
-        if self.is_pending() and self.state is not OrderStates.REFRESHING:
+        if self.is_pending() and self.state is not enums.OrderStates.REFRESHING:
             self.log_order_event_message("synchronizing")
             await self.synchronize()
         else:
@@ -136,7 +136,8 @@ class OrderState(Initializable):
         :param force_synchronization: When True, for the update of the order from the exchange
         :return: the result of OrdersProducer.update_order_from_exchange()
         """
-        return (await get_chan(ORDERS_CHANNEL, self.order.exchange_manager.id).get_internal_producer().
+        return (await exchanges.get_chan(octobot_trading.constants.ORDERS_CHANNEL,
+                                         self.order.exchange_manager.id).get_internal_producer().
                 update_order_from_exchange(order=self.order,
                                            wait_for_refresh=True,
                                            force_job_execution=force_synchronization))
@@ -155,10 +156,10 @@ class OrderState(Initializable):
         """
         previous_state = self.state
         async with self.lock:
-            self.state = OrderStates.REFRESHING
+            self.state = enums.OrderStates.REFRESHING
         await self._refresh_order_from_exchange(force_synchronization=force_synchronization)
         async with self.lock:
-            if self.state is OrderStates.REFRESHING:
+            if self.state is enums.OrderStates.REFRESHING:
                 self.state = previous_state
 
     def clear(self):

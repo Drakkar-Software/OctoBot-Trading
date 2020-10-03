@@ -19,15 +19,15 @@ import typing
 
 import time
 
-import octobot_trading.errors  as errors 
-import octobot_commons.constants  as constants 
+import octobot_trading.errors as errors
+import octobot_commons.constants as common_constants
 
 import octobot_trading.exchange_data as exchange_data
-import octobot_trading.constants  as constants 
-import octobot_trading.enums  as enums 
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 
 
-class FundingUpdater(FundingProducer):
+class FundingUpdater(exchange_data.FundingProducer):
     """
     The Funding Update fetch the exchange funding rate and send it to the Funding Channel
     """
@@ -35,14 +35,14 @@ class FundingUpdater(FundingProducer):
     """
     The updater related channel name
     """
-    CHANNEL_NAME = FUNDING_CHANNEL
+    CHANNEL_NAME = constants.FUNDING_CHANNEL
 
     """
     The default funding update refresh times in seconds
     """
-    FUNDING_REFRESH_TIME = 2 * HOURS_TO_SECONDS
-    FUNDING_REFRESH_TIME_MIN = 0.2 * HOURS_TO_SECONDS
-    FUNDING_REFRESH_TIME_MAX = 8 * HOURS_TO_SECONDS
+    FUNDING_REFRESH_TIME = 2 * common_constants.HOURS_TO_SECONDS
+    FUNDING_REFRESH_TIME_MIN = 0.2 * common_constants.HOURS_TO_SECONDS
+    FUNDING_REFRESH_TIME_MAX = 8 * common_constants.HOURS_TO_SECONDS
 
     async def start(self) -> None:
         """
@@ -67,7 +67,7 @@ class FundingUpdater(FundingProducer):
                     )
                     if next_funding_time_candidate is not None:
                         next_funding_time = next_funding_time_candidate
-            except (NotSupported, NotImplementedError):
+            except (errors.NotSupported, NotImplementedError):
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates"
                 )
@@ -89,7 +89,7 @@ class FundingUpdater(FundingProducer):
         """
         return None, self.FUNDING_REFRESH_TIME_MIN
 
-    async def fetch_symbol_funding_rate(self, symbol: str) -> Optional[int]:
+    async def fetch_symbol_funding_rate(self, symbol: str) -> typing.Optional[int]:
         """
         Fetch funding rate from exchange
         :param symbol: the funding symbol to fetch
@@ -102,20 +102,20 @@ class FundingUpdater(FundingProducer):
 
             if funding:
                 next_funding_time = funding[
-                    ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value
+                    enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value
                 ]
                 await self.push(
                     symbol=symbol,
                     funding_rate=funding[
-                        ExchangeConstantsFundingColumns.FUNDING_RATE.value
+                        enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value
                     ],
                     next_funding_time=next_funding_time,
                     timestamp=funding[
-                        ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value
+                        enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value
                     ],
                 )
                 return next_funding_time
-        except (NotSupported, NotImplementedError) as ne:
+        except (errors.NotSupported, NotImplementedError) as ne:
             raise ne
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update funding rate : {e}")

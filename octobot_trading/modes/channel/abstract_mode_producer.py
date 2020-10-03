@@ -13,20 +13,22 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.channels_name  as channels_name 
-import octobot_commons.constants  as constants 
-import octobot_commons.enums  as enums 
-import octobot_commons.logging as logging_util 
-import octobot_trading.modes as modes
-import octobot_trading.enums  as enums 
+import channel.enums as channel_enums
+
+import octobot_commons.channels_name as channels_name
+import octobot_commons.constants as common_constants
+import octobot_commons.logging as logging
+
+import octobot_trading.enums as enums
 import octobot_trading.exchanges as exchanges
+import octobot_trading.modes as modes
 
 
-class AbstractTradingModeProducer(ModeChannelProducer):
+class AbstractTradingModeProducer(modes.ModeChannelProducer):
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
         # the trading mode instance logger
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
 
         # the trading mode instance
         self.trading_mode = trading_mode
@@ -41,7 +43,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         self.exchange_name = self.exchange_manager.exchange_name
 
         # the final eval used by TradingModeConsumers, default value is INIT_EVAL_NOTE
-        self.final_eval = INIT_EVAL_NOTE
+        self.final_eval = common_constants.INIT_EVAL_NOTE
 
         # the producer state used by TradingModeConsumers
         self.state = None
@@ -50,7 +52,7 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         self.matrix_consumer = None
 
         # Define trading modes default consumer priority level
-        self.priority_level: int = ChannelConsumerPriorityLevels.MEDIUM.value
+        self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
     # noinspection PyArgumentList
     async def start(self) -> None:
@@ -61,18 +63,20 @@ class AbstractTradingModeProducer(ModeChannelProducer):
             from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
             from octobot_evaluators.enums import EvaluatorMatrixTypes
             matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                          self.exchange_manager.id).matrix_id
-            self.matrix_consumer = await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
-                                                            matrix_id).new_consumer(
+                                                                    self.exchange_manager.id).matrix_id
+            self.matrix_consumer = await get_evaluator_chan(
+                channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value, matrix_id).new_consumer(
                 callback=self.matrix_callback,
                 priority_level=self.priority_level,
                 matrix_id=exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                            self.exchange_manager.id).matrix_id,
-                cryptocurrency=self.trading_mode.cryptocurrency if self.trading_mode.cryptocurrency else CONFIG_WILDCARD,
-                symbol=self.trading_mode.symbol if self.trading_mode.symbol else CONFIG_WILDCARD,
+                                                                      self.exchange_manager.id).matrix_id,
+                cryptocurrency=self.trading_mode.cryptocurrency if self.trading_mode.cryptocurrency \
+                    else common_constants.CONFIG_WILDCARD,
+                symbol=self.trading_mode.symbol if self.trading_mode.symbol else common_constants.CONFIG_WILDCARD,
                 evaluator_type=EvaluatorMatrixTypes.STRATEGIES.value,
                 exchange_name=self.exchange_name,
-                time_frame=self.trading_mode.time_frame if self.trading_mode.time_frame else CONFIG_WILDCARD)
+                time_frame=self.trading_mode.time_frame if self.trading_mode.time_frame
+                else common_constants.CONFIG_WILDCARD)
         except (KeyError, ImportError):
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
 
@@ -84,9 +88,10 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         if self.exchange_manager is not None:
             try:
                 from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
-                await get_evaluator_chan(OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
-                                         exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                                           self.exchange_manager.id).matrix_id
+                await get_evaluator_chan(channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
+                                         exchanges.Exchanges.instance().get_exchange(
+                                             self.exchange_manager.exchange_name,
+                                             self.exchange_manager.id).matrix_id
                                          ).remove_consumer(self.matrix_consumer)
             except (KeyError, ImportError):
                 self.logger.error(f"Can't unregister matrix channel on {self.exchange_name}")
@@ -144,8 +149,8 @@ class AbstractTradingModeProducer(ModeChannelProducer):
         raise NotImplementedError("set_final_eval not implemented")
 
     async def submit_trading_evaluation(self, cryptocurrency, symbol, time_frame,
-                                        final_note=INIT_EVAL_NOTE,
-                                        state=EvaluatorStates.NEUTRAL,
+                                        final_note=common_constants.INIT_EVAL_NOTE,
+                                        state=enums.EvaluatorStates.NEUTRAL,
                                         data=None) -> None:
         await self.send(trading_mode_name=self.trading_mode.get_name(),
                         cryptocurrency=cryptocurrency,

@@ -17,7 +17,7 @@
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class PriceEventsManager(Initializable):
+cdef class PriceEventsManager(util.Initializable):
     cdef object logger
 
     cdef list events

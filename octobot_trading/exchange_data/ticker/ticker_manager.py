@@ -14,16 +14,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import math 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 import octobot_trading.util as util
 
 
-class TickerManager(Initializable):
+class TickerManager(util.Initializable):
     def __init__(self):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.ticker = {}
         self.mini_ticker = {}
         self.reset_ticker()
@@ -35,30 +35,30 @@ class TickerManager(Initializable):
 
     def reset_mini_ticker(self):
         self.mini_ticker = {
-            ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value: nan,
-            ExchangeConstantsMiniTickerColumns.LOW_PRICE.value: nan,
-            ExchangeConstantsMiniTickerColumns.OPEN_PRICE.value: nan,
-            ExchangeConstantsMiniTickerColumns.CLOSE_PRICE.value: nan,
-            ExchangeConstantsMiniTickerColumns.VOLUME.value: nan,
-            ExchangeConstantsMiniTickerColumns.TIMESTAMP.value: 0
+            enums.ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value: math.nan,
+            enums.ExchangeConstantsMiniTickerColumns.LOW_PRICE.value: math.nan,
+            enums.ExchangeConstantsMiniTickerColumns.OPEN_PRICE.value: math.nan,
+            enums.ExchangeConstantsMiniTickerColumns.CLOSE_PRICE.value: math.nan,
+            enums.ExchangeConstantsMiniTickerColumns.VOLUME.value: math.nan,
+            enums.ExchangeConstantsMiniTickerColumns.TIMESTAMP.value: 0
         }
 
     def reset_ticker(self):
         self.ticker = {
-            ExchangeConstantsTickersColumns.ASK.value: nan,
-            ExchangeConstantsTickersColumns.ASK_VOLUME.value: nan,
-            ExchangeConstantsTickersColumns.BID.value: nan,
-            ExchangeConstantsTickersColumns.BID_VOLUME.value: nan,
-            ExchangeConstantsTickersColumns.OPEN.value: nan,
-            ExchangeConstantsTickersColumns.LOW.value: nan,
-            ExchangeConstantsTickersColumns.HIGH.value: nan,
-            ExchangeConstantsTickersColumns.CLOSE.value: nan,
-            ExchangeConstantsTickersColumns.LAST.value: nan,
-            ExchangeConstantsTickersColumns.AVERAGE.value: nan,
-            ExchangeConstantsTickersColumns.SYMBOL.value: nan,
-            ExchangeConstantsTickersColumns.QUOTE_VOLUME.value: nan,
-            ExchangeConstantsTickersColumns.TIMESTAMP.value: 0,
-            ExchangeConstantsTickersColumns.VWAP.value: nan
+            enums.ExchangeConstantsTickersColumns.ASK.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.ASK_VOLUME.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.BID.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.BID_VOLUME.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.OPEN.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.LOW.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.HIGH.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.CLOSE.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.LAST.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.AVERAGE.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.SYMBOL.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.QUOTE_VOLUME.value: math.nan,
+            enums.ExchangeConstantsTickersColumns.TIMESTAMP.value: 0,
+            enums.ExchangeConstantsTickersColumns.VWAP.value: math.nan
         }
 
     def ticker_update(self, ticker):

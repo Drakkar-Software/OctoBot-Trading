@@ -16,13 +16,13 @@
 #  License along with this library.
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants 
+import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
 
 
-class OrdersUpdaterSimulator(OrdersUpdater):
+class OrdersUpdaterSimulator(personal_data.OrdersUpdater):
     async def start(self):
-        await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
+        await exchanges.get_chan(constants.RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.ignore_recent_trades_update)
 
     async def ignore_recent_trades_update(self, exchange: str, exchange_id: str,

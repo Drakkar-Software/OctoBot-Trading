@@ -13,11 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import typing 
+import typing
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
-import octobot_commons.singleton as singleton_class 
+import octobot_commons.singleton as singleton
 
 
 class ExchangeConfiguration:
@@ -33,7 +33,7 @@ class ExchangeConfiguration:
         self.real_time_time_frames = exchange_manager.exchange_config.real_time_time_frames
 
 
-class Exchanges(Singleton):
+class Exchanges(singleton.Singleton):
     def __init__(self):
         self.exchanges = {}
 
@@ -67,10 +67,10 @@ class Exchanges(Singleton):
                 self.exchanges.pop(exchange_name, None)
         except KeyError:
             if should_warn:
-                get_logger(self.__class__.__name__).warning(f"Can't del exchange {exchange_name} "
-                                                            f"with id {exchange_manager_id}")
+                logging.get_logger(self.__class__.__name__).warning(f"Can't del exchange {exchange_name} "
+                                                                    f"with id {exchange_manager_id}")
 
-    def get_exchange_names(self) -> KeysView:
+    def get_exchange_names(self) -> typing.KeysView:
         return self.exchanges.keys()
 
     def get_exchange_ids(self) -> list:

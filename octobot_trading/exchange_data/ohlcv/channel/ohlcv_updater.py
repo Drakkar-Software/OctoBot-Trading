@@ -17,16 +17,16 @@
 import asyncio
 import time
 
-import octobot_trading.errors as errors
+import octobot_commons.constants as common_constants
+import octobot_commons.enums as common_enums
 
-import octobot_commons.constants
-import octobot_commons.enums as enums
-import octobot_trading.constants
+import octobot_trading.errors as errors
+import octobot_trading.constants as constants
 import octobot_trading.exchange_data as exchange_data
 
 
-class OHLCVUpdater(OHLCVProducer):
-    CHANNEL_NAME = OHLCV_CHANNEL
+class OHLCVUpdater(exchange_data.OHLCVProducer):
+    CHANNEL_NAME = constants.OHLCV_CHANNEL
     OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_OLD_LIMIT = 200  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_ON_ERROR_TIME = 5
@@ -112,7 +112,7 @@ class OHLCVUpdater(OHLCVProducer):
             await asyncio.gather(*init_coroutines)
 
     async def _candle_callback(self, time_frame, pair):
-        time_frame_sleep: int = TimeFramesMinutes[time_frame] * MINUTE_TO_SECONDS
+        time_frame_sleep: int = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
         last_candle_timestamp: float = 0
 
         while not self.should_stop and not self.channel.is_paused:
@@ -132,7 +132,7 @@ class OHLCVUpdater(OHLCVProducer):
                         last_candle: list = []
 
                     if last_candle:
-                        current_candle_timestamp: float = last_candle[PriceIndexes.IND_PRICE_TIME.value]
+                        current_candle_timestamp: float = last_candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
                         should_sleep_time: float = current_candle_timestamp + time_frame_sleep - time.time()
 
                         # if we're trying to refresh the current candle => useless
@@ -152,7 +152,7 @@ class OHLCVUpdater(OHLCVProducer):
                 else:
                     # candles on this time frame have not been initialized: sleep until the next candle update
                     await asyncio.sleep(max(0.0, time_frame_sleep - (time.time() - start_update_time)))
-            except NotSupported:
+            except errors.NotSupported:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()

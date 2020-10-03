@@ -18,7 +18,7 @@
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class KlineManager(Initializable):
+cdef class KlineManager(util.Initializable):
     cdef object logger
 
     cdef public list kline

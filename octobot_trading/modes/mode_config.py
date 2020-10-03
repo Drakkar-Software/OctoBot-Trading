@@ -14,32 +14,36 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_commons.errors as errors
-import octobot_commons.logging as logging_util 
-import octobot_commons.tentacles_management as class_inspector 
-import octobot_tentacles_manager.api as configurator 
+import octobot_commons.logging as logging
+import octobot_commons.tentacles_management as class_inspector
+
+import octobot_tentacles_manager.api as configurator
+
 import octobot_trading.modes as modes
 
 
-def get_activated_trading_mode(tentacles_setup_config) -> AbstractTradingMode.__class__:
+def get_activated_trading_mode(tentacles_setup_config) -> modes.AbstractTradingMode.__class__:
     if tentacles_setup_config is not None:
         try:
             trading_modes = [tentacle_class
-                             for tentacle_class in get_activated_tentacles(tentacles_setup_config)
-                             if get_deep_class_from_parent_subclasses(tentacle_class, AbstractTradingMode)]
+                             for tentacle_class in configurator.get_activated_tentacles(tentacles_setup_config)
+                             if class_inspector.get_deep_class_from_parent_subclasses(tentacle_class,
+                                                                                      modes.AbstractTradingMode)]
 
             if len(trading_modes) > 1:
-                raise ConfigTradingError(
+                raise errors.ConfigTradingError(
                     f"More than one activated trading mode found in your tentacle configuration, "
                     f"please activate only one")
 
             elif trading_modes:
-                trading_mode_class = get_deep_class_from_parent_subclasses(trading_modes[0],
-                                                                           AbstractTradingMode)
+                trading_mode_class = class_inspector.get_deep_class_from_parent_subclasses(trading_modes[0],
+                                                                                           modes.AbstractTradingMode)
 
                 if trading_mode_class is not None:
                     return trading_mode_class
         except ModuleNotFoundError as e:
-            get_logger("get_activated_trading_mode").error(f"Error when loading the activated trading mode: {e}")
+            logging.get_logger("get_activated_trading_mode").error(f"Error when loading "
+                                                                   f"the activated trading mode: {e}")
 
-    raise ConfigTradingError(f"Please ensure your tentacles configuration file is valid and at least one trading "
-                             f"mode is activated")
+    raise errors.ConfigTradingError(f"Please ensure your tentacles configuration file is valid and "
+                                    f"at least one trading mode is activated")

@@ -13,11 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums  as enums 
+import octobot_trading.enums
 import octobot_trading.exchanges as exchanges
 
 
-class FutureExchange(AbstractExchange):
+class FutureExchange(exchanges.AbstractExchange):
     LONG_STR = "long"
     SHORT_STR = "short"
 
@@ -154,7 +154,8 @@ class FutureExchange(AbstractExchange):
         :param side: the raw side
         :return: the uniformized PositionSide instance from the raw side
         """
-        return PositionSide.LONG.value if side == self.LONG_STR else PositionSide.SHORT.value
+        return octobot_trading.enums.PositionSide.LONG.value \
+            if side == self.LONG_STR else octobot_trading.enums.PositionSide.SHORT.value
 
     def calculate_position_value(self, quantity, mark_price):
         """

@@ -20,7 +20,7 @@ from octobot_trading.exchanges.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class AbstractExchange(Initializable):
+cdef class AbstractExchange(util.Initializable):
     cdef public dict config
 
     cdef public object logger

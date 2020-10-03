@@ -18,18 +18,22 @@ import logging
 
 import ccxt.async_support as ccxt
 import ccxt.async_support as async_support
-import ccxt.base as errors 
+import ccxt.base.errors as ccxt_errors
+import typing
+
 import octobot_commons.constants
-import octobot_commons.enums as enums
+import octobot_commons.enums
 
 import octobot_trading 
-import octobot_trading.constants
-import octobot_trading.enums
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
+import octobot_trading.errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.personal_data as personal_data
+from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
-class CCXTExchange(AbstractExchange):
+class CCXTExchange(exchanges.AbstractExchange):
     """
     CCXT library wrapper
     """
@@ -46,10 +50,10 @@ class CCXTExchange(AbstractExchange):
         try:
             self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
             await self.client.load_markets()
-        except (ExchangeNotAvailable, RequestTimeout) as e:
+        except (ccxt_errors.ExchangeNotAvailable, ccxt_errors.RequestTimeout) as e:
             self.logger.error(f"initialization impossible: {e}")
         except ccxt.AuthenticationError:
-            raise errors.AuthenticationError
+            raise ccxt_errors.AuthenticationError
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
@@ -109,10 +113,10 @@ class CCXTExchange(AbstractExchange):
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         try:
             if with_fixer:
-                return ExchangeMarketStatusFixer(self.client.market(symbol), price_example).market_status
+                return exchanges.ExchangeMarketStatusFixer(self.client.market(symbol), price_example).market_status
             return self.client.market(symbol)
-        except NotSupported:
-            raise errors.NotSupported
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
         except Exception as e:
             self.logger.error(f"Fail to get market status of {symbol}: {e}")
             return {}
@@ -128,78 +132,85 @@ class CCXTExchange(AbstractExchange):
             balance = await self.client.fetch_balance(params=kwargs)
 
             # remove not currency specific keys
-            balance.pop(CONFIG_PORTFOLIO_INFO, None)
-            balance.pop(CONFIG_PORTFOLIO_FREE, None)
-            balance.pop(CONFIG_PORTFOLIO_USED, None)
-            balance.pop(CONFIG_PORTFOLIO_TOTAL, None)
+            balance.pop(constants.CONFIG_PORTFOLIO_INFO, None)
+            balance.pop(constants.CONFIG_PORTFOLIO_FREE, None)
+            balance.pop(constants.CONFIG_PORTFOLIO_USED, None)
+            balance.pop(constants.CONFIG_PORTFOLIO_TOTAL, None)
             return balance
 
-        except InvalidNonce as e:
+        except ccxt_errors.InvalidNonce as e:
             self.logger.error(f"Error when loading {self.name} real trader portfolio: {e}. "
                               f"To fix this, please synchronize your computer's clock. ")
             raise e
-        except NotSupported:
-            raise errors.NotSupported
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
 
-    async def get_symbol_prices(self, symbol: str, time_frame: TimeFrames, limit: int = None, **kwargs: dict) -> list:
+    async def get_symbol_prices(self,
+                                symbol: str,
+                                time_frame: octobot_commons.enums.TimeFrames,
+                                limit: int = None,
+                                **kwargs: dict) -> typing.Optional[list]:
         try:
             if limit:
                 return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, params=kwargs)
             return await self.client.fetch_ohlcv(symbol, time_frame.value)
-        except NotSupported:
-            raise errors.NotSupported
-        except BaseError as e:
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
+        except async_support.BaseError as e:
             self.logger.error(f"Failed to get_symbol_prices {e}")
-            return None
+        return None
 
-    async def get_kline_price(self, symbol: str, time_frame: TimeFrames, **kwargs: dict) -> list:
+    async def get_kline_price(self,
+                              symbol: str,
+                              time_frame: octobot_commons.enums.TimeFrames,
+                              **kwargs: dict) -> typing.Optional[list]:
         try:
             # default implementation
             return await self.get_symbol_prices(symbol, time_frame, limit=1, params=kwargs)
-        except NotSupported:
-            raise errors.NotSupported
-        except BaseError as e:
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
+        except async_support.BaseError as e:
             self.logger.error(f"Failed to get_kline_price {e}")
-            return None
+        return None
 
     # return up to ten bidasks on each side of the order book stack
-    async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> dict:
+    async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
         try:
             return await self.client.fetch_order_book(symbol, limit=limit, params=kwargs)
-        except NotSupported:
-            raise errors.NotSupported
-        except BaseError as e:
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
+        except async_support.BaseError as e:
             self.logger.error(f"Failed to get_order_book {e}")
-            return None
+        return None
 
-    async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> list:
+    async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
         try:
             return await self.client.fetch_trades(symbol, limit=limit, params=kwargs)
-        except NotSupported:
-            raise errors.NotSupported
-        except BaseError as e:
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
+        except async_support.BaseError as e:
             self.logger.error(f"Failed to get_recent_trades {e}")
-            return None
+        return None
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
-    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> dict:
+    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
         try:
             return await self.client.fetch_ticker(symbol, params=kwargs)
-        except NotSupported:
-            raise errors.NotSupported
-        except BaseError as e:
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
+        except async_support.BaseError as e:
             self.logger.error(f"Failed to get_price_ticker {e}")
-            return None
+        return None
 
-    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> list:
+    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         try:
             self.all_currencies_price_ticker = await self.client.fetch_tickers(params=kwargs)
             return self.all_currencies_price_ticker
-        except NotSupported:
-            raise errors.NotSupported
-        except BaseError as e:
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
+        except async_support.BaseError as e:
             self.logger.error(f"Failed to get_all_currencies_price_ticker {e}")
-            return None
+        return None
 
     # ORDERS
     async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
@@ -207,33 +218,34 @@ class CCXTExchange(AbstractExchange):
             try:
                 return await self.client.fetch_order(order_id, symbol, params=kwargs)
                 # self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order) TODO
-            except OrderNotFound:
+            except async_support.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
-                # self.exchange_manager.exchange_personal_data().update_order_attribute(order_id, ecoc.STATUS.value, OrderStatus.CANCELED.value) TODO
+                # self.exchange_manager.exchange_personal_data().
+                # update_order_attribute(order_id, ecoc.STATUS.value, OrderStatus.CANCELED.value) TODO
                 pass
         else:
-            raise errors.NotSupported("This exchange doesn't support fetchOrder")
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOrder")
 
     async def get_all_orders(self, symbol: str = None, since: int = None,
                              limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOrders']:
             return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
-            raise errors.NotSupported("This exchange doesn't support fetchOrders")
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOrders")
 
     async def get_open_orders(self, symbol: str = None, since: int = None,
                               limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOpenOrders']:
             return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
-            raise errors.NotSupported("This exchange doesn't support fetchOpenOrders")
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOpenOrders")
 
     async def get_closed_orders(self, symbol: str = None, since: int = None,
                                 limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchClosedOrders']:
             return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
-            raise errors.NotSupported("This exchange doesn't support fetchClosedOrders")
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchClosedOrders")
 
     async def get_my_recent_trades(self, symbol: str = None, since: int = None,
                                    limit: int = None, **kwargs: dict) -> list:
@@ -243,17 +255,17 @@ class CCXTExchange(AbstractExchange):
             elif self.client.has['fetchTrades']:
                 return await self.client.fetch_trades(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
-            raise errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
+            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         cancel_resp = None
         try:
             cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
-            return parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=kwargs))
-        except OrderNotFound:
+            return personal_data.parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=kwargs))
+        except async_support.OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
-        except NotSupported:
-            raise errors.NotSupported
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
         except Exception as e:
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
         return cancel_resp is not None
@@ -266,7 +278,7 @@ class CCXTExchange(AbstractExchange):
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
-                                         side=get_order_side(order_type),
+                                         side=exchanges.get_order_side(order_type),
                                          amount=quantity,
                                          price=price,
                                          takerOrMaker=taker_or_maker)
@@ -275,28 +287,28 @@ class CCXTExchange(AbstractExchange):
         try:
             market_status = self.client.market(symbol)
             return {
-                ExchangeConstantsMarketPropertyColumns.TAKER.value:
-                    market_status.get(ExchangeConstantsMarketPropertyColumns.TAKER.value,
-                                      CONFIG_DEFAULT_FEES),
-                ExchangeConstantsMarketPropertyColumns.MAKER.value:
-                    market_status.get(ExchangeConstantsMarketPropertyColumns.MAKER.value,
-                                      CONFIG_DEFAULT_FEES),
-                ExchangeConstantsMarketPropertyColumns.FEE.value:
-                    market_status.get(ExchangeConstantsMarketPropertyColumns.FEE.value,
-                                      CONFIG_DEFAULT_FEES)
+                enums.ExchangeConstantsMarketPropertyColumns.TAKER.value:
+                    market_status.get(enums.ExchangeConstantsMarketPropertyColumns.TAKER.value,
+                                      constants.CONFIG_DEFAULT_FEES),
+                enums.ExchangeConstantsMarketPropertyColumns.MAKER.value:
+                    market_status.get(enums.ExchangeConstantsMarketPropertyColumns.MAKER.value,
+                                      constants.CONFIG_DEFAULT_FEES),
+                enums.ExchangeConstantsMarketPropertyColumns.FEE.value:
+                    market_status.get(enums.ExchangeConstantsMarketPropertyColumns.FEE.value,
+                                      constants.CONFIG_DEFAULT_FEES)
             }
-        except NotSupported:
-            raise errors.NotSupported
+        except ccxt.NotSupported:
+            raise octobot_trading.errors.NotSupported
         except Exception as e:
             self.logger.error(f"Fees data for {symbol} was not found ({e})")
             return {
-                ExchangeConstantsMarketPropertyColumns.TAKER.value: CONFIG_DEFAULT_FEES,
-                ExchangeConstantsMarketPropertyColumns.MAKER.value: CONFIG_DEFAULT_FEES,
-                ExchangeConstantsMarketPropertyColumns.FEE.value: CONFIG_DEFAULT_FEES
+                enums.ExchangeConstantsMarketPropertyColumns.TAKER.value: constants.CONFIG_DEFAULT_FEES,
+                enums.ExchangeConstantsMarketPropertyColumns.MAKER.value: constants.CONFIG_DEFAULT_FEES,
+                enums.ExchangeConstantsMarketPropertyColumns.FEE.value: constants.CONFIG_DEFAULT_FEES
             }
 
     def get_uniform_timestamp(self, timestamp):
-        return timestamp / MSECONDS_TO_SECONDS
+        return timestamp / octobot_commons.constants.MSECONDS_TO_SECONDS
 
     def get_exchange_current_time(self):
         return self.get_uniform_timestamp(self.client.milliseconds())
@@ -306,21 +318,21 @@ class CCXTExchange(AbstractExchange):
         await self.client.close()
         self.logger.info(f"Connection closed.")
 
-    def get_pair_from_exchange(self, pair) -> str:
+    def get_pair_from_exchange(self, pair) -> typing.Optional[str]:
         try:
             return self.client.market(pair)["symbol"]
-        except BadSymbol:
+        except ccxt_errors.BadSymbol:
             try:
                 return self.client.markets_by_id[pair]["symbol"]
             except KeyError:
                 self.logger.error(f"Failed to get market of {pair}")
-                return None
+        return None
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
         try:
             market_data: dict = self.client.market(pair)
             return market_data["base"], market_data["quote"]
-        except BadSymbol:
+        except ccxt_errors.BadSymbol:
             try:
                 return self.client.markets_by_id[pair]["base"], self.client.markets_by_id[pair]["quote"]
             except KeyError:
@@ -352,7 +364,7 @@ class CCXTExchange(AbstractExchange):
     def set_sandbox_mode(self, is_sandboxed):
         try:
             self.client.setSandboxMode(is_sandboxed)
-        except NotSupported as e:
+        except ccxt_errors.NotSupported as e:
             default_type = self.client.options.get('defaultType', None)
             additional_info = f" in type {default_type}" if default_type else ""
             self.logger.warning(f"{self.name} does not support sandboxing {additional_info}: {e}")
@@ -398,13 +410,13 @@ class CCXTExchange(AbstractExchange):
         return order.get(ecoc.SYMBOL.value, None)
 
     def parse_status(self, status):
-        return OrderStatus(self.client.parse_order_status(status))
+        return enums.OrderStatus(self.client.parse_order_status(status))
 
     def parse_side(self, side):
-        return TradeOrderSide.BUY if side == self.BUY_STR else TradeOrderSide.SELL
+        return enums.TradeOrderSide.BUY if side == self.BUY_STR else enums.TradeOrderSide.SELL
 
     def parse_account(self, account):
-        return AccountTypes[account]
+        return enums.AccountTypes[account]
 
     """
     Cleaners

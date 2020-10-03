@@ -13,17 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.symbol_util  as symbol_util 
-import octobot_commons.time_frame_manager  as time_frame_manager 
-import octobot_commons.constants  as constants
-import octobot_commons.logging as logging_util 
+import octobot_commons.symbol_util as symbol_util
+import octobot_commons.time_frame_manager as time_frame_manager
+import octobot_commons.constants as constants
+import octobot_commons.logging as logging
+
 import octobot_trading.util as util
 
 
-class ExchangeConfig(Initializable):
+class ExchangeConfig(util.Initializable):
     def __init__(self, exchange_manager):
         super().__init__()
-        self._logger = get_logger(self.__class__.__name__)
+        self._logger = logging.get_logger(self.__class__.__name__)
 
         self.exchange_manager = exchange_manager
         self.config = exchange_manager.config
@@ -64,11 +65,11 @@ class ExchangeConfig(Initializable):
 
     def _set_config_traded_pairs(self):
         self.traded_cryptocurrencies = {}
-        for cryptocurrency in self.config[CONFIG_CRYPTO_CURRENCIES]:
-            if self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS]:
-                if self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS] != CONFIG_WILDCARD:
+        for cryptocurrency in self.config[constants.CONFIG_CRYPTO_CURRENCIES]:
+            if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS]:
+                if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS] != constants.CONFIG_WILDCARD:
                     self.traded_cryptocurrencies[cryptocurrency] = []
-                    for symbol in self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS]:
+                    for symbol in self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS]:
                         if self.exchange_manager.symbol_exists(symbol):
                             self.traded_cryptocurrencies[cryptocurrency].append(symbol)
                         else:
@@ -77,11 +78,11 @@ class ExchangeConfig(Initializable):
 
                 else:
                     self.traded_cryptocurrencies[cryptocurrency] = \
-                        self._create_wildcard_symbol_list(
-                            self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_QUOTE])
+                        self._create_wildcard_symbol_list(self.config[constants.CONFIG_CRYPTO_CURRENCIES]
+                                                          [cryptocurrency][constants.CONFIG_CRYPTO_QUOTE])
 
                     # additional pairs
-                    if CONFIG_CRYPTO_ADD in self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency]:
+                    if constants.CONFIG_CRYPTO_ADD in self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency]:
                         self.traded_cryptocurrencies[cryptocurrency] += \
                             self._add_tradable_symbols_from_config(cryptocurrency)
 
@@ -98,28 +99,29 @@ class ExchangeConfig(Initializable):
                                    f"You can add trading pair(s) for each asset in the configuration section.")
 
     def _set_config_time_frame(self):
-        for time_frame in get_config_time_frame(self.config):
+        for time_frame in time_frame_manager.get_config_time_frame(self.config):
             if self.exchange_manager.time_frame_exists(time_frame.value):
                 self.traded_time_frames.append(time_frame)
         if not self.exchange_manager.is_backtesting or not self.traded_time_frames:
             # add shortest time frame for realtime evaluators or if no time frame at all has
             # been registered in backtesting
-            client_shortest_time_frame = find_min_time_frame(self.exchange_manager.client_time_frames,
-                                                             MIN_EVAL_TIME_FRAME)
+            client_shortest_time_frame = time_frame_manager.find_min_time_frame(
+                self.exchange_manager.client_time_frames,
+                constants.MIN_EVAL_TIME_FRAME)
             self.real_time_time_frames.append(client_shortest_time_frame)
         self.traded_time_frames = list(set().union(self.traded_time_frames, self.real_time_time_frames))
-        self.traded_time_frames = sort_time_frames(self.traded_time_frames, reverse=True)
+        self.traded_time_frames = time_frame_manager.sort_time_frames(self.traded_time_frames, reverse=True)
 
     @staticmethod
     def _is_tradable_with_cryptocurrency(symbol, cryptocurrency):
-        return symbol if split_symbol(symbol)[1] == cryptocurrency else None
+        return symbol if symbol_util.split_symbol(symbol)[1] == cryptocurrency else None
 
     def _add_tradable_symbols_from_config(self, cryptocurrency):
         return [
             symbol
-            for symbol in self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_ADD]
+            for symbol in self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_ADD]
             if self.exchange_manager.symbol_exists(symbol)
-            and symbol not in self.traded_cryptocurrencies[cryptocurrency]
+               and symbol not in self.traded_cryptocurrencies[cryptocurrency]
         ]
 
     def _create_wildcard_symbol_list(self, cryptocurrency):
@@ -128,19 +130,20 @@ class ExchangeConfig(Initializable):
                 if s is not None]
 
     def _add_tradable_symbols(self, cryptocurrency, symbols):
-        if cryptocurrency not in self.config[CONFIG_CRYPTO_CURRENCIES]:
+        if cryptocurrency not in self.config[constants.CONFIG_CRYPTO_CURRENCIES]:
             # TODO use exchange config
-            self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency] = {}
-            self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS] = symbols
+            self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency] = {}
+            self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS] = symbols
             return cryptocurrency, symbols
 
         # TODO manage wildcard
         symbols_to_add = [s for s in symbols
                           if self.exchange_manager.symbol_exists(s)
-                          and s not in self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS]]
+                          and s not in self.config[constants.CONFIG_CRYPTO_CURRENCIES]
+                          [cryptocurrency][constants.CONFIG_CRYPTO_PAIRS]]
 
         # TODO use exchange config
-        self.config[CONFIG_CRYPTO_CURRENCIES][cryptocurrency][CONFIG_CRYPTO_PAIRS] += symbols_to_add
+        self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS] += symbols_to_add
 
         return None, symbols_to_add
 
@@ -148,5 +151,5 @@ class ExchangeConfig(Initializable):
         # TODO use exchange config
         time_frames_to_add = [tf for tf in time_frames
                               if self.exchange_manager.time_frame_exists(tf)
-                              and tf not in self.config[CONFIG_TIME_FRAME]]
+                              and tf not in self.config[constants.CONFIG_TIME_FRAME]]
         return time_frames_to_add

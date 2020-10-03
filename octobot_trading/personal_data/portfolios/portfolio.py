@@ -16,16 +16,16 @@
 import asyncio 
 import copy 
 
-import octobot_commons.constants  as constants 
-import octobot_commons.logging as logging_util 
+import octobot_commons.constants as common_constants
+import octobot_commons.logging as logging
 
-import octobot_trading.constants  as constants 
-import octobot_trading.enums  as enums 
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 import octobot_trading.util as util
 
 
-class Portfolio(Initializable):
+class Portfolio(util.Initializable):
     """
     The Portfolio class manage an exchange portfolio
     This will begin by loading current exchange portfolio (by pulling user data)
@@ -40,8 +40,8 @@ class Portfolio(Initializable):
         self._exchange_name = exchange_name
         self._is_simulated = is_simulated
 
-        self.logger = get_logger(f"{self.__class__.__name__}{'Simulator' if is_simulated else ''}[{exchange_name}]")
-        self.lock = Lock()
+        self.logger = logging.get_logger(f"{self.__class__.__name__}{'Simulator' if is_simulated else ''}[{exchange_name}]")
+        self.lock = asyncio.Lock()
         self.portfolio = None
 
     async def initialize_impl(self):
@@ -63,7 +63,7 @@ class Portfolio(Initializable):
         """
         new_portfolio: Portfolio = Portfolio(self._exchange_name, self._is_simulated)
         await new_portfolio.initialize()
-        new_portfolio.portfolio = deepcopy(self.portfolio)
+        new_portfolio.portfolio = copy.deepcopy(self.portfolio)
         return new_portfolio
 
     def update_portfolio_from_balance(self, balance, force_replace=True):
@@ -81,10 +81,10 @@ class Portfolio(Initializable):
             self.portfolio = new_balance
         else:
             self.portfolio.update(new_balance)
-        self.logger.debug(f"Portfolio updated | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
+        self.logger.debug(f"Portfolio updated | {constants.CURRENT_PORTFOLIO_STRING} {self.portfolio}")
         return True
 
-    def get_currency_from_given_portfolio(self, currency, portfolio_type=PORTFOLIO_AVAILABLE):
+    def get_currency_from_given_portfolio(self, currency, portfolio_type=common_constants.PORTFOLIO_AVAILABLE):
         """
         Get the currency quantity from the portfolio type
         :param currency: the currency to get quantity
@@ -97,7 +97,7 @@ class Portfolio(Initializable):
             self._reset_currency_portfolio(currency)
             return self.portfolio[currency][portfolio_type]
 
-    def get_currency_portfolio(self, currency, portfolio_type=PORTFOLIO_AVAILABLE):
+    def get_currency_portfolio(self, currency, portfolio_type=common_constants.PORTFOLIO_AVAILABLE):
         """
         Get specified currency quantity in the portfolio
         :param currency: the currency to get
@@ -192,8 +192,10 @@ class Portfolio(Initializable):
         :return: the updated currency portfolio
         """
         return self._create_currency_portfolio(
-            available=currency_balance.get(CONFIG_PORTFOLIO_FREE, currency_balance.get(PORTFOLIO_AVAILABLE, 0)),
-            total=currency_balance.get(CONFIG_PORTFOLIO_TOTAL, currency_balance.get(PORTFOLIO_TOTAL, 0)))
+            available=currency_balance.get(constants.CONFIG_PORTFOLIO_FREE,
+                                           currency_balance.get(common_constants.PORTFOLIO_AVAILABLE, 0)),
+            total=currency_balance.get(constants.CONFIG_PORTFOLIO_TOTAL,
+                                       currency_balance.get(common_constants.PORTFOLIO_TOTAL, 0)))
 
     def _create_currency_portfolio(self, available, total):
         """
@@ -202,7 +204,7 @@ class Portfolio(Initializable):
         :param total: the total value
         :return: the portfolio dictionary
         """
-        return {PORTFOLIO_AVAILABLE: available, PORTFOLIO_TOTAL: total}
+        return {common_constants.PORTFOLIO_AVAILABLE: available, common_constants.PORTFOLIO_TOTAL: total}
 
     def _reset_currency_portfolio(self, currency):
         """
@@ -227,8 +229,8 @@ class Portfolio(Initializable):
         :param available: the available delta
         :param total: the total delta
         """
-        self.portfolio[currency][PORTFOLIO_AVAILABLE] += available
-        self.portfolio[currency][PORTFOLIO_TOTAL] += total
+        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += available
+        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += total
 
     def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
         """
@@ -251,8 +253,8 @@ class Portfolio(Initializable):
         self.portfolio.update(
             {
                 currency: self._create_currency_portfolio(
-                    available=self.portfolio[currency][PORTFOLIO_TOTAL],
-                    total=self.portfolio[currency][PORTFOLIO_TOTAL])
+                    available=self.portfolio[currency][common_constants.PORTFOLIO_TOTAL],
+                    total=self.portfolio[currency][common_constants.PORTFOLIO_TOTAL])
                 for currency in self.portfolio
             })
 
@@ -264,8 +266,8 @@ class Portfolio(Initializable):
         """
         if reset_quantity is None:
             self._set_currency_portfolio(currency=currency_to_reset,
-                                         available=self.portfolio[currency_to_reset][PORTFOLIO_TOTAL],
-                                         total=self.portfolio[currency_to_reset][PORTFOLIO_TOTAL])
+                                         available=self.portfolio[currency_to_reset][common_constants.PORTFOLIO_TOTAL],
+                                         total=self.portfolio[currency_to_reset][common_constants.PORTFOLIO_TOTAL])
         else:
             self._update_currency_portfolio(currency=currency_to_reset, available=reset_quantity)
 
@@ -277,9 +279,9 @@ def _check_available_should_update(order):
     :return: True if the order should update available portfolio
     """
     # stop losses and take profits aren't using available portfolio
-    return order.__class__ not in [TraderOrderTypeClasses[TraderOrderType.STOP_LOSS],
-                                   TraderOrderTypeClasses[TraderOrderType.STOP_LOSS_LIMIT],
-                                   TraderOrderTypeClasses[TraderOrderType.TAKE_PROFIT],
-                                   TraderOrderTypeClasses[TraderOrderType.TAKE_PROFIT_LIMIT],
-                                   TraderOrderTypeClasses[TraderOrderType.TRAILING_STOP],
-                                   TraderOrderTypeClasses[TraderOrderType.TRAILING_STOP_LIMIT]]
+    return order.__class__ not in [personal_data.TraderOrderTypeClasses[enums.TraderOrderType.STOP_LOSS],
+                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.STOP_LOSS_LIMIT],
+                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.TAKE_PROFIT],
+                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.TAKE_PROFIT_LIMIT],
+                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.TRAILING_STOP],
+                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.TRAILING_STOP_LIMIT]]

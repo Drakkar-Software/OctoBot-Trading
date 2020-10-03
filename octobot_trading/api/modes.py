@@ -15,7 +15,6 @@
 #  License along with this library.
 
 import octobot_trading.modes as modes
-import octobot_trading.util as util
 
 
 def get_trading_modes(exchange_manager) -> list:
@@ -31,7 +30,7 @@ def get_trading_mode_current_state(trading_mode) -> tuple:
 
 
 def get_activated_trading_mode(tentacles_setup_config) -> modes.AbstractTradingMode.__class__:
-    return util.get_activated_trading_mode(tentacles_setup_config)
+    return modes.get_activated_trading_mode(tentacles_setup_config)
 
 
 async def create_trading_modes(config: dict,

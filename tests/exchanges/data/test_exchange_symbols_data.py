@@ -15,7 +15,7 @@
 #  License along with this library.
 import pytest
 
-from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
+from octobot_trading.exchange_data.exchange_symbols_data import ExchangeSymbolsData
 
 # Import required fixtures
 from tests import event_loop

@@ -19,7 +19,7 @@ from octobot_trading.util.initializable cimport Initializable
 cimport numpy as np
 np.import_array()
 
-cdef class CandlesManager(Initializable):
+cdef class CandlesManager(util.Initializable):
     cdef object logger
 
     cdef public bint candles_initialized

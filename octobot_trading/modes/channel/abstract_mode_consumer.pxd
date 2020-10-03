@@ -14,17 +14,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.util.initializable cimport Initializable
+from octobot_trading.modes.channel.mode cimport ModeChannelConsumer
+from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 
-cdef class RecentTradesManager(util.Initializable):
-    cdef object logger
+cdef class AbstractTradingModeConsumer(ModeChannelConsumer):
+    cdef public object trading_mode
 
-    cdef public object recent_trades
-    cdef public object liquidations
+    cdef public ExchangeManager exchange_manager
 
-    cdef void _reset_recent_trades(self)
+    cpdef int get_number_of_traded_assets(self)
 
-    cpdef list set_all_recent_trades(self, list recent_trades)
-    cpdef list add_new_trades(self, list recent_trades)
-
-    cpdef list add_new_liquidations(self, list liquidations)
+cpdef check_factor(min_val, max_val, factor)

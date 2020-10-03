@@ -17,7 +17,7 @@
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class TickerManager(Initializable):
+cdef class TickerManager(util.Initializable):
     cdef object logger
 
     cdef public dict ticker

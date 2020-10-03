@@ -14,23 +14,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
-import octobot_trading.errors  as errors 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.errors as errors
 import octobot_trading.modes as modes
 import octobot_trading.exchanges as exchanges
-import octobot_trading.util  as util 
 import octobot_trading.util as util
 
 
 class ExchangeBuilder:
     def __init__(self, config, exchange_name):
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.config: dict = config
         self.exchange_name: str = exchange_name
 
-        self.exchange_manager: ExchangeManager = ExchangeManager(self.config, self.exchange_name)
+        self.exchange_manager: exchanges.ExchangeManager = exchanges.ExchangeManager(self.config, self.exchange_name)
 
         self._is_using_trading_modes: bool = True
         self._matrix_id: str = None
@@ -52,7 +50,7 @@ class ExchangeBuilder:
 
     async def _build_exchange_manager(self):
         if self._is_using_trading_modes:
-            trading_mode_class = get_activated_trading_mode(self._tentacles_setup_config)
+            trading_mode_class = modes.get_activated_trading_mode(self._tentacles_setup_config)
             # handle exchange related requirements if the activated trading mode has any
             self._register_trading_modes_requirements(trading_mode_class)
 
@@ -79,7 +77,7 @@ class ExchangeBuilder:
     async def _build_trader(self):
         try:
             # check traders activation
-            if not is_trader_enabled(self.config) and not is_trader_simulator_enabled(self.config):
+            if not util.is_trader_enabled(self.config) and not util.is_trader_simulator_enabled(self.config):
                 raise ValueError(f"No trader simulator nor real trader activated on "
                                  f"{self.exchange_manager.exchange_name}")
 
@@ -93,11 +91,11 @@ class ExchangeBuilder:
 
     async def _build_trading_modes(self, trading_mode_class):
         try:
-            return await create_trading_modes(self.config,
-                                              self.exchange_manager,
-                                              trading_mode_class,
-                                              self._bot_id)
-        except TradingModeIncompatibility as e:
+            return await modes.create_trading_modes(self.config,
+                                                    self.exchange_manager,
+                                                    trading_mode_class,
+                                                    self._bot_id)
+        except errors.TradingModeIncompatibility as e:
             raise e
         except Exception as e:
             self.logger.error(f"An error occurred when initializing trading mode : {e}")
@@ -118,12 +116,12 @@ class ExchangeBuilder:
 
     def is_simulated(self):
         self.exchange_manager.is_simulated = True
-        self.exchange_manager.trader = TraderSimulator(self.config, self.exchange_manager)
+        self.exchange_manager.trader = exchanges.TraderSimulator(self.config, self.exchange_manager)
         return self
 
     def is_real(self):
         self.exchange_manager.is_simulated = False
-        self.exchange_manager.trader = Trader(self.config, self.exchange_manager)
+        self.exchange_manager.trader = exchanges.Trader(self.config, self.exchange_manager)
         return self
 
     def is_margin(self, use_margin=True):

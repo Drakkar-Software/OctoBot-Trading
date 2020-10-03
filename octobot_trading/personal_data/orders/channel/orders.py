@@ -14,16 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-import asyncio 
 
-import octobot_channels.constants as constants
+import channel.constants as channel_constants
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants
-import octobot_trading.exchanges as exchanges
+import octobot_trading.constants as constants
 
 
-class OrdersProducer(ExchangeChannelProducer):
+class OrdersProducer(exchanges.ExchangeChannelProducer):
     async def push(self, orders, is_from_bot=False, are_closed=False):
         await self.perform(orders, is_from_bot=is_from_bot, are_closed=are_closed)
 
@@ -34,8 +32,8 @@ class OrdersProducer(ExchangeChannelProducer):
             for order in orders:
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
                     self.channel.exchange_manager.exchange.parse_order_symbol(order))
-                if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
-                        symbol=symbol):
+                if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
+                        self.channel.get_filtered_consumers(symbol=symbol):
                     order_id: str = self.channel.exchange_manager.exchange.parse_order_id(order)
 
                     # if this order was not managed by order_manager before
@@ -52,7 +50,7 @@ class OrdersProducer(ExchangeChannelProducer):
             if not are_closed:
                 await self.handle_post_open_order_update(symbol, orders, has_new_order)
 
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -98,7 +96,8 @@ class OrdersProducer(ExchangeChannelProducer):
 
             # if a new order have been loaded : refresh portfolio to ensure available funds are up to date
             if has_new_order:
-                await get_chan(BALANCE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+                await exchanges.get_chan(constants.BALANCE_CHANNEL,
+                                         self.channel.exchange_manager.id).get_internal_producer(). \
                     refresh_real_trader_portfolio()
 
     async def update_order_from_exchange(self, order,
@@ -116,7 +115,7 @@ class OrdersProducer(ExchangeChannelProducer):
         :return: True if the order was updated
         """
         try:
-            await (get_chan(ORDERS_CHANNEL, self.channel.exchange_manager.id).producers[-1].
+            await (exchanges.get_chan(constants.ORDERS_CHANNEL, self.channel.exchange_manager.id).producers[-1].
                    update_order_from_exchange(order=order,
                                               should_notify=should_notify,
                                               force_job_execution=force_job_execution,
@@ -124,9 +123,9 @@ class OrdersProducer(ExchangeChannelProducer):
         except IndexError:
             if not self.channel.exchange_manager.is_simulated and create_order_producer_if_missing:
                 self.logger.debug("Missing orders producer, starting one...")
-                await create_authenticated_producer_from_parent(self.channel.exchange_manager,
-                                                                self.__class__,
-                                                                force_register_producer=True)
+                await exchanges.create_authenticated_producer_from_parent(self.channel.exchange_manager,
+                                                                          self.__class__,
+                                                                          force_register_producer=True)
                 await self.update_order_from_exchange(order=order,
                                                       should_notify=should_notify,
                                                       wait_for_refresh=wait_for_refresh,
@@ -180,6 +179,6 @@ class OrdersProducer(ExchangeChannelProducer):
             })
 
 
-class OrdersChannel(ExchangeChannel):
+class OrdersChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = OrdersProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer

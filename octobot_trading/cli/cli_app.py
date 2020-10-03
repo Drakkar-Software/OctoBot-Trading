@@ -17,38 +17,37 @@ import asyncio
 import threading 
 
 import click
-import click_shell 
+import click_shell
 
-import octobot_trading.api as exchange 
-import octobot_trading.api as orders 
+import octobot_trading.api as api
+import octobot_trading.exchanges as exchanges
 import octobot_trading.cli as cli
-import octobot_trading.cli as cli_tools 
 import octobot_trading.enums
 
 
-@shell(prompt='OctoBot-Trading > ', intro='Starting...')
+@click_shell.shell(prompt='OctoBot-Trading > ', intro='Starting...')
 def app():
     exchange_name = "binance"
-    exchange_builder = create_exchange_builder(get_config(), exchange_name) \
+    exchange_builder = exchanges.create_exchange_builder_instance(cli.get_config(), exchange_name) \
         .is_simulated() \
         .is_rest_only()
 
-    add_exchange(exchange_name, {
+    cli.add_exchange(exchange_name, {
         "exchange_builder": exchange_builder,
-        "exchange_thread": Thread(target=start_cli_exchange, args=(exchange_builder,))
+        "exchange_thread": threading.Thread(target=start_cli_exchange, args=(exchange_builder,))
     })
 
-    get_exchange(exchange_name)["exchange_thread"].start()
+    cli.get_exchange(exchange_name)["exchange_thread"].start()
 
 
 @app.command()
 def show():
-    set_should_display_callbacks_logs(True)
+    cli.set_should_display_callbacks_logs(True)
 
 
 @app.command()
 def hide():
-    set_should_display_callbacks_logs(False)
+    cli.set_should_display_callbacks_logs(False)
 
 
 #  create_order --exchange_name binance --symbol BTC/USDT --price 11000 --quantity 1 --order_type buy_limit

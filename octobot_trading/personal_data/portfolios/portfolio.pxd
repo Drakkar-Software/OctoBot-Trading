@@ -22,7 +22,7 @@ It is also use to store creation & fill values of the order """
 from octobot_trading.personal_data.orders.order cimport Order
 from octobot_trading.util.initializable cimport Initializable
 
-cdef class Portfolio(Initializable):
+cdef class Portfolio(util.Initializable):
     cdef object logger # Logger
     cdef public object lock # asyncio.Lock
 

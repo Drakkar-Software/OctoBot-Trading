@@ -13,15 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.symbol_util  as symbol_util 
+import octobot_commons.symbol_util as symbol_util
+
 import octobot_trading.exchanges as exchanges
-import octobot_trading.personal_data as personal_data
 import octobot_trading.modes as modes
-import octobot_trading.enums  as enums 
-import octobot_trading.errors  as errors 
+import octobot_trading.enums as enums
+import octobot_trading.errors as errors
+import octobot_trading.constants as constants
+from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
-class AbstractTradingModeConsumer(ModeChannelConsumer):
+class AbstractTradingModeConsumer(modes.ModeChannelConsumer):
     def __init__(self, trading_mode):
         super().__init__()
         self.trading_mode = trading_mode
@@ -35,7 +37,7 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
         # creates a new order (or multiple split orders), always check self.can_create_order() first.
         try:
             await self.create_order_if_possible(symbol, final_note, state, data=data)
-        except MissingMinimalExchangeTradeVolume:
+        except errors.MissingMinimalExchangeTradeVolume:
             self.logger.info("Not enough funds to create a new order: exchange minimal order volume has not been"
                              " reached.")
 
@@ -54,16 +56,17 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
                 if await self.can_create_order(symbol, state):
                     try:
                         return await self.create_new_orders(symbol, final_note, state, **kwargs)
-                    except MissingMinimalExchangeTradeVolume:
+                    except errors.MissingMinimalExchangeTradeVolume:
                         raise
-                    except MissingFunds:
+                    except errors.MissingFunds:
                         try:
                             # second chance: force portfolio update and retry
-                            await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer(). \
+                            await exchanges.get_chan(constants.BALANCE_CHANNEL,
+                                                     self.exchange_manager.id).get_internal_producer(). \
                                 refresh_real_trader_portfolio(True)
 
                             return await self.create_new_orders(symbol, final_note, state, **kwargs)
-                        except MissingFunds as e:
+                        except errors.MissingFunds as e:
                             self.logger.error(f"Failed to create order on second attempt : {e})")
                     except Exception as e:
                         self.logger.exception(e, True, f"Error when creating order: {e}")
@@ -74,7 +77,7 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
 
     # Can be overwritten
     async def can_create_order(self, symbol, state):
-        currency, market = split_symbol(symbol)
+        currency, market = symbol_util.split_symbol(symbol)
         portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
 
         # get symbol min amount when creating order
@@ -86,11 +89,11 @@ class AbstractTradingModeConsumer(ModeChannelConsumer):
             symbol_min_amount = 0
 
         # short cases => sell => need this currency
-        if state == EvaluatorStates.VERY_SHORT.value or state == EvaluatorStates.SHORT.value:
+        if state == enums.EvaluatorStates.VERY_SHORT.value or state == enums.EvaluatorStates.SHORT.value:
             return portfolio.get_currency_portfolio(currency) > symbol_min_amount
 
         # long cases => buy => need money(aka other currency in the pair) to buy this currency
-        elif state == EvaluatorStates.LONG.value or state == EvaluatorStates.VERY_LONG.value:
+        elif state == enums.EvaluatorStates.LONG.value or state == enums.EvaluatorStates.VERY_LONG.value:
             return portfolio.get_currency_portfolio(market) > order_min_amount
 
         # other cases like neutral state or unfulfilled previous conditions

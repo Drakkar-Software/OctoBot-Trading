@@ -13,25 +13,22 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants
+import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
-import octobot_trading.personal_data as personal_data
-import octobot_trading.personal_data as personal_data
-import octobot_trading.util  as util 
 import octobot_trading.util as util
 
 
-class PortfolioManager(Initializable):
+class PortfolioManager(util.Initializable):
     """
     Manage the portfolio and portfolio profitability instances
     """
 
     def __init__(self, config, trader, exchange_manager):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
 
         self.portfolio = None
@@ -100,20 +97,20 @@ class PortfolioManager(Initializable):
         Call BALANCE_CHANNEL producer to refresh real trader portfolio
         :return: True if the portfolio was updated
         """
-        return await get_chan(BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer(). \
+        return await exchanges.get_chan(constants.BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer(). \
             refresh_real_trader_portfolio()
 
     async def _reset_portfolio(self):
         """
         Reset the portfolio and portfolio profitability instances
         """
-        self.portfolio = create_portfolio_from_exchange_manager(self.exchange_manager)
+        self.portfolio = personal_data.create_portfolio_from_exchange_manager(self.exchange_manager)
         await self.portfolio.initialize()
         self._load_portfolio()
 
-        self.reference_market = get_reference_market(self.config)
-        self.portfolio_value_holder = PortfolioValueHolder(self)
-        self.portfolio_profitability = PortfolioProfitability(self)
+        self.reference_market = util.get_reference_market(self.config)
+        self.portfolio_value_holder = personal_data.PortfolioValueHolder(self)
+        self.portfolio_profitability = personal_data.PortfolioProfitability(self)
 
     def _refresh_simulated_trader_portfolio_from_order(self, order):
         """
@@ -134,13 +131,13 @@ class PortfolioManager(Initializable):
         if self.trader.is_enabled:
             if self.trader.simulate:
                 self._set_starting_simulated_portfolio()
-            self.logger.info(f"{CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
+            self.logger.info(f"{constants.CURRENT_PORTFOLIO_STRING} {self.portfolio.portfolio}")
 
     def _set_starting_simulated_portfolio(self):
         """
         Load new portfolio from config settings
         """
-        portfolio_amount_dict = self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]
+        portfolio_amount_dict = self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_STARTING_PORTFOLIO]
 
         try:
             self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
@@ -148,7 +145,7 @@ class PortfolioManager(Initializable):
             self.logger.exception(balance_update_exception, True, f"Error when loading trading history, "
                                                                   f"will reset history. ({balance_update_exception})")
             self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(
-                self.config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]))
+                self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_STARTING_PORTFOLIO]))
 
     def clear(self):
         """

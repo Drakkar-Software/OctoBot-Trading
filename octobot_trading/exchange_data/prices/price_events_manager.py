@@ -15,8 +15,8 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_commons.logging as logging_util 
-import octobot_trading.enums  as enums 
+import octobot_commons.logging as logging
+from octobot_trading.enums import ExchangeConstantsOrderColumns as ECOC
 
 
 class PriceEventsManager:
@@ -31,7 +31,7 @@ class PriceEventsManager:
     PRICE_EVENT_INDEX = 2
 
     def __init__(self):
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.events = []
 
     def reset(self):
@@ -125,4 +125,4 @@ def _new_price_event(price, timestamp, trigger_above):
     :param trigger_above: True if waiting for an upper price
     :return: a tuple to be added into events list
     """
-    return price, timestamp, Event(), trigger_above
+    return price, timestamp, asyncio.Event(), trigger_above

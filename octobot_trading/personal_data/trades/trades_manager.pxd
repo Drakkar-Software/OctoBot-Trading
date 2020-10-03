@@ -18,7 +18,7 @@ from octobot_trading.personal_data.trades.trade cimport Trade
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class TradesManager(Initializable):
+cdef class TradesManager(util.Initializable):
     cdef object logger
     cdef object exchange_manager
     cdef object trader

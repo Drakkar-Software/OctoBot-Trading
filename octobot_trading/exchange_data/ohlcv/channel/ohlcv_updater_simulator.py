@@ -13,29 +13,31 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_backtesting.api as backtesting 
-import octobot_backtesting.api as importer 
-import octobot_backtesting.data  as data 
-import octobot_channels.channels as channel 
-import octobot_commons.channels_name  as channels_name 
-import octobot_commons.constants  as constants 
-import octobot_commons.enums  as enums 
+import octobot_backtesting.api as api
+import octobot_backtesting.data as data
+
+import octobot_commons.channels_name as channels_name
+import octobot_commons.constants as constants
+import octobot_commons.enums as enums
+
 import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchanges as exchanges
 import octobot_trading.util as util
 
 
-class OHLCVUpdaterSimulator(OHLCVUpdater):
+class OHLCVUpdaterSimulator(exchange_data.OHLCVUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer
         self.exchange_name = self.channel.exchange_manager.exchange_name
 
-        self.initial_timestamp = get_backtesting_current_time(self.channel.exchange_manager.exchange.backtesting)
+        self.initial_timestamp = api.get_backtesting_current_time(self.channel.exchange_manager.exchange.backtesting)
         self.last_timestamp_pushed = 0
         self.time_consumer = None
 
         self.future_candle_time_frame = self.channel.exchange_manager.exchange_config.get_shortest_time_frame()
-        self.future_candle_sec_length = TimeFramesMinutes[self.future_candle_time_frame] * MINUTE_TO_SECONDS
+        self.future_candle_sec_length = enums.TimeFramesMinutes[self.future_candle_time_frame] * \
+                                        constants.MINUTE_TO_SECONDS
 
         self.last_candles_by_pair_by_time_frame = {}
         self.require_last_init_candles_pairs_push = False
@@ -66,7 +68,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
                     if ohlcv_data:
                         current_candle_index = 0
                         if self.future_candle_time_frame is time_frame:
-                            if ohlcv_data[0][-1][PriceIndexes.IND_PRICE_TIME.value] == timestamp:
+                            if ohlcv_data[0][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
                                 # register future candle
                                 self.channel.exchange.current_future_candles[pair][time_frame.value] = ohlcv_data[0][-1]
                                 # do not push future candle
@@ -89,7 +91,7 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
                                             pair,
                                             [self.last_candles_by_pair_by_time_frame[pair][time_frame.value][-1]],
                                             partial=True)
-        except DataBaseNotExists as e:
+        except data.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()
@@ -103,18 +105,19 @@ class OHLCVUpdaterSimulator(OHLCVUpdater):
 
     async def pause(self):
         if self.time_consumer is not None:
-            await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
+            await exchanges.get_chan(
+                channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
 
     async def stop(self):
-        await stop_and_pause(self)
+        await util.stop_and_pause(self)
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:
-            self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
-                self.handle_timestamp)
+            self.time_consumer = await exchanges.get_chan(
+                channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(self.handle_timestamp)
 
     def _get_traded_pairs(self):
-        return get_available_symbols(self.exchange_data_importer)
+        return api.get_available_symbols(self.exchange_data_importer)
 
     def _get_time_frames(self):
         return self.channel.exchange.get_time_frames(self.exchange_data_importer)

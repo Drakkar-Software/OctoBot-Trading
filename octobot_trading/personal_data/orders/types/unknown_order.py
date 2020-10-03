@@ -16,7 +16,7 @@
 import octobot_trading.personal_data as personal_data
 
 
-class UnknownOrder(Order):
+class UnknownOrder(personal_data.Order):
     """UnknownOrder is used when an exchange is giving an order without a type (ex: binance 2yo+ orders)"""
     async def update_order_status(self, force_refresh=False):
         if not self.trader.simulate:

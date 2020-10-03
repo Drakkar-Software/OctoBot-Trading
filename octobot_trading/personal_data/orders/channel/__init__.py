@@ -14,17 +14,18 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.orders.channel import orders_updater
 from octobot_trading.personal_data.orders.channel import orders
-from octobot_trading.personal_data.orders.channel import orders_manager
-from octobot_trading.personal_data.orders.channel import orders_updater_simulator
-
-from octobot_trading.personal_data.orders.channel.orders_updater import (
-    OrdersUpdater,
-)
 from octobot_trading.personal_data.orders.channel.orders import (
     OrdersProducer,
     OrdersChannel,
+)
+
+from octobot_trading.personal_data.orders.channel import orders_manager
+from octobot_trading.personal_data.orders.channel import orders_updater_simulator
+
+from octobot_trading.personal_data.orders.channel import orders_updater
+from octobot_trading.personal_data.orders.channel.orders_updater import (
+    OrdersUpdater,
 )
 from octobot_trading.personal_data.orders.channel.orders_manager import (
     OrdersManager,

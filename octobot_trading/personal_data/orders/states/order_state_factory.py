@@ -13,18 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 
 
 async def create_order_state(order, is_from_exchange_data=False, ignore_states=None):
     if ignore_states is None:
         ignore_states = []
 
-    if order.status is OrderStatus.OPEN and OrderStates.OPEN not in ignore_states:
+    if order.status is enums.OrderStatus.OPEN and enums.OrderStates.OPEN not in ignore_states:
         await order.on_open(force_open=False, is_from_exchange_data=is_from_exchange_data)
-    elif order.status in [OrderStatus.CLOSED, OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED] \
-            and OrderStates.FILLED not in ignore_states \
-            and OrderStates.CLOSED not in ignore_states:
+    elif order.status in [enums.OrderStatus.CLOSED, enums.OrderStatus.FILLED, enums.OrderStatus.PARTIALLY_FILLED] \
+            and enums.OrderStates.FILLED not in ignore_states \
+            and enums.OrderStates.CLOSED not in ignore_states:
         await order.on_fill(force_fill=False, is_from_exchange_data=is_from_exchange_data)
-    elif order.status is OrderStatus.CANCELED and OrderStates.CANCELED not in ignore_states:
+    elif order.status is enums.OrderStatus.CANCELED and enums.OrderStates.CANCELED not in ignore_states:
         await order.on_cancel(force_cancel=False, is_from_exchange_data=is_from_exchange_data)

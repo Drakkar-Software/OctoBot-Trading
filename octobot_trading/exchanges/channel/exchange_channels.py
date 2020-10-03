@@ -13,11 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_channels.producer  as producer 
-import octobot_channels.util as channel_creator 
-import octobot_commons.tentacles_management as class_inspector 
+import channel.producer as channel_producer
+import channel.util as channel_util
 
-import octobot_trading.exchanges as exchanges
+import octobot_commons.tentacles_management as tentacles_management
+
 import octobot_trading.exchanges as exchanges
 
 
@@ -27,10 +27,10 @@ async def create_exchange_channels(exchange_manager) -> None:
     # TODO filter creation --> not required if pause is managed
     :param exchange_manager: the related exchange manager
     """
-    for exchange_channel_class_type in [ExchangeChannel, TimeFrameExchangeChannel]:
-        await create_all_subclasses_channel(exchange_channel_class_type, set_chan,
-                                            is_synchronized=exchange_manager.is_backtesting,
-                                            exchange_manager=exchange_manager)
+    for exchange_channel_class_type in [exchanges.ExchangeChannel, exchanges.TimeFrameExchangeChannel]:
+        await channel_util.create_all_subclasses_channel(exchange_channel_class_type, exchanges.set_chan,
+                                                         is_synchronized=exchange_manager.is_backtesting,
+                                                         exchange_manager=exchange_manager)
 
 
 async def create_exchange_producers(exchange_manager) -> None:
@@ -46,13 +46,13 @@ async def create_exchange_producers(exchange_manager) -> None:
     # Real data producers
     if _should_create_unauthenticated_producers(exchange_manager):
         for updater in get_unauthenticated_updater_producers():
-            if not is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
-                await updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+            if not exchanges.is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
+                await updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
     # Simulated producers
     if _should_create_simulated_producers(exchange_manager):
         for updater in get_authenticated_updater_simulator_producers():
-            await updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+            await updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
 
 def _should_create_authenticated_producers(exchange_manager):
@@ -90,31 +90,31 @@ async def _create_authenticated_producers(exchange_manager) -> None:
     :param exchange_manager: the related exchange manager
     """
     for updater in get_authenticated_updater_producers():
-        if is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
+        if exchanges.is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
             # websocket is handling this channel: initialize data if required
-            if is_websocket_feed_requiring_init(exchange_manager, updater.CHANNEL_NAME):
+            if exchanges.is_websocket_feed_requiring_init(exchange_manager, updater.CHANNEL_NAME):
                 try:
-                    updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).trigger_single_update()
+                    updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).trigger_single_update()
                 except Exception as e:
                     exchange_manager.logger.exception(e, True,
                                                       f"Error when initializing data for {updater.CHANNEL_NAME} "
                                                       f"channel required by websocket: {e}")
         else:
             # no websocket for this channel: start an updater
-            await updater(get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+            await updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
 
-async def _create_authenticated_producer(exchange_manager, producer) -> Producer:
+async def _create_authenticated_producer(exchange_manager, producer) -> channel_producer.Producer:
     """
     Create real authenticated producers
     :param exchange_manager: the related exchange manager
     :param producer: the producer to create
     :return: the producer instance created
     """
-    producer_instance = producer(get_chan(producer.CHANNEL_NAME, exchange_manager.id))
-    if is_exchange_managed_by_websocket(exchange_manager, producer.CHANNEL_NAME):
+    producer_instance = producer(exchanges.get_chan(producer.CHANNEL_NAME, exchange_manager.id))
+    if exchanges.is_exchange_managed_by_websocket(exchange_manager, producer.CHANNEL_NAME):
         # websocket is handling this channel: initialize data if required
-        if is_websocket_feed_requiring_init(exchange_manager, producer.CHANNEL_NAME):
+        if exchanges.is_websocket_feed_requiring_init(exchange_manager, producer.CHANNEL_NAME):
             try:
                 producer_instance.trigger_single_update()
             except Exception as e:
@@ -149,7 +149,7 @@ def _get_authenticated_producer_from_parent(parent_producer_class):
     :return: the authenticated producer that inherit from parent_producer_class
     """
     for authenticated_producer_candidate in get_authenticated_updater_producers():
-        if default_parent_inspection(authenticated_producer_candidate, parent_producer_class):
+        if tentacles_management.default_parent_inspection(authenticated_producer_candidate, parent_producer_class):
             return authenticated_producer_candidate
     return None
 
@@ -165,4 +165,4 @@ def requires_refresh_trigger(exchange_manager, channel):
     :param channel: name of the channel
     :return: True if it should be refreshed via a manual trigger to be exactly up to date
     """
-    return not is_exchange_managed_by_websocket(exchange_manager, channel)
+    return not exchanges.is_exchange_managed_by_websocket(exchange_manager, channel)

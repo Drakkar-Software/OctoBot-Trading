@@ -15,18 +15,38 @@
 #  License along with this library.
 
 from octobot_trading.personal_data.orders import order
-from octobot_trading.personal_data.orders import order_util
-from octobot_trading.personal_data.orders import order_state
-from octobot_trading.personal_data.orders import channel
-from octobot_trading.personal_data.orders import order_adapter
-from octobot_trading.personal_data.orders import order_factory
-from octobot_trading.personal_data.orders import states
-from octobot_trading.personal_data.orders import types
-
 from octobot_trading.personal_data.orders.order import (
     Order,
     parse_order_type,
 )
+
+from octobot_trading.personal_data.orders import order_state
+from octobot_trading.personal_data.orders.order_state import (
+    OrderState,
+)
+from octobot_trading.personal_data.orders import states
+from octobot_trading.personal_data.orders.states import (
+    CloseOrderState,
+    CancelOrderState,
+    OpenOrderState,
+    create_order_state,
+    FillOrderState,
+)
+
+from octobot_trading.personal_data.orders import order_util
+from octobot_trading.personal_data.orders import order_adapter
+from octobot_trading.personal_data.orders import order_factory
+from octobot_trading.personal_data.orders import types
+from octobot_trading.personal_data.orders import channel
+
+from octobot_trading.personal_data.orders.channel import (
+    OrdersProducer,
+    OrdersChannel,
+    OrdersUpdater,
+    OrdersManager,
+    OrdersUpdaterSimulator,
+)
+
 from octobot_trading.personal_data.orders.order_util import (
     is_valid,
     get_min_max_amounts,
@@ -36,23 +56,6 @@ from octobot_trading.personal_data.orders.order_util import (
     parse_order_status,
     parse_is_cancelled,
     get_pre_order_data,
-)
-from octobot_trading.personal_data.orders.order_state import (
-    OrderState,
-)
-from octobot_trading.personal_data.orders.states import (
-    CloseOrderState,
-    CancelOrderState,
-    OpenOrderState,
-    create_order_state,
-    FillOrderState,
-)
-from octobot_trading.personal_data.orders.channel import (
-    OrdersProducer,
-    OrdersChannel,
-    OrdersUpdater,
-    OrdersManager,
-    OrdersUpdaterSimulator,
 )
 from octobot_trading.personal_data.orders.order_adapter import (
     adapt_price,

@@ -15,22 +15,22 @@
 #  License along with this library.
 import collections 
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 import octobot_trading.util as util
 
 
-class TradesManager(Initializable):
+class TradesManager(util.Initializable):
     MAX_TRADES_COUNT = 500
 
     def __init__(self, config, trader, exchange_manager):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
         self.trades_initialized = False
-        self.trades = OrderedDict()
+        self.trades = collections.OrderedDict()
 
     async def initialize_impl(self):
         self._reset_trades()
@@ -38,7 +38,7 @@ class TradesManager(Initializable):
 
     def upsert_trade(self, trade_id, raw_trade):
         if trade_id not in self.trades:
-            created_trade = create_trade_instance_from_raw(self.trader, raw_trade)
+            created_trade = personal_data.create_trade_instance_from_raw(self.trader, raw_trade)
             if created_trade:
                 self.trades[trade_id] = created_trade
                 self._check_trades_size()
@@ -54,8 +54,8 @@ class TradesManager(Initializable):
         total_fees = {}
         for trade in self.trades.values():
             if trade.fee is not None:
-                fee_cost = trade.fee[FeePropertyColumns.COST.value]
-                fee_currency = trade.fee[FeePropertyColumns.CURRENCY.value]
+                fee_cost = trade.fee[enums.FeePropertyColumns.COST.value]
+                fee_currency = trade.fee[enums.FeePropertyColumns.CURRENCY.value]
                 if fee_currency in total_fees:
                     total_fees[fee_currency] += fee_cost
                 else:
@@ -74,7 +74,7 @@ class TradesManager(Initializable):
 
     def _reset_trades(self):
         self.trades_initialized = False
-        self.trades = OrderedDict()
+        self.trades = collections.OrderedDict()
 
     def _remove_oldest_trades(self, nb_to_remove):
         for _ in range(nb_to_remove):

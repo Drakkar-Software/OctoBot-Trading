@@ -13,33 +13,33 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 
 
-class CloseOrderState(OrderState):
+class CloseOrderState(personal_data.OrderState):
     def __init__(self, order, is_from_exchange_data, force_close=True):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
-            else OrderStates.CLOSING
+        self.state = enums.OrderStates.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
+            else enums.OrderStates.CLOSING
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:
-            self.state = OrderStates.CLOSED
+            self.state = enums.OrderStates.CLOSED
         return await super().initialize_impl()
 
     def is_pending(self) -> bool:
-        return self.state is OrderStates.CLOSING
+        return self.state is enums.OrderStates.CLOSING
 
     def is_closed(self) -> bool:
-        return self.state is OrderStates.CLOSED
+        return self.state is enums.OrderStates.CLOSED
 
     async def on_order_refresh_successful(self):
         """
         Verify the order is properly closed
         """
-        if self.order.status is OrderStatus.CLOSED:
-            self.state = OrderStates.CLOSED
+        if self.order.status is enums.OrderStatus.CLOSED:
+            self.state = enums.OrderStates.CLOSED
             await self.update()
 
     async def terminate(self):

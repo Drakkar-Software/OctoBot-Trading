@@ -15,18 +15,18 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_channels.constants as constants
+import channel.constants as constants
 
 import octobot_trading.exchanges as exchanges
 
 
-class TickerProducer(ExchangeChannelProducer):
+class TickerProducer(exchanges.ExchangeChannelProducer):
     async def push(self, symbol, ticker):
         await self.perform(symbol, ticker)
 
     async def perform(self, symbol, ticker):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol):  #
                 if ticker:  # and price_ticker_is_initialized
                     self.channel.exchange_manager.get_symbol_data(symbol).handle_ticker_update(ticker)
@@ -34,7 +34,7 @@ class TickerProducer(ExchangeChannelProducer):
                                     get_pair_cryptocurrency(symbol),
                                     symbol=symbol,
                                     ticker=ticker)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -50,18 +50,18 @@ class TickerProducer(ExchangeChannelProducer):
             })
 
 
-class TickerChannel(ExchangeChannel):
+class TickerChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = TickerProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
 
 
-class MiniTickerProducer(ExchangeChannelProducer):
+class MiniTickerProducer(exchanges.ExchangeChannelProducer):
     async def push(self, symbol, mini_ticker):
         await self.perform(symbol, mini_ticker)
 
     async def perform(self, symbol, mini_ticker):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol):
                 if mini_ticker:
                     self.channel.exchange_manager.get_symbol_data(symbol).handle_mini_ticker_update(mini_ticker)
@@ -69,7 +69,7 @@ class MiniTickerProducer(ExchangeChannelProducer):
                                     get_pair_cryptocurrency(symbol),
                                     symbol=symbol,
                                     mini_ticker=mini_ticker)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -85,6 +85,6 @@ class MiniTickerProducer(ExchangeChannelProducer):
             })
 
 
-class MiniTickerChannel(ExchangeChannel):
+class MiniTickerChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = MiniTickerProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer

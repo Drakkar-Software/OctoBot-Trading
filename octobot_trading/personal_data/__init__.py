@@ -16,6 +16,11 @@
 
 import octobot_trading.enums
 
+from octobot_trading.personal_data import exchange_personal_data
+from octobot_trading.personal_data.exchange_personal_data import (
+    ExchangePersonalData,
+)
+
 from octobot_trading.personal_data import orders
 from octobot_trading.personal_data import portfolios
 from octobot_trading.personal_data import positions
@@ -205,4 +210,5 @@ __all__ = [
     "create_trade_instance",
     "TradesUpdater",
     "Trade",
+    "ExchangePersonalData",
 ]

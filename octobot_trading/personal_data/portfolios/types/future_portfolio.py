@@ -16,5 +16,5 @@
 import octobot_trading.personal_data as personal_data
 
 
-class FuturePortfolio(Portfolio):
+class FuturePortfolio(personal_data.Portfolio):
     pass

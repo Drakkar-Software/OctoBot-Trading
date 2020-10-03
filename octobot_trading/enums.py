@@ -16,18 +16,18 @@
 import enum 
 
 
-class TradeOrderSide(Enum):
+class TradeOrderSide(enum.Enum):
     BUY = "buy"
     SELL = "sell"
 
 
-class PositionSide(Enum):
+class PositionSide(enum.Enum):
     LONG = "long"
     SHORT = "short"
     UNKNOWN = "unknown"
 
 
-class TradeOrderType(Enum):
+class TradeOrderType(enum.Enum):
     LIMIT = "limit"
     MARKET = "market"
     STOP_LOSS = "stop_loss"
@@ -40,12 +40,12 @@ class TradeOrderType(Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
-class MarginType(Enum):
+class MarginType(enum.Enum):
     CROSS = "cross"
     ISOLATE = "isolate"
 
 
-class EvaluatorStates(Enum):
+class EvaluatorStates(enum.Enum):
     SHORT = "SHORT"
     VERY_SHORT = "VERY_SHORT"
     LONG = "LONG"
@@ -53,7 +53,7 @@ class EvaluatorStates(Enum):
     NEUTRAL = "NEUTRAL"
 
 
-class OrderStatus(Enum):
+class OrderStatus(enum.Enum):
     OPEN = "open"
     PARTIALLY_FILLED = "partially_filled"
     FILLED = "filled"
@@ -62,7 +62,7 @@ class OrderStatus(Enum):
     UNKNOWN = "unknown"
 
 
-class OrderStates(Enum):
+class OrderStates(enum.Enum):
     OPENING = "opening"
     OPEN = "open"
     FILLING = "filling"
@@ -76,14 +76,14 @@ class OrderStates(Enum):
     UNKNOWN = "unknown"
 
 
-class PositionStatus(Enum):
+class PositionStatus(enum.Enum):
     LIQUIDATING = "liquidating"
     OPEN = "open"
     ADL = "auto_deleveraging"
     CLOSED = "closed"
 
 
-class TraderOrderType(Enum):
+class TraderOrderType(enum.Enum):
     BUY_MARKET = "buy_market"
     BUY_LIMIT = "buy_limit"
     STOP_LOSS = "stop_loss"
@@ -97,20 +97,20 @@ class TraderOrderType(Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
-class ExchangeConstantsFundingColumns(Enum):
+class ExchangeConstantsFundingColumns(enum.Enum):
     SYMBOL = "symbol"
     LAST_FUNDING_TIME = "last_funding_time"
     FUNDING_RATE = "funding_rate"
     NEXT_FUNDING_TIME = "next_funding_time"
 
 
-class ExchangeConstantsMarkPriceColumns(Enum):
+class ExchangeConstantsMarkPriceColumns(enum.Enum):
     SYMBOL = "symbol"
     TIMESTAMP = "timestamp"
     MARK_PRICE = "mark_price"
 
 
-class ExchangeConstantsTickersColumns(Enum):
+class ExchangeConstantsTickersColumns(enum.Enum):
     SYMBOL = "symbol"
     TIMESTAMP = "timestamp"
     DATETIME = "datetime"
@@ -133,7 +133,7 @@ class ExchangeConstantsTickersColumns(Enum):
     INFO = "info"
 
 
-class ExchangeConstantsTickersInfoColumns(Enum):
+class ExchangeConstantsTickersInfoColumns(enum.Enum):
     SYMBOL = "symbol"
     PRICE_CHANGE = "priceChange"
     PRICE_CHANGE_PERCENT = "priceChangePercent"
@@ -157,7 +157,7 @@ class ExchangeConstantsTickersInfoColumns(Enum):
     COUNT = "count"
 
 
-class ExchangeConstantsMiniTickerColumns(Enum):
+class ExchangeConstantsMiniTickerColumns(enum.Enum):
     SYMBOL = "symbol"
     OPEN_PRICE = "open_price"
     HIGH_PRICE = "high_price"
@@ -167,7 +167,7 @@ class ExchangeConstantsMiniTickerColumns(Enum):
     TIMESTAMP = "timestamp"
 
 
-class ExchangeConstantsMarketStatusColumns(Enum):
+class ExchangeConstantsMarketStatusColumns(enum.Enum):
     SYMBOL = "symbol"
     ID = "id"
     CURRENCY = "base"
@@ -190,7 +190,7 @@ class ExchangeConstantsMarketStatusColumns(Enum):
     INFO = "info"
 
 
-class ExchangeConstantsMarketStatusInfoColumns(Enum):
+class ExchangeConstantsMarketStatusInfoColumns(enum.Enum):
     # binance specific
     FILTERS = "filters"
     FILTER_TYPE = "filterType"
@@ -203,7 +203,7 @@ class ExchangeConstantsMarketStatusInfoColumns(Enum):
     MAX_QTY = "maxQty"
 
 
-class ExchangeConstantsOrderBookInfoColumns(Enum):
+class ExchangeConstantsOrderBookInfoColumns(enum.Enum):
     BIDS = "bids"
     ASKS = "asks"
     TIMESTAMP = "timestamp"
@@ -215,7 +215,7 @@ class ExchangeConstantsOrderBookInfoColumns(Enum):
     SIDE = "side"
 
 
-class ExchangeConstantsOrderBookTickerColumns(Enum):
+class ExchangeConstantsOrderBookTickerColumns(enum.Enum):
     BID_QUANTITY = "bid_quantity"
     BID_PRICE = "bid_price"
     ASK_QUANTITY = "ask_quantity"
@@ -224,7 +224,7 @@ class ExchangeConstantsOrderBookTickerColumns(Enum):
     TIMESTAMP = "timestamp"
 
 
-class ExchangeConstantsOrderColumns(Enum):
+class ExchangeConstantsOrderColumns(enum.Enum):
     INFO = "info"
     ID = "id"
     TIMESTAMP = "timestamp"
@@ -248,7 +248,7 @@ class ExchangeConstantsOrderColumns(Enum):
     TAKERORMAKER = "takerOrMaker"
 
 
-class ExchangeConstantsPositionColumns(Enum):
+class ExchangeConstantsPositionColumns(enum.Enum):
     ID = "id"
     TIMESTAMP = "timestamp"
     SYMBOL = "symbol"
@@ -265,7 +265,7 @@ class ExchangeConstantsPositionColumns(Enum):
     SIDE = "side"
 
 
-class ExchangeConstantsLiquidationColumns(Enum):
+class ExchangeConstantsLiquidationColumns(enum.Enum):
     ID = "id"
     TIMESTAMP = "timestamp"
     SYMBOL = "symbol"
@@ -274,39 +274,39 @@ class ExchangeConstantsLiquidationColumns(Enum):
     SIDE = "side"
 
 
-class ExchangeConstantsFeesColumns(Enum):
+class ExchangeConstantsFeesColumns(enum.Enum):
     TYPE = "type"
     CURRENCY = "currency"
     RATE = "rate"
     COST = "cost"
 
 
-class ExchangeConstantsMarketPropertyColumns(Enum):
+class ExchangeConstantsMarketPropertyColumns(enum.Enum):
     TAKER = "taker"  # trading
     MAKER = "maker"  # trading
     FEE = "fee"  # withdraw
 
 
-class FeePropertyColumns(Enum):
+class FeePropertyColumns(enum.Enum):
     TYPE = "type"  # taker of maker
     CURRENCY = "currency"  # currency the fee is paid in
     RATE = "rate"  # multiplier applied to compute fee
     COST = "cost"  # fee amount
 
 
-class AccountTypes(Enum):
+class AccountTypes(enum.Enum):
     CASH = "cash"
     MARGIN = "margin"
     FUTURE = "future"
 
 
-class MarkPriceSources(Enum):
+class MarkPriceSources(enum.Enum):
     EXCHANGE_MARK_PRICE = "exchange_mark_price"
     RECENT_TRADE_AVERAGE = "recent_trade_average"
     TICKER_CLOSE_PRICE = "ticker_close_price"
 
 
-class WebsocketFeeds(Enum):
+class WebsocketFeeds(enum.Enum):
     L2_BOOK = 'l2_book'
     L3_BOOK = 'l3_book'
     BOOK_TICKER = 'book_ticker'
@@ -325,7 +325,7 @@ class WebsocketFeeds(Enum):
     UNSUPPORTED = 'unsupported'
 
 
-class RestExchangePairsRefreshMaxThresholds(Enum):
+class RestExchangePairsRefreshMaxThresholds(enum.Enum):
     FAST = 5
     MEDIUM = 10
     SLOW = 20

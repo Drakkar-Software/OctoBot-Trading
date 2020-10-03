@@ -15,18 +15,18 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_channels.constants  as constants 
+import channel.constants as constants
 
 import octobot_trading.exchanges as exchanges
 
 
-class OHLCVProducer(ExchangeChannelProducer):
+class OHLCVProducer(exchanges.ExchangeChannelProducer):
     async def push(self, time_frame, symbol, candle, replace_all=False, partial=False):
         await self.perform(time_frame, symbol, candle, replace_all, partial)
 
     async def perform(self, time_frame, symbol, candle, replace_all=False, partial=False):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
                 await self.channel.exchange_manager.get_symbol_data(symbol) \
                     .handle_candles_update(time_frame, candle, replace_all=replace_all, partial=partial)
@@ -37,7 +37,7 @@ class OHLCVProducer(ExchangeChannelProducer):
                                 time_frame=time_frame.value,
                                 symbol=symbol,
                                 candle=candle)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -54,6 +54,6 @@ class OHLCVProducer(ExchangeChannelProducer):
             })
 
 
-class OHLCVChannel(TimeFrameExchangeChannel):
+class OHLCVChannel(exchanges.TimeFrameExchangeChannel):
     PRODUCER_CLASS = OHLCVProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer

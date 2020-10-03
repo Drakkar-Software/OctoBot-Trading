@@ -25,7 +25,7 @@ from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class Trader(Initializable):
+cdef class Trader(util.Initializable):
     cdef dict config
 
     cdef public double risk

@@ -13,28 +13,34 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.constants  as constants 
-import octobot_trading.constants  as constants 
+import octobot_commons.constants as common_constants
+
+import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
 
 
-class MarginPortfolio(Portfolio):
+class MarginPortfolio(personal_data.Portfolio):
     async def update_portfolio_from_position(self, position):
         pass  # TODO
 
     # parse the exchange balance
     def _parse_currency_balance(self, currency_balance):
         return self._create_currency_portfolio(
-            available=currency_balance[CONFIG_PORTFOLIO_FREE]
-            if CONFIG_PORTFOLIO_FREE in currency_balance else currency_balance[PORTFOLIO_AVAILABLE],
-            margin=currency_balance[CONFIG_PORTFOLIO_MARGIN]
-            if CONFIG_PORTFOLIO_MARGIN in currency_balance else (currency_balance[MARGIN_PORTFOLIO]
-                                                                 if MARGIN_PORTFOLIO in currency_balance else 0),
-            total=currency_balance[CONFIG_PORTFOLIO_TOTAL]
-            if CONFIG_PORTFOLIO_TOTAL in currency_balance else currency_balance[PORTFOLIO_TOTAL])
+            available=currency_balance[constants.CONFIG_PORTFOLIO_FREE]
+            if constants.CONFIG_PORTFOLIO_FREE in currency_balance else currency_balance[
+                common_constants.PORTFOLIO_AVAILABLE],
+            margin=currency_balance[constants.CONFIG_PORTFOLIO_MARGIN]
+            if constants.CONFIG_PORTFOLIO_MARGIN in currency_balance else (
+                currency_balance[common_constants.MARGIN_PORTFOLIO]
+                if common_constants.MARGIN_PORTFOLIO in currency_balance else 0),
+            total=currency_balance[constants.CONFIG_PORTFOLIO_TOTAL]
+            if constants.CONFIG_PORTFOLIO_TOTAL in currency_balance else
+            currency_balance[common_constants.PORTFOLIO_TOTAL])
 
     def _create_currency_portfolio(self, available, total, margin=0):
-        return {PORTFOLIO_AVAILABLE: available, MARGIN_PORTFOLIO: margin, PORTFOLIO_TOTAL: total}
+        return {common_constants.PORTFOLIO_AVAILABLE: available,
+                common_constants.MARGIN_PORTFOLIO: margin,
+                common_constants.PORTFOLIO_TOTAL: total}
 
     def _reset_currency_portfolio(self, currency):
         self._set_currency_portfolio(currency=currency, available=0, total=0, margin=0)
@@ -43,6 +49,6 @@ class MarginPortfolio(Portfolio):
         self.portfolio[currency] = self._create_currency_portfolio(available=available, total=total, margin=margin)
 
     def _update_currency_portfolio(self, currency, available=0, total=0, margin=0):
-        self.portfolio[currency][PORTFOLIO_AVAILABLE] += available
-        self.portfolio[currency][MARGIN_PORTFOLIO] += margin
-        self.portfolio[currency][PORTFOLIO_TOTAL] += total
+        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += available
+        self.portfolio[currency][common_constants.MARGIN_PORTFOLIO] += margin
+        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += total

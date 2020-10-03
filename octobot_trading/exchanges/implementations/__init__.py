@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .default_spot_ccxt import *
-
 from octobot_trading.exchanges.implementations import exchange_simulator
 from octobot_trading.exchanges.implementations import spot_exchange_simulator
 from octobot_trading.exchanges.implementations import future_exchange_simulator
@@ -45,6 +43,8 @@ from octobot_trading.exchanges.implementations.ccxt_exchange import (
 from octobot_trading.exchanges.implementations.spot_ccxt_exchange import (
     SpotCCXTExchange,
 )
+
+from .default_spot_ccxt import *
 
 __all__ = [
     "ExchangeSimulator",
