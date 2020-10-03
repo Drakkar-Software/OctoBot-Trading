@@ -13,9 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.constants import PORTFOLIO_AVAILABLE
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.constants import BALANCE_CHANNEL
+import octobot_commons.constants as constants
+import octobot_trading.exchanges as exchanges
+import octobot_trading.constants
 
 
 def get_portfolio(exchange_manager) -> dict:

@@ -15,13 +15,11 @@
 #  License along with this library.
 
 import pytest
-from octobot_trading.exchange_data.recent_trades_manager import RecentTradesManager
+from octobot_trading.exchange_data.recent_trades.recent_trades_manager import RecentTradesManager
 
-from octobot_trading.exchange_data.prices_manager import PricesManager
+from octobot_trading.exchange_data.prices.prices_manager import PricesManager
 
-from octobot_trading.exchange_data.price_events_manager import PriceEventsManager
-
-from tests import event_loop
+from octobot_trading.exchange_data.prices.price_events_manager import PriceEventsManager
 
 
 @pytest.fixture()

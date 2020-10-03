@@ -28,7 +28,7 @@ from octobot_commons.tests.test_config import load_test_config, TEST_CONFIG_FOLD
 from octobot_tentacles_manager.constants import USER_TENTACLE_CONFIG_PATH, CONFIG_TENTACLES_FILE
 from octobot_trading.api.exchange import create_exchange_builder, cancel_ccxt_throttle_task
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.traders.trader_simulator import TraderSimulator
+from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 
 pytestmark = pytest.mark.asyncio
 

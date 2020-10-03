@@ -13,11 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.constants import CONFIG_WILDCARD
-from octobot_commons.logging.logging_util import get_logger
+import octobot_commons.constants  as constants 
+import octobot_commons.logging as logging_util 
 
-from octobot_trading.errors import TradingModeIncompatibility
-from octobot_trading.modes import AbstractTradingMode
+import octobot_trading.errors  as errors 
+import octobot_trading.modes  as modes 
 
 LOGGER_TAG = "TradingModeFactory"
 

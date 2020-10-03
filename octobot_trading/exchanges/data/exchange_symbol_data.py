@@ -14,16 +14,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_commons.logging.logging_util import get_logger
+import octobot_commons.logging as logging_util 
 
-from octobot_trading.exchange_data.candles_manager import CandlesManager
-from octobot_trading.exchange_data.funding_manager import FundingManager
-from octobot_trading.exchange_data.kline_manager import KlineManager
-from octobot_trading.exchange_data.order_book_manager import OrderBookManager
-from octobot_trading.exchange_data.price_events_manager import PriceEventsManager
-from octobot_trading.exchange_data.prices_manager import PricesManager
-from octobot_trading.exchange_data.recent_trades_manager import RecentTradesManager
-from octobot_trading.exchange_data.ticker_manager import TickerManager
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data as exchange_data
 
 
 class ExchangeSymbolData:

@@ -13,11 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from typing import KeysView
+import typing 
 
-from octobot_commons.logging.logging_util import get_logger
+import octobot_commons.logging as logging_util 
 
-from octobot_commons.singleton.singleton_class import Singleton
+import octobot_commons.singleton as singleton_class 
 
 
 class ExchangeConfiguration:

@@ -14,10 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.modes import AbstractTradingMode
-from octobot_trading.modes.modes_factory import create_trading_modes as create_trading_modes_factory, \
-    create_trading_mode as create_trading_mode_factory
-from octobot_trading.util.trading_config_util import get_activated_trading_mode as util_get_activated_trading_mode
+import octobot_trading.modes as modes
+import octobot_trading.util as util
 
 
 def get_trading_modes(exchange_manager) -> list:

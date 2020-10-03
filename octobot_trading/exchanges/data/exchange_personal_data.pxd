@@ -14,13 +14,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.orders.order cimport Order
-from octobot_trading.orders.orders_manager cimport OrdersManager
-from octobot_trading.portfolios.portfolio_manager cimport PortfolioManager
-from octobot_trading.positions.positions_manager cimport PositionsManager
-from octobot_trading.trades.trades_manager cimport TradesManager
+from octobot_trading.personal_data.orders.order cimport Order
+from octobot_trading.personal_data.orders.orders_manager cimport OrdersManager
+from octobot_trading.personal_data.portfolios.portfolio_manager cimport PortfolioManager
+from octobot_trading.personal_data.positions.positions_manager cimport PositionsManager
+from octobot_trading.personal_data.trades.trades_manager cimport TradesManager
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.traders.trader cimport Trader
+from octobot_trading.exchanges.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 cdef class ExchangePersonalData(Initializable):

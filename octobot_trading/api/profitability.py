@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.util import get_reference_market as util_get_reference_market
+import octobot_trading.util as util
 
 
 def get_profitability_stats(exchange_manager) -> tuple:

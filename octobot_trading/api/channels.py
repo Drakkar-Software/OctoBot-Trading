@@ -13,24 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.channels.exchange_channel import get_chan
-from octobot_trading.channels.ohlcv import OHLCVChannel
-from octobot_trading.channels.orders import OrdersChannel
-from octobot_trading.channels.trades import TradesChannel
+import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.personal_data as personal_data
 
 
 async def subscribe_to_ohlcv_channel(callback, exchange_id):
-    await _subscribe_to_channel(callback, exchange_id, OHLCVChannel)
+    await _subscribe_to_channel(callback, exchange_id, exchange_data.OHLCVChannel)
 
 
 async def subscribe_to_trades_channel(callback, exchange_id):
-    await _subscribe_to_channel(callback, exchange_id, TradesChannel)
+    await _subscribe_to_channel(callback, exchange_id, personal_data.TradesChannel)
 
 
 async def subscribe_to_order_channel(callback, exchange_id):
-    await _subscribe_to_channel(callback, exchange_id, OrdersChannel)
+    await _subscribe_to_channel(callback, exchange_id, personal_data.OrdersChannel)
 
 
 async def _subscribe_to_channel(callback, exchange_id, channel):
-    channel = get_chan(channel.get_name(), exchange_id)
+    channel = exchanges.get_chan(channel.get_name(), exchange_id)
     await channel.new_consumer(callback)

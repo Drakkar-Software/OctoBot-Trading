@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.abstract_exchange import AbstractExchange
+import octobot_trading.exchanges as exchanges
 
 
 class SpotExchange(AbstractExchange):

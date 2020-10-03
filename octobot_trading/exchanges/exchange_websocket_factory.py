@@ -13,9 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.constants import WEBSOCKET_FEEDS_TO_TRADING_CHANNELS
-from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
-from octobot_trading.exchanges.websockets.websockets_util import search_websocket_class
+import octobot_trading.constants  as constants 
+import octobot_trading.exchanges as exchanges
 
 
 def is_exchange_managed_by_websocket(exchange_manager, channel):
