@@ -24,7 +24,7 @@ def get_trade_history(exchange_manager, symbol=None, since=None, as_dict=False, 
 
 
 def _trade_filter(trade, symbol=None, timestamp=None, include_cancelled=False) -> bool:
-    if trade.status is OrderStatus.CANCELED and not include_cancelled:
+    if trade.status is octobot_trading.enums.OrderStatus.CANCELED and not include_cancelled:
         return False
     if symbol is None and timestamp is None:
         return True
@@ -48,9 +48,9 @@ def get_trade_exchange_name(trade) -> str:
     return trade.exchange_manager.get_exchange_name()
 
 
-def parse_trade_type(dict_trade) -> TraderOrderType:
+def parse_trade_type(dict_trade) -> octobot_trading.enums.TraderOrderType:
     # can use parse_order_type since format is compatible
-    return order_parse_order_type(dict_trade)[1]
+    return personal_data.parse_order_type(dict_trade)[1]
 
 
 def trade_to_dict(trade) -> dict:
