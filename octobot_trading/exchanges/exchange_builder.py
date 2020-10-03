@@ -14,16 +14,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.logging.logging_util import get_logger
+import octobot_commons.logging as logging_util 
 
-from octobot_trading.errors import TradingModeIncompatibility
-from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.exchanges.exchanges import Exchanges
-from octobot_trading.modes.modes_factory import create_trading_modes
-from octobot_trading.traders.trader import Trader
-from octobot_trading.traders.trader_simulator import TraderSimulator
-from octobot_trading.util import is_trader_simulator_enabled, is_trader_enabled
-from octobot_trading.util.trading_config_util import get_activated_trading_mode
+import octobot_trading.errors  as errors 
+import octobot_trading.exchanges as exchanges
+import octobot_trading.modes as modes
+import octobot_trading.exchanges as exchanges
+import octobot_trading.util  as util 
+import octobot_trading.util as util
 
 
 class ExchangeBuilder:
@@ -76,7 +74,7 @@ class ExchangeBuilder:
                     self.logger.info(f"{self.exchange_name} exchange is online and won't be trading")
 
         # add to global exchanges
-        Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
+        exchanges.Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
 
     async def _build_trader(self):
         try:

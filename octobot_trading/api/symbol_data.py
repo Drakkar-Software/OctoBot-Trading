@@ -13,17 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchange_data.candles_manager import CandlesManager
-from octobot_trading.enums import MarkPriceSources
-from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
-from octobot_trading.exchange_data.candles_adapter import \
-    get_symbol_close_candles as adapter_get_symbol_close_candles, \
-    get_symbol_open_candles as adapter_get_symbol_open_candles, \
-    get_symbol_high_candles as adapter_get_symbol_high_candles, \
-    get_symbol_low_candles as adapter_get_symbol_low_candles, \
-    get_symbol_volume_candles as adapter_get_symbol_volume_candles, \
-    get_symbol_time_candles as adapter_get_symbol_time_candles, get_candle_as_list as adapter_get_candle_as_list
-from octobot_commons.enums import TimeFrames
+import octobot_trading.enums
+import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_data as exchange_data
+import octobot_commons.enums as enums
 
 
 def get_symbol_data(exchange_manager, symbol, allow_creation=True) -> ExchangeSymbolData:

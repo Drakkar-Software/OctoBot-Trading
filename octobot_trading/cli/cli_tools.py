@@ -16,15 +16,14 @@
 import asyncio
 import logging
 
-from octobot_channels.channels.channel import get_chan
+import octobot_channels.channels as channel 
 
-from octobot_commons.channels_name import OctoBotBacktestingChannelsName
-from octobot_commons.pretty_printer import PrettyPrinter
+import octobot_commons.channels_name as channels_name
+import octobot_commons.pretty_printer as pretty_printer
 
-from octobot_trading.constants import TICKER_CHANNEL, RECENT_TRADES_CHANNEL, ORDER_BOOK_CHANNEL, KLINE_CHANNEL, \
-    OHLCV_CHANNEL, BALANCE_CHANNEL, TRADES_CHANNEL, POSITIONS_CHANNEL, ORDERS_CHANNEL, BALANCE_PROFITABILITY_CHANNEL
-from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
-from octobot_trading.cli import get_should_display_callbacks_logs
+import octobot_trading.constants
+import octobot_trading.exchanges as exchanges
+import octobot_trading.cli as cli
 
 
 async def ticker_callback(exchange: str, exchange_id: str, symbol: str,  ticker):

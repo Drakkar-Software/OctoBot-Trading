@@ -17,20 +17,16 @@
 import logging
 
 import ccxt.async_support as ccxt
-from ccxt.async_support import OrderNotFound, BaseError
-from ccxt.base.errors import ExchangeNotAvailable, InvalidNonce, BadSymbol, RequestTimeout, NotSupported
-from octobot_commons.constants import MSECONDS_TO_SECONDS
-from octobot_commons.enums import TimeFrames
+import ccxt.async_support as async_support
+import ccxt.base as errors 
+import octobot_commons.constants as constants
+import octobot_commons.enums as enums
 
-from octobot_trading import errors
-from octobot_trading.constants import CONFIG_DEFAULT_FEES, CONFIG_PORTFOLIO_INFO, CONFIG_PORTFOLIO_FREE, \
-    CONFIG_PORTFOLIO_USED, CONFIG_PORTFOLIO_TOTAL
-from octobot_trading.enums import ExchangeConstantsMarketPropertyColumns, \
-    ExchangeConstantsOrderColumns as ecoc, TradeOrderSide, OrderStatus, AccountTypes
-from octobot_trading.exchanges.abstract_exchange import AbstractExchange
-from octobot_trading.exchanges.exchange_util import get_order_side
-from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
-from octobot_trading.orders.order_util import parse_is_cancelled
+import octobot_trading 
+import octobot_trading.constants
+import octobot_trading.enums
+import octobot_trading.exchanges as exchanges
+import octobot_trading.personal_data as personal_data
 
 
 class CCXTExchange(AbstractExchange):

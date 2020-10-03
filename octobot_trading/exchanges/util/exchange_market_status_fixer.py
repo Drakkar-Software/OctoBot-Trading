@@ -14,11 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import math
-from decimal import Decimal
-from math import nan
+import decimal 
+import math 
 
-from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
-from octobot_trading.enums import ExchangeConstantsMarketStatusInfoColumns as Ecmsic
+import octobot_trading.enums  as enums 
+import octobot_trading.enums  as enums 
 
 
 def is_ms_valid(value, zero_valid=False):

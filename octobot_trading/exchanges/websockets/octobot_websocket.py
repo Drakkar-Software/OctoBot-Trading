@@ -14,12 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-from concurrent.futures.thread import ThreadPoolExecutor
+import concurrent.futures as thread 
 
-from octobot_trading.enums import WebsocketFeeds
-from octobot_trading.exchanges.types.websocket_exchange import WebsocketExchange
-from octobot_trading.exchanges.websockets.abstract_websocket import AbstractWebsocket
-from octobot_trading.exchanges.websockets.websockets_util import get_exchange_websocket_from_name
+import octobot_trading.enums  as enums 
+import octobot_trading.exchanges as exchanges
 
 
 class OctoBotWebSocketClient(AbstractWebsocket):

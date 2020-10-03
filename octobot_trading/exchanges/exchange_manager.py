@@ -15,21 +15,16 @@
 #  License along with this library.
 import uuid
 
-from octobot_commons.config_util import has_invalid_default_config_value, decrypt_element_if_possible
-from octobot_commons.constants import CONFIG_ENABLED_OPTION
-from octobot_commons.logging.logging_util import get_logger
+import octobot_commons.config_util as config_util
+import octobot_commons.constants as constants
+import octobot_commons.logging as logging_util 
 
-from octobot_trading.channels.exchange_channel import stop_exchange_channels
-from octobot_trading.constants import CONFIG_TRADER, CONFIG_EXCHANGES, CONFIG_EXCHANGE_SECRET, CONFIG_EXCHANGE_KEY, \
-    CONFIG_EXCHANGE_PASSWORD
-from octobot_trading.enums import RestExchangePairsRefreshMaxThresholds
-from octobot_trading.exchanges.data.exchange_config_data import ExchangeConfig
-from octobot_trading.exchanges.data.exchange_personal_data import ExchangePersonalData
-from octobot_trading.exchanges.data.exchange_symbols_data import ExchangeSymbolsData
-from octobot_trading.exchanges.exchange_factory import create_exchanges
-from octobot_trading.exchanges.exchanges import Exchanges
-from octobot_trading.util import is_trader_simulator_enabled
-from octobot_trading.util.initializable import Initializable
+import octobot_trading.exchanges as exchanges
+import octobot_trading.constants
+import octobot_trading.enums
+import octobot_trading.exchanges as exchanges
+import octobot_trading.util as util
+import octobot_trading.util as util
 
 
 class ExchangeManager(Initializable):
@@ -86,7 +81,7 @@ class ExchangeManager(Initializable):
             if not self.exchange_only:
                 await stop_exchange_channels(self, should_warn=warning_on_missing_elements)
             await self.exchange.stop()
-            Exchanges.instance().del_exchange(self.exchange.name, self.id, should_warn=warning_on_missing_elements)
+            exchanges.Exchanges.instance().del_exchange(self.exchange.name, self.id, should_warn=warning_on_missing_elements)
             self.exchange.exchange_manager = None
         if self.exchange_personal_data is not None:
             self.exchange_personal_data.clear()

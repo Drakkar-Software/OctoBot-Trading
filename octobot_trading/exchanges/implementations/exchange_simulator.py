@@ -13,21 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_backtesting.api.backtesting import get_backtesting_current_time
-from octobot_backtesting.api.importer import get_available_data_types, get_available_time_frames
-from octobot_backtesting.importers.exchanges.exchange_importer import ExchangeDataImporter
-from octobot_commons.number_util import round_into_str_with_max_digits
-from octobot_commons.symbol_util import split_symbol
-from octobot_commons.time_frame_manager import sort_time_frames
-from octobot_trading.channels.exchange_channel import get_chan as get_trading_chan
-from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_DEFAULT_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES, \
-    CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR_FEES_WITHDRAW, \
-    DEFAULT_BACKTESTING_TIME_LAG
-from octobot_trading.enums import ExchangeConstantsMarketStatusColumns, ExchangeConstantsMarketPropertyColumns, \
-    TraderOrderType, FeePropertyColumns
-from octobot_trading.exchanges.abstract_exchange import AbstractExchange
-from octobot_trading.producers.simulator import SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE, \
-    SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE, get_unauthenticated_updater_simulator_producers
+import octobot_backtesting.api as backtesting 
+import octobot_backtesting.api as importer 
+import octobot_backtesting.importers as exchanges
+import octobot_commons.number_util  as number_util 
+import octobot_commons.symbol_util  as symbol_util 
+import octobot_commons.time_frame_manager  as time_frame_manager 
+import octobot_trading.exchanges as exchanges
+import octobot_trading.constants  as constants
+import octobot_trading.enums  as enums
+import octobot_trading.exchanges as exchanges
 
 
 class ExchangeSimulator(AbstractExchange):

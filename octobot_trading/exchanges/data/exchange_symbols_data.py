@@ -14,9 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_commons.logging.logging_util import get_logger
+import octobot_commons.logging as logging_util 
 
-from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
+import octobot_trading.exchanges as exchanges
 
 
 class ExchangeSymbolsData:

@@ -13,13 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from abc import ABCMeta
+import abc 
 
-from octobot_commons.constants import TENTACLE_DEFAULT_CONFIG
-from octobot_commons.logging.logging_util import get_logger
-from octobot_commons.tentacles_management.abstract_tentacle import AbstractTentacle
-from octobot_tentacles_manager.api.configurator import get_tentacle_config
-from octobot_trading.constants import TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT, TRADING_MODE_REQUIRED_STRATEGIES
+import octobot_commons.constants as constants
+import octobot_commons.logging as logging_util 
+import octobot_commons.tentacles_management as abstract_tentacle 
+import octobot_tentacles_manager.api as configurator 
+import octobot_trading.constants
 
 
 class AbstractTradingMode(AbstractTentacle):

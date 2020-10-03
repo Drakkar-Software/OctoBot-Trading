@@ -13,10 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.api import LOGGER_TAG
-from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.util import is_trader_enabled as config_is_trader_enabled, is_trader_simulator_enabled as \
-    config_is_trader_simulator_enabled
+import octobot_trading.api as api
+import octobot_commons.logging as logging_util 
+import octobot_trading.util as util
 
 LOGGER = get_logger(LOGGER_TAG)
 

@@ -13,9 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_tentacles_manager.api.configurator import get_class_from_name_with_activated_required_tentacles
-from octobot_trading.exchanges.types.websocket_exchange import WebsocketExchange
-from octobot_trading.constants import CONFIG_EXCHANGES, CONFIG_EXCHANGE_WEB_SOCKET
+import octobot_tentacles_manager.api as configurator 
+import octobot_trading.exchanges as exchanges
+import octobot_trading.constants  as constants 
 
 
 def force_disable_web_socket(config, exchange_name) -> bool:

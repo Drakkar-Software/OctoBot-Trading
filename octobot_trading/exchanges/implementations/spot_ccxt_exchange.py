@@ -14,13 +14,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from ccxt import NotSupported, InsufficientFunds
+import ccxt 
 
-from octobot_trading import errors
-from octobot_trading.enums import TraderOrderType, ExchangeConstantsOrderColumns as ecoc
-from octobot_trading.errors import MissingFunds
-from octobot_trading.exchanges.implementations.ccxt_exchange import CCXTExchange
-from octobot_trading.exchanges.types.spot_exchange import SpotExchange
+import octobot_trading 
+import octobot_trading.enums  as enums 
+import octobot_trading.errors  as errors 
+import octobot_trading.exchanges as exchanges
 
 
 class SpotCCXTExchange(CCXTExchange, SpotExchange):

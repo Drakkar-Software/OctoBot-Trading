@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchange_data.order_book_manager cimport OrderBookManager
+from octobot_trading.exchange_data.order_book.order_book_manager cimport OrderBookManager
 
 cdef class WebsocketExchange:
     cdef public str exchange_id

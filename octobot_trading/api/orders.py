@@ -13,12 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.orders.order import Order
-from octobot_trading.api import LOGGER_TAG
-from octobot_commons.logging.logging_util import get_logger
-from octobot_trading.enums import TraderOrderType, OrderStatus
-from octobot_trading.orders.order import parse_order_type as order_parse_order_type, \
-    parse_order_status as order_parse_order_status
+import octobot_trading.personal_data as personal_data
+import octobot_trading.api as api
+import octobot_commons.logging as logging_util
+import octobot_trading.enums
+import octobot_trading.personal_data as personal_data
 
 LOGGER = get_logger(LOGGER_TAG)
 
