@@ -14,11 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_commons.constants  as constants 
-import octobot_commons.logging as logging_util 
-import octobot_commons.symbol_util  as symbol_util 
+import octobot_commons.constants as constants
+import octobot_commons.logging as logging
+import octobot_commons.symbol_util as symbol_util
 
-import octobot_trading.util  as util 
+import octobot_trading.util as util
 
 
 class PortfolioProfitability:
@@ -30,7 +30,8 @@ class PortfolioProfitability:
     def __init__(self, portfolio_manager):
         self.portfolio_manager = portfolio_manager
         self.value_manager = portfolio_manager.portfolio_value_holder
-        self.logger = get_logger(f"{self.__class__.__name__}[{self.portfolio_manager.exchange_manager.exchange_name}]")
+        self.logger = logging.get_logger(f"{self.__class__.__name__}["
+                                         f"{self.portfolio_manager.exchange_manager.exchange_name}]")
 
         # profitability attributes
         self.profitability = 0
@@ -44,7 +45,7 @@ class PortfolioProfitability:
         self.traded_currencies_without_market_specific = set()
 
         # set of currencies that should be traded because either present in config or as a reference market
-        self.traded_currencies = get_all_currencies(self.portfolio_manager.config)
+        self.traded_currencies = util.get_all_currencies(self.portfolio_manager.config)
         self.traded_currencies.add(self.portfolio_manager.reference_market)
 
     def get_average_market_profitability(self):
@@ -135,7 +136,7 @@ class PortfolioProfitability:
         TODO do not use config[CONFIG_CRYPTO_CURRENCIES]
         """
         self.traded_currencies_without_market_specific = set(
-            split_symbol(pair)[0]
-            for cryptocurrency in self.portfolio_manager.config[CONFIG_CRYPTO_CURRENCIES]
+            symbol_util.split_symbol(pair)[0]
+            for cryptocurrency in self.portfolio_manager.config[constants.CONFIG_CRYPTO_CURRENCIES]
             for pair in self.portfolio_manager.exchange_manager.exchange_config.get_traded_pairs(cryptocurrency)
         )

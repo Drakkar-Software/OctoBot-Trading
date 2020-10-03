@@ -14,19 +14,18 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_trading.enums  as enums 
-import octobot_trading.personal_data as personal_data
+import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 
 
-class OpenOrderState(OrderState):
+class OpenOrderState(personal_data.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.OPEN if is_from_exchange_data \
+        self.state = enums.OrderStates.OPEN if is_from_exchange_data \
                                          or self.order.simulated \
                                          or self.order.is_self_managed() \
-                                         or self.order.status is OrderStatus.OPEN \
-            else OrderStates.OPENING
+                                         or self.order.status is enums.OrderStatus.OPEN \
+            else enums.OrderStates.OPENING
 
         self.has_terminated = False
 
@@ -38,7 +37,7 @@ class OpenOrderState(OrderState):
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:
-            self.state = OrderStates.OPEN
+            self.state = enums.OrderStates.OPEN
 
         # update the availability of the currency in the portfolio
         self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio. \
@@ -53,14 +52,14 @@ class OpenOrderState(OrderState):
         # skip refresh process if the current order state is not the same as the one triggering this
         # on_order_refresh_successful to avoid synchronization issues (state already got refreshed by another mean)
         if self.state is self.order.state.state:
-            if self.order.status is OrderStatus.OPEN:
-                self.state = OrderStates.OPEN
+            if self.order.status is enums.OrderStatus.OPEN:
+                self.state = enums.OrderStates.OPEN
                 await self.update()
             else:
-                if self.order.status is OrderStatus.CLOSED:
-                    self.order.status = OrderStatus.FILLED
+                if self.order.status is enums.OrderStatus.CLOSED:
+                    self.order.status = enums.OrderStatus.FILLED
                     self.order.state = None
-                await create_order_state(self.order, is_from_exchange_data=True)
+                await personal_data.create_order_state(self.order, is_from_exchange_data=True)
         else:
             self.get_logger().debug(f"on_order_refresh_successful triggered from previous state "
                                     f"after state change on {self.order}")
@@ -78,4 +77,4 @@ class OpenOrderState(OrderState):
             self.has_terminated = True
 
     def is_pending(self) -> bool:
-        return self.state is OrderStates.OPENING
+        return self.state is enums.OrderStates.OPENING

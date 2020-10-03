@@ -13,15 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_backtesting.data  as data 
-import octobot_channels.channels as channel 
+import octobot_backtesting.data as data
 
-import octobot_commons.channels_name  as channels_name 
+import octobot_commons.channels_name as channels_name
+
 import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchanges as exchanges
 import octobot_trading.util as util
 
 
-class KlineUpdaterSimulator(KlineUpdater):
+class KlineUpdaterSimulator(exchange_data.KlineUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer
@@ -46,7 +47,7 @@ class KlineUpdaterSimulator(KlineUpdater):
                     if kline_data and kline_data[0][0] > self.last_timestamp_pushed:
                         self.last_timestamp_pushed = kline_data[0][0]
                         await self.push(time_frame, pair, kline_data[0][-1])
-        except DataBaseNotExists as e:
+        except data.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()
@@ -55,12 +56,13 @@ class KlineUpdaterSimulator(KlineUpdater):
 
     async def pause(self):
         if self.time_consumer is not None:
-            await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
+            await exchanges.get_chan(channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value)\
+                .remove_consumer(self.time_consumer)
 
     async def stop(self):
-        await stop_and_pause(self)
+        await util.stop_and_pause(self)
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:
-            self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
-                self.handle_timestamp)
+            self.time_consumer = await exchanges.get_chan(channels_name.OctoBotBacktestingChannelsName.
+                                                          TIME_CHANNEL.value).new_consumer(self.handle_timestamp)

@@ -16,7 +16,7 @@
 #  License along with this library.
 from octobot_trading.util.initializable cimport Initializable
 
-cdef class FundingManager(Initializable):
+cdef class FundingManager(util.Initializable):
     cdef object logger
 
     cdef public double funding_rate

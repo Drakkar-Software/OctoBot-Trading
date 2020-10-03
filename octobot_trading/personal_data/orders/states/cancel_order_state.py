@@ -13,21 +13,20 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums  as enums 
-import octobot_trading.personal_data as personal_data
+import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 
 
-class CancelOrderState(OrderState):
+class CancelOrderState(personal_data.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = OrderStates.CANCELING if not self.order.simulated and \
-                                              self.order.status is not OrderStatus.CANCELED else OrderStates.CANCELED
+        self.state = enums.OrderStates.CANCELING if not self.order.simulated and \
+                                                    self.order.status is not enums.Status.CANCELED else enums.OrderStates.CANCELED
 
     async def initialize_impl(self, forced=False, ignored_order=None) -> None:
         if forced:
-            self.state = OrderStates.CANCELED
-            self.order.status = OrderStatus.CANCELED
+            self.state = enums.OrderStates.CANCELED
+            self.order.status = enums.OrderStatus.CANCELED
 
         # always cancel this order first to avoid infinite loop followed by deadlock
         for linked_order in self.order.linked_orders:
@@ -37,20 +36,21 @@ class CancelOrderState(OrderState):
         await super().initialize_impl()
 
     def is_pending(self) -> bool:
-        return self.state is OrderStates.CANCELING
+        return self.state is enums.OrderStates.CANCELING
 
     def is_canceled(self) -> bool:
-        return self.state is OrderStates.CANCELED
+        return self.state is enums.OrderStates.CANCELED
 
     async def on_order_refresh_successful(self):
         """
         Verify the order is properly canceled
         """
-        if self.order.status is OrderStatus.CANCELED:
-            self.state = OrderStates.CANCELED
+        if self.order.status is enums.OrderStatus.CANCELED:
+            self.state = enums.OrderStates.CANCELED
             await self.update()
         else:
-            await create_order_state(self.order, is_from_exchange_data=True, ignore_states=[OrderStates.OPEN])
+            await personal_data.create_order_state(self.order, is_from_exchange_data=True,
+                                                   ignore_states=[enums.OrderStates.OPEN])
 
     async def terminate(self):
         """

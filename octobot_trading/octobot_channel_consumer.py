@@ -13,22 +13,22 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import enum 
+import enum
 
-import octobot_channels.channels as channel_instances 
-import octobot_commons.channels_name  as channels_name 
-import octobot_commons.logging as logging_util 
+import channel.channels as channel_instances
+import octobot_commons.channels_name as channels_name
+import octobot_commons.logging as logging
+import octobot_commons.enums as enums
 
-import octobot_commons.enums  as enums 
-import octobot_trading.constants  as constants
-import octobot_trading.errors  as errors 
+import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
-import octobot_trading.util  as util 
+import octobot_trading.util as util
 
 OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG = "OctoBotChannelTradingConsumer"
 
 
-class OctoBotChannelTradingActions(Enum):
+class OctoBotChannelTradingActions(enum.Enum):
     """
     OctoBot Channel consumer supported actions
     """
@@ -36,7 +36,7 @@ class OctoBotChannelTradingActions(Enum):
     EXCHANGE = "exchange"
 
 
-class OctoBotChannelTradingDataKeys(Enum):
+class OctoBotChannelTradingDataKeys(enum.Enum):
     """
     OctoBot Channel consumer supported data keys
     """
@@ -57,7 +57,7 @@ async def octobot_channel_callback(bot_id, subject, action, data) -> None:
     :param action: the callback action
     :param data: the callback data
     """
-    if subject == OctoBotChannelSubjects.CREATION.value:
+    if subject == enums.OctoBotChannelSubjects.CREATION.value:
         await _handle_creation(bot_id, action, data)
 
 
@@ -65,47 +65,54 @@ async def _handle_creation(bot_id, action, data):
     if action == OctoBotChannelTradingActions.EXCHANGE.value:
         try:
             config = data[OctoBotChannelTradingDataKeys.EXCHANGE_CONFIG.value]
-            exchange_builder = create_exchange_builder_instance(config, data[OctoBotChannelTradingDataKeys.
-                                                                EXCHANGE_NAME.value]) \
+            exchange_builder = exchanges.create_exchange_builder_instance(config, data[OctoBotChannelTradingDataKeys.
+                                                                          EXCHANGE_NAME.value]) \
                 .has_matrix(data[OctoBotChannelTradingDataKeys.MATRIX_ID.value]) \
                 .use_tentacles_setup_config(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value]) \
                 .set_bot_id(bot_id)
             _set_exchange_type_details(exchange_builder, config, data[OctoBotChannelTradingDataKeys.BACKTESTING.value])
             await exchange_builder.build()
-            await get_chan_at_id(OctoBotChannelsName.OCTOBOT_CHANNEL.value, bot_id).get_internal_producer() \
+            await channel_instances.get_chan_at_id(channels_name.OctoBotChannelsName.OCTOBOT_CHANNEL.value,
+                                                   bot_id).get_internal_producer() \
                 .send(bot_id=bot_id,
-                      subject=OctoBotChannelSubjects.NOTIFICATION.value,
+                      subject=enums.OctoBotChannelSubjects.NOTIFICATION.value,
                       action=action,
                       data={OctoBotChannelTradingDataKeys.EXCHANGE_ID.value: exchange_builder.exchange_manager.id})
-        except TradingModeIncompatibility as e:
-            get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
+        except errors.TradingModeIncompatibility as e:
+            logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
                 f"Error when initializing trading mode, {data[OctoBotChannelTradingDataKeys.EXCHANGE_NAME.value]} "
                 f"exchange connection is closed to increase performances: {e}")
         except Exception as e:
-            get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(f"Error when creating new exchange: {e}")
+            logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
+                f"Error when creating new exchange: {e}")
 
 
 def _set_exchange_type_details(exchange_builder, config, backtesting):
     # real, simulator, backtesting
-    if is_trader_enabled(config):
+    if util.is_trader_enabled(config):
         exchange_builder.is_real()
-    elif is_trader_simulator_enabled(config):
+    elif util.is_trader_simulator_enabled(config):
         exchange_builder.is_simulated()
     if backtesting is not None:
         exchange_builder.is_backtesting(backtesting)
     # use exchange sandbox
     exchange_builder.is_sandboxed(
-        config[CONFIG_EXCHANGES][exchange_builder.exchange_name].get(CONFIG_EXCHANGE_SANDBOXED, False)
+        config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            constants.CONFIG_EXCHANGE_SANDBOXED, False)
     )
     # exchange trading type
-    if config[CONFIG_EXCHANGES][exchange_builder.exchange_name].get(CONFIG_EXCHANGE_FUTURE, False):
+    if config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            constants.CONFIG_EXCHANGE_FUTURE, False):
         exchange_builder.is_future(True)
-    elif config[CONFIG_EXCHANGES][exchange_builder.exchange_name].get(CONFIG_EXCHANGE_MARGIN, False):
+    elif config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            constants.CONFIG_EXCHANGE_MARGIN, False):
         exchange_builder.is_margin(True)
-    elif config[CONFIG_EXCHANGES][exchange_builder.exchange_name].get(CONFIG_EXCHANGE_SPOT, True):
+    elif config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            constants.CONFIG_EXCHANGE_SPOT, True):
         # Use spot trading as default trading type
         exchange_builder.is_spot_only(True)
 
     # rest, web socket
-    if config[CONFIG_EXCHANGES][exchange_builder.exchange_name].get(CONFIG_EXCHANGE_REST_ONLY, False):
+    if config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            constants.CONFIG_EXCHANGE_REST_ONLY, False):
         exchange_builder.is_rest_only()

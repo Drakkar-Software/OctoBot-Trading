@@ -13,20 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import time
-import octobot_commons.constants  as constants 
-import octobot_commons.enums  as enums 
-import octobot_commons.logging as logging_util 
-import octobot_commons.timestamp_util  as timestamp_util 
+import typing
 
-import octobot_trading.constants  as constants 
-import octobot_trading.enums  as enums 
+import octobot_commons.constants
+import octobot_commons.enums as common_enums
+import octobot_commons.logging as logging
+import octobot_commons.timestamp_util as timestamp_util
+
+import octobot_trading.constants
+import octobot_trading.enums as enums
 import octobot_trading.util as util
 
 
-class AbstractExchange(Initializable):
-    BUY_STR = TradeOrderSide.BUY.value
-    SELL_STR = TradeOrderSide.SELL.value
+class AbstractExchange(util.Initializable):
+    BUY_STR = enums.TradeOrderSide.BUY.value
+    SELL_STR = enums.TradeOrderSide.SELL.value
 
     ACCOUNTS = {}
 
@@ -40,11 +41,11 @@ class AbstractExchange(Initializable):
 
         # exchange name related attributes
         self.name = self.exchange_manager.exchange_class_string
-        self.logger = get_logger(f"{self.__class__.__name__}[{self.name}]")
+        self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.name}]")
 
         # exchange related constants
-        self.allowed_time_lag = DEFAULT_EXCHANGE_TIME_LAG
-        self.current_account = AccountTypes.CASH
+        self.allowed_time_lag = octobot_trading.constants.DEFAULT_EXCHANGE_TIME_LAG
+        self.current_account = enums.AccountTypes.CASH
 
     async def initialize_impl(self):
         """
@@ -116,7 +117,11 @@ class AbstractExchange(Initializable):
         """
         raise NotImplementedError("get_balance is not implemented")
 
-    async def get_symbol_prices(self, symbol: str, time_frame: TimeFrames, limit: int = None, **kwargs: dict) -> list:
+    async def get_symbol_prices(self,
+                                symbol: str,
+                                time_frame: common_enums.TimeFrames,
+                                limit: int = None,
+                                **kwargs: dict) -> typing.Optional[list]:
         """
         Return the candle history
         :param symbol: the symbol
@@ -126,7 +131,10 @@ class AbstractExchange(Initializable):
         """
         raise NotImplementedError("get_symbol_prices is not implemented")
 
-    async def get_kline_price(self, symbol: str, time_frame: TimeFrames, **kwargs: dict) -> list:
+    async def get_kline_price(self,
+                              symbol: str,
+                              time_frame: common_enums.TimeFrames,
+                              **kwargs: dict) -> typing.Optional[list]:
         """
         Return the symbol current kline dict
         :param symbol: the symbol
@@ -135,7 +143,7 @@ class AbstractExchange(Initializable):
         """
         raise NotImplementedError("get_symbol_prices is not implemented")
 
-    async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> dict:
+    async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
         """
         Return the current symbol order book snapshot
         :param symbol: the symbol
@@ -144,7 +152,7 @@ class AbstractExchange(Initializable):
         """
         raise NotImplementedError("get_order_book is not implemented")
 
-    async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> list:
+    async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
         """
         Return the last "limit" recent trades for the specified symbol
         :param symbol: the symbol
@@ -153,7 +161,7 @@ class AbstractExchange(Initializable):
         """
         raise NotImplementedError("get_recent_trades is not implemented")
 
-    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> dict:
+    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
         """
         Get the symbol ticker from the exchange
         :param symbol: the symbol
@@ -161,7 +169,7 @@ class AbstractExchange(Initializable):
         """
         raise NotImplementedError("get_price_ticker is not implemented")
 
-    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> list:
+    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         """
         Get all exchange currency tickers
         :return: the list of exchange currencies tickers
@@ -230,7 +238,7 @@ class AbstractExchange(Initializable):
         """
         raise NotImplementedError("cancel_order is not implemented")
 
-    async def create_order(self, order_type: TraderOrderType, symbol: str, quantity: float,
+    async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: float,
                            price: float = None, stop_price=None, **kwargs: dict) -> dict:
         """
         Create a order on the exchange
@@ -302,7 +310,7 @@ class AbstractExchange(Initializable):
         """
         raise NotImplementedError("get_default_balance is not implemented")
 
-    async def switch_to_account(self, account_type: AccountTypes):
+    async def switch_to_account(self, account_type: enums.AccountTypes):
         """
         Request to switch account from exchange
         :param account_type: the account destination
@@ -452,7 +460,7 @@ class AbstractExchange(Initializable):
         :param timestamp: the timestamp to check
         :return: True if the timestamp should be uniformized
         """
-        return not is_valid_timestamp(timestamp)
+        return not timestamp_util.is_valid_timestamp(timestamp)
 
     def get_uniformized_timestamp(self, timestamp):
         """
@@ -472,10 +480,11 @@ class AbstractExchange(Initializable):
         """
         if candle_or_candles:  # TODO improve
             if isinstance(candle_or_candles[0], list):
-                if self.need_to_uniformize_timestamp(candle_or_candles[0][PriceIndexes.IND_PRICE_TIME.value]):
+                if self.need_to_uniformize_timestamp(
+                        candle_or_candles[0][common_enums.PriceIndexes.IND_PRICE_TIME.value]):
                     self._uniformize_candles_timestamps(candle_or_candles)
             else:
-                if self.need_to_uniformize_timestamp(candle_or_candles[PriceIndexes.IND_PRICE_TIME.value]):
+                if self.need_to_uniformize_timestamp(candle_or_candles[common_enums.PriceIndexes.IND_PRICE_TIME.value]):
                     self._uniformize_candle_timestamps(candle_or_candles)
         return candle_or_candles
 
@@ -492,8 +501,8 @@ class AbstractExchange(Initializable):
         Uniformize a candle timestamp
         :param candle: the candle to uniformize
         """
-        candle[PriceIndexes.IND_PRICE_TIME.value] = \
-            self.get_uniform_timestamp(candle[PriceIndexes.IND_PRICE_TIME.value])
+        candle[common_enums.PriceIndexes.IND_PRICE_TIME.value] = \
+            self.get_uniform_timestamp(candle[common_enums.PriceIndexes.IND_PRICE_TIME.value])
 
     def get_candle_since_timestamp(self, time_frame, count):
         """
@@ -501,4 +510,6 @@ class AbstractExchange(Initializable):
         :param count: the number of candle
         :return: the timestamp since "count" candles
         """
-        return self.get_exchange_current_time() - TimeFramesMinutes[time_frame] * MSECONDS_TO_MINUTE * count
+        return self.get_exchange_current_time() - (common_enums.TimeFramesMinutes[time_frame]
+                                                   * octobot_commons.constants.MSECONDS_TO_MINUTE
+                                                   * count)

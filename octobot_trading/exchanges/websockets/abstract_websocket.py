@@ -17,18 +17,18 @@
 
 import abc 
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
 
 class AbstractWebsocket:
-    __metaclass__ = ABCMeta
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, config, exchange_manager):
         self.config = config
         self.exchange_manager = exchange_manager
         self.client = None
         self.name = self.get_name()
-        self.logger = get_logger(f"WebSocket - {self.name}")
+        self.logger = logging.get_logger(f"WebSocket - {self.name}")
 
     # Abstract methods
     @classmethod
@@ -43,26 +43,26 @@ class AbstractWebsocket:
     def get_websocket_client(config, exchange_manager):
         raise NotImplementedError("get_websocket_client not implemented")
 
-    @abstractmethod
+    @abc.abstractmethod
     def is_handling(self, feed_name):
         raise NotImplementedError("is_handling not implemented")
 
-    @abstractmethod
+    @abc.abstractmethod
     async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
         raise NotImplementedError("init_websocket not implemented")
 
-    @abstractmethod
+    @abc.abstractmethod
     async def start_sockets(self):
         raise NotImplementedError("start_sockets not implemented")
 
-    @abstractmethod
+    @abc.abstractmethod
     async def wait_sockets(self):
         raise NotImplementedError("wait_sockets not implemented")
 
-    @abstractmethod
+    @abc.abstractmethod
     async def close_and_restart_sockets(self):
         raise NotImplementedError("close_and_restart_sockets not implemented")
 
-    @abstractmethod
+    @abc.abstractmethod
     async def stop_sockets(self):
         raise NotImplementedError("stop_sockets not implemented")

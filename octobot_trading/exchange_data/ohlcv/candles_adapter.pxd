@@ -17,7 +17,7 @@
 cimport numpy as np
 np.import_array()
 
-from octobot_trading.exchanges.data.exchange_symbol_data cimport ExchangeSymbolData
+from octobot_trading.exchange_data.exchange_symbol_data cimport ExchangeSymbolData
 
 
 cpdef np.ndarray get_symbol_close_candles(ExchangeSymbolData symbol_data, str time_frame,

@@ -30,6 +30,6 @@ class Initializable:
             return True
         return False
 
-    @abstractmethod
+    @abc.abstractmethod
     async def initialize_impl(self, **kwargs):
         raise NotImplementedError("initialize_impl not implemented")

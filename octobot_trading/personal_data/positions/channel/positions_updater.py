@@ -16,14 +16,14 @@
 #  License along with this library.
 import asyncio
 
-import octobot_trading.errors  as errors 
+import octobot_trading.errors as errors
 
 import octobot_trading.personal_data as personal_data
-import octobot_trading.constants  as constants 
+import octobot_trading.constants as constants
 
 
-class PositionsUpdater(PositionsProducer):
-    CHANNEL_NAME = POSITIONS_CHANNEL
+class PositionsUpdater(personal_data.PositionsProducer):
+    CHANNEL_NAME = constants.POSITIONS_CHANNEL
     POSITIONS_REFRESH_TIME = 11
 
     def __init__(self, channel):
@@ -49,7 +49,7 @@ class PositionsUpdater(PositionsProducer):
                 else:
                     await self.fetch_positions()
 
-            except NotSupported:
+            except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.stop()
             except Exception as e:

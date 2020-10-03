@@ -20,7 +20,7 @@ from octobot_trading.exchanges.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class PositionsManager(Initializable):
+cdef class PositionsManager(util.Initializable):
     cdef object logger
 
     cdef dict config

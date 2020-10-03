@@ -15,22 +15,22 @@
 #  License along with this library.
 import collections 
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
 import octobot_trading.personal_data as personal_data
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 import octobot_trading.util as util
 
 
-class PositionsManager(Initializable):
+class PositionsManager(util.Initializable):
     MAX_POSITIONS_COUNT = 2000
 
     def __init__(self, config, trader, exchange_manager):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
         self.positions_initialized = False  # TODO
-        self.positions = OrderedDict()
+        self.positions = collections.OrderedDict()
 
     async def initialize_impl(self):
         self._reset_positions()
@@ -63,14 +63,14 @@ class PositionsManager(Initializable):
             self._remove_oldest_positions(int(self.MAX_POSITIONS_COUNT / 2))
 
     def _create_position_from_raw(self, raw_position):
-        position = Position(self.trader)
+        position = personal_data.Position(self.trader)
         position.update_position_from_raw(raw_position)
         return position
 
     def _update_position_from_raw(self, position, raw_position):
         return position.update_position_from_raw(raw_position)
 
-    def _select_positions(self, status=PositionStatus.OPEN, symbol=None, since=-1, limit=-1):
+    def _select_positions(self, status=enums.PositionStatus.OPEN, symbol=None, since=-1, limit=-1):
         positions = [
             position
             for position in self.positions.values()
@@ -84,7 +84,7 @@ class PositionsManager(Initializable):
 
     def _reset_positions(self):
         self.positions_initialized = False
-        self.positions = OrderedDict()
+        self.positions = collections.OrderedDict()
 
     def _remove_oldest_positions(self, nb_to_remove):
         for _ in range(nb_to_remove):

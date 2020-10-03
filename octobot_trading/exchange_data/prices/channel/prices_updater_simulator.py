@@ -13,12 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.constants  as constants 
+import octobot_trading.constants as constants
 import octobot_trading.exchange_data as exchange_data
 import octobot_trading.exchanges as exchanges
 
 
-class MarkPriceUpdaterSimulator(MarkPriceUpdater):
+class MarkPriceUpdaterSimulator(exchange_data.MarkPriceUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer
@@ -26,12 +26,14 @@ class MarkPriceUpdaterSimulator(MarkPriceUpdater):
     async def start(self):
         exchange = self.channel.exchange_manager.exchange
         available_data = exchange.get_real_available_data(exchange.exchange_importers)
-        real_data_for_recent_trades = exchange.handles_real_data_for_updater(RECENT_TRADES_CHANNEL, available_data)
-        real_data_for_ticker = exchange.handles_real_data_for_updater(TICKER_CHANNEL, available_data)
+        real_data_for_recent_trades = exchange.handles_real_data_for_updater(constants.RECENT_TRADES_CHANNEL,
+                                                                             available_data)
+        real_data_for_ticker = exchange.handles_real_data_for_updater(constants.TICKER_CHANNEL, available_data)
         # if recent trades and ticker channels are both generated from ohlcv, do not watch them both,
         # prefer ticker
         if real_data_for_ticker or not (real_data_for_recent_trades or real_data_for_ticker):
-            await get_chan(TICKER_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_ticker_update)
+            await exchanges.get_chan(constants.TICKER_CHANNEL,
+                                     self.channel.exchange_manager.id).new_consumer(self.handle_ticker_update)
         if real_data_for_recent_trades:
-            await get_chan(RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
+            await exchanges.get_chan(constants.RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
                 .new_consumer(self.handle_recent_trades_update)

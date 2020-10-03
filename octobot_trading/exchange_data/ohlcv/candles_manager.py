@@ -15,19 +15,19 @@
 #  License along with this library.
 import numpy as np
 
-import octobot_commons.data_util  as data_util 
-import octobot_commons.enums  as enums 
-import octobot_commons.logging as logging_util 
+import octobot_commons.data_util as data_util
+import octobot_commons.enums as enums
+import octobot_commons.logging as logging
 
 import octobot_trading.util as util
 
 
-class CandlesManager(Initializable):
+class CandlesManager(util.Initializable):
     MAX_CANDLES_COUNT = 1000
 
     def __init__(self):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
 
         self.candles_initialized = False
 
@@ -90,12 +90,12 @@ class CandlesManager(Initializable):
 
     def get_symbol_prices(self, limit=-1):
         return {
-            PriceIndexes.IND_PRICE_CLOSE.value: self.get_symbol_close_candles(limit),
-            PriceIndexes.IND_PRICE_OPEN.value: self.get_symbol_open_candles(limit),
-            PriceIndexes.IND_PRICE_HIGH.value: self.get_symbol_high_candles(limit),
-            PriceIndexes.IND_PRICE_LOW.value: self.get_symbol_low_candles(limit),
-            PriceIndexes.IND_PRICE_VOL.value: self.get_symbol_volume_candles(limit),
-            PriceIndexes.IND_PRICE_TIME.value: self.get_symbol_time_candles(limit)
+            enums.PriceIndexes.IND_PRICE_CLOSE.value: self.get_symbol_close_candles(limit),
+            enums.PriceIndexes.IND_PRICE_OPEN.value: self.get_symbol_open_candles(limit),
+            enums.PriceIndexes.IND_PRICE_HIGH.value: self.get_symbol_high_candles(limit),
+            enums.PriceIndexes.IND_PRICE_LOW.value: self.get_symbol_low_candles(limit),
+            enums.PriceIndexes.IND_PRICE_VOL.value: self.get_symbol_volume_candles(limit),
+            enums.PriceIndexes.IND_PRICE_TIME.value: self.get_symbol_time_candles(limit)
         }
 
     def replace_all_candles(self, all_candles_data):
@@ -111,7 +111,7 @@ class CandlesManager(Initializable):
         """
         # check old candles
         for old_candle in candles_data[:-1]:
-            if old_candle[PriceIndexes.IND_PRICE_TIME.value] not in self.time_candles:
+            if old_candle[enums.PriceIndexes.IND_PRICE_TIME.value] not in self.time_candles:
                 self.add_new_candle(old_candle)
 
         try:
@@ -124,15 +124,15 @@ class CandlesManager(Initializable):
         :param new_candle_data: new candles data
         :return:
         """
-        if self._should_add_new_candle(new_candle_data[PriceIndexes.IND_PRICE_TIME.value]):
+        if self._should_add_new_candle(new_candle_data[enums.PriceIndexes.IND_PRICE_TIME.value]):
             try:
                 self._check_max_candles()
-                self.close_candles[self.close_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_CLOSE.value]
-                self.open_candles[self.open_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_OPEN.value]
-                self.high_candles[self.high_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_HIGH.value]
-                self.low_candles[self.low_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_LOW.value]
-                self.time_candles[self.time_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_TIME.value]
-                self.volume_candles[self.volume_candles_index] = new_candle_data[PriceIndexes.IND_PRICE_VOL.value]
+                self.close_candles[self.close_candles_index] = new_candle_data[enums.PriceIndexes.IND_PRICE_CLOSE.value]
+                self.open_candles[self.open_candles_index] = new_candle_data[enums.PriceIndexes.IND_PRICE_OPEN.value]
+                self.high_candles[self.high_candles_index] = new_candle_data[enums.PriceIndexes.IND_PRICE_HIGH.value]
+                self.low_candles[self.low_candles_index] = new_candle_data[enums.PriceIndexes.IND_PRICE_LOW.value]
+                self.time_candles[self.time_candles_index] = new_candle_data[enums.PriceIndexes.IND_PRICE_TIME.value]
+                self.volume_candles[self.volume_candles_index] = new_candle_data[enums.PriceIndexes.IND_PRICE_VOL.value]
                 self._inc_candle_index()
             except IndexError as e:
                 self.logger.error(f"Fail to add new candle {new_candle_data} : {e}")
@@ -146,12 +146,12 @@ class CandlesManager(Initializable):
             self.add_new_candle(new_candles_data)
 
     def _change_current_candle(self):
-        self.close_candles = shift_value_array(self.close_candles, -1, np.nan, np.float64)
-        self.open_candles = shift_value_array(self.open_candles, -1, np.nan, np.float64)
-        self.high_candles = shift_value_array(self.high_candles, -1, np.nan, np.float64)
-        self.low_candles = shift_value_array(self.low_candles, -1, np.nan, np.float64)
-        self.volume_candles = shift_value_array(self.volume_candles, -1, np.nan, np.float64)
-        self.time_candles = shift_value_array(self.time_candles, -1, np.nan, np.float64)
+        self.close_candles = data_util.shift_value_array(self.close_candles, -1, np.nan, np.float64)
+        self.open_candles = data_util.shift_value_array(self.open_candles, -1, np.nan, np.float64)
+        self.high_candles = data_util.shift_value_array(self.high_candles, -1, np.nan, np.float64)
+        self.low_candles = data_util.shift_value_array(self.low_candles, -1, np.nan, np.float64)
+        self.volume_candles = data_util.shift_value_array(self.volume_candles, -1, np.nan, np.float64)
+        self.time_candles = data_util.shift_value_array(self.time_candles, -1, np.nan, np.float64)
 
     def _should_add_new_candle(self, new_open_time):
         return new_open_time not in self.time_candles

@@ -14,13 +14,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.producers  as producers 
+import octobot_trading.personal_data as personal_data
 
 
-class BalanceUpdaterSimulator(BalanceUpdater):
+class BalanceUpdaterSimulator(personal_data.BalanceUpdater):
     pass
 
 
-class BalanceProfitabilityUpdaterSimulator(BalanceProfitabilityUpdater):
+class BalanceProfitabilityUpdaterSimulator(personal_data.BalanceProfitabilityUpdater):
     pass
 

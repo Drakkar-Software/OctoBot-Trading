@@ -17,7 +17,7 @@
 import octobot_trading.exchange_data as exchange_data
 
 
-class FundingUpdaterSimulator(FundingUpdater):
+class FundingUpdaterSimulator(exchange_data.FundingUpdater):
     """
     The Funding Update Simulator fetch the exchange funding rate and send it to the Funding Channel
     """

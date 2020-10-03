@@ -15,15 +15,15 @@
 #  License along with this library.
 import math 
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 import octobot_trading.util as util
 
 
-class FundingManager(Initializable):
+class FundingManager(util.Initializable):
     def __init__(self):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
-        self.funding_rate = nan
+        self.logger = logging.get_logger(self.__class__.__name__)
+        self.funding_rate = math.nan
         self.next_updated = 0
         self.last_updated = 0
         self.reset_funding()
@@ -32,7 +32,7 @@ class FundingManager(Initializable):
         self.reset_funding()
 
     def reset_funding(self):
-        self.funding_rate = nan
+        self.funding_rate = math.nan
         self.next_updated = 0
         self.last_updated = 0
 

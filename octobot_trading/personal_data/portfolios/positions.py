@@ -15,12 +15,13 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_channels.constants as constants
+import channel.constants as channel_constants
+
 import octobot_trading.exchanges as exchanges
-import octobot_trading.enums
+import octobot_trading.enums as enums
 
 
-class PositionsProducer(ExchangeChannelProducer):
+class PositionsProducer(exchanges.ExchangeChannelProducer):
     async def push(self, positions, is_closed=False, is_liquidated=False, is_from_bot=True):
         await self.perform(positions, is_closed=is_closed, is_liquidated=is_liquidated, is_from_bot=is_from_bot)
 
@@ -30,10 +31,10 @@ class PositionsProducer(ExchangeChannelProducer):
                 if not position:
                     continue
                 symbol: str = self.channel.exchange_manager.get_exchange_symbol(
-                    position[ExchangeConstantsPositionColumns.SYMBOL.value])
-                if self.channel.get_filtered_consumers(
-                        symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
-                    position_id: str = position[ExchangeConstantsPositionColumns.ID.value]
+                    position[enums.ExchangeConstantsPositionColumns.SYMBOL.value])
+                if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
+                        self.channel.get_filtered_consumers(symbol=symbol):
+                    position_id: str = position[enums.ExchangeConstantsPositionColumns.ID.value]
 
                     changed = await self.channel.exchange_manager.exchange_personal_data. \
                         handle_position_update(symbol=symbol,
@@ -50,7 +51,7 @@ class PositionsProducer(ExchangeChannelProducer):
                                         is_updated=changed,
                                         is_liquidated=is_liquidated,
                                         is_from_bot=is_from_bot)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -70,6 +71,6 @@ class PositionsProducer(ExchangeChannelProducer):
             })
 
 
-class PositionsChannel(ExchangeChannel):
+class PositionsChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = PositionsProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer

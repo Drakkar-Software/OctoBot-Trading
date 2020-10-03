@@ -14,18 +14,17 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-import asyncio 
 
+import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
-import octobot_trading.enums
 
 
-class LimitOrder(Order):
-    def __init__(self, trader, side=TradeOrderSide.BUY):
+class LimitOrder(personal_data.Order):
+    def __init__(self, trader, side=enums.TradeOrderSide.BUY):
         super().__init__(trader, side)
         self.limit_price_hit_event = None
         self.wait_for_hit_event_task = None
-        self.trigger_above = self.side is TradeOrderSide.SELL
+        self.trigger_above = self.side is enums.TradeOrderSide.SELL
 
     async def update_order_status(self, force_refresh=False):
         if self.limit_price_hit_event is None:
@@ -37,15 +36,15 @@ class LimitOrder(Order):
             self.wait_for_hit_event_task = asyncio.create_task(self.wait_for_price_hit())
 
     async def wait_for_price_hit(self):
-        await wait_for(self.limit_price_hit_event.wait(), timeout=None)
+        await asyncio.wait_for(self.limit_price_hit_event.wait(), timeout=None)
         await self.on_fill()
 
     def on_fill_actions(self):
-        self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
+        self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
         self.filled_price = self.origin_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
-        Order.on_fill_actions(self)
+        personal_data.Order.on_fill_actions(self)
 
     def clear(self):
         if self.wait_for_hit_event_task is not None:
@@ -55,4 +54,4 @@ class LimitOrder(Order):
         if self.limit_price_hit_event is not None:
             self.exchange_manager.exchange_symbols_data. \
                 get_exchange_symbol_data(self.symbol).price_events_manager.remove_event(self.limit_price_hit_event)
-        Order.clear(self)
+        personal_data.Order.clear(self)

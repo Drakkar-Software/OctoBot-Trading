@@ -20,7 +20,7 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.util as util
 
 
-class TraderSimulator(Trader):
+class TraderSimulator(exchanges.Trader):
     """
     TraderSimulator has a role of exchange response simulator
     - During order creation / filling / canceling process
@@ -33,11 +33,11 @@ class TraderSimulator(Trader):
         self.simulate = True
         super().__init__(config, exchange_manager)
 
-        self.trader_type_str = SIMULATOR_TRADER_STR
+        self.trader_type_str = octobot_trading.constants.SIMULATOR_TRADER_STR
 
     @staticmethod
     def enabled(config):
-        return is_trader_simulator_enabled(config)
+        return util.is_trader_simulator_enabled(config)
 
     def parse_order_id(self, order_id):
         return str(uuid.uuid4()) if order_id is None else order_id

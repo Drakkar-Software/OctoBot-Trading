@@ -13,10 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums
+import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 
 
-class BuyMarketOrder(MarketOrder):
+class BuyMarketOrder(personal_data.MarketOrder):
     def __init__(self, trader):
-        super().__init__(trader, side=TradeOrderSide.BUY)
+        super().__init__(trader, side=enums.TradeOrderSide.BUY)

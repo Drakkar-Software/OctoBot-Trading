@@ -13,21 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_backtesting.api as importer 
-import octobot_backtesting.data  as data 
-import octobot_backtesting.enums  as enums 
-import octobot_channels.channels as channel 
+import octobot_backtesting.api as api
+import octobot_backtesting.data as data
+import octobot_backtesting.enums as backtesting_enums
 
-import octobot_commons.channels_name  as channels_name 
-import octobot_commons.enums  as enums 
-import octobot_trading.constants  as constants 
-import octobot_trading.enums  as enums 
+import octobot_commons.channels_name as channels_name
+import octobot_commons.enums as common_enums
+
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data as exchange_data
 import octobot_trading.util as util
 
 
-class RecentTradeUpdaterSimulator(RecentTradeUpdater):
+class RecentTradeUpdaterSimulator(exchange_data.RecentTradeUpdater):
     SIMULATED_RECENT_TRADE_LIMIT = 2
 
     def __init__(self, channel, importer):
@@ -55,7 +55,7 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
                 if recent_trades_data[0] > self.last_timestamp_pushed:
                     self.last_timestamp_pushed = recent_trades_data[0]
                     await self.push(pair, recent_trades_data[-1])
-        except DataBaseNotExists as e:
+        except data.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e} will use ohlcv data to simulate recent trades.")
             await self.pause()
             await self.stop()
@@ -70,10 +70,10 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
                 # low price in order to get these prices, use exchange simulator's future candles filled by the
                 # previous ohlcv updater cycle that also triggered this call
                 future_candle = self.channel.exchange.current_future_candles[symbol][time_frame]
-                last_candle_timestamp = future_candle[PriceIndexes.IND_PRICE_TIME.value]
+                last_candle_timestamp = future_candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
                 if last_candle_timestamp > self.last_timestamp_pushed_by_symbol[symbol]:
-                    future_candle_low_price = future_candle[PriceIndexes.IND_PRICE_LOW.value]
-                    future_candle_high_price = future_candle[PriceIndexes.IND_PRICE_HIGH.value]
+                    future_candle_low_price = future_candle[common_enums.PriceIndexes.IND_PRICE_LOW.value]
+                    future_candle_high_price = future_candle[common_enums.PriceIndexes.IND_PRICE_HIGH.value]
                     recent_trades = [self._generate_recent_trade(last_candle_timestamp, future_candle_low_price),
                                      self._generate_recent_trade(last_candle_timestamp, future_candle_high_price)]
                     self.last_timestamp_pushed_by_symbol[symbol] = last_candle_timestamp
@@ -81,38 +81,40 @@ class RecentTradeUpdaterSimulator(RecentTradeUpdater):
             except (KeyError, TypeError):
                 # future candle not initialized or missing, should rarely happen: use received candle's close value
                 if candle:
-                    last_candle_timestamp = candle[PriceIndexes.IND_PRICE_TIME.value]
+                    last_candle_timestamp = candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
                     if last_candle_timestamp > self.last_timestamp_pushed_by_symbol[symbol]:
-                        last_candle_close_price = candle[PriceIndexes.IND_PRICE_CLOSE.value]
+                        last_candle_close_price = candle[common_enums.PriceIndexes.IND_PRICE_CLOSE.value]
                         recent_trades = [self._generate_recent_trade(last_candle_timestamp, last_candle_close_price)] \
-                            * self.SIMULATED_RECENT_TRADE_LIMIT
+                                        * self.SIMULATED_RECENT_TRADE_LIMIT
                         self.last_timestamp_pushed_by_symbol[symbol] = last_candle_timestamp
                         await self.push(symbol, recent_trades)
 
     @staticmethod
     def _generate_recent_trade(timestamp, price):
         return {
-            ExchangeConstantsOrderColumns.TIMESTAMP.value: timestamp,
-            ExchangeConstantsOrderColumns.PRICE.value: price
+            enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: timestamp,
+            enums.ExchangeConstantsOrderColumns.PRICE.value: price
         }
 
     async def pause(self):
         if self.time_consumer is not None:
-            await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
+            await exchanges.get_chan(channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value). \
+                remove_consumer(self.time_consumer)
         self.is_running = False
 
     async def stop(self):
-        await stop_and_pause(self)
+        await util.stop_and_pause(self)
 
     async def resume(self):
         if not self.is_running:
             if self.time_consumer is None and not self.channel.is_paused:
-                if ExchangeDataTables.RECENT_TRADES in get_available_data_types(self.exchange_data_importer):
-                    self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
+                if backtesting_enums.ExchangeDataTables.RECENT_TRADES in \
+                        api.get_available_data_types(self.exchange_data_importer):
+                    self.time_consumer = await exchanges.get_chan(
+                        channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
                         self.handle_timestamp)
                 else:
-                    await get_exchange_chan(OHLCV_CHANNEL,
-                                            self.channel.exchange_manager.id)\
+                    await exchanges.get_chan(constants.OHLCV_CHANNEL, self.channel.exchange_manager.id) \
                         .new_consumer(self._recent_trades_from_ohlcv_callback)
                     self.last_timestamp_pushed_by_symbol = {
                         symbol: 0

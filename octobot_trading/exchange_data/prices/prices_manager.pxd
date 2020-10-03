@@ -17,7 +17,7 @@
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class PricesManager(Initializable):
+cdef class PricesManager(util.Initializable):
     cdef object logger
     cdef object exchange_manager
 

@@ -14,17 +14,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import ccxt 
+import ccxt.base.errors as ccxt_errors
+import typing
 
-import octobot_trading 
-import octobot_trading.enums  as enums 
-import octobot_trading.errors  as errors 
+import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
+from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
-class SpotCCXTExchange(CCXTExchange, SpotExchange):
-    async def create_order(self, order_type: TraderOrderType, symbol: str, quantity: float,
-                           price: float = None, stop_price=None, **kwargs: dict) -> dict:
+class SpotCCXTExchange(exchanges.CCXTExchange, exchanges.SpotExchange):
+    async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: float,
+                           price: float = None, stop_price=None, **kwargs: dict) -> typing.Optional[dict]:
         try:
             created_order = await self._create_specific_order(order_type, symbol, quantity, price)
             # some exchanges are not returning the full order details on creation: fetch it if necessary
@@ -40,11 +41,11 @@ class SpotCCXTExchange(CCXTExchange, SpotExchange):
 
             return self.clean_order(created_order)
 
-        except InsufficientFunds as e:
+        except ccxt_errors.InsufficientFunds as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(e)
-            raise MissingFunds(e)
-        except NotSupported:
+            raise errors.MissingFunds(e)
+        except ccxt_errors.NotSupported:
             raise errors.NotSupported
         except Exception as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
@@ -53,25 +54,25 @@ class SpotCCXTExchange(CCXTExchange, SpotExchange):
 
     async def _create_specific_order(self, order_type, symbol, quantity, price=None):
         created_order = None
-        if order_type == TraderOrderType.BUY_MARKET:
+        if order_type == enums.TraderOrderType.BUY_MARKET:
             created_order = await self.client.create_market_buy_order(symbol, quantity)
-        elif order_type == TraderOrderType.BUY_LIMIT:
+        elif order_type == enums.TraderOrderType.BUY_LIMIT:
             created_order = await self.client.create_limit_buy_order(symbol, quantity, price)
-        elif order_type == TraderOrderType.SELL_MARKET:
+        elif order_type == enums.TraderOrderType.SELL_MARKET:
             created_order = await self.client.create_market_sell_order(symbol, quantity)
-        elif order_type == TraderOrderType.SELL_LIMIT:
+        elif order_type == enums.TraderOrderType.SELL_LIMIT:
             created_order = await self.client.create_limit_sell_order(symbol, quantity, price)
-        elif order_type == TraderOrderType.STOP_LOSS:
+        elif order_type == enums.TraderOrderType.STOP_LOSS:
             created_order = None
-        elif order_type == TraderOrderType.STOP_LOSS_LIMIT:
+        elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
             created_order = None
-        elif order_type == TraderOrderType.TAKE_PROFIT:
+        elif order_type == enums.TraderOrderType.TAKE_PROFIT:
             created_order = None
-        elif order_type == TraderOrderType.TAKE_PROFIT_LIMIT:
+        elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
             created_order = None
-        elif order_type == TraderOrderType.TRAILING_STOP:
+        elif order_type == enums.TraderOrderType.TRAILING_STOP:
             created_order = None
-        elif order_type == TraderOrderType.TRAILING_STOP_LIMIT:
+        elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
             created_order = None
         return created_order
 

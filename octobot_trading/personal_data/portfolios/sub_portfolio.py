@@ -16,7 +16,7 @@
 import octobot_trading.personal_data as personal_data
 
 
-class SubPortfolio(Portfolio):
+class SubPortfolio(personal_data.Portfolio):
     DEFAULT_SUB_PORTFOLIO_PERCENT = 0.5
 
     def __init__(self, config, trader, parent_portfolio, percent, is_relative=True):

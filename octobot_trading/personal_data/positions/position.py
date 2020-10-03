@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 
 
 class Position:
@@ -35,8 +35,8 @@ class Position:
         self.unrealised_pnl = 0
         self.realised_pnl = 0
         self.leverage = 0
-        self.status = PositionStatus.OPEN
-        self.side = PositionSide.UNKNOWN
+        self.status = enums.PositionStatus.OPEN
+        self.side = enums.PositionSide.UNKNOWN
 
     def _should_change(self, original_value, new_value):
         if new_value and original_value != new_value:
@@ -99,59 +99,59 @@ class Position:
             self.liquidation_price = float(liquidation_price)
 
         if self._should_change(self.status.value, status):
-            self.status = PositionStatus(status)
+            self.status = enums.PositionStatus(status)
 
         if self._should_change(self.side.value, side):
-            self.side = PositionSide(side)
+            self.side = enums.PositionSide(side)
 
-        if self.side is PositionSide.UNKNOWN and self.quantity:
-            self.side = PositionSide.LONG if self.quantity > 0 else PositionSide.SHORT
+        if self.side is enums.PositionSide.UNKNOWN and self.quantity:
+            self.side = enums.PositionSide.LONG if self.quantity > 0 else enums.PositionSide.SHORT
 
         return changed
 
     def is_liquidated(self):
-        return self.status is PositionStatus.LIQUIDATING
+        return self.status is enums.PositionStatus.LIQUIDATING
 
     def update_position_from_raw(self, raw_position):
         currency, market = self.exchange_manager.get_exchange_quote_and_base(
-            raw_position[ExchangeConstantsPositionColumns.SYMBOL.value])
+            raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value])
         return self._update(**{
             "symbol": self.exchange_manager.get_exchange_symbol(
-                raw_position[ExchangeConstantsPositionColumns.SYMBOL.value]),
+                raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value]),
             "currency": currency,
             "market": market,
-            "entry_price": raw_position[ExchangeConstantsPositionColumns.ENTRY_PRICE.value],
-            "mark_price": raw_position[ExchangeConstantsPositionColumns.MARK_PRICE.value],
-            "liquidation_price": raw_position[ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value],
-            "quantity": raw_position[ExchangeConstantsPositionColumns.QUANTITY.value],
-            "value": raw_position[ExchangeConstantsPositionColumns.VALUE.value],
-            "margin": raw_position[ExchangeConstantsPositionColumns.MARGIN.value],
+            "entry_price": raw_position[enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value],
+            "mark_price": raw_position[enums.ExchangeConstantsPositionColumns.MARK_PRICE.value],
+            "liquidation_price": raw_position[enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value],
+            "quantity": raw_position[enums.ExchangeConstantsPositionColumns.QUANTITY.value],
+            "value": raw_position[enums.ExchangeConstantsPositionColumns.VALUE.value],
+            "margin": raw_position[enums.ExchangeConstantsPositionColumns.MARGIN.value],
             "position_id": None,
-            "timestamp": raw_position[ExchangeConstantsPositionColumns.TIMESTAMP.value],
-            "unrealised_pnl": raw_position[ExchangeConstantsPositionColumns.UNREALISED_PNL.value],
-            "realised_pnl": raw_position[ExchangeConstantsPositionColumns.REALISED_PNL.value],
-            "leverage": raw_position[ExchangeConstantsPositionColumns.LEVERAGE.value],
-            "status": raw_position[ExchangeConstantsPositionColumns.STATUS.value],
-            "side": raw_position[ExchangeConstantsPositionColumns.SIDE.value]
-            if ExchangeConstantsPositionColumns.SIDE.value in raw_position else None
+            "timestamp": raw_position[enums.ExchangeConstantsPositionColumns.TIMESTAMP.value],
+            "unrealised_pnl": raw_position[enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value],
+            "realised_pnl": raw_position[enums.ExchangeConstantsPositionColumns.REALISED_PNL.value],
+            "leverage": raw_position[enums.ExchangeConstantsPositionColumns.LEVERAGE.value],
+            "status": raw_position[enums.ExchangeConstantsPositionColumns.STATUS.value],
+            "side": raw_position[enums.ExchangeConstantsPositionColumns.SIDE.value]
+            if enums.ExchangeConstantsPositionColumns.SIDE.value in raw_position else None
         })
 
     def to_dict(self):
         return {
-            ExchangeConstantsPositionColumns.ID.value: self.position_id,
-            ExchangeConstantsPositionColumns.SYMBOL.value: self.symbol,
-            ExchangeConstantsPositionColumns.STATUS.value: self.status.value,
-            ExchangeConstantsPositionColumns.TIMESTAMP.value: self.timestamp,
-            ExchangeConstantsPositionColumns.SIDE.value: self.side.value,
-            ExchangeConstantsPositionColumns.QUANTITY.value: self.quantity,
-            ExchangeConstantsPositionColumns.VALUE.value: self.value,
-            ExchangeConstantsPositionColumns.MARGIN.value: self.margin,
-            ExchangeConstantsPositionColumns.ENTRY_PRICE.value: self.entry_price,
-            ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
-            ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
-            ExchangeConstantsPositionColumns.UNREALISED_PNL.value: self.unrealised_pnl,
-            ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
-            ExchangeConstantsPositionColumns.LEVERAGE.value: self.leverage,
+            enums.ExchangeConstantsPositionColumns.ID.value: self.position_id,
+            enums.ExchangeConstantsPositionColumns.SYMBOL.value: self.symbol,
+            enums.ExchangeConstantsPositionColumns.STATUS.value: self.status.value,
+            enums.ExchangeConstantsPositionColumns.TIMESTAMP.value: self.timestamp,
+            enums.ExchangeConstantsPositionColumns.SIDE.value: self.side.value,
+            enums.ExchangeConstantsPositionColumns.QUANTITY.value: self.quantity,
+            enums.ExchangeConstantsPositionColumns.VALUE.value: self.value,
+            enums.ExchangeConstantsPositionColumns.MARGIN.value: self.margin,
+            enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: self.entry_price,
+            enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
+            enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
+            enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value: self.unrealised_pnl,
+            enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
+            enums.ExchangeConstantsPositionColumns.LEVERAGE.value: self.leverage,
         }
 
     def _check_for_liquidation(self):
@@ -181,10 +181,10 @@ class Position:
 class ShortPosition(Position):
     def _check_for_liquidation(self):
         if self.mark_price >= self.liquidation_price:
-            self.status = PositionStatus.LIQUIDATING
+            self.status = enums.PositionStatus.LIQUIDATING
 
 
 class LongPosition(Position):
     def _check_for_liquidation(self):
         if self.mark_price <= self.liquidation_price:
-            self.status = PositionStatus.LIQUIDATING
+            self.status = enums.PositionStatus.LIQUIDATING

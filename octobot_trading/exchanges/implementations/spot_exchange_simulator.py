@@ -16,5 +16,5 @@
 import octobot_trading.exchanges as exchanges
 
 
-class SpotExchangeSimulator(ExchangeSimulator, SpotExchange):
+class SpotExchangeSimulator(exchanges.ExchangeSimulator, exchanges.SpotExchange):
     pass

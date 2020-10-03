@@ -16,7 +16,7 @@
 #  License along with this library.
 from octobot_trading.util.initializable cimport Initializable
 
-cdef class OrderState(Initializable):
+cdef class OrderState(util.Initializable):
     cdef public object order  # instance of Order
     cdef public object state  # item of OrderStates
     cdef public object lock  # item of asyncio.Lock

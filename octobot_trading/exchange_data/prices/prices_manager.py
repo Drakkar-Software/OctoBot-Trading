@@ -15,26 +15,26 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_commons.constants  as constants 
-import octobot_commons.logging as logging_util 
+import octobot_commons.constants as constants
+import octobot_commons.logging as logging
 
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 import octobot_trading.util as util
 
 
-class PricesManager(Initializable):
-    MARK_PRICE_VALIDITY = 5 * MINUTE_TO_SECONDS
+class PricesManager(util.Initializable):
+    MARK_PRICE_VALIDITY = 5 * constants.MINUTE_TO_SECONDS
 
     def __init__(self, exchange_manager):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.mark_price = 0
         self.mark_price_set_time = 0
         self.mark_price_from_sources = {}
         self.exchange_manager = exchange_manager
 
         # warning: should only be created in the async loop thread
-        self.valid_price_received_event = Event()
+        self.valid_price_received_event = asyncio.Event()
 
     async def initialize_impl(self):
         """
@@ -54,13 +54,13 @@ class PricesManager(Initializable):
         :return True if mark price got updated
         """
         is_mark_price_updated = False
-        if mark_price_source == MarkPriceSources.EXCHANGE_MARK_PRICE.value:
+        if mark_price_source == enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value:
             self._set_mark_price_value(mark_price)
             is_mark_price_updated = True
 
         # set mark price value if MarkPriceSources.RECENT_TRADE_AVERAGE.value has already been updated
-        elif mark_price_source == MarkPriceSources.RECENT_TRADE_AVERAGE.value:
-            if self.mark_price_from_sources.get(MarkPriceSources.RECENT_TRADE_AVERAGE.value, None) is not None:
+        elif mark_price_source == enums.MarkPriceSources.RECENT_TRADE_AVERAGE.value:
+            if self.mark_price_from_sources.get(enums.MarkPriceSources.RECENT_TRADE_AVERAGE.value, None) is not None:
                 self._set_mark_price_value(mark_price)
                 is_mark_price_updated = True
             else:
@@ -68,8 +68,8 @@ class PricesManager(Initializable):
                 self.mark_price_from_sources[mark_price_source] = (mark_price, 0)
 
         # set mark price value if other sources have expired
-        elif mark_price_source == MarkPriceSources.TICKER_CLOSE_PRICE.value and not \
-                self._are_other_sources_valid(MarkPriceSources.TICKER_CLOSE_PRICE.value):
+        elif mark_price_source == enums.MarkPriceSources.TICKER_CLOSE_PRICE.value and not \
+                self._are_other_sources_valid(enums.MarkPriceSources.TICKER_CLOSE_PRICE.value):
             self._set_mark_price_value(mark_price)
             is_mark_price_updated = True
 
@@ -86,7 +86,7 @@ class PricesManager(Initializable):
         """
         self._ensure_price_validity()
         if not self.valid_price_received_event.is_set():
-            await wait_for(self.valid_price_received_event.wait(), timeout)
+            await asyncio.wait_for(self.valid_price_received_event.wait(), timeout)
         return self.mark_price
 
     def _set_mark_price_value(self, mark_price):
@@ -101,7 +101,7 @@ class PricesManager(Initializable):
         """
         Check if other sources a out of validity
         """
-        for source in MarkPriceSources:
+        for source in enums.MarkPriceSources:
             source_mark_price = self.mark_price_from_sources.get(source.value, None)
             if source_mark_price is not None and \
                     mark_price_source != source.value and \

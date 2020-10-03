@@ -15,20 +15,20 @@
 #  License along with this library.
 import collections 
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
 import octobot_trading.util as util
 
 
-class RecentTradesManager(Initializable):
+class RecentTradesManager(util.Initializable):
     MAX_RECENT_TRADES_COUNT = 100
     MAX_LIQUIDATIONS_COUNT = 20
 
     def __init__(self):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
-        self.recent_trades = deque(maxlen=self.MAX_RECENT_TRADES_COUNT)
-        self.liquidations = deque(maxlen=self.MAX_LIQUIDATIONS_COUNT)
+        self.logger = logging.get_logger(self.__class__.__name__)
+        self.recent_trades = collections.deque(maxlen=self.MAX_RECENT_TRADES_COUNT)
+        self.liquidations = collections.deque(maxlen=self.MAX_LIQUIDATIONS_COUNT)
         self._reset_recent_trades()
 
     async def initialize_impl(self):
@@ -58,5 +58,5 @@ class RecentTradesManager(Initializable):
             return new_liquidations
 
     def _reset_recent_trades(self):
-        self.recent_trades = deque(maxlen=self.MAX_RECENT_TRADES_COUNT)
-        self.liquidations = deque(maxlen=self.MAX_LIQUIDATIONS_COUNT)
+        self.recent_trades = collections.deque(maxlen=self.MAX_RECENT_TRADES_COUNT)
+        self.liquidations = collections.deque(maxlen=self.MAX_LIQUIDATIONS_COUNT)

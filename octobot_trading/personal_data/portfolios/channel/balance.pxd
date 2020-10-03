@@ -19,7 +19,7 @@
 Handles balance changes
 """
 
-from octobot_trading.exchanges.exchange_channel cimport ExchangeChannel, ExchangeChannelProducer
+from octobot_trading.exchanges.channel.exchange_channel cimport ExchangeChannel, ExchangeChannelProducer
 
 cdef class BalanceProducer(ExchangeChannelProducer):
     pass

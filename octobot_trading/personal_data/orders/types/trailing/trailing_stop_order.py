@@ -13,22 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 import asyncio 
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
 import octobot_trading.personal_data as personal_data
-import octobot_trading.enums
+import octobot_trading.enums as enums
 
 
-class TrailingStopOrder(Order):
+class TrailingStopOrder(personal_data.Order):
     UNINITIALIZED_TRAILING_PERCENT = -1
     DEFAULT_TRAILING_PERCENT = 5
 
-    def __init__(self, trader, side=TradeOrderSide.SELL, trailing_percent=UNINITIALIZED_TRAILING_PERCENT):
+    def __init__(self, trader, side=enums.TradeOrderSide.SELL, trailing_percent=UNINITIALIZED_TRAILING_PERCENT):
         super().__init__(trader, side=side)
-        self.order_type = TraderOrderType.TRAILING_STOP
+        self.order_type = enums.TraderOrderType.TRAILING_STOP
         self.trailing_stop_price_hit_event = None
         self.trailing_price_hit_event = None
         self.wait_for_stop_price_hit_event_task = None
@@ -68,10 +67,10 @@ class TrailingStopOrder(Order):
         if self.trailing_stop_price_hit_event is None:
             self.trailing_stop_price_hit_event = price_events_manager.add_event(
                 self._calculate_stop_price(new_price), new_price_time,
-                self.side is TradeOrderSide.BUY)
+                self.side is enums.TradeOrderSide.BUY)
         if self.trailing_price_hit_event is None:
             self.trailing_price_hit_event = price_events_manager.add_event(new_price, new_price_time,
-                                                                           self.side is TradeOrderSide.SELL)
+                                                                           self.side is enums.TradeOrderSide.SELL)
 
     def _calculate_stop_price(self, new_price):
         """
@@ -82,7 +81,7 @@ class TrailingStopOrder(Order):
         trailing_price_factor = (self.trailing_percent
                                  if self.trailing_percent != self.UNINITIALIZED_TRAILING_PERCENT
                                  else self.DEFAULT_TRAILING_PERCENT) / 100
-        trailing_price_factor *= 1 if self.side is TradeOrderSide.BUY else -1
+        trailing_price_factor *= 1 if self.side is enums.TradeOrderSide.BUY else -1
         return new_price * (1 + trailing_price_factor)
 
     def _create_hit_tasks(self):
@@ -129,17 +128,18 @@ class TrailingStopOrder(Order):
         """
         prices_manager = self.exchange_manager.exchange_symbols_data. \
             get_exchange_symbol_data(self.symbol).prices_manager
-        get_logger(self.get_logger_name()).debug(f"New price hit {prices_manager.mark_price}, replacing stop...")
+        logging.get_logger(self.get_logger_name()).debug(f"New price hit {prices_manager.mark_price}, "
+                                                         f"replacing stop...")
         await self._reset_events(prices_manager.mark_price, prices_manager.mark_price_set_time)
 
     async def on_filled(self):
         """
         Create an artificial when trailing stop is filled
         """
-        await Order.on_filled(self)
-        await self.trader.create_artificial_order(TraderOrderType.SELL_MARKET
-                                                  if self.side is TradeOrderSide.SELL
-                                                  else TraderOrderType.BUY_MARKET,
+        await personal_data.Order.on_filled(self)
+        await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
+                                                  if self.side is enums.TradeOrderSide.SELL
+                                                  else enums.TraderOrderType.BUY_MARKET,
                                                   self.symbol, self.origin_stop_price,
                                                   self.origin_quantity, self.origin_stop_price,
                                                   self.linked_portfolio)
@@ -157,7 +157,7 @@ class TrailingStopOrder(Order):
         Clear prices hit events and their related tasks and call super clear
         """
         self._clear_event_and_tasks()
-        Order.clear(self)
+        personal_data.Order.clear(self)
 
 
 async def _wait_for_price_hit(event_to_wait, callback):
@@ -166,5 +166,5 @@ async def _wait_for_price_hit(event_to_wait, callback):
     :param event_to_wait: the event to wait
     :param callback: the callback to call
     """
-    await wait_for(event_to_wait.wait(), timeout=None)
+    await asyncio.wait_for(event_to_wait.wait(), timeout=None)
     await callback()

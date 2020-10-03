@@ -23,7 +23,7 @@ from octobot_trading.exchange_data.ohlcv.candles_adapter import get_symbol_close
     get_candle_as_list
 from octobot_trading.exchange_data.ohlcv.candles_manager import CandlesManager
 from octobot_trading.exchange_data.kline.kline_manager import KlineManager
-from octobot_trading.exchanges.data.exchange_symbol_data import ExchangeSymbolData
+from octobot_trading.exchange_data.exchange_symbol_data import ExchangeSymbolData
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 
 

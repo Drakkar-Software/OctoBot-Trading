@@ -15,19 +15,19 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_channels.constants as constants
+import channel.constants as constants
 
 import octobot_trading.exchanges as exchanges
 
 
-class OrderBookProducer(ExchangeChannelProducer):
+class OrderBookProducer(exchanges.ExchangeChannelProducer):
     async def push(self, symbol, asks, bids, update_order_book=True):
         await self.perform(symbol, asks, bids, update_order_book)
 
     async def perform(self, symbol, asks, bids, update_order_book):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
-                    symbol=symbol):
+            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
+                    self.channel.get_filtered_consumers(symbol=symbol):
                 if update_order_book:
                     self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_update(asks, bids)
                 await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
@@ -35,7 +35,7 @@ class OrderBookProducer(ExchangeChannelProducer):
                                 symbol=symbol,
                                 asks=asks,
                                 bids=bids)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -52,19 +52,19 @@ class OrderBookProducer(ExchangeChannelProducer):
             })
 
 
-class OrderBookChannel(ExchangeChannel):
+class OrderBookChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = OrderBookProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
 
 
-class OrderBookTickerProducer(ExchangeChannelProducer):
+class OrderBookTickerProducer(exchanges.ExchangeChannelProducer):
     async def push(self, symbol, ask_quantity, ask_price, bid_quantity, bid_price):
         await self.perform(symbol, ask_quantity, ask_price, bid_quantity, bid_price)
 
     async def perform(self, symbol, ask_quantity, ask_price, bid_quantity, bid_price):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
-                    symbol=symbol):
+            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
+                    self.channel.get_filtered_consumers(symbol=symbol):
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_order_book_ticker_update(ask_quantity,
                                                                                                       ask_price,
                                                                                                       bid_quantity,
@@ -74,7 +74,7 @@ class OrderBookTickerProducer(ExchangeChannelProducer):
                                 symbol=symbol,
                                 ask_quantity=ask_quantity, ask_price=ask_price,
                                 bid_quantity=bid_quantity, bid_price=bid_price)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -93,6 +93,6 @@ class OrderBookTickerProducer(ExchangeChannelProducer):
             })
 
 
-class OrderBookTickerChannel(ExchangeChannel):
+class OrderBookTickerChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = OrderBookTickerProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
