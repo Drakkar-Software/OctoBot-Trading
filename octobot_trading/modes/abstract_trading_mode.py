@@ -15,7 +15,7 @@
 #  License along with this library.
 import abc 
 
-import octobot_commons.constants as constants
+import octobot_commons.constants
 import octobot_commons.logging as logging_util 
 import octobot_commons.tentacles_management as abstract_tentacle 
 import octobot_tentacles_manager.api as configurator 

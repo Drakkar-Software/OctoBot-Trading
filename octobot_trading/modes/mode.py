@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_channels.channels as channel 
-import octobot_commons.constants as constants
+import octobot_commons.constants
 import octobot_commons.enums as enums
 
 import octobot_trading.exchanges as exchanges

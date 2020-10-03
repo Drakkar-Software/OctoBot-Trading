@@ -13,7 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.constants as constants
+import octobot_commons.constants
+
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants
 
@@ -22,7 +23,8 @@ def get_portfolio(exchange_manager) -> dict:
     return exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
 
 
-def get_portfolio_currency(exchange_manager, currency, portfolio_type=PORTFOLIO_AVAILABLE) -> float:
+def get_portfolio_currency(exchange_manager, currency,
+                           portfolio_type=octobot_commons.constants.PORTFOLIO_AVAILABLE) -> float:
     return exchange_manager.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
         currency,
         portfolio_type=portfolio_type
@@ -34,5 +36,5 @@ def get_origin_portfolio(exchange_manager) -> dict:
 
 
 async def refresh_real_trader_portfolio(exchange_manager) -> bool:
-    return await get_chan(BALANCE_CHANNEL, exchange_manager.id).get_internal_producer(). \
-        refresh_real_trader_portfolio(True)
+    return await exchanges.get_chan(octobot_trading.constants.BALANCE_CHANNEL,
+                                    exchange_manager.id).get_internal_producer().refresh_real_trader_portfolio(True)

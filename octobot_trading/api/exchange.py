@@ -132,7 +132,7 @@ def get_exchange_name(exchange_manager) -> str:
 
 def has_only_ohlcv(exchange_importers):
     return exchanges.ExchangeSimulator.get_real_available_data(exchange_importers) == \
-           set(oSIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[OHLCV_CHANNEL])
+           set(SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[octobot_trading.constants.OHLCV_CHANNEL])
 
 
 def get_is_backtesting(exchange_manager) -> bool:

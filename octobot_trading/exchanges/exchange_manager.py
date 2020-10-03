@@ -16,7 +16,7 @@
 import uuid
 
 import octobot_commons.config_util as config_util
-import octobot_commons.constants as constants
+import octobot_commons.constants
 import octobot_commons.logging as logging_util 
 
 import octobot_trading.exchanges as exchanges

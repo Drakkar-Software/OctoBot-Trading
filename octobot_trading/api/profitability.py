@@ -39,7 +39,7 @@ def get_current_holdings_values(exchange_manager) -> dict:
 
 
 def get_reference_market(config) -> str:
-    return util_get_reference_market(config)
+    return util.get_reference_market(config)
 
 
 def get_initializing_currencies_prices(exchange_manager) -> set:

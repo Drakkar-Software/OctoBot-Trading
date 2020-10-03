@@ -19,7 +19,7 @@ import logging
 import ccxt.async_support as ccxt
 import ccxt.async_support as async_support
 import ccxt.base as errors 
-import octobot_commons.constants as constants
+import octobot_commons.constants
 import octobot_commons.enums as enums
 
 import octobot_trading 
