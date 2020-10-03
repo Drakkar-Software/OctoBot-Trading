@@ -21,6 +21,8 @@ from octobot_trading.exchange_data import order_book
 from octobot_trading.exchange_data import prices
 from octobot_trading.exchange_data import recent_trades
 from octobot_trading.exchange_data import ticker
+from octobot_trading.exchange_data import exchange_symbol_data
+from octobot_trading.exchange_data import exchange_symbols_data
 
 from octobot_trading.exchange_data.funding import (
     FundingUpdaterSimulator,
@@ -92,6 +94,12 @@ from octobot_trading.exchange_data.ticker import (
     MiniTickerChannel,
     TickerUpdaterSimulator,
 )
+from octobot_trading.exchange_data.exchange_symbol_data import (
+    ExchangeSymbolData,
+)
+from octobot_trading.exchange_data.exchange_symbols_data import (
+    ExchangeSymbolsData,
+)
 
 __all__ = [
     "FundingUpdaterSimulator",
@@ -144,4 +152,6 @@ __all__ = [
     "MiniTickerProducer",
     "MiniTickerChannel",
     "TickerUpdaterSimulator",
+    "ExchangeSymbolsData",
+    "ExchangeSymbolData",
 ]

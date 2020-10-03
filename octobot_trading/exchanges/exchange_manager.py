@@ -16,18 +16,18 @@
 import uuid
 
 import octobot_commons.config_util as config_util
-import octobot_commons.constants
-import octobot_commons.logging as logging_util 
+import octobot_commons.constants as common_constants
+import octobot_commons.logging as logging
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants
-import octobot_trading.enums
-import octobot_trading.exchanges as exchanges
-import octobot_trading.util as util
+import octobot_trading.personal_data as personal_data
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.util as util
 
 
-class ExchangeManager(Initializable):
+class ExchangeManager(util.Initializable):
     def __init__(self, config, exchange_class_string):
         super().__init__()
         self.id = str(uuid.uuid4())
@@ -35,7 +35,7 @@ class ExchangeManager(Initializable):
         self.tentacles_setup_config = None
         self.exchange_class_string = exchange_class_string
         self.exchange_name = exchange_class_string
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
 
         self.is_ready = False
         self.is_simulated: bool = False
@@ -55,7 +55,7 @@ class ExchangeManager(Initializable):
 
         self.backtesting = None
 
-        self.is_trader_simulated = is_trader_simulator_enabled(self.config)
+        self.is_trader_simulated = util.is_trader_simulator_enabled(self.config)
         self.has_websocket = False
 
         self.trader = None
@@ -67,21 +67,22 @@ class ExchangeManager(Initializable):
         self.client_symbols = []
         self.client_time_frames = []
 
-        self.exchange_config = ExchangeConfig(self)
-        self.exchange_personal_data = ExchangePersonalData(self)
-        self.exchange_symbols_data = ExchangeSymbolsData(self)
+        self.exchange_config = exchanges.ExchangeConfig(self)
+        self.exchange_personal_data = personal_data.ExchangePersonalData(self)
+        self.exchange_symbols_data = exchange_data.ExchangeSymbolsData(self)
 
     async def initialize_impl(self):
-        await create_exchanges(self)
+        await exchanges.create_exchanges(self)
 
     async def stop(self, warning_on_missing_elements=True):
         for trading_mode in self.trading_modes:
             await trading_mode.stop()
         if self.exchange is not None:
             if not self.exchange_only:
-                await stop_exchange_channels(self, should_warn=warning_on_missing_elements)
+                await exchanges.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
             await self.exchange.stop()
-            exchanges.Exchanges.instance().del_exchange(self.exchange.name, self.id, should_warn=warning_on_missing_elements)
+            exchanges.Exchanges.instance().del_exchange(self.exchange.name, self.id,
+                                                        should_warn=warning_on_missing_elements)
             self.exchange.exchange_manager = None
         if self.exchange_personal_data is not None:
             self.exchange_personal_data.clear()
@@ -103,28 +104,28 @@ class ExchangeManager(Initializable):
         self.exchange_config.set_config_traded_pairs()
 
     def need_user_stream(self):
-        return self.config[CONFIG_TRADER][CONFIG_ENABLED_OPTION]
+        return self.config[constants.CONFIG_TRADER][common_constants.CONFIG_ENABLED_OPTION]
 
     def reset_exchange_symbols_data(self):
-        self.exchange_symbols_data = ExchangeSymbolsData(self)
+        self.exchange_symbols_data = exchange_data.ExchangeSymbolsData(self)
 
     def reset_exchange_personal_data(self):
-        self.exchange_personal_data = ExchangePersonalData(self)
+        self.exchange_personal_data = personal_data.ExchangePersonalData(self)
 
     """
     Exchange Configuration
     """
 
     def check_config(self, exchange_name):
-        if CONFIG_EXCHANGE_KEY not in self.config[CONFIG_EXCHANGES][exchange_name] \
-                or CONFIG_EXCHANGE_SECRET not in self.config[CONFIG_EXCHANGES][exchange_name]:
+        if constants.CONFIG_EXCHANGE_KEY not in self.config[constants.CONFIG_EXCHANGES][exchange_name] \
+                or constants.CONFIG_EXCHANGE_SECRET not in self.config[constants.CONFIG_EXCHANGES][exchange_name]:
             return False
         else:
             return True
 
     def enabled(self):
         # if we can get candlestick data
-        if self.is_simulated or self.exchange.name in self.config[CONFIG_EXCHANGES]:
+        if self.is_simulated or self.exchange.name in self.config[constants.CONFIG_EXCHANGES]:
             return True
         else:
             self.logger.warning(f"Exchange {self.exchange.name} is currently disabled")
@@ -139,13 +140,13 @@ class ExchangeManager(Initializable):
     def get_symbol_data(self, symbol):
         return self.exchange_symbols_data.get_exchange_symbol_data(symbol)
 
-    def get_rest_pairs_refresh_threshold(self) -> RestExchangePairsRefreshMaxThresholds:
+    def get_rest_pairs_refresh_threshold(self) -> enums.RestExchangePairsRefreshMaxThresholds:
         traded_pairs_count = len(self.exchange_config.traded_symbol_pairs)
-        if traded_pairs_count < RestExchangePairsRefreshMaxThresholds.FAST.value:
-            return RestExchangePairsRefreshMaxThresholds.FAST
-        if traded_pairs_count < RestExchangePairsRefreshMaxThresholds.MEDIUM.value:
-            return RestExchangePairsRefreshMaxThresholds.MEDIUM
-        return RestExchangePairsRefreshMaxThresholds.SLOW
+        if traded_pairs_count < enums.RestExchangePairsRefreshMaxThresholds.FAST.value:
+            return enums.RestExchangePairsRefreshMaxThresholds.FAST
+        if traded_pairs_count < enums.RestExchangePairsRefreshMaxThresholds.MEDIUM.value:
+            return enums.RestExchangePairsRefreshMaxThresholds.MEDIUM
+        return enums.RestExchangePairsRefreshMaxThresholds.SLOW
 
     def _load_config_symbols_and_time_frames(self):
         client = self.exchange.client
@@ -176,9 +177,11 @@ class ExchangeManager(Initializable):
         return self.exchange_class_string
 
     def should_decrypt_token(self, logger):
-        if has_invalid_default_config_value(
-                self.config[CONFIG_EXCHANGES][self.get_exchange_name()].get(CONFIG_EXCHANGE_KEY, ''),
-                self.config[CONFIG_EXCHANGES][self.get_exchange_name()].get(CONFIG_EXCHANGE_SECRET, '')):
+        if config_util.has_invalid_default_config_value(
+                self.config[constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
+                    constants.CONFIG_EXCHANGE_KEY, ''),
+                self.config[constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
+                    constants.CONFIG_EXCHANGE_SECRET, '')):
             logger.warning("Exchange configuration tokens are not set yet, to use OctoBot's real trader's features, "
                            "please enter your api tokens in exchange configuration")
             return False
@@ -187,10 +190,10 @@ class ExchangeManager(Initializable):
     def get_exchange_credentials(self, logger, exchange_name):
         if self.ignore_config or not self.should_decrypt_token(logger) or self.without_auth:
             return "", "", ""
-        config_exchange = self.config[CONFIG_EXCHANGES][exchange_name]
-        return (decrypt_element_if_possible(CONFIG_EXCHANGE_KEY, config_exchange, None),
-                decrypt_element_if_possible(CONFIG_EXCHANGE_SECRET, config_exchange, None),
-                decrypt_element_if_possible(CONFIG_EXCHANGE_PASSWORD, config_exchange, None))
+        config_exchange = self.config[constants.CONFIG_EXCHANGES][exchange_name]
+        return (config_util.decrypt_element_if_possible(constants.CONFIG_EXCHANGE_KEY, config_exchange, None),
+                config_util.decrypt_element_if_possible(constants.CONFIG_EXCHANGE_SECRET, config_exchange, None),
+                config_util.decrypt_element_if_possible(constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None))
 
     @staticmethod
     def handle_token_error(error, logger):

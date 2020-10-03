@@ -15,12 +15,13 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_channels.constants as constants
+import channel.constants as channel_constants
+
 import octobot_trading.exchanges as exchanges
-import octobot_trading.enums
+import octobot_trading.enums as enums
 
 
-class TradesProducer(ExchangeChannelProducer):
+class TradesProducer(exchanges.ExchangeChannelProducer):
     async def push(self, trades, old_trade=False):
         await self.perform(trades, old_trade=old_trade)
 
@@ -30,10 +31,10 @@ class TradesProducer(ExchangeChannelProducer):
                 if not trade:
                     continue
                 symbol: str = self.channel.exchange_manager.get_exchange_symbol(
-                    trade[ExchangeConstantsOrderColumns.SYMBOL.value])
-                if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+                    trade[enums.ExchangeConstantsOrderColumns.SYMBOL.value])
+                if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
                         self.channel.get_filtered_consumers(symbol=symbol):
-                    trade_id: str = trade[ExchangeConstantsOrderColumns.ID.value]
+                    trade_id: str = trade[enums.ExchangeConstantsOrderColumns.ID.value]
 
                     added: bool = await self.channel.exchange_manager.exchange_personal_data.handle_trade_update(
                         symbol,
@@ -47,7 +48,7 @@ class TradesProducer(ExchangeChannelProducer):
                                         symbol=symbol,
                                         trade=trade,
                                         old_trade=old_trade)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -64,6 +65,6 @@ class TradesProducer(ExchangeChannelProducer):
             })
 
 
-class TradesChannel(ExchangeChannel):
+class TradesChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = TradesProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer

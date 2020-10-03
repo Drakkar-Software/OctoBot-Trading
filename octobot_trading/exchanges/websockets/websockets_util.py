@@ -13,14 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_tentacles_manager.api as configurator 
+import octobot_tentacles_manager.api as api
+
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants 
+import octobot_trading.constants as constants
 
 
 def force_disable_web_socket(config, exchange_name) -> bool:
-    return CONFIG_EXCHANGE_WEB_SOCKET in config[CONFIG_EXCHANGES][exchange_name] \
-           and not config[CONFIG_EXCHANGES][exchange_name][CONFIG_EXCHANGE_WEB_SOCKET]
+    return constants.CONFIG_EXCHANGE_WEB_SOCKET in config[constants.CONFIG_EXCHANGES][exchange_name] \
+           and not config[constants.CONFIG_EXCHANGES][exchange_name][constants.CONFIG_EXCHANGE_WEB_SOCKET]
 
 
 def check_web_socket_config(config, exchange_name) -> bool:
@@ -36,5 +37,5 @@ def search_websocket_class(websocket_class, exchange_manager):
 
 
 def get_exchange_websocket_from_name(name: str, tentacles_setup_config: object, with_class_method: str):
-    return get_class_from_name_with_activated_required_tentacles(name, WebsocketExchange,
-                                                                 tentacles_setup_config, with_class_method)
+    return api.get_class_from_name_with_activated_required_tentacles(name, exchanges.WebsocketExchange,
+                                                                     tentacles_setup_config, with_class_method)

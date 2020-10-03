@@ -14,24 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges import exchange_manager
-from octobot_trading.exchanges import exchange_builder
-from octobot_trading.exchanges import exchange_channel
-from octobot_trading.exchanges import exchange_factory
-from octobot_trading.exchanges import exchanges
-from octobot_trading.exchanges import exchange_util
-from octobot_trading.exchanges import abstract_exchange
-from octobot_trading.exchanges import exchange_websocket_factory
-from octobot_trading.exchanges import exchange_channels
-
-from octobot_trading.exchanges.exchange_manager import (
-    ExchangeManager,
-)
-from octobot_trading.exchanges.exchange_builder import (
-    ExchangeBuilder,
-    create_exchange_builder_instance,
-)
-from octobot_trading.exchanges.exchange_channel import (
+from octobot_trading.exchanges import channel
+from octobot_trading.exchanges.channel import (
     ExchangeChannelConsumer,
     ExchangeChannelInternalConsumer,
     ExchangeChannelSupervisedConsumer,
@@ -44,6 +28,71 @@ from octobot_trading.exchanges.exchange_channel import (
     get_chan,
     del_chan,
     stop_exchange_channels,
+    requires_refresh_trigger,
+    create_exchange_channels,
+    create_exchange_producers,
+    create_authenticated_producer_from_parent,
+)
+
+from octobot_trading.exchanges import exchange_manager
+from octobot_trading.exchanges import exchange_builder
+from octobot_trading.exchanges.channel import exchange_channel
+from octobot_trading.exchanges import exchange_factory
+from octobot_trading.exchanges import exchanges
+from octobot_trading.exchanges import exchange_util
+from octobot_trading.exchanges import abstract_exchange
+from octobot_trading.exchanges import exchange_websocket_factory
+from octobot_trading.exchanges import exchange_config_data
+from octobot_trading.exchanges import implementations
+from octobot_trading.exchanges import traders
+from octobot_trading.exchanges import types
+from octobot_trading.exchanges import util
+from octobot_trading.exchanges import websockets
+
+from octobot_trading.exchanges.exchange_manager import (
+    ExchangeManager,
+)
+from octobot_trading.exchanges.exchange_builder import (
+    ExchangeBuilder,
+    create_exchange_builder_instance,
+)
+from octobot_trading.exchanges.traders import (
+    Trader,
+    TraderSimulator,
+)
+from octobot_trading.exchanges.implementations import (
+    ExchangeSimulator,
+    SpotExchangeSimulator,
+    FutureExchangeSimulator,
+    MarginExchangeSimulator,
+    DefaultCCXTSpotExchange,
+    CCXTExchange,
+    SpotCCXTExchange,
+)
+from octobot_trading.exchanges.types import (
+    FutureExchange,
+    WebsocketExchange,
+    MarginExchange,
+    SpotExchange,
+)
+from octobot_trading.exchanges.util import (
+    ExchangeMarketStatusFixer,
+    is_ms_valid,
+    check_market_status_limits,
+    check_market_status_values,
+    get_markets_limit,
+    calculate_amounts,
+    calculate_costs,
+    calculate_prices,
+    fix_market_status_limits_from_current_data,
+)
+from octobot_trading.exchanges.websockets import (
+    AbstractWebsocket,
+    OctoBotWebSocketClient,
+    force_disable_web_socket,
+    check_web_socket_config,
+    search_websocket_class,
+    get_exchange_websocket_from_name,
 )
 from octobot_trading.exchanges.exchange_factory import (
     create_exchanges,
@@ -70,18 +119,13 @@ from octobot_trading.exchanges.exchange_websocket_factory import (
     is_exchange_managed_by_websocket,
     is_websocket_feed_requiring_init,
     search_and_create_websocket,
-    WEBSOCKET_FEEDS_TO_TRADING_CHANNELS,
-    WEBSOCKET_FEEDS_TO_TRADING_CHANNELS,
-    WEBSOCKET_FEEDS_TO_TRADING_CHANNELS,
 )
-from octobot_trading.exchanges.exchange_channels import (
-    requires_refresh_trigger,
-    create_exchange_channels,
-    create_exchange_producers,
-    create_authenticated_producer_from_parent,
+from octobot_trading.exchanges.exchange_config_data import (
+    ExchangeConfig,
 )
 
 __all__ = [
+    "ExchangeConfig",
     "ExchangeManager",
     "ExchangeBuilder",
     "create_exchange_builder_instance",
@@ -113,11 +157,36 @@ __all__ = [
     "is_exchange_managed_by_websocket",
     "is_websocket_feed_requiring_init",
     "search_and_create_websocket",
-    "WEBSOCKET_FEEDS_TO_TRADING_CHANNELS",
-    "WEBSOCKET_FEEDS_TO_TRADING_CHANNELS",
-    "WEBSOCKET_FEEDS_TO_TRADING_CHANNELS",
     "requires_refresh_trigger",
     "create_exchange_channels",
     "create_exchange_producers",
     "create_authenticated_producer_from_parent",
+    "TraderSimulator",
+    "Trader",
+    "ExchangeSimulator",
+    "SpotExchangeSimulator",
+    "FutureExchangeSimulator",
+    "MarginExchangeSimulator",
+    "DefaultCCXTSpotExchange",
+    "CCXTExchange",
+    "SpotCCXTExchange",
+    "FutureExchange",
+    "WebsocketExchange",
+    "MarginExchange",
+    "SpotExchange",
+    "ExchangeMarketStatusFixer",
+    "is_ms_valid",
+    "check_market_status_limits",
+    "check_market_status_values",
+    "get_markets_limit",
+    "calculate_amounts",
+    "calculate_costs",
+    "calculate_prices",
+    "fix_market_status_limits_from_current_data",
+    "OctoBotWebSocketClient",
+    "AbstractWebsocket",
+    "force_disable_web_socket",
+    "check_web_socket_config",
+    "search_websocket_class",
+    "get_exchange_websocket_from_name",
 ]

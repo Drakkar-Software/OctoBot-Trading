@@ -13,21 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_backtesting.api as importer 
-import octobot_backtesting.data  as data 
-import octobot_backtesting.enums  as enums 
-import octobot_channels.channels as channel 
-import octobot_commons.enums  as enums 
+import octobot_backtesting.api as api
+import octobot_backtesting.data as data
+import octobot_backtesting.enums as backtesting_enums
 
-import octobot_commons.channels_name  as channels_name 
-import octobot_trading.constants  as constants 
-import octobot_trading.enums  as enums 
+import octobot_commons.enums as common_enums
+import octobot_commons.channels_name as channels_name
+
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.util as util
 import octobot_trading.exchange_data as exchange_data
 
 
-class TickerUpdaterSimulator(TickerUpdater):
+class TickerUpdaterSimulator(exchange_data.TickerUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer
@@ -45,14 +45,15 @@ class TickerUpdaterSimulator(TickerUpdater):
     async def handle_timestamp(self, timestamp, **kwargs):
         try:
             for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                ticker_data = (await self.exchange_data_importer.get_ticker_from_timestamps(exchange_name=self.exchange_name,
-                                                                                            symbol=pair,
-                                                                                            inferior_timestamp=timestamp,
-                                                                                            limit=1))[0]
+                ticker_data = (await self.exchange_data_importer.get_ticker_from_timestamps(
+                    exchange_name=self.exchange_name,
+                    symbol=pair,
+                    inferior_timestamp=timestamp,
+                    limit=1))[0]
                 if ticker_data[0] > self.last_timestamp_pushed:
                     self.last_timestamp_pushed = ticker_data[0]
                     await self.push(pair, ticker_data[-1])
-        except DataBaseNotExists as e:
+        except data.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()
@@ -62,7 +63,7 @@ class TickerUpdaterSimulator(TickerUpdater):
     async def _ticker_from_ohlcv_callback(self, exchange: str, exchange_id: str,
                                           cryptocurrency: str, symbol: str, time_frame, candle):
         if self.ticker_time_frame == time_frame and candle:
-            last_candle_timestamp = candle[PriceIndexes.IND_PRICE_TIME.value]
+            last_candle_timestamp = candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
             if last_candle_timestamp > self.last_timestamp_pushed_by_symbol[symbol]:
                 self.last_timestamp_pushed_by_symbol[symbol] = last_candle_timestamp
                 ticker = self._generate_ticker_from_candle(candle, symbol, last_candle_timestamp)
@@ -71,32 +72,34 @@ class TickerUpdaterSimulator(TickerUpdater):
     @staticmethod
     def _generate_ticker_from_candle(candle, symbol, last_candle_timestamp):
         return {
-            ExchangeConstantsTickersColumns.TIMESTAMP.value: last_candle_timestamp,
-            ExchangeConstantsTickersColumns.LAST.value: candle[PriceIndexes.IND_PRICE_CLOSE.value],
-            ExchangeConstantsTickersColumns.SYMBOL.value: symbol,
-            ExchangeConstantsTickersColumns.HIGH.value: candle[PriceIndexes.IND_PRICE_HIGH.value],
-            ExchangeConstantsTickersColumns.LOW.value: candle[PriceIndexes.IND_PRICE_LOW.value],
-            ExchangeConstantsTickersColumns.OPEN.value: candle[PriceIndexes.IND_PRICE_OPEN.value],
-            ExchangeConstantsTickersColumns.CLOSE.value: candle[PriceIndexes.IND_PRICE_CLOSE.value]
+            enums.ExchangeConstantsTickersColumns.TIMESTAMP.value: last_candle_timestamp,
+            enums.ExchangeConstantsTickersColumns.LAST.value: candle[common_enums.PriceIndexes.IND_PRICE_CLOSE.value],
+            enums.ExchangeConstantsTickersColumns.SYMBOL.value: symbol,
+            enums.ExchangeConstantsTickersColumns.HIGH.value: candle[common_enums.PriceIndexes.IND_PRICE_HIGH.value],
+            enums.ExchangeConstantsTickersColumns.LOW.value: candle[common_enums.PriceIndexes.IND_PRICE_LOW.value],
+            enums.ExchangeConstantsTickersColumns.OPEN.value: candle[common_enums.PriceIndexes.IND_PRICE_OPEN.value],
+            enums.ExchangeConstantsTickersColumns.CLOSE.value: candle[common_enums.PriceIndexes.IND_PRICE_CLOSE.value]
         }
 
     async def pause(self):
         if self.time_consumer is not None:
-            await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(self.time_consumer)
+            await exchanges.get_chan(channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value). \
+                remove_consumer(self.time_consumer)
         self.is_running = False
 
     async def stop(self):
-        await stop_and_pause(self)
+        await util.stop_and_pause(self)
 
     async def resume(self):
         if not self.is_running:
             if self.time_consumer is None and not self.channel.is_paused:
-                if ExchangeDataTables.TICKER in get_available_data_types(self.exchange_data_importer):
-                    self.time_consumer = await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
+                if backtesting_enums.ExchangeDataTables.TICKER in \
+                        api.get_available_data_types(self.exchange_data_importer):
+                    self.time_consumer = await exchanges.get_chan(
+                        channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
                         self.handle_timestamp)
                 else:
-                    await get_exchange_chan(OHLCV_CHANNEL,
-                                            self.channel.exchange_manager.id)\
+                    await exchanges.get_chan(constants.OHLCV_CHANNEL, self.channel.exchange_manager.id) \
                         .new_consumer(self._ticker_from_ohlcv_callback)
                     self.last_timestamp_pushed_by_symbol = {
                         symbol: 0

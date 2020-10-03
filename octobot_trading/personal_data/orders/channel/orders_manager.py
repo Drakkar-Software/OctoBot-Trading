@@ -13,25 +13,26 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import collections 
+import collections
 
-import octobot_commons.logging as logging_util 
+import typing
+
+import octobot_commons.logging as logging
 
 import octobot_trading.personal_data as personal_data
-import octobot_trading.enums  as enums 
-import octobot_trading.personal_data as personal_data
+import octobot_trading.enums as enums
 import octobot_trading.util as util
 
 
-class OrdersManager(Initializable):
+class OrdersManager(util.Initializable):
     MAX_ORDERS_COUNT = 2000
 
     def __init__(self, config, trader, exchange_manager):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
         self.orders_initialized = False  # TODO
-        self.orders = OrderedDict()
+        self.orders = collections.OrderedDict()
 
     async def initialize_impl(self):
         self._reset_orders()
@@ -43,24 +44,24 @@ class OrdersManager(Initializable):
         return self._select_orders(None, symbol=symbol, since=since, limit=limit)
 
     def get_open_orders(self, symbol=None, since=-1, limit=-1):
-        return self._select_orders(OrderStatus.OPEN, symbol, since, limit)
+        return self._select_orders(enums.OrderStatus.OPEN, symbol, since, limit)
 
     def get_closed_orders(self, symbol=None, since=-1, limit=-1):
-        return self._select_orders(OrderStatus.CLOSED, symbol, since, limit)
+        return self._select_orders(enums.OrderStatus.CLOSED, symbol, since, limit)
 
     def get_order(self, order_id):
         return self.orders[order_id]
 
     async def upsert_order_from_raw(self, order_id, raw_order) -> bool:
         if not self.has_order(order_id):
-            new_order = create_order_instance_from_raw(self.trader, raw_order)
+            new_order = personal_data.create_order_instance_from_raw(self.trader, raw_order)
             self.orders[order_id] = new_order
             await new_order.initialize(is_from_exchange_data=True)
             self._check_orders_size()
             return True
         return await _update_order_from_raw(self.orders[order_id], raw_order)
 
-    async def upsert_order_close_from_raw(self, order_id, raw_order) -> Order:
+    async def upsert_order_close_from_raw(self, order_id, raw_order) -> typing.Optional[personal_data.Order]:
         if self.has_order(order_id):
             order = self.orders[order_id]
             await _update_order_from_raw(self.orders[order_id], raw_order)
@@ -91,7 +92,7 @@ class OrdersManager(Initializable):
     # private methods
     def _reset_orders(self):
         self.orders_initialized = False
-        self.orders = OrderedDict()
+        self.orders = collections.OrderedDict()
 
     def _check_orders_size(self):
         if len(self.orders) > self.MAX_ORDERS_COUNT:

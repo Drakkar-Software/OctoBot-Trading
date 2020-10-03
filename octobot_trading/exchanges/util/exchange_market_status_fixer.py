@@ -13,16 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 import math
-import decimal 
-import math 
 
-import octobot_trading.enums  as enums 
-import octobot_trading.enums  as enums 
+from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
+from octobot_trading.enums import ExchangeConstantsMarketStatusInfoColumns as Ecmsic
 
 
 def is_ms_valid(value, zero_valid=False):
-    return value is not None and value is not nan and (value >= 0 if zero_valid else value > 0)
+    return value is not None and value is not math.nan and (value >= 0 if zero_valid else value > 0)
 
 
 def check_market_status_limits(market_limit):
@@ -223,7 +222,7 @@ class ExchangeMarketStatusFixer:
         }
 
     def _get_price_precision(self):
-        return -Decimal(f"{self.price_example}").as_tuple().exponent
+        return -decimal.Decimal(f"{self.price_example}").as_tuple().exponent
 
     def _fix_market_status_precision_with_price(self):
         precision = self._get_price_precision()
@@ -249,22 +248,26 @@ class ExchangeMarketStatusFixer:
                     if Ecmsic.FILTER_TYPE.value in filter_dict:
                         if filter_dict[Ecmsic.FILTER_TYPE.value] == Ecmsic.PRICE_FILTER.value:
                             if is_ms_valid(float(filter_dict[Ecmsic.MAX_PRICE.value])) and \
-                               not is_ms_valid(market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MAX.value]):
+                                    not is_ms_valid(
+                                        market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MAX.value]):
                                 market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MAX.value] = \
                                     float(filter_dict[Ecmsic.MAX_PRICE.value])
 
                             if is_ms_valid(float(filter_dict[Ecmsic.MIN_PRICE.value])) and \
-                               not is_ms_valid(market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value]):
+                                    not is_ms_valid(
+                                        market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value]):
                                 market_limit[Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] = \
                                     float(filter_dict[Ecmsic.MIN_PRICE.value])
                         elif filter_dict[Ecmsic.FILTER_TYPE.value] == Ecmsic.LOT_SIZE.value:
                             if is_ms_valid(float(filter_dict[Ecmsic.MAX_QTY.value])) and \
-                               not is_ms_valid(market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MAX.value]):
+                                    not is_ms_valid(
+                                        market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MAX.value]):
                                 market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MAX.value] = \
                                     float(filter_dict[Ecmsic.MAX_QTY.value])
 
                             if is_ms_valid(float(filter_dict[Ecmsic.MIN_QTY.value])) and \
-                               not is_ms_valid(market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MIN.value]):
+                                    not is_ms_valid(
+                                        market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MIN.value]):
                                 market_limit[Ecmsc.LIMITS_AMOUNT.value][Ecmsc.LIMITS_AMOUNT_MIN.value] = \
                                     float(filter_dict[Ecmsic.MIN_QTY.value])
                 calculate_costs(market_limit)

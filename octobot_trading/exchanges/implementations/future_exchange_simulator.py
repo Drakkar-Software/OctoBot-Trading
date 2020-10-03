@@ -16,5 +16,5 @@
 import octobot_trading.exchanges as exchanges
 
 
-class FutureExchangeSimulator(ExchangeSimulator, FutureExchange):
+class FutureExchangeSimulator(exchanges.ExchangeSimulator, exchanges.FutureExchange):
     pass

@@ -16,13 +16,13 @@
 #  License along with this library.
 import asyncio
 
-import octobot_trading.errors  as errors 
+import octobot_trading.errors as errors
 
 import octobot_trading.personal_data as personal_data
-import octobot_trading.constants  as constants 
+import octobot_trading.constants as constants
 
 
-class TradesUpdater(TradesProducer):
+class TradesUpdater(personal_data.TradesProducer):
     """
     The Trades Update fetch the exchange trades and send it to the Trade Channel
     """
@@ -30,7 +30,7 @@ class TradesUpdater(TradesProducer):
     """
     The updater related channel name
     """
-    CHANNEL_NAME = TRADES_CHANNEL
+    CHANNEL_NAME = constants.TRADES_CHANNEL
 
     """
     Trades history request limit
@@ -47,7 +47,7 @@ class TradesUpdater(TradesProducer):
         try:
             await self.fetch_and_push()
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
-        except NotSupported:
+        except errors.NotSupported:
             self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
             await self.pause()
         except Exception as e:

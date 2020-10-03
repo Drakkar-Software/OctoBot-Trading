@@ -16,16 +16,16 @@
 #  License along with this library.
 import asyncio
 
-import octobot_trading.errors  as errors 
+import octobot_trading.errors as errors
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants 
+import octobot_trading.constants as constants
 import octobot_trading.exchange_data as exchange_data
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 
 
-class OrderBookUpdater(OrderBookProducer):
-    CHANNEL_NAME = ORDER_BOOK_CHANNEL
+class OrderBookUpdater(exchange_data.OrderBookProducer):
+    CHANNEL_NAME = constants.ORDER_BOOK_CHANNEL
     ORDER_BOOK_REFRESH_TIME = 5
 
     def __init__(self, channel):
@@ -34,9 +34,9 @@ class OrderBookUpdater(OrderBookProducer):
 
     async def start(self):
         refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()
-        if refresh_threshold is RestExchangePairsRefreshMaxThresholds.MEDIUM:
+        if refresh_threshold is enums.RestExchangePairsRefreshMaxThresholds.MEDIUM:
             self.refresh_time = 9
-        elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
+        elif refresh_threshold is enums.RestExchangePairsRefreshMaxThresholds.SLOW:
             self.refresh_time = 15
         if self.channel.is_paused:
             await self.pause()
@@ -49,15 +49,15 @@ class OrderBookUpdater(OrderBookProducer):
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     order_book = await self.channel.exchange_manager.exchange.get_order_book(pair)
                     try:
-                        asks, bids = order_book[ExchangeConstantsOrderBookInfoColumns.ASKS.value], \
-                                     order_book[ExchangeConstantsOrderBookInfoColumns.BIDS.value]
+                        asks, bids = order_book[enums.ExchangeConstantsOrderBookInfoColumns.ASKS.value], \
+                                     order_book[enums.ExchangeConstantsOrderBookInfoColumns.BIDS.value]
 
                         await self.parse_order_book_ticker(pair, asks, bids)
                         await self.push(pair, asks, bids)
                     except TypeError as e:
                         self.logger.error(f"Failed to fetch order book for {pair} : {e}")
                 await asyncio.sleep(self.refresh_time)
-            except NotSupported:
+            except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
@@ -69,7 +69,8 @@ class OrderBookUpdater(OrderBookProducer):
         """
         try:
             if asks and bids:
-                await get_chan(ORDER_BOOK_TICKER_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+                await exchanges.get_chan(constants.ORDER_BOOK_TICKER_CHANNEL,
+                                         self.channel.exchange_manager.id).get_internal_producer(). \
                     push(symbol=pair,
                          ask_quantity=asks[0][1], ask_price=asks[0][0],
                          bid_quantity=bids[0][1], bid_price=bids[0][0])

@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
 
-import octobot_trading.enums
+import octobot_trading.enums as enums
 
 # Strings
 CURRENT_PORTFOLIO_STRING = "Current Portfolio :"
@@ -106,18 +106,18 @@ CCXT_INFO = "info"
 CONFIG_EXCHANGE_WEB_SOCKET = "web-socket"
 
 WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
-    TICKER_CHANNEL: [WebsocketFeeds.TICKER],
-    MINI_TICKER_CHANNEL: [WebsocketFeeds.MINI_TICKER],
-    RECENT_TRADES_CHANNEL: [WebsocketFeeds.TRADES],
-    LIQUIDATIONS_CHANNEL: [WebsocketFeeds.LIQUIDATIONS],
-    ORDER_BOOK_CHANNEL: [WebsocketFeeds.L2_BOOK, WebsocketFeeds.L3_BOOK],
-    ORDER_BOOK_TICKER_CHANNEL: [WebsocketFeeds.BOOK_TICKER],
-    KLINE_CHANNEL: [WebsocketFeeds.KLINE],
-    OHLCV_CHANNEL: [WebsocketFeeds.CANDLE],
-    TRADES_CHANNEL: [WebsocketFeeds.TRADE],
-    ORDERS_CHANNEL: [WebsocketFeeds.ORDERS],
-    MARK_PRICE_CHANNEL: [WebsocketFeeds.MARK_PRICE],
-    BALANCE_CHANNEL: [WebsocketFeeds.PORTFOLIO],
-    POSITIONS_CHANNEL: [WebsocketFeeds.POSITION],
-    FUNDING_CHANNEL: [WebsocketFeeds.FUNDING]
+    TICKER_CHANNEL: [enums.WebsocketFeeds.TICKER],
+    MINI_TICKER_CHANNEL: [enums.WebsocketFeeds.MINI_TICKER],
+    RECENT_TRADES_CHANNEL: [enums.WebsocketFeeds.TRADES],
+    LIQUIDATIONS_CHANNEL: [enums.WebsocketFeeds.LIQUIDATIONS],
+    ORDER_BOOK_CHANNEL: [enums.WebsocketFeeds.L2_BOOK, enums.WebsocketFeeds.L3_BOOK],
+    ORDER_BOOK_TICKER_CHANNEL: [enums.WebsocketFeeds.BOOK_TICKER],
+    KLINE_CHANNEL: [enums.WebsocketFeeds.KLINE],
+    OHLCV_CHANNEL: [enums.WebsocketFeeds.CANDLE],
+    TRADES_CHANNEL: [enums.WebsocketFeeds.TRADE],
+    ORDERS_CHANNEL: [enums.WebsocketFeeds.ORDERS],
+    MARK_PRICE_CHANNEL: [enums.WebsocketFeeds.MARK_PRICE],
+    BALANCE_CHANNEL: [enums.WebsocketFeeds.PORTFOLIO],
+    POSITIONS_CHANNEL: [enums.WebsocketFeeds.POSITION],
+    FUNDING_CHANNEL: [enums.WebsocketFeeds.FUNDING]
 }

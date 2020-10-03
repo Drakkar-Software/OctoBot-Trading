@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .octobot_websocket import *
-
 from octobot_trading.exchanges.websockets import octobot_websocket
 from octobot_trading.exchanges.websockets import abstract_websocket
 from octobot_trading.exchanges.websockets import websockets_util
@@ -31,11 +29,9 @@ from octobot_trading.exchanges.websockets.websockets_util import (
     check_web_socket_config,
     search_websocket_class,
     get_exchange_websocket_from_name,
-    CONFIG_EXCHANGE_WEB_SOCKET,
-    CONFIG_EXCHANGE_WEB_SOCKET,
-    CONFIG_EXCHANGES,
-    CONFIG_EXCHANGES,
 )
+
+from .octobot_websocket import *
 
 __all__ = [
     "OctoBotWebSocketClient",
@@ -44,8 +40,4 @@ __all__ = [
     "check_web_socket_config",
     "search_websocket_class",
     "get_exchange_websocket_from_name",
-    "CONFIG_EXCHANGE_WEB_SOCKET",
-    "CONFIG_EXCHANGE_WEB_SOCKET",
-    "CONFIG_EXCHANGES",
-    "CONFIG_EXCHANGES",
 ]

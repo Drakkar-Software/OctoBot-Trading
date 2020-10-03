@@ -15,24 +15,24 @@
 #  License along with this library.
 import copy
 
-import octobot_commons.logging as logging_util 
+import octobot_commons.logging as logging
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants 
+import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
-import octobot_trading.enums  as enums 
-import octobot_trading.personal_data as personal_data
+import octobot_trading.enums as enums
 
 
-class PositionsUpdaterSimulator(PositionsUpdater):
+class PositionsUpdaterSimulator(personal_data.PositionsUpdater):
     def __init__(self, channel):
         super().__init__(channel)
         self.exchange_manager = None
 
     async def start(self):
         self.exchange_manager = self.channel.exchange_manager
-        self.logger = get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
-        await get_chan(MARK_PRICE_CHANNEL, self.channel.exchange_manager.id).new_consumer(self.handle_mark_price)
+        self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
+        await exchanges.get_chan(constants.MARK_PRICE_CHANNEL,
+                                 self.channel.exchange_manager.id).new_consumer(self.handle_mark_price)
 
     async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
         """
@@ -61,7 +61,8 @@ class PositionsUpdaterSimulator(PositionsUpdater):
             finally:
                 # ensure always call fill callback
                 if position_closed:
-                    await get_chan(POSITIONS_CHANNEL, self.channel.exchange_manager.id).get_internal_producer() \
+                    await exchanges.get_chan(constants.POSITIONS_CHANNEL,
+                                             self.channel.exchange_manager.id).get_internal_producer() \
                         .send(cryptocurrency=cryptocurrency,
                               symbol=position.symbol,
                               order=position.to_dict(),
@@ -71,7 +72,7 @@ class PositionsUpdaterSimulator(PositionsUpdater):
                               is_updated=False)
 
     async def _update_position_status(self,
-                                      position: Position,
+                                      position: personal_data.Position,
                                       mark_price):
         """
         Call position status update
@@ -80,7 +81,7 @@ class PositionsUpdaterSimulator(PositionsUpdater):
         try:
             await position.update_status(mark_price)
 
-            if position.status in (PositionStatus.CLOSED, PositionStatus.LIQUIDATING):
+            if position.status in (enums.PositionStatus.CLOSED, enums.PositionStatus.LIQUIDATING):
                 position_closed = True
                 self.logger.debug(f"{position.symbol} (ID : {position.position_id})"
                                   f" closed on {self.channel.exchange.name} "

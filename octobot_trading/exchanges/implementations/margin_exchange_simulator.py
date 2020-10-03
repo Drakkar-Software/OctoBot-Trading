@@ -16,5 +16,5 @@
 import octobot_trading.exchanges as exchanges
 
 
-class MarginExchangeSimulator(ExchangeSimulator, MarginExchange):
+class MarginExchangeSimulator(exchanges.ExchangeSimulator, exchanges.MarginExchange):
     pass

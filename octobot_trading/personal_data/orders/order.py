@@ -13,16 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio 
+import asyncio
 
-import octobot_commons.logging as logging_util 
+import typing
 
-import octobot_trading.enums  as enums
+import octobot_commons.logging as logging
+
+import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 import octobot_trading.util as util
 
 
-class Order(Initializable):
+class Order(util.Initializable):
     """
     Order class will represent an open order in the specified exchange
     In simulation it will also define rules to be filled / canceled
@@ -34,10 +36,10 @@ class Order(Initializable):
         super().__init__()
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
-        self.status = OrderStatus.OPEN
+        self.status = enums.OrderStatus.OPEN
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
         self.executed_time = 0
-        self.lock = Lock()
+        self.lock = asyncio.Lock()
         self.linked_orders = []
 
         self.is_synchronized_with_exchange = False
@@ -81,7 +83,7 @@ class Order(Initializable):
             self.logger_name = f"{self.get_name()} | {self.order_id}"
         return self.logger_name
 
-    def update(self, symbol, order_id="", status=OrderStatus.OPEN,
+    def update(self, symbol, order_id="", status=enums.OrderStatus.OPEN,
                current_price=0.0, quantity=0.0, price=0.0, stop_price=0.0,
                quantity_filled=0.0, filled_price=0.0, average_price=0.0, fee=None, total_cost=0.0,
                timestamp=None, linked_to=None, linked_portfolio=None, order_type=None) -> bool:
@@ -98,7 +100,7 @@ class Order(Initializable):
             self.status = status
             changed = True
         if not self.status:
-            self.status = OrderStatus.OPEN
+            self.status = enums.OrderStatus.OPEN
 
         if timestamp and self.timestamp != timestamp:
             self.timestamp = timestamp
@@ -110,7 +112,7 @@ class Order(Initializable):
                 self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
             self.timestamp = self.creation_time
 
-        if status in {OrderStatus.FILLED, OrderStatus.CLOSED} and not self.executed_time:
+        if status in {enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED} and not self.executed_time:
             self.executed_time = self.timestamp
 
         if price and self.origin_price != price:
@@ -180,7 +182,7 @@ class Order(Initializable):
         """
         Initialize order status update tasks
         """
-        await create_order_state(self, **kwargs)
+        await personal_data.create_order_state(self, **kwargs)
         if not self.is_closed():
             await self.update_order_status()
 
@@ -197,49 +199,49 @@ class Order(Initializable):
         return self.currency, self.market
 
     def get_total_fees(self, currency):
-        return get_fees_for_currency(self.fee, currency)
+        return personal_data.get_fees_for_currency(self.fee, currency)
 
     def is_open(self):
         return self.state is None or self.state.is_open()
 
     def is_filled(self):
-        return self.state.is_filled() or (self.state.is_closed() and self.status is OrderStatus.FILLED)
+        return self.state.is_filled() or (self.state.is_closed() and self.status is enums.OrderStatus.FILLED)
 
     def is_cancelled(self):
-        return self.state.is_canceled() or (self.state.is_closed() and self.status is OrderStatus.CANCELED)
+        return self.state.is_canceled() or (self.state.is_closed() and self.status is enums.OrderStatus.CANCELED)
 
     def is_closed(self):
-        return self.state.is_closed() if self.state is not None else self.status == OrderStatus.CLOSED
+        return self.state.is_closed() if self.state is not None else self.status == enums.OrderStatus.CLOSED
 
     def is_refreshing(self):
         return self.state is not None and self.state.is_refreshing()
 
     async def on_open(self, force_open=False, is_from_exchange_data=False):
-        self.state = OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state = personal_data.OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_open)
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
         get_logger(self.get_logger_name()).debug(f"on_fill triggered for {self}")
         if self.is_open() and not self.is_refreshing():
-            self.state = FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            self.state = personal_data.FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
             await self.state.initialize(forced=force_fill)
         else:
-            get_logger(self.get_logger_name()).debug(f"Trying to fill a refreshing or previously filled or "
-                                                     f"canceled order: ignored fill call for {self}")
+            logging.get_logger(self.get_logger_name()).debug(f"Trying to fill a refreshing or previously filled or canceled order: "
+                                                             f"ignored fill call for {self}")
 
     async def on_close(self, force_close=False, is_from_exchange_data=False):
-        self.state = CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state = personal_data.CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_close)
 
     async def on_cancel(self, is_from_exchange_data=False, force_cancel=False, ignored_order=None):
-        self.state = CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state = personal_data.CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
 
     def on_fill_actions(self):
         """
         Perform on_fill actions
         """
-        self.status = OrderStatus.FILLED
+        self.status = enums.OrderStatus.FILLED
 
     async def on_filled(self):
         """
@@ -251,20 +253,20 @@ class Order(Initializable):
         computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,
                                                                     self.filled_price, self.taker_or_maker)
         return {
-            FeePropertyColumns.COST.value:
-                forced_value if forced_value is not None else computed_fee[FeePropertyColumns.COST.value],
-            FeePropertyColumns.CURRENCY.value: computed_fee[FeePropertyColumns.CURRENCY.value],
+            enums.FeePropertyColumns.COST.value:
+                forced_value if forced_value is not None else computed_fee[enums.FeePropertyColumns.COST.value],
+            enums.FeePropertyColumns.CURRENCY.value: computed_fee[enums.FeePropertyColumns.CURRENCY.value],
         }
 
     def get_profitability(self):
         if self.filled_price != 0 and self.created_last_price != 0:
             if self.filled_price >= self.created_last_price:
                 self.order_profitability = 1 - self.filled_price / self.created_last_price
-                if self.side is TradeOrderSide.SELL:
+                if self.side is enums.TradeOrderSide.SELL:
                     self.order_profitability *= -1
             else:
                 self.order_profitability = 1 - self.created_last_price / self.filled_price
-                if self.side is TradeOrderSide.BUY:
+                if self.side is enums.TradeOrderSide.BUY:
                     self.order_profitability *= -1
         return self.order_profitability
 
@@ -272,9 +274,9 @@ class Order(Initializable):
         result = await self.exchange_manager.exchange.get_order(self.order_id, self.symbol)
         new_status = self.trader.parse_status(result)
         self.is_synchronized_with_exchange = True
-        if new_status in {OrderStatus.FILLED, OrderStatus.CLOSED}:
+        if new_status in {enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED}:
             await self.on_fill()
-        elif new_status is OrderStatus.CANCELED:
+        elif new_status is enums.OrderStatus.CANCELED:
             await self.trader.cancel_order(self)
 
     def generate_executed_time(self):
@@ -282,12 +284,12 @@ class Order(Initializable):
 
     def is_self_managed(self):
         # stop losses and take profits are self managed by the bot
-        if self.order_type in [TraderOrderType.TAKE_PROFIT,
-                               TraderOrderType.TAKE_PROFIT_LIMIT,
-                               TraderOrderType.STOP_LOSS,
-                               TraderOrderType.STOP_LOSS_LIMIT,
-                               TraderOrderType.TRAILING_STOP,
-                               TraderOrderType.TRAILING_STOP_LIMIT]:
+        if self.order_type in [enums.TraderOrderType.TAKE_PROFIT,
+                               enums.TraderOrderType.TAKE_PROFIT_LIMIT,
+                               enums.TraderOrderType.STOP_LOSS,
+                               enums.TraderOrderType.STOP_LOSS_LIMIT,
+                               enums.TraderOrderType.TRAILING_STOP,
+                               enums.TraderOrderType.TRAILING_STOP_LIMIT]:
             return True
         return False
 
@@ -298,29 +300,29 @@ class Order(Initializable):
                 if self.taker_or_maker is None:
                     self._update_taker_maker()
             except KeyError:
-                get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
+                logging.get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
-        filled_price = raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0)
+        filled_price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0)
         # set average price with real average price if available, use filled_price otherwise
-        average_price = raw_order.get(ExchangeConstantsOrderColumns.AVERAGE.value, 0.0) or filled_price
+        average_price = raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value, 0.0) or filled_price
 
         return self.update(
-            symbol=str(raw_order.get(ExchangeConstantsOrderColumns.SYMBOL.value, None)),
-            current_price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
-            quantity=raw_order.get(ExchangeConstantsOrderColumns.AMOUNT.value, 0.0),
-            price=raw_order.get(ExchangeConstantsOrderColumns.PRICE.value, 0.0),
-            status=parse_order_status(raw_order),
-            order_id=str(raw_order.get(ExchangeConstantsOrderColumns.ID.value, None)),
-            quantity_filled=raw_order.get(ExchangeConstantsOrderColumns.FILLED.value, 0.0),
+            symbol=str(raw_order.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value, None)),
+            current_price=raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            quantity=raw_order.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value, 0.0),
+            price=raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            status=personal_data.parse_order_status(raw_order),
+            order_id=str(raw_order.get(enums.ExchangeConstantsOrderColumns.ID.value, None)),
+            quantity_filled=raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value, 0.0),
             filled_price=filled_price,
             average_price=average_price,
-            total_cost=raw_order.get(ExchangeConstantsOrderColumns.COST.value, 0.0),
-            fee=raw_order.get(ExchangeConstantsOrderColumns.FEE.value, None),
-            timestamp=raw_order.get(ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
+            total_cost=raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value, 0.0),
+            fee=raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value, None),
+            timestamp=raw_order.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
         )
 
     def consider_as_filled(self):
-        self.status = OrderStatus.FILLED
+        self.status = enums.OrderStatus.FILLED
         if self.executed_time == 0:
             self.executed_time = self.timestamp
         if self.filled_quantity == 0:
@@ -329,51 +331,53 @@ class Order(Initializable):
             self.filled_price = self.origin_price
 
     def update_order_from_raw(self, raw_order):
-        self.status = parse_order_status(raw_order)
-        self.total_cost = raw_order[ExchangeConstantsOrderColumns.COST.value]
-        self.filled_quantity = raw_order[ExchangeConstantsOrderColumns.FILLED.value]
-        self.filled_price = raw_order[ExchangeConstantsOrderColumns.PRICE.value]
+        self.status = personal_data.parse_order_status(raw_order)
+        self.total_cost = raw_order[enums.ExchangeConstantsOrderColumns.COST.value]
+        self.filled_quantity = raw_order[enums.ExchangeConstantsOrderColumns.FILLED.value]
+        self.filled_price = raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value]
         if not self.filled_price and self.filled_quantity:
             self.filled_price = self.total_cost / self.filled_quantity
 
         self._update_taker_maker()
 
-        self.fee = raw_order[ExchangeConstantsOrderColumns.FEE.value]
+        self.fee = raw_order[enums.ExchangeConstantsOrderColumns.FEE.value]
 
         self.executed_time = self.trader.exchange.get_uniform_timestamp(
-            raw_order[ExchangeConstantsOrderColumns.TIMESTAMP.value])
+            raw_order[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value])
 
     def _update_type_from_raw(self, raw_order):
         try:
-            self.exchange_order_type = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
+            self.exchange_order_type = enums.TradeOrderType(raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value])
         except ValueError:
-            self.exchange_order_type = TradeOrderType.UNKNOWN
+            self.exchange_order_type = enums.TradeOrderType.UNKNOWN
         self.side, self.order_type = parse_order_type(raw_order)
 
     def _update_taker_maker(self):
-        if self.order_type in [TraderOrderType.SELL_MARKET, TraderOrderType.BUY_MARKET, TraderOrderType.STOP_LOSS]:
+        if self.order_type in [enums.TraderOrderType.SELL_MARKET,
+                               enums.TraderOrderType.BUY_MARKET,
+                               enums.TraderOrderType.STOP_LOSS]:
             # always true
-            self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.TAKER.value
+            self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
         else:
             # true 90% of the time: impossible to know for sure the reality
             # (should only be used for simulation anyway)
-            self.taker_or_maker = ExchangeConstantsMarketPropertyColumns.MAKER.value
+            self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
 
     def to_dict(self):
         filled_price = self.filled_price if self.filled_price > 0 else self.origin_price
         return {
-            ExchangeConstantsOrderColumns.ID.value: self.order_id,
-            ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
-            ExchangeConstantsOrderColumns.PRICE.value: filled_price,
-            ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
-            ExchangeConstantsOrderColumns.TIMESTAMP.value: self.timestamp,
-            ExchangeConstantsOrderColumns.TYPE.value: self.exchange_order_type.value
+            enums.ExchangeConstantsOrderColumns.ID.value: self.order_id,
+            enums.ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
+            enums.ExchangeConstantsOrderColumns.PRICE.value: filled_price,
+            enums.ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
+            enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: self.timestamp,
+            enums.ExchangeConstantsOrderColumns.TYPE.value: self.exchange_order_type.value
             if self.exchange_order_type else None,
-            ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
-            ExchangeConstantsOrderColumns.AMOUNT.value: self.origin_quantity,
-            ExchangeConstantsOrderColumns.COST.value: self.total_cost,
-            ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
-            ExchangeConstantsOrderColumns.FEE.value: self.fee
+            enums.ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
+            enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.origin_quantity,
+            enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
+            enums.ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
+            enums.ExchangeConstantsOrderColumns.FEE.value: self.fee
         }
 
     def clear(self):
@@ -401,33 +405,33 @@ class Order(Initializable):
 
 def parse_order_type(raw_order):
     try:
-        side: TradeOrderSide = TradeOrderSide(raw_order[ExchangeConstantsOrderColumns.SIDE.value])
-        order_type: TradeOrderType = TradeOrderType.UNKNOWN
-        parsed_order_type: TraderOrderType = TraderOrderType.UNKNOWN
+        side: enums.TradeOrderSide = enums.TradeOrderSide(raw_order[enums.ExchangeConstantsOrderColumns.SIDE.value])
+        order_type: enums.TradeOrderType = enums.TradeOrderType.UNKNOWN
+        parsed_order_type: enums.TraderOrderType = enums.TraderOrderType.UNKNOWN
         try:
-            order_type = TradeOrderType(raw_order[ExchangeConstantsOrderColumns.TYPE.value])
+            order_type = enums.TradeOrderType(raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value])
         except ValueError as e:
-            if raw_order[ExchangeConstantsOrderColumns.TYPE.value] is None:
+            if raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value] is None:
                 # No order type info: use unknown order type
-                return side, TraderOrderType.UNKNOWN
+                return side, enums.TraderOrderType.UNKNOWN
             else:
                 # Incompatible order type info: raise error
                 raise e
 
-        if order_type == TradeOrderType.UNKNOWN:
-            parsed_order_type = TraderOrderType.UNKNOWN
-        elif side == TradeOrderSide.BUY:
-            if order_type == TradeOrderType.LIMIT or order_type == TradeOrderType.LIMIT_MAKER:
-                parsed_order_type = TraderOrderType.BUY_LIMIT
-            elif order_type == TradeOrderType.MARKET:
-                parsed_order_type = TraderOrderType.BUY_MARKET
+        if order_type == enums.TradeOrderType.UNKNOWN:
+            parsed_order_type = enums.TraderOrderType.UNKNOWN
+        elif side == enums.TradeOrderSide.BUY:
+            if order_type == enums.TradeOrderType.LIMIT or order_type == enums.TradeOrderType.LIMIT_MAKER:
+                parsed_order_type = enums.TraderOrderType.BUY_LIMIT
+            elif order_type == enums.TradeOrderType.MARKET:
+                parsed_order_type = enums.TraderOrderType.BUY_MARKET
             else:
                 parsed_order_type = _get_sell_and_buy_types(order_type)
-        elif side == TradeOrderSide.SELL:
-            if order_type == TradeOrderType.LIMIT or order_type == TradeOrderType.LIMIT_MAKER:
-                parsed_order_type = TraderOrderType.SELL_LIMIT
-            elif order_type == TradeOrderType.MARKET:
-                parsed_order_type = TraderOrderType.SELL_MARKET
+        elif side == enums.TradeOrderSide.SELL:
+            if order_type == enums.TradeOrderType.LIMIT or order_type == enums.TradeOrderType.LIMIT_MAKER:
+                parsed_order_type = enums.TraderOrderType.SELL_LIMIT
+            elif order_type == enums.TradeOrderType.MARKET:
+                parsed_order_type = enums.TraderOrderType.SELL_MARKET
             else:
                 parsed_order_type = _get_sell_and_buy_types(order_type)
         return side, parsed_order_type
@@ -435,37 +439,37 @@ def parse_order_type(raw_order):
         return None, None
 
 
-def _get_trade_order_type(order_type: TraderOrderType) -> TradeOrderType:
-    if order_type == TraderOrderType.BUY_LIMIT or order_type == TraderOrderType.SELL_LIMIT:
-        return TradeOrderType.LIMIT
-    if order_type == TraderOrderType.BUY_MARKET or order_type == TraderOrderType.SELL_MARKET:
-        return TradeOrderType.MARKET
-    elif order_type == TraderOrderType.TAKE_PROFIT:
-        return TradeOrderType.TAKE_PROFIT
-    elif order_type == TraderOrderType.TAKE_PROFIT_LIMIT:
-        return TradeOrderType.TAKE_PROFIT_LIMIT
-    elif order_type == TraderOrderType.STOP_LOSS:
-        return TradeOrderType.STOP_LOSS
-    elif order_type == TraderOrderType.STOP_LOSS_LIMIT:
-        return TradeOrderType.STOP_LOSS_LIMIT
-    elif order_type == TraderOrderType.TRAILING_STOP:
-        return TradeOrderType.TRAILING_STOP
-    elif order_type == TraderOrderType.TRAILING_STOP_LIMIT:
-        return TradeOrderType.TRAILING_STOP_LIMIT
+def _get_trade_order_type(order_type: enums.TraderOrderType) -> typing.Optional[enums.TradeOrderType]:
+    if order_type == enums.TraderOrderType.BUY_LIMIT or order_type == enums.TraderOrderType.SELL_LIMIT:
+        return enums.TradeOrderType.LIMIT
+    if order_type == enums.TraderOrderType.BUY_MARKET or order_type == enums.TraderOrderType.SELL_MARKET:
+        return enums.TradeOrderType.MARKET
+    elif order_type == enums.TraderOrderType.TAKE_PROFIT:
+        return enums.TradeOrderType.TAKE_PROFIT
+    elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
+        return enums.TradeOrderType.TAKE_PROFIT_LIMIT
+    elif order_type == enums.TraderOrderType.STOP_LOSS:
+        return enums.TradeOrderType.STOP_LOSS
+    elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
+        return enums.TradeOrderType.STOP_LOSS_LIMIT
+    elif order_type == enums.TraderOrderType.TRAILING_STOP:
+        return enums.TradeOrderType.TRAILING_STOP
+    elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
+        return enums.TradeOrderType.TRAILING_STOP_LIMIT
     return None
 
 
-def _get_sell_and_buy_types(order_type) -> TraderOrderType:
-    if order_type == TradeOrderType.STOP_LOSS:
-        return TraderOrderType.STOP_LOSS
-    elif order_type == TradeOrderType.STOP_LOSS_LIMIT:
-        return TraderOrderType.STOP_LOSS_LIMIT
-    elif order_type == TradeOrderType.TAKE_PROFIT:
-        return TraderOrderType.TAKE_PROFIT
-    elif order_type == TradeOrderType.TAKE_PROFIT_LIMIT:
-        return TraderOrderType.TAKE_PROFIT_LIMIT
-    elif order_type == TradeOrderType.TRAILING_STOP:
-        return TraderOrderType.TRAILING_STOP
-    elif order_type == TradeOrderType.TRAILING_STOP_LIMIT:
-        return TraderOrderType.TRAILING_STOP_LIMIT
+def _get_sell_and_buy_types(order_type) -> typing.Optional[enums.TraderOrderType]:
+    if order_type == enums.TradeOrderType.STOP_LOSS:
+        return enums.TraderOrderType.STOP_LOSS
+    elif order_type == enums.TradeOrderType.STOP_LOSS_LIMIT:
+        return enums.TraderOrderType.STOP_LOSS_LIMIT
+    elif order_type == enums.TradeOrderType.TAKE_PROFIT:
+        return enums.TraderOrderType.TAKE_PROFIT
+    elif order_type == enums.TradeOrderType.TAKE_PROFIT_LIMIT:
+        return enums.TraderOrderType.TAKE_PROFIT_LIMIT
+    elif order_type == enums.TradeOrderType.TRAILING_STOP:
+        return enums.TraderOrderType.TRAILING_STOP
+    elif order_type == enums.TradeOrderType.TRAILING_STOP_LIMIT:
+        return enums.TraderOrderType.TRAILING_STOP_LIMIT
     return None

@@ -18,7 +18,7 @@
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class OrderBookManager(Initializable):
+cdef class OrderBookManager(util.Initializable):
     cdef object logger
 
     cdef public bint order_book_initialized

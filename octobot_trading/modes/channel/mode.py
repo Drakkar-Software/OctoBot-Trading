@@ -13,24 +13,25 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_channels.channels as channel 
-import octobot_commons.constants
-import octobot_commons.enums as enums
+import channel.constants as channel_constants
+import channel.enums as channel_enums
+
+import octobot_commons.constants as constants
 
 import octobot_trading.exchanges as exchanges
 
 
-class ModeChannelConsumer(ExchangeChannelInternalConsumer):
+class ModeChannelConsumer(exchanges.ExchangeChannelInternalConsumer):
     pass
 
 
-class ModeChannelProducer(ExchangeChannelProducer):
+class ModeChannelProducer(exchanges.ExchangeChannelProducer):
     async def send(self,
-                   final_note=INIT_EVAL_NOTE,
-                   trading_mode_name=CHANNEL_WILDCARD,
-                   state=CHANNEL_WILDCARD,
-                   cryptocurrency=CHANNEL_WILDCARD,
-                   symbol=CHANNEL_WILDCARD,
+                   final_note=constants.INIT_EVAL_NOTE,
+                   trading_mode_name=channel_constants.CHANNEL_WILDCARD,
+                   state=channel_constants.CHANNEL_WILDCARD,
+                   cryptocurrency=channel_constants.CHANNEL_WILDCARD,
+                   symbol=channel_constants.CHANNEL_WILDCARD,
                    time_frame=None,
                    data=None):
         for consumer in self.channel.get_filtered_consumers(trading_mode_name=trading_mode_name,
@@ -49,10 +50,10 @@ class ModeChannelProducer(ExchangeChannelProducer):
             })
 
 
-class ModeChannel(ExchangeChannel):
+class ModeChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = ModeChannelProducer
     CONSUMER_CLASS = ModeChannelConsumer
-    DEFAULT_PRIORITY_LEVEL = ChannelConsumerPriorityLevels.MEDIUM.value
+    DEFAULT_PRIORITY_LEVEL = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
     TRADING_MODE_NAME_KEY = "trading_mode_name"
     STATE_KEY = "state"
@@ -63,10 +64,10 @@ class ModeChannel(ExchangeChannel):
     async def new_consumer(self,
                            callback: object = None,  # shouldn't be provided here (InternalConsumer)
                            consumer_instance: ModeChannelConsumer = None,
-                           trading_mode_name: str = CHANNEL_WILDCARD,
-                           state=CHANNEL_WILDCARD,
-                           cryptocurrency: str = CHANNEL_WILDCARD,
-                           symbol: str = CHANNEL_WILDCARD,
+                           trading_mode_name: str = channel_constants.CHANNEL_WILDCARD,
+                           state=channel_constants.CHANNEL_WILDCARD,
+                           cryptocurrency: str = channel_constants.CHANNEL_WILDCARD,
+                           symbol: str = channel_constants.CHANNEL_WILDCARD,
                            time_frame=None):
         await self._add_new_consumer_and_run(consumer_instance,
                                              trading_mode_name=trading_mode_name,
@@ -76,11 +77,11 @@ class ModeChannel(ExchangeChannel):
                                              time_frame=time_frame)
 
     def get_filtered_consumers(self,
-                               trading_mode_name=CHANNEL_WILDCARD,
-                               state=CHANNEL_WILDCARD,
-                               cryptocurrency=CHANNEL_WILDCARD,
-                               symbol=CHANNEL_WILDCARD,
-                               time_frame=CHANNEL_WILDCARD):
+                               trading_mode_name=channel_constants.CHANNEL_WILDCARD,
+                               state=channel_constants.CHANNEL_WILDCARD,
+                               cryptocurrency=channel_constants.CHANNEL_WILDCARD,
+                               symbol=channel_constants.CHANNEL_WILDCARD,
+                               time_frame=channel_constants.CHANNEL_WILDCARD):
         return self.get_consumer_from_filters({
             self.TRADING_MODE_NAME_KEY: trading_mode_name,
             self.STATE_KEY: state,
@@ -90,10 +91,10 @@ class ModeChannel(ExchangeChannel):
         })
 
     async def _add_new_consumer_and_run(self, consumer,
-                                        trading_mode_name=CHANNEL_WILDCARD,
-                                        state=CHANNEL_WILDCARD,
-                                        cryptocurrency=CHANNEL_WILDCARD,
-                                        symbol=CHANNEL_WILDCARD,
+                                        trading_mode_name=channel_constants.CHANNEL_WILDCARD,
+                                        state=channel_constants.CHANNEL_WILDCARD,
+                                        cryptocurrency=channel_constants.CHANNEL_WILDCARD,
+                                        symbol=channel_constants.CHANNEL_WILDCARD,
                                         time_frame=None):
         consumer_filters: dict = {
             self.TRADING_MODE_NAME_KEY: trading_mode_name,

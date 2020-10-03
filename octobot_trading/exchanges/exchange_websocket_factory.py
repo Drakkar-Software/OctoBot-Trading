@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.constants  as constants 
+import octobot_trading.constants
 import octobot_trading.exchanges as exchanges
 
 
@@ -22,20 +22,20 @@ def is_exchange_managed_by_websocket(exchange_manager, channel):
     # TODO improve checker
     """
     return not exchange_manager.rest_only and exchange_manager.has_websocket and \
-           channel in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS and \
+           channel in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS and \
            any([exchange_manager.exchange_web_socket.is_feed_available(feed)
-                for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
+                for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
 
 
 def is_websocket_feed_requiring_init(exchange_manager, channel):
     return any([exchange_manager.exchange_web_socket.is_feed_requiring_init(feed)
-                for feed in WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
+                for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
 
 
 async def search_and_create_websocket(exchange_manager):
-    socket_manager = search_websocket_class(AbstractWebsocket, exchange_manager)
+    socket_manager = exchanges.search_websocket_class(exchanges.AbstractWebsocket, exchange_manager)
     if socket_manager is not None:
-        await _create_websocket(exchange_manager, AbstractWebsocket.__name__, socket_manager)
+        await _create_websocket(exchange_manager, exchanges.AbstractWebsocket.__name__, socket_manager)
 
 
 async def _create_websocket(exchange_manager, websocket_class_name, socket_manager):

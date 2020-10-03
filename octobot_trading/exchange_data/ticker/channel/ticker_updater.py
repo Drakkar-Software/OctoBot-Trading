@@ -16,16 +16,15 @@
 #  License along with this library.
 import asyncio
 
-import octobot_trading.errors  as errors
-
+import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants
+import octobot_trading.constants as constants
 import octobot_trading.exchange_data as exchange_data
-import octobot_trading.enums  as enums
+import octobot_trading.enums as enums
 
 
-class TickerUpdater(TickerProducer):
-    CHANNEL_NAME = TICKER_CHANNEL
+class TickerUpdater(exchange_data.TickerProducer):
+    CHANNEL_NAME = constants.TICKER_CHANNEL
     TICKER_REFRESH_TIME = 64
     TICKER_FUTURE_REFRESH_TIME = 14
 
@@ -54,7 +53,7 @@ class TickerUpdater(TickerProducer):
                     await self._fetch_ticker(pair)
 
                 await asyncio.sleep(self.TICKER_REFRESH_TIME)
-            except NotSupported:
+            except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:
@@ -85,20 +84,21 @@ class TickerUpdater(TickerProducer):
         Mini ticker
         """
         try:
-            await get_chan(MINI_TICKER_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+            await exchanges.get_chan(constants.MINI_TICKER_CHANNEL,
+                                     self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=pair, mini_ticker={
-                ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value:
-                    ticker[ExchangeConstantsTickersColumns.HIGH.value],
-                ExchangeConstantsMiniTickerColumns.LOW_PRICE.value:
-                    ticker[ExchangeConstantsTickersColumns.LOW.value],
-                ExchangeConstantsMiniTickerColumns.OPEN_PRICE.value:
-                    ticker[ExchangeConstantsTickersColumns.OPEN.value],
-                ExchangeConstantsMiniTickerColumns.CLOSE_PRICE.value:
-                    ticker[ExchangeConstantsTickersColumns.CLOSE.value],
-                ExchangeConstantsMiniTickerColumns.VOLUME.value:
-                    ticker[ExchangeConstantsTickersColumns.BASE_VOLUME.value],
-                ExchangeConstantsMiniTickerColumns.TIMESTAMP.value:
-                    ticker[ExchangeConstantsTickersColumns.TIMESTAMP.value]})
+                enums.ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value:
+                    ticker[enums.ExchangeConstantsTickersColumns.HIGH.value],
+                enums.ExchangeConstantsMiniTickerColumns.LOW_PRICE.value:
+                    ticker[enums.ExchangeConstantsTickersColumns.LOW.value],
+                enums.ExchangeConstantsMiniTickerColumns.OPEN_PRICE.value:
+                    ticker[enums.ExchangeConstantsTickersColumns.OPEN.value],
+                enums.ExchangeConstantsMiniTickerColumns.CLOSE_PRICE.value:
+                    ticker[enums.ExchangeConstantsTickersColumns.CLOSE.value],
+                enums.ExchangeConstantsMiniTickerColumns.VOLUME.value:
+                    ticker[enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value],
+                enums.ExchangeConstantsMiniTickerColumns.TIMESTAMP.value:
+                    ticker[enums.ExchangeConstantsTickersColumns.TIMESTAMP.value]})
         except Exception as e:
             self.logger.error(f"Failed to parse mini ticker : {e}")
 
@@ -121,19 +121,21 @@ class TickerUpdater(TickerProducer):
     async def extract_mark_price(self, symbol: str, ticker: dict):
         try:
             ticker = self.channel.exchange_manager.exchange.parse_mark_price(ticker, from_ticker=True)
-            await get_chan(MARK_PRICE_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
-                push(symbol=symbol, mark_price=ticker[ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])
+            await exchanges.get_chan(constants.MARK_PRICE_CHANNEL,
+                                     self.channel.exchange_manager.id).get_internal_producer(). \
+                push(symbol=symbol, mark_price=ticker[enums.ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update mark price from ticker : {e}")
 
     async def extract_funding_rate(self, symbol: str, ticker: dict):
         try:
             ticker = self.channel.exchange_manager.exchange.parse_funding(ticker, from_ticker=True)
-            await get_chan(FUNDING_CHANNEL, self.channel.exchange_manager.id).get_internal_producer(). \
+            await exchanges.get_chan(constants.FUNDING_CHANNEL,
+                                     self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=symbol,
-                     funding_rate=ticker[ExchangeConstantsFundingColumns.FUNDING_RATE.value],
-                     next_funding_time=ticker[ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
-                     timestamp=ticker[ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
+                     funding_rate=ticker[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
+                     next_funding_time=ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
+                     timestamp=ticker[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update funding rate from ticker : {e}")
 

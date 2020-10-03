@@ -19,7 +19,7 @@ from octobot_backtesting.backtesting import Backtesting
 from octobot_commons.constants import PORTFOLIO_TOTAL
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_STARTING_PORTFOLIO
-from octobot_trading.modes.abstract_mode_consumer import AbstractTradingModeConsumer
+from octobot_trading.modes.channel.abstract_mode_consumer import AbstractTradingModeConsumer
 from octobot_trading.enums import EvaluatorStates
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.modes import AbstractTradingMode

@@ -15,17 +15,17 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_channels.constants as constants
+import channel.constants as constants
 import octobot_trading.exchanges as exchanges
 
 
-class RecentTradeProducer(ExchangeChannelProducer):
+class RecentTradeProducer(exchanges.ExchangeChannelProducer):
     async def push(self, symbol, recent_trades, replace_all=False):
         await self.perform(symbol, recent_trades, replace_all=replace_all)
 
     async def perform(self, symbol, recent_trades, replace_all=False):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol):
                 recent_trades = self.channel.exchange_manager.get_symbol_data(symbol).handle_recent_trade_update(
                     recent_trades,
@@ -36,7 +36,7 @@ class RecentTradeProducer(ExchangeChannelProducer):
                                     get_pair_cryptocurrency(symbol),
                                     symbol=symbol,
                                     recent_trades=recent_trades)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -52,25 +52,25 @@ class RecentTradeProducer(ExchangeChannelProducer):
             })
 
 
-class RecentTradeChannel(ExchangeChannel):
+class RecentTradeChannel(exchanges.ExchangeChannel):
     FILTER_SIZE = 10
     PRODUCER_CLASS = RecentTradeProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
 
 
-class LiquidationsProducer(ExchangeChannelProducer):
+class LiquidationsProducer(exchanges.ExchangeChannelProducer):
     async def push(self, symbol, liquidations):
         await self.perform(symbol, liquidations)
 
     async def perform(self, symbol, liquidations):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
-                    symbol=symbol):
+            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
+                    self.channel.get_filtered_consumers(symbol=symbol):
                 self.channel.exchange_manager.get_symbol_data(symbol).handle_liquidations(liquidations)
                 await self.send(cryptocurrency=self.channel.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                                 symbol=symbol,
                                 liquidations=liquidations)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -86,6 +86,6 @@ class LiquidationsProducer(ExchangeChannelProducer):
             })
 
 
-class LiquidationsChannel(ExchangeChannel):
+class LiquidationsChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = LiquidationsProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer

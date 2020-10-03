@@ -13,11 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums  as enums 
+import octobot_trading.enums
 import octobot_trading.exchanges as exchanges
 
 
-class DefaultCCXTSpotExchange(SpotCCXTExchange):
+class DefaultCCXTSpotExchange(exchanges.SpotCCXTExchange):
     @classmethod
     def get_name(cls) -> str:
         return cls.__name__
@@ -26,6 +26,6 @@ class DefaultCCXTSpotExchange(SpotCCXTExchange):
     def is_default_exchange(cls) -> bool:
         return True
 
-    async def switch_to_account(self, account_type: AccountTypes):
+    async def switch_to_account(self, account_type: octobot_trading.enums.AccountTypes):
         # Currently not supported
         pass

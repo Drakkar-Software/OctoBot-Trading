@@ -14,34 +14,34 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import math 
-import octobot_commons.enums  as enums 
-import octobot_commons.logging as logging_util 
+import octobot_commons.enums as enums
+import octobot_commons.logging as logging
 
 import octobot_trading.util as util
 
 
-class KlineManager(Initializable):
+class KlineManager(util.Initializable):
     def __init__(self):  # Required for python development
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.kline = []
 
     async def initialize_impl(self):
         self._reset_kline()
 
     def _reset_kline(self):
-        self.kline = [nan] * len(PriceIndexes)
+        self.kline = [math.nan] * len(enums.PriceIndexes)
 
     def _update_kline_key(self, kline_key, kline_update):
         try:
-            if kline_update[kline_key] is not nan:
+            if kline_update[kline_key] is not math.nan:
                 self.kline[kline_key] = kline_update[kline_key]
         except KeyError:
             pass
 
     def _update_kline_init_only_key(self, kline_key, kline_update):
         try:
-            if self.kline[kline_key] is nan:
+            if self.kline[kline_key] is math.nan:
                 self.kline[kline_key] = kline_update[kline_key]
         except KeyError:
             pass
@@ -49,21 +49,21 @@ class KlineManager(Initializable):
     def kline_update(self, kline):
         try:
             # test for new candle
-            if self.kline[PriceIndexes.IND_PRICE_TIME.value] != kline[PriceIndexes.IND_PRICE_TIME.value]:
+            if self.kline[enums.PriceIndexes.IND_PRICE_TIME.value] != kline[enums.PriceIndexes.IND_PRICE_TIME.value]:
                 self._reset_kline()
 
-            self._update_kline_init_only_key(PriceIndexes.IND_PRICE_TIME.value, kline)
-            self._update_kline_init_only_key(PriceIndexes.IND_PRICE_OPEN.value, kline)
+            self._update_kline_init_only_key(enums.PriceIndexes.IND_PRICE_TIME.value, kline)
+            self._update_kline_init_only_key(enums.PriceIndexes.IND_PRICE_OPEN.value, kline)
 
-            self._update_kline_key(PriceIndexes.IND_PRICE_VOL.value, kline)
-            self._update_kline_key(PriceIndexes.IND_PRICE_CLOSE.value, kline)
+            self._update_kline_key(enums.PriceIndexes.IND_PRICE_VOL.value, kline)
+            self._update_kline_key(enums.PriceIndexes.IND_PRICE_CLOSE.value, kline)
 
-            if self.kline[PriceIndexes.IND_PRICE_HIGH.value] is nan or \
-                    self.kline[PriceIndexes.IND_PRICE_HIGH.value] < kline[PriceIndexes.IND_PRICE_HIGH.value]:
-                self._update_kline_key(PriceIndexes.IND_PRICE_HIGH.value, kline)
+            if self.kline[enums.PriceIndexes.IND_PRICE_HIGH.value] is math.nan or \
+                    self.kline[enums.PriceIndexes.IND_PRICE_HIGH.value] < kline[enums.PriceIndexes.IND_PRICE_HIGH.value]:
+                self._update_kline_key(enums.PriceIndexes.IND_PRICE_HIGH.value, kline)
 
-            if self.kline[PriceIndexes.IND_PRICE_LOW.value] is nan or \
-                    self.kline[PriceIndexes.IND_PRICE_LOW.value] > kline[PriceIndexes.IND_PRICE_LOW.value]:
-                self._update_kline_key(PriceIndexes.IND_PRICE_LOW.value, kline)
+            if self.kline[enums.PriceIndexes.IND_PRICE_LOW.value] is math.nan or \
+                    self.kline[enums.PriceIndexes.IND_PRICE_LOW.value] > kline[enums.PriceIndexes.IND_PRICE_LOW.value]:
+                self._update_kline_key(enums.PriceIndexes.IND_PRICE_LOW.value, kline)
         except TypeError as e:
             self.logger.error(f"Fail to update kline with {kline} : {e}")

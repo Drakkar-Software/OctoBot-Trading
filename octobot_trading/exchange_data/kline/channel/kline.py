@@ -15,18 +15,18 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_channels.constants as constants
+import channel.constants as constants
 
 import octobot_trading.exchanges as exchanges
 
 
-class KlineProducer(ExchangeChannelProducer):
+class KlineProducer(exchanges.ExchangeChannelProducer):
     async def push(self, time_frame, symbol, kline):
         await self.perform(time_frame, symbol, kline)
 
     async def perform(self, time_frame, symbol, kline):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or \
+            if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
                     self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
                 await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
@@ -36,7 +36,7 @@ class KlineProducer(ExchangeChannelProducer):
                                 kline=kline)
         except KeyError:
             pass
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -53,6 +53,6 @@ class KlineProducer(ExchangeChannelProducer):
             })
 
 
-class KlineChannel(TimeFrameExchangeChannel):
+class KlineChannel(exchanges.TimeFrameExchangeChannel):
     PRODUCER_CLASS = KlineProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer

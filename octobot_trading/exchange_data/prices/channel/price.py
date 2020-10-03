@@ -15,20 +15,20 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_channels.constants  as constants 
+import channel.constants as channel_constants
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 
 
-class MarkPriceProducer(ExchangeChannelProducer):
-    async def push(self, symbol, mark_price, mark_price_source=MarkPriceSources.EXCHANGE_MARK_PRICE.value):
+class MarkPriceProducer(exchanges.ExchangeChannelProducer):
+    async def push(self, symbol, mark_price, mark_price_source=enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value):
         await self.perform(symbol, mark_price, mark_price_source=mark_price_source)
 
-    async def perform(self, symbol, mark_price, mark_price_source=MarkPriceSources.EXCHANGE_MARK_PRICE.value):
+    async def perform(self, symbol, mark_price, mark_price_source=enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value):
         try:
-            if self.channel.get_filtered_consumers(symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(
-                    symbol=symbol):
+            if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
+                    self.channel.get_filtered_consumers(symbol=symbol):
                 if self.channel.exchange_manager.get_symbol_data(symbol).handle_mark_price_update(mark_price,
                                                                                                   mark_price_source):
                     # only send mark price if price got updated
@@ -38,7 +38,7 @@ class MarkPriceProducer(ExchangeChannelProducer):
                                     symbol=symbol,
                                     mark_price=self.channel.exchange_manager.get_symbol_data(
                                         symbol).prices_manager.mark_price)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -54,6 +54,6 @@ class MarkPriceProducer(ExchangeChannelProducer):
             })
 
 
-class MarkPriceChannel(ExchangeChannel):
+class MarkPriceChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = MarkPriceProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer

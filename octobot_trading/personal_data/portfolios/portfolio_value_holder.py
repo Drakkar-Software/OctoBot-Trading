@@ -15,13 +15,12 @@
 #  License along with this library.
 import asyncio
 
-import octobot_commons.constants  as constants 
-import octobot_commons.logging as logging_util 
-import octobot_commons.symbol_util  as symbol_util 
+import octobot_commons.constants as common_constants
+import octobot_commons.logging as logging
+import octobot_commons.symbol_util as symbol_util
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants 
-import octobot_trading.constants  as constants 
+import octobot_trading.constants as constants
 
 
 class PortfolioValueHolder:
@@ -31,7 +30,8 @@ class PortfolioValueHolder:
 
     def __init__(self, portfolio_manager):
         self.portfolio_manager = portfolio_manager
-        self.logger = get_logger(f"{self.__class__.__name__}[{self.portfolio_manager.exchange_manager.exchange_name}]")
+        self.logger = logging.get_logger(f"{self.__class__.__name__}"
+                                         f"[{self.portfolio_manager.exchange_manager.exchange_name}]")
 
         self.initializing_symbol_prices = set()
 
@@ -54,7 +54,7 @@ class PortfolioValueHolder:
         :param mark_price: the symbol mark price value
         :return: True if the origin portfolio should be recomputed
         """
-        currency, market = split_symbol(symbol)
+        currency, market = symbol_util.split_symbol(symbol)
         origin_currencies_should_be_updated = currency not in set(self.origin_crypto_currencies_values.keys()) and \
                                               market == self.portfolio_manager.reference_market
         if origin_currencies_should_be_updated:
@@ -89,7 +89,8 @@ class PortfolioValueHolder:
         :return: the holdings ratio
         """
         return self._evaluate_value(currency, self.portfolio_manager.portfolio.get_currency_from_given_portfolio(
-            currency, PORTFOLIO_TOTAL)) / self.portfolio_current_value if self.portfolio_current_value else 0
+            currency, common_constants.PORTFOLIO_TOTAL)) / self.portfolio_current_value \
+            if self.portfolio_current_value else 0
 
     async def handle_profitability_recalculation(self, force_recompute_origin_portfolio) -> None:
         """
@@ -207,8 +208,8 @@ class PortfolioValueHolder:
         It will try to create the symbol that fit with the exchange logic.
         :return: the value found of this currency quantity, if not found returns 0.
         """
-        symbol = merge_currencies(currency, self.portfolio_manager.reference_market)
-        reversed_symbol = merge_currencies(self.portfolio_manager.reference_market, currency)
+        symbol = symbol_util.merge_currencies(currency, self.portfolio_manager.reference_market)
+        reversed_symbol = symbol_util.merge_currencies(self.portfolio_manager.reference_market, currency)
 
         try:
             if self.portfolio_manager.exchange_manager.symbol_exists(symbol):
@@ -252,7 +253,8 @@ class PortfolioValueHolder:
         :param symbols_to_add: the list of symbol to add to the TICKER_CHANNEL producer watch list
         """
         asyncio.run_coroutine_threadsafe(
-            get_chan(TICKER_CHANNEL, self.portfolio_manager.exchange_manager.id).modify(added_pairs=symbols_to_add),
+            exchanges.get_chan(constants.TICKER_CHANNEL, self.portfolio_manager.exchange_manager.id).
+                modify(added_pairs=symbols_to_add),
             asyncio.get_running_loop())
 
     def _inform_no_matching_symbol(self, currency):
@@ -296,10 +298,10 @@ class PortfolioValueHolder:
         :param evaluated_currencies: the list of evaluated currencies
         :param missing_tickers: the list of missing currencies
         """
-        for cryptocurrency in self.portfolio_manager.config[CONFIG_CRYPTO_CURRENCIES]:
+        for cryptocurrency in self.portfolio_manager.config[common_constants.CONFIG_CRYPTO_CURRENCIES]:
             pairs = self.portfolio_manager.exchange_manager.exchange_config.get_traded_pairs(cryptocurrency)
             if pairs:
-                currency, market = split_symbol(pairs[0])
+                currency, market = symbol_util.split_symbol(pairs[0])
                 currency_to_evaluate = currency
                 try:
                     if currency not in evaluated_currencies:
@@ -357,10 +359,10 @@ class PortfolioValueHolder:
         :param raise_error: When True, forward exceptions
         :return: the currency value
         """
-        if currency in portfolio and portfolio[currency][CONFIG_PORTFOLIO_TOTAL] != 0:
+        if currency in portfolio and portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL] != 0:
             if currencies_values and currency in currencies_values:
-                return currencies_values[currency] * portfolio[currency][CONFIG_PORTFOLIO_TOTAL]
-            return self._evaluate_value(currency, portfolio[currency][CONFIG_PORTFOLIO_TOTAL], raise_error)
+                return currencies_values[currency] * portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL]
+            return self._evaluate_value(currency, portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL], raise_error)
         return 0
 
     def _should_currency_be_considered(self, currency, portfolio, ignore_missing_currency_data):
@@ -373,5 +375,5 @@ class PortfolioValueHolder:
         :return: True if enough data is available to evaluate currency value
         """
         return (currency not in self.missing_currency_data_in_exchange or ignore_missing_currency_data) and \
-               (portfolio[currency][PORTFOLIO_TOTAL] > 0 or currency in
+               (portfolio[currency][common_constants.PORTFOLIO_TOTAL] > 0 or currency in
                 self.portfolio_manager.portfolio_profitability.traded_currencies)

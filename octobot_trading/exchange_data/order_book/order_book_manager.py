@@ -13,26 +13,26 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import decimal 
+import decimal
+import sortedcontainers
 
-import octobot_commons.logging as logging_util 
-import octobot_trading.enums  as enums 
-import sortedcontainers 
+import octobot_commons.logging as logging
 
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 import octobot_trading.util as util
+from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC
 
 ORDER_ID_NOT_FOUND = -1
 INVALID_PARSED_VALUE = -1
 
 
-class OrderBookManager(Initializable):
+class OrderBookManager(util.Initializable):
     def __init__(self):
         super().__init__()
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.order_book_initialized = False
-        self.asks = SortedDict()
-        self.bids = SortedDict()
+        self.asks = sortedcontainers.SortedDict()
+        self.bids = sortedcontainers.SortedDict()
         self.timestamp = 0
         self.ask_quantity, self.ask_price, self.bid_quantity, self.bid_price = 0, 0, 0, 0
 
@@ -60,8 +60,8 @@ class OrderBookManager(Initializable):
 
     def handle_new_books(self, asks, bids, timestamp=None):
         self.reset_order_book()
-        self.handle_book_adds(_convert_price_size_list_to_order(asks, TradeOrderSide.SELL.value))
-        self.handle_book_adds(_convert_price_size_list_to_order(bids, TradeOrderSide.BUY.value))
+        self.handle_book_adds(_convert_price_size_list_to_order(asks, enums.TradeOrderSide.SELL.value))
+        self.handle_book_adds(_convert_price_size_list_to_order(bids, enums.TradeOrderSide.BUY.value))
         if timestamp:
             self.timestamp = timestamp
         self.order_book_initialized = True
@@ -89,7 +89,7 @@ class OrderBookManager(Initializable):
 
     def _handle_book_add(self, order):
         # Add buy side orders
-        if order[ECOBIC.SIDE.value] == TradeOrderSide.BUY.value:
+        if order[ECOBIC.SIDE.value] == enums.TradeOrderSide.BUY.value:
             bids = self.get_bids(order[ECOBIC.PRICE.value])
             if bids is None:
                 bids = [order]
@@ -107,10 +107,10 @@ class OrderBookManager(Initializable):
         self._set_asks(order[ECOBIC.PRICE.value], asks)
 
     def _handle_book_delete(self, order):
-        price = Decimal(order[ECOBIC.PRICE.value])
+        price = decimal.Decimal(order[ECOBIC.PRICE.value])
 
         # Delete buy side orders
-        if order[ECOBIC.SIDE.value] == TradeOrderSide.BUY.value:
+        if order[ECOBIC.SIDE.value] == enums.TradeOrderSide.BUY.value:
             bids = self.get_bids(price)
             if bids is not None:
                 bids = [bid_order for bid_order in bids if
@@ -132,11 +132,11 @@ class OrderBookManager(Initializable):
                 self._remove_asks(price)
 
     def _handle_book_update(self, order):
-        size = Decimal(order.get(ECOBIC.SIZE.value, INVALID_PARSED_VALUE))
-        price = Decimal(order[ECOBIC.PRICE.value])
+        size = decimal.Decimal(order.get(ECOBIC.SIZE.value, INVALID_PARSED_VALUE))
+        price = decimal.Decimal(order[ECOBIC.PRICE.value])
 
         # Update buy side orders
-        if order[ECOBIC.SIDE.value] == TradeOrderSide.BUY.value:
+        if order[ECOBIC.SIDE.value] == enums.TradeOrderSide.BUY.value:
             bids = self.get_bids(price)
             order_index = _order_id_index(order[ECOBIC.ORDER_ID.value], bids)
             if bids is None or order_index == ORDER_ID_NOT_FOUND:

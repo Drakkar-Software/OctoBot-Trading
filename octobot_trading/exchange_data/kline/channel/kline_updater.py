@@ -19,13 +19,13 @@ import time
 
 import octobot_trading.errors as errors
 
-import octobot_trading.constants
+import octobot_trading.constants as constants
 import octobot_trading.exchange_data as exchange_data
-import octobot_trading.enums
+import octobot_trading.enums as enums
 
 
-class KlineUpdater(KlineProducer):
-    CHANNEL_NAME = KLINE_CHANNEL
+class KlineUpdater(exchange_data.KlineProducer):
+    CHANNEL_NAME = constants.KLINE_CHANNEL
     KLINE_REFRESH_TIME = 8
     QUICK_KLINE_REFRESH_TIME = 3
 
@@ -39,9 +39,9 @@ class KlineUpdater(KlineProducer):
         Creates OHLCV refresh tasks
         """
         refresh_threshold = self.channel.exchange_manager.get_rest_pairs_refresh_threshold()
-        if refresh_threshold is RestExchangePairsRefreshMaxThresholds.MEDIUM:
+        if refresh_threshold is enums.RestExchangePairsRefreshMaxThresholds.MEDIUM:
             self.refresh_time = 14
-        elif refresh_threshold is RestExchangePairsRefreshMaxThresholds.SLOW:
+        elif refresh_threshold is enums.RestExchangePairsRefreshMaxThresholds.SLOW:
             self.refresh_time = 22
         if self.channel.is_paused:
             await self.pause()
@@ -77,7 +77,7 @@ class KlineUpdater(KlineProducer):
                 sleep_time = max((self.QUICK_KLINE_REFRESH_TIME if quick_sleep else self.refresh_time)
                                  - (time.time() - started_time), 0)
                 await asyncio.sleep(sleep_time)
-            except NotSupported:
+            except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
             except Exception as e:

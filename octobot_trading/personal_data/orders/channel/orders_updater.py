@@ -16,20 +16,20 @@
 #  License along with this library.
 import asyncio
 
-import octobot_trading.errors as errors
-
 import octobot_commons.async_job as async_job
+
+import octobot_trading.errors as errors
 import octobot_trading.personal_data as personal_data
-import octobot_trading.constants
+import octobot_trading.constants as constants
 
 
-class OrdersUpdater(OrdersProducer):
+class OrdersUpdater(personal_data.OrdersProducer):
     """
     Update open and close orders from exchange
     Can also be used to update a specific order from exchange
     """
 
-    CHANNEL_NAME = ORDERS_CHANNEL
+    CHANNEL_NAME = constants.ORDERS_CHANNEL
     ORDERS_UPDATE_LIMIT = 200
     ORDERS_STARTING_REFRESH_TIME = 10
     OPEN_ORDER_REFRESH_TIME = 7
@@ -40,15 +40,15 @@ class OrdersUpdater(OrdersProducer):
         super().__init__(channel)
 
         # create async jobs
-        self.open_orders_job = AsyncJob(self.open_orders_fetch_and_push,
-                                        execution_interval_delay=self.OPEN_ORDER_REFRESH_TIME,
-                                        min_execution_delay=self.TIME_BETWEEN_ORDERS_REFRESH)
-        self.closed_orders_job = AsyncJob(self.closed_orders_fetch_and_push,
-                                          execution_interval_delay=self.CLOSE_ORDER_REFRESH_TIME,
-                                          min_execution_delay=self.TIME_BETWEEN_ORDERS_REFRESH)
-        self.order_update_job = AsyncJob(self.order_fetch_and_push,
-                                         is_periodic=False,
-                                         enable_multiple_runs=True)
+        self.open_orders_job = async_job.AsyncJob(self.open_orders_fetch_and_push,
+                                                  execution_interval_delay=self.OPEN_ORDER_REFRESH_TIME,
+                                                  min_execution_delay=self.TIME_BETWEEN_ORDERS_REFRESH)
+        self.closed_orders_job = async_job.AsyncJob(self.closed_orders_fetch_and_push,
+                                                    execution_interval_delay=self.CLOSE_ORDER_REFRESH_TIME,
+                                                    min_execution_delay=self.TIME_BETWEEN_ORDERS_REFRESH)
+        self.order_update_job = async_job.AsyncJob(self.order_fetch_and_push,
+                                                   is_periodic=False,
+                                                   enable_multiple_runs=True)
         self.order_update_job.add_job_dependency(self.open_orders_job)
         self.open_orders_job.add_job_dependency(self.order_update_job)
 
@@ -58,7 +58,7 @@ class OrdersUpdater(OrdersProducer):
         """
         try:
             await self.fetch_and_push(is_from_bot=False)
-        except NotSupported:
+        except errors.NotSupported:
             self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
             await self.pause()
         except Exception as e:

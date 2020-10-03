@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums  as enums 
+import octobot_trading.enums as enums
 
 
 class Trade:
@@ -21,7 +21,7 @@ class Trade:
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
 
-        self.status = OrderStatus.OPEN
+        self.status = enums.OrderStatus.OPEN
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
 
         self.trade_id = trader.parse_order_id(None)
@@ -67,17 +67,17 @@ class Trade:
         self.symbol = order.symbol
 
     def to_dict(self):
-        trade_time = self.executed_time if self.status is not OrderStatus.CANCELED else self.canceled_time
+        trade_time = self.executed_time if self.status is not enums.OrderStatus.CANCELED else self.canceled_time
         return {
-            ExchangeConstantsOrderColumns.ID.value: self.trade_id,
-            ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
-            ExchangeConstantsOrderColumns.PRICE.value: self.executed_price,
-            ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
-            ExchangeConstantsOrderColumns.TIMESTAMP.value: trade_time,
-            ExchangeConstantsOrderColumns.TYPE.value: self.exchange_trade_type.value,
-            ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
-            ExchangeConstantsOrderColumns.AMOUNT.value: self.executed_quantity,
-            ExchangeConstantsOrderColumns.COST.value: self.total_cost,
-            ExchangeConstantsOrderColumns.TAKERORMAKER.value: self.taker_or_maker,
-            ExchangeConstantsOrderColumns.FEE.value: self.fee
+            enums.ExchangeConstantsOrderColumns.ID.value: self.trade_id,
+            enums.ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
+            enums.ExchangeConstantsOrderColumns.PRICE.value: self.executed_price,
+            enums.ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
+            enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: trade_time,
+            enums.ExchangeConstantsOrderColumns.TYPE.value: self.exchange_trade_type.value,
+            enums.ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
+            enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.executed_quantity,
+            enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
+            enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value: self.taker_or_maker,
+            enums.ExchangeConstantsOrderColumns.FEE.value: self.fee
         }

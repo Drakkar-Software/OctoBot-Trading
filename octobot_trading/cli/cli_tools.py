@@ -16,7 +16,7 @@
 import asyncio
 import logging
 
-import octobot_channels.channels as channel 
+import channel.channels as channel
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.pretty_printer as pretty_printer

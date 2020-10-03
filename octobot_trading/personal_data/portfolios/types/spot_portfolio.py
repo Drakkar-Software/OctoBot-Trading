@@ -13,12 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.constants  as constants 
-import octobot_trading.enums  as enums 
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 
 
-class SpotPortfolio(Portfolio):
+class SpotPortfolio(personal_data.Portfolio):
     def update_portfolio_data_from_order(self, order, currency, market):
         """
         Call update_portfolio_data for order currency and market
@@ -27,7 +27,7 @@ class SpotPortfolio(Portfolio):
         :param market: the order market
         """
         # update currency
-        if order.side == TradeOrderSide.BUY:
+        if order.side == enums.TradeOrderSide.BUY:
             new_quantity = order.filled_quantity - order.get_total_fees(currency)
             self._update_portfolio_data(currency, new_quantity, True, True)
         else:
@@ -35,7 +35,7 @@ class SpotPortfolio(Portfolio):
             self._update_portfolio_data(currency, new_quantity, True, False)
 
         # update market
-        if order.side == TradeOrderSide.BUY:
+        if order.side == enums.TradeOrderSide.BUY:
             new_quantity = -(order.filled_quantity * order.filled_price)
             self._update_portfolio_data(market, new_quantity, True, False)
         else:
@@ -51,7 +51,7 @@ class SpotPortfolio(Portfolio):
         currency, market = order.get_currency_and_market()
 
         # when buy order
-        if order.side == TradeOrderSide.BUY:
+        if order.side == enums.TradeOrderSide.BUY:
             new_quantity = - order.origin_quantity * order.origin_price * factor
             self._update_portfolio_data(market, new_quantity, False, True)
 
@@ -67,7 +67,7 @@ class SpotPortfolio(Portfolio):
         :param currency: the order currency
         :param market: the order market
         """
-        if order.side == TradeOrderSide.BUY:
+        if order.side == enums.TradeOrderSide.BUY:
             currency_portfolio_num = order.filled_quantity - order.get_total_fees(currency)
             market_portfolio_num = -order.filled_quantity * order.filled_price
         else:
@@ -75,4 +75,4 @@ class SpotPortfolio(Portfolio):
             market_portfolio_num = order.filled_quantity * order.filled_price - order.get_total_fees(market)
 
         self.logger.debug(f"Portfolio updated from order | {currency} {currency_portfolio_num} | {market} "
-                          f"{market_portfolio_num} | {CURRENT_PORTFOLIO_STRING} {self.portfolio}")
+                          f"{market_portfolio_num} | {constants.CURRENT_PORTFOLIO_STRING} {self.portfolio}")

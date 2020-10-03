@@ -14,12 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.personal_data as personal_data
-import octobot_trading.enums  as enums 
-import octobot_trading.personal_data as personal_data
+import octobot_trading.enums as enums
 
 
 def create_order_from_raw(trader, raw_order):
-    _, order_type = parse_order_type(raw_order)
+    _, order_type = personal_data.parse_order_type(raw_order)
     return create_order_from_type(trader, order_type)
 
 
@@ -27,14 +26,14 @@ def create_order_instance_from_raw(trader, raw_order, force_open=False):
     order = create_order_from_raw(trader, raw_order)
     order.update_from_raw(raw_order)
     if force_open:
-        order.status = OrderStatus.OPEN
+        order.status = enums.OrderStatus.OPEN
     return order
 
 
 def create_order_from_type(trader, order_type, side=None):
     if side is None:
-        return TraderOrderTypeClasses[order_type](trader)
-    return TraderOrderTypeClasses[order_type](trader, side=side)
+        return personal_data.TraderOrderTypeClasses[order_type](trader)
+    return personal_data.TraderOrderTypeClasses[order_type](trader, side=side)
 
 
 def create_order_instance(trader,
@@ -45,7 +44,7 @@ def create_order_instance(trader,
                           price=0.0,
                           stop_price=0.0,
                           linked_to=None,
-                          status=OrderStatus.OPEN,
+                          status=enums.OrderStatus.OPEN,
                           order_id=None,
                           filled_price=0.0,
                           average_price=0.0,

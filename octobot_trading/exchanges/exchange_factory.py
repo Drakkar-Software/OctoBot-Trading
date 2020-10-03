@@ -14,8 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_trading.errors  as errors 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
 
 
@@ -34,7 +33,7 @@ async def create_exchanges(exchange_manager):
 
     if not exchange_manager.exchange_only:
         # create exchange producers if necessary
-        await create_exchange_producers(exchange_manager)
+        await exchanges.create_exchange_producers(exchange_manager)
 
     if exchange_manager.is_backtesting:
         await init_simulated_exchange(exchange_manager)
@@ -52,7 +51,7 @@ async def create_real_exchange(exchange_manager) -> None:
 
     try:
         await exchange_manager.exchange.initialize()
-    except AuthenticationError:
+    except errors.AuthenticationError:
         exchange_manager.logger.error("Authentication error, retrying without authentication...")
         exchange_manager.without_auth = True
         await create_real_exchange(exchange_manager)
@@ -61,13 +60,13 @@ async def create_real_exchange(exchange_manager) -> None:
 
 async def initialize_real_exchange(exchange_manager):
     if not exchange_manager.exchange_only:
-        await create_exchange_channels(exchange_manager)
+        await exchanges.create_exchange_channels(exchange_manager)
 
     # create Websocket exchange if possible
     if not exchange_manager.rest_only:
         # search for websocket
-        if check_web_socket_config(exchange_manager.config, exchange_manager.exchange.name):
-            await search_and_create_websocket(exchange_manager)
+        if exchanges.check_web_socket_config(exchange_manager.config, exchange_manager.exchange.name):
+            await exchanges.search_and_create_websocket(exchange_manager)
 
 
 async def _create_rest_exchange(exchange_manager) -> None:
@@ -88,20 +87,20 @@ async def _create_rest_exchange(exchange_manager) -> None:
 
 async def create_simulated_exchange(exchange_manager):
     if exchange_manager.is_future and not exchange_manager.is_spot_only:
-        exchange_manager.exchange = FutureExchangeSimulator(exchange_manager.config, exchange_manager,
-                                                            exchange_manager.backtesting)
+        exchange_manager.exchange = exchanges.FutureExchangeSimulator(exchange_manager.config, exchange_manager,
+                                                                      exchange_manager.backtesting)
     elif exchange_manager.is_margin and not exchange_manager.is_spot_only:
-        exchange_manager.exchange = MarginExchangeSimulator(exchange_manager.config, exchange_manager,
-                                                            exchange_manager.backtesting)
+        exchange_manager.exchange = exchanges.MarginExchangeSimulator(exchange_manager.config, exchange_manager,
+                                                                      exchange_manager.backtesting)
     else:
-        exchange_manager.exchange = SpotExchangeSimulator(exchange_manager.config, exchange_manager,
-                                                          exchange_manager.backtesting)
+        exchange_manager.exchange = exchanges.SpotExchangeSimulator(exchange_manager.config, exchange_manager,
+                                                                    exchange_manager.backtesting)
 
     await exchange_manager.exchange.initialize()
     _initialize_simulator_time_frames(exchange_manager)
     exchange_manager.exchange_config.set_config_time_frame()
     exchange_manager.exchange_config.set_config_traded_pairs()
-    await create_exchange_channels(exchange_manager)
+    await exchanges.create_exchange_channels(exchange_manager)
 
 
 async def init_simulated_exchange(exchange_manager):
@@ -113,8 +112,8 @@ async def _search_and_create_spot_exchange(exchange_manager) -> None:
     Create a spot exchange if a SpotExchange matching class is found
     :param exchange_manager: the related exchange manager
     """
-    spot_exchange_class = get_spot_exchange_class(exchange_manager.exchange_name,
-                                                  exchange_manager.tentacles_setup_config)
+    spot_exchange_class = exchanges.get_spot_exchange_class(exchange_manager.exchange_name,
+                                                            exchange_manager.tentacles_setup_config)
     if spot_exchange_class:
         exchange_manager.exchange = spot_exchange_class(config=exchange_manager.config,
                                                         exchange_manager=exchange_manager)
@@ -125,8 +124,8 @@ async def _search_and_create_margin_exchange(exchange_manager) -> None:
     Create a margin exchange if a MarginExchange matching class is found
     :param exchange_manager: the related exchange manager
     """
-    margin_exchange_class = get_margin_exchange_class(exchange_manager.exchange_name,
-                                                      exchange_manager.tentacles_setup_config)
+    margin_exchange_class = exchanges.get_margin_exchange_class(exchange_manager.exchange_name,
+                                                                exchange_manager.tentacles_setup_config)
     if margin_exchange_class:
         exchange_manager.exchange = margin_exchange_class(config=exchange_manager.config,
                                                           exchange_manager=exchange_manager)
@@ -137,8 +136,8 @@ async def _search_and_create_future_exchange(exchange_manager) -> None:
     Create a future exchange if a FutureExchange matching class is found
     :param exchange_manager: the related exchange manager
     """
-    future_exchange_class = get_future_exchange_class(exchange_manager.exchange_name,
-                                                      exchange_manager.tentacles_setup_config)
+    future_exchange_class = exchanges.get_future_exchange_class(exchange_manager.exchange_name,
+                                                                exchange_manager.tentacles_setup_config)
     if future_exchange_class:
         exchange_manager.exchange = future_exchange_class(config=exchange_manager.config,
                                                           exchange_manager=exchange_manager)

@@ -23,7 +23,7 @@ from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.exchanges.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
-cdef class Position(Initializable):
+cdef class Position(util.Initializable):
     cdef Trader trader
     cdef ExchangeManager exchange_manager
 

@@ -17,7 +17,7 @@
 from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
 from octobot_trading.util.initializable cimport Initializable
 
-cdef class ExchangeConfig(Initializable):
+cdef class ExchangeConfig(util.Initializable):
     cdef object _logger
 
     cdef public dict traded_cryptocurrencies

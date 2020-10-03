@@ -20,20 +20,21 @@ import time
 import ccxt
 import abc 
 import asyncio 
-import datetime 
+from datetime import datetime
 import typing 
 
-import octobot_commons.constants  as constants 
-import octobot_commons.enums  as enums 
-import octobot_commons.logging as logging_util 
+import octobot_commons.constants
+import octobot_commons.enums
+import octobot_commons.logging as logging
+
 import octobot_trading.exchange_data as exchange_data
 import octobot_trading.exchanges as exchanges
-import octobot_trading.enums  as enums 
+import octobot_trading.enums
 
 
 class WebsocketExchange:
     LOGGERS = ["websockets.client", "websockets.server", "websockets.protocol"]
-    MAX_DELAY = HOURS_TO_SECONDS
+    MAX_DELAY = octobot_commons.constants.HOURS_TO_SECONDS
     EXCHANGE_FEEDS = {}
     INIT_REQUIRING_EXCHANGE_FEEDS = set()
     REQUIRED_ACTIVATED_TENTACLES = []
@@ -43,14 +44,14 @@ class WebsocketExchange:
                  channels: list = None,
                  currencies: list = None,
                  pairs: list = None,
-                 time_frames: List[TimeFrames] = None,
+                 time_frames: typing.List[octobot_commons.enums.TimeFrames] = None,
                  api_key: str = None,
                  api_secret: str = None,
                  api_password: str = None,
                  timeout: int = 120,
                  timeout_interval: int = 5):
-        set_logging_level(self.LOGGERS, logging.WARNING)
-        self.logger = get_logger(self.__class__.__name__)
+        logging.set_logging_level(self.LOGGERS, logging.WARNING)
+        self.logger = logging.get_logger(self.__class__.__name__)
 
         self.exchange_manager = exchange_manager
         self.exchange = self.exchange_manager.exchange
@@ -135,7 +136,8 @@ class WebsocketExchange:
                     await self.prepare()
                     await self.subscribe()
                     await self._handler()
-            except (websockets.ConnectionClosed, ConnectionAbortedError, ConnectionResetError, CancelledError) as e:
+            except (websockets.ConnectionClosed, ConnectionAbortedError,
+                    ConnectionResetError, asyncio.CancelledError) as e:
                 self.logger.warning(f"{self.get_name()} encountered connection issue ({e}) - reconnecting...")
             except Exception as e:
                 self.logger.exception(e, True, f"{self.get_name()} encountered an exception ({e}), reconnecting...")
@@ -161,7 +163,7 @@ class WebsocketExchange:
     async def push_to_channel(self, channel_name, **kwargs):
         try:
             asyncio.run_coroutine_threadsafe(
-                get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
+                exchanges.get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
                 asyncio.get_event_loop())
         except Exception as e:
             self.logger.error(f"Push to {channel_name} failed : {e}")
@@ -222,7 +224,7 @@ class WebsocketExchange:
         try:
             return self.books[symbol]
         except KeyError:
-            self.books[symbol] = OrderBookManager()
+            self.books[symbol] = exchange_data.OrderBookManager()
             return self.books[symbol]
 
     @classmethod
@@ -237,19 +239,19 @@ class WebsocketExchange:
     def is_handling_future(cls) -> bool:
         return False
 
-    @abstractmethod
+    @abc.abstractmethod
     async def do_auth(self):
         NotImplementedError("on_message is not implemented")
 
-    @abstractmethod
+    @abc.abstractmethod
     async def _send_command(self, command, args=None):
         raise NotImplementedError("_send_command is not implemented")
 
-    @abstractmethod
+    @abc.abstractmethod
     async def on_message(self, message):
         raise NotImplementedError("on_message is not implemented")
 
-    @abstractmethod
+    @abc.abstractmethod
     async def subscribe(self):
         raise NotImplementedError("subscribe is not implemented")
 
@@ -283,7 +285,7 @@ class WebsocketExchange:
 
     @classmethod
     def get_exchange_feed(cls, feed) -> str:
-        return cls.EXCHANGE_FEEDS.get(feed, Feeds.UNSUPPORTED.value)
+        return cls.EXCHANGE_FEEDS.get(feed, octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value)
 
     @classmethod
     def is_feed_requiring_init(cls, feed) -> bool:
@@ -291,7 +293,7 @@ class WebsocketExchange:
 
     def feed_to_exchange(self, feed):
         ret: str = self.get_exchange_feed(feed)
-        if ret == Feeds.UNSUPPORTED.value:
+        if ret == octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value:
             self.logger.error("{} is not supported on {}".format(feed, self.get_name()))
             raise ValueError(f"{feed} is not supported on {self.get_name()}")
         return ret

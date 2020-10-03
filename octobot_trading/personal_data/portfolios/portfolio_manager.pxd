@@ -22,7 +22,7 @@ from octobot_trading.exchanges.traders.trader cimport Trader
 from octobot_trading.util.initializable cimport Initializable
 
 
-cdef class PortfolioManager(Initializable):
+cdef class PortfolioManager(util.Initializable):
     cdef object logger
 
     cdef public dict config

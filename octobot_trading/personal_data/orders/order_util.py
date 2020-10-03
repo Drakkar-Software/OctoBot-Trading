@@ -16,9 +16,10 @@
 import asyncio
 
 import octobot_commons.symbol_util as symbol_util
-import octobot_commons.logging as logging_util 
-import octobot_trading.enums
+import octobot_commons.logging as logging
+import octobot_trading.enums as enums
 import octobot_trading.exchanges as exchanges
+from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
 def is_valid(element, key):
@@ -28,7 +29,7 @@ def is_valid(element, key):
     :param key:
     :return:
     """
-    return key in element and is_ms_valid(element[key])
+    return key in element and exchanges.is_ms_valid(element[key])
 
 
 def get_min_max_amounts(symbol_market, default_value=None):
@@ -87,7 +88,7 @@ def check_cost(total_order_price, min_cost):
     """
     if total_order_price < min_cost:
         if min_cost is None:
-            get_logger().error("Invalid min_cost from exchange")
+            logging.get_logger().error("Invalid min_cost from exchange")
         return False
     return True
 
@@ -99,7 +100,7 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
     except asyncio.TimeoutError:
         raise asyncio.TimeoutError("Mark price is not available")
 
-    currency, market = split_symbol(symbol)
+    currency, market = symbol_util.split_symbol(symbol)
 
     current_symbol_holding = exchange_manager.exchange_personal_data.portfolio_manager.portfolio\
         .get_currency_portfolio(currency)
@@ -114,21 +115,21 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
 
 
 def total_fees_from_order_dict(order_dict, currency):
-    return get_fees_for_currency(order_dict[ExchangeConstantsOrderColumns.FEE.value], currency)
+    return get_fees_for_currency(order_dict[enums.ExchangeConstantsOrderColumns.FEE.value], currency)
 
 
 def get_fees_for_currency(fee, currency):
-    if fee and fee[FeePropertyColumns.CURRENCY.value] == currency:
-        return fee[FeePropertyColumns.COST.value]
+    if fee and fee[enums.FeePropertyColumns.CURRENCY.value] == currency:
+        return fee[enums.FeePropertyColumns.COST.value]
     return 0
 
 
 def parse_order_status(raw_order):
     try:
-        return OrderStatus(raw_order[ExchangeConstantsOrderColumns.STATUS.value])
+        return enums.OrderStatus(raw_order[enums.ExchangeConstantsOrderColumns.STATUS.value])
     except KeyError:
         return KeyError("Could not parse new order status")
 
 
 def parse_is_cancelled(raw_order):
-    return parse_order_status(raw_order) in {OrderStatus.CANCELED, OrderStatus.CLOSED}
+    return parse_order_status(raw_order) in {enums.OrderStatus.CANCELED, enums.OrderStatus.CLOSED}

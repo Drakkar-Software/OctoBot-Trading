@@ -24,7 +24,7 @@ from octobot_trading.util.initializable cimport Initializable
 
 from octobot_trading.personal_data.portfolios.portfolio cimport Portfolio
 
-cdef class Order(Initializable):
+cdef class Order(util.Initializable):
     cdef public object trader
     cdef public object exchange_manager
 

@@ -15,18 +15,18 @@
 #  License along with this library.
 import asyncio 
 
-import octobot_channels.constants  as constants 
+import channel.constants as constants
 import octobot_trading.exchanges as exchanges
 
 
-class FundingProducer(ExchangeChannelProducer):
+class FundingProducer(exchanges.ExchangeChannelProducer):
     async def push(self, symbol, funding_rate, next_funding_time, timestamp):
         await self.perform(symbol, funding_rate, next_funding_time, timestamp)
 
     async def perform(self, symbol, funding_rate, next_funding_time, timestamp):
         try:
             if self.channel.get_filtered_consumers(
-                    symbol=CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
+                    symbol=constants.CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
                 await self.channel.exchange_manager.get_symbol_data(symbol) \
                     .handle_funding_update(funding_rate=funding_rate,
                                            next_funding_time=next_funding_time,
@@ -37,7 +37,7 @@ class FundingProducer(ExchangeChannelProducer):
                                 funding_rate=funding_rate,
                                 next_funding_time=next_funding_time,
                                 timestamp=timestamp)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -55,6 +55,6 @@ class FundingProducer(ExchangeChannelProducer):
             })
 
 
-class FundingChannel(ExchangeChannel):
+class FundingChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = FundingProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer

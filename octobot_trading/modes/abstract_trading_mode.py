@@ -15,19 +15,21 @@
 #  License along with this library.
 import abc 
 
-import octobot_commons.constants
-import octobot_commons.logging as logging_util 
-import octobot_commons.tentacles_management as abstract_tentacle 
-import octobot_tentacles_manager.api as configurator 
-import octobot_trading.constants
+import octobot_commons.constants as common_constants
+import octobot_commons.logging as logging
+import octobot_commons.tentacles_management as abstract_tentacle
+
+import octobot_tentacles_manager.api as configurator
+
+import octobot_trading.constants as constants
 
 
-class AbstractTradingMode(AbstractTentacle):
-    __metaclass__ = ABCMeta
+class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, config, exchange_manager):
         super().__init__()
-        self.logger = get_logger(self.get_name())
+        self.logger = logging.get_logger(self.get_name())
 
         # Global OctoBot configuration
         self.config: dict = config
@@ -147,16 +149,16 @@ class AbstractTradingMode(AbstractTentacle):
 
     @classmethod
     def get_required_strategies_names_and_count(cls, trading_mode_config=None):
-        config = trading_mode_config or get_tentacle_config(cls)
-        if TRADING_MODE_REQUIRED_STRATEGIES in config:
-            return config[TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)
-        raise Exception(f"'{TRADING_MODE_REQUIRED_STRATEGIES}' is missing in configuration file")
+        config = trading_mode_config or configurator.get_tentacle_config(cls)
+        if constants.TRADING_MODE_REQUIRED_STRATEGIES in config:
+            return config[constants.TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)
+        raise Exception(f"'{constants.TRADING_MODE_REQUIRED_STRATEGIES}' is missing in configuration file")
 
     @classmethod
     def get_default_strategies(cls, trading_mode_config=None):
-        config = trading_mode_config or get_tentacle_config(cls)
-        if TENTACLE_DEFAULT_CONFIG in config:
-            return config[TENTACLE_DEFAULT_CONFIG]
+        config = trading_mode_config or configurator.get_tentacle_config(cls)
+        if common_constants.TENTACLE_DEFAULT_CONFIG in config:
+            return config[common_constants.TENTACLE_DEFAULT_CONFIG]
 
         strategies_classes, _ = cls.get_required_strategies_names_and_count(config)
         return strategies_classes
@@ -164,6 +166,6 @@ class AbstractTradingMode(AbstractTentacle):
     @classmethod
     def get_required_strategies_count(cls, config):
         min_strategies_count = 1
-        if TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT in config:
-            min_strategies_count = config[TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT]
+        if constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT in config:
+            min_strategies_count = config[constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT]
         return min_strategies_count

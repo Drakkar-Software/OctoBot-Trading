@@ -16,7 +16,7 @@
 #  License along with this library.
 from octobot_trading.personal_data.portfolios cimport BalanceProducer
 from octobot_trading.personal_data.portfolios cimport BalanceProfitabilityProducer
-from octobot_trading.exchanges.data.exchange_personal_data cimport ExchangePersonalData
+from octobot_trading.personal_data.exchange_personal_data cimport ExchangePersonalData
 
 cdef class BalanceUpdater(BalanceProducer):
     pass

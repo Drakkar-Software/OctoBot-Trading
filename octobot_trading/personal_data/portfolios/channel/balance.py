@@ -20,11 +20,10 @@ Handles balance changes
 import asyncio 
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.constants  as constants 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.constants as constants
 
 
-class BalanceProducer(ExchangeChannelProducer):
+class BalanceProducer(exchanges.ExchangeChannelProducer):
     async def push(self, balance, is_diff_update=False):
         await self.perform(balance, is_diff_update)
 
@@ -34,7 +33,7 @@ class BalanceProducer(ExchangeChannelProducer):
                 balance=balance, should_notify=False, is_diff_update=is_diff_update)
             if changed:
                 await self.send(balance)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -51,7 +50,8 @@ class BalanceProducer(ExchangeChannelProducer):
         if self.channel.exchange_manager.is_simulated:
             # simulated portfolio can't be out of sync
             return True
-        if force_manual_refresh or requires_refresh_trigger(self.channel.exchange_manager, BALANCE_CHANNEL):
+        if force_manual_refresh or exchanges.requires_refresh_trigger(self.channel.exchange_manager,
+                                                                      constants.BALANCE_CHANNEL):
             self.logger.debug(f"Refreshing portfolio from {self.channel.exchange_manager.get_exchange_name()} exchange")
             return await self._update_portfolio_from_exchange()
         else:
@@ -70,12 +70,12 @@ class BalanceProducer(ExchangeChannelProducer):
             balance=balance, should_notify=should_notify, is_diff_update=False)
 
 
-class BalanceChannel(ExchangeChannel):
+class BalanceChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = BalanceProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
 
 
-class BalanceProfitabilityProducer(ExchangeChannelProducer):
+class BalanceProfitabilityProducer(exchanges.ExchangeChannelProducer):
     async def push(self, balance, mark_price):
         await self.perform(balance, mark_price)
 
@@ -83,7 +83,7 @@ class BalanceProfitabilityProducer(ExchangeChannelProducer):
         try:
             await self.channel.exchange_manager.exchange_personal_data \
                 .handle_portfolio_profitability_update(balance, mark_price, should_notify=True)
-        except CancelledError:
+        except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
@@ -102,6 +102,6 @@ class BalanceProfitabilityProducer(ExchangeChannelProducer):
             })
 
 
-class BalanceProfitabilityChannel(ExchangeChannel):
+class BalanceProfitabilityChannel(exchanges.ExchangeChannel):
     PRODUCER_CLASS = BalanceProfitabilityProducer
-    CONSUMER_CLASS = ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
