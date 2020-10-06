@@ -14,23 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.portfolios import positions
-from octobot_trading.personal_data.portfolios import portfolio_factory
-from octobot_trading.personal_data.portfolios import portfolio_profitability
-from octobot_trading.personal_data.portfolios import portfolio
 from octobot_trading.personal_data.portfolios import channel
-from octobot_trading.personal_data.portfolios import sub_portfolio
-from octobot_trading.personal_data.portfolios import portfolio_manager
-from octobot_trading.personal_data.portfolios import portfolio_value_holder
-from octobot_trading.personal_data.portfolios import types
-
-from octobot_trading.personal_data.portfolios.positions import (
-    PositionsProducer,
-    PositionsChannel,
-)
-from octobot_trading.personal_data.portfolios.portfolio_factory import (
-    create_portfolio_from_exchange_manager,
-)
 from octobot_trading.personal_data.portfolios.channel import (
     BalanceUpdater,
     BalanceProfitabilityUpdater,
@@ -41,11 +25,24 @@ from octobot_trading.personal_data.portfolios.channel import (
     BalanceProfitabilityProducer,
     BalanceProfitabilityChannel,
 )
-from octobot_trading.personal_data.portfolios.portfolio_profitability import (
-    PortfolioProfitability,
-)
+
+from octobot_trading.personal_data.portfolios import portfolio
 from octobot_trading.personal_data.portfolios.portfolio import (
     Portfolio,
+)
+from octobot_trading.personal_data.portfolios import portfolio_factory
+from octobot_trading.personal_data.portfolios import portfolio_profitability
+from octobot_trading.personal_data.portfolios import sub_portfolio
+from octobot_trading.personal_data.portfolios import portfolio_manager
+from octobot_trading.personal_data.portfolios import portfolio_value_holder
+from octobot_trading.personal_data.portfolios import types
+
+
+from octobot_trading.personal_data.portfolios.portfolio_factory import (
+    create_portfolio_from_exchange_manager,
+)
+from octobot_trading.personal_data.portfolios.portfolio_profitability import (
+    PortfolioProfitability,
 )
 from octobot_trading.personal_data.portfolios.sub_portfolio import (
     SubPortfolio,
@@ -63,8 +60,6 @@ from octobot_trading.personal_data.portfolios.types import (
 )
 
 __all__ = [
-    "PositionsProducer",
-    "PositionsChannel",
     "BalanceUpdaterSimulator",
     "BalanceProfitabilityUpdaterSimulator",
     "create_portfolio_from_exchange_manager",

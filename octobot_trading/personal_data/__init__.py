@@ -76,8 +76,6 @@ from octobot_trading.personal_data.orders import (
 )
 
 from octobot_trading.personal_data.portfolios import (
-    PositionsProducer,
-    PositionsChannel,
     BalanceUpdaterSimulator,
     BalanceProfitabilityUpdaterSimulator,
     create_portfolio_from_exchange_manager,
@@ -98,6 +96,8 @@ from octobot_trading.personal_data.portfolios import (
 )
 
 from octobot_trading.personal_data.positions import (
+    PositionsProducer,
+    PositionsChannel,
     PositionsUpdaterSimulator,
     Position,
     ShortPosition,

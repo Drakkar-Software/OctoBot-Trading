@@ -17,10 +17,10 @@
 
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders.channel as orders_channel
 
 
-class OrdersUpdaterSimulator(personal_data.OrdersUpdater):
+class OrdersUpdaterSimulator(orders_channel.OrdersUpdater):
     async def start(self):
         await exchanges.get_chan(constants.RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.ignore_recent_trades_update)

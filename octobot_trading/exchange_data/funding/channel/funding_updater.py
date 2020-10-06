@@ -22,12 +22,12 @@ import time
 import octobot_trading.errors as errors
 import octobot_commons.constants as common_constants
 
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.funding.channel as funding_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 
 
-class FundingUpdater(exchange_data.FundingProducer):
+class FundingUpdater(funding_channel.FundingProducer):
     """
     The Funding Update fetch the exchange funding rate and send it to the Funding Channel
     """

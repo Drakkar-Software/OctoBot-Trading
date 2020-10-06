@@ -13,18 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.constants
+import octobot_commons.constants as constants
 import octobot_commons.logging as logging
 
-import octobot_trading.errors  as errors 
-import octobot_trading.modes  as modes 
+import octobot_trading.errors as errors
+import octobot_trading.modes as modes
 
 LOGGER_TAG = "TradingModeFactory"
 
 
 async def create_trading_modes(config: dict,
                                exchange_manager: object,
-                               trading_mode_class: AbstractTradingMode.__class__,
+                               trading_mode_class: modes.AbstractTradingMode.__class__,
                                bot_id: str) -> list:
     is_symbol_wildcard = trading_mode_class.get_is_symbol_wildcard()
     if is_symbol_wildcard or (not is_symbol_wildcard and exchange_manager.exchange_config.traded_symbol_pairs):
@@ -36,13 +36,13 @@ async def create_trading_modes(config: dict,
                                            time_frames=exchange_manager.exchange_config.traded_time_frames,
                                            bot_id=bot_id)
     # Do not create no symbol wildcard trading mode if no trading pair is available
-    raise TradingModeIncompatibility(
+    raise errors.TradingModeIncompatibility(
         f"As non symbol-wildcard trading mode, {trading_mode_class.get_name()} requires "
         f"at least one exchange trading pair to be initialized. "
         f"None of the required pairs are available on {exchange_manager.exchange_name}.")
 
 
-async def _create_trading_modes(trading_mode_class: AbstractTradingMode.__class__,
+async def _create_trading_modes(trading_mode_class: modes.AbstractTradingMode.__class__,
                                 config: dict,
                                 exchange_manager: object,
                                 cryptocurrencies: list = None,
@@ -63,28 +63,28 @@ async def _create_trading_modes(trading_mode_class: AbstractTradingMode.__class_
     ]
 
 
-async def create_trading_mode(trading_mode_class: AbstractTradingMode.__class__,
+async def create_trading_mode(trading_mode_class: modes.AbstractTradingMode.__class__,
                               config: dict,
                               exchange_manager: object,
                               cryptocurrency: str = None,
                               symbol: str = None,
                               time_frame: object = None,
-                              bot_id: str = None) -> AbstractTradingMode:
+                              bot_id: str = None) -> modes.AbstractTradingMode:
     try:
-        trading_mode: AbstractTradingMode = trading_mode_class(config, exchange_manager)
+        trading_mode: modes.AbstractTradingMode = trading_mode_class(config, exchange_manager)
         trading_mode.cryptocurrency = cryptocurrency
         trading_mode.symbol = symbol
         trading_mode.time_frame = time_frame
         trading_mode.bot_id = bot_id
         await trading_mode.initialize()
-        get_logger(f"{LOGGER_TAG}[{exchange_manager.exchange_name}]") \
+        logging.get_logger(f"{LOGGER_TAG}[{exchange_manager.exchange_name}]") \
             .debug(f"{trading_mode.get_name()} started for "
-                   f"[cryptocurrency={cryptocurrency if cryptocurrency else CONFIG_WILDCARD},"
-                   f" symbol={symbol if symbol else CONFIG_WILDCARD},"
-                   f" time_frame={time_frame if time_frame else CONFIG_WILDCARD}]")
+                   f"[cryptocurrency={cryptocurrency if cryptocurrency else constants.CONFIG_WILDCARD},"
+                   f" symbol={symbol if symbol else constants.CONFIG_WILDCARD},"
+                   f" time_frame={time_frame if time_frame else constants.CONFIG_WILDCARD}]")
         return trading_mode
     except RuntimeError as e:
-        get_logger(LOGGER_TAG).error(e.args[0])
+        logging.get_logger(LOGGER_TAG).error(e.args[0])
         raise e
 
 

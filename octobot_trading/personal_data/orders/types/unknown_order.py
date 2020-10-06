@@ -13,10 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.personal_data as personal_data
+from octobot_trading.personal_data.orders.order import Order
 
 
-class UnknownOrder(personal_data.Order):
+class UnknownOrder(Order):
     """UnknownOrder is used when an exchange is giving an order without a type (ex: binance 2yo+ orders)"""
     async def update_order_status(self, force_refresh=False):
         if not self.trader.simulate:

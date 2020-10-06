@@ -14,19 +14,20 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchange_data.funding.channel import funding_updater_simulator
-from octobot_trading.exchange_data.funding.channel import funding_updater
 from octobot_trading.exchange_data.funding.channel import funding
-
-from octobot_trading.exchange_data.funding.channel.funding_updater_simulator import (
-    FundingUpdaterSimulator,
-)
-from octobot_trading.exchange_data.funding.channel.funding_updater import (
-    FundingUpdater,
-)
 from octobot_trading.exchange_data.funding.channel.funding import (
     FundingProducer,
     FundingChannel,
+)
+
+from octobot_trading.exchange_data.funding.channel import funding_updater
+from octobot_trading.exchange_data.funding.channel.funding_updater import (
+    FundingUpdater,
+)
+
+from octobot_trading.exchange_data.funding.channel import funding_updater_simulator
+from octobot_trading.exchange_data.funding.channel.funding_updater_simulator import (
+    FundingUpdaterSimulator,
 )
 
 __all__ = [

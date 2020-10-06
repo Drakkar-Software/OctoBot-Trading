@@ -16,14 +16,14 @@
 import octobot_commons.symbol_util as symbol_util
 
 import octobot_trading.exchanges as exchanges
-import octobot_trading.modes as modes
+import octobot_trading.modes.channel as modes_channel
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
-class AbstractTradingModeConsumer(modes.ModeChannelConsumer):
+class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
     def __init__(self, trading_mode):
         super().__init__()
         self.trading_mode = trading_mode

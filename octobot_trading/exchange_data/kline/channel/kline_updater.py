@@ -20,11 +20,11 @@ import time
 import octobot_trading.errors as errors
 
 import octobot_trading.constants as constants
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.kline.channel as kline_channel
 import octobot_trading.enums as enums
 
 
-class KlineUpdater(exchange_data.KlineProducer):
+class KlineUpdater(kline_channel.KlineProducer):
     CHANNEL_NAME = constants.KLINE_CHANNEL
     KLINE_REFRESH_TIME = 8
     QUICK_KLINE_REFRESH_TIME = 3

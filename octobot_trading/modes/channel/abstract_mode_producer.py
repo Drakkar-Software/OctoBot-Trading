@@ -21,10 +21,10 @@ import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
 import octobot_trading.exchanges as exchanges
-import octobot_trading.modes as modes
+import octobot_trading.modes.channel as modes_channel
 
 
-class AbstractTradingModeProducer(modes.ModeChannelProducer):
+class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
         # the trading mode instance logger

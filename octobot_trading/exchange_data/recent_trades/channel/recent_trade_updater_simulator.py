@@ -23,11 +23,11 @@ import octobot_commons.enums as common_enums
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchanges as exchanges
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.recent_trades.channel as recent_trade_channel
 import octobot_trading.util as util
 
 
-class RecentTradeUpdaterSimulator(exchange_data.RecentTradeUpdater):
+class RecentTradeUpdaterSimulator(recent_trade_channel.RecentTradeUpdater):
     SIMULATED_RECENT_TRADE_LIMIT = 2
 
     def __init__(self, channel, importer):

@@ -13,10 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.portfolios as portfolios
 
 
-class SubPortfolio(personal_data.Portfolio):
+class SubPortfolio(portfolios.Portfolio):
     DEFAULT_SUB_PORTFOLIO_PERCENT = 0.5
 
     def __init__(self, config, trader, parent_portfolio, percent, is_relative=True):

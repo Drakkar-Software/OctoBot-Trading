@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_channels.consumer cimport Consumer
+from async_channel.consumer cimport Consumer
 
 from octobot_backtesting.importers.exchanges.exchange_importer cimport ExchangeDataImporter
 

@@ -20,11 +20,11 @@ import octobot_trading.errors as errors
 
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.order_book.channel as order_book_channel
 import octobot_trading.enums as enums
 
 
-class OrderBookUpdater(exchange_data.OrderBookProducer):
+class OrderBookUpdater(order_book_channel.OrderBookProducer):
     CHANNEL_NAME = constants.ORDER_BOOK_CHANNEL
     ORDER_BOOK_REFRESH_TIME = 5
 

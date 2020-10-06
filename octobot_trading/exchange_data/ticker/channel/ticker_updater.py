@@ -19,11 +19,11 @@ import asyncio
 import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.ticker.channel as ticker_channel
 import octobot_trading.enums as enums
 
 
-class TickerUpdater(exchange_data.TickerProducer):
+class TickerUpdater(ticker_channel.TickerProducer):
     CHANNEL_NAME = constants.TICKER_CHANNEL
     TICKER_REFRESH_TIME = 64
     TICKER_FUTURE_REFRESH_TIME = 14

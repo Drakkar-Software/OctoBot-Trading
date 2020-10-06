@@ -16,10 +16,10 @@
 import octobot_commons.constants as common_constants
 
 import octobot_trading.constants as constants
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.portfolios as portfolios
 
 
-class MarginPortfolio(personal_data.Portfolio):
+class MarginPortfolio(portfolios.Portfolio):
     async def update_portfolio_from_position(self, position):
         pass  # TODO
 

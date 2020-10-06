@@ -18,11 +18,11 @@ import asyncio
 import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.prices.channel as prices_channel
 import octobot_trading.enums as enums
 
 
-class MarkPriceUpdater(exchange_data.MarkPriceProducer):
+class MarkPriceUpdater(prices_channel.MarkPriceProducer):
     CHANNEL_NAME = constants.MARK_PRICE_CHANNEL
 
     MARK_PRICE_REFRESH_TIME = 7

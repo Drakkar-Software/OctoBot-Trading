@@ -14,17 +14,18 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchange_data.funding import funding_manager
 from octobot_trading.exchange_data.funding import channel
 
-from octobot_trading.exchange_data.funding.funding_manager import (
-    FundingManager,
-)
+from octobot_trading.exchange_data.funding import funding_manager
 from octobot_trading.exchange_data.funding.channel import (
     FundingProducer,
     FundingChannel,
     FundingUpdaterSimulator,
     FundingUpdater,
+)
+
+from octobot_trading.exchange_data.funding.funding_manager import (
+    FundingManager,
 )
 
 __all__ = [
