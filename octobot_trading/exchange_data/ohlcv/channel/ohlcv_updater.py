@@ -22,10 +22,10 @@ import octobot_commons.enums as common_enums
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.ohlcv.channel as ohlcv_channel
 
 
-class OHLCVUpdater(exchange_data.OHLCVProducer):
+class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
     CHANNEL_NAME = constants.OHLCV_CHANNEL
     OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_OLD_LIMIT = 200  # should be < to candle manager's MAX_CANDLES_COUNT

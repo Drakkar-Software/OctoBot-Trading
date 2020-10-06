@@ -17,12 +17,12 @@ import octobot_backtesting.data as data
 
 import octobot_commons.channels_name as channels_name
 
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.kline.channel as kline_channel
 import octobot_trading.exchanges as exchanges
 import octobot_trading.util as util
 
 
-class KlineUpdaterSimulator(exchange_data.KlineUpdater):
+class KlineUpdaterSimulator(kline_channel.KlineUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer

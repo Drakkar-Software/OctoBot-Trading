@@ -18,11 +18,11 @@ import asyncio
 
 import octobot_trading.errors as errors
 
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.positions.channel as positions_channel
 import octobot_trading.constants as constants
 
 
-class PositionsUpdater(personal_data.PositionsProducer):
+class PositionsUpdater(positions_channel.PositionsProducer):
     CHANNEL_NAME = constants.POSITIONS_CHANNEL
     POSITIONS_REFRESH_TIME = 11
 

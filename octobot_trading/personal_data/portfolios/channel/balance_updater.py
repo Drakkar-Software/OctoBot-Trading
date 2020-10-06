@@ -20,11 +20,11 @@ import octobot_commons.logging as logging
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.portfolios.channel as portfolios_channel
 import octobot_trading.exchanges as exchanges
 
 
-class BalanceUpdater(personal_data.BalanceProducer):
+class BalanceUpdater(portfolios_channel.BalanceProducer):
     """
     The Balance Update fetch the exchange portfolio and send it to the Balance Channel
     """
@@ -73,7 +73,7 @@ class BalanceUpdater(personal_data.BalanceProducer):
             await self.run()
 
 
-class BalanceProfitabilityUpdater(personal_data.BalanceProfitabilityProducer):
+class BalanceProfitabilityUpdater(portfolios_channel.BalanceProfitabilityProducer):
     """
     The Balance Profitability Updater triggers the portfolio profitability calculation
     by subscribing to Mark price and Balance channel updates

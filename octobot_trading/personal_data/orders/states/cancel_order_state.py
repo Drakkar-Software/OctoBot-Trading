@@ -14,14 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders as orders
 
 
-class CancelOrderState(personal_data.OrderState):
+class CancelOrderState(orders.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = enums.OrderStates.CANCELING if not self.order.simulated and \
-                                                    self.order.status is not enums.Status.CANCELED else enums.OrderStates.CANCELED
+        self.state = enums.OrderStates.CANCELING if (not self.order.simulated and
+                                                     self.order.status is not enums.Status.CANCELED) \
+            else enums.OrderStates.CANCELED
 
     async def initialize_impl(self, forced=False, ignored_order=None) -> None:
         if forced:
@@ -49,8 +50,8 @@ class CancelOrderState(personal_data.OrderState):
             self.state = enums.OrderStates.CANCELED
             await self.update()
         else:
-            await personal_data.create_order_state(self.order, is_from_exchange_data=True,
-                                                   ignore_states=[enums.OrderStates.OPEN])
+            await orders.create_order_state(self.order, is_from_exchange_data=True,
+                                            ignore_states=[enums.OrderStates.OPEN])
 
     async def terminate(self):
         """

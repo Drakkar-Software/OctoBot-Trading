@@ -34,13 +34,17 @@ from octobot_trading.exchanges.channel import (
     create_authenticated_producer_from_parent,
 )
 
+from octobot_trading.exchanges import abstract_exchange
+from octobot_trading.exchanges.abstract_exchange import (
+    AbstractExchange,
+)
+
 from octobot_trading.exchanges import exchange_manager
 from octobot_trading.exchanges import exchange_builder
 from octobot_trading.exchanges.channel import exchange_channel
 from octobot_trading.exchanges import exchange_factory
 from octobot_trading.exchanges import exchanges
 from octobot_trading.exchanges import exchange_util
-from octobot_trading.exchanges import abstract_exchange
 from octobot_trading.exchanges import exchange_websocket_factory
 from octobot_trading.exchanges import exchange_config_data
 from octobot_trading.exchanges import implementations
@@ -111,9 +115,6 @@ from octobot_trading.exchanges.exchange_util import (
     get_spot_exchange_class,
     search_exchange_class_from_exchange_name,
     get_order_side,
-)
-from octobot_trading.exchanges.abstract_exchange import (
-    AbstractExchange,
 )
 from octobot_trading.exchanges.exchange_websocket_factory import (
     is_exchange_managed_by_websocket,

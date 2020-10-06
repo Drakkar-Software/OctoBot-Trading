@@ -15,10 +15,10 @@
 #  License along with this library.
 
 import octobot_trading.enums as enums
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders as orders
 
 
-class FillOrderState(personal_data.OrderState):
+class FillOrderState(orders.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.OrderStates.FILLING \
@@ -54,8 +54,8 @@ class FillOrderState(personal_data.OrderState):
             # TODO manage partially filled
             pass
         else:
-            await personal_data.create_order_state(self.order, is_from_exchange_data=True,
-                                                   ignore_states=[enums.OrderStates.OPEN])
+            await orders.create_order_state(self.order, is_from_exchange_data=True,
+                                            ignore_states=[enums.OrderStates.OPEN])
 
     async def terminate(self):
         """

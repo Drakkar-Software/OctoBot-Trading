@@ -14,24 +14,29 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.positions import channel
 from octobot_trading.personal_data.positions import position
-from octobot_trading.personal_data.positions import positions_manager
-
-from octobot_trading.personal_data.positions.channel import (
-    PositionsUpdater,
-    PositionsUpdaterSimulator,
-)
 from octobot_trading.personal_data.positions.position import (
     Position,
     ShortPosition,
     LongPosition,
 )
+
+from octobot_trading.personal_data.positions import channel
+from octobot_trading.personal_data.positions.channel import (
+    PositionsProducer,
+    PositionsChannel,
+    PositionsUpdater,
+    PositionsUpdaterSimulator,
+)
+
+from octobot_trading.personal_data.positions import positions_manager
 from octobot_trading.personal_data.positions.positions_manager import (
     PositionsManager,
 )
 
 __all__ = [
+    "PositionsProducer",
+    "PositionsChannel",
     "PositionsUpdaterSimulator",
     "Position",
     "ShortPosition",

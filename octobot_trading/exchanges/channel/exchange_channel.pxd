@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_channels.channels.channel cimport Channel
-from octobot_channels.consumer cimport Consumer, InternalConsumer, SupervisedConsumer
-from octobot_channels.producer cimport Producer
+from async_channel.channels.channel cimport Channel
+from async_channel.consumer cimport Consumer, InternalConsumer, SupervisedConsumer
+from async_channel.producer cimport Producer
 
 cdef class ExchangeChannel(Channel):
     cdef public object exchange_manager

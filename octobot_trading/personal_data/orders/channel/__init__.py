@@ -20,16 +20,15 @@ from octobot_trading.personal_data.orders.channel.orders import (
     OrdersChannel,
 )
 
-from octobot_trading.personal_data.orders.channel import orders_manager
-from octobot_trading.personal_data.orders.channel import orders_updater_simulator
-
 from octobot_trading.personal_data.orders.channel import orders_updater
 from octobot_trading.personal_data.orders.channel.orders_updater import (
     OrdersUpdater,
 )
+from octobot_trading.personal_data.orders.channel import orders_manager
 from octobot_trading.personal_data.orders.channel.orders_manager import (
     OrdersManager,
 )
+from octobot_trading.personal_data.orders.channel import orders_updater_simulator
 from octobot_trading.personal_data.orders.channel.orders_updater_simulator import (
     OrdersUpdaterSimulator,
 )

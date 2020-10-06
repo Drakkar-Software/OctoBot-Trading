@@ -14,20 +14,22 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchange_data.order_book.channel import order_book_updater
-from octobot_trading.exchange_data.order_book.channel import order_book
-from octobot_trading.exchange_data.order_book.channel import (
-    order_book_updater_simulator,
-)
 
-from octobot_trading.exchange_data.order_book.channel.order_book_updater import (
-    OrderBookUpdater,
-)
+from octobot_trading.exchange_data.order_book.channel import order_book
 from octobot_trading.exchange_data.order_book.channel.order_book import (
     OrderBookProducer,
     OrderBookChannel,
     OrderBookTickerProducer,
     OrderBookTickerChannel,
+)
+
+from octobot_trading.exchange_data.order_book.channel import order_book_updater
+from octobot_trading.exchange_data.order_book.channel.order_book_updater import (
+    OrderBookUpdater,
+)
+
+from octobot_trading.exchange_data.order_book.channel import (
+    order_book_updater_simulator,
 )
 from octobot_trading.exchange_data.order_book.channel.order_book_updater_simulator import (
     OrderBookUpdaterSimulator,

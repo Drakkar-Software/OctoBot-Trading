@@ -19,11 +19,12 @@ import octobot_commons.logging as logging
 
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.positions.channel as positions_channel
+import octobot_trading.personal_data.positions as positions
 import octobot_trading.enums as enums
 
 
-class PositionsUpdaterSimulator(personal_data.PositionsUpdater):
+class PositionsUpdaterSimulator(positions_channel.PositionsUpdater):
     def __init__(self, channel):
         super().__init__(channel)
         self.exchange_manager = None
@@ -72,7 +73,7 @@ class PositionsUpdaterSimulator(personal_data.PositionsUpdater):
                               is_updated=False)
 
     async def _update_position_status(self,
-                                      position: personal_data.Position,
+                                      position: positions.Position,
                                       mark_price):
         """
         Call position status update
