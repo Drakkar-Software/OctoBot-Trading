@@ -16,10 +16,10 @@
 #  License along with this library.
 import asyncio
 
-import channel.enums
-import channel.channels as channels
-import channel.consumer as consumers
-import channel.producer as producer
+import async_channel.enums
+import async_channel.channels as channels
+import async_channel.consumer as consumers
+import async_channel.producer as producer
 
 import octobot_commons.logging as logging
 

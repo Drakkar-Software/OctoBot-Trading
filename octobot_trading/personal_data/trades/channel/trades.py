@@ -15,7 +15,7 @@
 #  License along with this library.
 import asyncio 
 
-import channel.constants as channel_constants
+import async_channel.constants as channel_constants
 
 import octobot_trading.exchanges as exchanges
 import octobot_trading.enums as enums
