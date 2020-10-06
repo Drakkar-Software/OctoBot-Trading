@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import channel.enums as channel_enums
+import async_channel.enums as channel_enums
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as common_constants

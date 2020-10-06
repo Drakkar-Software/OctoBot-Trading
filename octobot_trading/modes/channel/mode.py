@@ -13,8 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import channel.constants as channel_constants
-import channel.enums as channel_enums
+import async_channel.constants as channel_constants
+import async_channel.enums as channel_enums
 
 import octobot_commons.constants as constants
 

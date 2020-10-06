@@ -24,6 +24,11 @@ from octobot_trading.personal_data.orders import order_state
 from octobot_trading.personal_data.orders.order_state import (
     OrderState,
 )
+
+from octobot_trading.personal_data.orders import order_util
+from octobot_trading.personal_data.orders import order_adapter
+from octobot_trading.personal_data.orders import order_factory
+from octobot_trading.personal_data.orders import channel
 from octobot_trading.personal_data.orders import states
 from octobot_trading.personal_data.orders.states import (
     CloseOrderState,
@@ -32,12 +37,22 @@ from octobot_trading.personal_data.orders.states import (
     create_order_state,
     FillOrderState,
 )
-
-from octobot_trading.personal_data.orders import order_util
-from octobot_trading.personal_data.orders import order_adapter
-from octobot_trading.personal_data.orders import order_factory
 from octobot_trading.personal_data.orders import types
-from octobot_trading.personal_data.orders import channel
+from octobot_trading.personal_data.orders.types import (
+    UnknownOrder,
+    MarketOrder,
+    SellMarketOrder,
+    BuyMarketOrder,
+    BuyLimitOrder,
+    SellLimitOrder,
+    LimitOrder,
+    TakeProfitOrder,
+    StopLossOrder,
+    StopLossLimitOrder,
+    TakeProfitLimitOrder,
+    TrailingStopOrder,
+    TrailingStopLimitOrder,
+)
 
 from octobot_trading.personal_data.orders.channel import (
     OrdersProducer,
@@ -72,22 +87,6 @@ from octobot_trading.personal_data.orders.order_factory import (
     create_order_instance_from_raw,
     create_order_from_type,
     create_order_instance,
-)
-
-from octobot_trading.personal_data.orders.types import (
-    UnknownOrder,
-    MarketOrder,
-    SellMarketOrder,
-    BuyMarketOrder,
-    BuyLimitOrder,
-    SellLimitOrder,
-    LimitOrder,
-    TakeProfitOrder,
-    StopLossOrder,
-    StopLossLimitOrder,
-    TakeProfitLimitOrder,
-    TrailingStopOrder,
-    TrailingStopLimitOrder,
 )
 
 __all__ = [

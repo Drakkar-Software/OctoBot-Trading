@@ -15,7 +15,7 @@
 #  License along with this library.
 import enum
 
-import channel.channels as channel_instances
+import async_channel.channels as channel_instances
 import octobot_commons.channels_name as channels_name
 import octobot_commons.logging as logging
 import octobot_commons.enums as enums
