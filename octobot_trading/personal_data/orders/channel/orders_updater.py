@@ -19,11 +19,11 @@ import asyncio
 import octobot_commons.async_job as async_job
 
 import octobot_trading.errors as errors
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders.channel as orders_channel
 import octobot_trading.constants as constants
 
 
-class OrdersUpdater(personal_data.OrdersProducer):
+class OrdersUpdater(orders_channel.OrdersProducer):
     """
     Update open and close orders from exchange
     Can also be used to update a specific order from exchange

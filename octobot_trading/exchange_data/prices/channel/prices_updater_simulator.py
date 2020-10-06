@@ -14,11 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.constants as constants
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.prices.channel as prices_channel
 import octobot_trading.exchanges as exchanges
 
 
-class MarkPriceUpdaterSimulator(exchange_data.MarkPriceUpdater):
+class MarkPriceUpdaterSimulator(prices_channel.MarkPriceUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer

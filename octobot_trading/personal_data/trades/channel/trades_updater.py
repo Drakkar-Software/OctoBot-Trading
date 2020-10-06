@@ -18,11 +18,11 @@ import asyncio
 
 import octobot_trading.errors as errors
 
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.trades.channel as trades_channel
 import octobot_trading.constants as constants
 
 
-class TradesUpdater(personal_data.TradesProducer):
+class TradesUpdater(trades_channel.TradesProducer):
     """
     The Trades Update fetch the exchange trades and send it to the Trade Channel
     """

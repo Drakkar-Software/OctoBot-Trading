@@ -17,12 +17,12 @@
 import asyncio
 
 import octobot_trading.errors as errors
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.recent_trades.channel as recent_trade_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 
 
-class RecentTradeUpdater(exchange_data.RecentTradeProducer):
+class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
     CHANNEL_NAME = constants.RECENT_TRADES_CHANNEL
     RECENT_TRADE_REFRESH_TIME = 5
     RECENT_TRADE_LIMIT = 20  # should be < to RecentTradesManager's MAX_TRADES_COUNT

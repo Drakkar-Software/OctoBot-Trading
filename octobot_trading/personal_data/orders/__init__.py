@@ -28,15 +28,6 @@ from octobot_trading.personal_data.orders.order_state import (
 from octobot_trading.personal_data.orders import order_util
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders import order_factory
-from octobot_trading.personal_data.orders import channel
-from octobot_trading.personal_data.orders import states
-from octobot_trading.personal_data.orders.states import (
-    CloseOrderState,
-    CancelOrderState,
-    OpenOrderState,
-    create_order_state,
-    FillOrderState,
-)
 from octobot_trading.personal_data.orders import types
 from octobot_trading.personal_data.orders.types import (
     UnknownOrder,
@@ -54,6 +45,16 @@ from octobot_trading.personal_data.orders.types import (
     TrailingStopLimitOrder,
 )
 
+from octobot_trading.personal_data.orders import states
+from octobot_trading.personal_data.orders.states import (
+    CloseOrderState,
+    CancelOrderState,
+    OpenOrderState,
+    create_order_state,
+    FillOrderState,
+)
+
+from octobot_trading.personal_data.orders import channel
 from octobot_trading.personal_data.orders.channel import (
     OrdersProducer,
     OrdersChannel,

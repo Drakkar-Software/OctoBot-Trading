@@ -14,23 +14,22 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.portfolios.channel import balance_updater_simulator
-from octobot_trading.personal_data.portfolios.channel import balance_updater
 from octobot_trading.personal_data.portfolios.channel import balance
-
-from octobot_trading.personal_data.portfolios.channel.balance_updater_simulator import (
-    BalanceUpdaterSimulator,
-    BalanceProfitabilityUpdaterSimulator,
-)
-from octobot_trading.personal_data.portfolios.channel.balance_updater import (
-    BalanceUpdater,
-    BalanceProfitabilityUpdater,
-)
 from octobot_trading.personal_data.portfolios.channel.balance import (
     BalanceProducer,
     BalanceChannel,
     BalanceProfitabilityProducer,
     BalanceProfitabilityChannel,
+)
+from octobot_trading.personal_data.portfolios.channel import balance_updater
+from octobot_trading.personal_data.portfolios.channel.balance_updater import (
+    BalanceUpdater,
+    BalanceProfitabilityUpdater,
+)
+from octobot_trading.personal_data.portfolios.channel import balance_updater_simulator
+from octobot_trading.personal_data.portfolios.channel.balance_updater_simulator import (
+    BalanceUpdaterSimulator,
+    BalanceProfitabilityUpdaterSimulator,
 )
 
 __all__ = [

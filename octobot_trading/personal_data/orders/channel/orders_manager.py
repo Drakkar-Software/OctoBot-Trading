@@ -19,9 +19,9 @@ import typing
 
 import octobot_commons.logging as logging
 
-import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
 import octobot_trading.util as util
+import octobot_trading.personal_data.orders as orders
 
 
 class OrdersManager(util.Initializable):
@@ -54,14 +54,14 @@ class OrdersManager(util.Initializable):
 
     async def upsert_order_from_raw(self, order_id, raw_order) -> bool:
         if not self.has_order(order_id):
-            new_order = personal_data.create_order_instance_from_raw(self.trader, raw_order)
+            new_order = orders.create_order_instance_from_raw(self.trader, raw_order)
             self.orders[order_id] = new_order
             await new_order.initialize(is_from_exchange_data=True)
             self._check_orders_size()
             return True
         return await _update_order_from_raw(self.orders[order_id], raw_order)
 
-    async def upsert_order_close_from_raw(self, order_id, raw_order) -> typing.Optional[personal_data.Order]:
+    async def upsert_order_close_from_raw(self, order_id, raw_order) -> typing.Optional[orders.Order]:
         if self.has_order(order_id):
             order = self.orders[order_id]
             await _update_order_from_raw(self.orders[order_id], raw_order)

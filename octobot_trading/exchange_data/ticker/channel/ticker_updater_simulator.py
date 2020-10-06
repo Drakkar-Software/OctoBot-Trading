@@ -24,10 +24,10 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.util as util
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.ticker.channel as ticker_channel
 
 
-class TickerUpdaterSimulator(exchange_data.TickerUpdater):
+class TickerUpdaterSimulator(ticker_channel.TickerUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer

@@ -16,7 +16,8 @@
 #  License along with this library.
 import asyncio
 
-import async_channel.enums
+import async_channel.enums as channel_enums
+import async_channel.constants as channel_constants
 import async_channel.channels as channels
 import async_channel.consumer as consumers
 import async_channel.producer as producer
@@ -63,7 +64,7 @@ class ExchangeChannel(channels.Channel):
     CONSUMER_CLASS = ExchangeChannelConsumer
     CRYPTOCURRENCY_KEY = "cryptocurrency"
     SYMBOL_KEY = "symbol"
-    DEFAULT_PRIORITY_LEVEL = channel.enums.ChannelConsumerPriorityLevels.HIGH.value
+    DEFAULT_PRIORITY_LEVEL = channel_enums.ChannelConsumerPriorityLevels.HIGH.value
 
     def __init__(self, exchange_manager):
         super().__init__()
@@ -79,8 +80,8 @@ class ExchangeChannel(channels.Channel):
                            consumer_instance: object = None,
                            size: int = 0,
                            priority_level: int = DEFAULT_PRIORITY_LEVEL,
-                           symbol: str = channel.constants.CHANNEL_WILDCARD,
-                           cryptocurrency: str = channel.constants.CHANNEL_WILDCARD,
+                           symbol: str = channel_constants.CHANNEL_WILDCARD,
+                           cryptocurrency: str = channel_constants.CHANNEL_WILDCARD,
                            **kwargs) -> ExchangeChannelConsumer:
         consumer = consumer_instance if consumer_instance else self.CONSUMER_CLASS(callback,
                                                                                    size=size,
@@ -93,16 +94,16 @@ class ExchangeChannel(channels.Channel):
         return consumer
 
     def get_filtered_consumers(self,
-                               cryptocurrency=channel.constants.CHANNEL_WILDCARD,
-                               symbol=channel.constants.CHANNEL_WILDCARD):
+                               cryptocurrency=channel_constants.CHANNEL_WILDCARD,
+                               symbol=channel_constants.CHANNEL_WILDCARD):
         return self.get_consumer_from_filters({
             self.CRYPTOCURRENCY_KEY: cryptocurrency,
             self.SYMBOL_KEY: symbol
         })
 
     async def _add_new_consumer_and_run(self, consumer,
-                                        cryptocurrency=channel.constants.CHANNEL_WILDCARD,
-                                        symbol=channel.constants.CHANNEL_WILDCARD):
+                                        cryptocurrency=channel_constants.CHANNEL_WILDCARD,
+                                        symbol=channel_constants.CHANNEL_WILDCARD):
         self.add_new_consumer(consumer,
                               {
                                   self.CRYPTOCURRENCY_KEY: cryptocurrency,
@@ -112,7 +113,7 @@ class ExchangeChannel(channels.Channel):
                                  symbol=symbol)
 
     async def _run_consumer(self, consumer,
-                            symbol=channel.constants.CHANNEL_WILDCARD):
+                            symbol=channel_constants.CHANNEL_WILDCARD):
         await consumer.run(with_task=not self.is_synchronized)
         self.logger.debug(f"Consumer started for symbol {symbol}")
 
@@ -121,9 +122,9 @@ class TimeFrameExchangeChannel(ExchangeChannel):
     TIME_FRAME_KEY = "time_frame"
 
     def get_filtered_consumers(self,
-                               cryptocurrency=channel.constants.CHANNEL_WILDCARD,
-                               symbol=channel.constants.CHANNEL_WILDCARD,
-                               time_frame=channel.constants.CHANNEL_WILDCARD):
+                               cryptocurrency=channel_constants.CHANNEL_WILDCARD,
+                               symbol=channel_constants.CHANNEL_WILDCARD,
+                               time_frame=channel_constants.CHANNEL_WILDCARD):
         return self.get_consumer_from_filters({
             self.CRYPTOCURRENCY_KEY: cryptocurrency,
             self.SYMBOL_KEY: symbol,
@@ -131,9 +132,9 @@ class TimeFrameExchangeChannel(ExchangeChannel):
         })
 
     async def _add_new_consumer_and_run(self, consumer,
-                                        cryptocurrency=channel.constants.CHANNEL_WILDCARD,
-                                        symbol=channel.constants.CHANNEL_WILDCARD,
-                                        time_frame=channel.constants.CHANNEL_WILDCARD):
+                                        cryptocurrency=channel_constants.CHANNEL_WILDCARD,
+                                        symbol=channel_constants.CHANNEL_WILDCARD,
+                                        time_frame=channel_constants.CHANNEL_WILDCARD):
         self.add_new_consumer(consumer,
                               {
                                   self.CRYPTOCURRENCY_KEY: cryptocurrency,

@@ -17,12 +17,12 @@ import octobot_backtesting.data as data
 
 import octobot_commons.channels_name as channels_name
 
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.order_book.channel as order_book_channel
 import octobot_trading.util as util
 import octobot_trading.exchanges as exchanges
 
 
-class OrderBookUpdaterSimulator(exchange_data.OrderBookUpdater):
+class OrderBookUpdaterSimulator(order_book_channel.OrderBookUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer

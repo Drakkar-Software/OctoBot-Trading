@@ -13,8 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.portfolios as portfolios
 
 
-class FuturePortfolio(personal_data.Portfolio):
+class FuturePortfolio(portfolios.Portfolio):
     pass

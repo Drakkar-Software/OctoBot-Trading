@@ -15,16 +15,16 @@
 #  License along with this library.
 
 import octobot_trading.enums as enums
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders as orders
 
 
-class OpenOrderState(personal_data.OrderState):
+class OpenOrderState(orders.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.OrderStates.OPEN if is_from_exchange_data \
-                                         or self.order.simulated \
-                                         or self.order.is_self_managed() \
-                                         or self.order.status is enums.OrderStatus.OPEN \
+                                               or self.order.simulated \
+                                               or self.order.is_self_managed() \
+                                               or self.order.status is enums.OrderStatus.OPEN \
             else enums.OrderStates.OPENING
 
         self.has_terminated = False
@@ -59,7 +59,7 @@ class OpenOrderState(personal_data.OrderState):
                 if self.order.status is enums.OrderStatus.CLOSED:
                     self.order.status = enums.OrderStatus.FILLED
                     self.order.state = None
-                await personal_data.create_order_state(self.order, is_from_exchange_data=True)
+                await orders.create_order_state(self.order, is_from_exchange_data=True)
         else:
             self.get_logger().debug(f"on_order_refresh_successful triggered from previous state "
                                     f"after state change on {self.order}")

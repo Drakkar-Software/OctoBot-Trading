@@ -15,6 +15,10 @@
 #  License along with this library.
 
 from octobot_trading.exchanges.implementations import exchange_simulator
+from octobot_trading.exchanges.implementations.exchange_simulator import (
+    ExchangeSimulator,
+)
+
 from octobot_trading.exchanges.implementations import spot_exchange_simulator
 from octobot_trading.exchanges.implementations import future_exchange_simulator
 from octobot_trading.exchanges.implementations import margin_exchange_simulator
@@ -22,9 +26,6 @@ from octobot_trading.exchanges.implementations import default_spot_ccxt
 from octobot_trading.exchanges.implementations import ccxt_exchange
 from octobot_trading.exchanges.implementations import spot_ccxt_exchange
 
-from octobot_trading.exchanges.implementations.exchange_simulator import (
-    ExchangeSimulator,
-)
 from octobot_trading.exchanges.implementations.spot_exchange_simulator import (
     SpotExchangeSimulator,
 )
