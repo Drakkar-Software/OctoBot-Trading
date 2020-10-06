@@ -13,8 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import channel.producer as channel_producer
-import channel.util as channel_util
+import async_channel.producer as channel_producer
+import async_channel.util as channel_util
 
 import octobot_commons.tentacles_management as tentacles_management
 
