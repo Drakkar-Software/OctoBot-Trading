@@ -16,10 +16,10 @@
 import octobot_commons.logging as logging
 
 import octobot_trading.personal_data as personal_data
-import octobot_trading.api as api
 import octobot_trading.enums
+import octobot_trading.constants as constants
 
-LOGGER = logging.get_logger(api.LOGGER_TAG)
+LOGGER = logging.get_logger(constants.API_LOGGER_TAG)
 
 
 async def create_order(exchange_manager,

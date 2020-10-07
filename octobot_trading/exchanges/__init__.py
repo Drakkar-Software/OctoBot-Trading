@@ -40,45 +40,52 @@ from octobot_trading.exchanges.abstract_exchange import (
 )
 
 from octobot_trading.exchanges import exchange_manager
-from octobot_trading.exchanges import exchange_builder
-from octobot_trading.exchanges.channel import exchange_channel
-from octobot_trading.exchanges import exchange_factory
-from octobot_trading.exchanges import exchanges
-from octobot_trading.exchanges import exchange_util
-from octobot_trading.exchanges import exchange_websocket_factory
-from octobot_trading.exchanges import exchange_config_data
-from octobot_trading.exchanges import implementations
-from octobot_trading.exchanges import traders
-from octobot_trading.exchanges import types
-from octobot_trading.exchanges import util
-from octobot_trading.exchanges import websockets
-
 from octobot_trading.exchanges.exchange_manager import (
     ExchangeManager,
 )
+
+from octobot_trading.exchanges import exchange_builder
 from octobot_trading.exchanges.exchange_builder import (
     ExchangeBuilder,
     create_exchange_builder_instance,
 )
+from octobot_trading.exchanges import exchange_factory
+from octobot_trading.exchanges.exchange_factory import (
+    create_exchanges,
+    create_real_exchange,
+    initialize_real_exchange,
+    create_simulated_exchange,
+    init_simulated_exchange,
+)
+from octobot_trading.exchanges import exchanges
+from octobot_trading.exchanges.exchanges import (
+    ExchangeConfiguration,
+    Exchanges,
+)
+from octobot_trading.exchanges import exchange_util
+from octobot_trading.exchanges.exchange_util import (
+    get_margin_exchange_class,
+    get_future_exchange_class,
+    get_spot_exchange_class,
+    search_exchange_class_from_exchange_name,
+    get_order_side,
+)
+from octobot_trading.exchanges import exchange_websocket_factory
+from octobot_trading.exchanges.exchange_websocket_factory import (
+    is_exchange_managed_by_websocket,
+    is_websocket_feed_requiring_init,
+    search_and_create_websocket,
+)
+from octobot_trading.exchanges import exchange_config_data
+from octobot_trading.exchanges.exchange_config_data import (
+    ExchangeConfig,
+)
+from octobot_trading.exchanges import traders
 from octobot_trading.exchanges.traders import (
     Trader,
     TraderSimulator,
 )
-from octobot_trading.exchanges.implementations import (
-    ExchangeSimulator,
-    SpotExchangeSimulator,
-    FutureExchangeSimulator,
-    MarginExchangeSimulator,
-    DefaultCCXTSpotExchange,
-    CCXTExchange,
-    SpotCCXTExchange,
-)
-from octobot_trading.exchanges.types import (
-    FutureExchange,
-    WebsocketExchange,
-    MarginExchange,
-    SpotExchange,
-)
+from octobot_trading.exchanges import util
 from octobot_trading.exchanges.util import (
     ExchangeMarketStatusFixer,
     is_ms_valid,
@@ -90,6 +97,7 @@ from octobot_trading.exchanges.util import (
     calculate_prices,
     fix_market_status_limits_from_current_data,
 )
+from octobot_trading.exchanges import websockets
 from octobot_trading.exchanges.websockets import (
     AbstractWebsocket,
     OctoBotWebSocketClient,
@@ -98,31 +106,22 @@ from octobot_trading.exchanges.websockets import (
     search_websocket_class,
     get_exchange_websocket_from_name,
 )
-from octobot_trading.exchanges.exchange_factory import (
-    create_exchanges,
-    create_real_exchange,
-    initialize_real_exchange,
-    create_simulated_exchange,
-    init_simulated_exchange,
+from octobot_trading.exchanges import types
+from octobot_trading.exchanges.types import (
+    FutureExchange,
+    WebsocketExchange,
+    MarginExchange,
+    SpotExchange,
 )
-from octobot_trading.exchanges.exchanges import (
-    ExchangeConfiguration,
-    Exchanges,
-)
-from octobot_trading.exchanges.exchange_util import (
-    get_margin_exchange_class,
-    get_future_exchange_class,
-    get_spot_exchange_class,
-    search_exchange_class_from_exchange_name,
-    get_order_side,
-)
-from octobot_trading.exchanges.exchange_websocket_factory import (
-    is_exchange_managed_by_websocket,
-    is_websocket_feed_requiring_init,
-    search_and_create_websocket,
-)
-from octobot_trading.exchanges.exchange_config_data import (
-    ExchangeConfig,
+from octobot_trading.exchanges import implementations
+from octobot_trading.exchanges.implementations import (
+    ExchangeSimulator,
+    SpotExchangeSimulator,
+    FutureExchangeSimulator,
+    MarginExchangeSimulator,
+    DefaultCCXTSpotExchange,
+    CCXTExchange,
+    SpotCCXTExchange,
 )
 
 __all__ = [

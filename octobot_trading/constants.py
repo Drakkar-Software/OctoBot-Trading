@@ -76,7 +76,10 @@ CONFIG_DEFAULT_SIMULATOR_FEES = 0
 
 SIMULATOR_LAST_PRICES_TO_CHECK = 50
 
-#  Channels
+# API
+API_LOGGER_TAG = "TradingApi"
+
+# Channels
 # Exchange public data
 TICKER_CHANNEL = "Ticker"
 MINI_TICKER_CHANNEL = "MiniTicker"

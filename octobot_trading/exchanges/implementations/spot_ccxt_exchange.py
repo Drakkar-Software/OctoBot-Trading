@@ -14,16 +14,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import ccxt.base.errors as ccxt_errors
+import ccxt.base as ccxt_errors
 import typing
 
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.implementations as exchange_implementations
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
-class SpotCCXTExchange(exchanges.CCXTExchange, exchanges.SpotExchange):
+class SpotCCXTExchange(exchange_implementations.CCXTExchange, exchanges.SpotExchange):
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: float,
                            price: float = None, stop_price=None, **kwargs: dict) -> typing.Optional[dict]:
         try:
@@ -41,11 +42,11 @@ class SpotCCXTExchange(exchanges.CCXTExchange, exchanges.SpotExchange):
 
             return self.clean_order(created_order)
 
-        except ccxt_errors.InsufficientFunds as e:
+        except ccxt_errors.errors.InsufficientFunds as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(e)
             raise errors.MissingFunds(e)
-        except ccxt_errors.NotSupported:
+        except ccxt_errors.errors.NotSupported:
             raise errors.NotSupported
         except Exception as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)

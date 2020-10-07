@@ -13,11 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.api as api
 import octobot_commons.logging as logging
-import octobot_trading.util as util
 
-LOGGER = logging.get_logger(api.LOGGER_TAG)
+import octobot_trading.util as util
+import octobot_trading.constants as constants
+
+LOGGER = logging.get_logger(constants.API_LOGGER_TAG)
 
 
 def is_trader_enabled_in_config_from_exchange_manager(exchange_manager) -> bool:
