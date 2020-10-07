@@ -159,10 +159,12 @@ class OrderState(Initializable):
             previous_state = self.state
             async with self.lock:
                 self.state = OrderStates.REFRESHING
-            await self._refresh_order_from_exchange(force_synchronization=force_synchronization)
-            async with self.lock:
-                if self.state is OrderStates.REFRESHING:
-                    self.state = previous_state
+            try:
+                await self._refresh_order_from_exchange(force_synchronization=force_synchronization)
+            finally:
+                async with self.lock:
+                    if self.state is OrderStates.REFRESHING:
+                        self.state = previous_state
 
     def clear(self):
         """
