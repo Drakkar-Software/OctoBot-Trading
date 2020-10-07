@@ -19,6 +19,8 @@ import pytest
 from tests.personal_data.portfolios import update_portfolio_balance
 from tests.util.random_numbers import random_quantity, random_price
 
+from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 

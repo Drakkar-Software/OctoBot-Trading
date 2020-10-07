@@ -17,6 +17,11 @@ import pytest
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType
 from octobot_trading.personal_data.orders import Order
 
+from tests.exchanges import exchange_manager
+from tests.exchanges.traders import trader_simulator
+from tests.exchanges.traders import trader
+from tests.util.random_numbers import random_price
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 

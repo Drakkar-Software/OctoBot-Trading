@@ -17,6 +17,9 @@ from octobot_trading.enums import OrderStatus, OrderStates
 from octobot_trading.personal_data.orders import create_order_state
 
 import pytest
+from tests import event_loop
+from tests.exchanges import simulated_trader, simulated_exchange_manager
+from tests.personal_data.orders import buy_limit_order
 
 pytestmark = pytest.mark.asyncio
 

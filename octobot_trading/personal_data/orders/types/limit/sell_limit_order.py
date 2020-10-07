@@ -14,10 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
-from octobot_trading.personal_data.orders.types.limit.limit_order import LimitOrder
+import octobot_trading.personal_data.orders.types.limit as limit
 
 
-class SellLimitOrder(LimitOrder):
+class SellLimitOrder(limit.LimitOrder):
     def __init__(self, trader, side=enums.TradeOrderSide.SELL):
         super().__init__(trader, side)
 
