@@ -153,13 +153,16 @@ class OrderState(Initializable):
         Also manage the order state during the refreshing process
         :param force_synchronization: When True, for the update of the order from the exchange
         """
-        previous_state = self.state
-        async with self.lock:
-            self.state = OrderStates.REFRESHING
-        await self._refresh_order_from_exchange(force_synchronization=force_synchronization)
-        async with self.lock:
-            if self.state is OrderStates.REFRESHING:
-                self.state = previous_state
+        if self.is_refreshing():
+            self.get_logger().debug(f"Trying to refresh a refreshing state for order: {self.order}")
+        else:
+            previous_state = self.state
+            async with self.lock:
+                self.state = OrderStates.REFRESHING
+            await self._refresh_order_from_exchange(force_synchronization=force_synchronization)
+            async with self.lock:
+                if self.state is OrderStates.REFRESHING:
+                    self.state = previous_state
 
     def clear(self):
         """

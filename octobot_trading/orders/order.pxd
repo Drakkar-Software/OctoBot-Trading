@@ -100,6 +100,7 @@ cdef class Order(Initializable):
     cpdef bint is_filled(self)
     cpdef bint is_cancelled(self)
     cpdef bint is_closed(self)
+    cpdef bint is_refreshing(self)
     cpdef void on_fill_actions(self)
     cpdef dict get_computed_fee(self, object forced_value=*)
     cpdef double get_profitability(self)
