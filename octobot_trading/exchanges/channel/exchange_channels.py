@@ -45,13 +45,15 @@ async def create_exchange_producers(exchange_manager) -> None:
 
     # Real data producers
     if _should_create_unauthenticated_producers(exchange_manager):
-        for updater in get_unauthenticated_updater_producers():
+        import octobot_trading.exchange_data as exchange_data
+        for updater in exchange_data.UNAUTHENTICATED_UPDATER_PRODUCERS:
             if not exchanges.is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
                 await updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
     # Simulated producers
     if _should_create_simulated_producers(exchange_manager):
-        for updater in get_authenticated_updater_simulator_producers():
+        import octobot_trading.personal_data as personal_data
+        for updater in personal_data.AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
             await updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
 
@@ -89,7 +91,8 @@ async def _create_authenticated_producers(exchange_manager) -> None:
     Create real authenticated producers
     :param exchange_manager: the related exchange manager
     """
-    for updater in get_authenticated_updater_producers():
+    import octobot_trading.personal_data as personal_data
+    for updater in personal_data.AUTHENTICATED_UPDATER_PRODUCERS:
         if exchanges.is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
             # websocket is handling this channel: initialize data if required
             if exchanges.is_websocket_feed_requiring_init(exchange_manager, updater.CHANNEL_NAME):
@@ -148,7 +151,8 @@ def _get_authenticated_producer_from_parent(parent_producer_class):
     :param parent_producer_class: the authenticated producer parent class
     :return: the authenticated producer that inherit from parent_producer_class
     """
-    for authenticated_producer_candidate in get_authenticated_updater_producers():
+    import octobot_trading.personal_data as personal_data
+    for authenticated_producer_candidate in personal_data.AUTHENTICATED_UPDATER_PRODUCERS:
         if tentacles_management.default_parent_inspection(authenticated_producer_candidate, parent_producer_class):
             return authenticated_producer_candidate
     return None

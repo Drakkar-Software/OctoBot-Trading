@@ -116,6 +116,19 @@ from octobot_trading.personal_data.trades import (
     Trade,
 )
 
+AUTHENTICATED_UPDATER_PRODUCERS = [
+    BalanceUpdater,
+    OrdersUpdater,
+    TradesUpdater,
+    PositionsUpdater,
+    BalanceProfitabilityUpdater
+]
+AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [
+    OrdersUpdaterSimulator,
+    BalanceProfitabilityUpdater,
+    PositionsUpdaterSimulator
+]
+
 TraderOrderTypeClasses = {
     octobot_trading.enums.TraderOrderType.BUY_MARKET: BuyMarketOrder,
     octobot_trading.enums.TraderOrderType.BUY_LIMIT: BuyLimitOrder,
@@ -211,4 +224,6 @@ __all__ = [
     "TradesUpdater",
     "Trade",
     "ExchangePersonalData",
+    "AUTHENTICATED_UPDATER_PRODUCERS",
+    "AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS",
 ]

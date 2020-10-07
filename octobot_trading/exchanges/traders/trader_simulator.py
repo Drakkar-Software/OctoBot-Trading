@@ -16,11 +16,11 @@
 import uuid
 
 import octobot_trading.constants
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.traders as traders
 import octobot_trading.util as util
 
 
-class TraderSimulator(exchanges.Trader):
+class TraderSimulator(traders.Trader):
     """
     TraderSimulator has a role of exchange response simulator
     - During order creation / filling / canceling process

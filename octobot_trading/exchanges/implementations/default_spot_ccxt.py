@@ -14,10 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.implementations as exchange_implementations
 
 
-class DefaultCCXTSpotExchange(exchanges.SpotCCXTExchange):
+class DefaultCCXTSpotExchange(exchange_implementations.SpotCCXTExchange):
     @classmethod
     def get_name(cls) -> str:
         return cls.__name__

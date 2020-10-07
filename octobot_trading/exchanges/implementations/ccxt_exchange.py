@@ -18,7 +18,7 @@ import logging
 
 import ccxt.async_support as ccxt
 import ccxt.async_support as async_support
-import ccxt.base.errors as ccxt_errors
+import ccxt.base as ccxt_errors
 import typing
 
 import octobot_commons.constants
@@ -138,7 +138,7 @@ class CCXTExchange(exchanges.AbstractExchange):
             balance.pop(constants.CONFIG_PORTFOLIO_TOTAL, None)
             return balance
 
-        except ccxt_errors.InvalidNonce as e:
+        except ccxt_errors.errors.InvalidNonce as e:
             self.logger.error(f"Error when loading {self.name} real trader portfolio: {e}. "
                               f"To fix this, please synchronize your computer's clock. ")
             raise e
@@ -321,7 +321,7 @@ class CCXTExchange(exchanges.AbstractExchange):
     def get_pair_from_exchange(self, pair) -> typing.Optional[str]:
         try:
             return self.client.market(pair)["symbol"]
-        except ccxt_errors.BadSymbol:
+        except ccxt_errors.errors.BadSymbol:
             try:
                 return self.client.markets_by_id[pair]["symbol"]
             except KeyError:
@@ -332,7 +332,7 @@ class CCXTExchange(exchanges.AbstractExchange):
         try:
             market_data: dict = self.client.market(pair)
             return market_data["base"], market_data["quote"]
-        except ccxt_errors.BadSymbol:
+        except ccxt_errors.errors.BadSymbol:
             try:
                 return self.client.markets_by_id[pair]["base"], self.client.markets_by_id[pair]["quote"]
             except KeyError:
@@ -364,7 +364,7 @@ class CCXTExchange(exchanges.AbstractExchange):
     def set_sandbox_mode(self, is_sandboxed):
         try:
             self.client.setSandboxMode(is_sandboxed)
-        except ccxt_errors.NotSupported as e:
+        except ccxt_errors.errors.NotSupported as e:
             default_type = self.client.options.get('defaultType', None)
             additional_info = f" in type {default_type}" if default_type else ""
             self.logger.warning(f"{self.name} does not support sandboxing {additional_info}: {e}")

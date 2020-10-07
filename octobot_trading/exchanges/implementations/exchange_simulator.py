@@ -23,6 +23,7 @@ import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
+import octobot_trading.exchange_data as exchange_data
 
 
 class ExchangeSimulator(exchanges.AbstractExchange):
@@ -66,15 +67,16 @@ class ExchangeSimulator(exchanges.AbstractExchange):
 
     @staticmethod
     def handles_real_data_for_updater(channel_type, available_data):
-        if channel_type in SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE:
-            return all(data_type in available_data for data_type in SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE[channel_type])
+        if channel_type in exchange_data.SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE:
+            return all(data_type in available_data
+                       for data_type in exchange_data.SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE[channel_type])
         return True
 
     async def create_backtesting_exchange_producers(self):
         for importer in self.exchange_importers:
             available_data_types = backtesting_api.get_available_data_types(importer)
             at_least_one_updater = False
-            for channel_type, updater in get_unauthenticated_updater_simulator_producers().items():
+            for channel_type, updater in exchange_data.UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS.items():
                 if self._are_required_data_available(channel_type, available_data_types):
                     await updater(exchanges.get_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
                     at_least_one_updater = True
@@ -83,14 +85,14 @@ class ExchangeSimulator(exchanges.AbstractExchange):
 
     @staticmethod
     def _are_required_data_available(channel_type, available_data_types):
-        if channel_type not in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE:
+        if channel_type not in exchange_data.SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE:
             # no required data if updater is not in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys
             return True
         else:
             # if updater is in SIMULATOR_PRODUCERS_TO_DATA_TYPE keys: check that at least one of the required data is
             # available
             return any(required_data_type in available_data_types
-                       for required_data_type in SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[channel_type])
+                       for required_data_type in exchange_data.SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[channel_type])
 
     async def stop(self):
         self.backtesting = None
