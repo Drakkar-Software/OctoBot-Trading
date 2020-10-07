@@ -219,17 +219,21 @@ class Order(Initializable):
     def is_closed(self):
         return self.state.is_closed() if self.state is not None else self.status == OrderStatus.CLOSED
 
+    def is_refreshing(self):
+        return self.state is not None and self.state.is_refreshing()
+
     async def on_open(self, force_open=False, is_from_exchange_data=False):
         self.state = OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_open)
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
-        if self.is_open():
+        get_logger(self.get_logger_name()).debug(f"on_fill triggered for {self}")
+        if self.is_open() and not self.is_refreshing():
             self.state = FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
             await self.state.initialize(forced=force_fill)
         else:
-            get_logger(self.get_logger_name()).debug(f"Trying to fill a previously filled or canceled order: "
-                                                     f"ignored fill call for {self}")
+            get_logger(self.get_logger_name()).debug(f"Trying to fill a refreshing or previously filled or "
+                                                     f"canceled order: ignored fill call for {self}")
 
     async def on_close(self, force_close=False, is_from_exchange_data=False):
         self.state = CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
