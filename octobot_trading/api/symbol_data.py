@@ -16,11 +16,10 @@
 import octobot_commons.enums
 
 import octobot_trading.enums
-import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data as exchange_data
 
 
-def get_symbol_data(exchange_manager, symbol, allow_creation=True) -> exchanges.ExchangeSymbolData:
+def get_symbol_data(exchange_manager, symbol, allow_creation=True) -> exchange_data.ExchangeSymbolData:
     return exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol, allow_creation=allow_creation)
 
 

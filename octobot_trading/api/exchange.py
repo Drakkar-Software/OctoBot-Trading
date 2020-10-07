@@ -17,6 +17,7 @@ import asyncio
 
 import octobot_trading.constants
 import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_data as exchange_data
 
 
 def create_exchange_builder(config, exchange_name) -> exchanges.ExchangeBuilder:
@@ -132,7 +133,7 @@ def get_exchange_name(exchange_manager) -> str:
 
 def has_only_ohlcv(exchange_importers):
     return exchanges.ExchangeSimulator.get_real_available_data(exchange_importers) == \
-           set(SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[octobot_trading.constants.OHLCV_CHANNEL])
+           set(exchange_data.SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[octobot_trading.constants.OHLCV_CHANNEL])
 
 
 def get_is_backtesting(exchange_manager) -> bool:

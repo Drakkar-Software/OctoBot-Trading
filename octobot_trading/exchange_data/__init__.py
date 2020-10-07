@@ -101,6 +101,40 @@ from octobot_trading.exchange_data.exchange_symbols_data import (
     ExchangeSymbolsData,
 )
 
+import octobot_trading.constants as trading_constants
+import octobot_backtesting.enums as backtesting_enums
+
+UNAUTHENTICATED_UPDATER_PRODUCERS = [OHLCVUpdater, OrderBookUpdater, RecentTradeUpdater, TickerUpdater,
+                                     KlineUpdater, MarkPriceUpdater, FundingUpdater]
+UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = {
+        trading_constants.OHLCV_CHANNEL: OHLCVUpdaterSimulator,
+        trading_constants.ORDER_BOOK_CHANNEL: OrderBookUpdaterSimulator,
+        trading_constants.RECENT_TRADES_CHANNEL: RecentTradeUpdaterSimulator,
+        trading_constants.TICKER_CHANNEL: TickerUpdaterSimulator,
+        trading_constants.KLINE_CHANNEL: KlineUpdaterSimulator,
+        trading_constants.MARK_PRICE_CHANNEL: MarkPriceUpdaterSimulator
+    }
+
+# Required data to run updater (requires at least one per list)
+SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE = {
+    trading_constants.OHLCV_CHANNEL: [backtesting_enums.ExchangeDataTables.OHLCV],
+    trading_constants.ORDER_BOOK_CHANNEL: [backtesting_enums.ExchangeDataTables.ORDER_BOOK],
+    trading_constants.RECENT_TRADES_CHANNEL: [backtesting_enums.ExchangeDataTables.RECENT_TRADES, 
+                                              backtesting_enums.ExchangeDataTables.OHLCV],
+    trading_constants.TICKER_CHANNEL: [backtesting_enums.ExchangeDataTables.TICKER,
+                                       backtesting_enums.ExchangeDataTables.OHLCV],
+    trading_constants.KLINE_CHANNEL: [backtesting_enums.ExchangeDataTables.KLINE]
+}
+
+# Required data to run real data updater (requires each per list)
+SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE = {
+    trading_constants.OHLCV_CHANNEL: [backtesting_enums.ExchangeDataTables.OHLCV],
+    trading_constants.ORDER_BOOK_CHANNEL: [backtesting_enums.ExchangeDataTables.ORDER_BOOK],
+    trading_constants. RECENT_TRADES_CHANNEL: [backtesting_enums.ExchangeDataTables.RECENT_TRADES],
+    trading_constants.TICKER_CHANNEL: [backtesting_enums.ExchangeDataTables.TICKER],
+    trading_constants.KLINE_CHANNEL: [backtesting_enums.ExchangeDataTables.KLINE],
+}
+
 __all__ = [
     "FundingUpdaterSimulator",
     "FundingUpdater",
@@ -154,4 +188,8 @@ __all__ = [
     "TickerUpdaterSimulator",
     "ExchangeSymbolsData",
     "ExchangeSymbolData",
+    "UNAUTHENTICATED_UPDATER_PRODUCERS",
+    "UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS",
+    "SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE",
+    "SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE",
 ]

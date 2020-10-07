@@ -14,14 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.traders import trader_simulator
 from octobot_trading.exchanges.traders import trader
-
-from octobot_trading.exchanges.traders.trader_simulator import (
-    TraderSimulator,
-)
 from octobot_trading.exchanges.traders.trader import (
     Trader,
+)
+from octobot_trading.exchanges.traders import trader_simulator
+from octobot_trading.exchanges.traders.trader_simulator import (
+    TraderSimulator,
 )
 
 __all__ = [

@@ -131,8 +131,6 @@ from octobot_trading.api.orders import (
     LOGGER,
 )
 
-LOGGER_TAG = "TradingApi"
-
 __all__ = [
     "get_symbol_data",
     "get_symbol_candles_manager",
@@ -221,5 +219,4 @@ __all__ = [
     "cancel_all_open_orders",
     "cancel_all_open_orders_with_currency",
     "cancel_order_with_id",
-    "LOGGER_TAG",
 ]
