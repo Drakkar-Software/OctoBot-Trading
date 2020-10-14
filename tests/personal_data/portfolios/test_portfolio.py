@@ -27,6 +27,8 @@ from octobot_trading.personal_data.orders import BuyMarketOrder
 from octobot_trading.personal_data.orders.types.market.sell_market_order import SellMarketOrder
 from tests.test_utils.order_util import fill_market_order, fill_limit_or_stop_order
 
+from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 

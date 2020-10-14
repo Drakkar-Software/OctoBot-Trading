@@ -13,12 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_backtesting.data as data
+import async_channel.channels as channels
+
+import octobot_backtesting.errors as errors
 
 import octobot_commons.channels_name as channels_name
 
 import octobot_trading.exchange_data.kline.channel as kline_channel
-import octobot_trading.exchanges as exchanges
 import octobot_trading.util as util
 
 
@@ -47,7 +48,7 @@ class KlineUpdaterSimulator(kline_channel.KlineUpdater):
                     if kline_data and kline_data[0][0] > self.last_timestamp_pushed:
                         self.last_timestamp_pushed = kline_data[0][0]
                         await self.push(time_frame, pair, kline_data[0][-1])
-        except data.DataBaseNotExists as e:
+        except errors.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()
@@ -56,7 +57,7 @@ class KlineUpdaterSimulator(kline_channel.KlineUpdater):
 
     async def pause(self):
         if self.time_consumer is not None:
-            await exchanges.get_chan(channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value)\
+            await channels.get_chan(channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value) \
                 .remove_consumer(self.time_consumer)
 
     async def stop(self):
@@ -64,5 +65,5 @@ class KlineUpdaterSimulator(kline_channel.KlineUpdater):
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:
-            self.time_consumer = await exchanges.get_chan(channels_name.OctoBotBacktestingChannelsName.
-                                                          TIME_CHANNEL.value).new_consumer(self.handle_timestamp)
+            self.time_consumer = await channels.get_chan(channels_name.OctoBotBacktestingChannelsName.
+                                                         TIME_CHANNEL.value).new_consumer(self.handle_timestamp)

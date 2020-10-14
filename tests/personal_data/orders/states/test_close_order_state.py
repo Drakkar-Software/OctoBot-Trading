@@ -14,6 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 from octobot_trading.enums import OrderStatus
+from tests import event_loop
+from tests.exchanges import simulated_trader, simulated_exchange_manager
+from tests.personal_data.orders import sell_limit_order
 
 import pytest
 

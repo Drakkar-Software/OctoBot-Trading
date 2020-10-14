@@ -297,4 +297,4 @@ class Trader(util.Initializable):
         Convert an order instance to Trade
         :return: the new Trade instance from order
         """
-        return create_trade_from_order(order)
+        return personal_data.create_trade_from_order(order)
