@@ -18,6 +18,10 @@ import pytest
 from octobot_trading.enums import TraderOrderType
 from tests.util.random_numbers import random_price, random_quantity
 
+from tests import event_loop
+from tests.exchanges import simulated_trader, simulated_exchange_manager
+from tests.personal_data.orders import buy_market_order
+
 pytestmark = pytest.mark.asyncio
 
 DEFAULT_SYMBOL_ORDER = "BTC/USDT"
