@@ -19,7 +19,7 @@ import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 import octobot_commons.tentacles_management as abstract_tentacle
 
-import octobot_tentacles_manager.api as configurator
+import octobot_tentacles_manager.api as tentacles_manager_api
 
 import octobot_trading.constants as constants
 
@@ -133,7 +133,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     def load_config(self) -> None:
         # try with this class name
-        self.trading_config = get_tentacle_config(self.__class__)
+        self.trading_config = tentacles_manager_api.get_tentacle_config(self.__class__)
 
         # set default config if nothing found
         if not self.trading_config:
@@ -149,14 +149,14 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     @classmethod
     def get_required_strategies_names_and_count(cls, trading_mode_config=None):
-        config = trading_mode_config or configurator.get_tentacle_config(cls)
+        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(cls)
         if constants.TRADING_MODE_REQUIRED_STRATEGIES in config:
             return config[constants.TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)
         raise Exception(f"'{constants.TRADING_MODE_REQUIRED_STRATEGIES}' is missing in configuration file")
 
     @classmethod
     def get_default_strategies(cls, trading_mode_config=None):
-        config = trading_mode_config or configurator.get_tentacle_config(cls)
+        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(cls)
         if common_constants.TENTACLE_DEFAULT_CONFIG in config:
             return config[common_constants.TENTACLE_DEFAULT_CONFIG]
 

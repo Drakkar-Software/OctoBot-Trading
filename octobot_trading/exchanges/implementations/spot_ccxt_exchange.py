@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import ccxt.base as ccxt_errors
+import ccxt.async_support as ccxt
 import typing
 
 import octobot_trading.enums as enums
@@ -42,11 +42,11 @@ class SpotCCXTExchange(exchange_implementations.CCXTExchange, exchanges.SpotExch
 
             return self.clean_order(created_order)
 
-        except ccxt_errors.errors.InsufficientFunds as e:
+        except ccxt.InsufficientFunds as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(e)
             raise errors.MissingFunds(e)
-        except ccxt_errors.errors.NotSupported:
+        except ccxt.NotSupported:
             raise errors.NotSupported
         except Exception as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)

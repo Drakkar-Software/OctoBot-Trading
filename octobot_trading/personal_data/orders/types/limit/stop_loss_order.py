@@ -14,16 +14,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
-from octobot_trading.personal_data.orders.types.limit.limit_order import LimitOrder
+import octobot_trading.personal_data.orders.types.limit as limit
 
 
-class StopLossOrder(LimitOrder):
+class StopLossOrder(limit.LimitOrder):
     def __init__(self, trader, side=enums.TradeOrderSide.SELL):
         super().__init__(trader, side)
         self.trigger_above = self.side is enums.TradeOrderSide.BUY
 
     async def on_filled(self):
-        await LimitOrder.on_filled(self)
+        await limit.LimitOrder.on_filled(self)
         if not self.trader.simulate:
             await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
                                                       if self.side is enums.TradeOrderSide.SELL

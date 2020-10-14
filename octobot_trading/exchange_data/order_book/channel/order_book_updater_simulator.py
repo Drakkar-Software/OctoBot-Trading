@@ -13,13 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_backtesting.data as data
+import async_channel.channels as channels
+
+import octobot_backtesting.errors as errors
 
 import octobot_commons.channels_name as channels_name
 
 import octobot_trading.exchange_data.order_book.channel as order_book_channel
 import octobot_trading.util as util
-import octobot_trading.exchanges as exchanges
 
 
 class OrderBookUpdaterSimulator(order_book_channel.OrderBookUpdater):
@@ -45,7 +46,7 @@ class OrderBookUpdaterSimulator(order_book_channel.OrderBookUpdater):
                 if order_book_data[0] > self.last_timestamp_pushed:
                     self.last_timestamp_pushed = order_book_data[0]
                     await self.push(pair, order_book_data[-1], order_book_data[-2])
-        except data.DataBaseNotExists as e:
+        except errors.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()
@@ -54,7 +55,7 @@ class OrderBookUpdaterSimulator(order_book_channel.OrderBookUpdater):
 
     async def pause(self):
         if self.time_consumer is not None:
-            await exchanges.get_chan(channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).\
+            await channels.get_chan(channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).\
                 remove_consumer(self.time_consumer)
 
     async def stop(self):
@@ -62,5 +63,5 @@ class OrderBookUpdaterSimulator(order_book_channel.OrderBookUpdater):
 
     async def resume(self):
         if self.time_consumer is None and not self.channel.is_paused:
-            self.time_consumer = await exchanges.get_chan(
+            self.time_consumer = await channels.get_chan(
                 channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(self.handle_timestamp)
