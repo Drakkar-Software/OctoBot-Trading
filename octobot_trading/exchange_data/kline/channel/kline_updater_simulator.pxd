@@ -14,16 +14,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_backtesting.importers.exchanges.exchange_importer cimport ExchangeDataImporter
-from async_channel.consumer cimport Consumer
+cimport octobot_backtesting.importers as importers
+cimport async_channel.consumer as consumer
 
-from octobot_trading.exchange_data.kline.channel.kline_updater cimport KlineUpdater
+cimport octobot_trading.exchange_data as exchange_data
 
-cdef class KlineUpdaterSimulator(KlineUpdater):
-    cdef ExchangeDataImporter exchange_data_importer
+cdef class KlineUpdaterSimulator(exchange_data.KlineUpdater):
+    cdef importers.ExchangeDataImporter exchange_data_importer
 
     cdef str exchange_name
 
     cdef double last_timestamp_pushed
 
-    cdef public Consumer time_consumer
+    cdef public consumer.Consumer time_consumer

@@ -13,3 +13,20 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.exchange_data.prices cimport prices_manager
+from octobot_trading.exchange_data.prices cimport price_events_manager
+
+from octobot_trading.exchange_data.prices.prices_manager cimport (
+    PricesManager,
+    calculate_mark_price_from_recent_trade_prices,
+)
+from octobot_trading.exchange_data.prices.price_events_manager cimport (
+    PriceEventsManager,
+)
+
+__all__ = [
+    "PricesManager",
+    "calculate_mark_price_from_recent_trade_prices",
+    "PriceEventsManager",
+]

@@ -14,11 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.personal_data as personal_data
 
-
-from octobot_trading.personal_data.portfolios.portfolio cimport Portfolio
-
-cdef class MarginPortfolio(Portfolio):
+cdef class MarginPortfolio(personal_data.Portfolio):
     cdef void _reset_currency_portfolio(self, str currency)
     cdef dict _parse_currency_balance(self, dict currency_balance)
     cdef dict _create_currency_portfolio(self, double available, double total, double margin=*)

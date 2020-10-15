@@ -13,3 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.personal_data.orders.types.trailing cimport trailing_stop_order
+from octobot_trading.personal_data.orders.types.trailing cimport (
+    trailing_stop_limit_order,
+)
+
+from octobot_trading.personal_data.orders.types.trailing.trailing_stop_order cimport (
+    TrailingStopOrder,
+)
+from octobot_trading.personal_data.orders.types.trailing.trailing_stop_limit_order cimport (
+    TrailingStopLimitOrder,
+)
+
+__all__ = [
+    "TrailingStopOrder",
+    "TrailingStopLimitOrder",
+]
+

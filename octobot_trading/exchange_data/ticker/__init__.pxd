@@ -13,3 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.exchange_data.ticker cimport ticker_manager
+
+from octobot_trading.exchange_data.ticker.ticker_manager cimport (
+    TickerManager,
+)
+
+__all__ = [
+    "TickerManager",
+]

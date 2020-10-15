@@ -14,12 +14,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.exchanges as exchanges
 
-from octobot_trading.exchanges.channel.exchange_channel cimport TimeFrameExchangeChannel, ExchangeChannelProducer
 
-
-cdef class OHLCVProducer(ExchangeChannelProducer):
+cdef class OHLCVProducer(exchanges.ExchangeChannelProducer):
     pass
 
-cdef class OHLCVChannel(TimeFrameExchangeChannel):
+cdef class OHLCVChannel(exchanges.TimeFrameExchangeChannel):
     pass

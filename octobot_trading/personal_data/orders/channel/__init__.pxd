@@ -13,3 +13,30 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.personal_data.orders.channel cimport orders_updater
+from octobot_trading.personal_data.orders.channel cimport orders
+from octobot_trading.personal_data.orders.channel cimport orders_manager
+from octobot_trading.personal_data.orders.channel cimport orders_updater_simulator
+
+from octobot_trading.personal_data.orders.channel.orders_updater cimport (
+    OrdersUpdater,
+)
+from octobot_trading.personal_data.orders.channel.orders cimport (
+    OrdersProducer,
+    OrdersChannel,
+)
+from octobot_trading.personal_data.orders.channel.orders_manager cimport (
+    OrdersManager,
+)
+from octobot_trading.personal_data.orders.channel.orders_updater_simulator cimport (
+    OrdersUpdaterSimulator,
+)
+
+__all__ = [
+    "OrdersUpdater",
+    "OrdersProducer",
+    "OrdersChannel",
+    "OrdersManager",
+    "OrdersUpdaterSimulator",
+]

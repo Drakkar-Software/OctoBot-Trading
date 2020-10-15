@@ -13,3 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.personal_data.portfolios.types cimport future_portfolio
+from octobot_trading.personal_data.portfolios.types cimport margin_portfolio
+from octobot_trading.personal_data.portfolios.types cimport spot_portfolio
+
+from octobot_trading.personal_data.portfolios.types.future_portfolio cimport (
+    FuturePortfolio,
+)
+from octobot_trading.personal_data.portfolios.types.margin_portfolio cimport (
+    MarginPortfolio,
+)
+from octobot_trading.personal_data.portfolios.types.spot_portfolio cimport (
+    SpotPortfolio,
+)
+
+__all__ = [
+    "FuturePortfolio",
+    "MarginPortfolio",
+    "SpotPortfolio",
+]

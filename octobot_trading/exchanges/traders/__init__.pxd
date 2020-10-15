@@ -13,3 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.exchanges.traders cimport trader_simulator
+from octobot_trading.exchanges.traders cimport trader
+
+from octobot_trading.exchanges.traders.trader_simulator cimport (
+    TraderSimulator,
+)
+from octobot_trading.exchanges.traders.trader cimport (
+    Trader,
+)
+
+__all__ = [
+    "TraderSimulator",
+    "Trader",
+]

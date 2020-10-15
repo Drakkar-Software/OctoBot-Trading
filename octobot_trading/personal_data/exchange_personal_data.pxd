@@ -14,14 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.personal_data.orders.order cimport Order
-from octobot_trading.personal_data.orders.orders_manager cimport OrdersManager
-from octobot_trading.personal_data.portfolios.portfolio_manager cimport PortfolioManager
-from octobot_trading.personal_data.positions.positions_manager cimport PositionsManager
-from octobot_trading.personal_data.trades.trades_manager cimport TradesManager
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.exchanges.traders.trader cimport Trader
-from octobot_trading.util.initializable cimport Initializable
+cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.exchanges as exchanges
+cimport octobot_trading.util as util
 
 cdef class ExchangePersonalData(util.Initializable):
     cdef public object logger
@@ -29,13 +24,13 @@ cdef class ExchangePersonalData(util.Initializable):
 
     cdef public dict config
 
-    cdef public ExchangeManager exchange_manager
-    cdef public Trader trader
+    cdef public exchanges.ExchangeManager exchange_manager
+    cdef public exchanges.Trader trader
 
-    cdef public PortfolioManager portfolio_manager
-    cdef public TradesManager trades_manager
-    cdef public OrdersManager orders_manager
-    cdef public PositionsManager positions_manager
+    cdef public personal_data.PortfolioManager portfolio_manager
+    cdef public personal_data.TradesManager trades_manager
+    cdef public personal_data.OrdersManager orders_manager
+    cdef public personal_data.PositionsManager positions_manager
 
     cpdef object get_order_portfolio(self, Order order)
     cpdef void clear(self)

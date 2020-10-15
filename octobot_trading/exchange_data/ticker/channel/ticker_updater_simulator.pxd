@@ -14,21 +14,19 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from async_channel.consumer cimport Consumer
-
-from octobot_backtesting.importers.exchanges.exchange_importer cimport ExchangeDataImporter
-
-from octobot_trading.exchange_data.ticker.channel.ticker_updater cimport TickerUpdater
+cimport async_channel.consumer as consumer
+cimport octobot_backtesting.importers as importers
+cimport octobot_trading.exchange_data as exchange_data
 
 
-cdef class TickerUpdaterSimulator(TickerUpdater):
-    cdef ExchangeDataImporter exchange_data_importer
+cdef class TickerUpdaterSimulator(exchange_data.TickerUpdater):
+    cdef importers.ExchangeDataImporter exchange_data_importer
 
     cdef str exchange_name
 
     cdef double last_timestamp_pushed
 
-    cdef public Consumer time_consumer
+    cdef public consumer.Consumer time_consumer
 
     cdef dict last_timestamp_pushed_by_symbol
     cdef str ticker_time_frame

@@ -14,10 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.exchange_data as exchange_data
 
-from octobot_trading.exchange_data.prices.price cimport MarkPriceProducer
-
-cdef class MarkPriceUpdater(MarkPriceProducer):
+cdef class MarkPriceUpdater(exchange_data.MarkPriceProducer):
     cdef object recent_trades_consumer
     cdef object ticker_consumer
     cdef int refresh_time

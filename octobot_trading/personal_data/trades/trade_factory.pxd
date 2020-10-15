@@ -14,20 +14,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.exchanges as exchanges
 
-from octobot_trading.orders.order cimport Order
-from octobot_trading.personal_data.trades.trade cimport Trade
-from octobot_trading.exchanges.traders.trader cimport Trader
+cpdef personal_data.Trade create_trade_instance_from_raw(exchanges.Trader trader, dict raw_order)
 
-cpdef Trade create_trade_instance_from_raw(Trader trader, dict raw_order)
-
-cpdef Trade create_trade_from_order(Order order,
+cpdef personal_data.Trade create_trade_from_order(personal_data.Order order,
                                     object close_status=*,
                                     double canceled_time=*,
                                     double creation_time=*,
                                     double executed_time=*)
 
-cpdef Trade create_trade_instance(Trader trader,
+cpdef personal_data.Trade create_trade_instance(exchanges.Trader trader,
                                   object order_type,
                                   str symbol,
                                   object status=*,

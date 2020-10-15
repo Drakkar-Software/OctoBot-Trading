@@ -13,3 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.exchange_data.order_book cimport order_book_manager
+
+from octobot_trading.exchange_data.order_book.order_book_manager cimport (
+    OrderBookManager,
+)
+
+__all__ = [
+    "OrderBookManager",
+]

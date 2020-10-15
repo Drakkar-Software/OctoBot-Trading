@@ -14,15 +14,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+cimport octobot_trading.exchanges as exchanges
 
 cdef class ExchangeBuilder:
     cdef object logger
 
     cdef dict config
 
-    cdef public ExchangeManager exchange_manager
+    cdef public exchanges.ExchangeManager exchange_manager
 
     cdef public str exchange_name
 

@@ -14,12 +14,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.exchanges as exchanges
 
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+cpdef bint requires_refresh_trigger(exchanges.ExchangeManager exchange_manager, str channel)
 
-cpdef bint requires_refresh_trigger(ExchangeManager exchange_manager, str channel)
-
-cdef bint _should_create_authenticated_producers(ExchangeManager exchange_manager)
-cdef bint _should_create_simulated_producers(ExchangeManager exchange_manager)
-cdef bint _should_create_unauthenticated_producers(ExchangeManager exchange_manager)
+cdef bint _should_create_authenticated_producers(exchanges.ExchangeManager exchange_manager)
+cdef bint _should_create_simulated_producers(exchanges.ExchangeManager exchange_manager)
+cdef bint _should_create_unauthenticated_producers(exchanges.ExchangeManager exchange_manager)
 cdef object _get_authenticated_producer_from_parent(object parent_producer_class)

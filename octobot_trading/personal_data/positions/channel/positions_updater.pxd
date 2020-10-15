@@ -14,9 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.personal_data as personal_data
 
-from octobot_trading.personal_data.portfolios cimport PositionsProducer
 
-
-cdef class PositionsUpdater(PositionsProducer):
+cdef class PositionsUpdater(personal_data.PositionsProducer):
     cdef public bint should_use_open_position_per_symbol
