@@ -165,7 +165,7 @@ class CCXTExchange(exchanges.AbstractExchange):
                               **kwargs: dict) -> typing.Optional[list]:
         try:
             # default implementation
-            return await self.get_symbol_prices(symbol, time_frame, limit=1, params=kwargs)
+            return await self.get_symbol_prices(symbol, time_frame, limit=1, **kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except async_support.BaseError as e:
@@ -259,8 +259,8 @@ class CCXTExchange(exchanges.AbstractExchange):
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         cancel_resp = None
         try:
-            cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
-            return personal_data.parse_is_cancelled(await self.get_order(order_id, symbol=symbol, params=kwargs))
+            cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, **kwargs)
+            return personal_data.parse_is_cancelled(await self.get_order(order_id, symbol=symbol, **kwargs))
         except async_support.OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
         except ccxt.NotSupported:
