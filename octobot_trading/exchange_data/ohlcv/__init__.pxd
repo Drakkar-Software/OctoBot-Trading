@@ -13,3 +13,28 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.exchange_data.ohlcv cimport candles_manager
+from octobot_trading.exchange_data.ohlcv cimport candles_adapter
+
+from octobot_trading.exchange_data.ohlcv.candles_manager cimport (
+    CandlesManager,
+)
+from octobot_trading.exchange_data.ohlcv.candles_adapter cimport (
+    get_symbol_close_candles,
+    get_symbol_open_candles,
+    get_symbol_high_candles,
+    get_symbol_low_candles,
+    get_symbol_volume_candles,
+    get_symbol_time_candles,
+)
+
+__all__ = [
+    "CandlesManager",
+    "get_symbol_close_candles",
+    "get_symbol_open_candles",
+    "get_symbol_high_candles",
+    "get_symbol_low_candles",
+    "get_symbol_volume_candles",
+    "get_symbol_time_candles",
+]

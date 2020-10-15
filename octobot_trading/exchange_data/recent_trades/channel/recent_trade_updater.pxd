@@ -14,9 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.exchange_data as exchange_data
 
-from octobot_trading.exchange_data.recent_trades.recent_trade cimport RecentTradeProducer
 
-
-cdef class RecentTradeUpdater(RecentTradeProducer):
+cdef class RecentTradeUpdater(exchange_data.RecentTradeProducer):
     cdef int refresh_time

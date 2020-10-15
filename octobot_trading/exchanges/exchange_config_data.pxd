@@ -14,8 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.util.initializable cimport Initializable
+cimport octobot_trading.exchanges as exchanges
+cimport octobot_trading.util as util
 
 cdef class ExchangeConfig(util.Initializable):
     cdef object _logger
@@ -27,7 +27,7 @@ cdef class ExchangeConfig(util.Initializable):
     cdef public list traded_time_frames
     cdef public list real_time_time_frames
 
-    cdef public ExchangeManager exchange_manager
+    cdef public exchanges.ExchangeManager exchange_manager
 
     cpdef void set_config_time_frame(self)
     cpdef void set_config_traded_pairs(self)

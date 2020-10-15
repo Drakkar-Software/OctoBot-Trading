@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchange_data.funding.channel.funding_updater cimport FundingUpdater
+cimport octobot_trading.exchange_data as exchange_data
 
-cdef class FundingUpdaterSimulator(FundingUpdater):
+cdef class FundingUpdaterSimulator(exchange_data.FundingUpdater):
     pass

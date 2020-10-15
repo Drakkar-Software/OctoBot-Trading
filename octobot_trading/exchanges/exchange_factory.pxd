@@ -14,6 +14,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+cimport octobot_trading.exchanges as exchanges
 
-cdef void _initialize_simulator_time_frames(ExchangeManager exchange_manager)
+cdef void _initialize_simulator_time_frames(exchanges.ExchangeManager exchange_manager)

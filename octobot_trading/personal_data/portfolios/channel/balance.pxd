@@ -18,17 +18,16 @@
 """
 Handles balance changes
 """
+cimport octobot_trading.exchanges as exchanges
 
-from octobot_trading.exchanges.channel.exchange_channel cimport ExchangeChannel, ExchangeChannelProducer
-
-cdef class BalanceProducer(ExchangeChannelProducer):
+cdef class BalanceProducer(exchanges.ExchangeChannelProducer):
     pass
 
-cdef class BalanceChannel(ExchangeChannel):
+cdef class BalanceChannel(exchanges.ExchangeChannel):
     pass
 
-cdef class BalanceProfitabilityProducer(ExchangeChannelProducer):
+cdef class BalanceProfitabilityProducer(exchanges.ExchangeChannelProducer):
     pass
 
-cdef class BalanceProfitabilityChannel(ExchangeChannel):
+cdef class BalanceProfitabilityChannel(exchanges.ExchangeChannel):
     pass

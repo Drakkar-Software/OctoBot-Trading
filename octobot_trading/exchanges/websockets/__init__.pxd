@@ -13,3 +13,27 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.exchanges.websockets cimport octobot_websocket
+from octobot_trading.exchanges.websockets cimport abstract_websocket
+from octobot_trading.exchanges.websockets cimport websockets_util
+
+from octobot_trading.exchanges.websockets.octobot_websocket cimport (
+    OctoBotWebSocketClient,
+)
+from octobot_trading.exchanges.websockets.abstract_websocket cimport (
+    AbstractWebsocket,
+)
+from octobot_trading.exchanges.websockets.websockets_util cimport (
+    force_disable_web_socket,
+    check_web_socket_config,
+    search_websocket_class,
+)
+
+__all__ = [
+    "OctoBotWebSocketClient",
+    "AbstractWebsocket",
+    "force_disable_web_socket",
+    "check_web_socket_config",
+    "search_websocket_class",
+]

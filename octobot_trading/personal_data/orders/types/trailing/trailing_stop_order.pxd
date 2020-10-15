@@ -14,11 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.personal_data as personal_data
 
-from octobot_trading.personal_data.orders.order cimport Order
-
-
-cdef class TrailingStopOrder(Order):
+cdef class TrailingStopOrder(personal_data.Order):
     cdef object trailing_stop_price_hit_event # object is asyncio.Event
     cdef object trailing_price_hit_event # object is asyncio.Event
     cdef object wait_for_stop_price_hit_event_task # object is asyncio.Event

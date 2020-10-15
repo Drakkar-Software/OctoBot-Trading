@@ -13,3 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.exchange_data cimport exchange_symbol_data
+from octobot_trading.exchange_data cimport exchange_symbols_data
+
+from octobot_trading.exchange_data.exchange_symbol_data cimport (
+    ExchangeSymbolData,
+)
+from octobot_trading.exchange_data.exchange_symbols_data cimport (
+    ExchangeSymbolsData,
+)
+
+__all__ = [
+    "ExchangeSymbolData",
+    "ExchangeSymbolsData",
+]

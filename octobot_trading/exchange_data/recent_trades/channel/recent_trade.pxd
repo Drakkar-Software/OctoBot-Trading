@@ -14,18 +14,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.exchanges as exchanges
 
-from octobot_trading.exchanges.channel.exchange_channel cimport ExchangeChannel, ExchangeChannelProducer
 
-
-cdef class RecentTradeProducer(ExchangeChannelProducer):
+cdef class RecentTradeProducer(exchanges.ExchangeChannelProducer):
     pass
 
-cdef class RecentTradeChannel(ExchangeChannel):
+cdef class RecentTradeChannel(exchanges.ExchangeChannel):
     pass
 
-cdef class LiquidationsProducer(ExchangeChannelProducer):
+cdef class LiquidationsProducer(exchanges.ExchangeChannelProducer):
     pass
 
-cdef class LiquidationsChannel(ExchangeChannel):
+cdef class LiquidationsChannel(exchanges.ExchangeChannel):
     pass

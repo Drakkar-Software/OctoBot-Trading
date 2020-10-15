@@ -14,9 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.personal_data as personal_data
 
-
-from octobot_trading.personal_data.portfolios.portfolio cimport Portfolio
-
-cdef class FuturePortfolio(Portfolio):
+cdef class FuturePortfolio(personal_data.Portfolio):
     pass

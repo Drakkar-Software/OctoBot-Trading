@@ -19,14 +19,13 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
-from octobot_trading.portfolios.portfolio_manager cimport PortfolioManager
-from octobot_trading.portfolios.portfolio_value_holder cimport PortfolioValueHolder
+cimport octobot_trading.personal_data as personal_data
 
 cdef class PortfolioProfitability:
     cdef object logger
 
-    cdef PortfolioManager portfolio_manager
-    cdef PortfolioValueHolder value_manager
+    cdef personal_data.PortfolioManager portfolio_manager
+    cdef personal_data.PortfolioValueHolder value_manager
 
     cdef public double profitability
     cdef public double profitability_percent

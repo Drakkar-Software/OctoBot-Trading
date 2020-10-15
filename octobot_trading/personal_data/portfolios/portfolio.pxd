@@ -19,8 +19,8 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
-from octobot_trading.personal_data.orders.order cimport Order
-from octobot_trading.util.initializable cimport Initializable
+cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.util as util
 
 cdef class Portfolio(util.Initializable):
     cdef object logger # Logger
@@ -36,16 +36,16 @@ cdef class Portfolio(util.Initializable):
     cpdef double get_currency_portfolio(self, str currency, str portfolio_type=*)
     cpdef double get_currency_from_given_portfolio(self, str currency, str portfolio_type=*)
     cpdef bint update_portfolio_from_balance(self, dict balance, bint force_replace=*)
-    cpdef void update_portfolio_available(self, Order order, bint is_new_order=*)
-    cpdef void update_portfolio_from_filled_order(self, Order order)
+    cpdef void update_portfolio_available(self, personal_data.Order order, bint is_new_order=*)
+    cpdef void update_portfolio_from_filled_order(self, personal_data.Order order)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
     # cpdef dict get_portfolio_from_amount_dict(self, dict amount_dict) can't be cythonized for now
     cpdef void reset(self)
 
     # abstract methods
-    cpdef void update_portfolio_data_from_order(self, Order order, str currency, str market)
-    cpdef void update_portfolio_available_from_order(self, Order order, int factor=*)
-    cpdef void log_portfolio_update_from_order(self, Order order, str currency, str market)
+    cpdef void update_portfolio_data_from_order(self, personal_data.Order order, str currency, str market)
+    cpdef void update_portfolio_available_from_order(self, personal_data.Order order, int factor=*)
+    cpdef void log_portfolio_update_from_order(self, personal_data.Order order, str currency, str market)
 
     # private methods
     cdef void _update_portfolio_data(self, str currency, double value, bint total=*, bint available=*)
@@ -57,4 +57,4 @@ cdef class Portfolio(util.Initializable):
     cdef void _reset_all_portfolio_available(self)
     cdef void _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 
-cdef bint _check_available_should_update(Order order)
+cdef bint _check_available_should_update(personal_data.Order order)
