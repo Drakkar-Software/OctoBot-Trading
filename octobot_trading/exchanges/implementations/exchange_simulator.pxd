@@ -14,11 +14,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_backtesting.backtesting cimport Backtesting
-from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
+cimport octobot_backtesting.backtesting as backtesting
+cimport octobot_trading.exchanges as exchanges
 
-cdef class ExchangeSimulator(AbstractExchange):
-    cdef public Backtesting backtesting
+cdef class ExchangeSimulator(exchanges.AbstractExchange):
+    cdef public backtesting.Backtesting backtesting
 
     cdef public list exchange_importers
 

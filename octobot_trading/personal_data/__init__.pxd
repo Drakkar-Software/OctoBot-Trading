@@ -13,3 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.personal_data cimport exchange_personal_data
+
+from octobot_trading.personal_data.exchange_personal_data cimport (
+    ExchangePersonalData,
+)
+
+__all__ = [
+    "ExchangePersonalData",
+]

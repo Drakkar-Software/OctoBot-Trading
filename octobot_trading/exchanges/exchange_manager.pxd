@@ -14,14 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-from octobot_trading.exchanges.abstract_exchange cimport AbstractExchange
-from octobot_trading.exchanges.exchange_config_data cimport ExchangeConfig
-from octobot_trading.personal_data.exchange_personal_data cimport ExchangePersonalData
-from octobot_trading.exchange_data.exchange_symbol_data cimport ExchangeSymbolData
-from octobot_trading.exchange_data.exchange_symbols_data cimport ExchangeSymbolsData
-from octobot_trading.exchanges.websockets.abstract_websocket cimport AbstractWebsocket
-from octobot_trading.exchanges.traders.trader cimport Trader
+cimport octobot_trading.exchanges as exchanges
+cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.util as util
 
 cdef class ExchangeManager(util.Initializable):
     cdef public str id
@@ -33,7 +29,7 @@ cdef class ExchangeManager(util.Initializable):
     cdef public object tentacles_setup_config
     cdef public object logger
     cdef public object backtesting
-    cdef public Trader trader
+    cdef public exchanges.Trader trader
 
     cdef public list client_time_frames
     cdef public list client_symbols
@@ -55,11 +51,11 @@ cdef class ExchangeManager(util.Initializable):
     cdef public bint exchange_only
     cdef public bint without_auth
 
-    cdef public AbstractExchange exchange
-    cdef public AbstractWebsocket exchange_web_socket
-    cdef public ExchangeConfig exchange_config
-    cdef public ExchangePersonalData exchange_personal_data
-    cdef public ExchangeSymbolsData exchange_symbols_data
+    cdef public exchanges.AbstractExchange exchange
+    cdef public exchanges.AbstractWebsocket exchange_web_socket
+    cdef public exchanges.ExchangeConfig exchange_config
+    cdef public personal_data.ExchangePersonalData exchange_personal_data
+    cdef public exchange_data.ExchangeSymbolsData exchange_symbols_data
 
     # private
     cdef void _load_config_symbols_and_time_frames(self)
@@ -81,4 +77,4 @@ cdef class ExchangeManager(util.Initializable):
     cpdef str get_exchange_name(self)
     cpdef tuple get_exchange_credentials(self, object logger, str exchange_name)
     cpdef bint should_decrypt_token(self, object logger)
-    cpdef ExchangeSymbolData get_symbol_data(self, str symbol)
+    cpdef exchange_data.ExchangeSymbolData get_symbol_data(self, str symbol)

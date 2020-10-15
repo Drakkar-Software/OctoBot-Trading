@@ -14,8 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-from octobot_trading.exchange_data.kline.channel.kline cimport KlineProducer
+cimport octobot_trading.exchange_data as exchange_data
 
 
 cdef class KlineUpdater(KlineProducer):

@@ -13,3 +13,24 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.personal_data.orders.types.market cimport market_order
+from octobot_trading.personal_data.orders.types.market cimport sell_market_order
+from octobot_trading.personal_data.orders.types.market cimport buy_market_order
+
+from octobot_trading.personal_data.orders.types.market.market_order cimport (
+    MarketOrder,
+)
+from octobot_trading.personal_data.orders.types.market.sell_market_order cimport (
+    SellMarketOrder,
+)
+from octobot_trading.personal_data.orders.types.market.buy_market_order cimport (
+    BuyMarketOrder,
+)
+
+__all__ = [
+    "MarketOrder",
+    "SellMarketOrder",
+    "BuyMarketOrder",
+]
+

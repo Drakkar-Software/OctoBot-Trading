@@ -13,3 +13,25 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.exchange_data.kline.channel cimport kline_updater_simulator
+from octobot_trading.exchange_data.kline.channel cimport kline
+from octobot_trading.exchange_data.kline.channel cimport kline_updater
+
+from octobot_trading.exchange_data.kline.channel.kline_updater_simulator cimport (
+    KlineUpdaterSimulator,
+)
+from octobot_trading.exchange_data.kline.channel.kline cimport (
+    KlineProducer,
+    KlineChannel,
+)
+from octobot_trading.exchange_data.kline.channel.kline_updater cimport (
+    KlineUpdater,
+)
+
+__all__ = [
+    "KlineUpdaterSimulator",
+    "KlineProducer",
+    "KlineChannel",
+    "KlineUpdater",
+]

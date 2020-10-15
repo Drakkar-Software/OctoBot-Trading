@@ -14,18 +14,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
-from octobot_trading.orders.order cimport Order
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
-from octobot_trading.exchanges.traders.trader cimport Trader
+cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.exchanges as exchanges
 
 cdef class Trade:
-    cdef public Trader trader
-    cdef public ExchangeManager exchange_manager
+    cdef public exchanges.Trader trader
+    cdef public exchanges.ExchangeManager exchange_manager
 
     cdef public object side # TradeOrderSide
     cdef public object status # OrderStatus
@@ -56,7 +50,7 @@ cdef class Trade:
     cdef public object exchange_trade_type # raw exchange trade type, used to create trade dict
 
     cpdef void update_from_order(self,
-                                 Order order,
+                                 personal_data.Order order,
                                  double canceled_time=*,
                                  double creation_time=*,
                                  double executed_time=*)

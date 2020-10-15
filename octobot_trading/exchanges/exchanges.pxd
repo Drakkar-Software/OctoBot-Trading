@@ -14,12 +14,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.singleton.singleton_class cimport Singleton
-
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+cimport octobot_commons.singleton as singleton
+cimport octobot_trading.exchanges as exchanges
 
 cdef class ExchangeConfiguration(object):
-    cdef public ExchangeManager exchange_manager
+    cdef public exchanges.ExchangeManager exchange_manager
 
     cdef public str exchange_name
     cdef public str id
@@ -31,10 +30,10 @@ cdef class ExchangeConfiguration(object):
     cdef public list real_time_time_frames
 
 
-cdef class Exchanges(Singleton):
+cdef class Exchanges(singleton.Singleton):
     cdef public dict exchanges
 
-    cpdef void add_exchange(self, ExchangeManager exchange_manager, str matrix_id)
+    cpdef void add_exchange(self, exchanges.ExchangeManager exchange_manager, str matrix_id)
     cpdef ExchangeConfiguration get_exchange(self, str exchange_name, str exchange_manager_id)
     cpdef dict get_exchanges(self, str exchange_name)
     cpdef list get_all_exchanges(self)

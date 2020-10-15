@@ -14,8 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.personal_data.trades.trade cimport Trade
-from octobot_trading.util.initializable cimport Initializable
+cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.util as util
 
 
 cdef class TradesManager(util.Initializable):
@@ -33,8 +33,8 @@ cdef class TradesManager(util.Initializable):
     cdef void _reset_trades(self)
     cdef void _remove_oldest_trades(self, int nb_to_remove)
 
-    cpdef Trade get_trade(self, str trade_id)
+    cpdef personal_data.Trade get_trade(self, str trade_id)
     cpdef bint upsert_trade(self, str trade_id, dict raw_trade)
-    cpdef void upsert_trade_instance(self, Trade trade)
+    cpdef void upsert_trade_instance(self, personal_data.Trade trade)
     cpdef dict get_total_paid_fees(self)
     cpdef void clear(self)

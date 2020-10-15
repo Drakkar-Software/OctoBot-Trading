@@ -13,3 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.personal_data.orders.types cimport unknown_order
+
+from octobot_trading.personal_data.orders.types.unknown_order cimport (
+    UnknownOrder,
+)
+
+__all__ = [
+    "UnknownOrder",
+]
+

@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.util.initializable cimport Initializable
+cimport octobot_trading.util as util
 
 
 cdef class TickerManager(util.Initializable):

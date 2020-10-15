@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.orders.order_state cimport OrderState
+cimport octobot_trading.personal_data as personal_data
 
-cdef class OpenOrderState(OrderState):
+cdef class OpenOrderState(personal_data.OrderState):
     cdef bint has_terminated

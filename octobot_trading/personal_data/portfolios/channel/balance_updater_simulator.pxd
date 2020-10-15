@@ -14,10 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.personal_data.portfolios cimport BalanceUpdater, BalanceProfitabilityUpdater
+cimport octobot_trading.personal_data as personal_data
 
-cdef class BalanceUpdaterSimulator(BalanceUpdater):
+cdef class BalanceUpdaterSimulator(personal_data.BalanceUpdater):
     pass
 
-cdef class BalanceProfitabilityUpdaterSimulator(BalanceProfitabilityUpdater):
+cdef class BalanceProfitabilityUpdaterSimulator(personal_data.BalanceProfitabilityUpdater):
     pass

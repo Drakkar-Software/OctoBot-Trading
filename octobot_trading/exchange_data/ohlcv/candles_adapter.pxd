@@ -16,22 +16,21 @@
 #  License along with this library.
 cimport numpy as np
 np.import_array()
+cimport octobot_trading.exchange_data as exchange_symbol_data
 
-from octobot_trading.exchange_data.exchange_symbol_data cimport ExchangeSymbolData
 
-
-cpdef np.ndarray get_symbol_close_candles(ExchangeSymbolData symbol_data, str time_frame,
+cpdef np.ndarray get_symbol_close_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame,
                                           int limit, bint include_in_construction)
-cpdef np.ndarray get_symbol_open_candles(ExchangeSymbolData symbol_data, str time_frame,
+cpdef np.ndarray get_symbol_open_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame,
                                          int limit, bint include_in_construction)
-cpdef np.ndarray get_symbol_high_candles(ExchangeSymbolData symbol_data, str time_frame,
+cpdef np.ndarray get_symbol_high_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame,
                                          int limit, bint include_in_construction)
-cpdef np.ndarray get_symbol_low_candles(ExchangeSymbolData symbol_data, str time_frame,
+cpdef np.ndarray get_symbol_low_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame,
                                         int limit, bint include_in_construction)
-cpdef np.ndarray get_symbol_volume_candles(ExchangeSymbolData symbol_data, str time_frame,
+cpdef np.ndarray get_symbol_volume_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame,
                                            int limit, bint include_in_construction)
-cpdef np.ndarray get_symbol_time_candles(ExchangeSymbolData symbol_data, str time_frame,
+cpdef np.ndarray get_symbol_time_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame,
                                          int limit, bint include_in_construction)
 
-cdef np.ndarray _add_in_construction_data(np.ndarray candles, ExchangeSymbolData symbol_data,
+cdef np.ndarray _add_in_construction_data(np.ndarray candles, exchange_symbol_data.ExchangeSymbolData symbol_data,
                                           object time_frame, int data_type)

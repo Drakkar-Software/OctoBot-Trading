@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.personal_data.portfolios.portfolio cimport Portfolio
-from octobot_trading.exchanges.exchange_manager cimport ExchangeManager
+cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.exchanges as exchanges
 
-cpdef Portfolio create_portfolio_from_exchange_manager(ExchangeManager exchange_manager)
+cpdef personal_data.Portfolio create_portfolio_from_exchange_manager(exchanges.ExchangeManager exchange_manager)
