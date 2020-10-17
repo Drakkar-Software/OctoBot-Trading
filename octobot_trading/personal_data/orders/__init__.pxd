@@ -14,16 +14,57 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.orders cimport order
-from octobot_trading.personal_data.orders cimport order_util
 from octobot_trading.personal_data.orders cimport order_state
-from octobot_trading.personal_data.orders cimport order_adapter
-from octobot_trading.personal_data.orders cimport order_factory
-
+from octobot_trading.personal_data.orders.order_state cimport (
+    OrderState,
+)
+from octobot_trading.personal_data.orders cimport order
 from octobot_trading.personal_data.orders.order cimport (
     Order,
     parse_order_type,
 )
+
+from octobot_trading.personal_data.orders cimport orders_manager
+from octobot_trading.personal_data.orders.orders_manager cimport (
+    OrdersManager,
+)
+
+from octobot_trading.personal_data.orders cimport order_util
+from octobot_trading.personal_data.orders cimport order_adapter
+from octobot_trading.personal_data.orders cimport order_factory
+from octobot_trading.personal_data.orders cimport types
+from octobot_trading.personal_data.orders.types cimport (
+    UnknownOrder,
+    MarketOrder,
+    SellMarketOrder,
+    BuyMarketOrder,
+    BuyLimitOrder,
+    SellLimitOrder,
+    LimitOrder,
+    TakeProfitOrder,
+    StopLossOrder,
+    StopLossLimitOrder,
+    TakeProfitLimitOrder,
+    TrailingStopOrder,
+    TrailingStopLimitOrder,
+)
+
+from octobot_trading.personal_data.orders cimport states
+from octobot_trading.personal_data.orders.states cimport (
+    CloseOrderState,
+    CancelOrderState,
+    OpenOrderState,
+    FillOrderState,
+)
+
+from octobot_trading.personal_data.orders cimport channel
+from octobot_trading.personal_data.orders.channel cimport (
+    OrdersProducer,
+    OrdersChannel,
+    OrdersUpdater,
+    OrdersUpdaterSimulator,
+)
+
 from octobot_trading.personal_data.orders.order_util cimport (
     is_valid,
     get_min_max_amounts,
@@ -32,9 +73,6 @@ from octobot_trading.personal_data.orders.order_util cimport (
     get_fees_for_currency,
     parse_order_status,
     parse_is_cancelled,
-)
-from octobot_trading.personal_data.orders.order_state cimport (
-    OrderState,
 )
 from octobot_trading.personal_data.orders.order_adapter cimport (
     adapt_price,
@@ -63,6 +101,7 @@ __all__ = [
     "parse_order_status",
     "parse_is_cancelled",
     "OrderState",
+    "OrdersUpdater",
     "adapt_price",
     "adapt_quantity",
     "adapt_order_quantity_because_quantity",
@@ -74,4 +113,25 @@ __all__ = [
     "create_order_instance_from_raw",
     "create_order_from_type",
     "create_order_instance",
+    "OrdersProducer",
+    "OrdersChannel",
+    "OrdersManager",
+    "OrdersUpdaterSimulator",
+    "CloseOrderState",
+    "CancelOrderState",
+    "OpenOrderState",
+    "FillOrderState",
+    "UnknownOrder",
+    "MarketOrder",
+    "SellMarketOrder",
+    "BuyMarketOrder",
+    "BuyLimitOrder",
+    "SellLimitOrder",
+    "LimitOrder",
+    "TakeProfitOrder",
+    "StopLossOrder",
+    "StopLossLimitOrder",
+    "TakeProfitLimitOrder",
+    "TrailingStopOrder",
+    "TrailingStopLimitOrder",
 ]

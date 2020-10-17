@@ -16,10 +16,10 @@
 #  License along with this library.
 cimport async_channel.consumer as consumer
 cimport octobot_backtesting.importers as importers
-cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater as ohlcv_updater
 
 
-cdef class OHLCVUpdaterSimulator(exchange_data.OHLCVUpdater):
+cdef class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
     cdef importers.ExchangeDataImporter exchange_data_importer
 
     cdef str exchange_name

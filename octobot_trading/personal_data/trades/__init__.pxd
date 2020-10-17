@@ -14,26 +14,34 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.trades cimport trades_manager
-from octobot_trading.personal_data.trades cimport trade_factory
+from octobot_trading.personal_data.trades cimport channel
+from octobot_trading.personal_data.trades.channel cimport (
+    TradesProducer,
+    TradesChannel,
+    TradesUpdater,
+)
 from octobot_trading.personal_data.trades cimport trade
-
+from octobot_trading.personal_data.trades.trade cimport (
+    Trade,
+)
+from octobot_trading.personal_data.trades cimport trades_manager
 from octobot_trading.personal_data.trades.trades_manager cimport (
     TradesManager,
 )
+from octobot_trading.personal_data.trades cimport trade_factory
 from octobot_trading.personal_data.trades.trade_factory cimport (
     create_trade_instance_from_raw,
     create_trade_from_order,
     create_trade_instance,
 )
-from octobot_trading.personal_data.trades.trade cimport (
-    Trade,
-)
 
 __all__ = [
     "TradesManager",
+    "TradesProducer",
+    "TradesChannel",
     "create_trade_instance_from_raw",
     "create_trade_from_order",
     "create_trade_instance",
+    "TradesUpdater",
     "Trade",
 ]

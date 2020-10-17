@@ -15,11 +15,28 @@
 #  License along with this library.
 
 from octobot_trading.exchange_data.order_book cimport order_book_manager
+from octobot_trading.exchange_data.order_book cimport channel
 
+from octobot_trading.exchange_data.order_book.channel cimport (
+    OrderBookUpdater,
+    OrderBookProducer,
+    OrderBookChannel,
+    OrderBookTickerProducer,
+    OrderBookTickerChannel,
+)
 from octobot_trading.exchange_data.order_book.order_book_manager cimport (
     OrderBookManager,
 )
+from octobot_trading.exchange_data.order_book.channel.order_book_updater_simulator cimport (
+    OrderBookUpdaterSimulator,
+)
 
 __all__ = [
+    "OrderBookUpdater",
+    "OrderBookProducer",
+    "OrderBookChannel",
+    "OrderBookTickerProducer",
+    "OrderBookTickerChannel",
     "OrderBookManager",
+    "OrderBookUpdaterSimulator",
 ]

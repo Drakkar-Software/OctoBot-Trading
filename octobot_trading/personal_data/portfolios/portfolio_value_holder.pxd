@@ -19,7 +19,8 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
-cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.personal_data.portfolios.portfolio as portfolio
+cimport octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 
 cdef class PortfolioValueHolder:
     cdef object logger
@@ -32,12 +33,12 @@ cdef class PortfolioValueHolder:
     cdef public dict origin_crypto_currencies_values
     cdef public dict current_crypto_currencies_values
 
-    cdef public personal_data.Portfolio origin_portfolio
+    cdef public portfolio.Portfolio origin_portfolio
 
     cdef set initializing_symbol_prices
     cdef set missing_currency_data_in_exchange
 
-    cdef personal_data.PortfolioManager portfolio_manager
+    cdef portfolio_manager.PortfolioManager portfolio_manager
 
     cpdef bint update_origin_crypto_currencies_values(self, str symbol, double mark_price)
     cpdef dict get_current_crypto_currencies_values(self)

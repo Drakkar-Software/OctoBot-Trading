@@ -20,7 +20,7 @@ import async_channel.enums as channel_enums
 import async_channel.constants as channel_constants
 import async_channel.channels as channels
 import async_channel.consumer as consumers
-import async_channel.producer as producer
+import async_channel.producer as producers
 
 import octobot_commons.logging as logging
 
@@ -43,7 +43,7 @@ class ExchangeChannelSupervisedConsumer(consumers.SupervisedConsumer):
     """
 
 
-class ExchangeChannelProducer(producer.Producer):
+class ExchangeChannelProducer(producers.Producer):
     """
     Producer adapted for ExchangeChannel
     """

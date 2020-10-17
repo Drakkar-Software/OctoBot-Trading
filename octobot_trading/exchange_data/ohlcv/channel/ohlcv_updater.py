@@ -22,7 +22,7 @@ import octobot_commons.enums as common_enums
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
-import octobot_trading.exchange_data.ohlcv.channel as ohlcv_channel
+import octobot_trading.exchange_data.ohlcv.channel.ohlcv as ohlcv_channel
 
 
 class OHLCVUpdater(ohlcv_channel.OHLCVProducer):

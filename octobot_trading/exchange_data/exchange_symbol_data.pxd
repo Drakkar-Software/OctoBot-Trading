@@ -14,7 +14,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.exchange_data.prices.price_events_manager as price_events_manager
+cimport octobot_trading.exchange_data.order_book.order_book_manager as order_book_manager
+cimport octobot_trading.exchange_data.prices.prices_manager as prices_manager
+cimport octobot_trading.exchange_data.recent_trades.recent_trades_manager as recent_trades_manager
+cimport octobot_trading.exchange_data.ticker.ticker_manager as ticker_manager
+cimport octobot_trading.exchange_data.funding.funding_manager as funding_manager
 
 cdef class ExchangeSymbolData:
     cdef public str symbol
@@ -25,12 +30,12 @@ cdef class ExchangeSymbolData:
     cdef public dict symbol_candles
     cdef public dict symbol_klines
 
-    cdef public exchange_data.PriceEventsManager price_events_manager
-    cdef public exchange_data.OrderBookManager order_book_manager
-    cdef public exchange_data.PricesManager prices_manager
-    cdef public exchange_data.RecentTradesManager recent_trades_manager
-    cdef public exchange_data.TickerManager ticker_manager
-    cdef public exchange_data.FundingManager funding_manager
+    cdef public price_events_manager.PriceEventsManager price_events_manager
+    cdef public order_book_manager.OrderBookManager order_book_manager
+    cdef public prices_manager.PricesManager prices_manager
+    cdef public recent_trades_manager.RecentTradesManager recent_trades_manager
+    cdef public ticker_manager.TickerManager ticker_manager
+    cdef public funding_manager.FundingManager funding_manager
 
     cpdef list handle_recent_trade_update(self, list recent_trades, bint replace_all=*)
     cpdef void handle_order_book_update(self, list asks, list bids)

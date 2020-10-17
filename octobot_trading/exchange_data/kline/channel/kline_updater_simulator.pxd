@@ -17,9 +17,9 @@
 cimport octobot_backtesting.importers as importers
 cimport async_channel.consumer as consumer
 
-cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.exchange_data.kline.channel.kline_updater as kline_updater
 
-cdef class KlineUpdaterSimulator(exchange_data.KlineUpdater):
+cdef class KlineUpdaterSimulator(kline_updater.KlineUpdater):
     cdef importers.ExchangeDataImporter exchange_data_importer
 
     cdef str exchange_name

@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.exchange_data.ticker.channel.ticker as ticker_channel
 
-cdef class TickerUpdater(exchange_data.TickerProducer):
+cdef class TickerUpdater(ticker_channel.TickerProducer):
     cdef list _added_pairs
     cdef bint is_fetching_future_data
 

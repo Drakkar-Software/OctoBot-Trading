@@ -30,9 +30,6 @@ from octobot_trading.exchanges.channel.exchange_channel cimport (
     get_chan,
     del_chan,
 )
-from octobot_trading.exchanges.channel.exchange_channels cimport (
-    requires_refresh_trigger,
-)
 
 __all__ = [
     "ExchangeChannelConsumer",
@@ -46,5 +43,4 @@ __all__ = [
     "del_exchange_channel_container",
     "get_chan",
     "del_chan",
-    "requires_refresh_trigger",
 ]

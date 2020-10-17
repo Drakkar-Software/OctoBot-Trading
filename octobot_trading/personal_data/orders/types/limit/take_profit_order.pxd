@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.personal_data.orders.types as orders_types_personal_data
 
-cdef class TakeProfitOrder(personal_data.LimitOrder):
+cdef class TakeProfitOrder(orders_types_personal_data.LimitOrder):
     pass

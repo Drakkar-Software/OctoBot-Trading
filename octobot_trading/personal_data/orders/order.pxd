@@ -20,7 +20,7 @@
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 cimport octobot_trading.util as util
-cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.personal_data.orders as orders_personal_data
 
 cdef class Order(util.Initializable):
     cdef public object trader
@@ -32,8 +32,8 @@ cdef class Order(util.Initializable):
     cdef public object lock # Lock
 
     cdef public Order linked_to
-    cdef public personal_data.Portfolio linked_portfolio
-    cdef public personal_data.OrderState state
+    cdef public object linked_portfolio # TODO : fix cimport personal_data.Portfolio
+    cdef public orders_personal_data.OrderState state
 
     cdef public bint is_simulated
     cdef public bint is_synchronized_with_exchange

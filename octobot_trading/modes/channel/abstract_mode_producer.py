@@ -60,11 +60,11 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         Start trading mode channels subscriptions
         """
         try:
-            from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
-            from octobot_evaluators.enums import EvaluatorMatrixTypes
+            import octobot_evaluators.evaluators.channel as evaluators_channel
+            import octobot_evaluators.enums as evaluators_enums
             matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                                     self.exchange_manager.id).matrix_id
-            self.matrix_consumer = await get_evaluator_chan(
+            self.matrix_consumer = await evaluators_channel.get_chan(
                 channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value, matrix_id).new_consumer(
                 callback=self.matrix_callback,
                 priority_level=self.priority_level,
@@ -73,7 +73,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 cryptocurrency=self.trading_mode.cryptocurrency if self.trading_mode.cryptocurrency \
                     else common_constants.CONFIG_WILDCARD,
                 symbol=self.trading_mode.symbol if self.trading_mode.symbol else common_constants.CONFIG_WILDCARD,
-                evaluator_type=EvaluatorMatrixTypes.STRATEGIES.value,
+                evaluator_type=evaluators_enums.EvaluatorMatrixTypes.STRATEGIES.value,
                 exchange_name=self.exchange_name,
                 time_frame=self.trading_mode.time_frame if self.trading_mode.time_frame
                 else common_constants.CONFIG_WILDCARD)
@@ -87,12 +87,12 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         await super().stop()
         if self.exchange_manager is not None:
             try:
-                from octobot_evaluators.channels.evaluator_channel import get_chan as get_evaluator_chan
-                await get_evaluator_chan(channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
-                                         exchanges.Exchanges.instance().get_exchange(
-                                             self.exchange_manager.exchange_name,
-                                             self.exchange_manager.id).matrix_id
-                                         ).remove_consumer(self.matrix_consumer)
+                import octobot_evaluators.evaluators.channel as evaluators_channel
+                await evaluators_channel.get_chan(channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
+                                                  exchanges.Exchanges.instance().get_exchange(
+                                                      self.exchange_manager.exchange_name,
+                                                      self.exchange_manager.id).matrix_id
+                                                  ).remove_consumer(self.matrix_consumer)
             except (KeyError, ImportError):
                 self.logger.error(f"Can't unregister matrix channel on {self.exchange_name}")
         self.flush()

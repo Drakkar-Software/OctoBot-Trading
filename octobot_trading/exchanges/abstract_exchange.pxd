@@ -14,7 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges as exchanges
+cimport octobot_trading.exchanges.exchange_manager as exchange_manager
+cimport octobot_trading.exchanges.traders as traders
 cimport octobot_trading.util as util
 
 
@@ -28,8 +29,8 @@ cdef class AbstractExchange(util.Initializable):
 
     cdef public bint is_authenticated
 
-    cdef public exchanges.Trader trader
-    cdef public exchanges.ExchangeManager exchange_manager
+    cdef public traders.Trader trader
+    cdef public exchange_manager.ExchangeManager exchange_manager
 
     cdef public str name
 

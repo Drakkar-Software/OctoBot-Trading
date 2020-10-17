@@ -14,10 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges as websockets
+cimport octobot_trading.exchanges.websockets.abstract_websocket as abstract_websocket
 
 
-cdef class OctoBotWebSocketClient(websockets.AbstractWebsocket):
+cdef class OctoBotWebSocketClient(abstract_websocket.AbstractWebsocket):
     cdef public str exchange_name
 
     cdef public list octobot_websockets

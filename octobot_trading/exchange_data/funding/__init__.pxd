@@ -14,12 +14,22 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.exchange_data.funding cimport channel
+from octobot_trading.exchange_data.funding.channel cimport (
+    FundingProducer,
+    FundingChannel,
+    FundingUpdaterSimulator,
+    FundingUpdater,
+)
 from octobot_trading.exchange_data.funding cimport funding_manager
-
 from octobot_trading.exchange_data.funding.funding_manager cimport (
     FundingManager,
 )
 
 __all__ = [
+    "FundingUpdaterSimulator",
+    "FundingUpdater",
     "FundingManager",
+    "FundingProducer",
+    "FundingChannel",
 ]

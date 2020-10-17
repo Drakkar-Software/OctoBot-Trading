@@ -15,20 +15,32 @@
 #  License along with this library.
 
 from octobot_trading.personal_data.positions cimport position
-from octobot_trading.personal_data.positions cimport positions_manager
-
 from octobot_trading.personal_data.positions.position cimport (
     Position,
     ShortPosition,
     LongPosition,
 )
+
+from octobot_trading.personal_data.positions cimport channel
+from octobot_trading.personal_data.positions.channel cimport (
+    PositionsProducer,
+    PositionsChannel,
+    PositionsUpdater,
+    PositionsUpdaterSimulator,
+)
+
+from octobot_trading.personal_data.positions cimport positions_manager
 from octobot_trading.personal_data.positions.positions_manager cimport (
     PositionsManager,
 )
 
 __all__ = [
+    "PositionsProducer",
+    "PositionsChannel",
+    "PositionsUpdaterSimulator",
     "Position",
     "ShortPosition",
     "LongPosition",
+    "PositionsUpdater",
     "PositionsManager",
 ]

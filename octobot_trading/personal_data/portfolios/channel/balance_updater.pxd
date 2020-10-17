@@ -14,12 +14,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.personal_data.portfolios as portfolios_personal_data
 
-cdef class BalanceUpdater(personal_data.BalanceProducer):
+cdef class BalanceUpdater(portfolios_personal_data.BalanceProducer):
     pass
 
-cdef class BalanceProfitabilityUpdater(personal_data.BalanceProfitabilityProducer):
-    cdef personal_data.ExchangePersonalData exchange_personal_data
+cdef class BalanceProfitabilityUpdater(portfolios_personal_data.BalanceProfitabilityProducer):
+    cdef object exchange_personal_data  # TODO : fix cimport personal_data.ExchangePersonalData
     cdef object balance_consumer
     cdef object mark_price_consumer

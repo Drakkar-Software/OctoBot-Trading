@@ -14,19 +14,20 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchange_data.ohlcv.channel cimport ohlcv_updater_simulator
-from octobot_trading.exchange_data.ohlcv.channel cimport ohlcv
-from octobot_trading.exchange_data.ohlcv.channel cimport ohlcv_updater
 
-from octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater_simulator cimport (
-    OHLCVUpdaterSimulator,
-)
+from octobot_trading.exchange_data.ohlcv.channel cimport ohlcv
 from octobot_trading.exchange_data.ohlcv.channel.ohlcv cimport (
     OHLCVProducer,
     OHLCVChannel,
 )
+from octobot_trading.exchange_data.ohlcv.channel cimport ohlcv_updater
 from octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater cimport (
     OHLCVUpdater,
+)
+
+from octobot_trading.exchange_data.ohlcv.channel cimport ohlcv_updater_simulator
+from octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater_simulator cimport (
+    OHLCVUpdaterSimulator,
 )
 
 __all__ = [

@@ -16,10 +16,10 @@
 #  License along with this library.
 cimport async_channel.consumer as consumer
 cimport octobot_backtesting.importers as importers
-cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.exchange_data.recent_trades.channel.recent_trade_updater as recent_trade_updater
 
 
-cdef class RecentTradeUpdaterSimulator(exchange_data.RecentTradeUpdater):
+cdef class RecentTradeUpdaterSimulator(recent_trade_updater.RecentTradeUpdater):
     cdef importers.ExchangeDataImporter exchange_data_importer
 
     cdef str exchange_name

@@ -14,8 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.exchange_data.order_book.channel.order_book as order_book_channel
 
 
-cdef class OrderBookUpdater(exchange_data.OrderBookProducer):
+cdef class OrderBookUpdater(order_book_channel.OrderBookProducer):
     cdef int refresh_time

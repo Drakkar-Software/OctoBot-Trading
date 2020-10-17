@@ -14,10 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.exchange_data.kline.channel.kline as kline_channel
 
 
-cdef class KlineUpdater(KlineProducer):
+cdef class KlineUpdater(kline_channel.KlineProducer):
     cdef list tasks
     cdef int refresh_time
 

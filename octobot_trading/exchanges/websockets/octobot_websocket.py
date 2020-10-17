@@ -17,11 +17,12 @@ import asyncio
 import concurrent.futures as futures
 
 import octobot_trading.enums
+import octobot_trading.exchanges.websockets.abstract_websocket as abstract_websocket
 import octobot_trading.exchanges.websockets as websockets
 import octobot_trading.exchanges.types as exchange_types
 
 
-class OctoBotWebSocketClient(websockets.AbstractWebsocket):
+class OctoBotWebSocketClient(abstract_websocket.AbstractWebsocket):
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.exchange_manager = exchange_manager

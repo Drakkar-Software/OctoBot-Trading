@@ -14,19 +14,18 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchange_data.ticker.channel cimport ticker_updater
 from octobot_trading.exchange_data.ticker.channel cimport ticker
-from octobot_trading.exchange_data.ticker.channel cimport ticker_updater_simulator
-
-from octobot_trading.exchange_data.ticker.channel.ticker_updater cimport (
-    TickerUpdater,
-)
 from octobot_trading.exchange_data.ticker.channel.ticker cimport (
     TickerProducer,
     TickerChannel,
     MiniTickerProducer,
     MiniTickerChannel,
 )
+from octobot_trading.exchange_data.ticker.channel cimport ticker_updater
+from octobot_trading.exchange_data.ticker.channel.ticker_updater cimport (
+    TickerUpdater,
+)
+from octobot_trading.exchange_data.ticker.channel cimport ticker_updater_simulator
 from octobot_trading.exchange_data.ticker.channel.ticker_updater_simulator cimport (
     TickerUpdaterSimulator,
 )

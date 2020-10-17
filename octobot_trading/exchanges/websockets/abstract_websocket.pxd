@@ -14,12 +14,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges as exchanges
+cimport octobot_trading.exchanges.exchange_manager as exchange_manager
 
 cdef class AbstractWebsocket:
     cdef public dict config
 
-    cdef public exchanges.ExchangeManager exchange_manager
+    cdef public exchange_manager.ExchangeManager exchange_manager
 
     cdef public str name
 
