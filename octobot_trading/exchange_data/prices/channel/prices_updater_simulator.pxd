@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 cimport octobot_backtesting.importers as importers
-cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.exchange_data.prices.channel.prices_updater as prices_updater
 
-cdef class MarkPriceUpdaterSimulator(MarkPriceUpdater):
-    cdef ExchangeDataImporter exchange_data_importer
+cdef class MarkPriceUpdaterSimulator(prices_updater.MarkPriceUpdater):
+    cdef importers.ExchangeDataImporter exchange_data_importer

@@ -16,10 +16,10 @@
 import asyncio
 
 import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders as orders
+import octobot_trading.personal_data.orders as orders_personal_data
 
 
-class LimitOrder(orders.Order):
+class LimitOrder(orders_personal_data.Order):
     def __init__(self, trader, side=enums.TradeOrderSide.BUY):
         super().__init__(trader, side)
         self.limit_price_hit_event = None

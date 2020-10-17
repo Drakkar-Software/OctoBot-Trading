@@ -14,25 +14,26 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.personal_data.trades as trades_personal_data
+cimport octobot_trading.personal_data.orders as orders_personal_data
 cimport octobot_trading.exchanges as exchanges
 
-cpdef personal_data.Trade create_trade_instance_from_raw(exchanges.Trader trader, dict raw_order)
+cpdef trades_personal_data.Trade create_trade_instance_from_raw(exchanges.Trader trader, dict raw_order)
 
-cpdef personal_data.Trade create_trade_from_order(personal_data.Order order,
-                                    object close_status=*,
-                                    double canceled_time=*,
-                                    double creation_time=*,
-                                    double executed_time=*)
+cpdef trades_personal_data.Trade create_trade_from_order(orders_personal_data.Order order,
+                                                         object close_status= *,
+                                                         double canceled_time= *,
+                                                         double creation_time= *,
+                                                         double executed_time= *)
 
-cpdef personal_data.Trade create_trade_instance(exchanges.Trader trader,
-                                  object order_type,
-                                  str symbol,
-                                  object status=*,
-                                  str order_id=*,
-                                  double filled_price=*,
-                                  double quantity_filled=*,
-                                  double total_cost=*,
-                                  double canceled_time=*,
-                                  double creation_time=*,
-                                  double executed_time=*)
+cpdef trades_personal_data.Trade create_trade_instance(exchanges.Trader trader,
+                                                       object order_type,
+                                                       str symbol,
+                                                       object status= *,
+                                                       str order_id= *,
+                                                       double filled_price= *,
+                                                       double quantity_filled= *,
+                                                       double total_cost= *,
+                                                       double canceled_time= *,
+                                                       double creation_time= *,
+                                                       double executed_time= *)

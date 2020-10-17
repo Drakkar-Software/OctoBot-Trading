@@ -13,38 +13,54 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-from octobot_trading.personal_data.portfolios cimport portfolio_factory
-from octobot_trading.personal_data.portfolios cimport portfolio_profitability
 from octobot_trading.personal_data.portfolios cimport portfolio
-from octobot_trading.personal_data.portfolios cimport sub_portfolio
-from octobot_trading.personal_data.portfolios cimport portfolio_manager
-from octobot_trading.personal_data.portfolios cimport portfolio_value_holder
-
-from octobot_trading.personal_data.portfolios.portfolio_factory cimport (
-    create_portfolio_from_exchange_manager,
-)
-from octobot_trading.personal_data.portfolios.portfolio_profitability cimport (
-    PortfolioProfitability,
-)
 from octobot_trading.personal_data.portfolios.portfolio cimport (
     Portfolio,
 )
+from octobot_trading.personal_data.portfolios cimport channel
+from octobot_trading.personal_data.portfolios.channel cimport (
+    BalanceUpdater,
+    BalanceProfitabilityUpdater,
+    BalanceUpdaterSimulator,
+    BalanceProfitabilityUpdaterSimulator,
+    BalanceProducer,
+    BalanceChannel,
+    BalanceProfitabilityProducer,
+    BalanceProfitabilityChannel,
+)
+from octobot_trading.personal_data.portfolios cimport portfolio_factory
+from octobot_trading.personal_data.portfolios.portfolio_factory cimport (
+    create_portfolio_from_exchange_manager,
+)
+from octobot_trading.personal_data.portfolios cimport sub_portfolio
 from octobot_trading.personal_data.portfolios.sub_portfolio cimport (
     SubPortfolio,
 )
+from octobot_trading.personal_data.portfolios cimport portfolio_manager
 from octobot_trading.personal_data.portfolios.portfolio_manager cimport (
     PortfolioManager,
 )
-from octobot_trading.personal_data.portfolios.portfolio_value_holder cimport (
-    PortfolioValueHolder,
+from octobot_trading.personal_data.portfolios cimport types
+from octobot_trading.personal_data.portfolios.types cimport (
+    FuturePortfolio,
+    MarginPortfolio,
+    SpotPortfolio,
 )
 
 __all__ = [
+    "BalanceUpdaterSimulator",
+    "BalanceProfitabilityUpdaterSimulator",
     "create_portfolio_from_exchange_manager",
-    "PortfolioProfitability",
+    "BalanceUpdater",
+    "BalanceProfitabilityUpdater",
     "Portfolio",
+    "BalanceProducer",
+    "BalanceChannel",
+    "BalanceProfitabilityProducer",
+    "BalanceProfitabilityChannel",
     "SubPortfolio",
     "PortfolioManager",
-    "PortfolioValueHolder",
+    "FuturePortfolio",
+    "MarginPortfolio",
+    "SpotPortfolio",
 ]

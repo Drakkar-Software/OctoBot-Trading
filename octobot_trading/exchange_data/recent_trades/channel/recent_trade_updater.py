@@ -17,7 +17,7 @@
 import asyncio
 
 import octobot_trading.errors as errors
-import octobot_trading.exchange_data.recent_trades.channel as recent_trade_channel
+import octobot_trading.exchange_data.recent_trades.channel.recent_trade as recent_trade_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 

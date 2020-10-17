@@ -14,9 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges as exchanges
-cimport octobot_trading.exchange_data as exchange_data
-cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.exchanges.traders as traders
+cimport octobot_trading.exchanges.exchange_config_data as exchange_config_data
+# cimport octobot_trading.exchange_data as exchange_data
+# cimport octobot_trading.personal_data as personal_data
 cimport octobot_trading.util as util
 
 cdef class ExchangeManager(util.Initializable):
@@ -29,7 +30,7 @@ cdef class ExchangeManager(util.Initializable):
     cdef public object tentacles_setup_config
     cdef public object logger
     cdef public object backtesting
-    cdef public exchanges.Trader trader
+    cdef public traders.Trader trader
 
     cdef public list client_time_frames
     cdef public list client_symbols
@@ -51,11 +52,11 @@ cdef class ExchangeManager(util.Initializable):
     cdef public bint exchange_only
     cdef public bint without_auth
 
-    cdef public exchanges.AbstractExchange exchange
-    cdef public exchanges.AbstractWebsocket exchange_web_socket
-    cdef public exchanges.ExchangeConfig exchange_config
-    cdef public personal_data.ExchangePersonalData exchange_personal_data
-    cdef public exchange_data.ExchangeSymbolsData exchange_symbols_data
+    cdef public object exchange  # TODO : fix cimport exchanges.AbstractExchange
+    cdef public object exchange_web_socket  # TODO : fix cimport exchanges.AbstractWebsocket
+    cdef public exchange_config_data.ExchangeConfig exchange_config
+    cdef public object exchange_personal_data # TODO : fix cimport personal_data.ExchangePersonalData
+    cdef public object exchange_symbols_data # TODO : fix cimport exchange_data.ExchangeSymbolsData
 
     # private
     cdef void _load_config_symbols_and_time_frames(self)
@@ -77,4 +78,4 @@ cdef class ExchangeManager(util.Initializable):
     cpdef str get_exchange_name(self)
     cpdef tuple get_exchange_credentials(self, object logger, str exchange_name)
     cpdef bint should_decrypt_token(self, object logger)
-    cpdef exchange_data.ExchangeSymbolData get_symbol_data(self, str symbol)
+    cpdef object get_symbol_data(self, str symbol) # TODO : fix cimport exchange_data.ExchangeSymbolData

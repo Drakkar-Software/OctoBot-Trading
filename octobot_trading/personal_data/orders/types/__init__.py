@@ -59,14 +59,3 @@ __all__ = [
     "TrailingStopOrder",
     "TrailingStopLimitOrder",
 ]
-
-from octobot_trading.personal_data.orders.types import unknown_order
-
-from octobot_trading.personal_data.orders.types.unknown_order import (
-    UnknownOrder,
-)
-
-__all__ = [
-    "UnknownOrder",
-]
-

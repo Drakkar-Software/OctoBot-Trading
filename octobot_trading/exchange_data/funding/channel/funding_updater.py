@@ -22,7 +22,7 @@ import time
 import octobot_trading.errors as errors
 import octobot_commons.constants as common_constants
 
-import octobot_trading.exchange_data.funding.channel as funding_channel
+import octobot_trading.exchange_data.funding.channel.funding as funding_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 

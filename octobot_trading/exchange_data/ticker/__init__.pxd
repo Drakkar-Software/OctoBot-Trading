@@ -20,6 +20,22 @@ from octobot_trading.exchange_data.ticker.ticker_manager cimport (
     TickerManager,
 )
 
+from octobot_trading.exchange_data.ticker cimport channel
+from octobot_trading.exchange_data.ticker.channel cimport (
+    TickerProducer,
+    TickerChannel,
+    TickerUpdater,
+    TickerUpdaterSimulator,
+    MiniTickerProducer,
+    MiniTickerChannel,
+)
+
 __all__ = [
-    "TickerManager",
+   "TickerManager",
+    "TickerUpdater",
+    "TickerProducer",
+    "TickerChannel",
+    "MiniTickerProducer",
+    "MiniTickerChannel",
+    "TickerUpdaterSimulator",
 ]

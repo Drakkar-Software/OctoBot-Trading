@@ -15,19 +15,18 @@
 #  License along with this library.
 
 from octobot_trading.exchange_data.recent_trades.channel cimport recent_trade
-from octobot_trading.exchange_data.recent_trades.channel cimport recent_trade_updater
-from octobot_trading.exchange_data.recent_trades.channel cimport (
-    recent_trade_updater_simulator,
-)
-
 from octobot_trading.exchange_data.recent_trades.channel.recent_trade cimport (
     RecentTradeProducer,
     RecentTradeChannel,
     LiquidationsProducer,
     LiquidationsChannel,
 )
+from octobot_trading.exchange_data.recent_trades.channel cimport recent_trade_updater
 from octobot_trading.exchange_data.recent_trades.channel.recent_trade_updater cimport (
     RecentTradeUpdater,
+)
+from octobot_trading.exchange_data.recent_trades.channel cimport (
+    recent_trade_updater_simulator,
 )
 from octobot_trading.exchange_data.recent_trades.channel.recent_trade_updater_simulator cimport (
     RecentTradeUpdaterSimulator,

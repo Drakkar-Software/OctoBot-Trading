@@ -14,10 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchange_data as exchange_data
+cimport octobot_trading.exchange_data.ohlcv.channel.ohlcv as ohlcv_channel
 
 
-cdef class OHLCVUpdater(exchange_data.OHLCVProducer):
+cdef class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
     cdef list tasks
 
     cdef bint is_initialized

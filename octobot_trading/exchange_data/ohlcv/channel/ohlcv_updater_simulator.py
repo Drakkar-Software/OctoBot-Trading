@@ -22,12 +22,11 @@ import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as constants
 import octobot_commons.enums as enums
 
-import octobot_trading.exchange_data.ohlcv.channel as ohlcv_channel
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater as ohlcv_updater
 import octobot_trading.util as util
 
 
-class OHLCVUpdaterSimulator(ohlcv_channel.OHLCVUpdater):
+class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer

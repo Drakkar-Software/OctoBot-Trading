@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.personal_data.trades.channel as trades_channel
 
-cdef class TradesUpdater(personal_data.TradesProducer):
+cdef class TradesUpdater(trades_channel.TradesProducer):
     pass

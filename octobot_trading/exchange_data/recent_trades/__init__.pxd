@@ -15,11 +15,22 @@
 #  License along with this library.
 
 from octobot_trading.exchange_data.recent_trades cimport recent_trades_manager
-
 from octobot_trading.exchange_data.recent_trades.recent_trades_manager cimport (
     RecentTradesManager,
 )
-
+from octobot_trading.exchange_data.recent_trades cimport channel
+from octobot_trading.exchange_data.recent_trades.channel cimport (
+    RecentTradeUpdater,
+    RecentTradeProducer,
+    RecentTradeChannel,
+    LiquidationsProducer,
+    LiquidationsChannel,
+)
 __all__ = [
+    "RecentTradeProducer",
+    "RecentTradeChannel",
+    "LiquidationsProducer",
+    "LiquidationsChannel",
     "RecentTradesManager",
+    "RecentTradeUpdater",
 ]

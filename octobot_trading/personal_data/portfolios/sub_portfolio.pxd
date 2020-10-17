@@ -19,10 +19,11 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
-cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.personal_data.portfolios as portfolios_personal_data
+cimport octobot_trading.personal_data.orders as orders_personal_data
 
-cdef class SubPortfolio(personal_data.Portfolio):
-    cdef public personal_data.Portfolio parent_portfolio
+cdef class SubPortfolio(portfolios_personal_data.Portfolio):
+    cdef public portfolios_personal_data.Portfolio parent_portfolio
 
     cdef public double percent
 
@@ -30,5 +31,5 @@ cdef class SubPortfolio(personal_data.Portfolio):
 
     cpdef void update_from_parent(self)
     cpdef void set_percent(self, double percent)
-    cpdef void update_portfolio_available(self, personal_data.Order order, bint is_new_order=*)
+    cpdef void update_portfolio_available(self, orders_personal_data.Order order, bint is_new_order=*)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)

@@ -15,12 +15,11 @@
 #  License along with this library.
 
 from octobot_trading.personal_data.trades.channel cimport trades
-from octobot_trading.personal_data.trades.channel cimport trades_updater
-
 from octobot_trading.personal_data.trades.channel.trades cimport (
     TradesProducer,
     TradesChannel,
 )
+from octobot_trading.personal_data.trades.channel cimport trades_updater
 from octobot_trading.personal_data.trades.channel.trades_updater cimport (
     TradesUpdater,
 )

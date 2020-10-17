@@ -19,7 +19,7 @@
 """ Order class will represent an open order in the specified exchange
 In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
-cimport octobot_trading.exchanges as exchanges
+cimport octobot_trading.exchanges.traders.trader as trader
 
-cdef class TraderSimulator(exchanges.Trader):
+cdef class TraderSimulator(trader.Trader):
     cpdef str parse_order_id(self, str order_id)

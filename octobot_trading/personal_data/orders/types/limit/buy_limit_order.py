@@ -15,9 +15,9 @@
 #  License along with this library.
 
 import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders.types.limit as limit
+import octobot_trading.personal_data.orders.types as orders_types_personal_data
 
 
-class BuyLimitOrder(limit.LimitOrder):
+class BuyLimitOrder(orders_types_personal_data.LimitOrder):
     def __init__(self, trader, side=enums.TradeOrderSide.BUY):
         super().__init__(trader, side)

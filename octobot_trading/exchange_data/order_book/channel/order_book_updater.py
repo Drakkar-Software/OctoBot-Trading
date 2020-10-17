@@ -20,7 +20,7 @@ import octobot_trading.errors as errors
 
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
-import octobot_trading.exchange_data.order_book.channel as order_book_channel
+import octobot_trading.exchange_data.order_book.channel.order_book as order_book_channel
 import octobot_trading.enums as enums
 
 

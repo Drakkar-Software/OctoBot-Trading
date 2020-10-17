@@ -16,10 +16,10 @@
 #  License along with this library.
 cimport octobot_commons.async_job as async_job
 
-cimport octobot_trading.personal_data as personal_data
+cimport octobot_trading.personal_data.orders.channel as orders_channel_personal_data
 
 
-cdef class OrdersUpdater(personal_data.OrdersProducer):
+cdef class OrdersUpdater(orders_channel_personal_data.OrdersProducer):
     cdef async_job.AsyncJob open_orders_job
     cdef async_job.AsyncJob closed_orders_job
     cdef async_job.AsyncJob order_update_job

@@ -17,8 +17,8 @@
 cimport octobot_trading.exchanges as exchanges
 
 
-cdef class KlineProducer(ExchangeChannelProducer):
+cdef class KlineProducer(exchanges.ExchangeChannelProducer):
     pass
 
-cdef class KlineChannel(TimeFrameExchangeChannel):
+cdef class KlineChannel(exchanges.TimeFrameExchangeChannel):
     pass

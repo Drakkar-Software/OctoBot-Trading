@@ -13,3 +13,22 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+from octobot_trading.modes cimport channel
+from octobot_trading.modes.channel cimport (
+    check_factor,
+    ModeChannelConsumer,
+    ModeChannelProducer,
+    ModeChannel,
+    AbstractTradingModeConsumer,
+    AbstractTradingModeProducer,
+)
+
+__all__ = [
+    "ModeChannelConsumer",
+    "ModeChannelProducer",
+    "ModeChannel",
+    "AbstractTradingModeProducer",
+    "AbstractTradingModeConsumer",
+    "check_factor",
+]

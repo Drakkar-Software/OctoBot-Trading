@@ -16,6 +16,7 @@
 
 from octobot_trading.exchange_data.ohlcv cimport candles_manager
 from octobot_trading.exchange_data.ohlcv cimport candles_adapter
+from octobot_trading.exchange_data.ohlcv cimport channel
 
 from octobot_trading.exchange_data.ohlcv.candles_manager cimport (
     CandlesManager,
@@ -28,6 +29,14 @@ from octobot_trading.exchange_data.ohlcv.candles_adapter cimport (
     get_symbol_volume_candles,
     get_symbol_time_candles,
 )
+from octobot_trading.exchange_data.ohlcv.channel cimport (
+    OHLCVUpdaterSimulator,
+    OHLCVProducer,
+    OHLCVChannel,
+)
+from octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater cimport (
+    OHLCVUpdater,
+)
 
 __all__ = [
     "CandlesManager",
@@ -37,4 +46,8 @@ __all__ = [
     "get_symbol_low_candles",
     "get_symbol_volume_candles",
     "get_symbol_time_candles",
+    "OHLCVUpdaterSimulator",
+    "OHLCVProducer",
+    "OHLCVChannel",
+    "OHLCVUpdater",
 ]

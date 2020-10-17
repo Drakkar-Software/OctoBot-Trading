@@ -14,19 +14,18 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchange_data.prices.channel cimport prices_updater_simulator
 from octobot_trading.exchange_data.prices.channel cimport price
-from octobot_trading.exchange_data.prices.channel cimport prices_updater
-
-from octobot_trading.exchange_data.prices.channel.prices_updater_simulator cimport (
-    MarkPriceUpdaterSimulator,
-)
 from octobot_trading.exchange_data.prices.channel.price cimport (
     MarkPriceProducer,
     MarkPriceChannel,
 )
+from octobot_trading.exchange_data.prices.channel cimport prices_updater
 from octobot_trading.exchange_data.prices.channel.prices_updater cimport (
     MarkPriceUpdater,
+)
+from octobot_trading.exchange_data.prices.channel cimport prices_updater_simulator
+from octobot_trading.exchange_data.prices.channel.prices_updater_simulator cimport (
+    MarkPriceUpdaterSimulator,
 )
 
 __all__ = [

@@ -14,11 +14,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport async_channel.channels as channel 
-cimport async_channel.consumer as consumer
-cimport async_channel.producer as producer
+cimport async_channel.channels as channels
+cimport async_channel.consumer as consumers
+cimport async_channel.producer as producers
 
-cdef class ExchangeChannel(channel.Channel):
+cdef class ExchangeChannel(channels.Channel):
     cdef public object exchange_manager
     cdef public object exchange
 
@@ -30,16 +30,16 @@ cdef class ExchangeChannel(channel.Channel):
 cdef class TimeFrameExchangeChannel(ExchangeChannel):
     cpdef object get_filtered_consumers(self, str cryptocurrency=*, str symbol=*, str time_frame=*)
 
-cdef class ExchangeChannelConsumer(consumer.Consumer):
+cdef class ExchangeChannelConsumer(consumers.Consumer):
     pass
 
-cdef class ExchangeChannelProducer(producer.Producer):
+cdef class ExchangeChannelProducer(producers.Producer):
     cpdef void trigger_single_update(self)
 
-cdef class ExchangeChannelInternalConsumer(consumer.InternalConsumer):
+cdef class ExchangeChannelInternalConsumer(consumers.InternalConsumer):
     pass
 
-cdef class ExchangeChannelSupervisedConsumer(consumer.SupervisedConsumer):
+cdef class ExchangeChannelSupervisedConsumer(consumers.SupervisedConsumer):
     pass
 
 cpdef ExchangeChannel get_chan(str chan_name, str exchange_id)
