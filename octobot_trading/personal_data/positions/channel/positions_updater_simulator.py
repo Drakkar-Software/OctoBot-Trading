@@ -19,12 +19,12 @@ import octobot_commons.logging as logging
 
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
-import octobot_trading.personal_data.positions.channel as positions_channel
+import octobot_trading.personal_data.positions.channel.positions_updater as positions_updater
 import octobot_trading.personal_data.positions as positions
 import octobot_trading.enums as enums
 
 
-class PositionsUpdaterSimulator(positions_channel.PositionsUpdater):
+class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
     def __init__(self, channel):
         super().__init__(channel)
         self.exchange_manager = None
