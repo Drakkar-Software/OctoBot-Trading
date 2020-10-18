@@ -18,7 +18,7 @@ import asyncio
 
 import octobot_trading.errors as errors
 
-import octobot_trading.personal_data.positions.channel as positions_channel
+import octobot_trading.personal_data.positions.channel.positions as positions_channel
 import octobot_trading.constants as constants
 
 
