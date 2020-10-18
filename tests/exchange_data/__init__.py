@@ -15,23 +15,19 @@
 #  License along with this library.
 
 import pytest
-from octobot_trading.exchange_data.recent_trades.recent_trades_manager import RecentTradesManager
-
-from octobot_trading.exchange_data.prices.prices_manager import PricesManager
-
-from octobot_trading.exchange_data.prices.price_events_manager import PriceEventsManager
+import octobot_trading.exchange_data as exchange_data
 
 
 @pytest.fixture()
 def price_events_manager(event_loop):
-    return PriceEventsManager()
+    return exchange_data.PriceEventsManager()
 
 
 @pytest.fixture()
 def prices_manager(event_loop, backtesting_exchange_manager):
-    return PricesManager(backtesting_exchange_manager)
+    return exchange_data.PricesManager(backtesting_exchange_manager)
 
 
 @pytest.fixture()
 def recent_trades_manager(event_loop):
-    return RecentTradesManager()
+    return exchange_data.RecentTradesManager()

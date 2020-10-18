@@ -26,6 +26,7 @@ from octobot_trading.personal_data.orders.order_state import (
 )
 
 from octobot_trading.personal_data.orders import order_util
+from octobot_trading.personal_data.orders import orders_manager
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders import order_factory
 from octobot_trading.personal_data.orders import types
@@ -59,10 +60,11 @@ from octobot_trading.personal_data.orders.channel import (
     OrdersProducer,
     OrdersChannel,
     OrdersUpdater,
-    OrdersManager,
     OrdersUpdaterSimulator,
 )
-
+from octobot_trading.personal_data.orders.orders_manager import (
+    OrdersManager,
+)
 from octobot_trading.personal_data.orders.order_util import (
     is_valid,
     get_min_max_amounts,
