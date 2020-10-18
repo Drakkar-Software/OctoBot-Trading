@@ -16,10 +16,10 @@
 import asyncio
 
 import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders as orders_personal_data
+import octobot_trading.personal_data.orders.order as order_class
 
 
-class LimitOrder(orders_personal_data.Order):
+class LimitOrder(order_class.Order):
     def __init__(self, trader, side=enums.TradeOrderSide.BUY):
         super().__init__(trader, side)
         self.limit_price_hit_event = None
@@ -44,7 +44,7 @@ class LimitOrder(orders_personal_data.Order):
         self.filled_price = self.origin_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
-        orders.Order.on_fill_actions(self)
+        order_class.Order.on_fill_actions(self)
 
     def clear(self):
         if self.wait_for_hit_event_task is not None:
@@ -54,4 +54,4 @@ class LimitOrder(orders_personal_data.Order):
         if self.limit_price_hit_event is not None:
             self.exchange_manager.exchange_symbols_data. \
                 get_exchange_symbol_data(self.symbol).price_events_manager.remove_event(self.limit_price_hit_event)
-        orders.Order.clear(self)
+        order_class.Order.clear(self)

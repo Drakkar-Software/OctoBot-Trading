@@ -17,11 +17,11 @@ import asyncio
 import octobot_commons.asyncio_tools as asyncio_tools
 
 import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders as orders_personal_data
+import octobot_trading.personal_data.orders.order as order_class
 import octobot_trading.personal_data as personal_data
 
 
-class MarketOrder(orders_personal_data.Order):
+class MarketOrder(order_class.Order):
     async def update_order_status(self, force_refresh=False):
         if self.trader.simulate:
             asyncio.create_task(self.on_fill(force_fill=True))

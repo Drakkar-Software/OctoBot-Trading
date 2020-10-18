@@ -14,10 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders as orders
+import octobot_trading.personal_data.orders.order_state as order_state
 
 
-class CloseOrderState(orders.OrderState):
+class CloseOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data, force_close=True):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.OrderStates.CLOSED if is_from_exchange_data or force_close or self.order.simulated \

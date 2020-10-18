@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.orders as orders_personal_data
+cimport octobot_trading.personal_data.orders.order as order_class
 
-cdef class UnknownOrder(orders_personal_data.Order):
+cdef class UnknownOrder(order_class.Order):
     pass

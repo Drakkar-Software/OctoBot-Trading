@@ -21,7 +21,6 @@ from octobot_trading.personal_data.orders.order_state cimport (
 from octobot_trading.personal_data.orders cimport order
 from octobot_trading.personal_data.orders.order cimport (
     Order,
-    parse_order_type,
 )
 
 from octobot_trading.personal_data.orders cimport orders_manager
@@ -92,7 +91,6 @@ from octobot_trading.personal_data.orders.order_factory cimport (
 
 __all__ = [
     "Order",
-    "parse_order_type",
     "is_valid",
     "get_min_max_amounts",
     "check_cost",

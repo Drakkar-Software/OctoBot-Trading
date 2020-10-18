@@ -14,10 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders.types as orders_types_personal_data
+import octobot_trading.personal_data.orders.types.trailing.trailing_stop_order as trailing_stop_order
 
 
-class TrailingStopLimitOrder(orders_types_personal_data.TrailingStopOrder):
+class TrailingStopLimitOrder(trailing_stop_order.TrailingStopOrder):
     UNINITIALIZED_LIMIT_PRICE = -1
 
     def __init__(self, trader, side=enums.TradeOrderSide.SELL, limit_price=UNINITIALIZED_LIMIT_PRICE):
@@ -26,7 +26,7 @@ class TrailingStopLimitOrder(orders_types_personal_data.TrailingStopOrder):
         self.limit_price = limit_price
 
     async def on_filled(self):
-        await orders_types_personal_data.TrailingStopOrder.on_filled(self)
+        await trailing_stop_order.TrailingStopOrder.on_filled(self)
         await self.trader.create_artificial_order(enums.TraderOrderType.SELL_LIMIT
                                                   if self.side is enums.TradeOrderSide.SELL else enums.TraderOrderType.BUY_LIMIT,
                                                   self.symbol, self.origin_stop_price,

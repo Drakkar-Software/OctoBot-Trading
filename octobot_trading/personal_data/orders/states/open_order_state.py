@@ -13,12 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
 import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders as orders
+import octobot_trading.personal_data.orders.order_state as order_state
+import octobot_trading.personal_data.orders.states.order_state_factory as order_state_factory
 
 
-class OpenOrderState(orders.OrderState):
+class OpenOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.OrderStates.OPEN if is_from_exchange_data \
@@ -59,7 +59,7 @@ class OpenOrderState(orders.OrderState):
                 if self.order.status is enums.OrderStatus.CLOSED:
                     self.order.status = enums.OrderStatus.FILLED
                     self.order.state = None
-                await orders.create_order_state(self.order, is_from_exchange_data=True)
+                await order_state_factory.create_order_state(self.order, is_from_exchange_data=True)
         else:
             self.get_logger().debug(f"on_order_refresh_successful triggered from previous state "
                                     f"after state change on {self.order}")

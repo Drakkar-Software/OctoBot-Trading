@@ -19,7 +19,7 @@ import asyncio
 import octobot_commons.async_job as async_job
 
 import octobot_trading.errors as errors
-import octobot_trading.personal_data.orders.channel as orders_channel
+import octobot_trading.personal_data.orders.channel.orders as orders_channel
 import octobot_trading.constants as constants
 
 

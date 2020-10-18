@@ -18,11 +18,11 @@ import asyncio
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders as orders_personal_data
+import octobot_trading.personal_data.orders.order as order_class
 import octobot_trading.personal_data as personal_data
 
 
-class TrailingStopOrder(orders_personal_data.Order):
+class TrailingStopOrder(order_class.Order):
     UNINITIALIZED_TRAILING_PERCENT = -1
     DEFAULT_TRAILING_PERCENT = 5
 
