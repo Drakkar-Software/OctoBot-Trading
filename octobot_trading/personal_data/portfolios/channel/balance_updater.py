@@ -20,7 +20,7 @@ import octobot_commons.logging as logging
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
-import octobot_trading.personal_data.portfolios.channel as portfolios_channel
+import octobot_trading.personal_data.portfolios.channel.balance as portfolios_channel
 import octobot_trading.exchanges as exchanges
 
 

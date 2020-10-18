@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.portfolios.types as portfolio_types
 
 
 def create_portfolio_from_exchange_manager(exchange_manager):
@@ -23,7 +23,7 @@ def create_portfolio_from_exchange_manager(exchange_manager):
     :return: the created portfolio instance
     """
     if exchange_manager.is_future:
-        return personal_data.FuturePortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
+        return portfolio_types.FuturePortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
     if exchange_manager.is_margin:
-        return personal_data.MarginPortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
-    return personal_data.SpotPortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
+        return portfolio_types.MarginPortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
+    return portfolio_types.SpotPortfolio(exchange_manager.get_exchange_name(), exchange_manager.trader.simulate)
