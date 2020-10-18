@@ -16,8 +16,7 @@
 import typing
 
 import octobot_commons.logging as logging
-
-import octobot_commons.singleton as singleton
+import octobot_commons.singleton as singleton_class
 
 
 class ExchangeConfiguration:
@@ -33,7 +32,7 @@ class ExchangeConfiguration:
         self.real_time_time_frames = exchange_manager.exchange_config.real_time_time_frames
 
 
-class Exchanges(singleton.Singleton):
+class Exchanges(singleton_class.Singleton):
     def __init__(self):
         self.exchanges = {}
 
