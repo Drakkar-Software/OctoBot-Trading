@@ -15,7 +15,6 @@
 #  License along with this library.
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.types.limit.limit_order as limit_order
-import octobot_trading.personal_data as personal_data
 
 
 class StopLossLimitOrder(limit_order.LimitOrder):
@@ -27,7 +26,7 @@ class StopLossLimitOrder(limit_order.LimitOrder):
         self.limit_price = limit_price
 
     async def on_filled(self):
-        await personal_data.LimitOrder.on_filled(self)
+        await limit_order.LimitOrder.on_filled(self)
         await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
                                                   if self.side is enums.TradeOrderSide.SELL
                                                   else enums.TraderOrderType.BUY_MARKET,

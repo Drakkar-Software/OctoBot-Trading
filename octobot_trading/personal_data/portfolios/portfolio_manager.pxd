@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.portfolios as portfolios_personal_data
+cimport octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 cimport octobot_trading.personal_data.portfolios.portfolio_profitability as portfolio_profitability
 cimport octobot_trading.personal_data.portfolios.portfolio_value_holder as portfolio_value_holder
 cimport octobot_trading.exchanges as exchanges
@@ -33,7 +33,7 @@ cdef class PortfolioManager(util.Initializable):
 
     cdef public portfolio_profitability.PortfolioProfitability portfolio_profitability
     cdef public portfolio_value_holder.PortfolioValueHolder portfolio_value_holder
-    cdef public portfolios_personal_data.Portfolio portfolio
+    cdef public portfolio_class.Portfolio portfolio
 
     cpdef bint handle_balance_update(self, dict balance, bint is_diff_update=*)
     cpdef void clear(self)

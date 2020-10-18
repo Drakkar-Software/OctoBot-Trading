@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.portfolios.channel as portfolios_channel
+cimport octobot_trading.personal_data.portfolios.channel.balance as portfolios_channel
 
 cdef class BalanceUpdater(portfolios_channel.BalanceProducer):
     pass

@@ -19,7 +19,6 @@ import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order as order_class
-import octobot_trading.personal_data as personal_data
 
 
 class TrailingStopOrder(order_class.Order):
@@ -137,7 +136,7 @@ class TrailingStopOrder(order_class.Order):
         """
         Create an artificial when trailing stop is filled
         """
-        await personal_data.Order.on_filled(self)
+        await order_class.Order.on_filled(self)
         await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
                                                   if self.side is enums.TradeOrderSide.SELL
                                                   else enums.TraderOrderType.BUY_MARKET,
@@ -158,7 +157,7 @@ class TrailingStopOrder(order_class.Order):
         Clear prices hit events and their related tasks and call super clear
         """
         self._clear_event_and_tasks()
-        personal_data.Order.clear(self)
+        order_class.Order.clear(self)
 
 
 async def _wait_for_price_hit(event_to_wait, callback):

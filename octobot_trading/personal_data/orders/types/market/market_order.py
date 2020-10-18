@@ -18,7 +18,6 @@ import octobot_commons.asyncio_tools as asyncio_tools
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order as order_class
-import octobot_trading.personal_data as personal_data
 
 
 class MarketOrder(order_class.Order):
@@ -35,4 +34,4 @@ class MarketOrder(order_class.Order):
         self.filled_price = self.created_last_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
-        personal_data.Order.on_fill_actions(self)
+        order_class.Order.on_fill_actions(self)
