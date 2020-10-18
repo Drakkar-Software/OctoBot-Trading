@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.orders as orders_personal_data
+cimport octobot_trading.personal_data.orders.order as order_class
 
-cdef class LimitOrder(orders_personal_data.Order):
+cdef class LimitOrder(order_class.Order):
     cdef object limit_price_hit_event # object is asyncio.Event
     cdef object wait_for_hit_event_task # object is asyncio.Task
 
