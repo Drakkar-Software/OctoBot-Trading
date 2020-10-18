@@ -13,6 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges cimport channel
+from octobot_trading.exchanges.channel cimport (
+    ExchangeChannelConsumer,
+    ExchangeChannelInternalConsumer,
+    ExchangeChannelSupervisedConsumer,
+    ExchangeChannelProducer,
+    ExchangeChannel,
+    TimeFrameExchangeChannel,
+    set_chan,
+    get_exchange_channels,
+    del_exchange_channel_container,
+    get_chan,
+    del_chan,
+)
+
 from octobot_trading.exchanges cimport exchange_config_data
 from octobot_trading.exchanges.exchange_config_data cimport (
     ExchangeConfig,
@@ -42,22 +57,6 @@ from octobot_trading.exchanges cimport exchange_manager
 from octobot_trading.exchanges.exchange_manager cimport (
     ExchangeManager,
 )
-
-from octobot_trading.exchanges cimport channel
-from octobot_trading.exchanges.channel cimport (
-    ExchangeChannelConsumer,
-    ExchangeChannelInternalConsumer,
-    ExchangeChannelSupervisedConsumer,
-    ExchangeChannelProducer,
-    ExchangeChannel,
-    TimeFrameExchangeChannel,
-    set_chan,
-    get_exchange_channels,
-    del_exchange_channel_container,
-    get_chan,
-    del_chan,
-)
-
 from octobot_trading.exchanges cimport exchange_builder
 from octobot_trading.exchanges.exchange_builder cimport (
     ExchangeBuilder,
