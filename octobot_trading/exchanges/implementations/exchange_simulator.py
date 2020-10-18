@@ -20,13 +20,14 @@ import octobot_commons.number_util as number_util
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.time_frame_manager as time_frame_manager
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.abstract_exchange as abstract_exchange
+import octobot_trading.exchanges.channel as exchange_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchange_data as exchange_data
 
 
-class ExchangeSimulator(exchanges.AbstractExchange):
+class ExchangeSimulator(abstract_exchange.AbstractExchange):
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
         self.backtesting = backtesting
@@ -78,7 +79,8 @@ class ExchangeSimulator(exchanges.AbstractExchange):
             at_least_one_updater = False
             for channel_type, updater in exchange_data.UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS.items():
                 if self._are_required_data_available(channel_type, available_data_types):
-                    await updater(exchanges.get_chan(updater.CHANNEL_NAME, self.exchange_manager.id), importer).run()
+                    await updater(exchange_channel.get_chan(updater.CHANNEL_NAME,
+                                                            self.exchange_manager.id), importer).run()
                     at_least_one_updater = True
             if not at_least_one_updater:
                 self.logger.error(f"No updater created for {importer.symbols} backtesting")

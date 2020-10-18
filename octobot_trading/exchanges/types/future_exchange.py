@@ -14,10 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 
 
-class FutureExchange(exchanges.AbstractExchange):
+class FutureExchange(abstract_exchange.AbstractExchange):
     LONG_STR = "long"
     SHORT_STR = "short"
 

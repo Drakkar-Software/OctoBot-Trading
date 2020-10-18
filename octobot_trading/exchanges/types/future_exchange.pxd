@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges as exchanges
+cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
 
-cdef class FutureExchange(exchanges.AbstractExchange):
+cdef class FutureExchange(abstract_exchange.AbstractExchange):
     cpdef double calculate_position_value(self, double quantity, double mark_price)
 
     """
