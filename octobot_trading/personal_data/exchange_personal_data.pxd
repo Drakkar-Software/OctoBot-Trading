@@ -19,7 +19,6 @@ cimport octobot_trading.personal_data.orders.order as order_class
 cimport octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 cimport octobot_trading.personal_data.positions.positions_manager as positions_manager
 cimport octobot_trading.personal_data.trades.trades_manager as trades_manager
-# cimport octobot_trading.exchanges as exchanges
 cimport octobot_trading.util as util
 
 cdef class ExchangePersonalData(util.Initializable):
