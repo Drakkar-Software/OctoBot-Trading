@@ -16,8 +16,8 @@
 import pytest
 
 from octobot_trading.enums import TradeOrderSide
-from octobot_trading.personal_data.orders import BuyLimitOrder, SellLimitOrder, SellMarketOrder, BuyMarketOrder, StopLossOrder, \
-    StopLossLimitOrder, TakeProfitOrder, TakeProfitLimitOrder, TrailingStopOrder, TrailingStopLimitOrder
+from octobot_trading.personal_data.orders.types import BuyLimitOrder, SellLimitOrder, SellMarketOrder, BuyMarketOrder, \
+    StopLossOrder, StopLossLimitOrder, TakeProfitOrder, TakeProfitLimitOrder, TrailingStopOrder, TrailingStopLimitOrder
 from octobot_trading.personal_data.orders import Order
 
 

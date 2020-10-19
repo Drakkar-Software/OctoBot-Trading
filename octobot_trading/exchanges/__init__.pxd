@@ -13,6 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from octobot_trading.exchanges cimport exchanges
+from octobot_trading.exchanges.exchanges cimport (
+    ExchangeConfiguration,
+    Exchanges,
+)
 from octobot_trading.exchanges cimport channel
 from octobot_trading.exchanges.channel cimport (
     ExchangeChannelConsumer,
@@ -60,11 +65,6 @@ from octobot_trading.exchanges.exchange_manager cimport (
 from octobot_trading.exchanges cimport exchange_builder
 from octobot_trading.exchanges.exchange_builder cimport (
     ExchangeBuilder,
-)
-from octobot_trading.exchanges cimport exchanges
-from octobot_trading.exchanges.exchanges cimport (
-    ExchangeConfiguration,
-    Exchanges,
 )
 from octobot_trading.exchanges cimport exchange_util
 from octobot_trading.exchanges.exchange_util cimport (

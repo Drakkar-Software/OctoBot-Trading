@@ -19,7 +19,10 @@ import octobot_commons.logging as logging
 
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
+import octobot_trading.personal_data.positions.positions_manager as positions_manager
+import octobot_trading.personal_data.orders.orders_manager as orders_manager
+import octobot_trading.personal_data.trades.trades_manager as trades_manager
 import octobot_trading.util as util
 
 
@@ -43,10 +46,12 @@ class ExchangePersonalData(util.Initializable):
         self.exchange = self.exchange_manager.exchange
         if self.trader.is_enabled:
             try:
-                self.portfolio_manager = personal_data.PortfolioManager(self.config, self.trader, self.exchange_manager)
-                self.trades_manager = personal_data.TradesManager(self.config, self.trader, self.exchange_manager)
-                self.orders_manager = personal_data.OrdersManager(self.config, self.trader, self.exchange_manager)
-                self.positions_manager = personal_data.PositionsManager(self.config, self.trader, self.exchange_manager)
+                self.portfolio_manager = portfolio_manager.PortfolioManager(self.config, self.trader,
+                                                                            self.exchange_manager)
+                self.trades_manager = trades_manager.TradesManager(self.config, self.trader, self.exchange_manager)
+                self.orders_manager = orders_manager.OrdersManager(self.config, self.trader, self.exchange_manager)
+                self.positions_manager = positions_manager.PositionsManager(self.config, self.trader,
+                                                                            self.exchange_manager)
                 await self.portfolio_manager.initialize()
                 await self.trades_manager.initialize()
                 await self.orders_manager.initialize()

@@ -13,7 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
+from octobot_trading.exchanges import exchanges
+from octobot_trading.exchanges.exchanges import (
+    ExchangeConfiguration,
+    Exchanges,
+)
 from octobot_trading.exchanges import channel
 from octobot_trading.exchanges.channel import (
     ExchangeChannelConsumer,
@@ -56,11 +60,6 @@ from octobot_trading.exchanges.exchange_factory import (
     initialize_real_exchange,
     create_simulated_exchange,
     init_simulated_exchange,
-)
-from octobot_trading.exchanges import exchanges
-from octobot_trading.exchanges.exchanges import (
-    ExchangeConfiguration,
-    Exchanges,
 )
 from octobot_trading.exchanges import exchange_util
 from octobot_trading.exchanges.exchange_util import (
