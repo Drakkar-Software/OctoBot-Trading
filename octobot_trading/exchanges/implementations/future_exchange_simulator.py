@@ -13,9 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.implementations as exchange_implementations
 
 
-class FutureExchangeSimulator(exchange_implementations.ExchangeSimulator, exchanges.FutureExchange):
+class FutureExchangeSimulator(exchange_implementations.ExchangeSimulator, exchanges_types.FutureExchange):
     pass

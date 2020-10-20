@@ -17,10 +17,6 @@
 import octobot_trading.enums
 
 from octobot_trading.personal_data import orders
-from octobot_trading.personal_data import portfolios
-from octobot_trading.personal_data import positions
-from octobot_trading.personal_data import trades
-
 from octobot_trading.personal_data.orders import (
     Order,
     parse_order_type,
@@ -69,7 +65,7 @@ from octobot_trading.personal_data.orders import (
     TrailingStopOrder,
     TrailingStopLimitOrder,
 )
-
+from octobot_trading.personal_data import portfolios
 from octobot_trading.personal_data.portfolios import (
     BalanceUpdaterSimulator,
     BalanceProfitabilityUpdaterSimulator,
@@ -89,7 +85,7 @@ from octobot_trading.personal_data.portfolios import (
     MarginPortfolio,
     SpotPortfolio,
 )
-
+from octobot_trading.personal_data import positions
 from octobot_trading.personal_data.positions import (
     PositionsProducer,
     PositionsChannel,
@@ -100,6 +96,7 @@ from octobot_trading.personal_data.positions import (
     PositionsUpdater,
     PositionsManager,
 )
+from octobot_trading.personal_data import trades
 from octobot_trading.personal_data.trades import (
     TradesManager,
     TradesProducer,

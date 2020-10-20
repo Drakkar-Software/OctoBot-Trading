@@ -19,12 +19,12 @@ import typing
 
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.implementations as exchange_implementations
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
-class SpotCCXTExchange(exchange_implementations.CCXTExchange, exchanges.SpotExchange):
+class SpotCCXTExchange(exchange_implementations.CCXTExchange, exchanges_types.SpotExchange):
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: float,
                            price: float = None, stop_price=None, **kwargs: dict) -> typing.Optional[dict]:
         try:
