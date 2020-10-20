@@ -13,19 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 import logging
 import websockets
 import time
 import ccxt
 import abc 
 import asyncio 
-from datetime import datetime
-import typing 
+from datetime import datetime, timedelta
+import typing
 
 import octobot_commons.constants
 import octobot_commons.enums
-import octobot_commons.logging as logging
+import octobot_commons.logging as commons_logging
 
 import octobot_trading.exchange_data as exchange_data
 import octobot_trading.exchanges as exchanges
@@ -50,8 +49,8 @@ class WebsocketExchange:
                  api_password: str = None,
                  timeout: int = 120,
                  timeout_interval: int = 5):
-        logging.set_logging_level(self.LOGGERS, logging.WARNING)
-        self.logger = logging.get_logger(self.__class__.__name__)
+        commons_logging.set_logging_level(self.LOGGERS, logging.WARNING)
+        self.logger = commons_logging.get_logger(self.__class__.__name__)
 
         self.exchange_manager = exchange_manager
         self.exchange = self.exchange_manager.exchange
@@ -103,7 +102,7 @@ class WebsocketExchange:
     async def _watcher(self):
         while True:
             if self.last_msg:
-                if datetime.utcnow() - datetime.timedelta(seconds=self.timeout) > self.last_msg:
+                if datetime.utcnow() - timedelta(seconds=self.timeout) > self.last_msg:
                     self.logger.warning("No messages received within timeout, restarting connection")
                     await self.reconnect()
             await self.ping()
