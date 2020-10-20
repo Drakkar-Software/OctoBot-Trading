@@ -18,7 +18,7 @@ import asyncio
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.logging as logging
 import octobot_trading.enums as enums
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
@@ -29,7 +29,7 @@ def is_valid(element, key):
     :param key:
     :return:
     """
-    return key in element and exchanges.is_ms_valid(element[key])
+    return key in element and exchange_market_status_fixer.is_ms_valid(element[key])
 
 
 def get_min_max_amounts(symbol_market, default_value=None):

@@ -20,7 +20,8 @@ import typing
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders.states as orders_states
+import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.util as util
 
 
@@ -182,7 +183,7 @@ class Order(util.Initializable):
         """
         Initialize order status update tasks
         """
-        await personal_data.create_order_state(self, **kwargs)
+        await orders_states.create_order_state(self, **kwargs)
         if not self.is_closed():
             await self.update_order_status()
 
@@ -199,7 +200,7 @@ class Order(util.Initializable):
         return self.currency, self.market
 
     def get_total_fees(self, currency):
-        return personal_data.get_fees_for_currency(self.fee, currency)
+        return order_util.get_fees_for_currency(self.fee, currency)
 
     def is_open(self):
         return self.state is None or self.state.is_open()
@@ -217,24 +218,24 @@ class Order(util.Initializable):
         return self.state is not None and self.state.is_refreshing()
 
     async def on_open(self, force_open=False, is_from_exchange_data=False):
-        self.state = personal_data.OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state = orders_states.OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_open)
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
         get_logger(self.get_logger_name()).debug(f"on_fill triggered for {self}")
         if self.is_open() and not self.is_refreshing():
-            self.state = personal_data.FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            self.state = orders_states.FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
             await self.state.initialize(forced=force_fill)
         else:
             logging.get_logger(self.get_logger_name()).debug(f"Trying to fill a refreshing or previously filled or canceled order: "
                                                              f"ignored fill call for {self}")
 
     async def on_close(self, force_close=False, is_from_exchange_data=False):
-        self.state = personal_data.CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state = orders_states.CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_close)
 
     async def on_cancel(self, is_from_exchange_data=False, force_cancel=False, ignored_order=None):
-        self.state = personal_data.CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
+        self.state = orders_states.CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
 
     def on_fill_actions(self):
@@ -311,7 +312,7 @@ class Order(util.Initializable):
             current_price=raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0),
             quantity=raw_order.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value, 0.0),
             price=raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0),
-            status=personal_data.parse_order_status(raw_order),
+            status=order_util.parse_order_status(raw_order),
             order_id=str(raw_order.get(enums.ExchangeConstantsOrderColumns.ID.value, None)),
             quantity_filled=raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value, 0.0),
             filled_price=filled_price,
@@ -331,7 +332,7 @@ class Order(util.Initializable):
             self.filled_price = self.origin_price
 
     def update_order_from_raw(self, raw_order):
-        self.status = personal_data.parse_order_status(raw_order)
+        self.status = order_util.parse_order_status(raw_order)
         self.total_cost = raw_order[enums.ExchangeConstantsOrderColumns.COST.value]
         self.filled_quantity = raw_order[enums.ExchangeConstantsOrderColumns.FILLED.value]
         self.filled_price = raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value]

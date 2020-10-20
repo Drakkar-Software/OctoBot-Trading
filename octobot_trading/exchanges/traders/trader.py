@@ -17,7 +17,9 @@
 import octobot_commons.logging as logging
 
 import octobot_trading.constants
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.portfolios as portfolios
+import octobot_trading.personal_data.orders as orders
+import octobot_trading.personal_data.trades as trades
 import octobot_trading.enums
 import octobot_trading.util as util
 
@@ -65,7 +67,7 @@ class Trader(util.Initializable):
             self.risk = risk
         return self.risk
 
-    async def create_order(self, order, portfolio: personal_data.Portfolio = None, loaded: bool = False):
+    async def create_order(self, order, portfolio: portfolios.Portfolio = None, loaded: bool = False):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
         notifies order channel. Handles linked orders.
@@ -77,8 +79,8 @@ class Trader(util.Initializable):
         if portfolio is None:
             portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
 
-        linked_order: personal_data.Order = None
-        new_order: personal_data.Order = order
+        linked_order: orders.Order = None
+        new_order: orders.Order = order
 
         # if this order is linked to another (ex : a sell limit order with a stop loss order)
         if new_order.linked_to is not None:
@@ -108,15 +110,15 @@ class Trader(util.Initializable):
         Creates an OctoBot managed order (managed orders example: stop loss that is not published on the exchange and
         that is maintained internally).
         """
-        await self.create_order(personal_data.create_order_instance(trader=self,
-                                                                    order_type=order_type,
-                                                                    symbol=symbol,
-                                                                    current_price=current_price,
-                                                                    quantity=quantity,
-                                                                    price=price,
-                                                                    linked_portfolio=linked_portfolio))
+        await self.create_order(orders.create_order_instance(trader=self,
+                                                             order_type=order_type,
+                                                             symbol=symbol,
+                                                             current_price=current_price,
+                                                             quantity=quantity,
+                                                             price=price,
+                                                             linked_portfolio=linked_portfolio))
 
-    async def _create_new_order(self, new_order: personal_data.Order, portfolio) -> personal_data.Order:
+    async def _create_new_order(self, new_order: orders.Order, portfolio) -> orders.Order:
         """
         Creates an exchange managed order, it might be a simulated or a real order. Then updates the portfolio.
         """
@@ -130,13 +132,13 @@ class Trader(util.Initializable):
             self.logger.info(f"Created order on {self.exchange_manager.exchange_name}: {created_order}")
 
             # get real order from exchange
-            new_order = personal_data.create_order_instance_from_raw(self, created_order, force_open=True)
+            new_order = orders.create_order_instance_from_raw(self, created_order, force_open=True)
 
             # rebind linked portfolio to new order instance
             new_order.linked_portfolio = portfolio
         return new_order
 
-    async def cancel_order(self, order: personal_data.Order, ignored_order: personal_data.Order = None):
+    async def cancel_order(self, order: orders.Order, ignored_order: orders.Order = None):
         """
         Cancels the given order and its linked orders, and updates the portfolio, publish in order channel
         if order is from a real exchange.
@@ -149,9 +151,7 @@ class Trader(util.Initializable):
             # always cancel this order first to avoid infinite loop followed by deadlock
             await self._handle_order_cancellation(order, ignored_order)
 
-    async def _handle_order_cancellation(self,
-                                         order: personal_data.Order,
-                                         ignored_order: personal_data.Order):
+    async def _handle_order_cancellation(self, order: orders.Order, ignored_order: orders.Order):
         success = True
         async with order.lock:
             # if real order: cancel on exchange
@@ -224,7 +224,7 @@ class Trader(util.Initializable):
             if inverted else octobot_trading.enums.TraderOrderType.SELL_MARKET
         async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
             current_symbol_holding, current_market_quantity, _, price, symbol_market = \
-                await personal_data.get_pre_order_data(self.exchange_manager, symbol, timeout=timeout)
+                await orders.get_pre_order_data(self.exchange_manager, symbol, timeout=timeout)
             if inverted:
                 if price > 0:
                     quantity = current_market_quantity / price
@@ -232,14 +232,14 @@ class Trader(util.Initializable):
                     quantity = 0
             else:
                 quantity = current_symbol_holding
-            for order_quantity, order_price in personal_data.check_and_adapt_order_details_if_necessary(quantity, price,
-                                                                                                        symbol_market):
-                current_order = personal_data.create_order_instance(trader=self,
-                                                                    order_type=order_type,
-                                                                    symbol=symbol,
-                                                                    current_price=order_price,
-                                                                    quantity=order_quantity,
-                                                                    price=order_price)
+            for order_quantity, order_price in orders.check_and_adapt_order_details_if_necessary(quantity, price,
+                                                                                                 symbol_market):
+                current_order = orders.create_order_instance(trader=self,
+                                                             order_type=order_type,
+                                                             symbol=symbol,
+                                                             current_price=order_price,
+                                                             quantity=order_quantity,
+                                                             price=order_price)
                 created_orders.append(
                     await self.create_order(current_order,
                                             self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio))
@@ -297,4 +297,4 @@ class Trader(util.Initializable):
         Convert an order instance to Trade
         :return: the new Trade instance from order
         """
-        return personal_data.create_trade_from_order(order)
+        return trades.create_trade_from_order(order)
