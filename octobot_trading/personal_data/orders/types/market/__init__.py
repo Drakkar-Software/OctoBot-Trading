@@ -33,24 +33,3 @@ __all__ = [
     "SellMarketOrder",
     "BuyMarketOrder",
 ]
-
-from octobot_trading.personal_data.orders.types.market import market_order
-from octobot_trading.personal_data.orders.types.market import sell_market_order
-from octobot_trading.personal_data.orders.types.market import buy_market_order
-
-from octobot_trading.personal_data.orders.types.market.market_order import (
-    MarketOrder,
-)
-from octobot_trading.personal_data.orders.types.market.sell_market_order import (
-    SellMarketOrder,
-)
-from octobot_trading.personal_data.orders.types.market.buy_market_order import (
-    BuyMarketOrder,
-)
-
-__all__ = [
-    "MarketOrder",
-    "SellMarketOrder",
-    "BuyMarketOrder",
-]
-

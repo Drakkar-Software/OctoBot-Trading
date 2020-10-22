@@ -33,24 +33,3 @@ __all__ = [
     "MarginPortfolio",
     "SpotPortfolio",
 ]
-
-from octobot_trading.personal_data.portfolios.types import future_portfolio
-from octobot_trading.personal_data.portfolios.types import margin_portfolio
-from octobot_trading.personal_data.portfolios.types import spot_portfolio
-
-from octobot_trading.personal_data.portfolios.types.future_portfolio import (
-    FuturePortfolio,
-)
-from octobot_trading.personal_data.portfolios.types.margin_portfolio import (
-    MarginPortfolio,
-)
-from octobot_trading.personal_data.portfolios.types.spot_portfolio import (
-    SpotPortfolio,
-)
-
-__all__ = [
-    "FuturePortfolio",
-    "MarginPortfolio",
-    "SpotPortfolio",
-]
-
