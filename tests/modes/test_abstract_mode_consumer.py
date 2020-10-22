@@ -16,6 +16,7 @@
 import pytest
 
 from octobot_backtesting.backtesting import Backtesting
+from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.constants import PORTFOLIO_TOTAL
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_STARTING_PORTFOLIO
@@ -158,6 +159,8 @@ async def test_get_holdings_ratio():
     exchange_manager.client_symbols.append("ETH/BTC")
     with pytest.raises(KeyError):
         ratio = await consumer.get_holdings_ratio("ETH")
+    # let channel register proceed
+    await wait_asyncio_next_cycle()
     assert round(ratio, 8) == 1
     ratio = await consumer.get_holdings_ratio("USDT")
     assert round(ratio, 8) == 0
