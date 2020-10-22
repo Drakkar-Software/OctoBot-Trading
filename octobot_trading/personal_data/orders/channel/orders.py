@@ -17,7 +17,7 @@ import asyncio
 
 import async_channel.constants as channel_constants
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 import octobot_trading.constants as constants
 
 
@@ -96,8 +96,8 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
 
             # if a new order have been loaded : refresh portfolio to ensure available funds are up to date
             if has_new_order:
-                await exchanges.get_chan(constants.BALANCE_CHANNEL,
-                                         self.channel.exchange_manager.id).get_internal_producer(). \
+                await exchanges_channel.get_chan(constants.BALANCE_CHANNEL,
+                                                 self.channel.exchange_manager.id).get_internal_producer(). \
                     refresh_real_trader_portfolio()
 
     async def update_order_from_exchange(self, order,
@@ -115,7 +115,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         :return: True if the order was updated
         """
         try:
-            await (exchanges.get_chan(constants.ORDERS_CHANNEL, self.channel.exchange_manager.id).producers[-1].
+            await (exchanges_channel.get_chan(constants.ORDERS_CHANNEL, self.channel.exchange_manager.id).producers[-1].
                    update_order_from_exchange(order=order,
                                               should_notify=should_notify,
                                               force_job_execution=force_job_execution,
@@ -123,9 +123,9 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         except IndexError:
             if not self.channel.exchange_manager.is_simulated and create_order_producer_if_missing:
                 self.logger.debug("Missing orders producer, starting one...")
-                await exchanges.create_authenticated_producer_from_parent(self.channel.exchange_manager,
-                                                                          self.__class__,
-                                                                          force_register_producer=True)
+                await exchanges_channel.create_authenticated_producer_from_parent(self.channel.exchange_manager,
+                                                                                  self.__class__,
+                                                                                  force_register_producer=True)
                 await self.update_order_from_exchange(order=order,
                                                       should_notify=should_notify,
                                                       wait_for_refresh=wait_for_refresh,
