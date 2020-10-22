@@ -20,9 +20,6 @@ import octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
 
 class MarginPortfolio(portfolio_class.Portfolio):
-    async def update_portfolio_from_position(self, position):
-        pass  # TODO
-
     # parse the exchange balance
     def _parse_currency_balance(self, currency_balance):
         return self._create_currency_portfolio(
@@ -34,12 +31,11 @@ class MarginPortfolio(portfolio_class.Portfolio):
                 currency_balance[common_constants.MARGIN_PORTFOLIO]
                 if common_constants.MARGIN_PORTFOLIO in currency_balance else 0),
             total=currency_balance[constants.CONFIG_PORTFOLIO_TOTAL]
-            if constants.CONFIG_PORTFOLIO_TOTAL in currency_balance else
-            currency_balance[common_constants.PORTFOLIO_TOTAL])
+            if constants.CONFIG_PORTFOLIO_TOTAL in currency_balance else currency_balance[
+                common_constants.PORTFOLIO_TOTAL])
 
     def _create_currency_portfolio(self, available, total, margin=0):
-        return {common_constants.PORTFOLIO_AVAILABLE: available,
-                common_constants.MARGIN_PORTFOLIO: margin,
+        return {common_constants.PORTFOLIO_AVAILABLE: available, common_constants.MARGIN_PORTFOLIO: margin,
                 common_constants.PORTFOLIO_TOTAL: total}
 
     def _reset_currency_portfolio(self, currency):

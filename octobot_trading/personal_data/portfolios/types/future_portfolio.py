@@ -17,4 +17,23 @@ import octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
 
 class FuturePortfolio(portfolio_class.Portfolio):
-    pass
+    def update_portfolio_available_from_order(self, order, increase_quantity=True):
+        """
+        Realise portfolio availability update
+        TODO support leverage
+        :param order: the order that triggers the portfolio update
+        :param increase_quantity: True when increasing quantity
+        """
+        currency, market = order.get_currency_and_market()
+
+        is_inverse_contract = True  # TODO
+
+        # When inverse contract, decrease a currency market equivalent quantity from currency balance
+        if is_inverse_contract:
+            # decrease currency market equivalent quantity from currency available balance
+            self._update_portfolio_data(currency, -(order.origin_quantity / order.origin_price), False, True)
+
+        # When non-inverse contract, decrease directly market quantity
+        else:
+            # decrease market quantity from market available balance
+            self._update_portfolio_data(market, -order.origin_quantity, False, True)
