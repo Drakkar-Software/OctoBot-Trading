@@ -66,7 +66,6 @@ from octobot_trading.exchanges.exchange_util import (
     get_margin_exchange_class,
     get_future_exchange_class,
     get_spot_exchange_class,
-    search_exchange_class_from_exchange_name,
     get_order_side,
 )
 from octobot_trading.exchanges import exchange_websocket_factory
@@ -88,13 +87,6 @@ from octobot_trading.exchanges import util
 from octobot_trading.exchanges.util import (
     ExchangeMarketStatusFixer,
     is_ms_valid,
-    check_market_status_limits,
-    check_market_status_values,
-    get_markets_limit,
-    calculate_amounts,
-    calculate_costs,
-    calculate_prices,
-    fix_market_status_limits_from_current_data,
 )
 from octobot_trading.exchanges import websockets
 from octobot_trading.exchanges.websockets import (
@@ -150,7 +142,6 @@ __all__ = [
     "get_margin_exchange_class",
     "get_future_exchange_class",
     "get_spot_exchange_class",
-    "search_exchange_class_from_exchange_name",
     "get_order_side",
     "AbstractExchange",
     "is_exchange_managed_by_websocket",
@@ -175,13 +166,6 @@ __all__ = [
     "SpotExchange",
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
-    "check_market_status_limits",
-    "check_market_status_values",
-    "get_markets_limit",
-    "calculate_amounts",
-    "calculate_costs",
-    "calculate_prices",
-    "fix_market_status_limits_from_current_data",
     "OctoBotWebSocketClient",
     "AbstractWebsocket",
     "force_disable_web_socket",

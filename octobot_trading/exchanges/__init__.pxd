@@ -71,20 +71,12 @@ from octobot_trading.exchanges.exchange_util cimport (
     get_margin_exchange_class,
     get_future_exchange_class,
     get_spot_exchange_class,
-    search_exchange_class_from_exchange_name,
     get_order_side,
 )
 from octobot_trading.exchanges cimport util
 from octobot_trading.exchanges.util cimport (
     ExchangeMarketStatusFixer,
     is_ms_valid,
-    check_market_status_limits,
-    check_market_status_values,
-    get_markets_limit,
-    calculate_amounts,
-    calculate_costs,
-    calculate_prices,
-    fix_market_status_limits_from_current_data,
 )
 from octobot_trading.exchanges cimport types
 from octobot_trading.exchanges.types cimport (
@@ -132,13 +124,6 @@ __all__ = [
     "SpotExchange",
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
-    "check_market_status_limits",
-    "check_market_status_values",
-    "get_markets_limit",
-    "calculate_amounts",
-    "calculate_costs",
-    "calculate_prices",
-    "fix_market_status_limits_from_current_data",
     "OctoBotWebSocketClient",
     "AbstractWebsocket",
     "force_disable_web_socket",

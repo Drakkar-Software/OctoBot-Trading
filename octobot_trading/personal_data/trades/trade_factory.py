@@ -13,13 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.trades.trade as trade_class
+import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.enums as enums
 
 
 def create_trade_instance_from_raw(trader, raw_trade):
     try:
-        order = personal_data.create_order_from_raw(trader, raw_trade)
+        order = order_factory.create_order_from_raw(trader, raw_trade)
         order.update_from_raw(raw_trade)
         if order.status is enums.OrderStatus.CANCELED:
             order.cancel_order()
@@ -38,7 +39,7 @@ def create_trade_from_order(order,
                             executed_time=0):
     if close_status is not None:
         order.status = close_status
-    trade = personal_data.Trade(order.trader)
+    trade = trade_class.Trade(order.trader)
     trade.update_from_order(order,
                             canceled_time=canceled_time,
                             creation_time=creation_time,
@@ -57,7 +58,7 @@ def create_trade_instance(trader,
                           canceled_time=0,
                           creation_time=0,
                           executed_time=0):
-    order = personal_data.create_order_from_type(trader=trader, order_type=order_type)
+    order = order_factory.create_order_from_type(trader=trader, order_type=order_type)
     order.update(order_type=order_type,
                  symbol=symbol,
                  current_price=filled_price,
