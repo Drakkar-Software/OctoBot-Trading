@@ -21,7 +21,7 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
 
 
-class OrdersProducer(exchanges.ExchangeChannelProducer):
+class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
     async def push(self, orders, is_from_bot=False, are_closed=False):
         await self.perform(orders, is_from_bot=is_from_bot, are_closed=are_closed)
 
@@ -179,6 +179,6 @@ class OrdersProducer(exchanges.ExchangeChannelProducer):
             })
 
 
-class OrdersChannel(exchanges.ExchangeChannel):
+class OrdersChannel(exchanges_channel.ExchangeChannel):
     PRODUCER_CLASS = OrdersProducer
-    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges_channel.ExchangeChannelConsumer

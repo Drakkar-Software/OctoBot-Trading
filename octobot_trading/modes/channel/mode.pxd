@@ -14,14 +14,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges as exchanges
+cimport octobot_trading.exchanges.channel as exchanges_channel
 
-cdef class ModeChannelConsumer(exchanges.ExchangeChannelInternalConsumer):
+cdef class ModeChannelConsumer(exchanges_channel.ExchangeChannelInternalConsumer):
     pass
 
-cdef class ModeChannelProducer(exchanges.ExchangeChannelProducer):
+cdef class ModeChannelProducer(exchanges_channel.ExchangeChannelProducer):
     pass
 
-cdef class ModeChannel(exchanges.ExchangeChannel):
+cdef class ModeChannel(exchanges_channel.ExchangeChannel):
     cpdef object get_filtered_consumers(self, str trading_mode_name=*, str state =*, str cryptocurrency=*,
                                         str symbol=*, str time_frame=*)

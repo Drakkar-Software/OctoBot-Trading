@@ -17,7 +17,7 @@
 import asyncio
 
 import octobot_trading.errors as errors
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.ticker.channel.ticker as ticker_channel
 import octobot_trading.enums as enums
@@ -84,8 +84,8 @@ class TickerUpdater(ticker_channel.TickerProducer):
         Mini ticker
         """
         try:
-            await exchanges.get_chan(constants.MINI_TICKER_CHANNEL,
-                                     self.channel.exchange_manager.id).get_internal_producer(). \
+            await exchanges_channel.get_chan(constants.MINI_TICKER_CHANNEL,
+                                             self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=pair, mini_ticker={
                 enums.ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value:
                     ticker[enums.ExchangeConstantsTickersColumns.HIGH.value],
@@ -121,8 +121,8 @@ class TickerUpdater(ticker_channel.TickerProducer):
     async def extract_mark_price(self, symbol: str, ticker: dict):
         try:
             ticker = self.channel.exchange_manager.exchange.parse_mark_price(ticker, from_ticker=True)
-            await exchanges.get_chan(constants.MARK_PRICE_CHANNEL,
-                                     self.channel.exchange_manager.id).get_internal_producer(). \
+            await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL,
+                                             self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=symbol, mark_price=ticker[enums.ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update mark price from ticker : {e}")
@@ -130,8 +130,8 @@ class TickerUpdater(ticker_channel.TickerProducer):
     async def extract_funding_rate(self, symbol: str, ticker: dict):
         try:
             ticker = self.channel.exchange_manager.exchange.parse_funding(ticker, from_ticker=True)
-            await exchanges.get_chan(constants.FUNDING_CHANNEL,
-                                     self.channel.exchange_manager.id).get_internal_producer(). \
+            await exchanges_channel.get_chan(constants.FUNDING_CHANNEL,
+                                             self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=symbol,
                      funding_rate=ticker[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
                      next_funding_time=ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],

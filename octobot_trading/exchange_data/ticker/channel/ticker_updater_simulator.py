@@ -25,7 +25,7 @@ import octobot_commons.channels_name as channels_name
 
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 import octobot_trading.util as util
 import octobot_trading.exchange_data.ticker.channel.ticker_updater as ticker_updater
 
@@ -102,7 +102,7 @@ class TickerUpdaterSimulator(ticker_updater.TickerUpdater):
                         channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(
                         self.handle_timestamp)
                 else:
-                    await exchanges.get_chan(constants.OHLCV_CHANNEL, self.channel.exchange_manager.id) \
+                    await exchanges_channel.get_chan(constants.OHLCV_CHANNEL, self.channel.exchange_manager.id) \
                         .new_consumer(self._ticker_from_ohlcv_callback)
                     self.last_timestamp_pushed_by_symbol = {
                         symbol: 0

@@ -17,10 +17,10 @@ import asyncio
 
 import async_channel.constants as constants
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 
 
-class KlineProducer(exchanges.ExchangeChannelProducer):
+class KlineProducer(exchanges_channel.ExchangeChannelProducer):
     async def push(self, time_frame, symbol, kline):
         await self.perform(time_frame, symbol, kline)
 
@@ -53,6 +53,6 @@ class KlineProducer(exchanges.ExchangeChannelProducer):
             })
 
 
-class KlineChannel(exchanges.TimeFrameExchangeChannel):
+class KlineChannel(exchanges_channel.TimeFrameExchangeChannel):
     PRODUCER_CLASS = KlineProducer
-    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges_channel.ExchangeChannelConsumer

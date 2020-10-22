@@ -18,7 +18,7 @@ import asyncio
 
 import octobot_trading.errors as errors
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.order_book.channel.order_book as order_book_channel
 import octobot_trading.enums as enums
@@ -69,8 +69,8 @@ class OrderBookUpdater(order_book_channel.OrderBookProducer):
         """
         try:
             if asks and bids:
-                await exchanges.get_chan(constants.ORDER_BOOK_TICKER_CHANNEL,
-                                         self.channel.exchange_manager.id).get_internal_producer(). \
+                await exchanges_channel.get_chan(constants.ORDER_BOOK_TICKER_CHANNEL,
+                                                 self.channel.exchange_manager.id).get_internal_producer(). \
                     push(symbol=pair,
                          ask_quantity=asks[0][1], ask_price=asks[0][0],
                          bid_quantity=bids[0][1], bid_price=bids[0][0])

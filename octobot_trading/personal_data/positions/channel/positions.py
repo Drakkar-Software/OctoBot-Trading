@@ -17,11 +17,11 @@ import asyncio
 
 import async_channel.constants as channel_constants
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 import octobot_trading.enums as enums
 
 
-class PositionsProducer(exchanges.ExchangeChannelProducer):
+class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
     async def push(self, positions, is_closed=False, is_liquidated=False, is_from_bot=True):
         await self.perform(positions, is_closed=is_closed, is_liquidated=is_liquidated, is_from_bot=is_from_bot)
 
@@ -71,6 +71,6 @@ class PositionsProducer(exchanges.ExchangeChannelProducer):
             })
 
 
-class PositionsChannel(exchanges.ExchangeChannel):
+class PositionsChannel(exchanges_channel.ExchangeChannel):
     PRODUCER_CLASS = PositionsProducer
-    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges_channel.ExchangeChannelConsumer

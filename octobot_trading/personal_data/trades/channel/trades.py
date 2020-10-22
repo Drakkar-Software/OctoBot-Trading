@@ -21,7 +21,7 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.enums as enums
 
 
-class TradesProducer(exchanges.ExchangeChannelProducer):
+class TradesProducer(exchanges_channel.ExchangeChannelProducer):
     async def push(self, trades, old_trade=False):
         await self.perform(trades, old_trade=old_trade)
 
@@ -65,6 +65,6 @@ class TradesProducer(exchanges.ExchangeChannelProducer):
             })
 
 
-class TradesChannel(exchanges.ExchangeChannel):
+class TradesChannel(exchanges_channel.ExchangeChannel):
     PRODUCER_CLASS = TradesProducer
-    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges_channel.ExchangeChannelConsumer
