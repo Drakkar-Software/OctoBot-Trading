@@ -22,7 +22,7 @@ class CancelOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.OrderStates.CANCELING if (not self.order.simulated and
-                                                     self.order.status is not enums.Status.CANCELED) \
+                                                     self.order.status is not enums.OrderStatus.CANCELED) \
             else enums.OrderStates.CANCELED
 
     async def initialize_impl(self, forced=False, ignored_order=None) -> None:

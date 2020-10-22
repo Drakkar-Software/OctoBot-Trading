@@ -91,5 +91,4 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
                 await position.close()
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update position status : {e} (concerned position : {position}).")
-        finally:
-            return position_closed
+        return position_closed

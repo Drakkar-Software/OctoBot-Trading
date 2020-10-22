@@ -16,7 +16,7 @@
 import async_channel.channels as channels
 
 import octobot_backtesting.api as api
-import octobot_backtesting.data as data
+import octobot_backtesting.errors as errors
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as constants
@@ -92,7 +92,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                             pair,
                                             [self.last_candles_by_pair_by_time_frame[pair][time_frame.value][-1]],
                                             partial=True)
-        except data.DataBaseNotExists as e:
+        except errors.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()
