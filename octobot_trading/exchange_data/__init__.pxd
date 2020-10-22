@@ -91,15 +91,13 @@ from octobot_trading.exchange_data.ticker cimport (
 )
 
 from octobot_trading.exchange_data cimport exchange_symbol_data
-from octobot_trading.exchange_data cimport exchange_symbols_data
-
 from octobot_trading.exchange_data.exchange_symbol_data cimport (
     ExchangeSymbolData,
 )
+from octobot_trading.exchange_data cimport exchange_symbols_data
 from octobot_trading.exchange_data.exchange_symbols_data cimport (
     ExchangeSymbolsData,
 )
-
 
 __all__ = [
     "FundingUpdaterSimulator",

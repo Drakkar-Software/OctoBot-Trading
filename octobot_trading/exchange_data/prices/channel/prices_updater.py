@@ -16,10 +16,10 @@
 import asyncio
 
 import octobot_trading.errors as errors
-import octobot_trading.exchanges as exchanges
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchanges.channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.prices.channel.price as prices_channel
+import octobot_trading.exchange_data.prices.prices_manager as prices_manager
 import octobot_trading.enums as enums
 
 
@@ -49,18 +49,19 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
                 await self.start_fetching()
 
     async def subscribe(self):
-        self.recent_trades_consumer = await exchanges.get_chan(constants.RECENT_TRADES_CHANNEL,
-                                                               self.channel.exchange_manager.id) \
+        self.recent_trades_consumer = await exchanges_channel.get_chan(constants.RECENT_TRADES_CHANNEL,
+                                                                       self.channel.exchange_manager.id) \
             .new_consumer(self.handle_recent_trades_update)
-        self.ticker_consumer = await exchanges.get_chan(constants.TICKER_CHANNEL, self.channel.exchange_manager.id) \
+        self.ticker_consumer = await exchanges_channel.get_chan(constants.TICKER_CHANNEL,
+                                                                self.channel.exchange_manager.id) \
             .new_consumer(self.handle_ticker_update)
 
     async def unsubscribe(self):
         if self.recent_trades_consumer:
-            await exchanges.get_chan(constants.RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
+            await exchanges_channel.get_chan(constants.RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
                 .remove_consumer(self.recent_trades_consumer)
         if self.ticker_consumer:
-            await exchanges.get_chan(constants.TICKER_CHANNEL, self.channel.exchange_manager.id) \
+            await exchanges_channel.get_chan(constants.TICKER_CHANNEL, self.channel.exchange_manager.id) \
                 .remove_consumer(self.ticker_consumer)
 
     async def resume(self) -> None:
@@ -79,7 +80,7 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
         Recent trades channel consumer callback
         """
         try:
-            mark_price = exchange_data.calculate_mark_price_from_recent_trade_prices(
+            mark_price = prices_manager.calculate_mark_price_from_recent_trade_prices(
                 [float(last_price[enums.ExchangeConstantsOrderColumns.PRICE.value])
                  for last_price in recent_trades])
 
@@ -131,8 +132,8 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
 
     async def push_funding_rate(self, symbol, funding_rate):
         if funding_rate:
-            await exchanges.get_chan(constants.FUNDING_CHANNEL,
-                                     self.channel.exchange_manager.id).get_internal_producer(). \
+            await exchanges_channel.get_chan(constants.FUNDING_CHANNEL,
+                                             self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=symbol,
                      funding_rate=funding_rate[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
                      next_funding_time=funding_rate[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],

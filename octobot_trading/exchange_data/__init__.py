@@ -15,15 +15,6 @@
 #  License along with this library.
 
 from octobot_trading.exchange_data import funding
-from octobot_trading.exchange_data import kline
-from octobot_trading.exchange_data import ohlcv
-from octobot_trading.exchange_data import order_book
-from octobot_trading.exchange_data import prices
-from octobot_trading.exchange_data import recent_trades
-from octobot_trading.exchange_data import ticker
-from octobot_trading.exchange_data import exchange_symbol_data
-from octobot_trading.exchange_data import exchange_symbols_data
-
 from octobot_trading.exchange_data.funding import (
     FundingUpdaterSimulator,
     FundingUpdater,
@@ -31,7 +22,7 @@ from octobot_trading.exchange_data.funding import (
     FundingProducer,
     FundingChannel,
 )
-
+from octobot_trading.exchange_data import kline
 from octobot_trading.exchange_data.kline import (
     KlineUpdaterSimulator,
     KlineProducer,
@@ -39,7 +30,7 @@ from octobot_trading.exchange_data.kline import (
     KlineManager,
     KlineUpdater,
 )
-
+from octobot_trading.exchange_data import ohlcv
 from octobot_trading.exchange_data.ohlcv import (
     CandlesManager,
     get_symbol_close_candles,
@@ -54,7 +45,7 @@ from octobot_trading.exchange_data.ohlcv import (
     OHLCVChannel,
     OHLCVUpdater,
 )
-
+from octobot_trading.exchange_data import order_book
 from octobot_trading.exchange_data.order_book import (
     OrderBookUpdater,
     OrderBookProducer,
@@ -64,7 +55,7 @@ from octobot_trading.exchange_data.order_book import (
     OrderBookManager,
     OrderBookUpdaterSimulator,
 )
-
+from octobot_trading.exchange_data import prices
 from octobot_trading.exchange_data.prices import (
     MarkPriceUpdaterSimulator,
     MarkPriceProducer,
@@ -74,7 +65,7 @@ from octobot_trading.exchange_data.prices import (
     MarkPriceUpdater,
     PriceEventsManager,
 )
-
+from octobot_trading.exchange_data import recent_trades
 from octobot_trading.exchange_data.recent_trades import (
     RecentTradeProducer,
     RecentTradeChannel,
@@ -84,7 +75,7 @@ from octobot_trading.exchange_data.recent_trades import (
     RecentTradeUpdater,
     RecentTradeUpdaterSimulator,
 )
-
+from octobot_trading.exchange_data import ticker
 from octobot_trading.exchange_data.ticker import (
     TickerManager,
     TickerUpdater,
@@ -94,9 +85,11 @@ from octobot_trading.exchange_data.ticker import (
     MiniTickerChannel,
     TickerUpdaterSimulator,
 )
+from octobot_trading.exchange_data import exchange_symbol_data
 from octobot_trading.exchange_data.exchange_symbol_data import (
     ExchangeSymbolData,
 )
+from octobot_trading.exchange_data import exchange_symbols_data
 from octobot_trading.exchange_data.exchange_symbols_data import (
     ExchangeSymbolsData,
 )

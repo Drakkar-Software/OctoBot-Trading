@@ -16,10 +16,10 @@
 import asyncio 
 
 import async_channel.constants as constants
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 
 
-class FundingProducer(exchanges.ExchangeChannelProducer):
+class FundingProducer(exchanges_channel.ExchangeChannelProducer):
     async def push(self, symbol, funding_rate, next_funding_time, timestamp):
         await self.perform(symbol, funding_rate, next_funding_time, timestamp)
 
@@ -55,6 +55,6 @@ class FundingProducer(exchanges.ExchangeChannelProducer):
             })
 
 
-class FundingChannel(exchanges.ExchangeChannel):
+class FundingChannel(exchanges_channel.ExchangeChannel):
     PRODUCER_CLASS = FundingProducer
-    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges_channel.ExchangeChannelConsumer

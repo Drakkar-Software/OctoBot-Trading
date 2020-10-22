@@ -17,10 +17,10 @@ import asyncio
 
 import async_channel.constants as constants
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 
 
-class OHLCVProducer(exchanges.ExchangeChannelProducer):
+class OHLCVProducer(exchanges_channel.ExchangeChannelProducer):
     async def push(self, time_frame, symbol, candle, replace_all=False, partial=False):
         await self.perform(time_frame, symbol, candle, replace_all, partial)
 
@@ -54,6 +54,6 @@ class OHLCVProducer(exchanges.ExchangeChannelProducer):
             })
 
 
-class OHLCVChannel(exchanges.TimeFrameExchangeChannel):
+class OHLCVChannel(exchanges_channel.TimeFrameExchangeChannel):
     PRODUCER_CLASS = OHLCVProducer
-    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges_channel.ExchangeChannelConsumer

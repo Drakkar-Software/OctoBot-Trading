@@ -17,10 +17,10 @@ import asyncio
 
 import async_channel.constants as constants
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 
 
-class OrderBookProducer(exchanges.ExchangeChannelProducer):
+class OrderBookProducer(exchanges_channel.ExchangeChannelProducer):
     async def push(self, symbol, asks, bids, update_order_book=True):
         await self.perform(symbol, asks, bids, update_order_book)
 
@@ -52,12 +52,12 @@ class OrderBookProducer(exchanges.ExchangeChannelProducer):
             })
 
 
-class OrderBookChannel(exchanges.ExchangeChannel):
+class OrderBookChannel(exchanges_channel.ExchangeChannel):
     PRODUCER_CLASS = OrderBookProducer
-    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges_channel.ExchangeChannelConsumer
 
 
-class OrderBookTickerProducer(exchanges.ExchangeChannelProducer):
+class OrderBookTickerProducer(exchanges_channel.ExchangeChannelProducer):
     async def push(self, symbol, ask_quantity, ask_price, bid_quantity, bid_price):
         await self.perform(symbol, ask_quantity, ask_price, bid_quantity, bid_price)
 
@@ -93,6 +93,6 @@ class OrderBookTickerProducer(exchanges.ExchangeChannelProducer):
             })
 
 
-class OrderBookTickerChannel(exchanges.ExchangeChannel):
+class OrderBookTickerChannel(exchanges_channel.ExchangeChannel):
     PRODUCER_CLASS = OrderBookTickerProducer
-    CONSUMER_CLASS = exchanges.ExchangeChannelConsumer
+    CONSUMER_CLASS = exchanges_channel.ExchangeChannelConsumer
