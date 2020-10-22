@@ -64,14 +64,24 @@ disable=C0114, # doc
         C0115, # doc
         C0116, # doc
         E0611, # false positive
+        broad-except,
+        abstract-method,
+        arguments-differ,
+        unused-argument,
+        reimported,
+        logging-format-interpolation,
+        fixme,
+        attribute-defined-outside-init,
+        useless-super-delegation,
+        pointless-string-statement,
         c-extension-no-member, # cythonized imports no member
-        W, C, R # only errors TODO remove
+        C, R # only errors TODO remove
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time (only on the command line, not in the configuration file where
 # it should appear only once). See also the "--disable" option for examples.
-enable=c-extension-no-member
+enable=
 
 
 [REPORTS]

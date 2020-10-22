@@ -119,8 +119,7 @@ class FundingUpdater(funding_channel.FundingProducer):
             raise ne
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update funding rate : {e}")
-        finally:
-            return None
+        return None
 
     def _should_run(self) -> bool:
         """

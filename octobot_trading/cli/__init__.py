@@ -1,3 +1,4 @@
+# pylint: disable=global-statement
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
