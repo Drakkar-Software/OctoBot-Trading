@@ -3,6 +3,7 @@ omit =
     octobot_trading/cli/*
     octobot_trading/api/*
     tests/*
+    tests_additional/*
     tentacles/*
     logs/*
     backtesting/*
