@@ -68,7 +68,7 @@ async def test_handle_balance_update_from_order(backtesting_trader):
 
     trader.simulate = True
     with patch.object(portfolio_manager, '_refresh_simulated_trader_portfolio_from_order',
-                      new=AsyncMock()) as _refresh_simulated_trader_portfolio_from_order_mock:
+                      new=Mock()) as _refresh_simulated_trader_portfolio_from_order_mock:
         _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
         await portfolio_manager.handle_balance_update_from_order(order)
         _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
