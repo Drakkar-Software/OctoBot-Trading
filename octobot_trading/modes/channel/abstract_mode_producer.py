@@ -20,7 +20,7 @@ import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.modes.channel as modes_channel
 
 
