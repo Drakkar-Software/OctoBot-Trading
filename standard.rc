@@ -64,6 +64,7 @@ disable=C0114, # doc
         C0115, # doc
         C0116, # doc
         E0611, # false positive
+        c-extension-no-member, # cythonized imports no member
         W, C, R # only errors TODO remove
 
 # Enable the message, report, category or checker with the given id(s). You can

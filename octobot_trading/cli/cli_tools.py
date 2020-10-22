@@ -21,72 +21,71 @@ import async_channel.channels as channel
 import octobot_commons.channels_name as channels_name
 import octobot_commons.pretty_printer as pretty_printer
 
-import octobot_trading.constants
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 import octobot_trading.cli as cli
 
 
 async def ticker_callback(exchange: str, exchange_id: str, symbol: str,  ticker):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(f"TICKER : EXCHANGE = {exchange} || SYMBOL = {symbol} || TICKER = {ticker}")
 
 
 async def order_book_callback(exchange: str, exchange_id: str, symbol: str,  asks, bids):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(f"ORDERBOOK : EXCHANGE = {exchange} || SYMBOL = {symbol} || ASKS = {asks} || BIDS = {bids}")
 
 
 async def ohlcv_callback(exchange: str, exchange_id: str, symbol: str,  time_frame, candle):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(
             f"OHLCV : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
 
 
 async def recent_trades_callback(exchange: str, exchange_id: str, symbol: str,  recent_trades):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(f"RECENT TRADE : EXCHANGE = {exchange} || SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
 
 
 async def kline_callback(exchange: str, exchange_id: str, symbol: str, time_frame, kline):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(
             f"KLINE : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || KLINE = {kline}")
 
 
 async def balance_callback(exchange: str, exchange_id: str, balance):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(f"BALANCE : EXCHANGE = {exchange} || BALANCE = {balance}")
 
 
 async def balance_profitability_callback(exchange: str, exchange_id: str, profitability, profitability_percent,
                                          market_profitability_percent, initial_portfolio_current_profitability):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(f"BALANCE PROFITABILITY : EXCHANGE = {exchange} || PROFITABILITY = "
-                     f"{PrettyPrinter.portfolio_profitability_pretty_print(profitability, profitability_percent, 'USDT')}")
+                     f"{pretty_printer.PrettyPrinter.portfolio_profitability_pretty_print(profitability, profitability_percent, 'USDT')}")
 
 
 async def trades_callback(exchange: str, exchange_id: str, symbol: str, trade: dict, old_trade: bool):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(f"TRADES : EXCHANGE = {exchange} || SYMBOL = {symbol} || TRADE = {trade} "
                      f"|| OLD_TRADE = {old_trade}")
 
 
 async def orders_callback(exchange: str, exchange_id: str, symbol: str,  order: dict, is_new, is_from_bot):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         order_string = f"ORDERS : EXCHANGE = {exchange} || SYMBOL = {symbol} ||"
-        order_string += PrettyPrinter.open_order_pretty_printer(exchange, order)
+        order_string += pretty_printer.PrettyPrinter.open_order_pretty_printer(exchange, order)
         order_string += f"|| CREATED = {is_new} || FROM_BOT = {is_from_bot}"
         logging.info(order_string)
 
 
 async def positions_callback(exchange: str, exchange_id: str, symbol: str,  position, is_closed, is_updated, is_from_bot):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(f"POSITIONS : EXCHANGE = {exchange} || SYMBOL = {symbol} || POSITIONS = {position}"
                      f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
 
 
 async def time_callback(timestamp):
-    if get_should_display_callbacks_logs():
+    if cli.get_should_display_callbacks_logs():
         logging.info(f"TIME : TIMESTAMP = {timestamp}")
 
 
@@ -106,22 +105,33 @@ async def start_exchange(exchange_builder):
 
     # consumers
     exchange_id = exchange_manager.id
-    await get_trading_chan(TICKER_CHANNEL, exchange_id).new_consumer(ticker_callback)
-    await get_trading_chan(RECENT_TRADES_CHANNEL, exchange_id).new_consumer(
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.TICKER_CHANNEL.value, exchange_id)\
+        .new_consumer(ticker_callback)
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.RECENT_TRADES_CHANNEL.value, exchange_id)\
+        .new_consumer(
         recent_trades_callback)
-    await get_trading_chan(ORDER_BOOK_CHANNEL, exchange_id).new_consumer(order_book_callback)
-    await get_trading_chan(KLINE_CHANNEL, exchange_id).new_consumer(kline_callback)
-    await get_trading_chan(OHLCV_CHANNEL, exchange_id).new_consumer(ohlcv_callback)
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.ORDER_BOOK_CHANNEL.value, exchange_id)\
+        .new_consumer(order_book_callback)
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.KLINE_CHANNEL.value, exchange_id)\
+        .new_consumer(kline_callback)
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.OHLCV_CHANNEL.value, exchange_id)\
+        .new_consumer(ohlcv_callback)
 
-    await get_trading_chan(BALANCE_CHANNEL, exchange_id).new_consumer(balance_callback)
-    await get_trading_chan(BALANCE_PROFITABILITY_CHANNEL, exchange_id).new_consumer(
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.BALANCE_CHANNEL.value, exchange_id)\
+        .new_consumer(balance_callback)
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.BALANCE_PROFITABILITY_CHANNEL.value,
+                                     exchange_id).new_consumer(
         balance_profitability_callback)
-    await get_trading_chan(TRADES_CHANNEL, exchange_id).new_consumer(trades_callback)
-    await get_trading_chan(POSITIONS_CHANNEL, exchange_id).new_consumer(positions_callback)
-    await get_trading_chan(ORDERS_CHANNEL, exchange_id).new_consumer(orders_callback)
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.TRADES_CHANNEL.value, exchange_id)\
+        .new_consumer(trades_callback)
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.POSITIONS_CHANNEL.value, exchange_id)\
+        .new_consumer(positions_callback)
+    await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.ORDERS_CHANNEL.value, exchange_id)\
+        .new_consumer(orders_callback)
 
     try:
-        await get_chan(OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(time_callback)
+        await channel.get_chan(channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value)\
+            .new_consumer(time_callback)
     except KeyError:
         pass
 

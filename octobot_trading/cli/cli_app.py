@@ -22,7 +22,7 @@ import click_shell
 import octobot_trading.api as api
 import octobot_trading.exchanges as exchanges
 import octobot_trading.cli as cli
-import octobot_trading.enums
+import octobot_trading.enums as enums
 
 
 @click_shell.shell(prompt='OctoBot-Trading > ', intro='Starting...')
@@ -34,7 +34,7 @@ def app():
 
     cli.add_exchange(exchange_name, {
         "exchange_builder": exchange_builder,
-        "exchange_thread": threading.Thread(target=start_cli_exchange, args=(exchange_builder,))
+        "exchange_thread": threading.Thread(target=cli.start_cli_exchange, args=(exchange_builder,))
     })
 
     cli.get_exchange(exchange_name)["exchange_thread"].start()
@@ -57,11 +57,11 @@ def hide():
 @click.option("--price", prompt="Order price", help="The order price.", type=float)
 @click.option("--quantity", prompt="Order quantity", help="The order quantity.", type=float)
 @click.option("--order_type", prompt="Order type", help="The order type.",
-              type=click.Choice([t.value for t in TraderOrderType]))
+              type=click.Choice([t.value for t in enums.TraderOrderType]))
 def create_order(exchange_name, symbol, price, quantity, order_type):
     asyncio.get_event_loop().run_until_complete(
-        api_create_order(exchanges[exchange_name]["exchange_factory"].exchange_manager,
-                         order_type=TraderOrderType(order_type),
+        api.create_order(exchanges[exchange_name]["exchange_factory"].exchange_manager,
+                         order_type=enums.TraderOrderType(order_type),
                          symbol=symbol,
                          current_price=price,
                          quantity=quantity,
@@ -74,7 +74,7 @@ def create_order(exchange_name, symbol, price, quantity, order_type):
 @click.option("--symbol", prompt="Order symbol", help="The order symbol.", type=str)
 def orders(exchange_name, symbol):
     exchange_manager = exchanges[exchange_name]["exchange_factory"].exchange_manager
-    click.echo(get_open_orders(exchange_manager))
+    click.echo(api.get_open_orders(exchange_manager))
 
 
 @app.command()
@@ -83,11 +83,11 @@ def orders(exchange_name, symbol):
 # @click.option("--api_secret", prompt="API secret", help="The api secret of the exchange to use.")
 def connect(exchange_name):
     if exchange_name not in exchanges:
-        exchange_builder = create_exchange_builder(get_config(), exchange_name)
+        exchange_builder = exchanges.create_exchange_builder(cli.get_config(), exchange_name)
 
         exchanges[exchange_name] = {
             "exchange_builder": exchange_builder,
-            "exchange_thread": Thread(target=start_cli_exchange, args=(exchange_builder,))
+            "exchange_thread": threading.Thread(target=cli.start_cli_exchange, args=(exchange_builder,))
         }
 
         exchanges[exchange_name]["exchange_thread"].start()
