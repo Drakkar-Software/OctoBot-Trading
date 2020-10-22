@@ -17,8 +17,8 @@ import logging
 import websockets
 import time
 import ccxt
-import abc 
-import asyncio 
+import abc
+import asyncio
 from datetime import datetime, timedelta
 import typing
 

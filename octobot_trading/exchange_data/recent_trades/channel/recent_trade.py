@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio 
+import asyncio
 
 import async_channel.constants as constants
 import octobot_trading.exchanges.channel as exchanges_channel
