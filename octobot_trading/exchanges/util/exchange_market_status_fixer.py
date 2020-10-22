@@ -42,14 +42,16 @@ def get_markets_limit(market_limit):
 def calculate_amounts(market_limit):
     limit_cost, limit_price, limit_amount = get_markets_limit(market_limit)
 
-    if Ecmsc.LIMITS_COST_MAX.value in limit_cost and Ecmsc.LIMITS_PRICE_MAX.value in limit_price:
+    if not is_ms_valid(limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value]) and \
+        Ecmsc.LIMITS_COST_MAX.value in limit_cost and Ecmsc.LIMITS_PRICE_MAX.value in limit_price:
         if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MAX.value]) \
                 and is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MAX.value]) \
                 and limit_price[Ecmsc.LIMITS_PRICE_MAX.value] > 0:
             limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value] = limit_cost[Ecmsc.LIMITS_COST_MAX.value] / \
                                                           limit_price[Ecmsc.LIMITS_PRICE_MAX.value]
 
-    if Ecmsc.LIMITS_COST_MIN.value in limit_cost and Ecmsc.LIMITS_PRICE_MIN.value in limit_price:
+    if not is_ms_valid(limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value]) and \
+        Ecmsc.LIMITS_COST_MIN.value in limit_cost and Ecmsc.LIMITS_PRICE_MIN.value in limit_price:
         if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MIN.value]) \
                 and is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MIN.value]) \
                 and limit_price[Ecmsc.LIMITS_PRICE_MIN.value] > 0:
@@ -60,17 +62,17 @@ def calculate_amounts(market_limit):
 def calculate_costs(market_limit):
     limit_cost, limit_price, limit_amount = get_markets_limit(market_limit)
 
-    if Ecmsc.LIMITS_AMOUNT_MAX.value in limit_amount and Ecmsc.LIMITS_PRICE_MAX.value in limit_price:
+    if not is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MAX.value]) and \
+        Ecmsc.LIMITS_AMOUNT_MAX.value in limit_amount and Ecmsc.LIMITS_PRICE_MAX.value in limit_price:
         if is_ms_valid(limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value]) \
-                and is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MAX.value]) \
-                and not is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MAX.value]):
+                and is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MAX.value]):
             limit_cost[Ecmsc.LIMITS_COST_MAX.value] = limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value] * \
                                                       limit_price[Ecmsc.LIMITS_PRICE_MAX.value]
 
-    if Ecmsc.LIMITS_AMOUNT_MIN.value in limit_amount and Ecmsc.LIMITS_PRICE_MIN.value in limit_price:
+    if not is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MIN.value]) and \
+        Ecmsc.LIMITS_AMOUNT_MIN.value in limit_amount and Ecmsc.LIMITS_PRICE_MIN.value in limit_price:
         if is_ms_valid(limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value]) \
-                and is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MIN.value]) \
-                and not is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MIN.value]):
+                and is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MIN.value]):
             limit_cost[Ecmsc.LIMITS_COST_MIN.value] = limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value] * \
                                                       limit_price[Ecmsc.LIMITS_PRICE_MIN.value]
 
@@ -78,14 +80,16 @@ def calculate_costs(market_limit):
 def calculate_prices(market_limit):
     limit_cost, limit_price, limit_amount = get_markets_limit(market_limit)
 
-    if Ecmsc.LIMITS_COST_MAX.value in limit_cost and Ecmsc.LIMITS_AMOUNT_MAX.value in limit_amount:
+    if not is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MAX.value]) and \
+        Ecmsc.LIMITS_COST_MAX.value in limit_cost and Ecmsc.LIMITS_AMOUNT_MAX.value in limit_amount:
         if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MAX.value]) \
                 and is_ms_valid(limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value]) \
                 and limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value] > 0:
             limit_price[Ecmsc.LIMITS_PRICE_MAX.value] = limit_cost[Ecmsc.LIMITS_COST_MAX.value] / \
                                                         limit_amount[Ecmsc.LIMITS_AMOUNT_MAX.value]
 
-    if Ecmsc.LIMITS_COST_MIN.value in limit_cost and Ecmsc.LIMITS_AMOUNT_MIN.value in limit_amount:
+    if not is_ms_valid(limit_price[Ecmsc.LIMITS_PRICE_MIN.value]) and \
+            Ecmsc.LIMITS_COST_MIN.value in limit_cost and Ecmsc.LIMITS_AMOUNT_MIN.value in limit_amount:
         if is_ms_valid(limit_cost[Ecmsc.LIMITS_COST_MIN.value]) \
                 and is_ms_valid(limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value]) \
                 and limit_amount[Ecmsc.LIMITS_AMOUNT_MIN.value] > 0:
