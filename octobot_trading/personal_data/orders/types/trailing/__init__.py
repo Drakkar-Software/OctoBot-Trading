@@ -30,21 +30,3 @@ __all__ = [
     "TrailingStopOrder",
     "TrailingStopLimitOrder",
 ]
-
-from octobot_trading.personal_data.orders.types.trailing import trailing_stop_order
-from octobot_trading.personal_data.orders.types.trailing import (
-    trailing_stop_limit_order,
-)
-
-from octobot_trading.personal_data.orders.types.trailing.trailing_stop_order import (
-    TrailingStopOrder,
-)
-from octobot_trading.personal_data.orders.types.trailing.trailing_stop_limit_order import (
-    TrailingStopLimitOrder,
-)
-
-__all__ = [
-    "TrailingStopOrder",
-    "TrailingStopLimitOrder",
-]
-

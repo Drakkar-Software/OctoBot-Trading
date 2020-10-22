@@ -17,7 +17,6 @@
 import logging
 
 import ccxt.async_support as ccxt
-import ccxt.async_support as async_support
 import typing
 
 import octobot_commons.constants
@@ -155,7 +154,7 @@ class CCXTExchange(exchanges.AbstractExchange):
             return await self.client.fetch_ohlcv(symbol, time_frame.value)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
-        except async_support.BaseError as e:
+        except ccxt.BaseError as e:
             self.logger.error(f"Failed to get_symbol_prices {e}")
         return None
 
@@ -168,7 +167,7 @@ class CCXTExchange(exchanges.AbstractExchange):
             return await self.get_symbol_prices(symbol, time_frame, limit=1, **kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
-        except async_support.BaseError as e:
+        except ccxt.BaseError as e:
             self.logger.error(f"Failed to get_kline_price {e}")
         return None
 
@@ -178,7 +177,7 @@ class CCXTExchange(exchanges.AbstractExchange):
             return await self.client.fetch_order_book(symbol, limit=limit, params=kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
-        except async_support.BaseError as e:
+        except ccxt.BaseError as e:
             self.logger.error(f"Failed to get_order_book {e}")
         return None
 
@@ -187,7 +186,7 @@ class CCXTExchange(exchanges.AbstractExchange):
             return await self.client.fetch_trades(symbol, limit=limit, params=kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
-        except async_support.BaseError as e:
+        except ccxt.BaseError as e:
             self.logger.error(f"Failed to get_recent_trades {e}")
         return None
 
@@ -197,7 +196,7 @@ class CCXTExchange(exchanges.AbstractExchange):
             return await self.client.fetch_ticker(symbol, params=kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
-        except async_support.BaseError as e:
+        except ccxt.BaseError as e:
             self.logger.error(f"Failed to get_price_ticker {e}")
         return None
 
@@ -207,7 +206,7 @@ class CCXTExchange(exchanges.AbstractExchange):
             return self.all_currencies_price_ticker
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
-        except async_support.BaseError as e:
+        except ccxt.BaseError as e:
             self.logger.error(f"Failed to get_all_currencies_price_ticker {e}")
         return None
 
@@ -217,7 +216,7 @@ class CCXTExchange(exchanges.AbstractExchange):
             try:
                 return await self.client.fetch_order(order_id, symbol, params=kwargs)
                 # self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order) TODO
-            except async_support.OrderNotFound:
+            except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
                 # self.exchange_manager.exchange_personal_data().
                 # update_order_attribute(order_id, ecoc.STATUS.value, OrderStatus.CANCELED.value) TODO
@@ -261,7 +260,7 @@ class CCXTExchange(exchanges.AbstractExchange):
         try:
             cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, **kwargs)
             return personal_data.parse_is_cancelled(await self.get_order(order_id, symbol=symbol, **kwargs))
-        except async_support.OrderNotFound:
+        except ccxt.OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
