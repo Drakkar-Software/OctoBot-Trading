@@ -17,7 +17,7 @@ import asyncio
 
 import async_channel.constants as channel_constants
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 import octobot_trading.enums as enums
 
 
