@@ -19,19 +19,22 @@ import octobot_commons.tentacles_management as tentacles_management
 import octobot_tentacles_manager.api as api
 
 import octobot_trading.enums as enums
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.types as exchanges_types
 
 
 def get_margin_exchange_class(exchange_name, tentacles_setup_config):
-    return search_exchange_class_from_exchange_name(exchanges.MarginExchange, exchange_name, tentacles_setup_config)
+    return search_exchange_class_from_exchange_name(exchanges_types.MarginExchange, exchange_name,
+                                                    tentacles_setup_config)
 
 
 def get_future_exchange_class(exchange_name, tentacles_setup_config):
-    return search_exchange_class_from_exchange_name(exchanges.FutureExchange, exchange_name, tentacles_setup_config)
+    return search_exchange_class_from_exchange_name(exchanges_types.FutureExchange, exchange_name,
+                                                    tentacles_setup_config)
 
 
 def get_spot_exchange_class(exchange_name, tentacles_setup_config):
-    return search_exchange_class_from_exchange_name(exchanges.SpotExchange, exchange_name, tentacles_setup_config)
+    return search_exchange_class_from_exchange_name(exchanges_types.SpotExchange, exchange_name,
+                                                    tentacles_setup_config)
 
 
 def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
@@ -54,7 +57,7 @@ def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
 
     logging.get_logger().warning(f"No specific exchange implementation for {exchange_name} "
                                  f"found, searching for default one...")
-    return search_exchange_class_from_exchange_name(exchanges.SpotExchange, exchange_name,
+    return search_exchange_class_from_exchange_name(exchanges_types.SpotExchange, exchange_name,
                                                     tentacles_setup_config, enable_default=True)
 
 
