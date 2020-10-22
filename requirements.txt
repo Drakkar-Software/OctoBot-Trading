@@ -9,7 +9,7 @@ OctoBot-Commons>=1.4.1, <1.5
 OctoBot-Tentacles-Manager>=2.3.1, <2.4
 
 # Exchange connection requirements
-ccxt==1.36.71
+ccxt==1.36.77
 cryptography # Never specify a version (managed by https://github.com/Drakkar-Software/OctoBot-PyPi-Linux-Deployer)
 
 # CLI requirements
