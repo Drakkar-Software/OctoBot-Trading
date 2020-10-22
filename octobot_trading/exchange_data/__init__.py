@@ -112,7 +112,7 @@ UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = {
 SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE = {
     trading_constants.OHLCV_CHANNEL: [backtesting_enums.ExchangeDataTables.OHLCV],
     trading_constants.ORDER_BOOK_CHANNEL: [backtesting_enums.ExchangeDataTables.ORDER_BOOK],
-    trading_constants.RECENT_TRADES_CHANNEL: [backtesting_enums.ExchangeDataTables.RECENT_TRADES, 
+    trading_constants.RECENT_TRADES_CHANNEL: [backtesting_enums.ExchangeDataTables.RECENT_TRADES,
                                               backtesting_enums.ExchangeDataTables.OHLCV],
     trading_constants.TICKER_CHANNEL: [backtesting_enums.ExchangeDataTables.TICKER,
                                        backtesting_enums.ExchangeDataTables.OHLCV],

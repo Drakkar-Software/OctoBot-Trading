@@ -14,8 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-import threading 
-
+import threading
 import click
 import click_shell
 

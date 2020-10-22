@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import collections 
+import collections
 
 import octobot_commons.logging as logging
 
