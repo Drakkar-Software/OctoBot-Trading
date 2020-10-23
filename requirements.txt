@@ -3,10 +3,10 @@ cython==0.29.21
 numpy==1.19.2
 
 # Drakkar-Software requirements
-OctoBot-Backtesting>=1.6.0, <1.7
-async-channel>=2.0.2, <2.1
-OctoBot-Commons>=1.4.1, <1.5
-OctoBot-Tentacles-Manager>=2.3.1, <2.4
+OctoBot-Backtesting>=1.6.1, <1.7
+async-channel>=2.0.3, <2.1
+OctoBot-Commons>=1.4.4, <1.5
+OctoBot-Tentacles-Manager>=2.3.2, <2.4
 
 # Exchange connection requirements
 ccxt==1.36.78
