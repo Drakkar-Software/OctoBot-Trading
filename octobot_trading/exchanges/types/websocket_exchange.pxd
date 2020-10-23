@@ -49,7 +49,7 @@ cdef class WebsocketExchange:
     cdef public object async_ccxt_client
     cdef object _watch_task
     cdef object last_msg
-    cdef object loop
+    cdef object bot_mainloop
 
     cdef void _initialize(self, list pairs, list channels)
     cdef void on_open(self)

@@ -57,7 +57,7 @@ class WebsocketExchange:
         self.exchange_id = self.exchange_manager.id
         self.use_testnet = self.exchange_manager.is_sandboxed
 
-        self.loop = asyncio.get_event_loop()
+        self.bot_mainloop = asyncio.get_event_loop()
 
         self.api_key = api_key
         self.api_secret = api_secret
@@ -97,7 +97,7 @@ class WebsocketExchange:
         self.channels = [self.feed_to_exchange(chan) for chan in channels] if channels else []
 
     def start(self):
-        self.websocket_task = self.loop.run_until_complete(self._connect())
+        asyncio.run(self._connect())
 
     async def _watcher(self):
         while True:
@@ -163,7 +163,7 @@ class WebsocketExchange:
         try:
             asyncio.run_coroutine_threadsafe(
                 exchanges.get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
-                asyncio.get_event_loop())
+                self.bot_mainloop)
         except Exception as e:
             self.logger.error(f"Push to {channel_name} failed : {e}")
 
