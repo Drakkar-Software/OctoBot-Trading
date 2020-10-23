@@ -1,4 +1,4 @@
-pytest
+pytest>=5.4.0
 pytest-pep8
 pytest-cov
 pytest-asyncio
@@ -7,7 +7,7 @@ pytest-randomly
 
 pylint==2.4.4
 
-mock>=4.0.1
+mock>=4.0.2
 
 coverage
 coveralls

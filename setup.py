@@ -165,7 +165,7 @@ with open('README.md', encoding='utf-8') as f:
     DESCRIPTION = f.read()
 
 REQUIRED = open('requirements.txt').readlines()
-REQUIRES_PYTHON = '>=3.7'
+REQUIRES_PYTHON = '>=3.8'
 CYTHON_DEBUG = False if not os.getenv('CYTHON_DEBUG') else os.getenv('CYTHON_DEBUG')
 
 if CYTHON_DEBUG:
@@ -195,8 +195,8 @@ setup(
     ext_modules=cythonize(ext_modules, gdb_debug=CYTHON_DEBUG),
     python_requires=REQUIRES_PYTHON,
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'Programming Language :: Python :: 3.7',
+        'Development Status :: 5 - Production/Stable',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Cython',
         'Operating System :: OS Independent',
         'Operating System :: MacOS :: MacOS X',
