@@ -15,6 +15,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-cdef list _get_cryptocurrencies_to_create(object trading_mode_class, list cryptocurrencies)
+cdef list _get_cryptocurrencies_to_create(object trading_mode_class, dict cryptocurrencies)
 cdef list _get_symbols_to_create(object trading_mode_class, list symbols)
 cdef list _get_time_frames_to_create(object trading_mode_class, list time_frames)
