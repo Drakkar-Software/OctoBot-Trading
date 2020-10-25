@@ -13,8 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
+import octobot_trading.personal_data.positions.contracts as contracts
 
 
 class FutureExchange(abstract_exchange.AbstractExchange):
@@ -29,33 +32,54 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     FUNDING_WITH_MARK_PRICE = False
     FUNDING_IN_TICKER = False
 
-    async def get_symbol_open_positions(self, symbol: str, **kwargs: dict) -> list:
+    def __init__(self, config, exchange_manager):
+        super().__init__(config, exchange_manager)
+        self.pair_contracts = {}
+
+    async def load_pairs_future_contracts(self):
         """
-        Get the current position associated to the symbol
-        :param symbol: the symbol
-        :return: the user position associated to the symbol
+        Create a new Contract instance for each traded pair
         """
+        for pair in self.exchange_manager.exchange_config.traded_symbol_pairs:
+            await self.load_pair_future_contract(pair)
+
+    async def load_pair_future_contract(self, pair: str):
+        """
+        Create a new FutureContract for the pair
+        :param pair: the pair
+        """
+        self.pair_contracts[pair] = contracts.FutureContract(pair)
+        self.pair_contracts[pair].current_leverage = await self.get_symbol_leverage(pair)
+        self.pair_contracts[pair].margin_type = await self.get_margin_type_leverage(pair)
+
+    def get_pair_future_contract(self, pair):
+        """
+        Return the FutureContract instance associated to the pair
+        TODO create if not exist
+        :param pair: the pair
+        :return: the FutureContract instance
+        """
+        try:
+            return self.pair_contracts[pair]
+        except KeyError:
+            asyncio.run_coroutine_threadsafe(self.load_pair_future_contract(pair), asyncio.get_running_loop())
+            return self.pair_contracts[pair]
+
+    """
+    Positions
+    """
+
+    async def get_symbol_open_positions(self, symbol: str) -> list:
         raise NotImplementedError("get_symbol_open_positions is not implemented")
 
     async def get_open_positions(self, **kwargs: dict) -> dict:
         """
-        Get the user current positions
-        :return: the user positions
+        Get the user current futures
+        :return: the user futures
         """
         raise NotImplementedError("get_open_positions is not implemented")
 
-    async def get_symbol_leverage(self, symbol: str, **kwargs: dict):
-        """
-        :param symbol: the symbol
-        :return: the leverage associated to the symbol
-        """
-        raise NotImplementedError("get_symbol_leverage is not implemented")
-
-    async def get_mark_price(self, symbol: str, **kwargs: dict) -> dict:
-        """
-        :param symbol: the symbol
-        :return: the current symbol mark price
-        """
+    async def get_mark_price(self, symbol: str) -> dict:
         raise NotImplementedError("get_mark_price is not implemented")
 
     async def get_mark_price_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
@@ -90,6 +114,19 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_funding_and_mark_price is not implemented")
 
+    """
+    Margin and leverage
+    """
+
+    async def get_symbol_leverage(self, symbol: str):
+        raise NotImplementedError("get_symbol_leverage is not implemented")
+
+    async def get_margin_type_leverage(self, symbol: str):
+        raise NotImplementedError("get_margin_type_leverage is not implemented")
+
+    async def get_symbol_leverage_info(self, symbol: str, limit: int = 1) -> list:
+        raise NotImplementedError("get_symbol_leverage_info is not implemented")
+
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         """
         Set the symbol leverage
@@ -107,6 +144,9 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :return: the update result
         """
         raise NotImplementedError("set_symbol_margin_type is not implemented")
+
+    async def set_position_isolated_margin(self, symbol: str, quantity: float, increase_quantity=True):
+        raise NotImplementedError("set_position_isolated_margin is not implemented")
 
     """
     Parsers
