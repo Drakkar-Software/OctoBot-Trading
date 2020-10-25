@@ -128,6 +128,7 @@ packages_list = [
     "octobot_trading.personal_data.positions.channel.positions",
     "octobot_trading.personal_data.positions.channel.positions_updater",
     "octobot_trading.personal_data.positions.channel.positions_updater_simulator",
+    "octobot_trading.personal_data.positions.contracts.future_contract",
     "octobot_trading.modes.modes_factory",
     "octobot_trading.modes.channel.abstract_mode_producer",
     "octobot_trading.modes.channel.mode",

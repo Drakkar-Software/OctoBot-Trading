@@ -14,14 +14,20 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
-cdef class FuturePortfolio(portfolio_class.Portfolio):
-    cdef void _update_portfolio_from_future_order(self,
-                                              object order,
-                                              double order_quantity,
-                                              double order_price,
-                                              bint subtract_fees=*,
-                                              bint inverse_calculation=*,
-                                              bint update_available=*,
-                                              bint update_total=*)
+
+cdef class FutureContract:
+    cdef str pair
+
+    cdef public object contract_type
+    cdef public object margin_type
+
+    cdef public double expiration_timestamp
+
+    cdef public double minimum_tick_size
+    cdef public double contract_size
+    cdef public double current_leverage
+    cdef public double maximum_leverage
+
+    cpdef bint is_inverse_contract(self)
+    cpdef bint is_isolated(self)

@@ -17,9 +17,9 @@ import pytest
 from octobot_commons.constants import PORTFOLIO_TOTAL, PORTFOLIO_AVAILABLE
 
 from octobot_trading.enums import TraderOrderType
-from octobot_trading.orders.types.limit.sell_limit_order import SellLimitOrder
-from octobot_trading.orders.types.market.buy_market_order import BuyMarketOrder
-from octobot_trading.portfolios.types.spot_portfolio import SpotPortfolio
+from octobot_trading.personal_data.orders.types.limit.sell_limit_order import SellLimitOrder
+from octobot_trading.personal_data.orders.types.market.buy_market_order import BuyMarketOrder
+from octobot_trading.personal_data.portfolios.types.spot_portfolio import SpotPortfolio
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 
 # All test coroutines will be treated as marked.

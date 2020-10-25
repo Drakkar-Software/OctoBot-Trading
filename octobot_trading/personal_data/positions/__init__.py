@@ -34,6 +34,11 @@ from octobot_trading.personal_data.positions.positions_manager import (
     PositionsManager,
 )
 
+from octobot_trading.personal_data.positions import contracts
+from octobot_trading.personal_data.positions.contracts import (
+    FutureContract,
+)
+
 __all__ = [
     "PositionsProducer",
     "PositionsChannel",
@@ -43,4 +48,5 @@ __all__ = [
     "LongPosition",
     "PositionsUpdater",
     "PositionsManager",
+    "FutureContract",
 ]

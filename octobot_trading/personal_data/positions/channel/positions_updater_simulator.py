@@ -17,7 +17,7 @@ import copy
 
 import octobot_commons.logging as logging
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchanges.channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.positions.channel.positions_updater as positions_updater
 import octobot_trading.personal_data.positions as positions
@@ -32,8 +32,8 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
     async def start(self):
         self.exchange_manager = self.channel.exchange_manager
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
-        await exchanges.get_chan(constants.MARK_PRICE_CHANNEL,
-                                 self.channel.exchange_manager.id).new_consumer(self.handle_mark_price)
+        await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id) \
+            .new_consumer(self.handle_mark_price)
 
     async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
         """
@@ -62,19 +62,16 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
             finally:
                 # ensure always call fill callback
                 if position_closed:
-                    await exchanges.get_chan(constants.POSITIONS_CHANNEL,
-                                             self.channel.exchange_manager.id).get_internal_producer() \
-                        .send(cryptocurrency=cryptocurrency,
-                              symbol=position.symbol,
-                              order=position.to_dict(),
-                              is_from_bot=True,
-                              is_liquidated=position.is_liquidated(),
-                              is_closed=True,
-                              is_updated=False)
+                    await exchanges_channel.get_chan(constants.POSITIONS_CHANNEL, self.channel.exchange_manager.id) \
+                        .get_internal_producer().send(cryptocurrency=cryptocurrency,
+                                                      symbol=position.symbol,
+                                                      order=position.to_dict(),
+                                                      is_from_bot=True,
+                                                      is_liquidated=position.is_liquidated(),
+                                                      is_closed=True,
+                                                      is_updated=False)
 
-    async def _update_position_status(self,
-                                      position: positions.Position,
-                                      mark_price):
+    async def _update_position_status(self, position: positions.Position, mark_price):
         """
         Call position status update
         """
