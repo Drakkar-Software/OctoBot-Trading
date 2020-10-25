@@ -17,12 +17,14 @@
 cimport numpy as np
 np.import_array()
 
+cimport octobot_trading.exchange_data.exchange_symbol_data as exchange_symbol_data
 
-cpdef np.ndarray get_symbol_close_candles( symbol_data, str time_frame,  int limit, bint include_in_construction) # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
-cpdef np.ndarray get_symbol_open_candles(object symbol_data, str time_frame, int limit, bint include_in_construction)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
-cpdef np.ndarray get_symbol_high_candles(object symbol_data, str time_frame, int limit, bint include_in_construction)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
-cpdef np.ndarray get_symbol_low_candles(object symbol_data, str time_frame, int limit, bint include_in_construction)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
-cpdef np.ndarray get_symbol_volume_candles(object symbol_data, str time_frame, int limit, bint include_in_construction)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
-cpdef np.ndarray get_symbol_time_candles(object symbol_data, str time_frame, int limit, bint include_in_construction)
 
-cdef np.ndarray _add_in_construction_data(np.ndarray candles, object symbol_data, object time_frame, int data_type)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
+cpdef np.ndarray get_symbol_close_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame,  int limit, bint include_in_construction) # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
+cpdef np.ndarray get_symbol_open_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame, int limit, bint include_in_construction)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
+cpdef np.ndarray get_symbol_high_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame, int limit, bint include_in_construction)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
+cpdef np.ndarray get_symbol_low_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame, int limit, bint include_in_construction)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
+cpdef np.ndarray get_symbol_volume_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame, int limit, bint include_in_construction)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
+cpdef np.ndarray get_symbol_time_candles(exchange_symbol_data.ExchangeSymbolData symbol_data, str time_frame, int limit, bint include_in_construction)
+
+cdef np.ndarray _add_in_construction_data(np.ndarray candles, exchange_symbol_data.ExchangeSymbolData symbol_data, object time_frame, int data_type)  # TODO : fix cimport exchange_symbol_data.ExchangeSymbolData
