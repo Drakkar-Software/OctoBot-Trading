@@ -79,7 +79,8 @@ class OrderState(util.Initializable):
         """
         :return: the order logger
         """
-        return logging.get_logger(self.order.get_logger_name())
+        return logging.get_logger(self.order.get_logger_name() if self.order is not None else
+                                  f"{self.__class__.__name__}_without_order")
 
     def log_order_event_message(self, state_message):
         """
