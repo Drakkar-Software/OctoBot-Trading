@@ -21,6 +21,7 @@ from octobot_commons.enums import PriceIndexes
 
 from octobot_trading.exchange_data.kline.kline_manager import KlineManager
 from tests.util.random_numbers import random_kline, random_price, random_timestamp, random_quantity
+from tests import event_loop
 
 pytestmark = pytest.mark.asyncio
 

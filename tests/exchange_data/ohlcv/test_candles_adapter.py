@@ -25,6 +25,7 @@ from octobot_trading.exchange_data.ohlcv.candles_manager import CandlesManager
 from octobot_trading.exchange_data.kline.kline_manager import KlineManager
 from octobot_trading.exchange_data.exchange_symbol_data import ExchangeSymbolData
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
+from tests import event_loop
 
 
 # All test coroutines will be treated as marked.

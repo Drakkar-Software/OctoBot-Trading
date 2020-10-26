@@ -17,6 +17,7 @@ import pytest
 from octobot_trading.enums import TradeOrderSide, OrderStatus, TraderOrderType
 from octobot_trading.personal_data.orders import Order
 
+from tests import event_loop
 from tests.exchanges import exchange_manager
 from tests.exchanges.traders import trader_simulator
 from tests.exchanges.traders import trader

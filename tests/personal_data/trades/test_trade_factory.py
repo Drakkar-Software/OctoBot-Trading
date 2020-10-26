@@ -18,6 +18,7 @@ import time
 
 import pytest
 
+from tests import event_loop
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.enums import TraderOrderType, OrderStatus
 from octobot_trading.exchanges.exchange_manager import ExchangeManager

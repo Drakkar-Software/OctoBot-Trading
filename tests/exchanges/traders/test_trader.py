@@ -20,6 +20,7 @@ import pytest
 import time
 from mock import AsyncMock, patch
 
+from tests import event_loop
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.constants import CONFIG_ENABLED_OPTION, PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 from octobot_commons.tests.test_config import load_test_config
@@ -676,6 +677,8 @@ class TestTrader:
             assert sell_USDT_order.symbol == "BTC/USDT"
             assert sell_USDT_order.order_type == TraderOrderType.BUY_MARKET
             assert round(sell_USDT_order.origin_quantity, 8) == round(1000 / sell_USDT_order.origin_price, 8)
+            # let market orders get filled before stopping exchange
+            await wait_asyncio_next_cycle()
 
         await self.stop(exchange_manager)
 

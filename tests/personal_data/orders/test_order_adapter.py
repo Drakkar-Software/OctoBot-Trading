@@ -19,6 +19,7 @@ import pytest
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 from octobot_trading.personal_data.orders import check_and_adapt_order_details_if_necessary, split_orders, \
     adapt_quantity, trunc_with_n_decimal_digits, add_dusts_to_quantity_if_necessary, adapt_price
+from tests import event_loop
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

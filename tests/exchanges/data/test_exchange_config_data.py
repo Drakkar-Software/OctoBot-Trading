@@ -15,6 +15,7 @@
 #  License along with this library.
 import pytest
 
+from tests import event_loop
 from octobot_commons.tests.test_config import load_test_config
 from octobot_commons.constants import CONFIG_CRYPTO_CURRENCIES
 from octobot_trading.exchanges.exchange_manager import ExchangeManager

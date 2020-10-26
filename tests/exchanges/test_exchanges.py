@@ -24,6 +24,7 @@ from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.exchanges import Exchanges
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
+from tests import event_loop
 
 pytestmark = pytest.mark.asyncio
 

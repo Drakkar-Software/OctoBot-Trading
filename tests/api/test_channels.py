@@ -15,6 +15,7 @@
 #  License along with this library.
 import pytest
 
+from tests import event_loop
 from octobot_trading.api.channels import subscribe_to_ohlcv_channel, subscribe_to_trades_channel, \
     subscribe_to_order_channel
 

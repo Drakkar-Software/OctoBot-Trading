@@ -19,10 +19,11 @@ import pytest
 
 from octobot_trading.exchanges import ExchangeManager
 from config import *
-from tests.test_utils.config import load_test_config
 from trading.trader.trader_simulator import TraderSimulator
 from trading.trader.trade import Trade
 from trading.trader.order import SellLimitOrder
+from tests.test_utils.config import load_test_config
+from tests import event_loop
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

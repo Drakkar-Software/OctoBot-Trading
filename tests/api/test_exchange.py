@@ -22,6 +22,7 @@ from octobot_trading.api.exchange import create_exchange_builder, \
     get_exchange_configurations_from_exchange_name, get_exchange_manager_from_exchange_name_and_id
 from octobot_trading.exchanges.exchanges import Exchanges
 from tests.exchanges import exchange_manager
+from tests import event_loop
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
