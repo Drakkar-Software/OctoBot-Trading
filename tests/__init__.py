@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import sys
 import asyncio
 from os import path
 
@@ -20,7 +21,7 @@ import aiohttp
 import pytest
 import requests
 
-from octobot_commons.asyncio_tools import ErrorContainer
+import octobot_commons.asyncio_tools as asyncio_tools
 from octobot_commons.tests.test_config import load_test_config
 from octobot_tentacles_manager.api.installer import install_all_tentacles
 from octobot_tentacles_manager.constants import TENTACLES_PATH
@@ -31,9 +32,11 @@ TENTACLES_LATEST_URL = "https://www.tentacles.octobot.online/repository/tentacle
 
 @pytest.yield_fixture
 def event_loop():
+    # re-configure async loop each time this fixture is called
+    _configure_async_test_loop()
     loop = asyncio.new_event_loop()
     # use ErrorContainer to catch otherwise hidden exceptions occurring in async scheduled tasks
-    error_container = ErrorContainer()
+    error_container = asyncio_tools.ErrorContainer()
     loop.set_exception_handler(error_container.exception_handler)
     yield loop
     # will fail if exceptions have been silently raised
@@ -66,3 +69,14 @@ async def install_tentacles():
     async with aiohttp.ClientSession() as session:
         yield await install_all_tentacles(_tentacles_local_path(), aiohttp_session=session)
     _cleanup()
+
+
+def _configure_async_test_loop():
+    if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
+        # use WindowsSelectorEventLoopPolicy to avoid aiohttp connexion close warnings
+        # https://github.com/encode/httpx/issues/914#issuecomment-622586610
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+
+# set default values for async loop
+_configure_async_test_loop()

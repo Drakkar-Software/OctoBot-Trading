@@ -20,6 +20,7 @@ from mock import patch, Mock, AsyncMock
 from octobot_trading.personal_data.orders import BuyMarketOrder, BuyLimitOrder
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
+from tests import event_loop
 
 # All test coroutines will be treated as marked.
 from tests.util.random_numbers import random_price, random_quantity

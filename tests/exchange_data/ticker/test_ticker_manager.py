@@ -21,6 +21,7 @@ from math import nan
 from octobot_trading.exchange_data.ticker.ticker_manager import TickerManager
 from octobot_trading.enums import ExchangeConstantsMiniTickerColumns, ExchangeConstantsTickersColumns
 from tests.util.random_numbers import random_price, random_quantity, random_timestamp
+from tests import event_loop
 
 pytestmark = pytest.mark.asyncio
 

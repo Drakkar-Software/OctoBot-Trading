@@ -25,6 +25,7 @@ from octobot_trading.enums import EvaluatorStates
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.modes import AbstractTradingMode
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
+from tests import event_loop
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
