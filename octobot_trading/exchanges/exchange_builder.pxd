@@ -18,20 +18,16 @@ cimport octobot_trading.exchanges as exchanges
 
 cdef class ExchangeBuilder:
     cdef object logger
+    cdef public exchanges.ExchangeManager exchange_manager
+    cdef object _tentacles_setup_config
 
     cdef dict config
 
-    cdef public exchanges.ExchangeManager exchange_manager
-
-    cdef public str exchange_name
-
     cdef bint _is_using_trading_modes
 
+    cdef public str exchange_name
     cdef str _matrix_id
-
     cdef str _bot_id
-
-    cdef object _tentacles_setup_config
 
     """
     Builder methods
