@@ -45,7 +45,7 @@ async def create_trading_modes(config: dict,
 async def _create_trading_modes(trading_mode_class: modes.AbstractTradingMode.__class__,
                                 config: dict,
                                 exchange_manager: object,
-                                cryptocurrencies: list = None,
+                                cryptocurrencies: dict = None,
                                 symbols: list = None,
                                 time_frames: list = None,
                                 bot_id: str = None) -> list:
@@ -58,7 +58,7 @@ async def _create_trading_modes(trading_mode_class: modes.AbstractTradingMode.__
                                   time_frame=time_frame,
                                   bot_id=bot_id)
         for cryptocurrency in _get_cryptocurrencies_to_create(trading_mode_class, cryptocurrencies)
-        for symbol in _get_symbols_to_create(trading_mode_class, symbols)
+        for symbol in _get_symbols_to_create(trading_mode_class, cryptocurrencies, cryptocurrency, symbols)
         for time_frame in _get_time_frames_to_create(trading_mode_class, time_frames)
     ]
 
@@ -89,11 +89,15 @@ async def create_trading_mode(trading_mode_class: modes.AbstractTradingMode.__cl
 
 
 def _get_cryptocurrencies_to_create(trading_mode_class, cryptocurrencies):
-    return cryptocurrencies if cryptocurrencies and not trading_mode_class.get_is_cryptocurrency_wildcard() else [None]
+    return list(cryptocurrencies.keys()) \
+        if cryptocurrencies and not trading_mode_class.get_is_cryptocurrency_wildcard() else [None]
 
 
-def _get_symbols_to_create(trading_mode_class, symbols):
-    return symbols if symbols and not trading_mode_class.get_is_symbol_wildcard() else [None]
+def _get_symbols_to_create(trading_mode_class, cryptocurrencies, cryptocurrency, symbols):
+    currency_symbols = symbols
+    if cryptocurrency is not None:
+        currency_symbols = cryptocurrencies.get(cryptocurrency, [])
+    return currency_symbols if currency_symbols and not trading_mode_class.get_is_symbol_wildcard() else [None]
 
 
 def _get_time_frames_to_create(trading_mode_class, time_frames):
