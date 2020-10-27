@@ -32,10 +32,10 @@ cdef class PortfolioValueHolder:
     cdef public dict currencies_last_prices
     cdef public dict origin_crypto_currencies_values
     cdef public dict current_crypto_currencies_values
+    cdef public set initializing_symbol_prices
 
     cdef public portfolio.Portfolio origin_portfolio
 
-    cdef set initializing_symbol_prices
     cdef set missing_currency_data_in_exchange
 
     cdef portfolio_manager.PortfolioManager portfolio_manager
