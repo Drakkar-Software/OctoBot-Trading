@@ -15,7 +15,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 cimport octobot_trading.exchanges.exchange_manager as exchange_manager
-cimport octobot_trading.exchanges.traders as traders
 cimport octobot_trading.util as util
 
 
@@ -24,12 +23,12 @@ cdef class AbstractExchange(util.Initializable):
 
     cdef public object logger
     cdef public object current_account
+    cdef public object trader
 
     cdef public double allowed_time_lag
 
     cdef public bint is_authenticated
 
-    cdef public traders.Trader trader
     cdef public exchange_manager.ExchangeManager exchange_manager
 
     cdef public str name
