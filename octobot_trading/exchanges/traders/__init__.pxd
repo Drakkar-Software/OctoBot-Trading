@@ -25,6 +25,6 @@ from octobot_trading.exchanges.traders.trader_simulator cimport (
 )
 
 __all__ = [
-    "TraderSimulator",
     "Trader",
+    "TraderSimulator",
 ]
