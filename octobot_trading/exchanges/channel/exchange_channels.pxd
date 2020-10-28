@@ -14,9 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cpdef bint requires_refresh_trigger(object exchange_manager, str channel) # TODO : fix cimport exchanges.ExchangeManager
 
-cdef bint _should_create_authenticated_producers(object exchange_manager) # TODO : fix cimport exchanges.ExchangeManager
-cdef bint _should_create_simulated_producers(object exchange_manager) # TODO : fix cimport exchanges.ExchangeManager
-cdef bint _should_create_unauthenticated_producers(object exchange_manager) # TODO : fix cimport exchanges.ExchangeManager
+cpdef bint requires_refresh_trigger(object exchange_manager, str channel)
+
+cdef bint _should_create_authenticated_producers(object exchange_manager)
+cdef bint _should_create_simulated_producers(object exchange_manager)
+cdef bint _should_create_unauthenticated_producers(object exchange_manager)
 cdef object _get_authenticated_producer_from_parent(object parent_producer_class)
