@@ -16,7 +16,14 @@
 
 import octobot_commons.logging as logging
 
-import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_data.ohlcv.candles_manager as candles_manager
+import octobot_trading.exchange_data.ticker.ticker_manager as ticker_manager
+import octobot_trading.exchange_data.order_book.order_book_manager as order_book_manager
+import octobot_trading.exchange_data.kline.kline_manager as kline_manager
+import octobot_trading.exchange_data.prices.prices_manager as prices_manager
+import octobot_trading.exchange_data.prices.price_events_manager as price_events_manager
+import octobot_trading.exchange_data.recent_trades.recent_trades_manager as recent_trades_manager
+import octobot_trading.exchange_data.funding.funding_manager as funding_manager
 
 
 class ExchangeSymbolData:
@@ -27,12 +34,12 @@ class ExchangeSymbolData:
         self.symbol = symbol
         self.exchange_manager = exchange_manager
 
-        self.price_events_manager = exchange_data.PriceEventsManager()
-        self.order_book_manager = exchange_data.OrderBookManager()
-        self.prices_manager = exchange_data.PricesManager(self.exchange_manager)
-        self.recent_trades_manager = exchange_data.RecentTradesManager()
-        self.ticker_manager = exchange_data.TickerManager()
-        self.funding_manager = exchange_data.FundingManager() if self.exchange_manager.is_margin else None
+        self.price_events_manager = price_events_manager.PriceEventsManager()
+        self.order_book_manager = order_book_manager.OrderBookManager()
+        self.prices_manager = prices_manager.PricesManager(self.exchange_manager)
+        self.recent_trades_manager = recent_trades_manager.RecentTradesManager()
+        self.ticker_manager = ticker_manager.TickerManager()
+        self.funding_manager = funding_manager.FundingManager() if self.exchange_manager.is_margin else None
 
         self.symbol_candles = {}
         self.symbol_klines = {}
@@ -44,7 +51,7 @@ class ExchangeSymbolData:
         try:
             symbol_candles = self.symbol_candles[time_frame]
         except KeyError:
-            symbol_candles = exchange_data.CandlesManager()
+            symbol_candles = candles_manager.CandlesManager()
             await symbol_candles.initialize()
 
             if replace_all:
@@ -94,7 +101,7 @@ class ExchangeSymbolData:
         try:
             symbol_klines = self.symbol_klines[time_frame]
         except KeyError:
-            symbol_klines = exchange_data.KlineManager()
+            symbol_klines = kline_manager.KlineManager()
             try:
                 await symbol_klines.initialize()
                 symbol_klines.kline_update(kline)
