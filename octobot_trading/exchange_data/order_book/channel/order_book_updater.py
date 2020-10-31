@@ -54,9 +54,13 @@ class OrderBookUpdater(order_book_channel.OrderBookProducer):
 
                         await self.parse_order_book_ticker(pair, asks, bids)
                         await self.push(pair, asks, bids)
+                    except errors.FailedRequest as e:
+                        self.logger.warning(e)
                     except TypeError as e:
                         self.logger.error(f"Failed to fetch order book for {pair} : {e}")
                 await asyncio.sleep(self.refresh_time)
+            except errors.FailedRequest as e:
+                self.logger.warning(e)
             except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()

@@ -77,6 +77,8 @@ class KlineUpdater(kline_channel.KlineProducer):
                 sleep_time = max((self.QUICK_KLINE_REFRESH_TIME if quick_sleep else self.refresh_time)
                                  - (time.time() - started_time), 0)
                 await asyncio.sleep(sleep_time)
+            except errors.FailedRequest as e:
+                self.logger.warning(e)
             except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()

@@ -155,8 +155,7 @@ class CCXTExchange(exchanges.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            self.logger.error(f"Failed to get_symbol_prices {e}")
-        return None
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_symbol_prices {e}")
 
     async def get_kline_price(self,
                               symbol: str,
@@ -168,8 +167,7 @@ class CCXTExchange(exchanges.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            self.logger.error(f"Failed to get_kline_price {e}")
-        return None
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_kline_price {e}")
 
     # return up to ten bidasks on each side of the order book stack
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
@@ -178,8 +176,7 @@ class CCXTExchange(exchanges.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            self.logger.error(f"Failed to get_order_book {e}")
-        return None
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_order_book {e}")
 
     async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
         try:
@@ -187,8 +184,7 @@ class CCXTExchange(exchanges.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            self.logger.error(f"Failed to get_recent_trades {e}")
-        return None
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_recent_trades {e}")
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
     async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
@@ -197,8 +193,7 @@ class CCXTExchange(exchanges.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            self.logger.error(f"Failed to get_price_ticker {e}")
-        return None
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_price_ticker {e}")
 
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         try:
@@ -207,8 +202,7 @@ class CCXTExchange(exchanges.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            self.logger.error(f"Failed to get_all_currencies_price_ticker {e}")
-        return None
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_all_currencies_price_ticker {e}")
 
     # ORDERS
     async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:

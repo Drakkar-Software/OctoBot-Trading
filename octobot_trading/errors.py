@@ -39,6 +39,12 @@ class NotSupported(Exception):
     """
 
 
+class FailedRequest(Exception):
+    """
+    Raised upon a failed request on an exchange API
+    """
+
+
 class AuthenticationError(Exception):
     """
     Raised when an exchange failed to authenticate
