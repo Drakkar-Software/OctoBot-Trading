@@ -71,6 +71,8 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
                     except TypeError:
                         pass
                 await asyncio.sleep(self.refresh_time)
+            except errors.FailedRequest as e:
+                self.logger.warning(e)
             except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
