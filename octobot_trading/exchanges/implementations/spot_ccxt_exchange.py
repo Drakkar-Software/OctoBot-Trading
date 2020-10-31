@@ -33,8 +33,8 @@ class SpotCCXTExchange(exchange_implementations.CCXTExchange, exchanges_types.Sp
             if created_order and not SpotCCXTExchange._ensure_order_details_completeness(created_order):
                 if ecoc.ID.value in created_order:
                     order_symbol = created_order[ecoc.SYMBOL.value] if ecoc.SYMBOL.value in created_order else None
-                    created_order = await self.exchange_manager.get_exchange().get_order(created_order[ecoc.ID.value],
-                                                                                         order_symbol, params=kwargs)
+                    created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value],
+                                                                                   order_symbol, **kwargs)
 
             # on some exchange, market order are not not including price, add it manually to ensure uniformity
             if created_order[ecoc.PRICE.value] is None and price is not None:
