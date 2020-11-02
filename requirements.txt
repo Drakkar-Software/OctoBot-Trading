@@ -3,13 +3,13 @@ cython==0.29.21
 numpy==1.19.3
 
 # Drakkar-Software requirements
-OctoBot-Backtesting>=1.6.2, <1.7
+OctoBot-Backtesting>=1.6.4, <1.7
 async-channel>=2.0.3, <2.1
 OctoBot-Commons>=1.4.6, <1.5
-OctoBot-Tentacles-Manager>=2.3.2, <2.4
+OctoBot-Tentacles-Manager>=2.3.5, <2.4
 
 # Exchange connection requirements
-ccxt==1.37.14
+ccxt==1.37.16
 cryptography # Never specify a version (managed by https://github.com/Drakkar-Software/OctoBot-PyPi-Linux-Deployer)
 
 # CLI requirements
