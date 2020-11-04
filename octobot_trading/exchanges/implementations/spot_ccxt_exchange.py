@@ -44,7 +44,7 @@ class SpotCCXTExchange(exchange_implementations.CCXTExchange, exchanges_types.Sp
 
         except ccxt.InsufficientFunds as e:
             self._log_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.warning(e)
+            self.logger.warning(str(e))
             raise errors.MissingFunds(e)
         except ccxt.NotSupported:
             raise errors.NotSupported
