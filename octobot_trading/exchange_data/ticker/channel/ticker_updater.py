@@ -68,7 +68,7 @@ class TickerUpdater(ticker_channel.TickerProducer):
                 if self.channel.exchange_manager.is_future:
                     await self.parse_future_data(pair, ticker)
         except errors.FailedRequest as e:
-            self.logger.warning(e)
+            self.logger.warning(str(e))
 
     def _cleanup_ticker_dict(self, ticker):
         try:

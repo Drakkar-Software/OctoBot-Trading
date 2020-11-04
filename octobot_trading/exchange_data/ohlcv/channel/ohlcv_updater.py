@@ -88,7 +88,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                 .get_symbol_prices(pair, time_frame, limit=self.OHLCV_OLD_LIMIT)
             self.channel.exchange_manager.exchange.uniformize_candles_if_necessary(candles)
         except errors.FailedRequest as e:
-            self.logger.warning(e)
+            self.logger.warning(str(e))
         if candles and len(candles) > 1:
             self._set_initialized(pair, time_frame, True)
             await self.channel.exchange_manager.get_symbol_data(pair) \
@@ -157,7 +157,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                     # candles on this time frame have not been initialized: sleep until the next candle update
                     await asyncio.sleep(max(0.0, time_frame_sleep - (time.time() - start_update_time)))
             except errors.FailedRequest as e:
-                self.logger.warning(e)
+                self.logger.warning(str(e))
             except errors.NotSupported:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
