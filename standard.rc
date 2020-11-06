@@ -74,6 +74,9 @@ disable=C0114, # doc
         attribute-defined-outside-init,
         useless-super-delegation,
         pointless-string-statement,
+        raise-missing-from,
+        logging-fstring-interpolation,
+        f-string-without-interpolation,
         c-extension-no-member, # cythonized imports no member
         C, R # only errors TODO remove
 

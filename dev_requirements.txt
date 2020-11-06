@@ -5,8 +5,6 @@ pytest-asyncio
 pytest-xdist
 pytest-randomly
 
-pylint==2.4.4
-
 mock>=4.0.2
 
 coverage
@@ -20,3 +18,5 @@ wheel
 pur
 
 aiohttp
+
+pylint

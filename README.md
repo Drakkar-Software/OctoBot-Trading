@@ -2,8 +2,7 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/903b6b22bceb4661b608a86fea655f69)](https://app.codacy.com/gh/Drakkar-Software/OctoBot-Trading?utm_source=github.com&utm_medium=referral&utm_content=Drakkar-Software/OctoBot-Trading&utm_campaign=Badge_Grade_Dashboard)
 [![PyPI](https://img.shields.io/pypi/v/OctoBot-Trading.svg)](https://pypi.python.org/pypi/OctoBot-Trading/)
 [![Coverage Status](https://coveralls.io/repos/github/Drakkar-Software/OctoBot-Trading/badge.svg?branch=master)](https://coveralls.io/github/Drakkar-Software/OctoBot-Trading?branch=master)
-[![Build Status](https://api.travis-ci.com/Drakkar-Software/OctoBot-Trading.svg?branch=master)](https://travis-ci.com/Drakkar-Software/OctoBot-Trading) 
-[![Build Status](https://dev.azure.com/drakkarsoftware/OctoBot-Trading/_apis/build/status/Drakkar-Software.OctoBot-Trading?branchName=master)](https://dev.azure.com/drakkarsoftware/OctoBot-Trading/_build/latest?definitionId=8&branchName=master)
+[![Github-Action-CI](https://github.com/Drakkar-Software/OctoBot-Trading/workflows/OctoBot-Trading-CI/badge.svg)](https://github.com/Drakkar-Software/OctoBot-Trading/actions)
 [![Build Status](https://cloud.drone.io/api/badges/Drakkar-Software/OctoBot-Trading/status.svg)](https://cloud.drone.io/Drakkar-Software/OctoBot-Trading)
 
 OctoBot trading package.
