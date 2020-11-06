@@ -1,0 +1,171 @@
+name: OctoBot-Trading-CI
+on: push
+
+jobs:
+  lint:
+    name: ubuntu-latest - Python 3.8 - lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8.x'
+        architecture: 'x64'
+
+    - name: Install dependencies
+      run: pip install --prefer-binary -r dev_requirements.txt -r requirements.txt
+
+#    - name: Black lint
+#      run: black ${{ secrets.PACKAGE_FOLDER }} --diff --check
+
+    - name: Pylint
+      run: |
+        pylint --rcfile=standard.rc ${{ secrets.PACKAGE_FOLDER }}
+        if [ $? -ne 1 ]; then exit 0; fi
+
+  tests:
+    needs: lint
+    name: ${{ matrix.os }}${{ matrix.arch }} - Python 3.8 - ${{ matrix.type }} - tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+        arch: [ x64, x86 ]
+        type: [sources, cython]
+        exclude:
+          - os: macos-latest # currently not supported
+            arch: x86
+          - os: ubuntu-latest # currently not supported
+            arch: x86
+          - os: windows-latest # don't test 'sources' twice on windows
+            arch: x86
+            type: sources
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8.x'
+        architecture: ${{ matrix.arch }}
+
+    - name: Install dependencies
+      run: pip install --prefer-binary -r dev_requirements.txt -r requirements.txt
+
+    - name: Compile project
+      if: matrix.type == 'cython'
+      env:
+        CYTHON_IGNORE: true
+      run: |
+        python setup.py install
+
+    - name: Pytests
+      run: pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests
+
+    - name: Publish coverage
+      if: matrix.type == 'sources'
+      run: coveralls
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+
+  build_wheels:
+    needs: tests
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    name: ${{ matrix.os }}-${{ matrix.arch }} - Python 3.8 - deploy
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        arch: [ x64, x86 ]
+        exclude:
+          - os: macos-latest # currently not supported
+            arch: x86
+          - os: ubuntu-latest # currently not supported
+            arch: x86
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8.x'
+        architecture: ${{ matrix.arch }}
+
+    - name: Install dependencies
+      if: matrix.os != 'ubuntu-latest'
+      run: pip install --prefer-binary -r dev_requirements.txt -r requirements.txt
+
+    - name: Build wheel
+      if: matrix.os != 'ubuntu-latest'
+      run: python setup.py bdist_wheel
+
+    - name: Install cibuildwheel
+      if: matrix.os == 'ubuntu-latest'
+      run: pip install cibuildwheel twine
+
+    - name: Build wheels
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        python -m cibuildwheel --output-dir wheelhouse
+      env:
+        # build for python 3.8
+        CIBW_BUILD: cp38-*
+        CIBW_BUILD_VERBOSITY_LINUX: 0
+        CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+        CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+        CIBW_BEFORE_BUILD_LINUX: >
+          python -m pip install --upgrade pip
+          pip install --extra-index-url ${{ secrets.OCTOBOT_PYPI_URL }} --prefer-binary auditwheel -r dev_requirements.txt -r requirements.txt
+        CIBW_BEFORE_ALL_LINUX: >
+          yum install -y libffi libffi-devel openssl-devel wget unzip blas-devel lapack-devel libxml2-devel libxslt-devel
+
+    - name: Publish package
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        python -m twine upload --repository-url ${{ secrets.PYPI_OFFICIAL_UPLOAD_URL }} -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --skip-existing wheelhouse/*
+
+    - name: Publish package
+      if: matrix.os != 'ubuntu-latest'
+      run: |
+        python -m twine upload --repository-url ${{ secrets.PYPI_OFFICIAL_UPLOAD_URL }} -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --skip-existing dist/*
+
+  build_sdist:
+    needs: tests
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    name: Source distribution - Python 3.8 - deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8.x'
+
+      - name: Install dependencies
+        run: pip install --prefer-binary -r dev_requirements.txt -r requirements.txt
+
+      - name: Build sdist
+        run: python setup.py sdist
+
+      - name: Publish package
+        run: |
+          python -m twine upload --repository-url ${{ secrets.PYPI_OFFICIAL_UPLOAD_URL }} -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --skip-existing dist/*
+
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - tests
+      - build_wheels
+      - build_sdist
+    if: ${{ failure() }}
+
+    steps:
+      - name: Notify discord
+        uses: sarisia/actions-status-discord@v1
+        with:
+          status: Failure
+          webhook: ${{ secrets.DISCORD_GITHUB_WEBHOOK }}
