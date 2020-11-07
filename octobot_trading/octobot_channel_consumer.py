@@ -64,9 +64,9 @@ async def octobot_channel_callback(bot_id, subject, action, data) -> None:
 async def _handle_creation(bot_id, action, data):
     if action == OctoBotChannelTradingActions.EXCHANGE.value:
         try:
+            exchange_name = data.get(OctoBotChannelTradingDataKeys.EXCHANGE_NAME.value, None)
             config = data[OctoBotChannelTradingDataKeys.EXCHANGE_CONFIG.value]
-            exchange_builder = exchanges.create_exchange_builder_instance(config, data[OctoBotChannelTradingDataKeys.
-                                                                          EXCHANGE_NAME.value]) \
+            exchange_builder = exchanges.create_exchange_builder_instance(config, exchange_name) \
                 .has_matrix(data[OctoBotChannelTradingDataKeys.MATRIX_ID.value]) \
                 .use_tentacles_setup_config(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value]) \
                 .set_bot_id(bot_id)
@@ -80,11 +80,11 @@ async def _handle_creation(bot_id, action, data):
                       data={OctoBotChannelTradingDataKeys.EXCHANGE_ID.value: exchange_builder.exchange_manager.id})
         except errors.TradingModeIncompatibility as e:
             logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
-                f"Error when initializing trading mode, {data[OctoBotChannelTradingDataKeys.EXCHANGE_NAME.value]} "
+                f"Error when initializing trading mode, {exchange_name} "
                 f"exchange connection is closed to increase performances: {e}")
         except Exception as e:
             logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
-                f"Error when creating new exchange: {e}")
+                f"Error when creating a new {exchange_name} exchange connexion: {e.__class__.__name__} {e}")
 
 
 def _set_exchange_type_details(exchange_builder, config, backtesting):
