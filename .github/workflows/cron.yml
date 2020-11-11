@@ -1,7 +1,7 @@
 name: OctoBot-Trading-Cron
 on:
   schedule:
-    - cron: '0 5 * * *' # every day at midnight
+    - cron: '0 5 * * *' # every day at 5am
 
 jobs:
   tests:
