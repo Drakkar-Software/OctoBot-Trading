@@ -17,10 +17,11 @@
 cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
 
 cdef class FutureExchange(abstract_exchange.AbstractExchange):
-    cdef public dict pair_contracts
+    cdef dict pair_contracts
 
     cpdef double calculate_position_value(self, double quantity, double mark_price)
     cpdef object get_pair_future_contract(self, str pair) # TODO : fix cimport positions.FutureContract
+    cpdef void set_pair_future_contract(self, str pair, object future_contract) # TODO : fix cimport positions.FutureContract
 
     """
     Parsers
