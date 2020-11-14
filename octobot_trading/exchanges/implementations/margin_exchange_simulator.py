@@ -18,4 +18,6 @@ import octobot_trading.exchanges.implementations as exchange_implementations
 
 
 class MarginExchangeSimulator(exchange_implementations.ExchangeSimulator, exchanges_types.MarginExchange):
-    pass
+    async def stop(self):
+        await super().stop()
+        self.exchange_manager = None
