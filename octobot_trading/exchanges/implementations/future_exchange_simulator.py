@@ -18,4 +18,6 @@ import octobot_trading.exchanges.implementations as exchange_implementations
 
 
 class FutureExchangeSimulator(exchange_implementations.ExchangeSimulator, exchanges_types.FutureExchange):
-    pass
+    async def stop(self):
+        await super().stop()
+        self.exchange_manager = None
