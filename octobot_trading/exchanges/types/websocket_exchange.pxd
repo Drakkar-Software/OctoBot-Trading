@@ -15,7 +15,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-cimport octobot_trading.exchange_data.order_book.order_book_manager as order_book_manager
 
 cdef class WebsocketExchange:
     cdef public str exchange_id
@@ -64,4 +63,4 @@ cdef class WebsocketExchange:
     cpdef start(self)
     cpdef stop(self)
     cpdef close(self)
-    cpdef order_book_manager.OrderBookManager get_book_instance(self, str symbol)
+    cpdef object get_book_instance(self, str symbol)
