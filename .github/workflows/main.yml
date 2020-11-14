@@ -58,6 +58,7 @@ jobs:
       env:
         CYTHON_IGNORE: true
       run: |
+        python setup.py build_ext --inplace
         python setup.py install
 
     - name: Pytests
