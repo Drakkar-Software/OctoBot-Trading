@@ -65,6 +65,14 @@ class FutureExchange(abstract_exchange.AbstractExchange):
             asyncio.run_coroutine_threadsafe(self.load_pair_future_contract(pair), asyncio.get_running_loop())
             return self.pair_contracts[pair]
 
+    def set_pair_future_contract(self, pair, future_contract):
+        """
+        Set the future contract
+        :param pair: the pair
+        :param future_contract: the future contract
+        """
+        self.pair_contracts[pair] = future_contract
+
     """
     Positions
     """

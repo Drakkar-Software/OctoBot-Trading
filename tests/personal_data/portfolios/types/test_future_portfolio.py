@@ -46,7 +46,7 @@ async def test_update_portfolio_available_from_order_in_inverse_market(backtesti
     btcusd_future_contract = FutureContract("BTC/USDT")
     btcusd_future_contract.current_leverage = 1
     btcusd_future_contract.contract_type = FutureContractType.INVERSE_PERPETUAL
-    exchange_manager.exchange.pair_contracts["BTC/USDT"] = btcusd_future_contract
+    exchange_manager.exchange.set_pair_future_contract("BTC/USDT", btcusd_future_contract)
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
@@ -89,7 +89,7 @@ async def test_update_portfolio_available_from_order_in_inverse_market_with_leve
     btcusd_future_contract = FutureContract("BTC/USDT")
     btcusd_future_contract.current_leverage = 10
     btcusd_future_contract.contract_type = FutureContractType.INVERSE_PERPETUAL
-    exchange_manager.exchange.pair_contracts["BTC/USDT"] = btcusd_future_contract
+    exchange_manager.exchange.set_pair_future_contract("BTC/USDT", btcusd_future_contract)
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
@@ -117,7 +117,7 @@ async def test_update_portfolio_available_from_order_with_leverage(backtesting_t
     btcusd_future_contract = FutureContract("BTC/USDT")
     btcusd_future_contract.current_leverage = 2
     btcusd_future_contract.contract_type = FutureContractType.PERPETUAL
-    exchange_manager.exchange.pair_contracts["BTC/USDT"] = btcusd_future_contract
+    exchange_manager.exchange.set_pair_future_contract("BTC/USDT", btcusd_future_contract)
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
