@@ -15,7 +15,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-cimport octobot_trading.personal_data.orders.order  as order_class
 cimport octobot_trading.exchanges.exchange_manager as exchange_manager
 cimport octobot_trading.util as util
 
@@ -37,4 +36,4 @@ cdef class Trader(util.Initializable):
     # methods
     cpdef str parse_order_id(self, str order_id)
     cpdef double set_risk(self, double risk)
-    cpdef order_class.Order convert_order_to_trade(self, object order)
+    cpdef object convert_order_to_trade(self, object order)
