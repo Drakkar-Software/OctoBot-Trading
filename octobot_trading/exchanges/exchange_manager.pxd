@@ -17,8 +17,8 @@
 cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
 cimport octobot_trading.exchanges.exchange_config_data as exchange_config_data
 cimport octobot_trading.exchanges.websockets.abstract_websocket as abstract_websocket
-cimport octobot_trading.exchange_data.exchange_symbols_data as exchange_symbols_data
-cimport octobot_trading.exchange_data.exchange_symbol_data as exchange_symbol_data
+# cimport octobot_trading.exchange_data.exchange_symbols_data as exchange_symbols_data
+# cimport octobot_trading.exchange_data.exchange_symbol_data as exchange_symbol_data
 cimport octobot_trading.util as util
 
 cdef class ExchangeManager(util.Initializable):
@@ -56,7 +56,7 @@ cdef class ExchangeManager(util.Initializable):
     cdef public abstract_exchange.AbstractExchange exchange
     cdef public abstract_websocket.AbstractWebsocket exchange_web_socket
     cdef public exchange_config_data.ExchangeConfig exchange_config
-    cdef public exchange_symbols_data.ExchangeSymbolsData exchange_symbols_data
+    cdef public object exchange_symbols_data
     cdef public object exchange_personal_data
 
     # private
@@ -79,4 +79,4 @@ cdef class ExchangeManager(util.Initializable):
     cpdef str get_exchange_name(self)
     cpdef tuple get_exchange_credentials(self, object logger, str exchange_name)
     cpdef bint should_decrypt_token(self, object logger)
-    cpdef exchange_symbol_data.ExchangeSymbolData get_symbol_data(self, str symbol)
+    cpdef object get_symbol_data(self, str symbol)
