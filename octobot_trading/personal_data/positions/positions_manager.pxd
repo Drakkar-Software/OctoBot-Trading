@@ -15,7 +15,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 cimport octobot_trading.personal_data.positions as positions_personal_data
-cimport octobot_trading.exchanges as exchanges
 cimport octobot_trading.util as util
 
 
@@ -26,8 +25,8 @@ cdef class PositionsManager(util.Initializable):
 
     cdef public bint positions_initialized
 
-    cdef exchanges.Trader trader
-    cdef exchanges.ExchangeManager exchange_manager
+    cdef object trader
+    cdef object exchange_manager
 
     cdef public object positions
 
