@@ -23,7 +23,7 @@ from tests.exchanges import backtesting_trader, backtesting_config, backtesting_
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
-from tests.util.random_numbers import random_price, random_quantity
+from tests.test_utils.random_numbers import random_price, random_quantity
 
 pytestmark = pytest.mark.asyncio
 

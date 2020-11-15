@@ -27,7 +27,7 @@ from tests.exchange_data import price_events_manager, prices_manager
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
-from tests.util.random_numbers import random_price
+from tests.test_utils.random_numbers import random_price
 
 pytestmark = pytest.mark.asyncio
 

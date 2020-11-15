@@ -23,7 +23,7 @@ from octobot_trading.exchange_data.prices.price_events_manager import PriceEvent
 from octobot_trading.enums import TradeOrderType, TradeOrderSide, MarkPriceSources
 from octobot_trading.personal_data.orders import TrailingStopOrder
 
-from tests.util.random_numbers import random_price, random_quantity, random_recent_trade
+from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.personal_data.orders import trailing_stop_order

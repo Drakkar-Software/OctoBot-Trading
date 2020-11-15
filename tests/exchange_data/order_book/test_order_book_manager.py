@@ -20,8 +20,8 @@ import pytest
 from octobot_trading.exchange_data.order_book.order_book_manager import OrderBookManager
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC
 from octobot_trading.enums import TradeOrderSide
-from tests.util.random_numbers import random_price_list, random_price, random_quantity, random_order_book_side
-from tests.util.random_numbers import random_timestamp
+from tests.test_utils.random_numbers import random_price_list, random_price, random_quantity, random_order_book_side
+from tests.test_utils.random_numbers import random_timestamp
 from tests import event_loop
 
 pytestmark = pytest.mark.asyncio

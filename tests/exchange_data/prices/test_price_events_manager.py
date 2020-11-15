@@ -20,7 +20,7 @@ from mock import patch, Mock
 
 from tests.exchange_data import price_events_manager
 from tests import event_loop
-from tests.util.random_numbers import random_recent_trade, random_price, random_timestamp
+from tests.test_utils.random_numbers import random_recent_trade, random_price, random_timestamp
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
