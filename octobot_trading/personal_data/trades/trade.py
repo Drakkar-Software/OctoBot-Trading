@@ -66,14 +66,16 @@ class Trade:
         self.executed_time = order.executed_time if order.executed_time > 0 else executed_time
         self.symbol = order.symbol
 
+    def get_time(self):
+        return self.executed_time if self.status is not enums.OrderStatus.CANCELED else self.canceled_time
+
     def to_dict(self):
-        trade_time = self.executed_time if self.status is not enums.OrderStatus.CANCELED else self.canceled_time
         return {
             enums.ExchangeConstantsOrderColumns.ID.value: self.trade_id,
             enums.ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
             enums.ExchangeConstantsOrderColumns.PRICE.value: self.executed_price,
             enums.ExchangeConstantsOrderColumns.STATUS.value: self.status.value,
-            enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: trade_time,
+            enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: self.get_time(),
             enums.ExchangeConstantsOrderColumns.TYPE.value: self.exchange_trade_type.value,
             enums.ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
             enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.executed_quantity,

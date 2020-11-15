@@ -13,9 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.logging as logging
 import octobot_trading.personal_data.trades.trade as trade_class
 import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 
 
 def create_trade_instance_from_raw(trader, raw_trade):
@@ -44,6 +46,9 @@ def create_trade_from_order(order,
                             canceled_time=canceled_time,
                             creation_time=creation_time,
                             executed_time=executed_time)
+    if trade.get_time() < constants.MINIMUM_VAL_TRADE_TIME:
+        logging.get_logger("TradeFactory").error(f"Trade with invalid trade time ({trade.get_time()}) "
+                                                 f"from order: {order}")
     return trade
 
 

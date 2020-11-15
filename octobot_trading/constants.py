@@ -99,6 +99,9 @@ BALANCE_CHANNEL = "Balance"
 BALANCE_PROFITABILITY_CHANNEL = "BalanceProfitability"
 POSITIONS_CHANNEL = "Positions"
 
+# 946742400 is 01/01/2000, if trade time is lower, there is an issue.
+MINIMUM_VAL_TRADE_TIME = 946688400
+
 # Internal
 MODE_CHANNEL = "Mode"
 
