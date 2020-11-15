@@ -16,7 +16,7 @@
 import pytest
 
 from octobot_trading.enums import TraderOrderType
-from tests.util.random_numbers import random_price, random_quantity
+from tests.test_utils.random_numbers import random_price, random_quantity
 
 from octobot_trading.personal_data.orders.states.open_order_state import OpenOrderState
 from tests import event_loop

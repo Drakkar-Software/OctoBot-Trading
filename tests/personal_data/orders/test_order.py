@@ -21,7 +21,7 @@ from tests import event_loop
 from tests.exchanges import exchange_manager
 from tests.exchanges.traders import trader_simulator
 from tests.exchanges.traders import trader
-from tests.util.random_numbers import random_price
+from tests.test_utils.random_numbers import random_price
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
