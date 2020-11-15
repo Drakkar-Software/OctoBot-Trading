@@ -20,18 +20,6 @@ from octobot_trading.exchanges.exchanges import (
 )
 from octobot_trading.exchanges import channel
 from octobot_trading.exchanges.channel import (
-    ExchangeChannelConsumer,
-    ExchangeChannelInternalConsumer,
-    ExchangeChannelSupervisedConsumer,
-    ExchangeChannelProducer,
-    ExchangeChannel,
-    TimeFrameExchangeChannel,
-    set_chan,
-    get_exchange_channels,
-    del_exchange_channel_container,
-    get_chan,
-    del_chan,
-    stop_exchange_channels,
     requires_refresh_trigger,
     create_exchange_channels,
     create_exchange_producers,
