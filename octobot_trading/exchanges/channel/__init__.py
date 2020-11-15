@@ -14,23 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.channel import exchange_channel
-
-from octobot_trading.exchanges.channel.exchange_channel import (
-    ExchangeChannelConsumer,
-    ExchangeChannelInternalConsumer,
-    ExchangeChannelSupervisedConsumer,
-    ExchangeChannelProducer,
-    ExchangeChannel,
-    TimeFrameExchangeChannel,
-    set_chan,
-    get_exchange_channels,
-    del_exchange_channel_container,
-    get_chan,
-    del_chan,
-    stop_exchange_channels,
-)
-
 from octobot_trading.exchanges.channel import exchange_channels
 from octobot_trading.exchanges.channel.exchange_channels import (
     requires_refresh_trigger,
@@ -40,18 +23,6 @@ from octobot_trading.exchanges.channel.exchange_channels import (
 )
 
 __all__ = [
-    "ExchangeChannelConsumer",
-    "ExchangeChannelInternalConsumer",
-    "ExchangeChannelSupervisedConsumer",
-    "ExchangeChannelProducer",
-    "ExchangeChannel",
-    "TimeFrameExchangeChannel",
-    "set_chan",
-    "get_exchange_channels",
-    "del_exchange_channel_container",
-    "get_chan",
-    "del_chan",
-    "stop_exchange_channels",
     "requires_refresh_trigger",
     "create_exchange_channels",
     "create_exchange_producers",

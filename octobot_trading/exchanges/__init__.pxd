@@ -18,20 +18,6 @@ from octobot_trading.exchanges.exchanges cimport (
     ExchangeConfiguration,
     Exchanges,
 )
-from octobot_trading.exchanges cimport channel
-from octobot_trading.exchanges.channel cimport (
-    ExchangeChannelConsumer,
-    ExchangeChannelInternalConsumer,
-    ExchangeChannelSupervisedConsumer,
-    ExchangeChannelProducer,
-    ExchangeChannel,
-    TimeFrameExchangeChannel,
-    set_chan,
-    get_exchange_channels,
-    del_exchange_channel_container,
-    get_chan,
-    del_chan,
-)
 
 from octobot_trading.exchanges cimport exchange_config_data
 from octobot_trading.exchanges.exchange_config_data cimport (
@@ -95,23 +81,11 @@ __all__ = [
     "ExchangeConfig",
     "ExchangeManager",
     "ExchangeBuilder",
-    "ExchangeChannelConsumer",
-    "ExchangeChannelInternalConsumer",
-    "ExchangeChannelSupervisedConsumer",
-    "ExchangeChannelProducer",
-    "ExchangeChannel",
-    "TimeFrameExchangeChannel",
-    "set_chan",
-    "get_exchange_channels",
-    "del_exchange_channel_container",
-    "get_chan",
-    "del_chan",
     "ExchangeConfiguration",
     "Exchanges",
     "get_margin_exchange_class",
     "get_future_exchange_class",
     "get_spot_exchange_class",
-    "search_exchange_class_from_exchange_name",
     "get_order_side",
     "AbstractExchange",
     "TraderSimulator",

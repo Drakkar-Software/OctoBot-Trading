@@ -153,8 +153,8 @@ packages_list = [
     "octobot_trading.exchanges.types.future_exchange",
     "octobot_trading.exchanges.implementations.ccxt_exchange",
     "octobot_trading.exchanges.implementations.exchange_simulator",
-    "octobot_trading.exchanges.channel.exchange_channel",
     "octobot_trading.exchanges.channel.exchange_channels",
+    "octobot_trading.exchanges.exchange_channel",
 ]
 
 ext_modules = [
