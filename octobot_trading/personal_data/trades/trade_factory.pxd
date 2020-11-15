@@ -14,26 +14,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.trades.trade as trade_class
-cimport octobot_trading.personal_data.orders.order as order_class
-cimport octobot_trading.exchanges as exchanges
 
-cpdef trade_class.Trade create_trade_instance_from_raw(exchanges.Trader trader, dict raw_order)
+cpdef object create_trade_instance_from_raw(object, dict raw_order)
 
-cpdef trade_class.Trade create_trade_from_order(order_class.Order order,
-                                                         object close_status= *,
-                                                         double canceled_time= *,
-                                                         double creation_time= *,
-                                                         double executed_time= *)
+cpdef object create_trade_from_order(object order,
+                                     object close_status= *,
+                                     double canceled_time= *,
+                                     double creation_time= *,
+                                     double executed_time= *)
 
-cpdef trade_class.Trade create_trade_instance(exchanges.Trader trader,
-                                                       object order_type,
-                                                       str symbol,
-                                                       object status= *,
-                                                       str order_id= *,
-                                                       double filled_price= *,
-                                                       double quantity_filled= *,
-                                                       double total_cost= *,
-                                                       double canceled_time= *,
-                                                       double creation_time= *,
-                                                       double executed_time= *)
+cpdef object create_trade_instance(object,
+                                   object order_type,
+                                   str symbol,
+                                   object status= *,
+                                   str order_id= *,
+                                   double filled_price= *,
+                                   double quantity_filled= *,
+                                   double total_cost= *,
+                                   double canceled_time= *,
+                                   double creation_time= *,
+                                   double executed_time= *)

@@ -14,7 +14,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.orders.order as order_class
 cimport octobot_trading.exchanges as exchanges
 
 cdef class Trade:
@@ -50,7 +49,7 @@ cdef class Trade:
     cdef public object exchange_trade_type # raw exchange trade type, used to create trade dict
 
     cpdef void update_from_order(self,
-                                 order_class.Order order,
+                                 object order,
                                  double canceled_time=*,
                                  double creation_time=*,
                                  double executed_time=*)
