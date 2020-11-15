@@ -14,11 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges as exchanges
 
 cdef class Trade:
-    cdef public exchanges.Trader trader
-    cdef public exchanges.ExchangeManager exchange_manager
+    cdef public object trader
+    cdef public object exchange_manager
 
     cdef public object side # TradeOrderSide
     cdef public object status # OrderStatus
