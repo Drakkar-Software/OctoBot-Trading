@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.exchange_data as exchange_data
 import octobot_trading.personal_data as personal_data
 
@@ -31,5 +31,5 @@ async def subscribe_to_order_channel(callback, exchange_id):
 
 
 async def _subscribe_to_channel(callback, exchange_id, channel):
-    channel = exchanges.get_chan(channel.get_name(), exchange_id)
+    channel = exchange_channel.get_chan(channel.get_name(), exchange_id)
     await channel.new_consumer(callback)

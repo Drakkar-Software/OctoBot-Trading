@@ -17,7 +17,7 @@ import asyncio
 
 import octobot_commons.logging as logging
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.enums as enums
 import octobot_trading.util as util
 import octobot_trading.constants
@@ -137,7 +137,7 @@ class OrderState(util.Initializable):
         :param force_synchronization: When True, for the update of the order from the exchange
         :return: the result of OrdersProducer.update_order_from_exchange()
         """
-        return (await exchanges.get_chan(octobot_trading.constants.ORDERS_CHANNEL,
+        return (await exchange_channel.get_chan(octobot_trading.constants.ORDERS_CHANNEL,
                                          self.order.exchange_manager.id).get_internal_producer().
                 update_order_from_exchange(order=self.order,
                                            wait_for_refresh=True,

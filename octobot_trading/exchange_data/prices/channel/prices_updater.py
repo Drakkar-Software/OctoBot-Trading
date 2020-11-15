@@ -16,7 +16,7 @@
 import asyncio
 
 import octobot_trading.errors as errors
-import octobot_trading.exchanges.channel as exchanges_channel
+import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.prices.channel.price as prices_channel
 import octobot_trading.exchange_data.prices.prices_manager as prices_manager

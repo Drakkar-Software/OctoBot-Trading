@@ -19,6 +19,7 @@ import octobot_commons.config_util as config_util
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.exchanges as exchanges
 import octobot_trading.personal_data as personal_data
 import octobot_trading.exchange_data as exchange_data
@@ -79,7 +80,7 @@ class ExchangeManager(util.Initializable):
             await trading_mode.stop()
         if self.exchange is not None:
             if not self.exchange_only:
-                await exchanges.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
+                await exchange_channel.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
             await self.exchange.stop()
             exchanges.Exchanges.instance().del_exchange(self.exchange.name, self.id,
                                                         should_warn=warning_on_missing_elements)

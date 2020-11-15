@@ -15,7 +15,7 @@
 #  License along with this library.
 import octobot_commons.symbol_util as symbol_util
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.modes.channel as modes_channel
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
@@ -61,7 +61,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                     except errors.MissingFunds:
                         try:
                             # second chance: force portfolio update and retry
-                            await exchanges.get_chan(constants.BALANCE_CHANNEL,
+                            await exchange_channel.get_chan(constants.BALANCE_CHANNEL,
                                                      self.exchange_manager.id).get_internal_producer(). \
                                 refresh_real_trader_portfolio(True)
 

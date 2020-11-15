@@ -19,7 +19,8 @@ Handles balance changes
 """
 import asyncio
 
-import octobot_trading.exchanges.channel as exchanges_channel
+import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
 
 
@@ -50,8 +51,8 @@ class BalanceProducer(exchanges_channel.ExchangeChannelProducer):
         if self.channel.exchange_manager.is_simulated:
             # simulated portfolio can't be out of sync
             return True
-        if force_manual_refresh or exchanges_channel.requires_refresh_trigger(self.channel.exchange_manager,
-                                                                              constants.BALANCE_CHANNEL):
+        if force_manual_refresh or exchanges.requires_refresh_trigger(self.channel.exchange_manager,
+                                                                      constants.BALANCE_CHANNEL):
             self.logger.debug(f"Refreshing portfolio from {self.channel.exchange_manager.get_exchange_name()} exchange")
             return await self._update_portfolio_from_exchange()
         else:

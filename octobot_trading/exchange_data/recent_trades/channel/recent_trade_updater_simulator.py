@@ -24,7 +24,7 @@ import octobot_commons.enums as common_enums
 
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
-import octobot_trading.exchanges.channel as exchanges_channel
+import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.exchange_data.recent_trades.channel.recent_trade_updater as recent_trade_updater
 import octobot_trading.util as util
 

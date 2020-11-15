@@ -17,7 +17,7 @@ import copy
 
 import octobot_commons.logging as logging
 
-import octobot_trading.exchanges.channel as exchanges_channel
+import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.positions.channel.positions_updater as positions_updater
 import octobot_trading.personal_data.positions as positions

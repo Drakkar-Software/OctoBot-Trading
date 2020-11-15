@@ -17,7 +17,8 @@ import asyncio
 
 import async_channel.constants as channel_constants
 
-import octobot_trading.exchanges.channel as exchanges_channel
+import octobot_trading.exchange_channel as exchanges_channel
+import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
 
 
@@ -123,9 +124,9 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
         except IndexError:
             if not self.channel.exchange_manager.is_simulated and create_order_producer_if_missing:
                 self.logger.debug("Missing orders producer, starting one...")
-                await exchanges_channel.create_authenticated_producer_from_parent(self.channel.exchange_manager,
-                                                                                  self.__class__,
-                                                                                  force_register_producer=True)
+                await exchanges.create_authenticated_producer_from_parent(self.channel.exchange_manager,
+                                                                          self.__class__,
+                                                                          force_register_producer=True)
                 await self.update_order_from_exchange(order=order,
                                                       should_notify=should_notify,
                                                       wait_for_refresh=wait_for_refresh,

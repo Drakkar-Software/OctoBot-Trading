@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges.channel as exchanges_channel
+cimport octobot_trading.exchange_channel as exchanges_channel
 
 
 cdef class KlineProducer(exchanges_channel.ExchangeChannelProducer):

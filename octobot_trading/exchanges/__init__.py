@@ -36,11 +36,6 @@ from octobot_trading.exchanges.exchange_manager import (
     ExchangeManager,
 )
 
-from octobot_trading.exchanges import exchange_builder
-from octobot_trading.exchanges.exchange_builder import (
-    ExchangeBuilder,
-    create_exchange_builder_instance,
-)
 from octobot_trading.exchanges import exchange_factory
 from octobot_trading.exchanges.exchange_factory import (
     create_exchanges,
@@ -102,24 +97,17 @@ from octobot_trading.exchanges.implementations import (
     CCXTExchange,
     SpotCCXTExchange,
 )
+from octobot_trading.exchanges import exchange_builder
+from octobot_trading.exchanges.exchange_builder import (
+    ExchangeBuilder,
+    create_exchange_builder_instance,
+)
 
 __all__ = [
     "ExchangeConfig",
     "ExchangeManager",
     "ExchangeBuilder",
     "create_exchange_builder_instance",
-    "ExchangeChannelConsumer",
-    "ExchangeChannelInternalConsumer",
-    "ExchangeChannelSupervisedConsumer",
-    "ExchangeChannelProducer",
-    "ExchangeChannel",
-    "TimeFrameExchangeChannel",
-    "set_chan",
-    "get_exchange_channels",
-    "del_exchange_channel_container",
-    "get_chan",
-    "del_chan",
-    "stop_exchange_channels",
     "create_exchanges",
     "create_real_exchange",
     "initialize_real_exchange",
