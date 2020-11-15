@@ -14,8 +14,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
-cimport octobot_trading.exchanges.exchange_manager as exchange_manager
 cimport octobot_trading.exchange_data as exchange_data
 
 cdef class ExchangeSymbolsData:
@@ -24,7 +22,7 @@ cdef class ExchangeSymbolsData:
     cdef public dict exchange_symbol_data
     cdef public dict config
 
-    cdef public abstract_exchange.AbstractExchange exchange
-    cdef public exchange_manager.ExchangeManager exchange_manager
+    cdef public object exchange
+    cdef public object exchange_manager
 
     cpdef public exchange_data.ExchangeSymbolData get_exchange_symbol_data(self, str symbol, bint allow_creation=*)
