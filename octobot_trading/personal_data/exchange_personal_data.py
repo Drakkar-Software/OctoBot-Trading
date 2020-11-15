@@ -17,7 +17,7 @@ import asyncio
 
 import octobot_commons.logging as logging
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants
 import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 import octobot_trading.personal_data.positions.positions_manager as positions_manager
@@ -65,7 +65,7 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = self.portfolio_manager.handle_balance_update(balance, is_diff_update=is_diff_update)
             if should_notify:
-                await exchanges.get_chan(octobot_trading.constants.BALANCE_CHANNEL,
+                await exchange_channel.get_chan(octobot_trading.constants.BALANCE_CHANNEL,
                                          self.exchange_manager.id).get_internal_producer().send(balance)
             return changed
         except AttributeError as e:
@@ -76,7 +76,7 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order)
             if should_notify:
-                await exchanges.get_chan(octobot_trading.constants.BALANCE_CHANNEL, self.exchange_manager.id). \
+                await exchange_channel.get_chan(octobot_trading.constants.BALANCE_CHANNEL, self.exchange_manager.id). \
                     get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
             return changed
         except AttributeError as e:
@@ -94,7 +94,7 @@ class ExchangePersonalData(util.Initializable):
                 await self.portfolio_manager.handle_mark_price_update(symbol=symbol, mark_price=mark_price)
 
             if should_notify:
-                await exchanges.get_chan(octobot_trading.constants.BALANCE_PROFITABILITY_CHANNEL,
+                await exchange_channel.get_chan(octobot_trading.constants.BALANCE_PROFITABILITY_CHANNEL,
                                          self.exchange_manager.id).get_internal_producer() \
                     .send(profitability=portfolio_profitability.profitability,
                           profitability_percent=portfolio_profitability.profitability_percent,
@@ -145,7 +145,7 @@ class ExchangePersonalData(util.Initializable):
         :param is_new_order: True if the order was created during update
         """
         try:
-            await exchanges.get_chan(octobot_trading.constants.ORDERS_CHANNEL,
+            await exchange_channel.get_chan(octobot_trading.constants.ORDERS_CHANNEL,
                                      self.exchange_manager.id).get_internal_producer() \
                 .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(order.symbol),
                       symbol=order.symbol,
@@ -173,7 +173,7 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = self.trades_manager.upsert_trade(trade_id, trade)
             if should_notify:
-                await exchanges.get_chan(octobot_trading.constants.TRADES_CHANNEL,
+                await exchange_channel.get_chan(octobot_trading.constants.TRADES_CHANNEL,
                                          self.exchange_manager.id).get_internal_producer() \
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                           symbol=symbol,
@@ -188,7 +188,7 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = self.trades_manager.upsert_trade_instance(trade)
             if should_notify:
-                await exchanges.get_chan(octobot_trading.constants.TRADES_CHANNEL,
+                await exchange_channel.get_chan(octobot_trading.constants.TRADES_CHANNEL,
                                self.exchange_manager.id).get_internal_producer() \
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(trade.symbol),
                           symbol=trade.symbol,
@@ -204,7 +204,7 @@ class ExchangePersonalData(util.Initializable):
             changed: bool = self.positions_manager.upsert_position(position_id, position)
             if should_notify:
                 position_instance = self.positions_manager[position_id]
-                await exchanges.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,
+                await exchange_channel.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,
                                          self.exchange_manager.id).get_internal_producer() \
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                           symbol=symbol,
@@ -222,7 +222,7 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = self.positions_manager.upsert_position_instance(position)
             if should_notify:
-                await exchanges.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,
+                await exchange_channel.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,
                                          self.exchange_manager.id).get_internal_producer() \
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(position.symbol),
                           symbol=position.symbol,

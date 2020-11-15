@@ -19,6 +19,7 @@ import async_channel.util as channel_util
 import octobot_commons.tentacles_management as tentacles_management
 
 import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchange_channel
 
 
 async def create_exchange_channels(exchange_manager) -> None:
@@ -27,8 +28,8 @@ async def create_exchange_channels(exchange_manager) -> None:
     # TODO filter creation --> not required if pause is managed
     :param exchange_manager: the related exchange manager
     """
-    for exchange_channel_class_type in [exchanges.ExchangeChannel, exchanges.TimeFrameExchangeChannel]:
-        await channel_util.create_all_subclasses_channel(exchange_channel_class_type, exchanges.set_chan,
+    for exchange_channel_class_type in [exchange_channel.ExchangeChannel, exchange_channel.TimeFrameExchangeChannel]:
+        await channel_util.create_all_subclasses_channel(exchange_channel_class_type, exchange_channel.set_chan,
                                                          is_synchronized=exchange_manager.is_backtesting,
                                                          exchange_manager=exchange_manager)
 
@@ -48,13 +49,13 @@ async def create_exchange_producers(exchange_manager) -> None:
         import octobot_trading.exchange_data as exchange_data
         for updater in exchange_data.UNAUTHENTICATED_UPDATER_PRODUCERS:
             if not exchanges.is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
-                await updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+                await updater(exchange_channel.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
     # Simulated producers
     if _should_create_simulated_producers(exchange_manager):
         import octobot_trading.personal_data as personal_data
         for updater in personal_data.AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
-            await updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+            await updater(exchange_channel.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
 
 def _should_create_authenticated_producers(exchange_manager):
@@ -97,14 +98,14 @@ async def _create_authenticated_producers(exchange_manager) -> None:
             # websocket is handling this channel: initialize data if required
             if exchanges.is_websocket_feed_requiring_init(exchange_manager, updater.CHANNEL_NAME):
                 try:
-                    updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).trigger_single_update()
+                    updater(exchange_channel.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).trigger_single_update()
                 except Exception as e:
                     exchange_manager.logger.exception(e, True,
                                                       f"Error when initializing data for {updater.CHANNEL_NAME} "
                                                       f"channel required by websocket: {e}")
         else:
             # no websocket for this channel: start an updater
-            await updater(exchanges.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+            await updater(exchange_channel.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
 
 
 async def _create_authenticated_producer(exchange_manager, producer) -> channel_producer.Producer:
@@ -114,7 +115,7 @@ async def _create_authenticated_producer(exchange_manager, producer) -> channel_
     :param producer: the producer to create
     :return: the producer instance created
     """
-    producer_instance = producer(exchanges.get_chan(producer.CHANNEL_NAME, exchange_manager.id))
+    producer_instance = producer(exchange_channel.get_chan(producer.CHANNEL_NAME, exchange_manager.id))
     if exchanges.is_exchange_managed_by_websocket(exchange_manager, producer.CHANNEL_NAME):
         # websocket is handling this channel: initialize data if required
         if exchanges.is_websocket_feed_requiring_init(exchange_manager, producer.CHANNEL_NAME):

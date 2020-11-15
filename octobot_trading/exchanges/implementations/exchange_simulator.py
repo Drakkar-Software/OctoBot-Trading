@@ -21,7 +21,7 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_commons.time_frame_manager as time_frame_manager
 
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
-import octobot_trading.exchanges.channel as exchange_channel
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchange_data as exchange_data

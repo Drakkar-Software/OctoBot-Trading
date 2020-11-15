@@ -19,7 +19,7 @@ import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 import octobot_commons.symbol_util as symbol_util
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
 
 
@@ -253,7 +253,7 @@ class PortfolioValueHolder:
         :param symbols_to_add: the list of symbol to add to the TICKER_CHANNEL producer watch list
         """
         asyncio.run_coroutine_threadsafe(
-            exchanges.get_chan(constants.TICKER_CHANNEL, self.portfolio_manager.exchange_manager.id).
+            exchange_channel.get_chan(constants.TICKER_CHANNEL, self.portfolio_manager.exchange_manager.id).
                 modify(added_pairs=symbols_to_add),
             asyncio.get_running_loop())
 

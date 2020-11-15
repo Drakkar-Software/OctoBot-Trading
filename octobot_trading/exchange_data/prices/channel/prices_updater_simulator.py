@@ -15,7 +15,7 @@
 #  License along with this library.
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.prices.channel.prices_updater as prices_updater
-import octobot_trading.exchanges.channel as exchanges_channel
+import octobot_trading.exchange_channel as exchanges_channel
 
 
 class MarkPriceUpdaterSimulator(prices_updater.MarkPriceUpdater):

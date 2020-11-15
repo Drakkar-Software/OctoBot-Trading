@@ -16,7 +16,7 @@
 import asyncio
 
 import async_channel.constants as constants
-import octobot_trading.exchanges.channel as exchanges_channel
+import octobot_trading.exchange_channel as exchanges_channel
 
 
 class FundingProducer(exchanges_channel.ExchangeChannelProducer):

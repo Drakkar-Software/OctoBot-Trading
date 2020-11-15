@@ -21,7 +21,7 @@ import async_channel.channels as channel
 import octobot_commons.channels_name as channels_name
 import octobot_commons.pretty_printer as pretty_printer
 
-import octobot_trading.exchanges.channel as exchanges_channel
+import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.cli as cli
 
 

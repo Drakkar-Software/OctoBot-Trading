@@ -48,10 +48,6 @@ from octobot_trading.exchanges cimport exchange_manager
 from octobot_trading.exchanges.exchange_manager cimport (
     ExchangeManager,
 )
-from octobot_trading.exchanges cimport exchange_builder
-from octobot_trading.exchanges.exchange_builder cimport (
-    ExchangeBuilder,
-)
 from octobot_trading.exchanges cimport exchange_util
 from octobot_trading.exchanges.exchange_util cimport (
     get_margin_exchange_class,
@@ -75,6 +71,10 @@ from octobot_trading.exchanges cimport implementations
 from octobot_trading.exchanges.implementations cimport (
     ExchangeSimulator,
     CCXTExchange,
+)
+from octobot_trading.exchanges cimport exchange_builder
+from octobot_trading.exchanges.exchange_builder cimport (
+    ExchangeBuilder,
 )
 
 __all__ = [

@@ -15,7 +15,7 @@
 #  License along with this library.
 import octobot_commons.logging as logging
 
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
 import octobot_trading.util as util
@@ -97,7 +97,8 @@ class PortfolioManager(util.Initializable):
         Call BALANCE_CHANNEL producer to refresh real trader portfolio
         :return: True if the portfolio was updated
         """
-        return await exchanges.get_chan(constants.BALANCE_CHANNEL, self.exchange_manager.id).get_internal_producer(). \
+        return await exchange_channel.get_chan(constants.BALANCE_CHANNEL,
+                                               self.exchange_manager.id).get_internal_producer().\
             refresh_real_trader_portfolio()
 
     async def _reset_portfolio(self):

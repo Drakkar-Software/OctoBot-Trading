@@ -18,7 +18,7 @@ import async_channel.enums as channel_enums
 
 import octobot_commons.constants as constants
 
-import octobot_trading.exchanges.channel as exchanges_channel
+import octobot_trading.exchange_channel as exchanges_channel
 
 
 class ModeChannelConsumer(exchanges_channel.ExchangeChannelInternalConsumer):

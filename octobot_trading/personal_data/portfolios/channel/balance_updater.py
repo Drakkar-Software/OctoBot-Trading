@@ -21,7 +21,7 @@ import octobot_commons.logging as logging
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.portfolios.channel.balance as portfolios_channel
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchange_channel
 
 
 class BalanceUpdater(portfolios_channel.BalanceProducer):
@@ -97,10 +97,10 @@ class BalanceProfitabilityUpdater(portfolios_channel.BalanceProfitabilityProduce
         """
         Starts the balance profitability subscribing process
         """
-        self.balance_consumer = await exchanges.get_chan(
+        self.balance_consumer = await exchange_channel.get_chan(
             constants.BALANCE_CHANNEL, self.channel.exchange_manager.id
         ).new_consumer(self.handle_balance_update)
-        self.mark_price_consumer = await exchanges.get_chan(
+        self.mark_price_consumer = await exchange_channel.get_chan(
             constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
         ).new_consumer(self.handle_mark_price_update)
 
@@ -110,13 +110,13 @@ class BalanceProfitabilityUpdater(portfolios_channel.BalanceProfitabilityProduce
         """
         await super().stop()
         try:
-            await exchanges.get_chan(
+            await exchange_channel.get_chan(
                 constants.BALANCE_CHANNEL, self.channel.exchange_manager.id
             ).remove_consumer(self.balance_consumer)
         except KeyError:
             # balance channel might already be stopped and removed from available channels
             pass
-        await exchanges.get_chan(
+        await exchange_channel.get_chan(
             constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
         ).remove_consumer(self.mark_price_consumer)
         self.balance_consumer = None

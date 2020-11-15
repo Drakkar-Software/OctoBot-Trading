@@ -27,7 +27,7 @@ import octobot_commons.enums
 import octobot_commons.logging as commons_logging
 
 import octobot_trading.exchange_data as exchange_data
-import octobot_trading.exchanges as exchanges
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.enums
 
 
@@ -162,7 +162,7 @@ class WebsocketExchange:
     async def push_to_channel(self, channel_name, **kwargs):
         try:
             asyncio.run_coroutine_threadsafe(
-                exchanges.get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
+                exchange_channel.get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
                 self.bot_mainloop)
         except Exception as e:
             self.logger.error(f"Push to {channel_name} failed : {e}")
