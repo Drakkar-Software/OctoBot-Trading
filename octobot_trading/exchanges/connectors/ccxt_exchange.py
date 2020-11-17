@@ -45,7 +45,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         self._create_exchange_type()
         self._create_client()
 
-    async def initialize(self):
+    async def initialize_impl(self):
         try:
             self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
             await self.client.load_markets()
