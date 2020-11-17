@@ -22,16 +22,16 @@ import octobot_trading.exchanges.util as exchange_util
 import octobot_trading.exchanges.types as exchange_types
 
 
-class WebSocketExchange(abstract_websocket.AbstractWebsocket):
+class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.exchange_manager = exchange_manager
         self.exchange_name = exchange_manager.exchange_name
 
-        self.octobot_websockets = []
-        self.octobot_websockets_tasks = []
+        self.websocket_exchanges = []
+        self.websocket_exchanges_tasks = []
 
-        self.octobot_websockets_executors = None
+        self.websocket_exchanges_executors = None
         self.exchange_class = None
 
         self.trader_pairs = []
@@ -102,7 +102,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocket):
     def _create_octobot_feed_feeds(self):
         try:
             key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_name)
-            self.octobot_websockets.append(
+            self.websocket_exchanges.append(
                 self.exchange_class(exchange_manager=self.exchange_manager,
                                     pairs=self.trader_pairs,
                                     time_frames=self.time_frames,
@@ -127,21 +127,21 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocket):
     @classmethod
     def get_class_method_name_to_get_compatible_websocket(cls, exchange_manager: object) -> str:
         if exchange_manager.is_future:
-            return exchange_types.WebsocketExchange.is_handling_future.__name__
+            return exchange_types.WebSocketExchange.is_handling_future.__name__
         if exchange_manager.is_margin:
-            return exchange_types.WebsocketExchange.is_handling_margin.__name__
-        return exchange_types.WebsocketExchange.is_handling_spot.__name__
+            return exchange_types.WebSocketExchange.is_handling_margin.__name__
+        return exchange_types.WebSocketExchange.is_handling_spot.__name__
 
     async def start_sockets(self):
         if any(self.handled_feeds.values()):
             try:
-                self.octobot_websockets_executors = futures.ThreadPoolExecutor(
-                    max_workers=len(self.octobot_websockets),
+                self.websocket_exchanges_executors = futures.ThreadPoolExecutor(
+                    max_workers=len(self.websocket_exchanges),
                     thread_name_prefix=f"{self.get_name()}-{self.exchange_name}-pool-executor")
 
-                self.octobot_websockets_tasks = [
-                    asyncio.get_event_loop().run_in_executor(self.octobot_websockets_executors, websocket.start)
-                    for websocket in self.octobot_websockets]
+                self.websocket_exchanges_tasks = [
+                    asyncio.get_event_loop().run_in_executor(self.websocket_exchanges_executors, websocket.start)
+                    for websocket in self.websocket_exchanges]
 
                 self.is_websocket_running = True
             except ValueError as e:
@@ -152,14 +152,14 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocket):
                               f"websocket is not handling anything, it will not be started, ")
 
     async def wait_sockets(self):
-        await asyncio.wait(self.octobot_websockets_tasks)
+        await asyncio.wait(self.websocket_exchanges_tasks)
 
     async def close_and_restart_sockets(self):
-        for websocket in self.octobot_websockets:
+        for websocket in self.websocket_exchanges:
             await websocket.reconnect()
 
     async def stop_sockets(self):
-        for websocket in self.octobot_websockets:
+        for websocket in self.websocket_exchanges:
             websocket.stop()
 
     def is_handling(self, feed_name):
@@ -167,4 +167,4 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocket):
 
     @staticmethod
     def get_websocket_client(config, exchange_manager):
-        return WebSocketConnector(config, exchange_manager)
+        return WebSocketExchange(config, exchange_manager)
