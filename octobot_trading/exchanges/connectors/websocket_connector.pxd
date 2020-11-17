@@ -14,31 +14,53 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges.websockets.abstract_websocket as abstract_websocket
 
 
-cdef class WebSocketConnector(abstract_websocket.AbstractWebsocket):
-    cdef public str exchange_name
+cdef class WebsocketConnector:
+    cdef public str exchange_id
+    cdef str api_key
+    cdef str api_secret
+    cdef str api_password
 
-    cdef public list octobot_websockets
-    cdef public list octobot_websockets_tasks
-    cdef public list trader_pairs
+    cdef int timeout
+    cdef int timeout_interval
+    cdef int last_ping_time
+
+    cdef bint is_connected
+    cdef bint should_stop
+    cdef bint use_testnet
+    cdef bint is_authenticated
+
+    cdef public dict endpoint_args
+
+    cdef public list currencies
+    cdef public list pairs
     cdef public list time_frames
     cdef public list channels
 
-    cdef public object octobot_websockets_executors
-    cdef public object exchange_class
+    cdef public dict books
 
-    cdef public dict open_sockets_keys
-    cdef public dict handled_feeds
+    # objects
+    cdef public object exchange_manager
+    cdef public object exchange
+    cdef public object logger
+    cdef public object websocket
+    cdef public object websocket_task
+    cdef public object ccxt_client
+    cdef public object async_ccxt_client
+    cdef object _watch_task
+    cdef object last_msg
+    cdef object bot_mainloop
 
-    cdef public bint is_websocket_running
-    cdef public bint is_websocket_authenticated
+    cdef void _initialize(self, list pairs, list channels)
+    cdef void on_open(self)
+    cdef void on_auth(self, bint status)
+    cdef void on_close(self)
+    cdef void on_error(self, str error)
+    cdef str feed_to_exchange(self, feed)
+    cdef bint _should_authenticate(self)
 
-    # private
-    cdef void _create_octobot_feed_feeds(self)
-
-    # public
-    cpdef bint is_handling(self, str feed_name)
-    cpdef bint is_feed_available(self, object feed)
-    cpdef bint is_feed_requiring_init(self, object feed)
+    cpdef start(self)
+    cpdef stop(self)
+    cpdef close(self)
+    cpdef object get_book_instance(self, str symbol)

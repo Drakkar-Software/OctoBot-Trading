@@ -13,158 +13,309 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import logging
+import websockets
+import time
+import ccxt
+import abc
 import asyncio
-import concurrent.futures as futures
+from datetime import datetime, timedelta
+import typing
 
+import octobot_commons.constants
+import octobot_commons.enums
+import octobot_commons.logging as commons_logging
+
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.enums
-import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
-import octobot_trading.exchanges.util as exchange_util
-import octobot_trading.exchanges.types as exchange_types
 
 
-class WebSocketConnector(abstract_websocket.AbstractWebsocket):
-    def __init__(self, config, exchange_manager):
-        super().__init__(config, exchange_manager)
+class WebsocketConnector:
+    LOGGERS = ["websockets.client", "websockets.server", "websockets.protocol"]
+    MAX_DELAY = octobot_commons.constants.HOURS_TO_SECONDS
+    EXCHANGE_FEEDS = {}
+    INIT_REQUIRING_EXCHANGE_FEEDS = set()
+    REQUIRED_ACTIVATED_TENTACLES = []
+
+    def __init__(self,
+                 exchange_manager: object,
+                 channels: list = None,
+                 currencies: list = None,
+                 pairs: list = None,
+                 time_frames: typing.List[octobot_commons.enums.TimeFrames] = None,
+                 api_key: str = None,
+                 api_secret: str = None,
+                 api_password: str = None,
+                 timeout: int = 120,
+                 timeout_interval: int = 5):
+        commons_logging.set_logging_level(self.LOGGERS, logging.WARNING)
+        self.logger = commons_logging.get_logger(self.__class__.__name__)
+
         self.exchange_manager = exchange_manager
-        self.exchange_name = exchange_manager.exchange_name
+        self.exchange = self.exchange_manager.exchange
+        self.exchange_id = self.exchange_manager.id
+        self.use_testnet = self.exchange_manager.is_sandboxed
 
-        self.octobot_websockets = []
-        self.octobot_websockets_tasks = []
+        self.bot_mainloop = asyncio.get_event_loop()
 
-        self.octobot_websockets_executors = None
-        self.exchange_class = None
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.api_password = api_password
 
-        self.trader_pairs = []
-        self.time_frames = []
+        self.timeout = timeout
+        self.timeout_interval = timeout_interval
+        self.last_ping_time = 0
 
+        self.is_connected = False
+        self.is_authenticated = False
+        self.should_stop = False
+
+        # keyword arguments to be given to get_ws_endpoint
+        self.endpoint_args = {}
+
+        self.currencies = currencies if currencies else []
+        self.pairs = []
         self.channels = []
-        self.handled_feeds = {}
+        self.books = {}
+        self.time_frames = time_frames if time_frames is not None else []
 
-        self.is_websocket_running = False
-        self.is_websocket_authenticated = False
+        self.websocket = None
+        self.ccxt_client = None
+        self._watch_task = None
+        self.websocket_task = None
+        self.last_msg = datetime.utcnow()
 
-    async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
-        self.exchange_class = exchange_util.get_exchange_websocket_from_name(
-            self.exchange_manager.exchange_name,
-            self.exchange_manager.tentacles_setup_config,
-            self.get_class_method_name_to_get_compatible_websocket(
-                self.exchange_manager)
-        )
-        self.trader_pairs = trader_pairs
-        self.time_frames = time_frames
+        self._initialize(pairs, channels)
 
-        if self.trader_pairs:
-            # unauthenticated
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.TRADES)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.L2_BOOK)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.L3_BOOK)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.BOOK_TICKER)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.MINI_TICKER)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.TICKER)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.FUNDING)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.MARK_PRICE)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.LIQUIDATIONS)
+    def _initialize(self, pairs, channels):
+        self.async_ccxt_client = self.get_ccxt_async_client()()
+        self.ccxt_client = getattr(ccxt, self.get_name())()
+        self.ccxt_client.load_markets()
 
-            if self.time_frames:
-                await self.add_feed(octobot_trading.enums.WebsocketFeeds.CANDLE)
-                await self.add_feed(octobot_trading.enums.WebsocketFeeds.KLINE)
+        self.pairs = [self.get_exchange_pair(pair) for pair in pairs] if pairs else []
+        self.channels = [self.feed_to_exchange(chan) for chan in channels] if channels else []
 
-            # authenticated
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.POSITION)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.PORTFOLIO)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.TRADE)
-            await self.add_feed(octobot_trading.enums.WebsocketFeeds.ORDERS)
+    def start(self):
+        asyncio.run(self._connect())
 
-            # ensure feeds are added
-            self._create_octobot_feed_feeds()
-        else:
-            self.logger.warning(f"{self.exchange_manager.exchange_name.title()}'s "
-                                f"websocket has no symbol to feed")
+    async def _watcher(self):
+        while True:
+            if self.last_msg:
+                if datetime.utcnow() - timedelta(seconds=self.timeout) > self.last_msg:
+                    self.logger.warning("No messages received within timeout, restarting connection")
+                    await self.reconnect()
+            await self.ping()
+            self.logger.debug("Sending keepalive...")
+            await asyncio.sleep(self.timeout_interval)
 
-    async def add_feed(self, feed_name):
-        if self.is_feed_available(feed_name):
-            self.channels.append(feed_name)
-            self.handled_feeds[feed_name] = True
-        else:
-            self.handled_feeds[feed_name] = False
-            self.logger.debug(f"{self.exchange_manager.exchange_name}'s websocket is not handling {feed_name.value}")
-
-    def is_feed_available(self, feed):
-        try:
-            feed_available = self.exchange_class.get_exchange_feed(feed)
-            return feed_available is not octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value
-        except (KeyError, ValueError):
-            return False
-
-    def is_feed_requiring_init(self, feed):
-        return self.exchange_class.is_feed_requiring_init(feed)
-
-    def _create_octobot_feed_feeds(self):
-        try:
-            key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_name)
-            self.octobot_websockets.append(
-                self.exchange_class(exchange_manager=self.exchange_manager,
-                                    pairs=self.trader_pairs,
-                                    time_frames=self.time_frames,
-                                    channels=self.channels,
-                                    api_key=key,
-                                    api_secret=secret,
-                                    api_password=password))
-        except ValueError as e:
-            self.logger.exception(e, True, f"Fail to create feed : {e}")
-
-    @classmethod
-    def get_name(cls):
-        return cls.__name__
-
-    @classmethod
-    def has_name(cls, exchange_manager: object) -> bool:
-        return exchange_util.get_exchange_websocket_from_name(exchange_manager.exchange_name,
-                                                              exchange_manager.tentacles_setup_config,
-                                                              cls.get_class_method_name_to_get_compatible_websocket(
-                                                                  exchange_manager)) is not None
-
-    @classmethod
-    def get_class_method_name_to_get_compatible_websocket(cls, exchange_manager: object) -> str:
-        if exchange_manager.is_future:
-            return exchange_types.WebsocketExchange.is_handling_future.__name__
-        if exchange_manager.is_margin:
-            return exchange_types.WebsocketExchange.is_handling_margin.__name__
-        return exchange_types.WebsocketExchange.is_handling_spot.__name__
-
-    async def start_sockets(self):
-        if any(self.handled_feeds.values()):
+    async def _connect(self):
+        delay: int = 1
+        self._watch_task = None
+        while not self.should_stop:
+            # manage max delay
+            if delay >= self.MAX_DELAY:
+                delay = self.MAX_DELAY
             try:
-                self.octobot_websockets_executors = futures.ThreadPoolExecutor(
-                    max_workers=len(self.octobot_websockets),
-                    thread_name_prefix=f"{self.get_name()}-{self.exchange_name}-pool-executor")
+                await self.before_connect()
+            except Exception as e:
+                self.logger.exception(e, True, f"Error on before_connect {e}")
+            try:
+                async with websockets.connect(self.get_ws_endpoint(**self.endpoint_args)
+                                              if not self.use_testnet else self.get_ws_testnet_endpoint(),
+                                              subprotocols=self.get_sub_protocol()) as websocket:
+                    self.websocket = websocket
+                    self.on_open()
+                    self._watch_task = asyncio.create_task(self._watcher())
+                    # connection was successful, reset delay
+                    delay = 1
+                    if self._should_authenticate():
+                        await self.do_auth()
 
-                self.octobot_websockets_tasks = [
-                    asyncio.get_event_loop().run_in_executor(self.octobot_websockets_executors, websocket.start)
-                    for websocket in self.octobot_websockets]
+                    await self.prepare()
+                    await self.subscribe()
+                    await self._handler()
+            except (websockets.ConnectionClosed, ConnectionAbortedError,
+                    ConnectionResetError, asyncio.CancelledError) as e:
+                self.logger.warning(f"{self.get_name()} encountered connection issue ({e}) - reconnecting...")
+            except Exception as e:
+                self.logger.exception(e, True, f"{self.get_name()} encountered an exception ({e}), reconnecting...")
+            await asyncio.sleep(delay)
+            delay *= 2
 
-                self.is_websocket_running = True
-            except ValueError as e:
-                self.logger.error(f"Failed to start websocket on {self.exchange_name} : {e}")
+    async def _handler(self):
+        async for message in self.websocket:
+            self.last_msg = datetime.utcnow()
+            try:
+                await self.on_message(message)
+            except Exception:
+                self.logger.error(f"{self.get_name()}: error handling message {message}")
+                # exception will be logged with traceback when connection handler
+                # retries the connection
+                raise
 
-        if not self.is_websocket_running:
-            self.logger.error(f"{self.exchange_manager.exchange_name.title()}'s "
-                              f"websocket is not handling anything, it will not be started, ")
+    def _should_authenticate(self):
+        return not self.exchange_manager.without_auth \
+            and not self.exchange_manager.is_trader_simulated \
+            and self.api_key and self.api_secret
 
-    async def wait_sockets(self):
-        await asyncio.wait(self.octobot_websockets_tasks)
+    async def push_to_channel(self, channel_name, **kwargs):
+        try:
+            asyncio.run_coroutine_threadsafe(
+                exchange_channel.get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
+                self.bot_mainloop)
+        except Exception as e:
+            self.logger.error(f"Push to {channel_name} failed : {e}")
 
-    async def close_and_restart_sockets(self):
-        for websocket in self.octobot_websockets:
-            await websocket.reconnect()
+    async def reconnect(self):
+        self.stop()
+        await self._connect()
 
-    async def stop_sockets(self):
-        for websocket in self.octobot_websockets:
-            websocket.stop()
+    def on_open(self):
+        self.logger.info("Connected")
 
-    def is_handling(self, feed_name):
-        return feed_name in self.handled_feeds[feed_name] and self.handled_feeds[feed_name]
+    def on_auth(self, status):
+        if status:
+            self.is_authenticated = True
+            self.logger.info("Authenticated")
+        else:
+            self.is_authenticated = False
+            self.logger.warning("Authentication failed")
 
-    @staticmethod
-    def get_websocket_client(config, exchange_manager):
-        return WebSocketConnector(config, exchange_manager)
+    def on_pong(self):
+        self.logger.debug(f"Pong received | latency = {float(time.time() * 1000)  - (self.last_ping_time * 1000)}")
+
+    async def on_ping(self):
+        self.logger.debug("Ping received. Sending pong...")
+        await self.websocket.pong()
+
+    async def ping(self):
+        self.last_ping_time = time.time()
+        await self.websocket.ping()
+
+    def on_close(self):
+        self.logger.info('Closed')
+
+    def on_error(self, error):
+        self.logger.error(f"Error : {error}")
+
+    def stop(self):
+        self.websocket.close()
+
+    def close(self):
+        self.stop()
+        self._watch_task.cancel()
+        self.websocket_task.cancel()
+        self.is_connected = False
+        self.websocket.close()
+        self.on_close()
+
+    async def before_connect(self):
+        pass
+
+    async def prepare(self):
+        pass
+
+    def get_sub_protocol(self):
+        return []
+
+    def get_book_instance(self, symbol):
+        try:
+            return self.books[symbol]
+        except KeyError:
+            self.books[symbol] = exchange_data.OrderBookManager()
+            return self.books[symbol]
+
+    @classmethod
+    def is_handling_spot(cls) -> bool:
+        return False
+
+    @classmethod
+    def is_handling_margin(cls) -> bool:
+        return False
+
+    @classmethod
+    def is_handling_future(cls) -> bool:
+        return False
+
+    @abc.abstractmethod
+    async def do_auth(self):
+        NotImplementedError("on_message is not implemented")
+
+    @abc.abstractmethod
+    async def _send_command(self, command, args=None):
+        raise NotImplementedError("_send_command is not implemented")
+
+    @abc.abstractmethod
+    async def on_message(self, message):
+        raise NotImplementedError("on_message is not implemented")
+
+    @abc.abstractmethod
+    async def subscribe(self):
+        raise NotImplementedError("subscribe is not implemented")
+
+    @classmethod
+    def get_name(cls) -> str:
+        raise NotImplementedError("get_name is not implemented")
+
+    @classmethod
+    def get_ws_endpoint(cls) -> str:
+        raise NotImplementedError("get_ws_endpoint is not implemented")
+
+    @classmethod
+    def get_ws_testnet_endpoint(cls) -> str:
+        raise NotImplementedError("get_ws_testnet_endpoint is not implemented")
+
+    @classmethod
+    def get_endpoint(cls) -> str:
+        raise NotImplementedError("get_endpoint is not implemented")
+
+    @classmethod
+    def get_testnet_endpoint(cls):
+        raise NotImplementedError("get_testnet_endpoint is not implemented")
+
+    @classmethod
+    def get_ccxt_async_client(cls):
+        raise NotImplementedError("get_ccxt_async_client is not implemented")
+
+    @classmethod
+    def get_feeds(cls) -> dict:
+        return cls.EXCHANGE_FEEDS
+
+    @classmethod
+    def get_exchange_feed(cls, feed) -> str:
+        return cls.EXCHANGE_FEEDS.get(feed, octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value)
+
+    @classmethod
+    def is_feed_requiring_init(cls, feed) -> bool:
+        return feed in cls.INIT_REQUIRING_EXCHANGE_FEEDS
+
+    def feed_to_exchange(self, feed):
+        ret: str = self.get_exchange_feed(feed)
+        if ret == octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value:
+            self.logger.error("{} is not supported on {}".format(feed, self.get_name()))
+            raise ValueError(f"{feed} is not supported on {self.get_name()}")
+        return ret
+
+    """
+    CCXT methods
+    """
+
+    def get_pair_from_exchange(self, pair: str) -> str:
+        try:
+            return self.ccxt_client.market(pair)["symbol"]
+        except ccxt.errors.BadSymbol:
+            try:
+                return self.ccxt_client.markets_by_id[pair]["symbol"]
+            except KeyError:
+                self.logger.error(f"Failed to get market of {pair}")
+                return None
+
+    def get_exchange_pair(self, pair: str) -> str:
+        if pair in self.ccxt_client.symbols:
+            try:
+                return self.ccxt_client.market(pair)["id"]
+            except KeyError:
+                raise KeyError(f'{pair} is not supported on {self.get_name()}')
+        else:
+            raise ValueError(f'{pair} is not supported on {self.get_name()}')
