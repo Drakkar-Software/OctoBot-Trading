@@ -14,10 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.exchanges.types as exchanges_types
+import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.implementations as exchange_implementations
 
 
 class SpotExchangeSimulator(exchange_implementations.ExchangeSimulator, exchanges_types.SpotExchange):
+    def __init__(self, config, exchange_manager):
+        super().__init__(config, exchange_manager)
+        self.connector = exchange_connectors.ExchangeSimulator(config, exchange_manager)
+
     async def stop(self):
         await super().stop()
         self.exchange_manager = None
