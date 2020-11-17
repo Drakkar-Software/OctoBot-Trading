@@ -79,7 +79,7 @@ from octobot_trading.exchanges.traders import (
 from octobot_trading.exchanges import types
 from octobot_trading.exchanges.types import (
     FutureExchange,
-    WebsocketExchange,
+    WebSocketExchange,
     MarginExchange,
     SpotExchange,
 )
@@ -101,8 +101,8 @@ from octobot_trading.exchanges.exchange_builder import (
 from octobot_trading.exchanges import connectors
 from octobot_trading.exchanges.connectors import (
     ExchangeSimulator,
-    WebSocketConnector,
     CCXTExchange,
+    WebsocketConnector,
 )
 
 __all__ = [
@@ -139,12 +139,12 @@ __all__ = [
     "MarginExchangeSimulator",
     "MarginCCXTExchange",
     "ExchangeSimulator",
-    "WebSocketConnector",
     "CCXTExchange",
+    "WebsocketConnector",
     "FutureExchange",
     "MarginExchange",
     "SpotExchange",
-    "WebsocketExchange",
+    "WebSocketExchange",
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
     "AbstractWebsocketExchange",

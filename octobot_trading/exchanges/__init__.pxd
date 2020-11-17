@@ -57,7 +57,7 @@ from octobot_trading.exchanges.util cimport (
 )
 from octobot_trading.exchanges.types cimport (
     FutureExchange,
-    WebsocketExchange,
+    WebSocketExchange,
     MarginExchange,
     SpotExchange,
 )
@@ -91,8 +91,8 @@ from octobot_trading.exchanges.exchange_builder cimport (
 from octobot_trading.exchanges cimport connectors
 from octobot_trading.exchanges.connectors cimport (
     ExchangeSimulator,
-    WebSocketConnector,
     CCXTExchange,
+    WebsocketConnector,
 )
 
 from octobot_trading.exchanges cimport abstract_websocket_exchange
@@ -115,13 +115,13 @@ __all__ = [
     "TraderSimulator",
     "Trader",
     "ExchangeSimulator",
-    "WebSocketConnector",
     "CCXTExchange",
+    "WebsocketConnector",
     "AbstractWebsocketExchange",
     "FutureExchange",
-    "WebsocketExchange",
     "MarginExchange",
     "SpotExchange",
+    "WebSocketExchange",
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
     "AbstractWebsocketExchange",
