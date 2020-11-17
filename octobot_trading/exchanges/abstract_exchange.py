@@ -35,6 +35,7 @@ class AbstractExchange(util.Initializable):
         super().__init__()
         self.config = config
         self.exchange_manager = exchange_manager
+        self.connector = None
 
         # We will need to create the rest client and fetch exchange config
         self.is_authenticated = False

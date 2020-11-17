@@ -31,7 +31,7 @@ import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
-class CCXTExchange(exchanges.AbstractExchange):
+class CCXTExchange:
     """
     CCXT library wrapper
     """
