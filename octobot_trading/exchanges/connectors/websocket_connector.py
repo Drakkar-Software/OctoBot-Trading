@@ -18,11 +18,11 @@ import concurrent.futures as futures
 
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
-import octobot_trading.exchanges.websockets as websockets
+import octobot_trading.exchanges.util as exchange_util
 import octobot_trading.exchanges.types as exchange_types
 
 
-class OctoBotWebSocketClient(abstract_websocket.AbstractWebsocket):
+class WebSocketConnector(abstract_websocket.AbstractWebsocket):
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.exchange_manager = exchange_manager
@@ -44,7 +44,7 @@ class OctoBotWebSocketClient(abstract_websocket.AbstractWebsocket):
         self.is_websocket_authenticated = False
 
     async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
-        self.exchange_class = websockets.get_exchange_websocket_from_name(
+        self.exchange_class = exchange_util.get_exchange_websocket_from_name(
             self.exchange_manager.exchange_name,
             self.exchange_manager.tentacles_setup_config,
             self.get_class_method_name_to_get_compatible_websocket(
@@ -119,10 +119,10 @@ class OctoBotWebSocketClient(abstract_websocket.AbstractWebsocket):
 
     @classmethod
     def has_name(cls, exchange_manager: object) -> bool:
-        return websockets.get_exchange_websocket_from_name(exchange_manager.exchange_name,
-                                                           exchange_manager.tentacles_setup_config,
-                                                           cls.get_class_method_name_to_get_compatible_websocket(
-                                                               exchange_manager)) is not None
+        return exchange_util.get_exchange_websocket_from_name(exchange_manager.exchange_name,
+                                                              exchange_manager.tentacles_setup_config,
+                                                              cls.get_class_method_name_to_get_compatible_websocket(
+                                                                  exchange_manager)) is not None
 
     @classmethod
     def get_class_method_name_to_get_compatible_websocket(cls, exchange_manager: object) -> str:
@@ -167,4 +167,4 @@ class OctoBotWebSocketClient(abstract_websocket.AbstractWebsocket):
 
     @staticmethod
     def get_websocket_client(config, exchange_manager):
-        return OctoBotWebSocketClient(config, exchange_manager)
+        return WebSocketConnector(config, exchange_manager)

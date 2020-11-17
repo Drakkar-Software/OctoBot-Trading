@@ -16,7 +16,7 @@
 #  License along with this library.
 cimport octobot_trading.exchanges.exchange_manager as exchange_manager
 
-cdef class AbstractWebsocket:
+cdef class AbstractWebsocketExchange:
     cdef public dict config
 
     cdef public exchange_manager.ExchangeManager exchange_manager

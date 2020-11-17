@@ -15,13 +15,34 @@
 #  License along with this library.
 
 from octobot_trading.exchanges.util import exchange_market_status_fixer
-
 from octobot_trading.exchanges.util.exchange_market_status_fixer import (
     ExchangeMarketStatusFixer,
     is_ms_valid,
+)
+from octobot_trading.exchanges.util import exchange_util
+from octobot_trading.exchanges.util.exchange_util import (
+    get_margin_exchange_class,
+    get_future_exchange_class,
+    get_spot_exchange_class,
+    get_order_side,
+)
+from octobot_trading.exchanges.util import websockets_util
+from octobot_trading.exchanges.util.websockets_util import (
+    force_disable_web_socket,
+    check_web_socket_config,
+    search_websocket_class,
+    get_exchange_websocket_from_name,
 )
 
 __all__ = [
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
+    "get_margin_exchange_class",
+    "get_future_exchange_class",
+    "get_spot_exchange_class",
+    "get_order_side",
+    "force_disable_web_socket",
+    "check_web_socket_config",
+    "search_websocket_class",
+    "get_exchange_websocket_from_name",
 ]

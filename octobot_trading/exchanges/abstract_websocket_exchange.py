@@ -20,7 +20,7 @@ import abc
 import octobot_commons.logging as logging
 
 
-class AbstractWebsocket:
+class AbstractWebsocketExchange:
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, config, exchange_manager):

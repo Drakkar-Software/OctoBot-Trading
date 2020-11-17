@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -9,26 +10,13 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+#  Lesser General License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.exchanges.types as exchanges_types
+cimport octobot_trading.exchanges.implementations as exchange_implementations
 
-from octobot_trading.exchanges.connectors import exchange_simulator
-from octobot_trading.exchanges.connectors.exchange_simulator import (
-    ExchangeSimulator,
-)
-from octobot_trading.exchanges.connectors import ccxt_exchange
-from octobot_trading.exchanges.connectors.ccxt_exchange import (
-    CCXTExchange,
-)
-from octobot_trading.exchanges.connectors import websocket_connector
-from octobot_trading.exchanges.connectors.websocket_connector import (
-    WebSocketConnector,
-)
 
-__all__ = [
-    "ExchangeSimulator",
-    "WebSocketConnector",
-    "CCXTExchange",
-]
+cdef class MarginExchangeSimulator(exchanges_types.MarginExchange):
+    pass

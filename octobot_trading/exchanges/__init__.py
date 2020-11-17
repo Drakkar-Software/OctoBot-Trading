@@ -18,8 +18,8 @@ from octobot_trading.exchanges.exchanges import (
     ExchangeConfiguration,
     Exchanges,
 )
-from octobot_trading.exchanges import channel
-from octobot_trading.exchanges.channel import (
+from octobot_trading.exchanges import exchange_channels
+from octobot_trading.exchanges.exchange_channels import (
     requires_refresh_trigger,
     create_exchange_channels,
     create_exchange_producers,
@@ -29,6 +29,11 @@ from octobot_trading.exchanges.channel import (
 from octobot_trading.exchanges import abstract_exchange
 from octobot_trading.exchanges.abstract_exchange import (
     AbstractExchange,
+)
+
+from octobot_trading.exchanges import abstract_websocket_exchange
+from octobot_trading.exchanges.abstract_websocket_exchange import (
+    AbstractWebsocketExchange,
 )
 
 from octobot_trading.exchanges import exchange_manager
@@ -44,11 +49,17 @@ from octobot_trading.exchanges.exchange_factory import (
     create_simulated_exchange,
     init_simulated_exchange,
 )
-from octobot_trading.exchanges.util.exchange_util import (
+from octobot_trading.exchanges.util import (
+    ExchangeMarketStatusFixer,
+    is_ms_valid,
     get_margin_exchange_class,
     get_future_exchange_class,
     get_spot_exchange_class,
     get_order_side,
+    force_disable_web_socket,
+    check_web_socket_config,
+    search_websocket_class,
+    get_exchange_websocket_from_name,
 )
 from octobot_trading.exchanges import exchange_websocket_factory
 from octobot_trading.exchanges.exchange_websocket_factory import (
@@ -65,19 +76,6 @@ from octobot_trading.exchanges.traders import (
     Trader,
     TraderSimulator,
 )
-from octobot_trading.exchanges import util
-from octobot_trading.exchanges.util import (
-    ExchangeMarketStatusFixer,
-    is_ms_valid, exchange_util,
-)
-from octobot_trading.exchanges import websockets
-from octobot_trading.exchanges.websockets import (
-    AbstractWebsocket,
-    force_disable_web_socket,
-    check_web_socket_config,
-    search_websocket_class,
-    get_exchange_websocket_from_name,
-)
 from octobot_trading.exchanges import types
 from octobot_trading.exchanges.types import (
     FutureExchange,
@@ -87,18 +85,24 @@ from octobot_trading.exchanges.types import (
 )
 from octobot_trading.exchanges import implementations
 from octobot_trading.exchanges.implementations import (
-    ExchangeSimulator,
-    SpotExchangeSimulator,
-    FutureExchangeSimulator,
-    MarginExchangeSimulator,
     DefaultCCXTSpotExchange,
-    CCXTExchange,
+    SpotExchangeSimulator,
     SpotCCXTExchange,
+    FutureExchangeSimulator,
+    FutureCCXTExchange,
+    MarginExchangeSimulator,
+    MarginCCXTExchange,
 )
 from octobot_trading.exchanges import exchange_builder
 from octobot_trading.exchanges.exchange_builder import (
     ExchangeBuilder,
     create_exchange_builder_instance,
+)
+from octobot_trading.exchanges import connectors
+from octobot_trading.exchanges.connectors import (
+    ExchangeSimulator,
+    WebSocketConnector,
+    CCXTExchange,
 )
 
 __all__ = [
@@ -127,21 +131,23 @@ __all__ = [
     "create_authenticated_producer_from_parent",
     "TraderSimulator",
     "Trader",
-    "ExchangeSimulator",
-    "SpotExchangeSimulator",
-    "FutureExchangeSimulator",
-    "MarginExchangeSimulator",
     "DefaultCCXTSpotExchange",
-    "CCXTExchange",
+    "SpotExchangeSimulator",
     "SpotCCXTExchange",
+    "FutureExchangeSimulator",
+    "FutureCCXTExchange",
+    "MarginExchangeSimulator",
+    "MarginCCXTExchange",
+    "ExchangeSimulator",
+    "WebSocketConnector",
+    "CCXTExchange",
     "FutureExchange",
-    "WebsocketExchange",
     "MarginExchange",
     "SpotExchange",
+    "WebsocketExchange",
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
-    "OctoBotWebSocketClient",
-    "AbstractWebsocket",
+    "AbstractWebsocketExchange",
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",
