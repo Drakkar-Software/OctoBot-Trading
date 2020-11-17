@@ -13,16 +13,43 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.exchanges.types as exchanges_types
-import octobot_trading.exchanges.implementations as exchange_implementations
 import octobot_trading.exchanges.connectors as exchange_connectors
+import octobot_trading.exchanges.types as exchanges_types
 
 
-class FutureExchangeSimulator(exchange_implementations.ExchangeSimulator, exchanges_types.FutureExchange):
-    def __init__(self, config, exchange_manager):
+class FutureExchangeSimulator(exchanges_types.FutureExchange):
+    def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
-        self.connector = exchange_connectors.ExchangeSimulator(config, exchange_manager)
+        self.connector = exchange_connectors.ExchangeSimulator(config, exchange_manager, backtesting=backtesting)
 
-    async def stop(self):
+    async def initialize_impl(self):
+        await self.connector.initialize()
+
+    async def stop(self) -> None:
+        await self.connector.stop()
         await super().stop()
         self.exchange_manager = None
+
+    @classmethod
+    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
+        return exchange_connectors.ExchangeSimulator.is_supporting_exchange(exchange_candidate_name)
+
+    @classmethod
+    def is_simulated_exchange(cls) -> bool:
+        return exchange_connectors.ExchangeSimulator.is_simulated_exchange()
+
+    def get_exchange_current_time(self):
+        return self.connector.get_exchange_current_time()
+
+    def get_market_status(self, symbol, price_example=None, with_fixer=True):
+        return self.connector.get_market_status(symbol=symbol, price_example=price_example, with_fixer=with_fixer)
+
+    def get_uniform_timestamp(self, timestamp):
+        return self.connector.get_uniform_timestamp(timestamp=timestamp)
+
+    def get_fees(self, symbol):
+        return self.connector.get_fees(symbol=symbol)
+
+    def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
+        return self.connector.get_trade_fee(symbol=symbol, order_type=order_type, quantity=quantity,
+                                            price=price, taker_or_maker=taker_or_maker)
