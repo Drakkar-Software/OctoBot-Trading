@@ -20,14 +20,13 @@ import octobot_commons.number_util as number_util
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.time_frame_manager as time_frame_manager
 
-import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchange_data as exchange_data
 
 
-class ExchangeSimulator(abstract_exchange.AbstractExchange):
+class ExchangeSimulator:
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
         self.backtesting = backtesting

@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges as exchanges
 
-cdef class CCXTExchange(exchanges.AbstractExchange):
+
+cdef class CCXTExchange:
     cdef object all_currencies_price_ticker
     cdef public object client
 

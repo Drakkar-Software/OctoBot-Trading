@@ -24,6 +24,7 @@ cdef class AbstractExchange(util.Initializable):
     cdef public object current_account
     cdef public object trader
     cdef public object exchange_manager
+    cdef public object connector
 
     cdef public double allowed_time_lag
 
