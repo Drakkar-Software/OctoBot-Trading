@@ -14,12 +14,17 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.channel cimport exchange_channels
+from octobot_trading.exchanges.implementations cimport exchange_simulator
+from octobot_trading.exchanges.implementations cimport ccxt_exchange
 
-from octobot_trading.exchanges.channel.exchange_channels cimport (
-    requires_refresh_trigger,
+from octobot_trading.exchanges.implementations.exchange_simulator cimport (
+    ExchangeSimulator,
+)
+from octobot_trading.exchanges.implementations.ccxt_exchange cimport (
+    CCXTExchange,
 )
 
 __all__ = [
-    "requires_refresh_trigger"
+    "ExchangeSimulator",
+    "CCXTExchange",
 ]

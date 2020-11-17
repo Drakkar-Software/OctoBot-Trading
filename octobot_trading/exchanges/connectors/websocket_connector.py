@@ -17,7 +17,7 @@ import asyncio
 import concurrent.futures as futures
 
 import octobot_trading.enums
-import octobot_trading.exchanges.websockets.abstract_websocket as abstract_websocket
+import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 import octobot_trading.exchanges.websockets as websockets
 import octobot_trading.exchanges.types as exchange_types
 

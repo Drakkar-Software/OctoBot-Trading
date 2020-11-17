@@ -44,8 +44,7 @@ from octobot_trading.exchanges.exchange_factory import (
     create_simulated_exchange,
     init_simulated_exchange,
 )
-from octobot_trading.exchanges import exchange_util
-from octobot_trading.exchanges.exchange_util import (
+from octobot_trading.exchanges.util.exchange_util import (
     get_margin_exchange_class,
     get_future_exchange_class,
     get_spot_exchange_class,
@@ -69,12 +68,11 @@ from octobot_trading.exchanges.traders import (
 from octobot_trading.exchanges import util
 from octobot_trading.exchanges.util import (
     ExchangeMarketStatusFixer,
-    is_ms_valid,
+    is_ms_valid, exchange_util,
 )
 from octobot_trading.exchanges import websockets
 from octobot_trading.exchanges.websockets import (
     AbstractWebsocket,
-    OctoBotWebSocketClient,
     force_disable_web_socket,
     check_web_socket_config,
     search_websocket_class,
