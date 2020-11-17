@@ -14,17 +14,22 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.implementations cimport exchange_simulator
-from octobot_trading.exchanges.implementations cimport ccxt_exchange
-
-from octobot_trading.exchanges.implementations.exchange_simulator cimport (
+from octobot_trading.exchanges.connectors cimport exchange_simulator
+from octobot_trading.exchanges.connectors.exchange_simulator cimport (
     ExchangeSimulator,
 )
-from octobot_trading.exchanges.implementations.ccxt_exchange cimport (
+from octobot_trading.exchanges.connectors cimport ccxt_exchange
+from octobot_trading.exchanges.connectors.ccxt_exchange cimport (
     CCXTExchange,
 )
+from octobot_trading.exchanges.connectors cimport websocket_connector
+from octobot_trading.exchanges.connectors.websocket_connector cimport (
+    WebSocketConnector,
+)
+
 
 __all__ = [
     "ExchangeSimulator",
+    "WebSocketConnector",
     "CCXTExchange",
 ]

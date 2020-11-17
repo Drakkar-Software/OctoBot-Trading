@@ -13,22 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.exchanges.types as exchanges_types
+import octobot_trading.exchanges.implementations as exchange_implementations
 
-from octobot_trading.exchanges.connectors import exchange_simulator
-from octobot_trading.exchanges.connectors.exchange_simulator import (
-    ExchangeSimulator,
-)
-from octobot_trading.exchanges.connectors import ccxt_exchange
-from octobot_trading.exchanges.connectors.ccxt_exchange import (
-    CCXTExchange,
-)
-from octobot_trading.exchanges.connectors import websocket_connector
-from octobot_trading.exchanges.connectors.websocket_connector import (
-    WebSocketConnector,
-)
 
-__all__ = [
-    "ExchangeSimulator",
-    "WebSocketConnector",
-    "CCXTExchange",
-]
+class MarginCCXTExchange(exchange_implementations.ExchangeSimulator, exchanges_types.MarginExchange):
+    async def stop(self):
+        await super().stop()
+        self.exchange_manager = None

@@ -17,7 +17,7 @@
 cimport octobot_trading.exchanges.websockets.abstract_websocket as abstract_websocket
 
 
-cdef class OctoBotWebSocketClient(abstract_websocket.AbstractWebsocket):
+cdef class WebSocketConnector(abstract_websocket.AbstractWebsocket):
     cdef public str exchange_name
 
     cdef public list octobot_websockets
