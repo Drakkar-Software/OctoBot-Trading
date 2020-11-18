@@ -34,7 +34,6 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
 
     async def stop(self) -> None:
         await self.connector.stop()
-        await super().stop()
         self.exchange_manager = None
 
     @classmethod
