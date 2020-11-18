@@ -75,7 +75,6 @@ from octobot_trading.exchanges.util cimport (
 
 from octobot_trading.exchanges cimport implementations
 from octobot_trading.exchanges.implementations cimport (
-    DefaultCCXTSpotExchange,
     SpotExchangeSimulator,
     SpotCCXTExchange,
     FutureExchangeSimulator,
@@ -128,7 +127,6 @@ __all__ = [
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",
-    "DefaultCCXTSpotExchange",
     "SpotExchangeSimulator",
     "SpotCCXTExchange",
     "FutureExchangeSimulator",

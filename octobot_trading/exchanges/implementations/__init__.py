@@ -48,8 +48,8 @@ __all__ = [
     "SpotExchangeSimulator",
     "FutureExchangeSimulator",
     "MarginExchangeSimulator",
-    "DefaultCCXTSpotExchange",
-    "SpotCCXTExchange",
     "FutureCCXTExchange",
-    "MarginCCXTExchange"
+    "MarginCCXTExchange",
+    "SpotCCXTExchange",
+    "DefaultCCXTSpotExchange",
 ]

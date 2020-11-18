@@ -38,17 +38,12 @@ from octobot_trading.exchanges.implementations cimport spot_ccxt_exchange
 from octobot_trading.exchanges.implementations.spot_ccxt_exchange cimport (
     SpotCCXTExchange,
 )
-from octobot_trading.exchanges.implementations cimport default_spot_ccxt_exchange
-from octobot_trading.exchanges.implementations.default_spot_ccxt_exchange cimport (
-    DefaultCCXTSpotExchange,
-)
 
 __all__ = [
     "SpotExchangeSimulator",
     "FutureExchangeSimulator",
     "MarginExchangeSimulator",
-    "DefaultCCXTSpotExchange",
-    "SpotCCXTExchange",
     "FutureCCXTExchange",
-    "MarginCCXTExchange"
+    "MarginCCXTExchange",
+    "SpotCCXTExchange",
 ]
