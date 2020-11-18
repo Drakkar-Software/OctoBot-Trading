@@ -154,13 +154,13 @@ packages_list = [
     "octobot_trading.exchanges.types.margin_exchange",
     "octobot_trading.exchanges.types.future_exchange",
     "octobot_trading.exchanges.types.websocket_exchange",
-    "octobot_trading.exchanges.implementations.default_spot_ccxt_exchange",
     "octobot_trading.exchanges.implementations.future_ccxt_exchange",
     "octobot_trading.exchanges.implementations.future_exchange_simulator",
     "octobot_trading.exchanges.implementations.margin_ccxt_exchange",
     "octobot_trading.exchanges.implementations.margin_exchange_simulator",
     "octobot_trading.exchanges.implementations.spot_ccxt_exchange",
     "octobot_trading.exchanges.implementations.spot_exchange_simulator",
+    # "octobot_trading.exchanges.implementations.default_spot_ccxt_exchange",
     "octobot_trading.exchange_channel",
 ]
 
