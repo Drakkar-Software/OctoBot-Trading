@@ -20,17 +20,21 @@ import octobot_trading.exchanges.types as exchanges_types
 class SpotExchangeSimulator(exchanges_types.SpotExchange):
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
+
+        self.backtesting = backtesting
         self.connector = exchange_connectors.ExchangeSimulator(config, exchange_manager, backtesting=backtesting)
 
     async def initialize_impl(self):
         await self.connector.initialize()
         self.symbols = self.connector.symbols
         self.time_frames = self.connector.time_frames
+        self.exchange_importers = self.connector.exchange_importers
 
     async def stop(self) -> None:
         await self.connector.stop()
-        await super().stop()
         self.exchange_manager = None
+        self.backtesting = None
+        self.exchange_importers = None
 
     @classmethod
     def get_name(cls) -> str:
