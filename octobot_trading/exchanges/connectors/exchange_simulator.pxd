@@ -22,9 +22,6 @@ cdef class ExchangeSimulator(abstract_exchange.AbstractExchange):
 
     cdef public list exchange_importers
 
-    cdef public set symbols
-    cdef public set time_frames
-
     cdef public dict current_future_candles
 
     cpdef str get_pair_cryptocurrency(self, str pair)

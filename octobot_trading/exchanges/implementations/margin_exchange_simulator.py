@@ -24,11 +24,17 @@ class MarginExchangeSimulator(exchanges_types.MarginExchange):
 
     async def initialize_impl(self):
         await self.connector.initialize()
+        self.symbols = self.connector.symbols
+        self.time_frames = self.connector.time_frames
 
     async def stop(self) -> None:
         await self.connector.stop()
         await super().stop()
         self.exchange_manager = None
+
+    @classmethod
+    def get_name(cls) -> str:
+        return cls.__name__
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
@@ -40,6 +46,27 @@ class MarginExchangeSimulator(exchanges_types.MarginExchange):
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()
+
+    def get_available_time_frames(self):
+        return self.connector.get_available_time_frames()
+
+    def get_split_pair_from_exchange(self, pair) -> (str, str):
+        return self.connector.get_split_pair_from_exchange(pair=pair)
+
+    def get_pair_cryptocurrency(self, pair) -> str:
+        return self.connector.get_pair_cryptocurrency(pair=pair)
+
+    @staticmethod
+    def get_real_available_data(exchange_importers):
+        return exchange_connectors.ExchangeSimulator.get_real_available_data(exchange_importers)
+
+    @staticmethod
+    def handles_real_data_for_updater(channel_type, available_data):
+        return exchange_connectors.ExchangeSimulator.handles_real_data_for_updater(channel_type=channel_type,
+                                                                                   available_data=available_data)
+
+    async def create_backtesting_exchange_producers(self):
+        return await self.connector.create_backtesting_exchange_producers()
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         return self.connector.get_market_status(symbol=symbol, price_example=price_example, with_fixer=with_fixer)

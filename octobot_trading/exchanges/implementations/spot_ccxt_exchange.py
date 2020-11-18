@@ -33,11 +33,17 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     async def initialize_impl(self):
         await self.connector.initialize()
+        self.symbols = self.connector.symbols
+        self.time_frames = self.connector.time_frames
 
     async def stop(self) -> None:
         await self.connector.stop()
         await super().stop()
         self.exchange_manager = None
+
+    @classmethod
+    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
+        return exchange_connectors.CCXTExchange.is_supporting_exchange(exchange_candidate_name)
 
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: float,
                            price: float = None, stop_price=None, **kwargs: dict) -> typing.Optional[dict]:

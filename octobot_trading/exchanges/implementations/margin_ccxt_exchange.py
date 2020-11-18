@@ -29,11 +29,17 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
 
     async def initialize_impl(self):
         await self.connector.initialize()
+        self.symbols = self.connector.symbols
+        self.time_frames = self.connector.time_frames
 
     async def stop(self) -> None:
         await self.connector.stop()
         await super().stop()
         self.exchange_manager = None
+
+    @classmethod
+    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
+        return exchange_connectors.CCXTExchange.is_supporting_exchange(exchange_candidate_name)
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()

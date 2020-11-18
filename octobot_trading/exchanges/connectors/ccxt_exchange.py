@@ -49,6 +49,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         try:
             self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
             await self.client.load_markets()
+
+            # initialize symbols and timeframes
+            self.symbols = self.client.symbols
+            self.time_frames = list(self.client.timeframes) if hasattr(self.client, "timeframes") else []
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
             self.logger.error(f"initialization impossible: {e}")
         except ccxt.AuthenticationError:
