@@ -26,6 +26,9 @@ cdef class AbstractExchange(util.Initializable):
     cdef public object exchange_manager
     cdef public object connector
 
+    cdef public set symbols
+    cdef public set time_frames
+
     cdef public double allowed_time_lag
 
     cdef public bint is_authenticated

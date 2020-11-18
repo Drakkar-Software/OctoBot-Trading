@@ -150,12 +150,11 @@ class ExchangeManager(util.Initializable):
         return enums.RestExchangePairsRefreshMaxThresholds.SLOW
 
     def _load_config_symbols_and_time_frames(self):
-        client = self.exchange.client
-        if client:
-            self.client_symbols = client.symbols
-            self.client_time_frames = list(client.timeframes) if hasattr(client, "timeframes") else []
+        if self.exchange.symbols and self.exchange.time_frames:
+            self.client_symbols = self.exchange.symbols
+            self.client_time_frames = self.exchange.time_frames
         else:
-            self.logger.error("Failed to load client from REST exchange")
+            self.logger.error("Failed to load exchange symbols or time frames")
             self._raise_exchange_load_error()
 
     def symbol_exists(self, symbol):

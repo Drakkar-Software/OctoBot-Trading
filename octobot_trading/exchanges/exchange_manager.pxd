@@ -62,7 +62,6 @@ cdef class ExchangeManager(util.Initializable):
     # private
     cdef void _load_config_symbols_and_time_frames(self)
     cdef void _load_config_symbols_and_time_frames(self)
-    cdef void _raise_exchange_load_error(self)
 
     # public
     cpdef bint enabled(self)

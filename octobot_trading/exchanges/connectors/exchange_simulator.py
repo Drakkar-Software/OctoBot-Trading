@@ -35,9 +35,6 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
 
         self.exchange_importers = []
 
-        self.symbols = set()
-        self.time_frames = set()
-
         self.current_future_candles = {}
 
         self.is_authenticated = False

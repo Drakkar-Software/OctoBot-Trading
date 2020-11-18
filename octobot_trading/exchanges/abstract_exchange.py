@@ -37,6 +37,10 @@ class AbstractExchange(util.Initializable):
         self.exchange_manager = exchange_manager
         self.connector = None
 
+        # Initialized when initializing exchange connector
+        self.symbols = set()
+        self.time_frames = set()
+
         # We will need to create the rest client and fetch exchange config
         self.is_authenticated = False
 
