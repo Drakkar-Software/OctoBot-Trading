@@ -106,7 +106,7 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
         return self.connector.get_exchange_pair(pair=pair)
 
     def get_pair_cryptocurrency(self, pair) -> str:
-        return self.connector.get_pair_cryptocurrency(pair=pair)
+        return self.connector.get_pair_cryptocurrency(pair)
 
     def get_default_balance(self):
         return self.connector.get_default_balance()
@@ -116,21 +116,6 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
 
     async def switch_to_account(self, account_type: enums.AccountTypes):
         return await self.connector.switch_to_account(account_type=account_type)
-
-    def parse_position(self, position_dict) -> dict:
-        return self.connector.parse_position(position_dict=position_dict)
-
-    def parse_funding(self, funding_dict, from_ticker=False) -> dict:
-        return self.connector.parse_funding(funding_dict=funding_dict, from_ticker=from_ticker)
-
-    def parse_mark_price(self, mark_price_dict, from_ticker=False) -> dict:
-        return self.connector.parse_mark_price(mark_price_dict=mark_price_dict, from_ticker=from_ticker)
-
-    def parse_liquidation(self, liquidation_dict) -> dict:
-        return self.connector.parse_liquidation(liquidation_dict=liquidation_dict)
-
-    def parse_position_status(self, status):
-        return self.connector.parse_position_status(status=status)
 
     def parse_balance(self, balance):
         return self.connector.parse_balance(balance=balance)

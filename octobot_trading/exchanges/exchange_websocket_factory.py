@@ -33,9 +33,9 @@ def is_websocket_feed_requiring_init(exchange_manager, channel):
 
 
 async def search_and_create_websocket(exchange_manager):
-    socket_manager = exchanges.search_websocket_class(exchanges.AbstractWebsocket, exchange_manager)
+    socket_manager = exchanges.search_websocket_class(exchanges.AbstractWebsocketExchange, exchange_manager)
     if socket_manager is not None:
-        await _create_websocket(exchange_manager, exchanges.AbstractWebsocket.__name__, socket_manager)
+        await _create_websocket(exchange_manager, exchanges.AbstractWebsocketExchange.__name__, socket_manager)
 
 
 async def _create_websocket(exchange_manager, websocket_class_name, socket_manager):

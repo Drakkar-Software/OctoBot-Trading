@@ -107,7 +107,7 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
         return self.connector.get_exchange_pair(pair=pair)
 
     def get_pair_cryptocurrency(self, pair) -> str:
-        return self.connector.get_pair_cryptocurrency(pair=pair)
+        return self.connector.get_pair_cryptocurrency(pair)
 
     def get_default_balance(self):
         return self.connector.get_default_balance()

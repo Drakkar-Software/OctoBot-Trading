@@ -50,7 +50,7 @@ async def exchange_manager(request):
         config, exchange_name, is_spot, is_margin, is_future = request.param
 
     exchange_manager_instance = ExchangeManager(config if config is not None else load_test_config(), exchange_name)
-    exchange_manager_instance.is_spot = is_spot
+    exchange_manager_instance.is_spot_only = is_spot
     exchange_manager_instance.is_margin = is_margin
     exchange_manager_instance.is_future = is_future
     await exchange_manager_instance.initialize()
@@ -112,7 +112,7 @@ async def simulated_exchange_manager(request):
 
     exchange_manager_instance = ExchangeManager(config, exchange_name)
     exchange_manager_instance.is_simulated = True
-    exchange_manager_instance.is_spot = is_spot
+    exchange_manager_instance.is_spot_only = is_spot
     exchange_manager_instance.is_margin = is_margin
     exchange_manager_instance.is_future = is_future
     await exchange_manager_instance.initialize()
@@ -145,7 +145,7 @@ async def backtesting_exchange_manager(request, backtesting_config, fake_backtes
         config = backtesting_config
     exchange_manager_instance = ExchangeManager(config, exchange_name)
     exchange_manager_instance.is_backtesting = True
-    exchange_manager_instance.is_spot = is_spot
+    exchange_manager_instance.is_spot_only = is_spot
     exchange_manager_instance.is_margin = is_margin
     exchange_manager_instance.is_future = is_future
     exchange_manager_instance.backtesting = fake_backtesting

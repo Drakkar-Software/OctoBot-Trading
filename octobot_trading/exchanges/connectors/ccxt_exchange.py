@@ -40,6 +40,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.client = None
+        self.exchange_type = None
         self.all_currencies_price_ticker = None
 
         self._create_exchange_type()
@@ -51,8 +52,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             await self.client.load_markets()
 
             # initialize symbols and timeframes
-            self.symbols = self.client.symbols
-            self.time_frames = list(self.client.timeframes) if hasattr(self.client, "timeframes") else []
+            self.symbols = set(self.client.symbols)
+            self.time_frames = set(self.client.timeframes) if hasattr(self.client, "timeframes") else set()
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
             self.logger.error(f"initialization impossible: {e}")
         except ccxt.AuthenticationError:
@@ -267,7 +268,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
         return cancel_resp is not None
 
-    def _log_error(self, error, order_type, symbol, quantity, price, stop_price):
+    def log_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
                      f" stop_price: {stop_price}"
         self.logger.error(f"Failed to create order : {error} ({order_desc})")

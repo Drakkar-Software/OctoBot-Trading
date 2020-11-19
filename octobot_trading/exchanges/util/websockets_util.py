@@ -37,5 +37,5 @@ def search_websocket_class(websocket_class, exchange_manager):
 
 
 def get_exchange_websocket_from_name(name: str, tentacles_setup_config: object, with_class_method: str):
-    return api.get_class_from_name_with_activated_required_tentacles(name, exchanges.WebsocketExchange,
+    return api.get_class_from_name_with_activated_required_tentacles(name, exchanges.WebSocketExchange,
                                                                      tentacles_setup_config, with_class_method)

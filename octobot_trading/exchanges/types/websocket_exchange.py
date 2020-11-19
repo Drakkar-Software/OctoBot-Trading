@@ -18,8 +18,8 @@ import concurrent.futures as futures
 
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
+import octobot_trading.exchanges.connectors.websocket_connector as websocket_connector
 import octobot_trading.exchanges.util as exchange_util
-import octobot_trading.exchanges.types as exchange_types
 
 
 class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
@@ -127,10 +127,10 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     @classmethod
     def get_class_method_name_to_get_compatible_websocket(cls, exchange_manager: object) -> str:
         if exchange_manager.is_future:
-            return exchange_types.WebSocketExchange.is_handling_future.__name__
+            return websocket_connector.WebsocketConnector.is_handling_future.__name__
         if exchange_manager.is_margin:
-            return exchange_types.WebSocketExchange.is_handling_margin.__name__
-        return exchange_types.WebSocketExchange.is_handling_spot.__name__
+            return websocket_connector.WebsocketConnector.is_handling_margin.__name__
+        return websocket_connector.WebsocketConnector.is_handling_spot.__name__
 
     async def start_sockets(self):
         if any(self.handled_feeds.values()):
