@@ -21,6 +21,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
 
+        self.exchange_importers = []
         self.backtesting = backtesting
         self.connector = exchange_connectors.ExchangeSimulator(config, exchange_manager, backtesting=backtesting)
 
@@ -55,7 +56,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
         return self.connector.get_available_time_frames()
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
-        return self.connector.get_split_pair_from_exchange(pair=pair)
+        return self.connector.get_split_pair_from_exchange(pair)
 
     def get_pair_cryptocurrency(self, pair) -> str:
         return self.connector.get_pair_cryptocurrency(pair)
@@ -73,14 +74,13 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
         return await self.connector.create_backtesting_exchange_producers()
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
-        return self.connector.get_market_status(symbol=symbol, price_example=price_example, with_fixer=with_fixer)
+        return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
 
     def get_uniform_timestamp(self, timestamp):
-        return self.connector.get_uniform_timestamp(timestamp=timestamp)
+        return self.connector.get_uniform_timestamp(timestamp)
 
     def get_fees(self, symbol):
-        return self.connector.get_fees(symbol=symbol)
+        return self.connector.get_fees(symbol)
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
-        return self.connector.get_trade_fee(symbol=symbol, order_type=order_type, quantity=quantity,
-                                            price=price, taker_or_maker=taker_or_maker)
+        return self.connector.get_trade_fee(symbol, order_type, quantity, price, taker_or_maker)

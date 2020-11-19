@@ -44,10 +44,10 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
         return self.connector.get_exchange_current_time()
 
     def get_uniform_timestamp(self, timestamp):
-        return self.connector.get_uniform_timestamp(timestamp=timestamp)
+        return self.connector.get_uniform_timestamp(timestamp)
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
-        return self.connector.get_market_status(symbol=symbol, price_example=price_example, with_fixer=with_fixer)
+        return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
 
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
@@ -91,20 +91,19 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
         return await self.connector.cancel_order(symbol=symbol, order_id=order_id, **kwargs)
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
-        return self.connector.get_trade_fee(symbol=symbol, order_type=order_type,
-                                            quantity=quantity, price=price, taker_or_maker=taker_or_maker)
+        return self.connector.get_trade_fee(symbol, order_type, quantity, price, taker_or_maker)
 
     def get_fees(self, symbol):
-        return self.connector.get_fees(symbol=symbol)
+        return self.connector.get_fees(symbol)
 
     def get_pair_from_exchange(self, pair) -> str:
-        return self.connector.get_pair_from_exchange(pair=pair)
+        return self.connector.get_pair_from_exchange(pair)
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
-        return self.connector.get_split_pair_from_exchange(pair=pair)
+        return self.connector.get_split_pair_from_exchange(pair)
 
     def get_exchange_pair(self, pair) -> str:
-        return self.connector.get_exchange_pair(pair=pair)
+        return self.connector.get_exchange_pair(pair)
 
     def get_pair_cryptocurrency(self, pair) -> str:
         return self.connector.get_pair_cryptocurrency(pair)
@@ -119,54 +118,52 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
         return await self.connector.switch_to_account(account_type=account_type)
 
     def parse_balance(self, balance):
-        return self.connector.parse_balance(balance=balance)
+        return self.connector.parse_balance(balance)
 
     def parse_trade(self, trade):
-        return self.connector.parse_trade(trade=trade)
+        return self.connector.parse_trade(trade)
 
     def parse_order(self, order):
-        return self.connector.parse_order(order=order)
+        return self.connector.parse_order(order)
 
     def parse_ticker(self, ticker):
-        return self.connector.parse_ticker(ticker=ticker)
+        return self.connector.parse_ticker(ticker)
 
     def parse_ohlcv(self, ohlcv):
-        return self.connector.parse_ohlcv(ohlcv=ohlcv)
+        return self.connector.parse_ohlcv(ohlcv)
 
     def parse_order_book(self, order_book):
-        return self.connector.parse_order_book(order_book=order_book)
+        return self.connector.parse_order_book(order_book)
 
     def parse_order_book_ticker(self, order_book_ticker):
-        return self.connector.parse_order_book_ticker(order_book_ticker=order_book_ticker)
+        return self.connector.parse_order_book_ticker(order_book_ticker)
 
     def parse_timestamp(self, data_dict, timestamp_key, default_value=None, ms=False):
-        return self.connector.parse_timestamp(data_dict=data_dict, timestamp_key=timestamp_key,
-                                              default_value=default_value, ms=ms)
+        return self.connector.parse_timestamp(data_dict, timestamp_key, default_value=default_value, ms=ms)
 
     def parse_currency(self, currency):
-        return self.connector.parse_currency(currency=currency)
+        return self.connector.parse_currency(currency)
 
     def parse_order_id(self, order):
-        return self.connector.parse_order_id(order=order)
+        return self.connector.parse_order_id(order)
 
     def parse_order_symbol(self, order):
-        return self.connector.parse_order_symbol(order=order)
+        return self.connector.parse_order_symbol(order)
 
     def parse_status(self, status):
-        return self.connector.parse_status(status=status)
+        return self.connector.parse_status(status)
 
     def parse_side(self, side):
-        return self.connector.parse_side(side=side)
+        return self.connector.parse_side(side)
 
     def parse_account(self, account):
-        return self.connector.parse_account(account=account)
+        return self.connector.parse_account(account)
 
     def clean_recent_trade(self, recent_trade):
-        return self.connector.clean_recent_trade(recent_trade=recent_trade)
+        return self.connector.clean_recent_trade(recent_trade)
 
     def clean_trade(self, trade):
-        return self.connector.clean_trade(trade=trade)
+        return self.connector.clean_trade(trade)
 
     def clean_order(self, order):
-        return self.connector.clean_order(order=order)
-
+        return self.connector.clean_order(order)

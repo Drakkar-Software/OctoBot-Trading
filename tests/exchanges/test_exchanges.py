@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import os
+
 import pytest
 from mock import patch
 from datetime import datetime
@@ -161,6 +163,9 @@ class TestExchanges:
         exchange_manager_bitmex = ExchangeManager(config, "bitmex")
         await exchange_manager_bitmex.initialize()
         await exchange_manager_bitmex.stop()
+
+        if os.getenv('CYTHON_IGNORE'):
+            return
 
         exchange = exchange_manager_bitmex.exchange
         with patch.object(exchange, 'get_exchange_current_time', new=get_constant_ms_timestamp):
