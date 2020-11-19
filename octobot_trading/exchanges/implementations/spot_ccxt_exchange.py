@@ -62,26 +62,26 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             return self.clean_order(created_order)
 
         except ccxt.InsufficientFunds as e:
-            self._log_error(e, order_type, symbol, quantity, price, stop_price)
+            self.connector.log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(str(e))
             raise errors.MissingFunds(e)
         except ccxt.NotSupported:
             raise errors.NotSupported
         except Exception as e:
-            self._log_error(e, order_type, symbol, quantity, price, stop_price)
+            self.connector.log_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.error(e)
         return None
 
     async def _create_specific_order(self, order_type, symbol, quantity, price=None):
         created_order = None
         if order_type == enums.TraderOrderType.BUY_MARKET:
-            created_order = await self.client.create_market_buy_order(symbol, quantity)
+            created_order = await self.connector.client.create_market_buy_order(symbol, quantity)
         elif order_type == enums.TraderOrderType.BUY_LIMIT:
-            created_order = await self.client.create_limit_buy_order(symbol, quantity, price)
+            created_order = await self.connector.client.create_limit_buy_order(symbol, quantity, price)
         elif order_type == enums.TraderOrderType.SELL_MARKET:
-            created_order = await self.client.create_market_sell_order(symbol, quantity)
+            created_order = await self.connector.client.create_market_sell_order(symbol, quantity)
         elif order_type == enums.TraderOrderType.SELL_LIMIT:
-            created_order = await self.client.create_limit_sell_order(symbol, quantity, price)
+            created_order = await self.connector.client.create_limit_sell_order(symbol, quantity, price)
         elif order_type == enums.TraderOrderType.STOP_LOSS:
             created_order = None
         elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
@@ -169,7 +169,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return self.connector.get_exchange_pair(pair=pair)
 
     def get_pair_cryptocurrency(self, pair) -> str:
-        return self.connector.get_pair_cryptocurrency(pair=pair)
+        return self.connector.get_pair_cryptocurrency(pair)
 
     def get_default_balance(self):
         return self.connector.get_default_balance()

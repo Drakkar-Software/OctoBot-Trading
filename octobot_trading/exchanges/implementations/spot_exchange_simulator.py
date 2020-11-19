@@ -58,7 +58,7 @@ class SpotExchangeSimulator(exchanges_types.SpotExchange):
         return self.connector.get_split_pair_from_exchange(pair=pair)
 
     def get_pair_cryptocurrency(self, pair) -> str:
-        return self.connector.get_pair_cryptocurrency(pair=pair)
+        return self.connector.get_pair_cryptocurrency(pair)
 
     @staticmethod
     def get_real_available_data(exchange_importers):

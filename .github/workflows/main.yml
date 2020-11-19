@@ -55,11 +55,16 @@ jobs:
 
     - name: Compile project
       if: matrix.type == 'cython'
-      env:
-        CYTHON_IGNORE: true
       run: |
         python setup.py build_ext --inplace
         python setup.py install
+
+    - name: Pytests
+      if: matrix.type == 'cython'
+      env:
+        CYTHON_IGNORE: true
+      run: |
+        pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests
 
     - name: Pytests
       run: pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests

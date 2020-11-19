@@ -18,14 +18,16 @@ cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
 
 cdef class CCXTExchange(abstract_exchange.AbstractExchange):
     cdef object all_currencies_price_ticker
+
     cdef public object client
+    cdef public object exchange_type
 
     # private
     cdef void _create_client(self)
-    cdef void _log_error(self, object error, object order_type, str symbol, double quantity, double price, double stop_price)
 
     # @staticmethod waiting for a future version of cython
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
 
     cpdef dict get_ccxt_client_login_options(self)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)
+    cpdef void log_error(self, object error, object order_type, str symbol, double quantity, double price, double stop_price)

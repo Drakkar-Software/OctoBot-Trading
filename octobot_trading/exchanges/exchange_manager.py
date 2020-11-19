@@ -151,8 +151,8 @@ class ExchangeManager(util.Initializable):
 
     def _load_config_symbols_and_time_frames(self):
         if self.exchange.symbols and self.exchange.time_frames:
-            self.client_symbols = self.exchange.symbols
-            self.client_time_frames = self.exchange.time_frames
+            self.client_symbols = list(self.exchange.symbols)
+            self.client_time_frames = list(self.exchange.time_frames)
         else:
             self.logger.error("Failed to load exchange symbols or time frames")
             self._raise_exchange_load_error()
