@@ -25,6 +25,9 @@ class ExchangeConfiguration:
         self.exchange_name = exchange_manager.exchange_name
         self.id = exchange_manager.id
         self.matrix_id = matrix_id
+        # use only enabled currencies
+        # use exchange_manager.exchange_config.all_config_symbol_pairs to get all pairs regardless of whether they
+        # are activated in config
         self.symbols = exchange_manager.exchange_config.traded_symbol_pairs
         self.symbols_by_crypto_currencies = exchange_manager.exchange_config.traded_cryptocurrencies
         self.time_frames_without_real_time = list(set(exchange_manager.exchange_config.traded_time_frames) -

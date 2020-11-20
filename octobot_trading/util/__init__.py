@@ -28,6 +28,7 @@ from octobot_trading.util.simulator_updater_utils import (
 from octobot_trading.util.config_util import (
     is_trader_enabled,
     is_trader_simulator_enabled,
+    is_currency_enabled,
     get_symbols,
     get_all_currencies,
     get_pairs,
@@ -40,6 +41,7 @@ __all__ = [
     "Initializable",
     "is_trader_enabled",
     "is_trader_simulator_enabled",
+    "is_currency_enabled",
     "get_symbols",
     "get_all_currencies",
     "get_pairs",

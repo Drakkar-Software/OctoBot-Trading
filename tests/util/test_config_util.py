@@ -1,0 +1,151 @@
+#  Drakkar-Software OctoBot-Trading
+#  Copyright (c) Drakkar-Software, All rights reserved.
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 3.0 of the License, or (at your option) any later version.
+#
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library.
+import copy
+import octobot_trading.util as util
+import octobot_commons.symbol_util as symbol_util
+import octobot_commons.constants as commons_constants
+import octobot_trading.constants as trading_constants
+
+from tests import config
+
+
+def test_is_trader_enabled(config):
+    _test_enabled(config, util.is_trader_enabled, trading_constants.CONFIG_TRADER, False)
+
+
+def test_is_trader_simulator_enabled(config):
+    _test_enabled(config, util.is_trader_simulator_enabled, trading_constants.CONFIG_SIMULATOR, True)
+
+
+def test_is_currency_enabled(config):
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = True
+    assert util.is_currency_enabled(config, "Bitcoin", True) is True
+    assert util.is_currency_enabled(config, "Bitcoin", False) is True
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
+    assert util.is_currency_enabled(config, "Bitcoin", True) is False
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"].pop(commons_constants.CONFIG_ENABLED_OPTION, None)
+    assert util.is_currency_enabled(config, "Bitcoin", True) is True
+    assert util.is_currency_enabled(config, "Bitcoin", False) is False
+
+
+def test_get_symbols(config):
+    assert list(util.get_symbols(config, True)) == FULL_PAIRS_LIST
+
+    # with disabled currency
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
+    list_without_bitcoin = _filter_by_base(FULL_PAIRS_LIST, "BTC")
+    assert list(util.get_symbols(config, True)) == list_without_bitcoin
+    assert list(util.get_symbols(config, False)) == FULL_PAIRS_LIST
+
+    # with empty pairs
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Ethereum"][commons_constants.CONFIG_CRYPTO_PAIRS] = []
+    assert list(util.get_symbols(config, False)) == _filter_by_base(FULL_PAIRS_LIST, "ETH")
+
+    # with broken config
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES] = []
+    assert list(util.get_symbols(config, False)) == []
+    config.pop(commons_constants.CONFIG_CRYPTO_CURRENCIES, None)
+    assert list(util.get_symbols(config, False)) == []
+
+
+def test_get_all_currencies(config):
+    symbols = set()
+    for pair in FULL_PAIRS_LIST:
+        symbols.update(symbol_util.split_symbol(pair))
+    assert util.get_all_currencies(config) == symbols
+    assert util.get_all_currencies(config, enabled_only=True) == symbols
+
+    # with disabled currency
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
+    assert util.get_all_currencies(config) == symbols
+    symbols_without_bitcoin_symbols = copy.copy(symbols)
+    symbols_without_bitcoin_symbols.remove("EUR")
+    symbols_without_bitcoin_symbols.remove("USDC")
+    assert util.get_all_currencies(config, enabled_only=True) == symbols_without_bitcoin_symbols
+    assert util.get_all_currencies(config, enabled_only=False) == symbols
+
+
+def test_get_pairs(config):
+    assert util.get_pairs(config, "BTC") == _select_by_base_or_quote(FULL_PAIRS_LIST, "BTC")
+    assert util.get_pairs(config, "ICX") == ["ICX/BTC"]
+
+    # with disabled currency
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
+    assert util.get_pairs(config, "BTC", enabled_only=False) == _select_by_base_or_quote(FULL_PAIRS_LIST, "BTC")
+    assert util.get_pairs(config, "BTC", enabled_only=True) != _select_by_base_or_quote(FULL_PAIRS_LIST, "BTC")
+    assert util.get_pairs(config, "BTC", enabled_only=True) == _filter_by_base(_select_by_base_or_quote(FULL_PAIRS_LIST,
+                                                                                                        "BTC"),
+                                                                               "BTC")
+
+
+def test_get_market_pair(config):
+    config[trading_constants.CONFIG_TRADING][trading_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC"
+    assert util.get_market_pair(config, "ETH") == ("", False)
+    assert util.get_market_pair(config, "ADA") == ("ADA/BTC", False)
+    assert util.get_market_pair(config, "USDT") == ("BTC/USDT", True)
+    assert util.get_market_pair(config, "BTC") == ("", False)
+
+    # with disabled currency
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Cardano"][commons_constants.CONFIG_ENABLED_OPTION] = False
+    assert util.get_market_pair(config, "ADA", enabled_only=False) == ("ADA/BTC", False)
+    assert util.get_market_pair(config, "ADA", enabled_only=True) == ("", False)
+
+
+def test_get_reference_market(config):
+    config[trading_constants.CONFIG_TRADING][trading_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC"
+    assert util.get_reference_market(config) == "BTC"
+    config[trading_constants.CONFIG_TRADING][trading_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC1"
+    assert util.get_reference_market(config) == "BTC1"
+    config[trading_constants.CONFIG_TRADING].pop(trading_constants.CONFIG_TRADER_REFERENCE_MARKET, None)
+    assert util.get_reference_market(config) == trading_constants.DEFAULT_REFERENCE_MARKET
+
+
+FULL_PAIRS_LIST = [
+    'BTC/USDT',
+    'BTC/EUR',
+    'BTC/USDC',
+    'NEO/BTC',
+    'ETH/USDT',
+    'ICX/BTC',
+    'VEN/BTC',
+    'XRB/BTC',
+    'ADA/BTC',
+    'ONT/BTC',
+    'XLM/BTC',
+    'POWR/BTC',
+    'ETC/BTC',
+    'WAX/BTC',
+    'XRP/BTC',
+    'XVG/BTC'
+]
+
+
+def _test_enabled(config, func, config_key, current_val):
+    assert func(config) is current_val
+    config[config_key][commons_constants.CONFIG_ENABLED_OPTION] = not current_val
+    assert func(config) is not current_val
+    config[config_key].pop(commons_constants.CONFIG_ENABLED_OPTION, None)
+    assert func(config) is False
+    config.pop(config_key, None)
+    assert func(config) is False
+
+
+def _filter_by_base(pairs, filtered_base):
+    return [s for s in pairs if symbol_util.split_symbol(s)[0] != filtered_base]
+
+
+def _select_by_base_or_quote(pairs, base_or_quote):
+    return [s for s in pairs if base_or_quote in symbol_util.split_symbol(s)]

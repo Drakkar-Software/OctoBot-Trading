@@ -35,7 +35,7 @@ cdef class PortfolioProfitability:
     cdef public double initial_portfolio_current_profitability
 
     cdef set traded_currencies_without_market_specific
-    cdef public set traded_currencies
+    cdef public set valuated_currencies
 
     cdef double _calculate_average_market_profitability(self)
     cdef void _reset_before_profitability_calculation(self)

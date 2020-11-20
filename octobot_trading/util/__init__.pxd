@@ -19,6 +19,26 @@ from octobot_trading.util.initializable cimport (
     Initializable,
 )
 
+from octobot_trading.util cimport config_util
+from octobot_trading.util.config_util cimport (
+    is_trader_enabled,
+    is_trader_simulator_enabled,
+    is_currency_enabled,
+    get_symbols,
+    get_all_currencies,
+    get_pairs,
+    get_market_pair,
+    get_reference_market,
+)
+
 __all__ = [
     "Initializable",
+    "is_trader_enabled",
+    "is_trader_simulator_enabled",
+    "is_currency_enabled",
+    "get_symbols",
+    "get_all_currencies",
+    "get_pairs",
+    "get_market_pair",
+    "get_reference_market",
 ]
