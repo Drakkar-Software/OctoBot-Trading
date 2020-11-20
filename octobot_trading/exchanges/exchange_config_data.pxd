@@ -23,6 +23,7 @@ cdef class ExchangeConfig(util.Initializable):
     cdef public dict config
 
     cdef public list traded_symbol_pairs
+    cdef public list all_config_symbol_pairs
     cdef public list traded_time_frames
     cdef public list real_time_time_frames
 
@@ -31,14 +32,15 @@ cdef class ExchangeConfig(util.Initializable):
     cpdef void set_config_time_frame(self)
     cpdef void set_config_traded_pairs(self)
     cpdef object get_shortest_time_frame(self)
-    cpdef list get_traded_pairs(self, str cryptocurrency=*)
 
     @staticmethod
     cdef str _is_tradable_with_cryptocurrency(str symbol, str cryptocurrency)
 
     cdef void _set_config_time_frame(self)
     cdef void _set_config_traded_pairs(self)
-    cdef list _add_tradable_symbols_from_config(self, str cryptocurrency)
+    cdef void _populate_non_wildcard_pairs(self, str cryptocurrency, set existing_pairs, bint is_enabled)
+    cdef void _populate_wildcard_pairs(self, str cryptocurrency, set existing_pairs, bint is_enabled)
+    cdef list _add_tradable_symbols_from_config(self, str cryptocurrency, list filtered_symbols)
     cdef object _add_tradable_symbols(self, str cryptocurrency, list symbols)
     cdef list _add_tradable_time_frames(self, list time_frames)
     cdef list _create_wildcard_symbol_list(self, str cryptocurrency)

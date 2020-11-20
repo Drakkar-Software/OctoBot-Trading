@@ -205,7 +205,7 @@ class Trader(util.Initializable):
         :param currency: Currency to find trading pairs to cancel orders on.
         :return: None
         """
-        symbols = util.get_pairs(self.config, currency)
+        symbols = util.get_pairs(self.config, currency, enabled_only=True)
         if symbols:
             for symbol in symbols:
                 await self.cancel_open_orders(symbol)
@@ -264,7 +264,7 @@ class Trader(util.Initializable):
                           if currency in currency_list]
 
         for currency in currencies:
-            symbol, inverted = util.get_market_pair(self.config, currency)
+            symbol, inverted = util.get_market_pair(self.config, currency, enabled_only=True)
             if symbol:
                 orders += await self._sell_everything(symbol, inverted, timeout=timeout)
         return orders

@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_commons.constants as constants
 import octobot_commons.logging as logging
 import octobot_commons.symbol_util as symbol_util
 
@@ -44,9 +43,9 @@ class PortfolioProfitability:
         # is market only => not used to compute market average profitability
         self.traded_currencies_without_market_specific = set()
 
-        # set of currencies that should be traded because either present in config or as a reference market
-        self.traded_currencies = util.get_all_currencies(self.portfolio_manager.config)
-        self.traded_currencies.add(self.portfolio_manager.reference_market)
+        # set of currencies that should be valuated because either present in config or as a reference market
+        self.valuated_currencies = util.get_all_currencies(self.portfolio_manager.config, enabled_only=False)
+        self.valuated_currencies.add(self.portfolio_manager.reference_market)
 
     def get_average_market_profitability(self):
         """
@@ -133,10 +132,9 @@ class PortfolioProfitability:
     def _init_traded_currencies_without_market_specific(self):
         """
         Initialize traded currencies without market specific set
-        TODO do not use config[CONFIG_CRYPTO_CURRENCIES]
+        Use exchange_config.all_config_symbol_pairs to take every config pair into account including disabled ones
         """
         self.traded_currencies_without_market_specific = set(
             symbol_util.split_symbol(pair)[0]
-            for cryptocurrency in self.portfolio_manager.config[constants.CONFIG_CRYPTO_CURRENCIES]
-            for pair in self.portfolio_manager.exchange_manager.exchange_config.get_traded_pairs(cryptocurrency)
+            for pair in self.portfolio_manager.exchange_manager.exchange_config.all_config_symbol_pairs
         )

@@ -44,9 +44,11 @@ class TestExchangeConfig:
                 "pairs": ["NEO/BTC"]
             },
             "Ethereum": {
+                "enabled": True,
                 "pairs": ["ETH/USDT"]
             },
             "Icon": {
+                "enabled": False,
                 "pairs": ["ICX/BTC"]
             }
         }
@@ -55,9 +57,12 @@ class TestExchangeConfig:
 
         assert exchange_manager.exchange_config.traded_cryptocurrencies == {
             "Ethereum": ["ETH/USDT"],
-            "Icon": ["ICX/BTC"],
             "Neo": ["NEO/BTC"]
         }
+        all_pairs = sorted(["NEO/BTC", "ETH/USDT", "ICX/BTC"])
+        all_enabled_pairs = sorted(["NEO/BTC", "ETH/USDT"])
+        assert sorted(exchange_manager.exchange_config.traded_symbol_pairs) == all_enabled_pairs
+        assert sorted(exchange_manager.exchange_config.all_config_symbol_pairs) == all_pairs
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 
@@ -67,6 +72,11 @@ class TestExchangeConfig:
             "Bitcoin": {
                 "pairs": "*",
                 "quote": "BTC"
+            },
+            "Ethereum": {
+                "enabled": False,
+                "pairs": "*",
+                "quote": "ETH"
             }
         }
         _, exchange_manager = await self.init_default(config=config)
@@ -79,6 +89,14 @@ class TestExchangeConfig:
         assert "BTC/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "NEO/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "ETH/BTC" in exchange_manager.exchange_config.traded_symbol_pairs
+        assert "ETH/BTC" in exchange_manager.exchange_config.all_config_symbol_pairs
+
+        # disabled
+        assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
+        assert "ADA/ETH" not in exchange_manager.exchange_config.traded_symbol_pairs
+        assert "ADA/ETH" in exchange_manager.exchange_config.all_config_symbol_pairs
+
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 
@@ -89,6 +107,12 @@ class TestExchangeConfig:
                 "pairs": "*",
                 "quote": "BTC",
                 "add": ["BTC/USDT"]
+            },
+            "Ethereum": {
+                "enabled": False,
+                "pairs": "*",
+                "quote": "ETH",
+                "add": ["ETH/USDT"]
             }
         }
 
@@ -102,5 +126,14 @@ class TestExchangeConfig:
         assert "BTC/USDT" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "NEO/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "BTC/USDT" in exchange_manager.exchange_config.traded_symbol_pairs
+        assert "BTC/USDT" in exchange_manager.exchange_config.all_config_symbol_pairs
+
+        # disabled
+        assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
+        assert "ADA/ETH" not in exchange_manager.exchange_config.traded_symbol_pairs
+        assert "ADA/ETH" in exchange_manager.exchange_config.all_config_symbol_pairs
+        assert "ETH/USDT" not in exchange_manager.exchange_config.traded_symbol_pairs
+        assert "ETH/USDT" in exchange_manager.exchange_config.all_config_symbol_pairs
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()

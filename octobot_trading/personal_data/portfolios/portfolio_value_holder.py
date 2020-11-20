@@ -298,21 +298,21 @@ class PortfolioValueHolder:
         :param evaluated_currencies: the list of evaluated currencies
         :param missing_tickers: the list of missing currencies
         """
-        for cryptocurrency in self.portfolio_manager.config[common_constants.CONFIG_CRYPTO_CURRENCIES]:
-            pairs = self.portfolio_manager.exchange_manager.exchange_config.get_traded_pairs(cryptocurrency)
-            if pairs:
-                currency, market = symbol_util.split_symbol(pairs[0])
-                currency_to_evaluate = currency
-                try:
-                    if currency not in evaluated_currencies:
-                        evaluated_pair_values[currency] = self._evaluate_value(currency, 1)
-                        evaluated_currencies.add(currency)
-                    if market not in evaluated_currencies:
-                        currency_to_evaluate = market
-                        evaluated_pair_values[market] = self._evaluate_value(market, 1)
-                        evaluated_currencies.add(market)
-                except KeyError:
-                    missing_tickers.add(currency_to_evaluate)
+        if self.portfolio_manager.exchange_manager.exchange_config.all_config_symbol_pairs:
+            currency, market = symbol_util.split_symbol(
+                self.portfolio_manager.exchange_manager.exchange_config.all_config_symbol_pairs[0]
+            )
+            currency_to_evaluate = currency
+            try:
+                if currency not in evaluated_currencies:
+                    evaluated_pair_values[currency] = self._evaluate_value(currency, 1)
+                    evaluated_currencies.add(currency)
+                if market not in evaluated_currencies:
+                    currency_to_evaluate = market
+                    evaluated_pair_values[market] = self._evaluate_value(market, 1)
+                    evaluated_currencies.add(market)
+            except KeyError:
+                missing_tickers.add(currency_to_evaluate)
 
     def _evaluate_portfolio_currencies_values(self,
                                               portfolio,
@@ -376,4 +376,4 @@ class PortfolioValueHolder:
         """
         return (currency not in self.missing_currency_data_in_exchange or ignore_missing_currency_data) and \
                (portfolio[currency][common_constants.PORTFOLIO_TOTAL] > 0 or currency in
-                self.portfolio_manager.portfolio_profitability.traded_currencies)
+                self.portfolio_manager.portfolio_profitability.valuated_currencies)
