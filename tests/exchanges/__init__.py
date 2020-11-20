@@ -55,14 +55,10 @@ async def exchange_manager(request):
     exchange_manager_instance.is_future = is_future
     await exchange_manager_instance.initialize()
     yield exchange_manager_instance
-    try:
-        cancel_ccxt_throttle_task()
-        await exchange_manager_instance.stop()
-        # let updaters gracefully shutdown
-        await wait_asyncio_next_cycle()
-    except RuntimeError as e:
-        # prevent to fail test when event loop is closed
-        pass
+    cancel_ccxt_throttle_task()
+    await exchange_manager_instance.stop()
+    # let updaters gracefully shutdown
+    await wait_asyncio_next_cycle()
 
 
 @pytest.yield_fixture
