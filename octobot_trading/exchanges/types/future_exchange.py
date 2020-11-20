@@ -62,7 +62,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         try:
             return self.pair_contracts[pair]
         except KeyError:
-            asyncio.run_coroutine_threadsafe(self.load_pair_future_contract(pair), asyncio.get_running_loop())
+            asyncio.run(self.load_pair_future_contract(pair))
             return self.pair_contracts[pair]
 
     def set_pair_future_contract(self, pair, future_contract):
