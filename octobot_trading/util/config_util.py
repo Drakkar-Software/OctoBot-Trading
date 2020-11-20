@@ -59,7 +59,7 @@ def get_all_currencies(config, enabled_only=False):
     return currencies
 
 
-def get_pairs(config, currency, enabled_only=False) -> []:
+def get_pairs(config, currency, enabled_only=False) -> list:
     pairs = []
     for symbol in get_symbols(config, enabled_only):
         if currency in symbol_util.split_symbol(symbol):

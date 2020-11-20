@@ -71,13 +71,14 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                         if self.future_candle_time_frame is time_frame:
                             if ohlcv_data[0][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
                                 # register future candle
-                                self.channel.exchange.current_future_candles[pair][time_frame.value] = ohlcv_data[0][-1]
+                                self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = \
+                                    ohlcv_data[0][-1]
                                 # do not push future candle
                                 current_candle_index = 1
                             else:
                                 # if no future candle available
                                 # (end of backtesting of missing data: reset future candle)
-                                self.channel.exchange.current_future_candles[pair][time_frame.value] = None
+                                self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = None
                         if current_candle_index == 0 or len(ohlcv_data) > 1:
                             # push current candle(s)
                             await self.push(time_frame,

@@ -116,9 +116,13 @@ class BalanceProfitabilityUpdater(portfolios_channel.BalanceProfitabilityProduce
         except KeyError:
             # balance channel might already be stopped and removed from available channels
             pass
-        await exchange_channel.get_chan(
-            constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
-        ).remove_consumer(self.mark_price_consumer)
+        try:
+            await exchange_channel.get_chan(
+                constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id
+            ).remove_consumer(self.mark_price_consumer)
+        except KeyError:
+            # balance channel might already be stopped and removed from available channels
+            pass
         self.balance_consumer = None
         self.mark_price_consumer = None
 
