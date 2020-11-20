@@ -71,7 +71,7 @@ class RecentTradeUpdaterSimulator(recent_trade_updater.RecentTradeUpdater):
                 # Recent trades for this candle are between the next candle candle high price and the next candle
                 # low price in order to get these prices, use exchange simulator's future candles filled by the
                 # previous ohlcv updater cycle that also triggered this call
-                future_candle = self.channel.exchange.current_future_candles[symbol][time_frame]
+                future_candle = self.channel.exchange.get_current_future_candles()[symbol][time_frame]
                 last_candle_timestamp = future_candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
                 if last_candle_timestamp > self.last_timestamp_pushed_by_symbol[symbol]:
                     future_candle_low_price = future_candle[common_enums.PriceIndexes.IND_PRICE_LOW.value]
