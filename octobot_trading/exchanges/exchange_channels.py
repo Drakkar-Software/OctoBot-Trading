@@ -63,7 +63,7 @@ def _should_create_authenticated_producers(exchange_manager):
     :param exchange_manager: the related exchange manager
     :return: True if should create authenticated producers
     """
-    return exchange_manager.exchange.is_authenticated \
+    return exchange_manager.exchange.authenticated() \
            and exchange_manager.trader and exchange_manager.is_trading \
            and not (exchange_manager.is_simulated or exchange_manager.is_backtesting or exchange_manager.is_collecting)
 
@@ -73,7 +73,7 @@ def _should_create_simulated_producers(exchange_manager):
     :param exchange_manager: the related exchange manager
     :return: True if should create simulated producers
     """
-    return (not exchange_manager.exchange.is_authenticated
+    return (not exchange_manager.exchange.authenticated()
             or exchange_manager.is_simulated
             or exchange_manager.is_backtesting) \
            and exchange_manager.trader and exchange_manager.is_trading and not exchange_manager.is_collecting

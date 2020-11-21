@@ -53,6 +53,8 @@ class TestExchangeManager:
         assert exchange_manager is not None
         assert exchange_manager.exchange_name is TestExchangeManager.EXCHANGE_NAME
 
+        assert exchange_manager.exchange.authenticated() is False
+
         assert exchange_manager.config is config
 
         assert isinstance(exchange_manager.exchange, SpotExchangeSimulator)

@@ -207,7 +207,7 @@ class ExchangeManager(util.Initializable):
         exchange_type = 'future' if self.is_future else exchange_type
         return f"[{self.__class__.__name__}] with {self.exchange.__class__.__name__ if self.exchange else '?'} " \
                f"exchange class on {self.get_exchange_name()} | {exchange_type} | " \
-               f"{'authenticated | ' if self.exchange and self.exchange.is_authenticated else 'unauthenticated | '}" \
+               f"{'authenticated | ' if self.exchange and self.exchange.authenticated() else 'unauthenticated | '}" \
                f"{'backtesting | ' if self.backtesting else ''}{'sandboxed | ' if self.is_sandboxed else ''}" \
                f"{'' if self.is_trading else 'not trading | '}" \
                f"{'websocket | ' if self.has_websocket else 'no websocket | '} id: {self.id}"
