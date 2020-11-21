@@ -18,15 +18,15 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_trading.constants as trading_constants
 
 
-def is_trader_enabled(config):
+def is_trader_enabled(config) -> bool:
     return _is_trader_enabled(config, trading_constants.CONFIG_TRADER)
 
 
-def is_trader_simulator_enabled(config):
+def is_trader_simulator_enabled(config) -> bool:
     return _is_trader_enabled(config, trading_constants.CONFIG_SIMULATOR)
 
 
-def _is_trader_enabled(config, trader_key):
+def _is_trader_enabled(config, trader_key) -> bool:
     try:
         return config[trader_key][commons_constants.CONFIG_ENABLED_OPTION]
     except KeyError:
@@ -53,7 +53,7 @@ def get_symbols(config, enabled_only) -> list:
     return []
 
 
-def get_all_currencies(config, enabled_only=False):
+def get_all_currencies(config, enabled_only=False) -> set:
     currencies = set()
     for symbol in get_symbols(config, enabled_only):
         quote, base = symbol_util.split_symbol(symbol)
@@ -62,7 +62,7 @@ def get_all_currencies(config, enabled_only=False):
     return currencies
 
 
-def get_pairs(config, currency, enabled_only=False):
+def get_pairs(config, currency, enabled_only=False) -> list:
     return [
         symbol
         for symbol in get_symbols(config, enabled_only)
