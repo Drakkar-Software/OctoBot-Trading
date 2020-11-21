@@ -59,12 +59,12 @@ def get_all_currencies(config, enabled_only=False):
     return currencies
 
 
-def get_pairs(config, currency, enabled_only=False) -> list:
-    pairs = []
-    for symbol in get_symbols(config, enabled_only):
-        if currency in symbol_util.split_symbol(symbol):
-            pairs.append(symbol)
-    return pairs
+def get_pairs(config, currency, enabled_only=False):
+    return [
+        symbol
+        for symbol in get_symbols(config, enabled_only)
+        if currency in symbol_util.split_symbol(symbol)
+    ]
 
 
 def get_market_pair(config, currency, enabled_only=False) -> (str, bool):
