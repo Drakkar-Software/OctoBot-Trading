@@ -41,13 +41,16 @@ def is_currency_enabled(config, currency, default_value) -> bool:
                                                                             default_value)
 
 
-def get_symbols(config, enabled_only):
+def get_symbols(config, enabled_only) -> list:
     if commons_constants.CONFIG_CRYPTO_CURRENCIES in config \
             and isinstance(config[commons_constants.CONFIG_CRYPTO_CURRENCIES], dict):
-        for currency, crypto_currency_data in config[commons_constants.CONFIG_CRYPTO_CURRENCIES].items():
-            if not enabled_only or is_currency_enabled(config, currency, True):
-                for symbol in crypto_currency_data[commons_constants.CONFIG_CRYPTO_PAIRS]:
-                    yield symbol
+        return [
+            symbol
+            for currency, crypto_currency_data in config[commons_constants.CONFIG_CRYPTO_CURRENCIES].items()
+            if not enabled_only or is_currency_enabled(config, currency, True)
+            for symbol in crypto_currency_data[commons_constants.CONFIG_CRYPTO_PAIRS]
+        ]
+    return []
 
 
 def get_all_currencies(config, enabled_only=False):

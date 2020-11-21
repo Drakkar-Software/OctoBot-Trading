@@ -42,23 +42,23 @@ def test_is_currency_enabled(config):
 
 
 def test_get_symbols(config):
-    assert list(util.get_symbols(config, True)) == FULL_PAIRS_LIST
+    assert util.get_symbols(config, True) == FULL_PAIRS_LIST
 
     # with disabled currency
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
     list_without_bitcoin = _filter_by_base(FULL_PAIRS_LIST, "BTC")
-    assert list(util.get_symbols(config, True)) == list_without_bitcoin
-    assert list(util.get_symbols(config, False)) == FULL_PAIRS_LIST
+    assert util.get_symbols(config, True) == list_without_bitcoin
+    assert util.get_symbols(config, False) == FULL_PAIRS_LIST
 
     # with empty pairs
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Ethereum"][commons_constants.CONFIG_CRYPTO_PAIRS] = []
-    assert list(util.get_symbols(config, False)) == _filter_by_base(FULL_PAIRS_LIST, "ETH")
+    assert util.get_symbols(config, False) == _filter_by_base(FULL_PAIRS_LIST, "ETH")
 
     # with broken config
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES] = []
-    assert list(util.get_symbols(config, False)) == []
+    assert util.get_symbols(config, False) == []
     config.pop(commons_constants.CONFIG_CRYPTO_CURRENCIES, None)
-    assert list(util.get_symbols(config, False)) == []
+    assert util.get_symbols(config, False) == []
 
 
 def test_get_all_currencies(config):
