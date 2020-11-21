@@ -42,6 +42,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         self.client = None
         self.exchange_type = None
         self.all_currencies_price_ticker = None
+        self.is_authenticated = False
 
         self._create_exchange_type()
         self._create_client()

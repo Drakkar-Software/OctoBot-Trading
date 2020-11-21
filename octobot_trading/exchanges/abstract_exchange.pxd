@@ -31,8 +31,6 @@ cdef class AbstractExchange(util.Initializable):
 
     cdef public double allowed_time_lag
 
-    cdef public bint is_authenticated
-
     cdef public str name
 
     cpdef str get_name(cls)
@@ -48,6 +46,9 @@ cdef class AbstractExchange(util.Initializable):
     cpdef tuple get_split_pair_from_exchange(self, str pair)
     cpdef int get_rate_limit(self)
     cpdef dict get_default_balance(self)
+
+    # exchange settings
+    cpdef bint authenticated(self)
 
     # parsers
     cpdef dict parse_balance(self, dict balance)

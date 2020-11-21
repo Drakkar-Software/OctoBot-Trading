@@ -43,7 +43,7 @@ def _assert_fee(fee, currency, price, rate, fee_type):
 
 async def test_is_authenticated(backtesting_trader):
     _, exchange_manager, trader_inst = backtesting_trader
-    assert not exchange_manager.exchange.is_authenticated
+    assert not exchange_manager.exchange.authenticated()
 
 
 async def test_get_uniform_timestamp(backtesting_trader):

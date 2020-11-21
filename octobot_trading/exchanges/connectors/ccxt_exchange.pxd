@@ -22,6 +22,8 @@ cdef class CCXTExchange(abstract_exchange.AbstractExchange):
     cdef public object client
     cdef public object exchange_type
 
+    cdef public bint is_authenticated
+
     # private
     cdef void _create_client(self)
 

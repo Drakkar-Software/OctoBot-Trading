@@ -41,9 +41,6 @@ class AbstractExchange(util.Initializable):
         self.symbols = set()
         self.time_frames = set()
 
-        # We will need to create the rest client and fetch exchange config
-        self.is_authenticated = False
-
         # exchange name related attributes
         self.name = self.exchange_manager.exchange_class_string
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.name}]")
@@ -77,6 +74,9 @@ class AbstractExchange(util.Initializable):
         :return: True if this implementation corresponds to a simulated exchange
         """
         return False
+
+    def authenticated(self) -> bool:
+        return self.connector.is_authenticated
 
     @classmethod
     def is_default_exchange(cls) -> bool:
