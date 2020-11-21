@@ -201,6 +201,7 @@ class WebsocketConnector:
 
     def stop(self):
         self.websocket.close()
+        self.exchange_manager = None
 
     def close(self):
         self.stop()

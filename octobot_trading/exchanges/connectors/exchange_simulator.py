@@ -96,6 +96,7 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
     async def stop(self):
         self.backtesting = None
         self.exchange_importers = []
+        self.exchange_manager = None
 
     def get_exchange_current_time(self):
         return backtesting_api.get_backtesting_current_time(self.backtesting)
