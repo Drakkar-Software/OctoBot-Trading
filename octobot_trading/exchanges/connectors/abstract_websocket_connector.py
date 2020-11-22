@@ -13,49 +13,42 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import logging
-import websockets
-import time
-import ccxt
 import abc
 import asyncio
+import logging
 from datetime import datetime, timedelta
-import typing
 
 import octobot_commons.constants
 import octobot_commons.enums
 import octobot_commons.logging as commons_logging
+import time
+import websockets
 
-import octobot_trading.exchange_data as exchange_data
-import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.enums
+import octobot_trading.exchange_channel as exchange_channel
+import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 
 
-class WebsocketConnector:
+class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     LOGGERS = ["websockets.client", "websockets.server", "websockets.protocol"]
     MAX_DELAY = octobot_commons.constants.HOURS_TO_SECONDS
     EXCHANGE_FEEDS = {}
     INIT_REQUIRING_EXCHANGE_FEEDS = set()
-    REQUIRED_ACTIVATED_TENTACLES = []
 
     def __init__(self,
+                 config: object,
                  exchange_manager: object,
-                 channels: list = None,
-                 currencies: list = None,
-                 pairs: list = None,
-                 time_frames: typing.List[octobot_commons.enums.TimeFrames] = None,
                  api_key: str = None,
                  api_secret: str = None,
                  api_password: str = None,
                  timeout: int = 120,
                  timeout_interval: int = 5):
+        super().__init__(config, exchange_manager)
         commons_logging.set_logging_level(self.LOGGERS, logging.WARNING)
-        self.logger = commons_logging.get_logger(self.__class__.__name__)
 
-        self.exchange_manager = exchange_manager
         self.exchange = self.exchange_manager.exchange
         self.exchange_id = self.exchange_manager.id
-        self.use_testnet = self.exchange_manager.is_sandboxed
 
         self.bot_mainloop = asyncio.get_event_loop()
 
@@ -67,34 +60,30 @@ class WebsocketConnector:
         self.timeout_interval = timeout_interval
         self.last_ping_time = 0
 
-        self.is_connected = False
-        self.is_authenticated = False
-        self.should_stop = False
-
         # keyword arguments to be given to get_ws_endpoint
         self.endpoint_args = {}
 
-        self.currencies = currencies if currencies else []
+        self.is_connected = False
+        self.is_authenticated = False
+        self.should_stop = False
+        self.use_testnet = False
+
+        self.currencies = []
         self.pairs = []
+        self.time_frames = []
         self.channels = []
         self.books = {}
-        self.time_frames = time_frames if time_frames is not None else []
 
         self.websocket = None
-        self.ccxt_client = None
         self._watch_task = None
         self.websocket_task = None
         self.last_msg = datetime.utcnow()
 
-        self._initialize(pairs, channels)
-
-    def _initialize(self, pairs, channels):
-        self.async_ccxt_client = self.get_ccxt_async_client()()
-        self.ccxt_client = getattr(ccxt, self.get_name())()
-        self.ccxt_client.load_markets()
-
+    def initialize(self, currencies=None, pairs=None, time_frames=None, channels=None):
         self.pairs = [self.get_exchange_pair(pair) for pair in pairs] if pairs else []
         self.channels = [self.feed_to_exchange(chan) for chan in channels] if channels else []
+        self.time_frames = time_frames if time_frames is not None else []
+        self.currencies = currencies if currencies else []
 
     def start(self):
         asyncio.run(self._connect())
@@ -276,10 +265,6 @@ class WebsocketConnector:
         raise NotImplementedError("get_testnet_endpoint is not implemented")
 
     @classmethod
-    def get_ccxt_async_client(cls):
-        raise NotImplementedError("get_ccxt_async_client is not implemented")
-
-    @classmethod
     def get_feeds(cls) -> dict:
         return cls.EXCHANGE_FEEDS
 
@@ -298,25 +283,8 @@ class WebsocketConnector:
             raise ValueError(f"{feed} is not supported on {self.get_name()}")
         return ret
 
-    """
-    CCXT methods
-    """
-
     def get_pair_from_exchange(self, pair: str) -> str:
-        try:
-            return self.ccxt_client.market(pair)["symbol"]
-        except ccxt.errors.BadSymbol:
-            try:
-                return self.ccxt_client.markets_by_id[pair]["symbol"]
-            except KeyError:
-                self.logger.error(f"Failed to get market of {pair}")
-                return None
+        raise NotImplementedError("get_pair_from_exchange is not implemented")
 
     def get_exchange_pair(self, pair: str) -> str:
-        if pair in self.ccxt_client.symbols:
-            try:
-                return self.ccxt_client.market(pair)["id"]
-            except KeyError:
-                raise KeyError(f'{pair} is not supported on {self.get_name()}')
-        else:
-            raise ValueError(f'{pair} is not supported on {self.get_name()}')
+        raise NotImplementedError("get_exchange_pair is not implemented")

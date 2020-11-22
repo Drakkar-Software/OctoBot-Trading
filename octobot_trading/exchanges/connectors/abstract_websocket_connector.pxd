@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 
-
-cdef class WebsocketConnector:
+cdef class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     cdef public str exchange_id
     cdef str api_key
     cdef str api_secret
@@ -28,39 +28,34 @@ cdef class WebsocketConnector:
 
     cdef bint is_connected
     cdef bint should_stop
-    cdef bint use_testnet
     cdef bint is_authenticated
-
-    cdef public dict endpoint_args
+    cdef bint use_testnet
 
     cdef public list currencies
     cdef public list pairs
     cdef public list time_frames
     cdef public list channels
 
+    cdef public dict endpoint_args
     cdef public dict books
 
     # objects
-    cdef public object exchange_manager
     cdef public object exchange
-    cdef public object logger
     cdef public object websocket
     cdef public object websocket_task
-    cdef public object ccxt_client
-    cdef public object async_ccxt_client
     cdef object _watch_task
     cdef object last_msg
     cdef object bot_mainloop
 
-    cdef void _initialize(self, list pairs, list channels)
-    cdef void on_open(self)
-    cdef void on_auth(self, bint status)
-    cdef void on_close(self)
-    cdef void on_error(self, str error)
-    cdef str feed_to_exchange(self, feed)
-    cdef bint _should_authenticate(self)
-
+    cpdef void initialize(self, list currencies=*, list pairs=*, list time_frames=*, list channels=*)
+    cpdef void on_open(self)
+    cpdef void on_auth(self, bint status)
+    cpdef void on_close(self)
+    cpdef void on_error(self, str error)
+    cpdef str feed_to_exchange(self, feed)
     cpdef start(self)
     cpdef stop(self)
     cpdef close(self)
     cpdef object get_book_instance(self, str symbol)
+
+    cpdef bint _should_authenticate(self)
