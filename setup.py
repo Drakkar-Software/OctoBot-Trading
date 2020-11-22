@@ -145,7 +145,8 @@ packages_list = [
     "octobot_trading.exchanges.exchange_factory",
     "octobot_trading.exchanges.connectors.ccxt_exchange",
     "octobot_trading.exchanges.connectors.exchange_simulator",
-    "octobot_trading.exchanges.connectors.websocket_connector",
+    "octobot_trading.exchanges.connectors.abstract_websocket_connector",
+    "octobot_trading.exchanges.connectors.ccxt_websocket_connector",
     "octobot_trading.exchanges.traders.trader",
     "octobot_trading.exchanges.traders.trader_simulator",
     "octobot_trading.exchanges.util.exchange_market_status_fixer",
@@ -161,6 +162,7 @@ packages_list = [
     "octobot_trading.exchanges.implementations.margin_exchange_simulator",
     "octobot_trading.exchanges.implementations.spot_ccxt_exchange",
     "octobot_trading.exchanges.implementations.spot_exchange_simulator",
+    "octobot_trading.exchanges.implementations.ccxt_websocket_exchange",
     # "octobot_trading.exchanges.implementations.default_spot_ccxt_exchange",
     "octobot_trading.exchange_channel",
 ]

@@ -81,6 +81,7 @@ from octobot_trading.exchanges.implementations cimport (
     FutureCCXTExchange,
     MarginExchangeSimulator,
     MarginCCXTExchange,
+    CCXTWebSocketExchange,
 )
 
 from octobot_trading.exchanges.exchange_builder cimport (
@@ -91,7 +92,8 @@ from octobot_trading.exchanges cimport connectors
 from octobot_trading.exchanges.connectors cimport (
     ExchangeSimulator,
     CCXTExchange,
-    WebsocketConnector,
+    CCXTWebsocketConnector,
+    AbstractWebsocketConnector,
 )
 
 from octobot_trading.exchanges cimport abstract_websocket_exchange
@@ -115,7 +117,8 @@ __all__ = [
     "Trader",
     "ExchangeSimulator",
     "CCXTExchange",
-    "WebsocketConnector",
+    "AbstractWebsocketConnector",
+    "CCXTWebsocketConnector",
     "AbstractWebsocketExchange",
     "FutureExchange",
     "MarginExchange",
@@ -133,4 +136,5 @@ __all__ = [
     "FutureCCXTExchange",
     "MarginExchangeSimulator",
     "MarginCCXTExchange",
+    "CCXTWebSocketExchange",
 ]

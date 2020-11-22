@@ -13,9 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_tentacles_manager.api as api
-
-import octobot_trading.exchanges as exchanges
+import octobot_commons.tentacles_management as tentacles_management
 import octobot_trading.constants as constants
 
 
@@ -29,13 +27,8 @@ def check_web_socket_config(config, exchange_name) -> bool:
 
 
 def search_websocket_class(websocket_class, exchange_manager):
-    for socket_manager in websocket_class.__subclasses__():
+    for socket_manager in tentacles_management.get_all_classes_from_parent(websocket_class):
         # return websocket exchange if available
         if socket_manager.has_name(exchange_manager):
             return socket_manager
     return None
-
-
-def get_exchange_websocket_from_name(name: str, tentacles_setup_config: object, with_class_method: str):
-    return api.get_class_from_name_with_activated_required_tentacles(name, exchanges.WebSocketExchange,
-                                                                     tentacles_setup_config, with_class_method)

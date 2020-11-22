@@ -59,7 +59,6 @@ from octobot_trading.exchanges.util import (
     force_disable_web_socket,
     check_web_socket_config,
     search_websocket_class,
-    get_exchange_websocket_from_name,
 )
 from octobot_trading.exchanges import exchange_websocket_factory
 from octobot_trading.exchanges.exchange_websocket_factory import (
@@ -85,6 +84,7 @@ from octobot_trading.exchanges.types import (
 )
 from octobot_trading.exchanges import implementations
 from octobot_trading.exchanges.implementations import (
+    CCXTWebSocketExchange,
     DefaultCCXTSpotExchange,
     SpotExchangeSimulator,
     SpotCCXTExchange,
@@ -102,7 +102,8 @@ from octobot_trading.exchanges import connectors
 from octobot_trading.exchanges.connectors import (
     ExchangeSimulator,
     CCXTExchange,
-    WebsocketConnector,
+    CCXTWebsocketConnector,
+    AbstractWebsocketConnector,
 )
 
 __all__ = [
@@ -131,6 +132,7 @@ __all__ = [
     "create_authenticated_producer_from_parent",
     "TraderSimulator",
     "Trader",
+    "CCXTWebSocketExchange",
     "DefaultCCXTSpotExchange",
     "SpotExchangeSimulator",
     "SpotCCXTExchange",
@@ -140,7 +142,8 @@ __all__ = [
     "MarginCCXTExchange",
     "ExchangeSimulator",
     "CCXTExchange",
-    "WebsocketConnector",
+    "AbstractWebsocketConnector",
+    "CCXTWebsocketConnector",
     "FutureExchange",
     "MarginExchange",
     "SpotExchange",
@@ -151,5 +154,4 @@ __all__ = [
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",
-    "get_exchange_websocket_from_name",
 ]
