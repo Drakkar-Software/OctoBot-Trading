@@ -39,6 +39,10 @@ from octobot_trading.exchanges.implementations import spot_ccxt_exchange
 from octobot_trading.exchanges.implementations.spot_ccxt_exchange import (
     SpotCCXTExchange,
 )
+from octobot_trading.exchanges.implementations import ccxt_websocket_exchange
+from octobot_trading.exchanges.implementations.ccxt_websocket_exchange import (
+    CCXTWebSocketExchange,
+)
 from octobot_trading.exchanges.implementations import default_spot_ccxt_exchange
 from octobot_trading.exchanges.implementations.default_spot_ccxt_exchange import (
     DefaultCCXTSpotExchange,
@@ -51,5 +55,6 @@ __all__ = [
     "FutureCCXTExchange",
     "MarginCCXTExchange",
     "SpotCCXTExchange",
+    "CCXTWebSocketExchange",
     "DefaultCCXTSpotExchange",
 ]

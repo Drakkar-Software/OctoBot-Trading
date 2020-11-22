@@ -22,13 +22,18 @@ from octobot_trading.exchanges.connectors import ccxt_exchange
 from octobot_trading.exchanges.connectors.ccxt_exchange import (
     CCXTExchange,
 )
-from octobot_trading.exchanges.connectors import websocket_connector
-from octobot_trading.exchanges.connectors.websocket_connector import (
-    WebsocketConnector,
+from octobot_trading.exchanges.connectors import abstract_websocket_connector
+from octobot_trading.exchanges.connectors.abstract_websocket_connector import (
+    AbstractWebsocketConnector,
+)
+from octobot_trading.exchanges.connectors import ccxt_websocket_connector
+from octobot_trading.exchanges.connectors.ccxt_websocket_connector import (
+    CCXTWebsocketConnector,
 )
 
 __all__ = [
     "ExchangeSimulator",
     "CCXTExchange",
-    "WebsocketConnector",
+    "AbstractWebsocketConnector",
+    "CCXTWebsocketConnector",
 ]
