@@ -19,7 +19,3 @@ cimport octobot_trading.exchanges.connectors.abstract_websocket_connector as abs
 cdef class CCXTWebsocketConnector(abstract_websocket_connector.AbstractWebsocketConnector):
     cdef public object ccxt_client
     cdef public object async_ccxt_client
-    cdef object _watch_task
-    cdef object last_msg
-    cdef object bot_mainloop
-
