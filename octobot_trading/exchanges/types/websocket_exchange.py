@@ -18,8 +18,7 @@ import concurrent.futures as futures
 
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
-import octobot_trading.exchanges.connectors.websocket_connector as websocket_connector
-import octobot_trading.exchanges.util as exchange_util
+import octobot_trading.exchanges.connectors.abstract_websocket_connector as abstract_websocket_connector
 
 
 class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
@@ -28,11 +27,11 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         self.exchange_manager = exchange_manager
         self.exchange_name = exchange_manager.exchange_name
 
-        self.websocket_exchanges = []
-        self.websocket_exchanges_tasks = []
+        self.websocket_connectors = []
+        self.websocket_connectors_tasks = []
 
-        self.websocket_exchanges_executors = None
-        self.exchange_class = None
+        self.websocket_connectors_executors = None
+        self.websocket_connector = None
 
         self.trader_pairs = []
         self.time_frames = []
@@ -44,12 +43,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         self.is_websocket_authenticated = False
 
     async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
-        self.exchange_class = exchange_util.get_exchange_websocket_from_name(
-            self.exchange_manager.exchange_name,
-            self.exchange_manager.tentacles_setup_config,
-            self.get_class_method_name_to_get_compatible_websocket(
-                self.exchange_manager)
-        )
+        self.websocket_connector = self.get_exchange_connector_class(self.exchange_manager)
         self.trader_pairs = trader_pairs
         self.time_frames = time_frames
 
@@ -76,7 +70,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.ORDERS)
 
             # ensure feeds are added
-            self._create_octobot_feed_feeds()
+            self.create_feeds()
         else:
             self.logger.warning(f"{self.exchange_manager.exchange_name.title()}'s "
                                 f"websocket has no symbol to feed")
@@ -91,27 +85,13 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
 
     def is_feed_available(self, feed):
         try:
-            feed_available = self.exchange_class.get_exchange_feed(feed)
+            feed_available = self.websocket_connector.get_exchange_feed(feed)
             return feed_available is not octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value
         except (KeyError, ValueError):
             return False
 
     def is_feed_requiring_init(self, feed):
-        return self.exchange_class.is_feed_requiring_init(feed)
-
-    def _create_octobot_feed_feeds(self):
-        try:
-            key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_name)
-            self.websocket_exchanges.append(
-                self.exchange_class(exchange_manager=self.exchange_manager,
-                                    pairs=self.trader_pairs,
-                                    time_frames=self.time_frames,
-                                    channels=self.channels,
-                                    api_key=key,
-                                    api_secret=secret,
-                                    api_password=password))
-        except ValueError as e:
-            self.logger.exception(e, True, f"Fail to create feed : {e}")
+        return self.websocket_connector.is_feed_requiring_init(feed)
 
     @classmethod
     def get_name(cls):
@@ -119,29 +99,37 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
 
     @classmethod
     def has_name(cls, exchange_manager: object) -> bool:
-        return exchange_util.get_exchange_websocket_from_name(exchange_manager.exchange_name,
-                                                              exchange_manager.tentacles_setup_config,
-                                                              cls.get_class_method_name_to_get_compatible_websocket(
-                                                                  exchange_manager)) is not None
+        return cls.get_exchange_connector_class(exchange_manager) is not None
+
+    def create_feeds(self):
+        raise NotImplementedError("create_feeds is not implemented")
+
+    @classmethod
+    def get_exchange_connector_class(cls, exchange_manager: object):
+        raise NotImplementedError("get_exchange_connector_class is not implemented")
+
+    @staticmethod
+    def get_websocket_client(config, exchange_manager):
+        raise NotImplementedError("get_websocket_client is not implemented")
 
     @classmethod
     def get_class_method_name_to_get_compatible_websocket(cls, exchange_manager: object) -> str:
         if exchange_manager.is_future:
-            return websocket_connector.WebsocketConnector.is_handling_future.__name__
+            return abstract_websocket_connector.AbstractWebsocketConnector.is_handling_future.__name__
         if exchange_manager.is_margin:
-            return websocket_connector.WebsocketConnector.is_handling_margin.__name__
-        return websocket_connector.WebsocketConnector.is_handling_spot.__name__
+            return abstract_websocket_connector.AbstractWebsocketConnector.is_handling_margin.__name__
+        return abstract_websocket_connector.AbstractWebsocketConnector.is_handling_spot.__name__
 
     async def start_sockets(self):
         if any(self.handled_feeds.values()):
             try:
-                self.websocket_exchanges_executors = futures.ThreadPoolExecutor(
-                    max_workers=len(self.websocket_exchanges),
+                self.websocket_connectors_executors = futures.ThreadPoolExecutor(
+                    max_workers=len(self.websocket_connectors),
                     thread_name_prefix=f"{self.get_name()}-{self.exchange_name}-pool-executor")
 
-                self.websocket_exchanges_tasks = [
-                    asyncio.get_event_loop().run_in_executor(self.websocket_exchanges_executors, websocket.start)
-                    for websocket in self.websocket_exchanges]
+                self.websocket_connectors_tasks = [
+                    asyncio.get_event_loop().run_in_executor(self.websocket_connectors_executors, websocket.start)
+                    for websocket in self.websocket_connectors]
 
                 self.is_websocket_running = True
             except ValueError as e:
@@ -152,19 +140,15 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
                               f"websocket is not handling anything, it will not be started, ")
 
     async def wait_sockets(self):
-        await asyncio.wait(self.websocket_exchanges_tasks)
+        await asyncio.wait(self.websocket_connectors_tasks)
 
     async def close_and_restart_sockets(self):
-        for websocket in self.websocket_exchanges:
+        for websocket in self.websocket_connectors:
             await websocket.reconnect()
 
     async def stop_sockets(self):
-        for websocket in self.websocket_exchanges:
+        for websocket in self.websocket_connectors:
             websocket.stop()
 
     def is_handling(self, feed_name):
         return feed_name in self.handled_feeds[feed_name] and self.handled_feeds[feed_name]
-
-    @staticmethod
-    def get_websocket_client(config, exchange_manager):
-        return WebSocketExchange(config, exchange_manager)
