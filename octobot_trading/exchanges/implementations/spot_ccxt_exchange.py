@@ -27,6 +27,10 @@ from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
 class SpotCCXTExchange(exchanges_types.SpotExchange):
+    ORDER_NON_EMPTY_FIELDS = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
+                              ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
+    ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
+
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.connector = exchange_connectors.CCXTExchange(config, exchange_manager)
@@ -49,7 +53,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         try:
             created_order = await self._create_specific_order(order_type, symbol, quantity, price)
             # some exchanges are not returning the full order details on creation: fetch it if necessary
-            if created_order and not SpotCCXTExchange._ensure_order_details_completeness(created_order):
+            if created_order and not self._ensure_order_details_completeness(created_order):
                 if ecoc.ID.value in created_order:
                     order_symbol = created_order[ecoc.SYMBOL.value] if ecoc.SYMBOL.value in created_order else None
                     created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value],
@@ -96,12 +100,14 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             created_order = None
         return created_order
 
-    @staticmethod
-    def _ensure_order_details_completeness(order, order_required_fields=None):
+    def _ensure_order_details_completeness(self, order, order_required_fields=None, order_non_empty_fields=None):
         if order_required_fields is None:
-            order_required_fields = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
-                                     ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.REMAINING.value]
-        return all(key in order for key in order_required_fields)
+            order_required_fields = self.ORDER_REQUIRED_FIELDS
+        if order_non_empty_fields is None:
+            order_non_empty_fields = self.ORDER_NON_EMPTY_FIELDS
+        # ensure all order_required_fields are present and all order_non_empty_fields are not empty
+        return all(key in order for key in order_required_fields) and \
+            all(order[key] for key in order_non_empty_fields)
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()
