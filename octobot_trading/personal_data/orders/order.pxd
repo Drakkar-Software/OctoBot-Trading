@@ -105,7 +105,7 @@ cdef class Order(util.Initializable):
     cpdef double get_profitability(self)
     cpdef double generate_executed_time(self)
     cpdef bint is_self_managed(self)
-    cpdef bint update_from_raw(self, dict raw_order)
+    cpdef object update_from_raw(self, dict raw_order)
     cpdef void consider_as_filled(self)
     cpdef dict to_dict(self)
     cpdef void clear(self)
