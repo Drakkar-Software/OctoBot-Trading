@@ -42,7 +42,6 @@ cdef class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchan
     # objects
     cdef public object exchange
     cdef public object websocket
-    cdef public object websocket_task
     cdef object _watch_task
     cdef object last_msg
     cdef object bot_mainloop

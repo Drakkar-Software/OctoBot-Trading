@@ -76,7 +76,6 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
         self.websocket = None
         self._watch_task = None
-        self.websocket_task = None
         self.last_msg = datetime.utcnow()
 
     def initialize(self, currencies=None, pairs=None, time_frames=None, channels=None):
@@ -195,10 +194,10 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     def close(self):
         self.stop()
         self._watch_task.cancel()
-        self.websocket_task.cancel()
         self.is_connected = False
         self.websocket.close()
         self.on_close()
+        self.websocket = None
 
     async def before_connect(self):
         pass
