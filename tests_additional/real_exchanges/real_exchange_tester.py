@@ -84,7 +84,7 @@ class RealExchangeTester:
 
     async def time_frames(self):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
-            return exchange_manager.exchange.client.timeframes
+            return exchange_manager.exchange.time_frames
 
     async def get_market_status(self):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
