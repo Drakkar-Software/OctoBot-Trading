@@ -17,8 +17,6 @@
 import asyncio
 
 import octobot_commons.channels_name as channels_name
-import octobot_commons.tests as commons_tests
-
 import octobot_trading.exchanges as exchanges
 
 try:
@@ -41,6 +39,7 @@ async def test_unauthenticated_push_to_channel_coverage_websocket(
         websocket_exchange_class: exchanges.AbstractWebsocketExchange,
         websocket_connector_class: exchanges.AbstractWebsocketConnector,
         exchange_manager: exchanges.ExchangeManager,
+        config: object,
         symbols: list,
         time_frames: list,
         expected_pushed_channels: set = None,
@@ -55,7 +54,7 @@ async def test_unauthenticated_push_to_channel_coverage_websocket(
     with mock.patch.object(websocket_connector_class,
                            'push_to_channel',
                            new=mock_push_to_channel):
-        ws_exchange = websocket_exchange_class(commons_tests.load_test_config(), exchange_manager)
+        ws_exchange = websocket_exchange_class(config, exchange_manager)
         with mock.patch.object(websocket_exchange_class,
                                'get_exchange_connector_class',
                                new=mock.Mock()) as get_exchange_connector_class_mock:

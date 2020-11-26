@@ -14,18 +14,17 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_commons.tests as commons_tests
 import octobot_commons.asyncio_tools as asyncio_tools
-
-import octobot_trading.exchanges as exchanges
 import octobot_trading.api as trading_api
+import octobot_trading.exchanges as exchanges
 
 
-async def create_test_exchange_manager(exchange_name: str,
-                                       is_spot_only: bool = True,
-                                       is_margin: bool = False,
-                                       is_future: bool = False) -> exchanges.ExchangeManager:
-    config = commons_tests.load_test_config()
+async def create_test_exchange_manager(
+        config: object,
+        exchange_name: str,
+        is_spot_only: bool = True,
+        is_margin: bool = False,
+        is_future: bool = False) -> exchanges.ExchangeManager:
     exchange_manager_instance = exchanges.ExchangeManager(config, exchange_name)
     exchange_manager_instance.is_spot_only = is_spot_only
     exchange_manager_instance.is_margin = is_margin
