@@ -16,6 +16,7 @@
 import asyncio
 import concurrent.futures as futures
 
+import octobot_commons.thread_util as thread_util
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 import octobot_trading.exchanges.connectors.abstract_websocket_connector as abstract_websocket_connector
@@ -149,6 +150,14 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     async def stop_sockets(self):
         for websocket in self.websocket_connectors:
             websocket.stop()
+
+    async def close_sockets(self):
+        for websocket in self.websocket_connectors:
+            websocket.close()
+        for websocket_task in self.websocket_connectors_tasks:
+            websocket_task.cancel()
+        thread_util.stop_thread_pool_executor_non_gracefully(self.websocket_connectors_executors)
+        self.websocket_connectors_executors = None
 
     def is_handling(self, feed_name):
         return feed_name in self.handled_feeds[feed_name] and self.handled_feeds[feed_name]
