@@ -66,3 +66,7 @@ class AbstractWebsocketExchange:
     @abc.abstractmethod
     async def stop_sockets(self):
         raise NotImplementedError("stop_sockets not implemented")
+
+    @abc.abstractmethod
+    async def close_sockets(self):
+        raise NotImplementedError("close_sockets not implemented")
