@@ -49,6 +49,7 @@ class ExchangeBuilder:
         return self.exchange_manager
 
     async def _build_exchange_manager(self):
+        trading_mode_class = None
         if self._is_using_trading_modes:
             trading_mode_class = modes.get_activated_trading_mode(self._tentacles_setup_config)
             # handle exchange related requirements if the activated trading mode has any
@@ -65,11 +66,7 @@ class ExchangeBuilder:
                 await self._build_trader()
 
             # create trading modes
-            if self._is_using_trading_modes:
-                if self.exchange_manager.is_trading:
-                    self.exchange_manager.trading_modes = await self._build_trading_modes(trading_mode_class)
-                else:
-                    self.logger.info(f"{self.exchange_name} exchange is online and won't be trading")
+            await self._build_trading_modes_if_required(trading_mode_class)
 
         # add to global exchanges
         exchanges.Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
@@ -88,6 +85,18 @@ class ExchangeBuilder:
 
     def _register_trading_modes_requirements(self, trading_mode_class):
         self.exchange_manager.is_trading = trading_mode_class.get_is_trading_on_exchange(self.exchange_name)
+
+    async def _build_trading_modes_if_required(self, trading_mode_class):
+        if self._is_using_trading_modes:
+            # self.exchange_manager.trader can be None if neither simulator or real trader has be set
+            if self.exchange_manager.is_trading:
+                if self.exchange_manager.trader is None:
+                    self.logger.warning(f"There wont be any order created on {self.exchange_name}: neither "
+                                        f"simulated nor real trader has been activated.")
+                else:
+                    self.exchange_manager.trading_modes = await self._build_trading_modes(trading_mode_class)
+            else:
+                self.logger.info(f"{self.exchange_name} exchange is online and won't be trading")
 
     async def _build_trading_modes(self, trading_mode_class):
         try:

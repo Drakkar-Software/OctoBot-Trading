@@ -37,10 +37,9 @@ from octobot_trading.personal_data.orders.types.market.sell_market_order import 
 from octobot_trading.personal_data.orders import StopLossOrder
 from octobot_trading.exchanges.traders.trader import Trader
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
-
-# All test coroutines will be treated as marked.
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
+# All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 
