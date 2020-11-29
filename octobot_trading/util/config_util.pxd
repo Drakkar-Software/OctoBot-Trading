@@ -19,6 +19,7 @@
 cpdef bint is_trader_enabled(dict config)
 cpdef bint is_trader_simulator_enabled(dict config)
 cpdef bint is_currency_enabled(dict config, str currency, bint default_value)
+cpdef bint is_trade_history_loading_enabled(dict config, bint default=*)
 cpdef list get_symbols(dict config, bint enabled_only)
 cpdef set get_all_currencies(dict config, bint enabled_only=*)
 cpdef list get_pairs(dict config, str currency, bint enabled_only=*)

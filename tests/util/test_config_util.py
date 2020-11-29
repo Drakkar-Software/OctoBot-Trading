@@ -30,6 +30,15 @@ def test_is_trader_simulator_enabled(config):
     _test_enabled(config, util.is_trader_simulator_enabled, trading_constants.CONFIG_SIMULATOR, True)
 
 
+def test_is_trade_history_loading_enabled(config):
+    assert util.is_trade_history_loading_enabled(config) is True
+    config[trading_constants.CONFIG_TRADER][trading_constants.CONFIG_LOAD_TRADE_HISTORY] = False
+    assert util.is_trade_history_loading_enabled(config) is False
+    config.pop(trading_constants.CONFIG_TRADER)
+    assert util.is_trade_history_loading_enabled(config) is True
+    assert util.is_trade_history_loading_enabled(config, False) is False
+
+
 def test_is_currency_enabled(config):
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = True
     assert util.is_currency_enabled(config, "Bitcoin", True) is True

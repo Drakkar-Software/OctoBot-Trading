@@ -20,6 +20,7 @@ import octobot_trading.errors as errors
 
 import octobot_trading.personal_data.trades.channel as trades_channel
 import octobot_trading.constants as constants
+import octobot_trading.util as util
 
 
 class TradesUpdater(trades_channel.TradesProducer):
@@ -63,7 +64,8 @@ class TradesUpdater(trades_channel.TradesProducer):
                 await self.push(trades=list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
 
     async def start(self):
-        await self.init_old_trades()
+        if util.is_trade_history_loading_enabled(self.channel.exchange_manager.config):
+            await self.init_old_trades()
 
         # Code bellow shouldn't be necessary
         # while not self.should_stop and not self.channel.is_paused:
