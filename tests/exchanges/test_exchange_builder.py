@@ -17,6 +17,7 @@ import pytest
 import octobot_trading.exchanges as exchanges
 
 from tests.exchanges import exchange_manager
+from tests import event_loop
 
 
 # All test coroutines will be treated as marked.
