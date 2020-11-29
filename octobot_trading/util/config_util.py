@@ -36,6 +36,13 @@ def _is_trader_enabled(config, trader_key) -> bool:
         return False
 
 
+def is_trade_history_loading_enabled(config, default=True) -> bool:
+    try:
+        return config[trading_constants.CONFIG_TRADER].get(trading_constants.CONFIG_LOAD_TRADE_HISTORY, default)
+    except KeyError:
+        return default
+
+
 def is_currency_enabled(config, currency, default_value) -> bool:
     return config[commons_constants.CONFIG_CRYPTO_CURRENCIES][currency].get(commons_constants.CONFIG_ENABLED_OPTION,
                                                                             default_value)
