@@ -23,15 +23,16 @@ import octobot_trading.util as util
 
 
 class PricesManager(util.Initializable):
-    MARK_PRICE_VALIDITY = 5 * constants.MINUTE_TO_SECONDS
+    MARK_PRICE_FETCH_TIMEOUT = 5 * constants.MINUTE_TO_SECONDS
 
     def __init__(self, exchange_manager):
         super().__init__()
-        self.logger = logging.get_logger(self.__class__.__name__)
         self.mark_price = 0
         self.mark_price_set_time = 0
         self.mark_price_from_sources = {}
         self.exchange_manager = exchange_manager
+        self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange_name}]")
+        self.price_validity = self._compute_mark_price_validity_timeout()
 
         # warning: should only be created in the async loop thread
         self.valid_price_received_event = asyncio.Event()
@@ -78,7 +79,7 @@ class PricesManager(util.Initializable):
                 (mark_price, self.exchange_manager.exchange.get_exchange_current_time())
         return is_mark_price_updated
 
-    async def get_mark_price(self, timeout=MARK_PRICE_VALIDITY):
+    async def get_mark_price(self, timeout=MARK_PRICE_FETCH_TIMEOUT):
         """
         Return mark price if valid
         :param timeout: event wait timeout
@@ -86,7 +87,14 @@ class PricesManager(util.Initializable):
         """
         self._ensure_price_validity()
         if not self.valid_price_received_event.is_set():
-            await asyncio.wait_for(self.valid_price_received_event.wait(), timeout)
+            try:
+                await asyncio.wait_for(self.valid_price_received_event.wait(), timeout)
+            except asyncio.TimeoutError:
+                self.logger.warning("Timeout when waiting for current market price. This probably means that too many "
+                                    "trading pairs are being used at the same time and the exchange's rate limit is "
+                                    "preventing OctoBot from working properly. If this issue persists, please consider "
+                                    "using websocket connections.")
+                raise
         return self.mark_price
 
     def _set_mark_price_value(self, mark_price):
@@ -116,14 +124,22 @@ class PricesManager(util.Initializable):
         if not self._is_mark_price_valid(self.mark_price_set_time):
             self.valid_price_received_event.clear()
 
+    def _compute_mark_price_validity_timeout(self):
+        refresh_threshold = self.exchange_manager.get_rest_pairs_refresh_threshold()
+        if refresh_threshold is enums.RestExchangePairsRefreshMaxThresholds.FAST:
+            return 3 * constants.MINUTE_TO_SECONDS
+        if refresh_threshold is enums.RestExchangePairsRefreshMaxThresholds.MEDIUM:
+            return 5 * constants.MINUTE_TO_SECONDS
+        return 7 * constants.MINUTE_TO_SECONDS
+
     def _is_mark_price_valid(self, mark_price_updated_time):
         """
         Check if a mark price value has expired
         :param mark_price_updated_time: the mark price updated time
-        :return: True if the difference between mark_price_updated_time and now is < MARK_PRICE_VALIDITY
+        :return: True if the difference between mark_price_updated_time and now is < self.price_validity
         """
         return self.exchange_manager.exchange.get_exchange_current_time() - mark_price_updated_time < \
-            self.MARK_PRICE_VALIDITY
+            self.price_validity
 
     def _reset_prices(self):
         """

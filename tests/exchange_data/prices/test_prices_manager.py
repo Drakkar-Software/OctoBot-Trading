@@ -18,9 +18,9 @@ import os
 import pytest
 import asyncio
 
+import octobot_commons.constants as constants
 from octobot_trading.enums import MarkPriceSources
-from octobot_trading.exchange_data.prices.prices_manager import PricesManager, \
-    calculate_mark_price_from_recent_trade_prices
+from octobot_trading.exchange_data.prices.prices_manager import calculate_mark_price_from_recent_trade_prices
 
 from tests.exchanges import backtesting_exchange_manager, backtesting_config, fake_backtesting
 from tests.exchange_data import price_events_manager, prices_manager
@@ -113,7 +113,7 @@ async def test_set_mark_price_for_ticker_with_rt_source_outdated(prices_manager)
         prices_manager.mark_price_from_sources[MarkPriceSources.RECENT_TRADE_AVERAGE.value] = (
             prices_manager.mark_price_from_sources[MarkPriceSources.RECENT_TRADE_AVERAGE.value][0],
             prices_manager.mark_price_from_sources[MarkPriceSources.RECENT_TRADE_AVERAGE.value][1] -
-            PricesManager.MARK_PRICE_VALIDITY
+            5 * constants.MINUTE_TO_SECONDS
         )
         prices_manager.set_mark_price(40, MarkPriceSources.TICKER_CLOSE_PRICE.value)
         assert prices_manager.mark_price == 40  # should be updated because RECENT_TRADE_AVERAGE has expired
