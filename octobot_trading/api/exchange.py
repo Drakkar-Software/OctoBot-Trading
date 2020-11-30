@@ -157,6 +157,18 @@ def get_fees(exchange_manager, symbol) -> dict:
     return exchange_manager.exchange.get_fees(symbol)
 
 
+def get_max_handled_pair_with_time_frame(exchange_manager) -> int:
+    return exchange_manager.exchange.get_max_handled_pair_with_time_frame()
+
+
+def get_currently_handled_pair_with_time_frame(exchange_manager) -> int:
+    return exchange_manager.get_currently_handled_pair_with_time_frame()
+
+
+def is_overloaded(exchange_manager) -> bool:
+    return exchange_manager.get_is_overloaded()
+
+
 def cancel_ccxt_throttle_task():
     for task in asyncio.all_tasks():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise

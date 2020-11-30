@@ -15,8 +15,7 @@
 #  License along with this library.
 
 import pytest
-from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_SIMULATOR_FEES, CONFIG_SIMULATOR_FEES_MAKER, \
-    CONFIG_SIMULATOR_FEES_TAKER
+import octobot_trading.constants as constants
 from octobot_trading.enums import FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, TraderOrderType
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
@@ -51,6 +50,12 @@ async def test_get_uniform_timestamp(backtesting_trader):
     assert exchange_manager.exchange.get_uniform_timestamp(1e8) == 1e5
 
 
+async def test_get_max_handled_pair_with_time_frame(backtesting_trader):
+    _, exchange_manager, _ = backtesting_trader
+    assert exchange_manager.exchange.get_max_handled_pair_with_time_frame() == \
+           constants.INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME
+
+
 async def test_get_split_pair_from_exchange(backtesting_trader):
     _, exchange_manager, trader_inst = backtesting_trader
     assert exchange_manager.exchange.get_split_pair_from_exchange(DEFAULT_BACKTESTING_SYMBOL) == \
@@ -66,9 +71,9 @@ async def test_get_trade_fee(backtesting_trader):
     _, exchange_manager, trader_inst = backtesting_trader
 
     # force fees
-    exchange_manager.config[CONFIG_SIMULATOR][CONFIG_SIMULATOR_FEES] = {
-        CONFIG_SIMULATOR_FEES_MAKER: 0.05,
-        CONFIG_SIMULATOR_FEES_TAKER: 0.1
+    exchange_manager.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES] = {
+        constants.CONFIG_SIMULATOR_FEES_MAKER: 0.05,
+        constants.CONFIG_SIMULATOR_FEES_TAKER: 0.1
     }
 
     buy_market_fee = exchange_manager.exchange.get_trade_fee(DEFAULT_BACKTESTING_SYMBOL, TraderOrderType.BUY_MARKET, 10,

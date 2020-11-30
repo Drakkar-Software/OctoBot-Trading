@@ -518,3 +518,9 @@ class AbstractExchange(util.Initializable):
         return self.get_exchange_current_time() - (common_enums.TimeFramesMinutes[time_frame]
                                                    * octobot_commons.constants.MSECONDS_TO_MINUTE
                                                    * count)
+
+    def get_max_handled_pair_with_time_frame(self) -> int:
+        """
+        :return: the maximum number of simultaneous pairs * time_frame that this exchange can handle.
+        """
+        return self.connector.get_max_handled_pair_with_time_frame()

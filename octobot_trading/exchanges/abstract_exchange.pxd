@@ -49,6 +49,7 @@ cdef class AbstractExchange(util.Initializable):
 
     # exchange settings
     cpdef bint authenticated(self)
+    cpdef int get_max_handled_pair_with_time_frame(self)
 
     # parsers
     cpdef dict parse_balance(self, dict balance)

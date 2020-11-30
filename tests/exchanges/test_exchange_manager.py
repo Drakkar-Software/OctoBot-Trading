@@ -72,6 +72,42 @@ class TestExchangeManager:
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 
+    async def test_get_is_overloaded(self):
+        # simulated
+        config, exchange_manager = await self.init_default(simulated=True, backtesting=True)
+
+        # few traded elements
+        exchange_manager.exchange_config.traded_symbol_pairs = [0] * 3
+        exchange_manager.exchange_config.traded_time_frames = [0] * 3
+        assert exchange_manager.get_currently_handled_pair_with_time_frame() == 3*3
+        assert not exchange_manager.get_is_overloaded()
+
+        # too many traded elements
+        exchange_manager.exchange_config.traded_symbol_pairs = [0] * 99
+        exchange_manager.exchange_config.traded_time_frames = [0] * 99
+        assert exchange_manager.get_currently_handled_pair_with_time_frame() == 99*99
+        # not overloaded since exchange simulator is not limited in term of traded elements
+        assert not exchange_manager.get_is_overloaded()
+        await exchange_manager.stop()
+
+        # real
+        config, exchange_manager = await self.init_default(simulated=False)
+
+        # few traded elements
+        exchange_manager.exchange_config.traded_symbol_pairs = [0] * 3
+        exchange_manager.exchange_config.traded_time_frames = [0] * 3
+        assert exchange_manager.get_currently_handled_pair_with_time_frame() == 3*3
+        assert not exchange_manager.get_is_overloaded()
+
+        # too many traded elements
+        exchange_manager.exchange_config.traded_symbol_pairs = [0] * 99
+        exchange_manager.exchange_config.traded_time_frames = [0] * 99
+        assert exchange_manager.get_currently_handled_pair_with_time_frame() == 99*99
+        # overloaded since exchange simulator is limited in term of traded elements
+        assert exchange_manager.get_is_overloaded()
+        cancel_ccxt_throttle_task()
+        await exchange_manager.stop()
+
     async def test_ready(self):
         _, exchange_manager = await self.init_default()
 

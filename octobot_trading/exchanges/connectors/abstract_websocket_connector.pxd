@@ -58,3 +58,4 @@ cdef class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchan
     cpdef object get_book_instance(self, str symbol)
 
     cpdef bint _should_authenticate(self)
+    cpdef int get_max_handled_pair_with_time_frame(self)

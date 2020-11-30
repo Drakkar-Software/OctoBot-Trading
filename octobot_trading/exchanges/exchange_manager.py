@@ -176,6 +176,14 @@ class ExchangeManager(util.Initializable):
     def get_exchange_name(self):
         return self.exchange_class_string
 
+    def get_currently_handled_pair_with_time_frame(self):
+        return len(self.exchange_config.traded_symbol_pairs) * len(self.exchange_config.traded_time_frames)
+
+    def get_is_overloaded(self):
+        max_handled = self.exchange.get_max_handled_pair_with_time_frame()
+        return max_handled != constants.INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME and max_handled < \
+            self.get_currently_handled_pair_with_time_frame()
+
     def should_decrypt_token(self, logger):
         if config_util.has_invalid_default_config_value(
                 self.config[constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
