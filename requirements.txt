@@ -6,10 +6,10 @@ numpy==1.19.3
 OctoBot-Backtesting>=1.6.8, <1.7
 Async-Channel>=2.0.6, <2.1
 OctoBot-Commons>=1.4.11, <1.5
-OctoBot-Tentacles-Manager>=2.3.5, <2.4
+OctoBot-Tentacles-Manager>=2.3.6, <2.4
 
 # Exchange connection requirements
-ccxt==1.38.13
+ccxt==1.38.62
 cryptography # Never specify a version (managed by https://github.com/Drakkar-Software/OctoBot-PyPi-Linux-Deployer)
 
 # CLI requirements
