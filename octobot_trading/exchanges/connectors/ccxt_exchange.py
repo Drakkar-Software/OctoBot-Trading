@@ -455,3 +455,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         except KeyError as e:
             self.logger.error(f"Fail to cleanup order dict ({e})")
         return order
+
+    def get_max_handled_pair_with_time_frame(self) -> int:
+        """
+        Override when necessary
+        :return: the maximum number of simultaneous pairs * time_frame that this exchange can handle.
+        """
+        # 15 pairs, each on 3 time frames
+        return 45

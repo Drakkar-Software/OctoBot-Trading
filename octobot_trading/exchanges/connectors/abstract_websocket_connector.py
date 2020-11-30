@@ -24,6 +24,7 @@ import octobot_commons.logging as commons_logging
 import time
 import websockets
 
+import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.exchange_data as exchange_data
@@ -287,3 +288,9 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
 
     def get_exchange_pair(self, pair: str) -> str:
         raise NotImplementedError("get_exchange_pair is not implemented")
+
+    def get_max_handled_pair_with_time_frame(self) -> int:
+        """
+        :return: the maximum number of simultaneous pairs * time_frame that this exchange can handle.
+        """
+        return octobot_trading.constants.INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME

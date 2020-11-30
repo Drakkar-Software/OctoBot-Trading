@@ -209,3 +209,9 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
         for importer in exchange_importers:
             available_data = available_data.union(backtesting_api.get_available_data_types(importer))
         return available_data
+
+    def get_max_handled_pair_with_time_frame(self) -> int:
+        """
+        :return: the maximum number of simultaneous pairs * time_frame that this exchange can handle.
+        """
+        return constants.INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME
