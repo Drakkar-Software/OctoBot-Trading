@@ -79,3 +79,7 @@ cdef class AbstractExchange(util.Initializable):
 
     cdef object _uniformize_candles_timestamps(self, list candles)
     cdef void _uniformize_candle_timestamps(self, list candle)
+
+    # utils
+    cpdef void log_order_creation_error(self, object error, object order_type, str symbol, double quantity,
+                                        object price, object stop_price)
