@@ -66,13 +66,13 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             return self.clean_order(created_order)
 
         except ccxt.InsufficientFunds as e:
-            self.logger.error(e, order_type, symbol, quantity, price, stop_price)
+            self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(str(e))
             raise errors.MissingFunds(e)
         except ccxt.NotSupported:
             raise errors.NotSupported
         except Exception as e:
-            self.logger.error(e, order_type, symbol, quantity, price, stop_price)
+            self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.error(e)
         return None
 

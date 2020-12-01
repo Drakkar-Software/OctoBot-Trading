@@ -269,11 +269,6 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             self.logger.error(f"Order {order_id} failed to cancel | {e}")
         return cancel_resp is not None
 
-    def log_error(self, error, order_type, symbol, quantity, price, stop_price):
-        order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
-                     f" stop_price: {stop_price}"
-        self.logger.error(f"Failed to create order : {error} ({order_desc})")
-
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.client.calculate_fee(symbol=symbol,
                                          type=order_type,

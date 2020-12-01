@@ -32,4 +32,3 @@ cdef class CCXTExchange(abstract_exchange.AbstractExchange):
 
     cpdef dict get_ccxt_client_login_options(self)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)
-    cpdef void log_error(self, object error, object order_type, str symbol, double quantity, double price, double stop_price)
