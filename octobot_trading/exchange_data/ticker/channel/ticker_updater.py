@@ -62,13 +62,29 @@ class TickerUpdater(ticker_channel.TickerProducer):
     async def _fetch_ticker(self, pair):
         try:
             ticker: dict = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
-            if ticker:
+            if self._is_valid(ticker):
                 await self.push(pair, ticker)
                 await self.parse_mini_ticker(pair, ticker)
                 if self.channel.exchange_manager.is_future:
                     await self.parse_future_data(pair, ticker)
+            else:
+                self.logger.debug(f"Ignored incomplete ticker: {ticker}")
         except errors.FailedRequest as e:
             self.logger.warning(str(e))
+
+    @staticmethod
+    def _is_valid(ticker):
+        try:
+            # at least require close, volume and timestamp
+            return ticker and \
+                all(ticker[field] is not None
+                    for field in (
+                        enums.ExchangeConstantsTickersColumns.CLOSE.value,
+                        enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value,
+                        enums.ExchangeConstantsTickersColumns.TIMESTAMP.value
+                    ))
+        except KeyError:
+            return False
 
     def _cleanup_ticker_dict(self, ticker):
         try:
