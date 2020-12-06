@@ -32,6 +32,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
     OHLCV_ON_ERROR_TIME = 5
     OHLCV_MIN_REFRESH_TIME = 1
     OHLCV_REFRESH_TIME_THRESHOLD = 1.5  # to prevent spamming at candle closing
+    OHLCV_MISSING_DATA_REFRESH_RETRY_MAX_DELAY = 30 * common_constants.MINUTE_TO_SECONDS
 
     OHLCV_INITIALIZATION_TIMEOUT = 60
     OHLCV_INITIALIZATION_RETRY_DELAY = 10
@@ -116,8 +117,10 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             await asyncio.gather(*init_coroutines)
 
     async def _candle_callback(self, time_frame, pair):
-        time_frame_sleep: int = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
+        time_frame_seconds: int = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
+        time_frame_sleep: int = time_frame_seconds
         last_candle_timestamp: float = 0
+        missing_data_sleep_time = min(int(time_frame_seconds / 6), self.OHLCV_MISSING_DATA_REFRESH_RETRY_MAX_DELAY)
 
         while not self.should_stop and not self.channel.is_paused:
             try:
@@ -135,7 +138,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                     else:
                         last_candle: list = []
 
-                    if last_candle:
+                    if last_candle and len(candles) > 1:
                         current_candle_timestamp: float = last_candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
                         should_sleep_time: float = current_candle_timestamp + time_frame_sleep - time.time()
 
@@ -151,8 +154,10 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
 
                         await asyncio.sleep(self._ensure_correct_sleep_time(should_sleep_time, time_frame_sleep))
                     else:
-                        # TODO think about asyncio.call_at or call_later
-                        await asyncio.sleep(time_frame_sleep)
+                        # not enough candles: retry soon
+                        self.logger.debug(f"Missing candles in request results for {pair} on {time_frame}, refreshing "
+                                          f"in {missing_data_sleep_time} seconds (available candles: {candles}).")
+                        await asyncio.sleep(missing_data_sleep_time)
                 else:
                     # candles on this time frame have not been initialized: sleep until the next candle update
                     await asyncio.sleep(max(0.0, time_frame_sleep - (time.time() - start_update_time)))
