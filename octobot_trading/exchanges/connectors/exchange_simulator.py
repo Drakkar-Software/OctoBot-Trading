@@ -19,6 +19,7 @@ import octobot_backtesting.importers as importers
 import octobot_commons.number_util as number_util
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.time_frame_manager as time_frame_manager
+import octobot_commons.constants as commons_constants
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
@@ -141,25 +142,25 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
             enums.ExchangeConstantsMarketPropertyColumns.FEE.value: constants.CONFIG_DEFAULT_SIMULATOR_FEES
         }
 
-        if constants.CONFIG_SIMULATOR in self.config and \
-                constants.CONFIG_SIMULATOR_FEES in self.config[constants.CONFIG_SIMULATOR]:
-            if constants.CONFIG_SIMULATOR_FEES_MAKER in \
-                    self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES]:
+        if commons_constants.CONFIG_SIMULATOR in self.config and \
+                commons_constants.CONFIG_SIMULATOR_FEES in self.config[commons_constants.CONFIG_SIMULATOR]:
+            if commons_constants.CONFIG_SIMULATOR_FEES_MAKER in \
+                    self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES]:
                 result_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value] = \
-                    self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES][
-                        constants.CONFIG_SIMULATOR_FEES_MAKER]
+                    self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES][
+                        commons_constants.CONFIG_SIMULATOR_FEES_MAKER]
 
-            if constants.CONFIG_SIMULATOR_FEES_MAKER in self.config[constants.CONFIG_SIMULATOR][
-                constants.CONFIG_SIMULATOR_FEES]:
+            if commons_constants.CONFIG_SIMULATOR_FEES_MAKER in self.config[commons_constants.CONFIG_SIMULATOR][
+                commons_constants.CONFIG_SIMULATOR_FEES]:
                 result_fees[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value] = \
-                    self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES][
-                        constants.CONFIG_SIMULATOR_FEES_TAKER]
+                    self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES][
+                        commons_constants.CONFIG_SIMULATOR_FEES_TAKER]
 
-            if constants.CONFIG_SIMULATOR_FEES_WITHDRAW in self.config[constants.CONFIG_SIMULATOR][
-                constants.CONFIG_SIMULATOR_FEES]:
+            if commons_constants.CONFIG_SIMULATOR_FEES_WITHDRAW in self.config[commons_constants.CONFIG_SIMULATOR][
+                commons_constants.CONFIG_SIMULATOR_FEES]:
                 result_fees[enums.ExchangeConstantsMarketPropertyColumns.FEE.value] = \
-                    self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES][
-                        constants.CONFIG_SIMULATOR_FEES_WITHDRAW]
+                    self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES][
+                        commons_constants.CONFIG_SIMULATOR_FEES_WITHDRAW]
 
         return result_fees
 

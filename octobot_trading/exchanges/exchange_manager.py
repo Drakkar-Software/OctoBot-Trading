@@ -105,7 +105,7 @@ class ExchangeManager(util.Initializable):
         self.exchange_config.set_config_traded_pairs()
 
     def need_user_stream(self):
-        return self.config[constants.CONFIG_TRADER][common_constants.CONFIG_ENABLED_OPTION]
+        return self.config[common_constants.CONFIG_TRADER][common_constants.CONFIG_ENABLED_OPTION]
 
     def reset_exchange_symbols_data(self):
         self.exchange_symbols_data = exchange_data.ExchangeSymbolsData(self)
@@ -118,15 +118,15 @@ class ExchangeManager(util.Initializable):
     """
 
     def check_config(self, exchange_name):
-        if constants.CONFIG_EXCHANGE_KEY not in self.config[constants.CONFIG_EXCHANGES][exchange_name] \
-                or constants.CONFIG_EXCHANGE_SECRET not in self.config[constants.CONFIG_EXCHANGES][exchange_name]:
+        if common_constants.CONFIG_EXCHANGE_KEY not in self.config[common_constants.CONFIG_EXCHANGES][exchange_name] \
+                or common_constants.CONFIG_EXCHANGE_SECRET not in self.config[common_constants.CONFIG_EXCHANGES][exchange_name]:
             return False
         else:
             return True
 
     def enabled(self):
         # if we can get candlestick data
-        if self.is_simulated or self.exchange.name in self.config[constants.CONFIG_EXCHANGES]:
+        if self.is_simulated or self.exchange.name in self.config[common_constants.CONFIG_EXCHANGES]:
             return True
         else:
             self.logger.warning(f"Exchange {self.exchange.name} is currently disabled")
@@ -186,10 +186,10 @@ class ExchangeManager(util.Initializable):
 
     def should_decrypt_token(self, logger):
         if config_util.has_invalid_default_config_value(
-                self.config[constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
-                    constants.CONFIG_EXCHANGE_KEY, ''),
-                self.config[constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
-                    constants.CONFIG_EXCHANGE_SECRET, '')):
+                self.config[common_constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
+                    common_constants.CONFIG_EXCHANGE_KEY, ''),
+                self.config[common_constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
+                    common_constants.CONFIG_EXCHANGE_SECRET, '')):
             logger.warning("Exchange configuration tokens are not set yet, to use OctoBot's real trader's features, "
                            "please enter your api tokens in exchange configuration")
             return False
@@ -198,10 +198,10 @@ class ExchangeManager(util.Initializable):
     def get_exchange_credentials(self, logger, exchange_name):
         if self.ignore_config or not self.should_decrypt_token(logger) or self.without_auth:
             return "", "", ""
-        config_exchange = self.config[constants.CONFIG_EXCHANGES][exchange_name]
-        return (config_util.decrypt_element_if_possible(constants.CONFIG_EXCHANGE_KEY, config_exchange, None),
-                config_util.decrypt_element_if_possible(constants.CONFIG_EXCHANGE_SECRET, config_exchange, None),
-                config_util.decrypt_element_if_possible(constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None))
+        config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
+        return (config_util.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_KEY, config_exchange, None),
+                config_util.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None),
+                config_util.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None))
 
     @staticmethod
     def handle_token_error(error, logger):

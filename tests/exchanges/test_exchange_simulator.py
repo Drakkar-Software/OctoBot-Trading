@@ -16,6 +16,7 @@
 
 import pytest
 import octobot_trading.constants as constants
+import octobot_commons.constants as commons_constants
 from octobot_trading.enums import FeePropertyColumns, ExchangeConstantsMarketPropertyColumns, TraderOrderType
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
@@ -71,9 +72,9 @@ async def test_get_trade_fee(backtesting_trader):
     _, exchange_manager, trader_inst = backtesting_trader
 
     # force fees
-    exchange_manager.config[constants.CONFIG_SIMULATOR][constants.CONFIG_SIMULATOR_FEES] = {
-        constants.CONFIG_SIMULATOR_FEES_MAKER: 0.05,
-        constants.CONFIG_SIMULATOR_FEES_TAKER: 0.1
+    exchange_manager.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES] = {
+        commons_constants.CONFIG_SIMULATOR_FEES_MAKER: 0.05,
+        commons_constants.CONFIG_SIMULATOR_FEES_TAKER: 0.1
     }
 
     buy_market_fee = exchange_manager.exchange.get_trade_fee(DEFAULT_BACKTESTING_SYMBOL, TraderOrderType.BUY_MARKET, 10,

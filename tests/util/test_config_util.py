@@ -15,26 +15,26 @@
 #  License along with this library.
 import copy
 import octobot_trading.util as util
+import octobot_trading.constants as trading_constants
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.constants as commons_constants
-import octobot_trading.constants as trading_constants
 
 from tests import config
 
 
 def test_is_trader_enabled(config):
-    _test_enabled(config, util.is_trader_enabled, trading_constants.CONFIG_TRADER, False)
+    _test_enabled(config, util.is_trader_enabled, commons_constants.CONFIG_TRADER, False)
 
 
 def test_is_trader_simulator_enabled(config):
-    _test_enabled(config, util.is_trader_simulator_enabled, trading_constants.CONFIG_SIMULATOR, True)
+    _test_enabled(config, util.is_trader_simulator_enabled, commons_constants.CONFIG_SIMULATOR, True)
 
 
 def test_is_trade_history_loading_enabled(config):
     assert util.is_trade_history_loading_enabled(config) is True
-    config[trading_constants.CONFIG_TRADER][trading_constants.CONFIG_LOAD_TRADE_HISTORY] = False
+    config[commons_constants.CONFIG_TRADER][commons_constants.CONFIG_LOAD_TRADE_HISTORY] = False
     assert util.is_trade_history_loading_enabled(config) is False
-    config.pop(trading_constants.CONFIG_TRADER)
+    config.pop(commons_constants.CONFIG_TRADER)
     assert util.is_trade_history_loading_enabled(config) is True
     assert util.is_trade_history_loading_enabled(config, False) is False
 
@@ -101,7 +101,7 @@ def test_get_pairs(config):
 
 
 def test_get_market_pair(config):
-    config[trading_constants.CONFIG_TRADING][trading_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC"
+    config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC"
     assert util.get_market_pair(config, "ETH") == ("", False)
     assert util.get_market_pair(config, "ADA") == ("ADA/BTC", False)
     assert util.get_market_pair(config, "USDT") == ("BTC/USDT", True)
@@ -114,11 +114,11 @@ def test_get_market_pair(config):
 
 
 def test_get_reference_market(config):
-    config[trading_constants.CONFIG_TRADING][trading_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC"
+    config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC"
     assert util.get_reference_market(config) == "BTC"
-    config[trading_constants.CONFIG_TRADING][trading_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC1"
+    config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC1"
     assert util.get_reference_market(config) == "BTC1"
-    config[trading_constants.CONFIG_TRADING].pop(trading_constants.CONFIG_TRADER_REFERENCE_MARKET, None)
+    config[commons_constants.CONFIG_TRADING].pop(commons_constants.CONFIG_TRADER_REFERENCE_MARKET, None)
     assert util.get_reference_market(config) == trading_constants.DEFAULT_REFERENCE_MARKET
 
 

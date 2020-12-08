@@ -15,9 +15,9 @@
 #  License along with this library.
 from contextlib import asynccontextmanager
 
+import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.constants import CONFIG_EXCHANGES
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
@@ -25,8 +25,8 @@ from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 @asynccontextmanager
 async def get_exchange_manager(exchange_name, config=None):
     config = config or load_test_config()
-    if exchange_name not in config[CONFIG_EXCHANGES]:
-        config[CONFIG_EXCHANGES][exchange_name] = {}
+    if exchange_name not in config[commons_constants.CONFIG_EXCHANGES]:
+        config[commons_constants.CONFIG_EXCHANGES][exchange_name] = {}
     exchange_manager_instance = ExchangeManager(config, exchange_name)
     await exchange_manager_instance.initialize()
     try:

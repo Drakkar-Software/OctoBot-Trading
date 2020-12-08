@@ -15,9 +15,8 @@
 #  License along with this library.
 import pytest
 
-from octobot_commons.constants import CONFIG_ENABLED_OPTION
+import octobot_commons.constants as commons_constants
 from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.exchanges.traders.trader import Trader
 
@@ -25,7 +24,7 @@ from octobot_trading.exchanges.traders.trader import Trader
 @pytest.fixture
 async def trader(exchange_manager):
     config = load_test_config()
-    config[CONFIG_TRADER][CONFIG_ENABLED_OPTION] = True
+    config[commons_constants.CONFIG_TRADER][commons_constants.CONFIG_ENABLED_OPTION] = True
     trader_inst = Trader(load_test_config(), exchange_manager)
     await trader_inst.initialize()
     return config, exchange_manager, trader_inst
@@ -34,7 +33,7 @@ async def trader(exchange_manager):
 @pytest.fixture
 async def trader_simulator(exchange_manager):
     config = load_test_config()
-    config[CONFIG_SIMULATOR][CONFIG_ENABLED_OPTION] = True
+    config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_ENABLED_OPTION] = True
     trader_inst = TraderSimulator(load_test_config(), exchange_manager)
     await trader_inst.initialize()
     return config, exchange_manager, trader_inst
