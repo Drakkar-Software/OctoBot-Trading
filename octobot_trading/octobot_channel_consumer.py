@@ -19,8 +19,8 @@ import async_channel.channels as channel_instances
 import octobot_commons.channels_name as channels_name
 import octobot_commons.logging as logging
 import octobot_commons.enums as enums
+import octobot_commons.constants as commons_constants
 
-import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.util as util
@@ -97,22 +97,22 @@ def _set_exchange_type_details(exchange_builder, config, backtesting):
         exchange_builder.is_backtesting(backtesting)
     # use exchange sandbox
     exchange_builder.is_sandboxed(
-        config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
-            constants.CONFIG_EXCHANGE_SANDBOXED, False)
+        config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            commons_constants.CONFIG_EXCHANGE_SANDBOXED, False)
     )
     # exchange trading type
-    if config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
-            constants.CONFIG_EXCHANGE_FUTURE, False):
+    if config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            commons_constants.CONFIG_EXCHANGE_FUTURE, False):
         exchange_builder.is_future(True)
-    elif config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
-            constants.CONFIG_EXCHANGE_MARGIN, False):
+    elif config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            commons_constants.CONFIG_EXCHANGE_MARGIN, False):
         exchange_builder.is_margin(True)
-    elif config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
-            constants.CONFIG_EXCHANGE_SPOT, True):
+    elif config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            commons_constants.CONFIG_EXCHANGE_SPOT, True):
         # Use spot trading as default trading type
         exchange_builder.is_spot_only(True)
 
     # rest, web socket
-    if config[constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
-            constants.CONFIG_EXCHANGE_REST_ONLY, False):
+    if config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+            commons_constants.CONFIG_EXCHANGE_REST_ONLY, False):
         exchange_builder.is_rest_only()

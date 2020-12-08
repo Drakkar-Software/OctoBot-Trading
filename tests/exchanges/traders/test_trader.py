@@ -21,11 +21,9 @@ import time
 from mock import AsyncMock, patch
 
 from tests import event_loop
+import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
-from octobot_commons.constants import CONFIG_ENABLED_OPTION, PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.constants import CONFIG_TRADER, CONFIG_TRADER_RISK, CONFIG_TRADING, CONFIG_TRADER_RISK_MIN, \
-    CONFIG_TRADER_RISK_MAX
 from octobot_trading.personal_data.orders import Order
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
@@ -73,10 +71,10 @@ class TestTrader:
         config, exchange_manager, trader_inst = await self.init_default()
         await self.stop(exchange_manager)
 
-        config[CONFIG_TRADER][CONFIG_ENABLED_OPTION] = True
+        config[commons_constants.CONFIG_TRADER][commons_constants.CONFIG_ENABLED_OPTION] = True
         assert Trader.enabled(config)
 
-        config[CONFIG_TRADER][CONFIG_ENABLED_OPTION] = False
+        config[commons_constants.CONFIG_TRADER][commons_constants.CONFIG_ENABLED_OPTION] = False
         assert not Trader.enabled(config)
         await self.stop(exchange_manager)
 
@@ -84,17 +82,17 @@ class TestTrader:
         config, exchange_manager, trader_inst = await self.init_default()
         await self.stop(exchange_manager)
 
-        config[CONFIG_TRADING][CONFIG_TRADER_RISK] = 0
+        config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_RISK] = 0
         trader_1 = TraderSimulator(config, exchange_manager)
-        assert round(trader_1.risk, 2) == CONFIG_TRADER_RISK_MIN
+        assert round(trader_1.risk, 2) == commons_constants.CONFIG_TRADER_RISK_MIN
         await self.stop(exchange_manager)
 
-        config[CONFIG_TRADING][CONFIG_TRADER_RISK] = 2
+        config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_RISK] = 2
         trader_2 = TraderSimulator(config, exchange_manager)
-        assert trader_2.risk == CONFIG_TRADER_RISK_MAX
+        assert trader_2.risk == commons_constants.CONFIG_TRADER_RISK_MAX
         await self.stop(exchange_manager)
 
-        config[CONFIG_TRADING][CONFIG_TRADER_RISK] = 0.5
+        config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_RISK] = 0.5
         trader_2 = TraderSimulator(config, exchange_manager)
         assert trader_2.risk == 0.5
         await self.stop(exchange_manager)
@@ -524,8 +522,8 @@ class TestTrader:
         assert not trades_manager.trades
 
         with pytest.raises(KeyError):
-            assert portfolio_manager.portfolio.portfolio["BQX"][PORTFOLIO_AVAILABLE] == 0
-        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_AVAILABLE] == 0.5
+            assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 0
+        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 0.5
 
         # Fill only 1st one
         limit_buy.filled_price = 4
@@ -540,9 +538,9 @@ class TestTrader:
         assert second_limit_buy in orders_manager.get_open_orders()
 
         assert initial_portfolio != portfolio_manager.portfolio
-        assert portfolio_manager.portfolio.portfolio["BQX"][PORTFOLIO_AVAILABLE] == 2
-        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_AVAILABLE] == 0.5
-        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_TOTAL] == 2
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 2
+        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 0.5
+        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == 2
 
         await self.stop(exchange_manager)
 
@@ -578,10 +576,10 @@ class TestTrader:
         assert all(trade.status is OrderStatus.FILLED for trade in trades_manager.trades.values())
 
         assert initial_portfolio != portfolio_manager.portfolio
-        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_AVAILABLE] == 9
-        assert portfolio_manager.portfolio.portfolio["BTC"][PORTFOLIO_TOTAL] == 9
-        assert portfolio_manager.portfolio.portfolio["BQX"][PORTFOLIO_AVAILABLE] == 10
-        assert portfolio_manager.portfolio.portfolio["BQX"][PORTFOLIO_TOTAL] == 10
+        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 9
+        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == 9
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 10
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_TOTAL] == 10
 
         await self.stop(exchange_manager)
 
@@ -646,12 +644,12 @@ class TestTrader:
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
         portfolio_manager.portfolio.portfolio["ADA"] = {
-            PORTFOLIO_AVAILABLE: 1500,
-            PORTFOLIO_TOTAL: 1500
+            commons_constants.PORTFOLIO_AVAILABLE: 1500,
+            commons_constants.PORTFOLIO_TOTAL: 1500
         }
         portfolio_manager.portfolio.portfolio["USDT"] = {
-            PORTFOLIO_AVAILABLE: 1000,
-            PORTFOLIO_TOTAL: 1000
+            commons_constants.PORTFOLIO_AVAILABLE: 1000,
+            commons_constants.PORTFOLIO_TOTAL: 1000
         }
 
         if not os.getenv('CYTHON_IGNORE'):
@@ -686,12 +684,12 @@ class TestTrader:
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
         portfolio_manager.portfolio.portfolio["ADA"] = {
-            PORTFOLIO_AVAILABLE: 1500,
-            PORTFOLIO_TOTAL: 1500
+            commons_constants.PORTFOLIO_AVAILABLE: 1500,
+            commons_constants.PORTFOLIO_TOTAL: 1500
         }
         portfolio_manager.portfolio.portfolio["USDT"] = {
-            PORTFOLIO_AVAILABLE: 1000,
-            PORTFOLIO_TOTAL: 1000
+            commons_constants.PORTFOLIO_AVAILABLE: 1000,
+            commons_constants.PORTFOLIO_TOTAL: 1000
         }
 
         if not os.getenv('CYTHON_IGNORE'):
@@ -725,8 +723,8 @@ class TestTrader:
             assert len(orders) == 0
 
             portfolio_manager.portfolio.portfolio["XRP"] = {
-                PORTFOLIO_AVAILABLE: 0,
-                PORTFOLIO_TOTAL: 0
+                commons_constants.PORTFOLIO_AVAILABLE: 0,
+                commons_constants.PORTFOLIO_TOTAL: 0
             }
 
         if not os.getenv('CYTHON_IGNORE'):
@@ -744,8 +742,8 @@ class TestTrader:
             assert len(orders) == 0
 
             portfolio_manager.portfolio.portfolio["ICX"] = {
-                PORTFOLIO_AVAILABLE: 0.0000001,
-                PORTFOLIO_TOTAL: 0.0000001
+                commons_constants.PORTFOLIO_AVAILABLE: 0.0000001,
+                commons_constants.PORTFOLIO_TOTAL: 0.0000001
             }
 
         if not os.getenv('CYTHON_IGNORE'):

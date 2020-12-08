@@ -15,11 +15,10 @@
 #  License along with this library.
 import pytest
 
+import octobot_commons.constants as commons_constants
 from octobot_backtesting.backtesting import Backtesting
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
-from octobot_commons.constants import PORTFOLIO_TOTAL
 from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_STARTING_PORTFOLIO
 from octobot_trading.modes.channel.abstract_mode_consumer import AbstractTradingModeConsumer
 from octobot_trading.enums import EvaluatorStates
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
@@ -34,9 +33,11 @@ pytestmark = pytest.mark.asyncio
 async def _get_tools():
     symbol = "BTC/USDT"
     config = load_test_config()
-    config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]["SUB"] = 0.000000000000000000005
-    config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]["BNB"] = 0.000000000000000000005
-    config[CONFIG_SIMULATOR][CONFIG_STARTING_PORTFOLIO]["USDT"] = 2000
+    config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]["SUB"] = \
+        0.000000000000000000005
+    config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]["BNB"] = \
+        0.000000000000000000005
+    config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]["USDT"] = 2000
     exchange_manager = ExchangeManager(config, "binance")
 
     # use backtesting not to spam exchanges apis
@@ -135,10 +136,10 @@ async def test_get_holdings_ratio():
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.portfolio_current_value = 11
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio = {
         "BTC": {
-            PORTFOLIO_TOTAL: 10
+            commons_constants.PORTFOLIO_TOTAL: 10
         },
         "USDT": {
-            PORTFOLIO_TOTAL: 1000
+            commons_constants.PORTFOLIO_TOTAL: 1000
         }
     }
     ratio = await consumer.get_holdings_ratio("BTC")
@@ -152,7 +153,7 @@ async def test_get_holdings_ratio():
     assert round(ratio, 8) == 1
     # add ETH and try to get ratio without symbol price
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["ETH"] = {
-        PORTFOLIO_TOTAL: 10
+        commons_constants.PORTFOLIO_TOTAL: 10
     }
     # force not backtesting mode
     exchange_manager.is_backtesting = False

@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_commons.logging as logging
+import octobot_commons.constants as commons_constants
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
@@ -138,7 +139,8 @@ class PortfolioManager(util.Initializable):
         """
         Load new portfolio from config settings
         """
-        portfolio_amount_dict = self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_STARTING_PORTFOLIO]
+        portfolio_amount_dict = self.config[commons_constants.CONFIG_SIMULATOR][
+            commons_constants.CONFIG_STARTING_PORTFOLIO]
 
         try:
             self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
@@ -146,7 +148,7 @@ class PortfolioManager(util.Initializable):
             self.logger.exception(balance_update_exception, True, f"Error when loading trading history, "
                                                                   f"will reset history. ({balance_update_exception})")
             self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(
-                self.config[constants.CONFIG_SIMULATOR][constants.CONFIG_STARTING_PORTFOLIO]))
+                self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]))
 
     def clear(self):
         """

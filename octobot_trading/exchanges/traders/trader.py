@@ -16,12 +16,13 @@
 
 import octobot_commons.logging as logging
 
-import octobot_trading.constants
+import octobot_commons.constants
 import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.orders.order_adapter as order_adapter
 import octobot_trading.personal_data.trades.trade_factory as trade_factory
 import octobot_trading.enums
+import octobot_trading.constants
 import octobot_trading.util as util
 
 
@@ -36,8 +37,8 @@ class Trader(util.Initializable):
 
         self.risk = 0
         try:
-            self.set_risk(self.config[octobot_trading.constants.CONFIG_TRADING]
-                          [octobot_trading.constants.CONFIG_TRADER_RISK])
+            self.set_risk(self.config[octobot_commons.constants.CONFIG_TRADING]
+                          [octobot_commons.constants.CONFIG_TRADER_RISK])
         except KeyError:
             self.set_risk(0)
 
@@ -60,10 +61,10 @@ class Trader(util.Initializable):
         return util.is_trader_enabled(config)
 
     def set_risk(self, risk):
-        if risk < octobot_trading.constants.CONFIG_TRADER_RISK_MIN:
-            self.risk = octobot_trading.constants.CONFIG_TRADER_RISK_MIN
-        elif risk > octobot_trading.constants.CONFIG_TRADER_RISK_MAX:
-            self.risk = octobot_trading.constants.CONFIG_TRADER_RISK_MAX
+        if risk < octobot_commons.constants.CONFIG_TRADER_RISK_MIN:
+            self.risk = octobot_commons.constants.CONFIG_TRADER_RISK_MIN
+        elif risk > octobot_commons.constants.CONFIG_TRADER_RISK_MAX:
+            self.risk = octobot_commons.constants.CONFIG_TRADER_RISK_MAX
         else:
             self.risk = risk
         return self.risk

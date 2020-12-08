@@ -14,16 +14,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
 import octobot_commons.constants as commons_constants
-import octobot_commons.symbol_util as symbol_util
 import octobot_trading.constants as trading_constants
+import octobot_commons.symbol_util as symbol_util
 
 
 def is_trader_enabled(config) -> bool:
-    return _is_trader_enabled(config, trading_constants.CONFIG_TRADER)
+    return _is_trader_enabled(config, commons_constants.CONFIG_TRADER)
 
 
 def is_trader_simulator_enabled(config) -> bool:
-    return _is_trader_enabled(config, trading_constants.CONFIG_SIMULATOR)
+    return _is_trader_enabled(config, commons_constants.CONFIG_SIMULATOR)
 
 
 def _is_trader_enabled(config, trader_key) -> bool:
@@ -38,7 +38,7 @@ def _is_trader_enabled(config, trader_key) -> bool:
 
 def is_trade_history_loading_enabled(config, default=True) -> bool:
     try:
-        return config[trading_constants.CONFIG_TRADER].get(trading_constants.CONFIG_LOAD_TRADE_HISTORY, default)
+        return config[commons_constants.CONFIG_TRADER].get(commons_constants.CONFIG_LOAD_TRADE_HISTORY, default)
     except KeyError:
         return default
 
@@ -78,7 +78,7 @@ def get_pairs(config, currency, enabled_only=False) -> list:
 
 
 def get_market_pair(config, currency, enabled_only=False) -> (str, bool):
-    if trading_constants.CONFIG_TRADING in config:
+    if commons_constants.CONFIG_TRADING in config:
         reference_market = get_reference_market(config)
         for symbol in get_symbols(config, enabled_only):
             symbol_currency, symbol_market = symbol_util.split_symbol(symbol)
@@ -91,5 +91,5 @@ def get_market_pair(config, currency, enabled_only=False) -> (str, bool):
 
 def get_reference_market(config) -> str:
     # The reference market is the currency unit of the calculated quantity value
-    return config[trading_constants.CONFIG_TRADING].get(trading_constants.CONFIG_TRADER_REFERENCE_MARKET,
+    return config[commons_constants.CONFIG_TRADING].get(commons_constants.CONFIG_TRADER_REFERENCE_MARKET,
                                                         trading_constants.DEFAULT_REFERENCE_MARKET)

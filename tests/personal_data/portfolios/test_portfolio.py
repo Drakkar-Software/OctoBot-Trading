@@ -15,10 +15,8 @@
 #  License along with this library.
 
 import pytest
-from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
+import octobot_commons.constants as commons_constants
 
-from octobot_trading.constants import CONFIG_SIMULATOR_FEES_MAKER, CONFIG_SIMULATOR_FEES_TAKER, CONFIG_SIMULATOR, \
-    CONFIG_SIMULATOR_FEES
 from octobot_trading.enums import TraderOrderType, TradeOrderSide
 from octobot_trading.personal_data.orders import BuyLimitOrder
 from octobot_trading.personal_data.orders import SellLimitOrder
@@ -58,20 +56,20 @@ async def test_get_portfolio_from_amount_dict(backtesting_trader):
 async def test_get_currency_portfolio(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("NANO", PORTFOLIO_TOTAL) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("NANO", commons_constants.PORTFOLIO_TOTAL) == 0
 
 
 async def test_update_portfolio_from_balance(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    test_portfolio = {"zyx": {PORTFOLIO_AVAILABLE: 0.1,
-                              PORTFOLIO_TOTAL: 0.1},
-                      "BTC": {PORTFOLIO_AVAILABLE: 1,
-                              PORTFOLIO_TOTAL: 1},
-                      "ETH": {PORTFOLIO_AVAILABLE: 50,
-                              PORTFOLIO_TOTAL: 150}}
+    test_portfolio = {"zyx": {commons_constants.PORTFOLIO_AVAILABLE: 0.1,
+                              commons_constants.PORTFOLIO_TOTAL: 0.1},
+                      "BTC": {commons_constants.PORTFOLIO_AVAILABLE: 1,
+                              commons_constants.PORTFOLIO_TOTAL: 1},
+                      "ETH": {commons_constants.PORTFOLIO_AVAILABLE: 50,
+                              commons_constants.PORTFOLIO_TOTAL: 150}}
 
     assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio)
     assert portfolio_manager.portfolio.portfolio == test_portfolio
@@ -83,34 +81,34 @@ async def test_update_portfolio_from_balance(backtesting_trader):
 async def test_update_portfolio_from_balance_with_deltas(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    test_portfolio = {"BTC": {PORTFOLIO_AVAILABLE: 1,
-                              PORTFOLIO_TOTAL: 1}}
+    test_portfolio = {"BTC": {commons_constants.PORTFOLIO_AVAILABLE: 1,
+                              commons_constants.PORTFOLIO_TOTAL: 1}}
 
     assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio, force_replace=False)
     assert portfolio_manager.portfolio.portfolio == {
-        'BTC': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 1},
-        'USDT': {PORTFOLIO_AVAILABLE: 1000, PORTFOLIO_TOTAL: 1000}
+        'BTC': {commons_constants.PORTFOLIO_AVAILABLE: 1, commons_constants.PORTFOLIO_TOTAL: 1},
+        'USDT': {commons_constants.PORTFOLIO_AVAILABLE: 1000, commons_constants.PORTFOLIO_TOTAL: 1000}
     }
 
-    test_portfolio_2 = {"NANO": {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 2}}
+    test_portfolio_2 = {"NANO": {commons_constants.PORTFOLIO_AVAILABLE: 1, commons_constants.PORTFOLIO_TOTAL: 2}}
 
     assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio_2, force_replace=False)
     assert portfolio_manager.portfolio.portfolio == {
-        'BTC': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 1},
-        'USDT': {PORTFOLIO_AVAILABLE: 1000, PORTFOLIO_TOTAL: 1000},
-        'NANO': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 2}
+        'BTC': {commons_constants.PORTFOLIO_AVAILABLE: 1, commons_constants.PORTFOLIO_TOTAL: 1},
+        'USDT': {commons_constants.PORTFOLIO_AVAILABLE: 1000, commons_constants.PORTFOLIO_TOTAL: 1000},
+        'NANO': {commons_constants.PORTFOLIO_AVAILABLE: 1, commons_constants.PORTFOLIO_TOTAL: 2}
     }
 
-    test_portfolio_3 = {"USDT": {PORTFOLIO_AVAILABLE: 250, PORTFOLIO_TOTAL: 500}}
+    test_portfolio_3 = {"USDT": {commons_constants.PORTFOLIO_AVAILABLE: 250, commons_constants.PORTFOLIO_TOTAL: 500}}
 
     assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio_3, force_replace=False)
     assert portfolio_manager.portfolio.portfolio == {
-        'BTC': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 1},
-        'USDT': {PORTFOLIO_AVAILABLE: 250, PORTFOLIO_TOTAL: 500},
-        'NANO': {PORTFOLIO_AVAILABLE: 1, PORTFOLIO_TOTAL: 2}
+        'BTC': {commons_constants.PORTFOLIO_AVAILABLE: 1, commons_constants.PORTFOLIO_TOTAL: 1},
+        'USDT': {commons_constants.PORTFOLIO_AVAILABLE: 250, commons_constants.PORTFOLIO_TOTAL: 500},
+        'NANO': {commons_constants.PORTFOLIO_AVAILABLE: 1, commons_constants.PORTFOLIO_TOTAL: 2}
     }
 
-    test_portfolio_4 = {"USDT": {PORTFOLIO_AVAILABLE: 100, PORTFOLIO_TOTAL: 100}}
+    test_portfolio_4 = {"USDT": {commons_constants.PORTFOLIO_AVAILABLE: 100, commons_constants.PORTFOLIO_TOTAL: 100}}
 
     assert portfolio_manager.portfolio.update_portfolio_from_balance(test_portfolio_4, force_replace=True)
     assert portfolio_manager.portfolio.portfolio == test_portfolio_4
@@ -130,15 +128,15 @@ async def test_update_portfolio(backtesting_trader):
 
     # update portfolio with creations
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 300
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 300
 
     await fill_limit_or_stop_order(limit_buy)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 20
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 300
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 20
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 300
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 20
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 300
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 20
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 300
 
     # Test buy order
     market_sell = SellMarketOrder(trader)
@@ -150,16 +148,16 @@ async def test_update_portfolio(backtesting_trader):
 
     # update portfolio with creations
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 12
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 300
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 12
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 300
 
     await fill_market_order(market_sell)
 
     # when filling market sell
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 12
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 940
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 12
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 940
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 12
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 940
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 12
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 940
 
 
 async def test_update_portfolio_with_filled_orders(backtesting_trader):
@@ -167,9 +165,9 @@ async def test_update_portfolio_with_filled_orders(backtesting_trader):
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
     # force fees => should have consequences
-    exchange_manager.exchange.config[CONFIG_SIMULATOR][CONFIG_SIMULATOR_FEES] = {
-        CONFIG_SIMULATOR_FEES_MAKER: 0.05,
-        CONFIG_SIMULATOR_FEES_TAKER: 0.1
+    exchange_manager.exchange.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES] = {
+        commons_constants.CONFIG_SIMULATOR_FEES_MAKER: 0.05,
+        commons_constants.CONFIG_SIMULATOR_FEES_TAKER: 0.1
     }
 
     # Test buy order
@@ -213,29 +211,29 @@ async def test_update_portfolio_with_filled_orders(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_available(stop_loss, True)
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 2.8
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 900
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 2.8
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 900
 
     # when cancelling limit sell, market sell and stop orders
     portfolio_manager.portfolio.update_portfolio_available(stop_loss, False)
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, False)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 7
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 900
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 7
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 900
 
     # when filling limit buy
     await fill_limit_or_stop_order(limit_buy)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 8.999
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 900
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 11.999
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 900
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 8.999
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 900
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 11.999
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 900
 
     # when filling market sell
     await fill_market_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 8.999
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1109.79
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 8.999
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1109.79
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 8.999
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 1109.79
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 8.999
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1109.79
 
 
 async def test_update_portfolio_with_cancelled_orders(backtesting_trader):
@@ -243,9 +241,9 @@ async def test_update_portfolio_with_cancelled_orders(backtesting_trader):
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
     # force fees => shouldn't do anything
-    exchange_manager.exchange.config[CONFIG_SIMULATOR][CONFIG_SIMULATOR_FEES] = {
-        CONFIG_SIMULATOR_FEES_MAKER: 0.05,
-        CONFIG_SIMULATOR_FEES_TAKER: 0.1
+    exchange_manager.exchange.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES] = {
+        commons_constants.CONFIG_SIMULATOR_FEES_MAKER: 0.05,
+        commons_constants.CONFIG_SIMULATOR_FEES_TAKER: 0.1
     }
 
     # Test buy order
@@ -286,10 +284,11 @@ async def test_update_portfolio_with_cancelled_orders(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
 
-    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE), 1) == 1.7
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 800
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE),
+                 1) == 1.7
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 800
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
     # with no filled orders
     portfolio_manager.portfolio.update_portfolio_available(stop_loss, False)
@@ -297,10 +296,10 @@ async def test_update_portfolio_with_cancelled_orders(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, False)
     portfolio_manager.portfolio.update_portfolio_available(market_sell, False)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
 
 async def test_update_portfolio_with_stop_loss_sell_orders(backtesting_trader):
@@ -335,10 +334,11 @@ async def test_update_portfolio_with_stop_loss_sell_orders(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
 
-    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE), 1) == 6
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 800
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE),
+                 1) == 6
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 800
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
     # cancel limits
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, False)
@@ -348,10 +348,10 @@ async def test_update_portfolio_with_stop_loss_sell_orders(backtesting_trader):
 
     # filling stop loss
     # typical stop loss behavior --> update available before update portfolio
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 6
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1240
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 6
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1240
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 6
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 1240
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 6
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1240
 
 
 async def test_update_portfolio_with_stop_loss_buy_orders(backtesting_trader):
@@ -386,10 +386,11 @@ async def test_update_portfolio_with_stop_loss_buy_orders(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
 
-    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE), 1) == 6
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 800
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE),
+                 1) == 6
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 800
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
     # cancel limits
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, False)
@@ -399,10 +400,10 @@ async def test_update_portfolio_with_stop_loss_buy_orders(backtesting_trader):
 
     # filling stop loss
     # typical stop loss behavior --> update available before update portfolio
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 14
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 760
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 14
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 760
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 14
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 760
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 14
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 760
 
 
 async def test_update_portfolio_with_some_filled_orders(backtesting_trader):
@@ -473,10 +474,11 @@ async def test_update_portfolio_with_some_filled_orders(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
     portfolio_manager.portfolio.update_portfolio_available(limit_buy_2, True)
 
-    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE), 1) == 3
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 680
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE),
+                 1) == 3
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 680
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
     # Test stop loss order
     stop_loss_4 = StopLossOrder(trader, side=TradeOrderSide.BUY)
@@ -496,10 +498,11 @@ async def test_update_portfolio_with_some_filled_orders(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_5, True)
 
     # portfolio did not change as stop losses are not affecting available funds
-    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE), 1) == 3
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 680
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE),
+                 1) == 3
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 680
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
     # cancels
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_3, False)
@@ -513,16 +516,16 @@ async def test_update_portfolio_with_some_filled_orders(backtesting_trader):
     await fill_limit_or_stop_order(limit_sell_3)
     await fill_limit_or_stop_order(limit_buy_2)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 7
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1200
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 7
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1200
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 7
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 1200
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 7
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1200
 
     await fill_limit_or_stop_order(stop_loss_4)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 11
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1120
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 11
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1120
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 11
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 1120
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 11
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1120
 
 
 async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
@@ -665,10 +668,12 @@ async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_available(limit_buy_5, True)
     portfolio_manager.portfolio.update_portfolio_available(limit_buy_6, True)
 
-    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE), 1) == 2.1
-    assert round(portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE), 7) == 62.7295063
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE),
+                 1) == 2.1
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE),
+                 7) == 62.7295063
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
     # cancels
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_3, False)
@@ -690,10 +695,11 @@ async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
     await fill_limit_or_stop_order(limit_buy_5)
     await fill_limit_or_stop_order(limit_buy_6)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 13.05448
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 674.22
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 13.05448
-    assert round(portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL), 7) == 673.4295063
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 13.05448
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 674.22
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 13.05448
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL),
+                 7) == 673.4295063
 
 
 async def test_update_portfolio_with_multiple_symbols_orders(backtesting_trader):
@@ -710,17 +716,17 @@ async def test_update_portfolio_with_multiple_symbols_orders(backtesting_trader)
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("ETH", PORTFOLIO_AVAILABLE) == 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 300
-    assert portfolio_manager.portfolio.get_currency_portfolio("ETH", PORTFOLIO_TOTAL) == 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("ETH", commons_constants.PORTFOLIO_AVAILABLE) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 300
+    assert portfolio_manager.portfolio.get_currency_portfolio("ETH", commons_constants.PORTFOLIO_TOTAL) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
     await fill_market_order(market_buy)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("ETH", PORTFOLIO_AVAILABLE) == 100
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 300
-    assert portfolio_manager.portfolio.get_currency_portfolio("ETH", PORTFOLIO_TOTAL) == 100
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 300
+    assert portfolio_manager.portfolio.get_currency_portfolio("ETH", commons_constants.PORTFOLIO_AVAILABLE) == 100
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 300
+    assert portfolio_manager.portfolio.get_currency_portfolio("ETH", commons_constants.PORTFOLIO_TOTAL) == 100
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 300
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
@@ -732,17 +738,20 @@ async def test_update_portfolio_with_multiple_symbols_orders(backtesting_trader)
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("LTC", PORTFOLIO_AVAILABLE) == 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 8.647780000000001
-    assert portfolio_manager.portfolio.get_currency_portfolio("LTC", PORTFOLIO_TOTAL) == 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("LTC", commons_constants.PORTFOLIO_AVAILABLE) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
+                                                              commons_constants.PORTFOLIO_AVAILABLE) == 8.647780000000001
+    assert portfolio_manager.portfolio.get_currency_portfolio("LTC", commons_constants.PORTFOLIO_TOTAL) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
 
     await fill_market_order(market_buy)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("LTC", PORTFOLIO_AVAILABLE) == 100
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 8.647780000000001
-    assert portfolio_manager.portfolio.get_currency_portfolio("LTC", PORTFOLIO_TOTAL) == 100
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 8.647780000000001
+    assert portfolio_manager.portfolio.get_currency_portfolio("LTC", commons_constants.PORTFOLIO_AVAILABLE) == 100
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
+                                                              commons_constants.PORTFOLIO_AVAILABLE) == 8.647780000000001
+    assert portfolio_manager.portfolio.get_currency_portfolio("LTC", commons_constants.PORTFOLIO_TOTAL) == 100
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
+                                                              commons_constants.PORTFOLIO_TOTAL) == 8.647780000000001
 
     # Test buy order
     limit_buy = BuyLimitOrder(trader)
@@ -754,17 +763,21 @@ async def test_update_portfolio_with_multiple_symbols_orders(backtesting_trader)
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("XRP", PORTFOLIO_AVAILABLE) == 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 8.280801174155501
-    assert portfolio_manager.portfolio.get_currency_portfolio("XRP", PORTFOLIO_TOTAL) == 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 8.647780000000001
+    assert portfolio_manager.portfolio.get_currency_portfolio("XRP", commons_constants.PORTFOLIO_AVAILABLE) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
+                                                              commons_constants.PORTFOLIO_AVAILABLE) == 8.280801174155501
+    assert portfolio_manager.portfolio.get_currency_portfolio("XRP", commons_constants.PORTFOLIO_TOTAL) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
+                                                              commons_constants.PORTFOLIO_TOTAL) == 8.647780000000001
 
     # cancel
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, False)
-    assert portfolio_manager.portfolio.get_currency_portfolio("XRP", PORTFOLIO_AVAILABLE) == 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 8.647780000000001
-    assert portfolio_manager.portfolio.get_currency_portfolio("XRP", PORTFOLIO_TOTAL) == 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 8.647780000000001
+    assert portfolio_manager.portfolio.get_currency_portfolio("XRP", commons_constants.PORTFOLIO_AVAILABLE) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
+                                                              commons_constants.PORTFOLIO_AVAILABLE) == 8.647780000000001
+    assert portfolio_manager.portfolio.get_currency_portfolio("XRP", commons_constants.PORTFOLIO_TOTAL) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
+                                                              commons_constants.PORTFOLIO_TOTAL) == 8.647780000000001
 
 
 async def test_reset_portfolio_available(backtesting_trader):
@@ -782,10 +795,10 @@ async def test_reset_portfolio_available(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
     portfolio_manager.portfolio.reset_portfolio_available()
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
     # Test sell order
     limit_sell = SellLimitOrder(trader)
@@ -829,18 +842,18 @@ async def test_reset_portfolio_available(backtesting_trader):
     # reset equivalent of the ven buy order
     portfolio_manager.portfolio.reset_portfolio_available("BTC", 4 * 0.5)
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 6
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 6
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 0
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
     # reset equivalent of the btc buy orders 1 and 2
     portfolio_manager.portfolio.reset_portfolio_available("USDT")
 
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 6
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_AVAILABLE) == 6
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", commons_constants.PORTFOLIO_TOTAL) == 10
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_AVAILABLE) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", commons_constants.PORTFOLIO_TOTAL) == 1000
 
 
 async def test_default_impl(backtesting_trader):

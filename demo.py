@@ -17,17 +17,16 @@ import logging
 import os
 from logging.config import fileConfig
 
-from octobot_commons.constants import CONFIG_ENABLED_OPTION, CONFIG_TIME_FRAME, CONFIG_CRYPTO_CURRENCIES
+import octobot_commons.constants as commons_constants
 from octobot_commons.enums import TimeFrames
 from octobot_trading import cli
 from octobot_trading.api.exchange import create_exchange_builder
 from octobot_trading.cli import add_exchange
 from octobot_trading.cli.cli_tools import start_cli_exchange
-from octobot_trading.constants import CONFIG_SIMULATOR, CONFIG_TRADER, CONFIG_TRADING, CONFIG_EXCHANGES
 
 
 config = {
-    CONFIG_CRYPTO_CURRENCIES: {
+    commons_constants.CONFIG_CRYPTO_CURRENCIES: {
         "Bitcoin": {
             "pairs": [
                 "BTC/USDT",
@@ -41,7 +40,7 @@ config = {
             ]
         }
     },
-    CONFIG_EXCHANGES: {
+    commons_constants.CONFIG_EXCHANGES: {
         "bitmex": {
             "api-key": os.getenv('BITMEX-API-KEY'),
             "api-secret": os.getenv('BITMEX-API-SECRET')
@@ -56,11 +55,11 @@ config = {
             "api-password": os.getenv('COINBASE-PASSWORD')
         }
     },
-    CONFIG_TRADER: {
-        CONFIG_ENABLED_OPTION: True
+    commons_constants.CONFIG_TRADER: {
+        commons_constants.CONFIG_ENABLED_OPTION: True
     },
-    CONFIG_SIMULATOR: {
-        CONFIG_ENABLED_OPTION: True,
+    commons_constants.CONFIG_SIMULATOR: {
+        commons_constants.CONFIG_ENABLED_OPTION: True,
         "fees": {
             "maker": 0.1,
             "taker": 0.1
@@ -71,12 +70,12 @@ config = {
             "USDT": 1000
         }
     },
-    CONFIG_TRADING: {
+    commons_constants.CONFIG_TRADING: {
         "multi-session-profitability": False,
         "reference-market": "BTC",
         "risk": 0.5
     },
-    CONFIG_TIME_FRAME: {
+    commons_constants.CONFIG_TIME_FRAME: {
         TimeFrames.ONE_MINUTE,
         TimeFrames.ONE_HOUR
     }
