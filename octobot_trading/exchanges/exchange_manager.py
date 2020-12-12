@@ -15,7 +15,7 @@
 #  License along with this library.
 import uuid
 
-import octobot_commons.config_util as config_util
+import octobot_commons.configuration as configuration
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 
@@ -185,7 +185,7 @@ class ExchangeManager(util.Initializable):
             self.get_currently_handled_pair_with_time_frame()
 
     def should_decrypt_token(self, logger):
-        if config_util.has_invalid_default_config_value(
+        if configuration.has_invalid_default_config_value(
                 self.config[common_constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
                     common_constants.CONFIG_EXCHANGE_KEY, ''),
                 self.config[common_constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
@@ -199,9 +199,11 @@ class ExchangeManager(util.Initializable):
         if self.ignore_config or not self.should_decrypt_token(logger) or self.without_auth:
             return "", "", ""
         config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
-        return (config_util.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_KEY, config_exchange, None),
-                config_util.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None),
-                config_util.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None))
+        return (
+            configuration.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_KEY, config_exchange, None),
+            configuration.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None),
+            configuration.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None)
+        )
 
     def __str__(self):
         exchange_type = 'rest'
