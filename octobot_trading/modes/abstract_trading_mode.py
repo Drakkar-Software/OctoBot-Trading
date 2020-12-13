@@ -20,6 +20,7 @@ import octobot_commons.logging as logging
 import octobot_commons.tentacles_management as abstract_tentacle
 
 import octobot_tentacles_manager.api as tentacles_manager_api
+import octobot_tentacles_manager.configuration as tm_configuration
 
 import octobot_trading.constants as constants
 
@@ -91,7 +92,8 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         return True
 
     @classmethod
-    def get_is_trading_on_exchange(cls, exchange_name) -> bool:
+    def get_is_trading_on_exchange(cls, exchange_name,
+                                   tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration) -> bool:
         """
         :return: When returning false, the associated exchange_manager.is_trading will be set to false, which will
         prevent the initialization of trade related elements. Default is True
@@ -133,7 +135,8 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     def load_config(self) -> None:
         # try with this class name
-        self.trading_config = tentacles_manager_api.get_tentacle_config(self.__class__)
+        self.trading_config = tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config,
+                                                                        self.__class__)
 
         # set default config if nothing found
         if not self.trading_config:
@@ -148,19 +151,23 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     """
 
     @classmethod
-    def get_required_strategies_names_and_count(cls, trading_mode_config=None):
-        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(cls)
+    def get_required_strategies_names_and_count(cls,
+                                                tentacles_config: tm_configuration.TentaclesSetupConfiguration,
+                                                trading_mode_config=None):
+        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(tentacles_config, cls)
         if constants.TRADING_MODE_REQUIRED_STRATEGIES in config:
             return config[constants.TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)
         raise Exception(f"'{constants.TRADING_MODE_REQUIRED_STRATEGIES}' is missing in configuration file")
 
     @classmethod
-    def get_default_strategies(cls, trading_mode_config=None):
-        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(cls)
+    def get_default_strategies(cls,
+                               tentacles_config: tm_configuration.TentaclesSetupConfiguration,
+                               trading_mode_config=None):
+        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(tentacles_config, cls)
         if common_constants.TENTACLE_DEFAULT_CONFIG in config:
             return config[common_constants.TENTACLE_DEFAULT_CONFIG]
 
-        strategies_classes, _ = cls.get_required_strategies_names_and_count(config)
+        strategies_classes, _ = cls.get_required_strategies_names_and_count(tentacles_config, config)
         return strategies_classes
 
     @classmethod

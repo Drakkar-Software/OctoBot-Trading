@@ -17,15 +17,15 @@ import os
 from shutil import copyfile
 
 import pytest
+import octobot_commons.constants as commons_constants
 from octobot_backtesting.backtesting import Backtesting
 from octobot_backtesting.constants import CONFIG_BACKTESTING
 import octobot_backtesting.time as backtesting_time
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
-from octobot_commons.constants import CONFIG_ENABLED_OPTION
 from octobot_commons.enums import TimeFrames
 
 from octobot_commons.tests.test_config import load_test_config, TEST_CONFIG_FOLDER
-from octobot_tentacles_manager.constants import USER_TENTACLE_CONFIG_PATH, CONFIG_TENTACLES_FILE
+from octobot_tentacles_manager.constants import USER_REFERENCE_TENTACLE_CONFIG_PATH
 from octobot_trading.api.exchange import create_exchange_builder, cancel_ccxt_throttle_task
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
@@ -34,8 +34,9 @@ pytestmark = pytest.mark.asyncio
 
 TESTS_FOLDER = "tests"
 TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
-TEST_TRADING_TENTACLES_CONFIG_PATH = os.path.join(TESTS_FOLDER, USER_TENTACLE_CONFIG_PATH)
-TEST_TRADING_TENTACLES_CONFIG_FILE_PATH = os.path.join(TEST_TRADING_TENTACLES_CONFIG_PATH, CONFIG_TENTACLES_FILE)
+TEST_TRADING_TENTACLES_CONFIG_PATH = os.path.join(TESTS_FOLDER, USER_REFERENCE_TENTACLE_CONFIG_PATH)
+TEST_TRADING_TENTACLES_CONFIG_FILE_PATH = os.path.join(TEST_TRADING_TENTACLES_CONFIG_PATH,
+                                                       commons_constants.CONFIG_TENTACLES_FILE)
 DEFAULT_EXCHANGE_NAME = "binance"
 
 
@@ -65,7 +66,8 @@ async def exchange_manager(request):
 async def create_test_tentacles_config():
     if not os.path.exists(TEST_TRADING_TENTACLES_CONFIG_PATH):
         os.makedirs(TEST_TRADING_TENTACLES_CONFIG_PATH)
-        copyfile(os.path.join(TEST_CONFIG_FOLDER, CONFIG_TENTACLES_FILE), TEST_TRADING_TENTACLES_CONFIG_PATH)
+        copyfile(os.path.join(TEST_CONFIG_FOLDER, commons_constants.CONFIG_TENTACLES_FILE),
+                 TEST_TRADING_TENTACLES_CONFIG_PATH)
     yield TEST_TRADING_TENTACLES_CONFIG_PATH
     if not os.path.exists(TEST_TRADING_TENTACLES_CONFIG_PATH):
         os.removedirs(TEST_TRADING_TENTACLES_CONFIG_PATH)
@@ -96,7 +98,7 @@ DEFAULT_BACKTESTING_TF = TimeFrames.ONE_HOUR
 async def backtesting_config():
     config = load_test_config()
     config[CONFIG_BACKTESTING] = {}
-    config[CONFIG_BACKTESTING][CONFIG_ENABLED_OPTION] = True
+    config[CONFIG_BACKTESTING][commons_constants.CONFIG_ENABLED_OPTION] = True
     return config
 
 

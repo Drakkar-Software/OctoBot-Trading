@@ -53,7 +53,7 @@ class ExchangeBuilder:
         if self._is_using_trading_modes:
             trading_mode_class = modes.get_activated_trading_mode(self._tentacles_setup_config)
             # handle exchange related requirements if the activated trading mode has any
-            self._register_trading_modes_requirements(trading_mode_class)
+            self._register_trading_modes_requirements(trading_mode_class, self._tentacles_setup_config)
 
         self.exchange_manager.tentacles_setup_config = self._tentacles_setup_config
         await self.exchange_manager.initialize()
@@ -83,8 +83,9 @@ class ExchangeBuilder:
             self.logger.error(f"An error occurred when creating trader : {e}")
             raise e
 
-    def _register_trading_modes_requirements(self, trading_mode_class):
-        self.exchange_manager.is_trading = trading_mode_class.get_is_trading_on_exchange(self.exchange_name)
+    def _register_trading_modes_requirements(self, trading_mode_class, tentacles_setup_config):
+        self.exchange_manager.is_trading = trading_mode_class.get_is_trading_on_exchange(self.exchange_name,
+                                                                                         tentacles_setup_config)
 
     async def _build_trading_modes_if_required(self, trading_mode_class):
         if self._is_using_trading_modes:
