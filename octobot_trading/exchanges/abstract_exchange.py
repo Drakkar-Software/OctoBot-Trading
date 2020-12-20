@@ -529,3 +529,7 @@ class AbstractExchange(util.Initializable):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
                      f" stop_price: {stop_price}"
         self.logger.error(f"Failed to create order : {error.__class__.__name__} {error}: ({order_desc})")
+
+    def handle_token_error(self, error):
+        self.logger.error(f"Exchange configuration is invalid : please check your configuration ! "
+                          f"({error.__class__.__name__}: {error})")

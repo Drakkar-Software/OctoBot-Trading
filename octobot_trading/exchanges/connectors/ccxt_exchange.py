@@ -50,6 +50,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def initialize_impl(self):
         try:
             self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
+            if self._should_authenticate():
+                await self._ensure_auth()
+
             await self.client.load_markets()
 
             # initialize symbols and timeframes
@@ -76,6 +79,16 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         """
         return {}
 
+    async def _ensure_auth(self):
+        try:
+            await self.get_balance()
+        except ccxt.AuthenticationError as e:
+            await self.client.close()
+            self._unauthenticated_exchange_fallback(e)
+        except Exception as e:
+            # Is probably handled in exchange tentacles, important thing here is that authentication worked
+            self.logger.debug(f"Error when checking exchange connection: {e}. This should not be an issue.")
+
     def _create_client(self):
         """
         Exchange instance creation
@@ -98,22 +111,31 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                     'enableRateLimit': True,
                     'options': self.get_ccxt_client_login_options()
                 })
-            except Exception as e:
-                self.is_authenticated = False
-                self.exchange_manager.handle_token_error(e, self.logger)
-                self.client = self.exchange_type({
-                    'verbose': False,
-                    'enableRateLimit': True,
-                    'options': self.get_ccxt_client_login_options()
-                })
+                if self._should_authenticate():
+                    self.client.checkRequiredCredentials()
+            except (ccxt.AuthenticationError, Exception) as e:
+                self._unauthenticated_exchange_fallback(e)
         else:
-            self.client = self.exchange_type({
-                'verbose': False,
-                'enableRateLimit': True,
-                'options': self.get_ccxt_client_login_options()
-            })
+            self.client = self._get_unauthenticated_exchange()
             self.logger.error("configuration issue: missing login information !")
         self.client.logger.setLevel(logging.INFO)
+
+    def _should_authenticate(self):
+        return not (self.exchange_manager.is_simulated or
+                    self.exchange_manager.is_backtesting or
+                    self.exchange_manager.is_collecting)
+
+    def _unauthenticated_exchange_fallback(self, err):
+        self.is_authenticated = False
+        self.handle_token_error(err)
+        self.client = self._get_unauthenticated_exchange()
+
+    def _get_unauthenticated_exchange(self):
+        return self.exchange_type({
+            'verbose': False,
+            'enableRateLimit': True,
+            'options': self.get_ccxt_client_login_options()
+        })
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         try:

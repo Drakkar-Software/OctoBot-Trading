@@ -32,3 +32,7 @@ cdef class CCXTExchange(abstract_exchange.AbstractExchange):
 
     cpdef dict get_ccxt_client_login_options(self)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)
+
+    cdef void _unauthenticated_exchange_fallback(self, object err)
+    cdef object _get_unauthenticated_exchange(self)
+    cdef bint _should_authenticate(self)

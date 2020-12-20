@@ -203,11 +203,6 @@ class ExchangeManager(util.Initializable):
                 config_util.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_SECRET, config_exchange, None),
                 config_util.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None))
 
-    @staticmethod
-    def handle_token_error(error, logger):
-        logger.error(f"Exchange configuration tokens are invalid : please check your configuration ! "
-                     f"({error.__class__.__name__})")
-
     def __str__(self):
         exchange_type = 'rest'
         exchange_type = 'spot only' if self.is_spot_only else exchange_type

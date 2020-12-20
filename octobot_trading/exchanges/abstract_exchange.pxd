@@ -83,3 +83,4 @@ cdef class AbstractExchange(util.Initializable):
     # utils
     cpdef void log_order_creation_error(self, object error, object order_type, str symbol, double quantity,
                                         object price, object stop_price)
+    cpdef void handle_token_error(self, object error)
