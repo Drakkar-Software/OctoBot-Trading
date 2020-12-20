@@ -21,8 +21,16 @@ import octobot_trading.constants as constants
 LOGGER = logging.get_logger(constants.API_LOGGER_TAG)
 
 
+def has_trader(exchange_manager):
+    return exchange_manager.trader is not None
+
+
 def is_trader_enabled_in_config_from_exchange_manager(exchange_manager) -> bool:
     return exchange_manager.trader.enabled(exchange_manager.config)
+
+
+def is_trader_existing_and_enabled(exchange_manager) -> bool:
+    return False if exchange_manager.trader is None else exchange_manager.trader.is_enabled
 
 
 def is_trader_enabled(exchange_manager) -> bool:

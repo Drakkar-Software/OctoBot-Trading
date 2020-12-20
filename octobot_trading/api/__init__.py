@@ -95,7 +95,9 @@ from octobot_trading.api.modes import (
     create_trading_mode,
 )
 from octobot_trading.api.trader import (
+    has_trader,
     is_trader_enabled_in_config_from_exchange_manager,
+    is_trader_existing_and_enabled,
     is_trader_enabled,
     is_trader_enabled_in_config,
     is_trader_simulator_enabled_in_config,
@@ -195,7 +197,9 @@ __all__ = [
     "get_activated_trading_mode",
     "create_trading_modes",
     "create_trading_mode",
+    "has_trader",
     "is_trader_enabled_in_config_from_exchange_manager",
+    "is_trader_existing_and_enabled",
     "is_trader_enabled",
     "is_trader_enabled_in_config",
     "is_trader_simulator_enabled_in_config",
