@@ -43,5 +43,5 @@ def get_reference_market(config) -> str:
 
 
 def get_initializing_currencies_prices(exchange_manager) -> set:
-    return exchange_manager.exchange_personal_data.portfolio_manager.\
-        portfolio_value_holder.initializing_symbol_prices
+    return set() if exchange_manager.exchange_personal_data.portfolio_manager is None else \
+        exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.initializing_symbol_prices
