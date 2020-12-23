@@ -19,7 +19,7 @@ from octobot_commons.errors import ConfigTradingError
 
 # Import required fixtures
 from tests import event_loop, install_tentacles
-from tests.exchanges import create_test_tentacles_config, exchange_builder
+from tests.exchanges import exchange_builder
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 
 # All test coroutines will be treated as marked.
@@ -32,7 +32,7 @@ async def test_create_without_trading_config(exchange_builder):
         await exchange_builder.build()
 
 
-@pytest.mark.usefixtures("event_loop", "exchange_builder", "create_test_tentacles_config")
+@pytest.mark.usefixtures("event_loop", "exchange_builder")
 async def test_create_without_installed_trading_mode(exchange_builder):
     with pytest.raises(ConfigTradingError):
         await exchange_builder.build()
@@ -44,7 +44,7 @@ async def test_create_without_installed_trading_mode(exchange_builder):
         await exchange_builder.build()
 
 
-@pytest.mark.usefixtures("event_loop", "exchange_builder", "create_test_tentacles_config", "install_tentacles")
+@pytest.mark.usefixtures("event_loop", "exchange_builder", "install_tentacles")
 async def test_create(exchange_builder):
     # await exchange_builder.build() # TODO
     pass
