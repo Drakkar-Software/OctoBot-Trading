@@ -34,9 +34,6 @@ pytestmark = pytest.mark.asyncio
 
 TESTS_FOLDER = "tests"
 TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
-TEST_TRADING_TENTACLES_CONFIG_PATH = os.path.join(TESTS_FOLDER, USER_REFERENCE_TENTACLE_CONFIG_PATH)
-TEST_TRADING_TENTACLES_CONFIG_FILE_PATH = os.path.join(TEST_TRADING_TENTACLES_CONFIG_PATH,
-                                                       commons_constants.CONFIG_TENTACLES_FILE)
 DEFAULT_EXCHANGE_NAME = "binance"
 
 
@@ -60,18 +57,6 @@ async def exchange_manager(request):
     await exchange_manager_instance.stop()
     # let updaters gracefully shutdown
     await wait_asyncio_next_cycle()
-
-
-@pytest.yield_fixture
-async def create_test_tentacles_config():
-    if not os.path.exists(TEST_TRADING_TENTACLES_CONFIG_PATH):
-        os.makedirs(TEST_TRADING_TENTACLES_CONFIG_PATH)
-        copyfile(os.path.join(TEST_CONFIG_FOLDER, commons_constants.CONFIG_TENTACLES_FILE),
-                 TEST_TRADING_TENTACLES_CONFIG_PATH)
-    yield TEST_TRADING_TENTACLES_CONFIG_PATH
-    if not os.path.exists(TEST_TRADING_TENTACLES_CONFIG_PATH):
-        os.removedirs(TEST_TRADING_TENTACLES_CONFIG_PATH)
-
 
 @pytest.yield_fixture
 async def exchange_builder(request):
