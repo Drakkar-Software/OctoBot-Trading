@@ -64,12 +64,13 @@ class RecentTradeUpdater(recent_trade_channel.RecentTradeProducer):
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
                     recent_trades = await self.channel.exchange_manager.exchange.\
                         get_recent_trades(pair, limit=self.RECENT_TRADE_LIMIT)
-                    try:
-                        await self.push(pair,
-                                        list(map(self.channel.exchange_manager.exchange.clean_recent_trade,
-                                                 recent_trades)))
-                    except TypeError:
-                        pass
+                    if recent_trades:
+                        try:
+                            await self.push(pair,
+                                            list(map(self.channel.exchange_manager.exchange.clean_recent_trade,
+                                                     recent_trades)))
+                        except TypeError:
+                            pass
                 await asyncio.sleep(self.refresh_time)
             except errors.FailedRequest as e:
                 self.logger.warning(str(e))
