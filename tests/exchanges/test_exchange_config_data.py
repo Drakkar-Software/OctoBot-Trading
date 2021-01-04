@@ -137,3 +137,44 @@ class TestExchangeConfig:
         assert "ETH/USDT" in exchange_manager.exchange_config.all_config_symbol_pairs
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
+
+    async def test_traded_pairs_with_redundancy(self):
+        config = load_test_config()
+        config[CONFIG_CRYPTO_CURRENCIES] = {
+            "Binance Coin": {
+                "pairs": [
+                    "BNB/USDT"
+                ]
+            },
+            "Binance USD": {
+                "pairs": [
+                    "BNB/BUSD"
+                ]
+            },
+            "Bitcoin": {
+                "enabled": True,
+                "pairs": [
+                    "BNB/BTC"
+                ]
+            },
+            "Tether": {
+                "enabled": True,
+                "pairs": [
+                    "BNB/USDT"
+                ]
+            }
+        }
+
+        _, exchange_manager = await self.init_default(config=config)
+
+        assert exchange_manager.exchange_config.traded_cryptocurrencies["Binance Coin"] == ["BNB/USDT"]
+        assert exchange_manager.exchange_config.traded_cryptocurrencies["Binance USD"] == ["BNB/BUSD"]
+        assert exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"] == ["BNB/BTC"]
+        assert exchange_manager.exchange_config.traded_cryptocurrencies["Tether"] == ["BNB/USDT"]
+
+        sorted_pairs_without_redundancy = sorted(["BNB/USDT", "BNB/BUSD", "BNB/BTC"])
+        assert sorted(exchange_manager.exchange_config.traded_symbol_pairs) == sorted_pairs_without_redundancy
+        assert sorted(exchange_manager.exchange_config.all_config_symbol_pairs) == sorted_pairs_without_redundancy
+
+        cancel_ccxt_throttle_task()
+        await exchange_manager.stop()
