@@ -66,6 +66,7 @@ class ExchangeConfig(util.Initializable):
 
     def _set_config_traded_pairs(self):
         self.traded_cryptocurrencies = {}
+        traded_symbol_pairs_set = set()
         existing_pairs = set()
         for cryptocurrency in self.config[constants.CONFIG_CRYPTO_CURRENCIES]:
             if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS]:
@@ -81,12 +82,15 @@ class ExchangeConfig(util.Initializable):
                         self._logger.error(
                             f"{self.exchange_manager.exchange_name} is not supporting any {cryptocurrency} trading pair"
                             f" from the current configuration.")
-                    self.traded_symbol_pairs += self.traded_cryptocurrencies[cryptocurrency]
+                    traded_symbol_pairs_set = traded_symbol_pairs_set.union(
+                        self.traded_cryptocurrencies[cryptocurrency]
+                    )
             else:
                 self._logger.error(f"Current configuration for {cryptocurrency} is not including any trading pair, "
                                    f"this asset can't be traded and related orders won't be loaded. "
                                    f"OctoBot requires at least one trading pair in configuration to handle an asset. "
                                    f"You can add trading pair(s) for each asset in the configuration section.")
+        self.traded_symbol_pairs = list(traded_symbol_pairs_set)
         self.all_config_symbol_pairs = list(existing_pairs)
 
     def _populate_non_wildcard_pairs(self, cryptocurrency, existing_pairs, is_enabled):
