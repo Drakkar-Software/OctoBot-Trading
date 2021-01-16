@@ -57,7 +57,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
             # initialize symbols and timeframes
             self.symbols = set(self.client.symbols)
-            self.time_frames = set(self.client.timeframes) if hasattr(self.client, "timeframes") else set()
+
+            self.time_frames = set(self.client.timeframes) \
+                if hasattr(self.client, "timeframes") and self.client.timeframes is not None else set()
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
             self.logger.error(f"initialization impossible: {e}")
         except ccxt.AuthenticationError:
