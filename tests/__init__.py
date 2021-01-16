@@ -30,7 +30,7 @@ from octobot_tentacles_manager.managers.tentacles_setup_manager import Tentacles
 TENTACLES_LATEST_URL = "https://www.tentacles.octobot.online/repository/tentacles/officials/base/latest.zip"
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def event_loop():
     # re-configure async loop each time this fixture is called
     _configure_async_test_loop()
@@ -49,7 +49,7 @@ async def config():
     return load_test_config()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def install_tentacles():
     def _download_tentacles():
         r = requests.get(TENTACLES_LATEST_URL, stream=True)

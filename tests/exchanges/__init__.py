@@ -37,7 +37,7 @@ TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
 DEFAULT_EXCHANGE_NAME = "binance"
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def exchange_manager(request):
     config = None
     exchange_name = DEFAULT_EXCHANGE_NAME
@@ -58,7 +58,7 @@ async def exchange_manager(request):
     # let updaters gracefully shutdown
     await wait_asyncio_next_cycle()
 
-@pytest.yield_fixture
+@pytest.fixture
 async def exchange_builder(request):
     config = None
     exchange_name = DEFAULT_EXCHANGE_NAME
@@ -87,7 +87,7 @@ async def backtesting_config():
     return config
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def simulated_exchange_manager(request):
     config = load_test_config()
     exchange_name = DEFAULT_EXCHANGE_NAME
@@ -118,7 +118,7 @@ async def fake_backtesting(backtesting_config):
                        backtesting_files=[])
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def backtesting_exchange_manager(request, backtesting_config, fake_backtesting):
     config = None
     exchange_name = DEFAULT_EXCHANGE_NAME
