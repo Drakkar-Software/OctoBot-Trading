@@ -40,6 +40,9 @@ class TradesManager(util.Initializable):
         if trade_id not in self.trades:
             created_trade = personal_data.create_trade_instance_from_raw(self.trader, raw_trade)
             if created_trade:
+                if trade_id in self.trades:
+                    self.logger.debug(f"Replacement of an existing trade: {self.trades[trade_id].to_dict()} "
+                                      f"by {created_trade.to_dict()} on id: {trade_id}")
                 self.trades[trade_id] = created_trade
                 self._check_trades_size()
                 return True
