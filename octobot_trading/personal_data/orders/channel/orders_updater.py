@@ -40,13 +40,13 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         super().__init__(channel)
 
         # create async jobs
-        self.open_orders_job = async_job.AsyncJob(self.open_orders_fetch_and_push,
+        self.open_orders_job = async_job.AsyncJob(self._open_orders_fetch_and_push,
                                                   execution_interval_delay=self.OPEN_ORDER_REFRESH_TIME,
                                                   min_execution_delay=self.TIME_BETWEEN_ORDERS_REFRESH)
-        self.closed_orders_job = async_job.AsyncJob(self.closed_orders_fetch_and_push,
+        self.closed_orders_job = async_job.AsyncJob(self._closed_orders_fetch_and_push,
                                                     execution_interval_delay=self.CLOSE_ORDER_REFRESH_TIME,
                                                     min_execution_delay=self.TIME_BETWEEN_ORDERS_REFRESH)
-        self.order_update_job = async_job.AsyncJob(self.order_fetch_and_push,
+        self.order_update_job = async_job.AsyncJob(self._order_fetch_and_push,
                                                    is_periodic=False,
                                                    enable_multiple_runs=True)
         self.order_update_job.add_job_dependency(self.open_orders_job)
@@ -79,11 +79,11 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         :param is_from_bot: True if the order was created by OctoBot
         :param limit: the exchange request orders count limit
         """
-        await self.open_orders_fetch_and_push(is_from_bot=is_from_bot, limit=limit)
+        await self._open_orders_fetch_and_push(is_from_bot=is_from_bot, limit=limit)
         await asyncio.sleep(self.TIME_BETWEEN_ORDERS_REFRESH)
-        await self.closed_orders_fetch_and_push(limit=limit)
+        await self._closed_orders_fetch_and_push(limit=limit)
 
-    async def open_orders_fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT):
+    async def _open_orders_fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT):
         """
         Update open orders from exchange
         :param is_from_bot: True if the order was created by OctoBot
@@ -97,7 +97,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
             else:
                 await self.handle_post_open_order_update(symbol, open_orders, False)
 
-    async def closed_orders_fetch_and_push(self, limit=ORDERS_UPDATE_LIMIT) -> None:
+    async def _closed_orders_fetch_and_push(self, limit=ORDERS_UPDATE_LIMIT) -> None:
         """
         Update closed orders from exchange
         :param limit: the exchange request orders count limit
@@ -126,7 +126,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                                         ignore_dependencies_check=force_job_execution,
                                         order=order, should_notify=should_notify)
 
-    async def order_fetch_and_push(self, order, should_notify=False):
+    async def _order_fetch_and_push(self, order, should_notify=False):
         """
         Update Order from exchange
         :param order: the order to update

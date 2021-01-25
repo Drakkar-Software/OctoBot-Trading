@@ -55,6 +55,7 @@ class OrdersManager(util.Initializable):
 
     async def upsert_order_from_raw(self, order_id, raw_order) -> bool:
         if not self.has_order(order_id):
+            self.logger.debug(f"Creating new order from exchange data: {raw_order}")
             new_order = order_factory.create_order_instance_from_raw(self.trader, raw_order)
             self.orders[order_id] = new_order
             await new_order.initialize(is_from_exchange_data=True)
