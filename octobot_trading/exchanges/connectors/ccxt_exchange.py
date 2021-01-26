@@ -157,7 +157,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         :return: balance dict
         """
         if not kwargs:
-            kwargs = {'recvWindow': 10000000}
+            kwargs = {}
         try:
             balance = await self.client.fetch_balance(params=kwargs)
 
