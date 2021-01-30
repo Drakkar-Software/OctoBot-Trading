@@ -37,3 +37,5 @@ cdef class ExchangePersonalData(util.Initializable):
 
     cpdef object get_order_portfolio(self, order_class.Order order)
     cpdef void clear(self)
+
+    cdef bint _is_out_of_sync_order(self, str order_id)

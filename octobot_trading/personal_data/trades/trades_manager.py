@@ -53,6 +53,12 @@ class TradesManager(util.Initializable):
             self.trades[trade.trade_id] = trade
             self._check_trades_size()
 
+    def has_closing_trade_with_order_id(self, order_id) -> bool:
+        for trade in self.trades.values():
+            if trade.origin_order_id == order_id and trade.is_closing_order:
+                return True
+        return False
+
     def get_total_paid_fees(self):
         total_fees = {}
         for trade in self.trades.values():

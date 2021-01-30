@@ -105,22 +105,33 @@ class ExchangePersonalData(util.Initializable):
     async def handle_order_update_from_raw(self, order_id, raw_order,
                                            is_new_order: bool = False,
                                            should_notify: bool = True) -> bool:
-        try:
-            changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order)
+        # Orders can sometimes be out of sync between different exchange endpoints (ex: binance order API vs
+        # open_orders API which is slower).
+        # Always check if this order has not already been closed previously (most likely during the last
+        # seconds/minutes)
+        if self._is_out_of_sync_order(order_id):
+            self.logger.debug(f"Ignored update for order with {order_id}: this order has already been closed "
+                              f"(received raw order: {raw_order})")
+        else:
+            try:
+                changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order)
 
-            if changed:
-                updated_order = self.orders_manager.get_order(order_id)
-                asyncio.create_task(updated_order.state.on_order_refresh_successful())
+                if changed:
+                    updated_order = self.orders_manager.get_order(order_id)
+                    asyncio.create_task(updated_order.state.on_order_refresh_successful())
 
-                if should_notify:
-                    await self.handle_order_update_notification(updated_order, is_new_order)
+                    if should_notify:
+                        await self.handle_order_update_notification(updated_order, is_new_order)
 
-            return changed
-        except KeyError as ke:
-            self.logger.debug(f"Failed to update order : Order was not found ({ke})")
-        except Exception as e:
-            self.logger.exception(e, True, f"Failed to update order : {e}")
+                return changed
+            except KeyError as ke:
+                self.logger.debug(f"Failed to update order : Order was not found ({ke})")
+            except Exception as e:
+                self.logger.exception(e, True, f"Failed to update order : {e}")
         return False
+
+    def _is_out_of_sync_order(self, order_id) -> bool:
+        return self.trades_manager.has_closing_trade_with_order_id(order_id)
 
     async def handle_order_instance_update(self, order, is_new_order: bool = False, should_notify: bool = True):
         try:
