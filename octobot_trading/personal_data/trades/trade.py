@@ -25,6 +25,10 @@ class Trade:
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
 
         self.trade_id = trader.parse_order_id(None)
+        # One order might create multiple trades when matched to multiple open orders.
+        # Current implementation creates only one trade per order
+        # TODO: update this comment when handling multiple trades per order
+        self.origin_order_id = None
         self.simulated = True
 
         self.symbol = None
@@ -59,6 +63,7 @@ class Trade:
         self.status = order.status
         self.fee = order.fee
         self.trade_id = order.order_id
+        self.origin_order_id = order.order_id
         self.simulated = order.simulated
         self.side = order.side
         self.creation_time = order.creation_time if order.creation_time > 0 else creation_time
