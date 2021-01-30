@@ -90,9 +90,9 @@ class RealExchangeTester:
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
             return exchange_manager.exchange.get_market_status(self.SYMBOL)
 
-    async def get_symbol_prices(self):
+    async def get_symbol_prices(self, limit=None):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
-            return await exchange_manager.exchange.get_symbol_prices(self.SYMBOL, self.TIME_FRAME)
+            return await exchange_manager.exchange.get_symbol_prices(self.SYMBOL, self.TIME_FRAME, limit=limit)
 
     async def get_kline_price(self):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
