@@ -48,10 +48,9 @@ class ExchangePersonalData(util.Initializable):
             try:
                 self.portfolio_manager = portfolio_manager.PortfolioManager(self.config, self.trader,
                                                                             self.exchange_manager)
-                self.trades_manager = trades_manager.TradesManager(self.config, self.trader, self.exchange_manager)
-                self.orders_manager = orders_manager.OrdersManager(self.config, self.trader, self.exchange_manager)
-                self.positions_manager = positions_manager.PositionsManager(self.config, self.trader,
-                                                                            self.exchange_manager)
+                self.trades_manager = trades_manager.TradesManager(self.trader)
+                self.orders_manager = orders_manager.OrdersManager(self.trader)
+                self.positions_manager = positions_manager.PositionsManager(self.trader)
                 await self.portfolio_manager.initialize()
                 await self.trades_manager.initialize()
                 await self.orders_manager.initialize()
