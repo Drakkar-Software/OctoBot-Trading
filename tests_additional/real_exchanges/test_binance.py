@@ -64,8 +64,17 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
                                 Ecmsc.LIMITS_COST.value))
 
     async def test_get_symbol_prices(self):
+        # without limit
         symbol_prices = await self.get_symbol_prices()
         assert len(symbol_prices) == 500
+        # check candles order (oldest first)
+        self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
+        # check last candle is the current candle
+        assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
+
+        # try with candles limit (used in candled updater)
+        symbol_prices = await self.get_symbol_prices(limit=200)
+        assert len(symbol_prices) == 200
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
