@@ -212,7 +212,7 @@ class Order(util.Initializable):
         return self.state.is_canceled() or (self.state.is_closed() and self.status is enums.OrderStatus.CANCELED)
 
     def is_closed(self):
-        return self.state.is_closed() if self.state is not None else self.status == enums.OrderStatus.CLOSED
+        return self.state.is_closed() if self.state is not None else self.status is enums.OrderStatus.CLOSED
 
     def is_refreshing(self):
         return self.state is not None and self.state.is_refreshing()
