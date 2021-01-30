@@ -21,12 +21,10 @@ cimport octobot_trading.util as util
 
 cdef class OrdersManager(util.Initializable):
     cdef object logger
-    cdef dict config
 
     cdef public bint orders_initialized
 
     cdef exchanges.Trader trader
-    cdef exchanges.ExchangeManager exchange_manager
 
     cdef public object orders
 

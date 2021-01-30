@@ -25,10 +25,10 @@ import octobot_trading.util as util
 class PositionsManager(util.Initializable):
     MAX_POSITIONS_COUNT = 2000
 
-    def __init__(self, config, trader, exchange_manager):
+    def __init__(self, trader):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
-        self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
+        self.trader = trader
         self.positions_initialized = False  # TODO
         self.positions = collections.OrderedDict()
 

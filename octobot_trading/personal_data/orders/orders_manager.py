@@ -28,10 +28,10 @@ import octobot_trading.personal_data.orders.order_factory as order_factory
 class OrdersManager(util.Initializable):
     MAX_ORDERS_COUNT = 2000
 
-    def __init__(self, config, trader, exchange_manager):
+    def __init__(self, trader):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
-        self.config, self.trader, self.exchange_manager = config, trader, exchange_manager
+        self.trader = trader
         self.orders_initialized = False  # TODO
         self.orders = collections.OrderedDict()
 
