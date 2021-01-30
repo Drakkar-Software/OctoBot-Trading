@@ -83,6 +83,7 @@ class TestTradeFactory:
         trade = create_trade_instance_from_raw(trader, raw_trade)
 
         assert trade.trade_id == '12345-67890:09876/54321'
+        assert trade.origin_order_id == '12345-67890:09876/54321'
         assert trade.trade_type == TraderOrderType.BUY_LIMIT
         assert trade.symbol == 'ETH/BTC'
         assert trade.total_cost == 0.10376526
@@ -127,6 +128,7 @@ class TestTradeFactory:
         trade = create_trade_from_order(order, close_status=OrderStatus.FILLED)
 
         assert trade.trade_id == '12345-67890:09876/54321'
+        assert trade.origin_order_id == '12345-67890:09876/54321'
         assert trade.simulated is True
         assert trade.trade_type == TraderOrderType.SELL_LIMIT
         assert trade.symbol == 'BTC/USDT'
