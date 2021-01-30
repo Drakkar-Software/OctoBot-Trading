@@ -92,6 +92,7 @@ class TestTradeFactory:
         assert trade.executed_price == 0.06917684
         assert trade.executed_time == 1502962946216
         assert trade.status == OrderStatus.FILLED
+        assert trade.is_closing_order is True
 
         await self.stop(exchange_manager)
 
@@ -138,6 +139,7 @@ class TestTradeFactory:
         assert trade.origin_price == 7684
         assert trade.executed_price == 7684
         assert trade.status == OrderStatus.FILLED
+        assert trade.is_closing_order is True
 
         trade = create_trade_from_order(order)
         assert trade.status == OrderStatus.FILLED
@@ -145,6 +147,53 @@ class TestTradeFactory:
         exec_time = time.time()
         trade = create_trade_from_order(order, executed_time=exec_time)
         assert trade.executed_time == exec_time
+
+        await self.stop(exchange_manager)
+
+    async def test_create_trade_from_partially_filled_order(self):
+        _, exchange_manager, trader = await self.init_default()
+
+        raw_order = json.loads(
+            """
+            {
+                "id":                "12345-67890:09876/54321",
+                "datetime":          "2017-08-17 12:42:48.000",
+                "timestamp":          1502962946216,
+                "lastTradeTimestamp": 1502962956216,
+                "status":     "open",
+                "symbol":     "BTC/USDT",
+                "type":       "limit",
+                "side":       "sell",
+                "price":       7684,
+                "amount":      1.5,
+                "filled":      1.1,
+                "remaining":   0.4,
+                "cost":        0.076094524,
+                "trades":    [],
+                "fee": {
+                    "currency": "BTC",
+                    "cost": 0.0009,
+                    "rate": 0.002
+                },
+                "info": {}
+            }
+            """)
+
+        order = create_order_instance_from_raw(trader, raw_order)
+        trade = create_trade_from_order(order, close_status=OrderStatus.OPEN)
+
+        assert trade.trade_id == '12345-67890:09876/54321'
+        assert trade.origin_order_id == '12345-67890:09876/54321'
+        assert trade.simulated is True
+        assert trade.trade_type == TraderOrderType.SELL_LIMIT
+        assert trade.symbol == 'BTC/USDT'
+        assert trade.total_cost == 0.076094524
+        assert trade.executed_quantity == 1.1
+        assert trade.origin_quantity == 1.5
+        assert trade.origin_price == 7684
+        assert trade.executed_price == 7684
+        assert trade.status == OrderStatus.OPEN
+        assert trade.is_closing_order is False
 
         await self.stop(exchange_manager)
 

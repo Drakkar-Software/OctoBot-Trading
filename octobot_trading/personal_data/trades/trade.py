@@ -17,6 +17,8 @@ import octobot_trading.enums as enums
 
 
 class Trade:
+    CLOSING_TRADE_ORDER_STATUS = {enums.OrderStatus.CANCELED, enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED}
+
     def __init__(self, trader):
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
@@ -30,6 +32,7 @@ class Trade:
         # TODO: update this comment when handling multiple trades per order
         self.origin_order_id = None
         self.simulated = True
+        self.is_closing_order = False
 
         self.symbol = None
         self.currency = None
@@ -70,6 +73,7 @@ class Trade:
         self.canceled_time = order.canceled_time if order.canceled_time > 0 else canceled_time
         self.executed_time = order.executed_time if order.executed_time > 0 else executed_time
         self.symbol = order.symbol
+        self.is_closing_order = order.status in self.CLOSING_TRADE_ORDER_STATUS
 
     def get_time(self):
         return self.executed_time if self.status is not enums.OrderStatus.CANCELED else self.canceled_time
