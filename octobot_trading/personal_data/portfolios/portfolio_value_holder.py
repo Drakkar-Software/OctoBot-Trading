@@ -38,7 +38,7 @@ class PortfolioValueHolder:
         self.portfolio_origin_value = 0
         self.portfolio_current_value = 0
 
-        self.currencies_last_prices = {}
+        self.last_prices_by_trading_pair = {}
         self.origin_portfolio = None
 
         self.origin_crypto_currencies_values = {}
@@ -74,7 +74,7 @@ class PortfolioValueHolder:
                 self.origin_crypto_currencies_values[currency] = mark_price
             else:
                 self.origin_crypto_currencies_values[market] = 1 / mark_price
-        self.currencies_last_prices[symbol] = mark_price
+        self.last_prices_by_trading_pair[symbol] = mark_price
         return origin_currencies_should_be_updated
 
     def get_current_crypto_currencies_values(self):
@@ -226,11 +226,11 @@ class PortfolioValueHolder:
 
         try:
             if self.portfolio_manager.exchange_manager.symbol_exists(symbol):
-                return self.currencies_last_prices[symbol] * quantity
+                return self.last_prices_by_trading_pair[symbol] * quantity
 
             if self.portfolio_manager.exchange_manager.symbol_exists(reversed_symbol) and \
-                    self.currencies_last_prices[reversed_symbol] != 0:
-                return quantity / self.currencies_last_prices[reversed_symbol]
+                    self.last_prices_by_trading_pair[reversed_symbol] != 0:
+                return quantity / self.last_prices_by_trading_pair[reversed_symbol]
 
             if currency not in self.missing_currency_data_in_exchange:
                 self._inform_no_matching_symbol(currency)

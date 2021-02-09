@@ -29,7 +29,7 @@ cdef class PortfolioValueHolder:
     cdef public double portfolio_origin_value
     cdef public double portfolio_current_value
 
-    cdef public dict currencies_last_prices
+    cdef public dict last_prices_by_trading_pair
     cdef public dict origin_crypto_currencies_values
     cdef public dict current_crypto_currencies_values
     cdef public set initializing_symbol_prices

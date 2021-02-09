@@ -131,7 +131,7 @@ async def test_valid_create_new_order():
 async def test_get_holdings_ratio():
     exchange_manager, symbol, consumer = await _get_tools()
     exchange_manager.client_symbols = [symbol]
-    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.currencies_last_prices[symbol] = \
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair[symbol] = \
         1000
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.portfolio_current_value = 11
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio = {
