@@ -184,3 +184,16 @@ async def test_get_origin_portfolio_current_value_with_different_reference_marke
     await portfolio_manager.handle_profitability_recalculation(True)
     assert portfolio_value_holder.get_origin_portfolio_current_value() == 1000
 
+
+async def test_update_origin_crypto_currencies_values(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    portfolio_value_holder = portfolio_manager.portfolio_value_holder
+
+    assert portfolio_value_holder.update_origin_crypto_currencies_values("ETH/BTC", 0.1) is True
+    assert portfolio_value_holder.origin_crypto_currencies_values["ETH"] == 0.1
+    assert portfolio_value_holder.last_prices_by_trading_pair["ETH/BTC"] == 0.1
+
+    assert portfolio_value_holder.update_origin_crypto_currencies_values("BTC/USDT", 100) is True
+    assert portfolio_value_holder.origin_crypto_currencies_values["USDT"] == 1 / 100
+    assert portfolio_value_holder.last_prices_by_trading_pair["BTC/USDT"] == 100
