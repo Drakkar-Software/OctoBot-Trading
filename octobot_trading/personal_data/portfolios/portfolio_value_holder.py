@@ -55,12 +55,25 @@ class PortfolioValueHolder:
         :return: True if the origin portfolio should be recomputed
         """
         currency, market = symbol_util.split_symbol(symbol)
-        origin_currencies_should_be_updated = currency not in set(self.origin_crypto_currencies_values.keys()) and \
-                                              market == self.portfolio_manager.reference_market
+        # update origin values if this price has relevant data regarding the origin portfolio (using both quote and base)
+        origin_currencies_should_be_updated = (
+            (
+                currency not in set(self.origin_crypto_currencies_values.keys()) and
+                market == self.portfolio_manager.reference_market
+            )
+            or
+            (
+                market not in set(self.origin_crypto_currencies_values.keys()) and
+                currency == self.portfolio_manager.reference_market
+            )
+        )
         if origin_currencies_should_be_updated:
             # will fail if symbol doesn't have a price in self.origin_crypto_currencies_values and therefore
             # requires the origin portfolio value to be recomputed using this price info in case this price is relevant
-            self.origin_crypto_currencies_values[currency] = mark_price
+            if market == self.portfolio_manager.reference_market:
+                self.origin_crypto_currencies_values[currency] = mark_price
+            else:
+                self.origin_crypto_currencies_values[market] = 1 / mark_price
         self.currencies_last_prices[symbol] = mark_price
         return origin_currencies_should_be_updated
 
