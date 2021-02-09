@@ -4,11 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.11.29] - 2020-02-08
+## [1.11.30] - 2021-02-09
+### Updated
+- Profitability computation issues
+
+## [1.11.29] - 2021-02-08
 ### Updated
 - Requirements
 
-## [1.11.28] - 2020-02-03
+## [1.11.28] - 2021-02-03
 ### Updated
 - Requirements
   
