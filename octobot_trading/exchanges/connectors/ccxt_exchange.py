@@ -285,7 +285,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         cancel_resp = None
         try:
             cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, **kwargs)
-            return personal_data.parse_is_cancelled(await self.get_order(order_id, symbol=symbol, **kwargs))
+            cancelled_order = await self.get_order(order_id, symbol=symbol, **kwargs)
+            return cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order)
         except ccxt.OrderNotFound:
             self.logger.error(f"Order {order_id} was not found")
         except ccxt.NotSupported:
