@@ -291,7 +291,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except Exception as e:
-            self.logger.error(f"Order {order_id} failed to cancel | {e}")
+            self.logger.exception(e, True, f"Order {order_id} failed to cancel | {e} ({e.__class__.__name__})")
         return cancel_resp is not None
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
