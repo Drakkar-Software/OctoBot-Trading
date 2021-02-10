@@ -38,8 +38,8 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         try:
             await self.create_order_if_possible(symbol, final_note, state, data=data)
         except errors.MissingMinimalExchangeTradeVolume:
-            self.logger.info("Not enough funds to create a new order: exchange minimal order volume has not been"
-                             " reached.")
+            self.logger.info(f"Not enough funds to create a new order: {self.exchange_manager.exchange_name} "
+                             f"exchange minimal order volume has not been reached.")
 
     async def create_new_orders(self, symbol, final_note, state, **kwargs):
         raise NotImplementedError("create_new_orders is not implemented")
