@@ -28,6 +28,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
 
     async def perform(self, orders, is_from_bot=False, are_closed=False):
         try:
+            self.logger.debug(f"Received order update for {len(orders)} orders.")
             symbol = None
             has_new_order = False
             for order in orders:
