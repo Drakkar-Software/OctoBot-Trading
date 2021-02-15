@@ -14,12 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-
 import typing
+import contextlib
 
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.states as orders_states
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.util as util
@@ -217,27 +218,38 @@ class Order(util.Initializable):
     def is_refreshing(self):
         return self.state is not None and self.state.is_refreshing()
 
+    @contextlib.contextmanager
+    def order_state_creation(self):
+        try:
+            yield
+        except errors.InvalidOrderState as exc:
+            logging.get_logger(self.get_logger_name()).exception(exc, True, f"Error when creating order state: {exc}")
+
     async def on_open(self, force_open=False, is_from_exchange_data=False):
-        self.state = orders_states.OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
-        await self.state.initialize(forced=force_open)
+        with self.order_state_creation():
+            self.state = orders_states.OpenOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            await self.state.initialize(forced=force_open)
 
     async def on_fill(self, force_fill=False, is_from_exchange_data=False):
         logging.get_logger(self.get_logger_name()).debug(f"on_fill triggered for {self}")
         if self.is_open() and not self.is_refreshing():
-            self.state = orders_states.FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
-            await self.state.initialize(forced=force_fill)
+            with self.order_state_creation():
+                self.state = orders_states.FillOrderState(self, is_from_exchange_data=is_from_exchange_data)
+                await self.state.initialize(forced=force_fill)
         else:
             logging.get_logger(self.get_logger_name()).debug(f"Trying to fill a refreshing or previously filled "
                                                              f"or canceled order: "
                                                              f"ignored fill call for {self}")
 
     async def on_close(self, force_close=False, is_from_exchange_data=False):
-        self.state = orders_states.CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
-        await self.state.initialize(forced=force_close)
+        with self.order_state_creation():
+            self.state = orders_states.CloseOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            await self.state.initialize(forced=force_close)
 
     async def on_cancel(self, is_from_exchange_data=False, force_cancel=False, ignored_order=None):
-        self.state = orders_states.CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
-        await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
+        with self.order_state_creation():
+            self.state = orders_states.CancelOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            await self.state.initialize(forced=force_cancel, ignored_order=ignored_order)
 
     def on_fill_actions(self):
         """
@@ -389,6 +401,9 @@ class Order(util.Initializable):
         self.linked_to = None
         self.linked_portfolio = None
         self.linked_orders = []
+
+    def is_cleared(self):
+        return self.exchange_manager is None
 
     def to_string(self):
         return (f"{self.symbol} | "
