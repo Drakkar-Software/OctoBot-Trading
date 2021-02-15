@@ -21,11 +21,16 @@ import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.enums as enums
 import octobot_trading.util as util
 import octobot_trading.constants
+import octobot_trading.errors
 
 
 class OrderState(util.Initializable):
     def __init__(self, order, is_from_exchange_data):
         super().__init__()
+
+        # ensure order has not been cleared
+        if order.is_cleared():
+            raise octobot_trading.errors.InvalidOrderState(f"Order has already been cleared. Order: {order}")
 
         # related order
         self.order = order
