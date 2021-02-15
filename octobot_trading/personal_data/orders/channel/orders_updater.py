@@ -113,13 +113,15 @@ class OrdersUpdater(orders_channel.OrdersProducer):
     async def update_order_from_exchange(self, order,
                                          should_notify=False,
                                          wait_for_refresh=False,
-                                         force_job_execution=False):
+                                         force_job_execution=False,
+                                         create_order_producer_if_missing=True):
         """
         Trigger order job refresh from exchange
         :param order: the order to update
         :param wait_for_refresh: if True, wait until the order refresh task to finish
         :param should_notify: if Orders channel consumers should be notified
         :param force_job_execution: When True, order_update_job will bypass its dependencies check
+        :param create_order_producer_if_missing: Should be set to False when called by self to prevent spamming
         :return: True if the order was updated
         """
         await self.order_update_job.run(force=True, wait_for_task_execution=wait_for_refresh,
