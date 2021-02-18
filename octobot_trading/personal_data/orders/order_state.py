@@ -146,7 +146,8 @@ class OrderState(util.Initializable):
                                          self.order.exchange_manager.id).get_internal_producer().
                 update_order_from_exchange(order=self.order,
                                            wait_for_refresh=True,
-                                           force_job_execution=force_synchronization))
+                                           force_job_execution=force_synchronization,
+                                           wait_for_order_state_transition=True))
 
     async def on_order_refresh_successful(self):
         """

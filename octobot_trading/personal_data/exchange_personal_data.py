@@ -104,7 +104,8 @@ class ExchangePersonalData(util.Initializable):
 
     async def handle_order_update_from_raw(self, order_id, raw_order,
                                            is_new_order: bool = False,
-                                           should_notify: bool = True) -> bool:
+                                           should_notify: bool = True,
+                                           wait_for_order_state_transition: bool = False) -> bool:
         # Orders can sometimes be out of sync between different exchange endpoints (ex: binance order API vs
         # open_orders API which is slower).
         # Always check if this order has not already been closed previously (most likely during the last
@@ -118,7 +119,10 @@ class ExchangePersonalData(util.Initializable):
 
                 if changed:
                     updated_order = self.orders_manager.get_order(order_id)
-                    asyncio.create_task(updated_order.state.on_order_refresh_successful())
+                    if wait_for_order_state_transition:
+                        await updated_order.state.on_order_refresh_successful()
+                    else:
+                        asyncio.create_task(updated_order.state.on_order_refresh_successful())
 
                     if should_notify:
                         await self.handle_order_update_notification(updated_order, is_new_order)

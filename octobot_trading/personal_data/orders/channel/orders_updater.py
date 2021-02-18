@@ -126,7 +126,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                                         ignore_dependencies_check=force_job_execution,
                                         order=order, should_notify=should_notify)
 
-    async def _order_fetch_and_push(self, order, should_notify=False):
+    async def _order_fetch_and_push(self, order, should_notify=False, wait_for_order_state_transition=False):
         """
         Update Order from exchange
         :param order: the order to update
@@ -142,7 +142,8 @@ class OrdersUpdater(orders_channel.OrdersProducer):
             self.logger.debug(f"Received update for {order} on {exchange_name}: {raw_order}")
 
             await self.channel.exchange_manager.exchange_personal_data.handle_order_update_from_raw(
-                order.order_id, raw_order, should_notify=should_notify)
+                order.order_id, raw_order, should_notify=should_notify,
+                wait_for_order_state_transition=wait_for_order_state_transition)
 
     async def stop(self) -> None:
         """
