@@ -188,14 +188,15 @@ class Portfolio(util.Initializable):
     def _parse_currency_balance(self, currency_balance):
         """
         Parse the exchange balance from the default ccxt format
+        Set 0 as currency value when the parsed value is None (concerning available and total values)
         :param currency_balance: the current currency balance
         :return: the updated currency portfolio
         """
         return self._create_currency_portfolio(
             available=currency_balance.get(constants.CONFIG_PORTFOLIO_FREE,
-                                           currency_balance.get(common_constants.PORTFOLIO_AVAILABLE, 0)),
+                                           currency_balance.get(common_constants.PORTFOLIO_AVAILABLE, 0)) or 0,
             total=currency_balance.get(constants.CONFIG_PORTFOLIO_TOTAL,
-                                       currency_balance.get(common_constants.PORTFOLIO_TOTAL, 0)))
+                                       currency_balance.get(common_constants.PORTFOLIO_TOTAL, 0)) or 0)
 
     def _create_currency_portfolio(self, available, total):
         """
