@@ -102,9 +102,9 @@ class RealExchangeTester:
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
             return await exchange_manager.exchange.get_order_book(self.SYMBOL, **kwargs)
 
-    async def get_recent_trades(self):
+    async def get_recent_trades(self, limit=50):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
-            return await exchange_manager.exchange.get_recent_trades(self.SYMBOL)
+            return await exchange_manager.exchange.get_recent_trades(self.SYMBOL, limit=limit)
 
     async def get_price_ticker(self):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
