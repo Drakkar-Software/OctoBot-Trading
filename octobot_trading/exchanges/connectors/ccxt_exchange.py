@@ -183,7 +183,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         try:
             if limit:
                 return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, params=kwargs)
-            return await self.client.fetch_ohlcv(symbol, time_frame.value)
+            return await self.client.fetch_ohlcv(symbol, time_frame.value, params=kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
