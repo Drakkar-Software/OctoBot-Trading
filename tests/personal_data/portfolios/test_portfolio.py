@@ -13,10 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import os
 
 import pytest
 import octobot_commons.constants as commons_constants
 
+import octobot_trading.constants as constants
 from octobot_trading.enums import TraderOrderType, TradeOrderSide
 from octobot_trading.personal_data.orders import BuyLimitOrder
 from octobot_trading.personal_data.orders import SellLimitOrder
@@ -866,3 +868,43 @@ async def test_default_impl(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_data_from_order(order, "BTC", "USD")
     portfolio_manager.portfolio.update_portfolio_available_from_order(order)
     portfolio_manager.portfolio.log_portfolio_update_from_order(order, "BTC", "USD")
+
+
+async def test_parse_currency_balance(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    if not os.getenv('CYTHON_IGNORE'):
+        # 0 values
+        assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: 0,
+                                                                    commons_constants.PORTFOLIO_TOTAL: 0.0}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+
+        assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: 0,
+                                                                    commons_constants.PORTFOLIO_TOTAL: 0.0}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+
+        # None values
+        assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: None,
+                                                                    commons_constants.PORTFOLIO_TOTAL: 0.0}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+
+        assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: None,
+                                                                    commons_constants.PORTFOLIO_TOTAL: None}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+
+        assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: 0,
+                                                                    commons_constants.PORTFOLIO_TOTAL: None}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+
+        assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: None,
+                                                                    commons_constants.PORTFOLIO_TOTAL: 0.0}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+
+        assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: None,
+                                                                    commons_constants.PORTFOLIO_TOTAL: None}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+
+        assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: 0,
+                                                                    commons_constants.PORTFOLIO_TOTAL: None}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
