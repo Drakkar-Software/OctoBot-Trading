@@ -19,6 +19,11 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 
 
 class CancelOrderState(order_state.OrderState):
+    CANCEL_STATUS = [enums.OrderStatus.PENDING_CANCEL,
+                     enums.OrderStatus.CANCELED,
+                     enums.OrderStatus.EXPIRED,
+                     enums.OrderStatus.REJECTED]
+
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.OrderStates.CANCELING if (not self.order.simulated and
@@ -47,7 +52,7 @@ class CancelOrderState(order_state.OrderState):
         """
         Verify the order is properly canceled
         """
-        if self.order.status is enums.OrderStatus.CANCELED:
+        if self.order.status in self.CANCEL_STATUS:
             self.state = enums.OrderStates.CANCELED
             await self.update()
         else:
