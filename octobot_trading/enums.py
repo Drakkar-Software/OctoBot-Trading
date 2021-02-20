@@ -53,7 +53,10 @@ class OrderStatus(enum.Enum):
     PARTIALLY_FILLED = "partially_filled"
     FILLED = "filled"
     CANCELED = "canceled"
+    PENDING_CANCEL = "canceling"
     CLOSED = "closed"
+    EXPIRED = "expired"
+    REJECTED = "rejected"
     UNKNOWN = "unknown"
 
 
