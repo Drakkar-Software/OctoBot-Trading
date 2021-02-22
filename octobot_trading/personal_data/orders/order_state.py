@@ -113,12 +113,13 @@ class OrderState(util.Initializable):
         Necessary when the state is not already synchronizing and when the order type is supported by the exchange
         Try to fix the pending state or terminate
         """
-        if self.is_pending() and not self.is_refreshing() and not self.order.is_self_managed():
-            self.log_order_event_message("synchronizing")
-            await self.synchronize()
-        else:
-            async with self.lock:
-                await self.terminate()
+        if not self.is_refreshing():
+            if self.is_pending() and not self.order.is_self_managed():
+                self.log_order_event_message("synchronizing")
+                await self.synchronize()
+            else:
+                async with self.lock:
+                    await self.terminate()
 
     async def synchronize(self, force_synchronization=False, catch_exception=False) -> None:
         """
