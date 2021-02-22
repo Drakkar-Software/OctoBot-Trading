@@ -109,10 +109,11 @@ class OrderState(util.Initializable):
 
     async def update(self) -> None:
         """
-        Update the order state
+        Update the order state if necessary
+        Necessary when the state is not already synchronizing and when the order type is supported by the exchange
         Try to fix the pending state or terminate
         """
-        if self.is_pending() and self.state is not enums.OrderStates.REFRESHING:
+        if self.is_pending() and not self.is_refreshing() and not self.order.is_self_managed():
             self.log_order_event_message("synchronizing")
             await self.synchronize()
         else:
@@ -143,7 +144,7 @@ class OrderState(util.Initializable):
         :return: the result of OrdersProducer.update_order_from_exchange()
         """
         return (await exchange_channel.get_chan(octobot_trading.constants.ORDERS_CHANNEL,
-                                         self.order.exchange_manager.id).get_internal_producer().
+                                                self.order.exchange_manager.id).get_internal_producer().
                 update_order_from_exchange(order=self.order,
                                            wait_for_refresh=True,
                                            force_job_execution=force_synchronization))
@@ -154,10 +155,10 @@ class OrderState(util.Initializable):
         """
         raise NotImplementedError("_on_order_refresh_successful not implemented")
 
-    async def _synchronize_order_with_exchange(self, force_synchronization=False):
+    async def _synchronize_order_with_exchange(self, force_synchronization: bool = False) -> None:
         """
-        Ask the exchange to update the order
-        Also manage the order state during the refreshing process
+        Ask the exchange to update the order only if the state is not already refreshing
+        When the refreshing process starts set the state to enums.OrderStates.REFRESHING
         :param force_synchronization: When True, for the update of the order from the exchange
         """
         if self.is_refreshing():
@@ -166,12 +167,24 @@ class OrderState(util.Initializable):
             previous_state = self.state
             async with self.lock:
                 self.state = enums.OrderStates.REFRESHING
-            try:
-                await self._refresh_order_from_exchange(force_synchronization=force_synchronization)
-            finally:
-                async with self.lock:
-                    if self.state is enums.OrderStates.REFRESHING:
-                        self.state = previous_state
+            await self._refresh_or_restore_order_from_exchange(
+                previous_state=previous_state,
+                force_synchronization=force_synchronization)
+
+    async def _refresh_or_restore_order_from_exchange(self,
+                                                      previous_state: enums.OrderStates,
+                                                      force_synchronization: bool = False) -> None:
+        """
+        Ask the exchange to update the order
+        Restore the previous state if the refresh process fails
+        :param force_synchronization: When True, for the update of the order from the exchange
+        """
+        try:
+            await self._refresh_order_from_exchange(force_synchronization=force_synchronization)
+        finally:
+            async with self.lock:
+                if self.state is enums.OrderStates.REFRESHING:
+                    self.state = previous_state
 
     def clear(self):
         """
