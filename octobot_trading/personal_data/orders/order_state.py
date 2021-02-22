@@ -128,6 +128,7 @@ class OrderState(util.Initializable):
         - calling terminate if the state is terminated
         - restoring the initial state if nothing has been changed with synchronization or if sync failed
         :param force_synchronization: When True, for the update of the order from the exchange
+        :param catch_exception: When False raises the Exception during synchronize_order instead of catching it silently
         """
         try:
             await self._synchronize_order_with_exchange(force_synchronization=force_synchronization)
