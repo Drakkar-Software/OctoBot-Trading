@@ -29,6 +29,15 @@ class AbstractExchange(util.Initializable):
     BUY_STR = enums.TradeOrderSide.BUY.value
     SELL_STR = enums.TradeOrderSide.SELL.value
 
+    # order that should be self managed by OctoBot
+    # can be override locally to match exchange support
+    UNSUPPORTED_ORDERS = [enums.TraderOrderType.STOP_LOSS,
+                          enums.TraderOrderType.STOP_LOSS_LIMIT,
+                          enums.TraderOrderType.TAKE_PROFIT,
+                          enums.TraderOrderType.TAKE_PROFIT_LIMIT,
+                          enums.TraderOrderType.TRAILING_STOP,
+                          enums.TraderOrderType.TRAILING_STOP_LIMIT]
+
     ACCOUNTS = {}
 
     def __init__(self, config, exchange_manager):
@@ -256,6 +265,15 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("create_order is not implemented")
 
+    def is_supported_order_type(self, order_type):
+        """
+        Check if the order type is supported by the current exchange instance
+        Should be used to know if we should simulate this order or create it on the exchange
+        :param order_type: the order type, should be a member of enums.TraderOrderType
+        :return: True if the order type is supported by the exchange, else False
+        """
+        return order_type not in self.UNSUPPORTED_ORDERS
+
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         """
         Calculates fees resulting to a trade
@@ -459,6 +477,7 @@ class AbstractExchange(util.Initializable):
     """
     Uniformization
     """
+
     def need_to_uniformize_timestamp(self, timestamp):
         """
         Return True if the timestamp should be uniformized
