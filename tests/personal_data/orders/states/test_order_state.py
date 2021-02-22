@@ -13,14 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+from mock import patch, Mock, AsyncMock
 import pytest
 
 import octobot_trading.personal_data
 import octobot_trading.errors
+import octobot_trading.enums as enums
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
-from tests.personal_data.orders import buy_limit_order
+from tests.personal_data.orders import buy_limit_order, stop_loss_limit_order
 
 pytestmark = pytest.mark.asyncio
 
@@ -35,3 +37,34 @@ async def test_constructor(buy_limit_order):
     buy_limit_order.clear()
     with pytest.raises(octobot_trading.errors.InvalidOrderState):
         octobot_trading.personal_data.OrderState(buy_limit_order, True)
+
+
+async def test_update_calls_synchronize_when_pending_for_buy_limit_order(buy_limit_order):
+    buy_limit_order.order_type = enums.TraderOrderType.BUY_LIMIT
+    state = octobot_trading.personal_data.OrderState(buy_limit_order, True)
+    with patch.object(state, 'synchronize', new=AsyncMock()) as order_state_synchronize_mock, \
+            patch.object(state, 'terminate', new=AsyncMock()) as order_state_terminate_mock:
+        await state.update()
+        order_state_synchronize_mock.assert_called_once()
+        order_state_terminate_mock.assert_not_called()
+
+
+async def test_update_calls_terminate_when_pending_for_stop_loss_limit_order(stop_loss_limit_order):
+    stop_loss_limit_order.order_type = enums.TraderOrderType.STOP_LOSS_LIMIT
+    state = octobot_trading.personal_data.OrderState(stop_loss_limit_order, True)
+    with patch.object(state, 'synchronize', new=AsyncMock()) as order_state_synchronize_mock, \
+            patch.object(state, 'terminate', new=AsyncMock()) as order_state_terminate_mock:
+        await state.update()
+        order_state_synchronize_mock.assert_not_called()
+        order_state_terminate_mock.assert_called_once()
+
+
+async def test_update_calls_nothing_when_refreshing(buy_limit_order):
+    buy_limit_order.order_type = enums.TraderOrderType.BUY_LIMIT
+    state = octobot_trading.personal_data.OrderState(buy_limit_order, True)
+    with patch.object(state, 'synchronize', new=AsyncMock()) as order_state_synchronize_mock, \
+            patch.object(state, 'terminate', new=AsyncMock()) as order_state_terminate_mock:
+        state.state = enums.OrderStates.REFRESHING
+        await state.update()
+        order_state_synchronize_mock.assert_not_called()
+        order_state_terminate_mock.assert_not_called()
