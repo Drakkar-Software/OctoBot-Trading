@@ -297,15 +297,7 @@ class Order(util.Initializable):
         return self.exchange_manager.exchange.get_exchange_current_time()
 
     def is_self_managed(self):
-        # stop losses and take profits are self managed by the bot
-        if self.order_type in [enums.TraderOrderType.TAKE_PROFIT,
-                               enums.TraderOrderType.TAKE_PROFIT_LIMIT,
-                               enums.TraderOrderType.STOP_LOSS,
-                               enums.TraderOrderType.STOP_LOSS_LIMIT,
-                               enums.TraderOrderType.TRAILING_STOP,
-                               enums.TraderOrderType.TRAILING_STOP_LIMIT]:
-            return True
-        return False
+        return not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
 
     def update_from_raw(self, raw_order):
         if self.side is None or self.order_type is None:

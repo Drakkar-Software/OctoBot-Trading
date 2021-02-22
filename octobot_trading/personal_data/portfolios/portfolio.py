@@ -18,10 +18,7 @@ import copy
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
-
 import octobot_trading.constants as constants
-import octobot_trading.enums as enums
-import octobot_trading.personal_data as personal_data
 import octobot_trading.util as util
 
 
@@ -279,10 +276,4 @@ def _check_available_should_update(order):
     :param order: The order to check
     :return: True if the order should update available portfolio
     """
-    # stop losses and take profits aren't using available portfolio
-    return order.__class__ not in [personal_data.TraderOrderTypeClasses[enums.TraderOrderType.STOP_LOSS],
-                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.STOP_LOSS_LIMIT],
-                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.TAKE_PROFIT],
-                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.TAKE_PROFIT_LIMIT],
-                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.TRAILING_STOP],
-                                   personal_data.TraderOrderTypeClasses[enums.TraderOrderType.TRAILING_STOP_LIMIT]]
+    return not order.is_self_managed()
