@@ -17,4 +17,5 @@
 cimport octobot_trading.personal_data.orders.order_state as order_state
 
 cdef class FillOrderState(order_state.OrderState):
-    pass
+    cdef bint is_status_pending(self)
+    cdef bint is_status_filled(self)
