@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import os
+
 from mock import patch, Mock, AsyncMock
 import pytest
 
@@ -42,6 +44,8 @@ async def test_constructor(buy_limit_order):
 async def test_update_calls_synchronize_when_pending_for_buy_limit_order(buy_limit_order):
     buy_limit_order.order_type = enums.TraderOrderType.BUY_LIMIT
     state = octobot_trading.personal_data.OrderState(buy_limit_order, True)
+    if os.getenv('CYTHON_IGNORE'):
+        return
     with patch.object(state, 'synchronize', new=AsyncMock()) as order_state_synchronize_mock, \
             patch.object(state, 'terminate', new=AsyncMock()) as order_state_terminate_mock:
         await state.update()
@@ -52,6 +56,8 @@ async def test_update_calls_synchronize_when_pending_for_buy_limit_order(buy_lim
 async def test_update_calls_terminate_when_pending_for_stop_loss_limit_order(stop_loss_limit_order):
     stop_loss_limit_order.order_type = enums.TraderOrderType.STOP_LOSS_LIMIT
     state = octobot_trading.personal_data.OrderState(stop_loss_limit_order, True)
+    if os.getenv('CYTHON_IGNORE'):
+        return
     with patch.object(state, 'synchronize', new=AsyncMock()) as order_state_synchronize_mock, \
             patch.object(state, 'terminate', new=AsyncMock()) as order_state_terminate_mock:
         await state.update()
@@ -62,6 +68,8 @@ async def test_update_calls_terminate_when_pending_for_stop_loss_limit_order(sto
 async def test_update_calls_nothing_when_refreshing(buy_limit_order):
     buy_limit_order.order_type = enums.TraderOrderType.BUY_LIMIT
     state = octobot_trading.personal_data.OrderState(buy_limit_order, True)
+    if os.getenv('CYTHON_IGNORE'):
+        return
     with patch.object(state, 'synchronize', new=AsyncMock()) as order_state_synchronize_mock, \
             patch.object(state, 'terminate', new=AsyncMock()) as order_state_terminate_mock:
         state.state = enums.OrderStates.REFRESHING
