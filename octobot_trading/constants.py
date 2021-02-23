@@ -43,7 +43,6 @@ DEFAULT_EXCHANGE_TIME_LAG = 10
 DEFAULT_BACKTESTING_TIME_LAG = 0
 INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME = -1
 
-
 TESTED_EXCHANGES = ["binance", "bitmax", "kucoin", "coinbasepro"]
 SIMULATOR_TESTED_EXCHANGES = ["bybit"]
 
@@ -98,3 +97,11 @@ WEBSOCKET_FEEDS_TO_TRADING_CHANNELS = {
     POSITIONS_CHANNEL: [enums.WebsocketFeeds.POSITION],
     FUNDING_CHANNEL: [enums.WebsocketFeeds.FUNDING]
 }
+
+FILL_ORDER_STATUS_SCOPE = [enums.OrderStatus.CLOSED,
+                           enums.OrderStatus.FILLED,
+                           enums.OrderStatus.PARTIALLY_FILLED]
+CANCEL_ORDER_STATUS_SCOPE = [enums.OrderStatus.PENDING_CANCEL,
+                             enums.OrderStatus.CANCELED,
+                             enums.OrderStatus.EXPIRED,
+                             enums.OrderStatus.REJECTED]
