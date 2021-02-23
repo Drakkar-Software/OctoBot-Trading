@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.personal_data.orders.order_state as order_state
 import octobot_trading.personal_data.orders.states.order_state_factory as order_state_factory
 
@@ -22,8 +23,7 @@ class FillOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.OrderStates.FILLING \
-            if not self.order.simulated and self.order.status not in [enums.OrderStatus.FILLED,
-                                                                      enums.OrderStatus.CLOSED] \
+            if ((not self.order.simulated and not self.is_status_filled()) or self.is_status_pending()) \
             else enums.OrderStates.FILLED
 
     async def initialize_impl(self, forced=False) -> None:
@@ -33,12 +33,16 @@ class FillOrderState(order_state.OrderState):
         return await super().initialize_impl()
 
     def is_pending(self) -> bool:
-        # TODO : Should also include OrderStates.PARTIALLY_FILLED ?
         return self.state is enums.OrderStates.FILLING
 
     def is_filled(self) -> bool:
-        # TODO : Should also include OrderStates.PARTIALLY_FILLED ?
         return self.state is enums.OrderStates.FILLED
+
+    def is_status_pending(self) -> bool:
+        return self.order.status is enums.OrderStatus.PARTIALLY_FILLED
+
+    def is_status_filled(self) -> bool:
+        return self.order.status in [enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED]
 
     async def on_order_refresh_successful(self):
         """
@@ -47,12 +51,12 @@ class FillOrderState(order_state.OrderState):
         can also be still pending
         or be fully filled
         """
-        if self.order.status in [enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED]:
+        if self.order.status is enums.OrderStatus.PARTIALLY_FILLED:
+            # TODO manage partially filled
+            await self.update()
+        elif self.order.status in constants.FILL_ORDER_STATUS_SCOPE:
             self.state = enums.OrderStates.FILLED
             await self.update()
-        elif self.order.status is enums.OrderStatus.PARTIALLY_FILLED:
-            # TODO manage partially filled
-            pass
         else:
             await order_state_factory.create_order_state(self.order, is_from_exchange_data=True,
                                                          ignore_states=[enums.OrderStates.OPEN])
