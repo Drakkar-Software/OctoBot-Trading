@@ -14,20 +14,16 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.personal_data.orders.order_state as order_state
 import octobot_trading.personal_data.orders.states.order_state_factory as order_state_factory
 
 
 class CancelOrderState(order_state.OrderState):
-    CANCEL_STATUS = [enums.OrderStatus.PENDING_CANCEL,
-                     enums.OrderStatus.CANCELED,
-                     enums.OrderStatus.EXPIRED,
-                     enums.OrderStatus.REJECTED]
-
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = enums.OrderStates.CANCELING if (not self.order.simulated and
-                                                     self.order.status is not enums.OrderStatus.CANCELED) \
+        self.state = enums.OrderStates.CANCELING \
+            if ((not self.order.simulated and not self.is_status_cancelled()) or self.is_status_pending()) \
             else enums.OrderStates.CANCELED
 
     async def initialize_impl(self, forced=False, ignored_order=None) -> None:
@@ -48,11 +44,20 @@ class CancelOrderState(order_state.OrderState):
     def is_canceled(self) -> bool:
         return self.state is enums.OrderStates.CANCELED
 
+    def is_status_pending(self) -> bool:
+        return self.order.status is enums.OrderStatus.PENDING_CANCEL
+
+    def is_status_cancelled(self) -> bool:
+        return self.order.status is enums.OrderStatus.CANCELED
+
     async def on_order_refresh_successful(self):
         """
         Verify the order is properly canceled
         """
-        if self.order.status in self.CANCEL_STATUS:
+        if self.is_status_pending():
+            # TODO manage pending cancel
+            await self.update()
+        elif self.order.status in constants.CANCEL_ORDER_STATUS_SCOPE:
             self.state = enums.OrderStates.CANCELED
             await self.update()
         else:
