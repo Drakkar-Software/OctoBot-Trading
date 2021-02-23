@@ -13,20 +13,71 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import OrderStatus
+import os
+
+import octobot_trading.personal_data
+import octobot_trading.enums as enums
 
 import pytest
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
-from tests.personal_data.orders import sell_limit_order
+from tests.personal_data.orders import sell_limit_order, buy_limit_order, buy_market_order, sell_market_order
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_on_order_refresh_successful(sell_limit_order):
-    sell_limit_order.status = OrderStatus.CANCELED
+    sell_limit_order.status = enums.OrderStatus.CANCELED
     sell_limit_order.exchange_manager.is_backtesting = True
     await sell_limit_order.initialize()
     await sell_limit_order.state.on_order_refresh_successful()
     assert sell_limit_order.is_cancelled()
     sell_limit_order.clear()
+
+
+async def test_constructor_with_pending_cancel_status(buy_limit_order):
+    # with PENDING_CANCEL status
+    buy_limit_order.status = enums.OrderStatus.PENDING_CANCEL
+    state = octobot_trading.personal_data.CancelOrderState(buy_limit_order, True)
+    assert state.state is enums.OrderStates.CANCELING
+    assert state.is_pending()
+    assert not state.is_canceled()
+    if not os.getenv('CYTHON_IGNORE'):
+        assert state.is_status_pending()
+        assert not state.is_status_cancelled()
+
+
+async def test_constructor_with_cancelled_status(sell_limit_order):
+    # with CANCELED status
+    sell_limit_order.status = enums.OrderStatus.CANCELED
+    state = octobot_trading.personal_data.CancelOrderState(sell_limit_order, True)
+    assert state.state is enums.OrderStates.CANCELED
+    assert not state.is_pending()
+    assert state.is_canceled()
+    if not os.getenv('CYTHON_IGNORE'):
+        assert not state.is_status_pending()
+        assert state.is_status_cancelled()
+
+
+async def test_constructor_with_expired_status(buy_market_order):
+    # with EXPIRED status
+    buy_market_order.status = enums.OrderStatus.EXPIRED
+    state = octobot_trading.personal_data.CancelOrderState(buy_market_order, True)
+    assert state.state is enums.OrderStates.CANCELED
+    assert not state.is_pending()
+    assert state.is_canceled()
+    if not os.getenv('CYTHON_IGNORE'):
+        assert not state.is_status_pending()
+        assert state.is_status_cancelled()
+
+
+async def test_constructor_with_rejected_status(sell_market_order):
+    # with REJECTED status
+    sell_market_order.status = enums.OrderStatus.REJECTED
+    state = octobot_trading.personal_data.CancelOrderState(sell_market_order, True)
+    assert state.state is enums.OrderStates.CANCELED
+    assert not state.is_pending()
+    assert state.is_canceled()
+    if not os.getenv('CYTHON_IGNORE'):
+        assert not state.is_status_pending()
+        assert state.is_status_cancelled()
