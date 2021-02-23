@@ -120,6 +120,8 @@ class OrderState(util.Initializable):
             else:
                 async with self.lock:
                     await self.terminate()
+        else:
+            self.get_logger().debug(f"Trying to update a refreshing state for order: {self.order}")
 
     async def synchronize(self, force_synchronization=False, catch_exception=False) -> None:
         """
