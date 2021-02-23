@@ -42,7 +42,7 @@ class FillOrderState(order_state.OrderState):
         return self.order.status is enums.OrderStatus.PARTIALLY_FILLED
 
     def is_status_filled(self) -> bool:
-        return self.order.status in [enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED]
+        return not self.is_status_pending() and self.order.status in constants.FILL_ORDER_STATUS_SCOPE
 
     async def on_order_refresh_successful(self):
         """

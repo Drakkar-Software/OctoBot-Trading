@@ -48,7 +48,7 @@ class CancelOrderState(order_state.OrderState):
         return self.order.status is enums.OrderStatus.PENDING_CANCEL
 
     def is_status_cancelled(self) -> bool:
-        return self.order.status is enums.OrderStatus.CANCELED
+        return not self.is_status_pending() and self.order.status in constants.CANCEL_ORDER_STATUS_SCOPE
 
     async def on_order_refresh_successful(self):
         """
