@@ -1,15 +1,15 @@
 # Setup requirements
-cython==0.29.21
+cython==0.29.22
 numpy==1.20.1
 
 # Drakkar-Software requirements
-OctoBot-Backtesting>=1.6.12, <1.7
-Async-Channel>=2.0.7, <2.1
-OctoBot-Commons>=1.5.4, <1.6
-OctoBot-Tentacles-Manager>=2.4.0, <2.5
+OctoBot-Backtesting>=1.6.13, <1.7
+Async-Channel>=2.0.8, <2.1
+OctoBot-Commons>=1.5.5, <1.6
+OctoBot-Tentacles-Manager>=2.4.6, <2.5
 
 # Exchange connection requirements
-ccxt==1.41.2 # always ensure real exchanges tests are passing before changing the ccxt version (kucoin currently broken on order_book test in later versions)
+ccxt==1.42.36 # always ensure real exchanges tests are passing before changing the ccxt version
 cryptography # Never specify a version (managed by https://github.com/Drakkar-Software/OctoBot-PyPi-Linux-Deployer)
 
 # CLI requirements
@@ -22,7 +22,7 @@ websockets==8.1
 
 # other requirements
 sortedcontainers==2.3.0
-colorlog==4.2.1
+colorlog==4.7.2
 yarl==1.1.0
 idna<2.9,>=2.5
 multidict>=4.5,<5.0

@@ -18,7 +18,7 @@ import os
 
 from setuptools import dist
 
-dist.Distribution().fetch_build_eggs(['Cython>=0.29.21', 'numpy==1.20.1'])
+dist.Distribution().fetch_build_eggs(['Cython>=0.29.22', 'numpy==1.20.1'])
 
 import numpy as np
 
