@@ -293,7 +293,19 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 # get a cancelled order).
                 return True
         except ccxt.OrderNotFound:
-            self.logger.error(f"Trying to cancel order with id {order_id} but order was not found")
+            self.logger.debug(f"Trying to cancel order with id {order_id} but order was not found. "
+                              f"Now checking if this order still exists.")
+            # Order cancellation might have gone unnoticed: try to get it: if still not found then
+            # it doesn't exist anymore: consider it cancelled already
+            try:
+                await self.get_order(order_id, symbol=symbol, **kwargs)
+            except ccxt.OrderNotFound:
+                self.logger.debug(f"Order with id {order_id} doesn't exist on exchange: now considering it cancelled.")
+                return True
+            # Order exists, there is a problem: log error and raise
+            self.logger.error(f"Trying to cancel order with id {order_id} but order was not found in cancel "
+                              f"command while still existing in get requests.")
+            raise ccxt.OrderNotFound
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except Exception as e:
