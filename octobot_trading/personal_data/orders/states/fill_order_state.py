@@ -82,7 +82,8 @@ class FillOrderState(order_state.OrderState):
 
             # compute trading fees
             try:
-                self.order.fee = self.order.get_computed_fee()
+                if self.order.exchange_manager is not None:
+                    self.order.fee = self.order.get_computed_fee()
             except KeyError:
                 self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
