@@ -168,11 +168,12 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         raise NotImplementedError("get_should_cancel_loaded_orders not implemented")
 
-    async def cancel_symbol_open_orders(self, symbol) -> None:
+    async def cancel_symbol_open_orders(self, symbol) -> bool:
         """
         Cancel all trader open orders
         """
         cancel_loaded_orders = self.get_should_cancel_loaded_orders()
 
         if self.exchange_manager.trader.is_enabled:
-            await self.exchange_manager.trader.cancel_open_orders(symbol, cancel_loaded_orders)
+            return await self.exchange_manager.trader.cancel_open_orders(symbol, cancel_loaded_orders)
+        return True

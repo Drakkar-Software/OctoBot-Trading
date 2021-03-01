@@ -40,12 +40,12 @@ def get_open_orders(exchange_manager) -> list:
     return exchange_manager.exchange_personal_data.orders_manager.get_open_orders()
 
 
-async def cancel_all_open_orders(exchange_manager) -> None:
-    await exchange_manager.trader.cancel_all_open_orders()
+async def cancel_all_open_orders(exchange_manager) -> bool:
+    return await exchange_manager.trader.cancel_all_open_orders()
 
 
-async def cancel_all_open_orders_with_currency(exchange_manager, currency) -> None:
-    await exchange_manager.trader.cancel_all_open_orders_with_currency(currency)
+async def cancel_all_open_orders_with_currency(exchange_manager, currency) -> bool:
+    return await exchange_manager.trader.cancel_all_open_orders_with_currency(currency)
 
 
 async def cancel_order_with_id(exchange_manager, order_id) -> bool:

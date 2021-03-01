@@ -140,7 +140,7 @@ class Trader(util.Initializable):
             new_order.linked_portfolio = portfolio
         return new_order
 
-    async def cancel_order(self, order: object, ignored_order: object = None):
+    async def cancel_order(self, order: object, ignored_order: object = None) -> bool:
         """
         Cancels the given order and its linked orders, and updates the portfolio, publish in order channel
         if order is from a real exchange.
@@ -151,9 +151,10 @@ class Trader(util.Initializable):
         """
         if order and order.is_open():
             # always cancel this order first to avoid infinite loop followed by deadlock
-            await self._handle_order_cancellation(order, ignored_order)
+            return await self._handle_order_cancellation(order, ignored_order)
+        return False
 
-    async def _handle_order_cancellation(self, order: object, ignored_order: object):
+    async def _handle_order_cancellation(self, order: object, ignored_order: object) -> bool:
         success = True
         async with order.lock:
             # if real order: cancel on exchange
@@ -163,7 +164,8 @@ class Trader(util.Initializable):
                     # retry to cancel order
                     success = await self.exchange_manager.exchange.cancel_order(order.order_id, order.symbol)
                 if not success:
-                    self.logger.error(f"Failed to cancel order {order}")
+                    self.logger.warning(f"Failed to cancel order {order}")
+                    return False
                 else:
                     order.status = octobot_trading.enums.OrderStatus.CLOSED
                     self.logger.debug(f"Successfully cancelled order {order}")
@@ -174,51 +176,59 @@ class Trader(util.Initializable):
         await order.on_cancel(force_cancel=success,
                               is_from_exchange_data=False,
                               ignored_order=ignored_order)
+        return True
 
     async def cancel_order_with_id(self, order_id):
         """
         Gets order matching order_id from the OrderManager and calls self.cancel_order() on it
         :param order_id: Id of the order to cancel
-        :return: True if cancel is successful, False if order is not found
+        :return: True if cancel is successful, False if order is not found or cancellation failed
         """
         try:
-            await self.cancel_order(self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id))
-            return True
+            return await self.cancel_order(
+                self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id)
+            )
         except KeyError:
             return False
 
-    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True):
+    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True) -> bool:
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
         :param symbol: The symbol to cancel all orders on
         :param cancel_loaded_orders: When True, also cancels loaded orders (order that are not from this bot instance)
-        :return: None
+        :return: True if all orders got cancelled, False if an error occurred
         """
+        all_cancelled = True
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if (order.symbol == symbol and not order.is_cancelled()) and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
-                await self.cancel_order(order)
+                all_cancelled = await self.cancel_order(order) and all_cancelled
+        return all_cancelled
 
-    async def cancel_all_open_orders_with_currency(self, currency):
+    async def cancel_all_open_orders_with_currency(self, currency) -> bool:
         """
         Should be called only if the goal is to cancel all open orders for each traded symbol containing the
         given currency.
         :param currency: Currency to find trading pairs to cancel orders on.
-        :return: None
+        :return: True if all orders got cancelled, False if an error occurred
         """
+        all_cancelled = True
         symbols = util.get_pairs(self.config, currency, enabled_only=True)
         if symbols:
             for symbol in symbols:
-                await self.cancel_open_orders(symbol)
+                all_cancelled = await self.cancel_open_orders(symbol) and all_cancelled
+        return all_cancelled
 
-    async def cancel_all_open_orders(self):
+    async def cancel_all_open_orders(self) -> bool:
         """
         Cancel all open orders registered on this bot.
-        :return: None
+        :return: True if all orders got cancelled, False if an error occurred
         """
+        all_cancelled = True
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if not order.is_cancelled():
-                await self.cancel_order(order)
+                all_cancelled = await self.cancel_order(order) and all_cancelled
+        return all_cancelled
 
     async def _sell_everything(self, symbol, inverted, timeout=None):
         created_orders = []

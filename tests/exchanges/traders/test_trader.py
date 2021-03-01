@@ -115,7 +115,7 @@ class TestTrader:
 
         assert limit_buy in orders_manager.get_open_orders()
 
-        await trader_inst.cancel_order(limit_buy)
+        assert await trader_inst.cancel_order(limit_buy) is True
 
         assert limit_buy not in orders_manager.get_open_orders()
 
@@ -139,11 +139,30 @@ class TestTrader:
 
         assert stop_order in orders_manager.get_open_orders()
 
-        await trader_inst.cancel_order(stop_order)
+        assert await trader_inst.cancel_order(stop_order) is True
 
         assert stop_order not in orders_manager.get_open_orders()
 
         await self.stop(exchange_manager)
+
+    async def test_cancel_closed_order(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+
+        # Test buy order
+        limit_buy = BuyLimitOrder(trader_inst)
+        limit_buy.update(order_type=TraderOrderType.SELL_LIMIT,
+                         symbol=self.DEFAULT_SYMBOL,
+                         current_price=70,
+                         quantity=10,
+                         price=70)
+
+        # 1. cancel order: success
+        assert await trader_inst.cancel_order(limit_buy) is True
+        # 2. re-cancel order: failure (already cancelled)
+        assert await trader_inst.cancel_order(limit_buy) is False
+
+        await self.stop(exchange_manager)
+
 
     async def test_cancel_open_orders_default_symbol(self):
         config, exchange_manager, trader_inst = await self.init_default()
@@ -186,7 +205,7 @@ class TestTrader:
 
         assert not trades_manager.trades
 
-        await trader_inst.cancel_open_orders(self.DEFAULT_SYMBOL)
+        assert await trader_inst.cancel_open_orders(self.DEFAULT_SYMBOL) is True
 
         assert limit_buy_1 not in orders_manager.get_open_orders()
         assert limit_sell not in orders_manager.get_open_orders()
@@ -252,7 +271,7 @@ class TestTrader:
 
         assert len(trades_manager.trades) == 2
 
-        await trader_inst.cancel_open_orders(self.DEFAULT_SYMBOL)
+        assert await trader_inst.cancel_open_orders(self.DEFAULT_SYMBOL) is True
 
         assert limit_buy not in orders_manager.get_open_orders()
         assert limit_sell in orders_manager.get_open_orders()
@@ -313,14 +332,14 @@ class TestTrader:
 
         assert len(trades_manager.trades) == 2
 
-        await trader_inst.cancel_all_open_orders_with_currency("XYZ")
+        assert await trader_inst.cancel_all_open_orders_with_currency("XYZ") is True
 
         assert limit_buy in orders_manager.get_open_orders()
         assert limit_sell in orders_manager.get_open_orders()
 
         assert len(trades_manager.trades) == 2
 
-        await trader_inst.cancel_all_open_orders_with_currency("XRP")
+        assert await trader_inst.cancel_all_open_orders_with_currency("XRP") is True
 
         assert limit_buy in orders_manager.get_open_orders()
         assert limit_sell not in orders_manager.get_open_orders()
