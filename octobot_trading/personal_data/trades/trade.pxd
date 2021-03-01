@@ -50,6 +50,7 @@ cdef class Trade:
     cdef public object exchange_trade_type # raw exchange trade type, used to create trade dict
 
     cpdef double get_time(self)
+    cpdef double get_quantity(self)
     cpdef void update_from_order(self,
                                  object order,
                                  double canceled_time=*,

@@ -78,6 +78,9 @@ class Trade:
     def get_time(self):
         return self.executed_time if self.status is not enums.OrderStatus.CANCELED else self.canceled_time
 
+    def get_quantity(self):
+        return self.executed_quantity if self.status is not enums.OrderStatus.CANCELED else self.origin_quantity
+
     def to_dict(self):
         return {
             enums.ExchangeConstantsOrderColumns.ID.value: self.trade_id,
@@ -87,7 +90,7 @@ class Trade:
             enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: self.get_time(),
             enums.ExchangeConstantsOrderColumns.TYPE.value: self.exchange_trade_type.value,
             enums.ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
-            enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.executed_quantity,
+            enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.get_quantity(),
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
             enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value: self.taker_or_maker,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee
