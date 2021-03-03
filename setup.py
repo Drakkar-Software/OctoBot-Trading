@@ -208,6 +208,7 @@ setup(
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Cython',
         'Operating System :: OS Independent',
         'Operating System :: MacOS :: MacOS X',
