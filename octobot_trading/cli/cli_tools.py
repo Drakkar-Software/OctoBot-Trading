@@ -25,28 +25,29 @@ import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.cli as cli
 
 
-async def ticker_callback(exchange: str, exchange_id: str, symbol: str,  ticker):
+async def ticker_callback(exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,  ticker):
     if cli.get_should_display_callbacks_logs():
         logging.info(f"TICKER : EXCHANGE = {exchange} || SYMBOL = {symbol} || TICKER = {ticker}")
 
 
-async def order_book_callback(exchange: str, exchange_id: str, symbol: str,  asks, bids):
+async def order_book_callback(exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,  asks, bids):
     if cli.get_should_display_callbacks_logs():
         logging.info(f"ORDERBOOK : EXCHANGE = {exchange} || SYMBOL = {symbol} || ASKS = {asks} || BIDS = {bids}")
 
 
-async def ohlcv_callback(exchange: str, exchange_id: str, symbol: str,  time_frame, candle):
+async def ohlcv_callback(exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,  time_frame, candle):
     if cli.get_should_display_callbacks_logs():
         logging.info(
-            f"OHLCV : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || CANDLE = {candle}")
+            f"OHLCV : EXCHANGE = {exchange} || CRYPTOCURRENCY = {cryptocurrency} || SYMBOL = {symbol} "
+            f"|| TIME FRAME = {time_frame} || CANDLE = {candle}")
 
 
-async def recent_trades_callback(exchange: str, exchange_id: str, symbol: str,  recent_trades):
+async def recent_trades_callback(exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,  recent_trades):
     if cli.get_should_display_callbacks_logs():
         logging.info(f"RECENT TRADE : EXCHANGE = {exchange} || SYMBOL = {symbol} || RECENT TRADE = {recent_trades}")
 
 
-async def kline_callback(exchange: str, exchange_id: str, symbol: str, time_frame, kline):
+async def kline_callback(exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, time_frame, kline):
     if cli.get_should_display_callbacks_logs():
         logging.info(
             f"KLINE : EXCHANGE = {exchange} || SYMBOL = {symbol} || TIME FRAME = {time_frame} || KLINE = {kline}")
@@ -61,24 +62,24 @@ async def balance_profitability_callback(exchange: str, exchange_id: str, profit
                                          market_profitability_percent, initial_portfolio_current_profitability):
     if cli.get_should_display_callbacks_logs():
         logging.info(f"BALANCE PROFITABILITY : EXCHANGE = {exchange} || PROFITABILITY = "
-                     f"{pretty_printer.PrettyPrinter.portfolio_profitability_pretty_print(profitability, profitability_percent, 'USDT')}")
+                     f"{pretty_printer.portfolio_profitability_pretty_print(profitability, profitability_percent, 'USDT')}")
 
 
-async def trades_callback(exchange: str, exchange_id: str, symbol: str, trade: dict, old_trade: bool):
+async def trades_callback(exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, trade: dict, old_trade: bool):
     if cli.get_should_display_callbacks_logs():
         logging.info(f"TRADES : EXCHANGE = {exchange} || SYMBOL = {symbol} || TRADE = {trade} "
                      f"|| OLD_TRADE = {old_trade}")
 
 
-async def orders_callback(exchange: str, exchange_id: str, symbol: str,  order: dict, is_new, is_from_bot):
+async def orders_callback(exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,  order: dict, is_new: bool, is_from_bot: bool):
     if cli.get_should_display_callbacks_logs():
         order_string = f"ORDERS : EXCHANGE = {exchange} || SYMBOL = {symbol} ||"
-        order_string += pretty_printer.PrettyPrinter.open_order_pretty_printer(exchange, order)
+        order_string += pretty_printer.open_order_pretty_printer(exchange, order)
         order_string += f"|| CREATED = {is_new} || FROM_BOT = {is_from_bot}"
         logging.info(order_string)
 
 
-async def positions_callback(exchange: str, exchange_id: str, symbol: str,  position, is_closed, is_updated, is_from_bot):
+async def positions_callback(exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,  position, is_closed, is_updated, is_liquidated: bool, is_from_bot):
     if cli.get_should_display_callbacks_logs():
         logging.info(f"POSITIONS : EXCHANGE = {exchange} || SYMBOL = {symbol} || POSITIONS = {position}"
                      f"|| CLOSED = {is_closed} || UPDATED = {is_updated} || FROM_BOT = {is_from_bot}")
