@@ -90,7 +90,10 @@ if __name__ == '__main__':
     cli.set_should_display_callbacks_logs(True)
 
     exchange_name = "binance"
-    exchange_builder = create_exchange_builder(config, exchange_name).is_simulated().is_rest_only()
+    exchange_builder = create_exchange_builder(config, exchange_name).\
+        is_simulated().\
+        is_rest_only().\
+        disable_trading_mode()
 
     add_exchange(exchange_name, {
         "exchange_builder": exchange_builder,
