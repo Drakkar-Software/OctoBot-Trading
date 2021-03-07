@@ -14,8 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
-from ccxt.async_support import kraken
+from ccxt.async_support import bittrex
 
+import octobot_trading.errors
 from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
@@ -28,8 +29,8 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestKrakenRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "kraken"
+class TestBittrexRealExchangeTester(RealExchangeTester):
+    EXCHANGE_NAME = "bittrex"
     SYMBOL = "BTC/USDT"
 
     async def test_time_frames(self):
@@ -37,12 +38,8 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
         assert all(time_frame in time_frames for time_frame in (
             TimeFrames.ONE_MINUTE.value,
             TimeFrames.FIVE_MINUTES.value,
-            TimeFrames.FIFTEEN_MINUTES.value,
-            TimeFrames.THIRTY_MINUTES.value,
             TimeFrames.ONE_HOUR.value,
-            TimeFrames.FOUR_HOURS.value,
-            TimeFrames.ONE_DAY.value,
-            TimeFrames.ONE_WEEK.value
+            TimeFrames.ONE_DAY.value
         ))
 
     async def test_get_market_status(self):
@@ -60,13 +57,13 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 720
+        assert len(symbol_prices) >= 744
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-        # candle limit is not supported, replaced by (await self.get_symbol_prices())[-limit:] in kraken tentacle
+        # candle limit is not supported, replaced by (await self.get_symbol_prices())[-limit:] in bittrex tentacle
         # try with candles limit (used in candled updater)
         symbol_prices = (await self.get_symbol_prices())[-200:]
         assert len(symbol_prices) == 200
@@ -77,9 +74,9 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
 
     async def test_get_kline_price(self):
         # kline_price = await self.get_kline_price()
-        client = kraken()
+        client = bittrex()
         await client.fetch_markets()
-        kline_price = [(await client.fetch_ohlcv(TestKrakenRealExchangeTester.SYMBOL, TimeFrames.ONE_HOUR.value))[-1]]
+        kline_price = [(await client.fetch_ohlcv(TestBittrexRealExchangeTester.SYMBOL, TimeFrames.ONE_HOUR.value))[-1]]
 
         assert len(kline_price) == 1
         assert len(kline_price[0]) == 6
@@ -89,19 +86,16 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
         await client.close()
 
     async def test_get_order_book(self):
-        # We should prefer using fetch_l2_order_book (from https://github.com/ccxt/ccxt/issues/8135)
-        order_book = await self.get_order_book()
-        assert len(order_book[Ecobic.ASKS.value]) == 5
-        # [price, amount, time] instead of [price, amount]
-        assert len(order_book[Ecobic.ASKS.value][0]) == 3
-        assert len(order_book[Ecobic.BIDS.value]) == 5
-        # [price, amount, time] instead of [price, amount]
-        assert len(order_book[Ecobic.BIDS.value][0]) == 3
+        # fetchOrderBook() limit argument must be None, 1, 25 or 500, default is 25
+        order_book = await self.get_order_book(limit=25)
+        assert len(order_book[Ecobic.ASKS.value]) == 25
+        assert len(order_book[Ecobic.ASKS.value][0]) == 2
+        assert len(order_book[Ecobic.BIDS.value]) == 25
+        assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
-        # https://github.com/ccxt/ccxt/issues/5698
-        recent_trades = await self.get_recent_trades(limit=1000)
-        assert len(recent_trades) == 1000
+        recent_trades = await self.get_recent_trades()
+        assert len(recent_trades) == 50
         # check trades order (oldest first)
         self.ensure_elements_order(recent_trades, Ecoc.TIMESTAMP.value)
 
@@ -130,14 +124,14 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
             Ectc.PREVIOUS_CLOSE.value
         ))
         if check_content:
-            assert ticker[Ectc.HIGH.value]
-            assert ticker[Ectc.LOW.value]
+            assert ticker[Ectc.HIGH.value] is None
+            assert ticker[Ectc.LOW.value] is None
             assert ticker[Ectc.BID.value]
             assert ticker[Ectc.BID_VOLUME.value] is None
             assert ticker[Ectc.ASK.value]
             assert ticker[Ectc.ASK_VOLUME.value] is None
-            assert ticker[Ectc.OPEN.value]
+            assert ticker[Ectc.OPEN.value] is None
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
-            assert ticker[Ectc.BASE_VOLUME.value]
+            assert ticker[Ectc.BASE_VOLUME.value] is None
