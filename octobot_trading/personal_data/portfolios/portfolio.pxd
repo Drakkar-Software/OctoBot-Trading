@@ -58,4 +58,6 @@ cdef class Portfolio(util.Initializable):
     cdef void _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 
 cdef bint _check_available_should_update(order_class.Order order)
-cpdef double ensure_portfolio_update_validness(str currency, double origin_quantity, double update_quantity)
+
+# shouldn't be cythonized while hooking _ensure_portfolio_update_validness in tests/__init__.py
+# cpdef double ensure_portfolio_update_validness(str currency, double origin_quantity, double update_quantity)
