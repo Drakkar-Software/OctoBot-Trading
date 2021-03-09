@@ -38,7 +38,8 @@ class Portfolio(util.Initializable):
         self._exchange_name = exchange_name
         self._is_simulated = is_simulated
 
-        self.logger = logging.get_logger(f"{self.__class__.__name__}{'Simulator' if is_simulated else ''}[{exchange_name}]")
+        self.logger = logging.get_logger(
+            f"{self.__class__.__name__}{'Simulator' if is_simulated else ''}[{exchange_name}]")
         self.lock = asyncio.Lock()
         self.portfolio = None
 
@@ -228,26 +229,12 @@ class Portfolio(util.Initializable):
         :param available: the available delta
         :param total: the total delta
         """
-        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += self._ensure_portfolio_update_validness(
+        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += _ensure_portfolio_update_validness(
             currency, self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE], available
         )
-        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += self._ensure_portfolio_update_validness(
+        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += _ensure_portfolio_update_validness(
             currency, self.portfolio[currency][common_constants.PORTFOLIO_TOTAL], total
         )
-
-    def _ensure_portfolio_update_validness(self, currency, origin_quantity, update_quantity):
-        """
-        Ensure that the portfolio final value is not negative.
-        Raise a PortfolioNegativeValueError if the final value is negative
-        :param currency: the currency to update
-        :param origin_quantity: the original currency value
-        :param update_quantity: the update value
-        :return:
-        """
-        if origin_quantity + update_quantity < 0:
-            raise errors.PortfolioNegativeValueError(f"Trying to update {currency} with {update_quantity} "
-                                                     f"but quantity was {origin_quantity}")
-        return update_quantity
 
     def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
         """
@@ -296,3 +283,18 @@ def _check_available_should_update(order):
     :return: True if the order should update available portfolio
     """
     return not order.is_self_managed()
+
+
+def _ensure_portfolio_update_validness(currency, origin_quantity, update_quantity):
+    """
+    Ensure that the portfolio final value is not negative.
+    Raise a PortfolioNegativeValueError if the final value is negative
+    :param currency: the currency to update
+    :param origin_quantity: the original currency value
+    :param update_quantity: the update value
+    :return:
+    """
+    if origin_quantity + update_quantity < 0:
+        raise errors.PortfolioNegativeValueError(f"Trying to update {currency} with {update_quantity} "
+                                                 f"but quantity was {origin_quantity}")
+    return update_quantity
