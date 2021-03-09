@@ -89,7 +89,7 @@ def setup_test_hooks():
         # disable PortfolioNegativeValueError raise
         return args[2]
     setup_hook_on_method(portfolio,
-                         portfolio._ensure_portfolio_update_validness.__name__,
+                         portfolio.ensure_portfolio_update_validness.__name__,
                          portfolio_ensure_portfolio_update_validness_hook)
 
 # set default values for async loop
