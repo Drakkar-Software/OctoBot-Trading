@@ -918,8 +918,8 @@ async def test_update_portfolio_data(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
-    # disable hook on _ensure_portfolio_update_validness
-    restore_origin_method(portfolio, "_ensure_portfolio_update_validness")
+    # disable hook on ensure_portfolio_update_validness
+    restore_origin_method(portfolio, "ensure_portfolio_update_validness")
 
     if not os.getenv('CYTHON_IGNORE'):
         with pytest.raises(errors.PortfolioNegativeValueError):
@@ -938,5 +938,5 @@ async def test_update_portfolio_data(backtesting_trader):
 
         portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy2, True)
 
-    # enable hook on _ensure_portfolio_update_validness
-    restore_hook_on_method(portfolio, "_ensure_portfolio_update_validness")
+    # enable hook on ensure_portfolio_update_validness
+    restore_hook_on_method(portfolio, "ensure_portfolio_update_validness")

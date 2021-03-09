@@ -229,10 +229,10 @@ class Portfolio(util.Initializable):
         :param available: the available delta
         :param total: the total delta
         """
-        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += _ensure_portfolio_update_validness(
+        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += ensure_portfolio_update_validness(
             currency, self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE], available
         )
-        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += _ensure_portfolio_update_validness(
+        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += ensure_portfolio_update_validness(
             currency, self.portfolio[currency][common_constants.PORTFOLIO_TOTAL], total
         )
 
@@ -285,14 +285,14 @@ def _check_available_should_update(order):
     return not order.is_self_managed()
 
 
-def _ensure_portfolio_update_validness(currency, origin_quantity, update_quantity):
+def ensure_portfolio_update_validness(currency, origin_quantity, update_quantity):
     """
     Ensure that the portfolio final value is not negative.
     Raise a PortfolioNegativeValueError if the final value is negative
     :param currency: the currency to update
     :param origin_quantity: the original currency value
     :param update_quantity: the update value
-    :return:
+    :return: the updated quantity
     """
     if origin_quantity + update_quantity < 0:
         raise errors.PortfolioNegativeValueError(f"Trying to update {currency} with {update_quantity} "
