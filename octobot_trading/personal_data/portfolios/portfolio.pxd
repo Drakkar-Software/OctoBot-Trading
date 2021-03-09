@@ -38,7 +38,6 @@ cdef class Portfolio(util.Initializable):
     cpdef bint update_portfolio_from_balance(self, dict balance, bint force_replace=*)
     cpdef void update_portfolio_available(self, order_class.Order order, bint is_new_order=*)
     cpdef void update_portfolio_from_filled_order(self, order_class.Order order)
-    cpdef double _ensure_portfolio_update_validness(self, str currency, double origin_quantity, double update_quantity)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
     # cpdef dict get_portfolio_from_amount_dict(self, dict amount_dict) can't be cythonized for now
     cpdef void reset(self)
@@ -59,3 +58,4 @@ cdef class Portfolio(util.Initializable):
     cdef void _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 
 cdef bint _check_available_should_update(order_class.Order order)
+cpdef double _ensure_portfolio_update_validness(str currency, double origin_quantity, double update_quantity)
