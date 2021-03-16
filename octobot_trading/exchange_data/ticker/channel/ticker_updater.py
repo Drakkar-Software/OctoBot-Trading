@@ -77,7 +77,7 @@ class TickerUpdater(ticker_channel.TickerProducer):
         try:
             # at least require close, volume and timestamp
             return ticker and \
-                all(ticker[field] is not None
+                any(ticker[field] is not None
                     for field in (
                         enums.ExchangeConstantsTickersColumns.CLOSE.value,
                         enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value,
