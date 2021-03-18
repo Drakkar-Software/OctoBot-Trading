@@ -90,13 +90,14 @@ class RealExchangeTester:
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
             return exchange_manager.exchange.get_market_status(self.SYMBOL)
 
-    async def get_symbol_prices(self, limit=None):
+    async def get_symbol_prices(self, limit=None, **kwargs):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
-            return await exchange_manager.exchange.get_symbol_prices(self.SYMBOL, self.TIME_FRAME, limit=limit)
+            return await exchange_manager.exchange.get_symbol_prices(self.SYMBOL, self.TIME_FRAME,
+                                                                     limit=limit, **kwargs)
 
-    async def get_kline_price(self):
+    async def get_kline_price(self, **kwargs):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
-            return await exchange_manager.exchange.get_kline_price(self.SYMBOL, self.TIME_FRAME)
+            return await exchange_manager.exchange.get_kline_price(self.SYMBOL, self.TIME_FRAME, **kwargs)
 
     async def get_order_book(self, **kwargs):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
