@@ -30,10 +30,15 @@ from octobot_trading.exchanges.connectors cimport ccxt_websocket_connector
 from octobot_trading.exchanges.connectors.ccxt_websocket_connector cimport (
     CCXTWebsocketConnector,
 )
+from octobot_trading.exchanges.connectors cimport cryptofeed_websocket_connector
+from octobot_trading.exchanges.connectors.cryptofeed_websocket_connector cimport (
+    CryptofeedWebsocketConnector,
+)
 
 __all__ = [
     "ExchangeSimulator",
     "CCXTExchange",
     "AbstractWebsocketConnector",
     "CCXTWebsocketConnector",
+    "CryptofeedWebsocketConnector",
 ]

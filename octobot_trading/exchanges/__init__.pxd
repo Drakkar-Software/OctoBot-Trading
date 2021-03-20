@@ -94,6 +94,7 @@ from octobot_trading.exchanges.connectors cimport (
     CCXTExchange,
     CCXTWebsocketConnector,
     AbstractWebsocketConnector,
+    CryptofeedWebsocketConnector,
 )
 
 from octobot_trading.exchanges cimport abstract_websocket_exchange
@@ -137,4 +138,5 @@ __all__ = [
     "MarginExchangeSimulator",
     "MarginCCXTExchange",
     "CCXTWebSocketExchange",
+    "CryptofeedWebsocketConnector",
 ]
