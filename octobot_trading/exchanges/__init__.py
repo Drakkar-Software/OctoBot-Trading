@@ -104,6 +104,7 @@ from octobot_trading.exchanges.connectors import (
     CCXTExchange,
     CCXTWebsocketConnector,
     AbstractWebsocketConnector,
+    CryptofeedWebsocketConnector,
 )
 
 __all__ = [
@@ -151,6 +152,7 @@ __all__ = [
     "ExchangeMarketStatusFixer",
     "is_ms_valid",
     "AbstractWebsocketExchange",
+    "CryptofeedWebsocketConnector",
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",
