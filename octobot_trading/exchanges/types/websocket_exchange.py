@@ -53,12 +53,16 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.TRADES)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.L2_BOOK)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.L3_BOOK)
+            await self.add_feed(octobot_trading.enums.WebsocketFeeds.BOOK_DELTA)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.BOOK_TICKER)
+            await self.add_feed(octobot_trading.enums.WebsocketFeeds.OPEN_INTEREST)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.MINI_TICKER)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.TICKER)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.FUNDING)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.MARK_PRICE)
+            await self.add_feed(octobot_trading.enums.WebsocketFeeds.VOLUME)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.LIQUIDATIONS)
+            await self.add_feed(octobot_trading.enums.WebsocketFeeds.FUTURES_INDEX)
 
             if self.time_frames:
                 await self.add_feed(octobot_trading.enums.WebsocketFeeds.CANDLE)
