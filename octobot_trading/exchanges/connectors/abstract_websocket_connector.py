@@ -18,16 +18,12 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
-import octobot_commons.constants
-import octobot_commons.enums
-import octobot_commons.logging as commons_logging
 import time
 import websockets
 
-import octobot_trading.constants
-import octobot_trading.enums
-import octobot_trading.exchange_channel as exchange_channel
-import octobot_trading.exchange_data as exchange_data
+import octobot_commons.constants
+import octobot_commons.enums
+import octobot_commons.logging as commons_logging
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 
 
@@ -45,17 +41,8 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
                  api_password: str = None,
                  timeout: int = 120,
                  timeout_interval: int = 5):
-        super().__init__(config, exchange_manager)
+        super().__init__(config, exchange_manager, api_key, api_secret, api_password)
         commons_logging.set_logging_level(self.LOGGERS, logging.WARNING)
-
-        self.exchange = self.exchange_manager.exchange
-        self.exchange_id = self.exchange_manager.id
-
-        self.bot_mainloop = asyncio.get_event_loop()
-
-        self.api_key = api_key
-        self.api_secret = api_secret
-        self.api_password = api_password
 
         self.timeout = timeout
         self.timeout_interval = timeout_interval
@@ -69,21 +56,9 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         self.should_stop = False
         self.use_testnet = False
 
-        self.currencies = []
-        self.pairs = []
-        self.time_frames = []
-        self.channels = []
-        self.books = {}
-
         self.websocket = None
         self._watch_task = None
         self.last_msg = datetime.utcnow()
-
-    def initialize(self, currencies=None, pairs=None, time_frames=None, channels=None):
-        self.pairs = [self.get_exchange_pair(pair) for pair in pairs] if pairs else []
-        self.channels = [self.feed_to_exchange(chan) for chan in channels] if channels else []
-        self.time_frames = time_frames if time_frames is not None else []
-        self.currencies = currencies if currencies else []
 
     def start(self):
         asyncio.run(self._connect())
@@ -143,19 +118,6 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
                 # retries the connection
                 raise
 
-    def _should_authenticate(self):
-        return not self.exchange_manager.without_auth \
-            and not self.exchange_manager.is_trader_simulated \
-            and self.api_key and self.api_secret
-
-    async def push_to_channel(self, channel_name, **kwargs):
-        try:
-            asyncio.run_coroutine_threadsafe(
-                exchange_channel.get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
-                self.bot_mainloop)
-        except Exception as e:
-            self.logger.error(f"Push to {channel_name} failed : {e}")
-
     async def reconnect(self):
         self.stop()
         await self._connect()
@@ -209,29 +171,6 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     def get_sub_protocol(self):
         return []
 
-    def get_book_instance(self, symbol):
-        try:
-            return self.books[symbol]
-        except KeyError:
-            self.books[symbol] = exchange_data.OrderBookManager()
-            return self.books[symbol]
-
-    @classmethod
-    def is_handling_spot(cls) -> bool:
-        return False
-
-    @classmethod
-    def is_handling_margin(cls) -> bool:
-        return False
-
-    @classmethod
-    def is_handling_future(cls) -> bool:
-        return False
-
-    @abc.abstractmethod
-    async def do_auth(self):
-        NotImplementedError("on_message is not implemented")
-
     @abc.abstractmethod
     async def _send_command(self, command, args=None):
         raise NotImplementedError("_send_command is not implemented")
@@ -239,14 +178,6 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     @abc.abstractmethod
     async def on_message(self, message):
         raise NotImplementedError("on_message is not implemented")
-
-    @abc.abstractmethod
-    async def subscribe(self):
-        raise NotImplementedError("subscribe is not implemented")
-
-    @classmethod
-    def get_name(cls) -> str:
-        raise NotImplementedError("get_name is not implemented")
 
     @classmethod
     def get_ws_endpoint(cls) -> str:
@@ -263,34 +194,3 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     @classmethod
     def get_testnet_endpoint(cls):
         raise NotImplementedError("get_testnet_endpoint is not implemented")
-
-    @classmethod
-    def get_feeds(cls) -> dict:
-        return cls.EXCHANGE_FEEDS
-
-    @classmethod
-    def get_exchange_feed(cls, feed) -> str:
-        return cls.EXCHANGE_FEEDS.get(feed, octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value)
-
-    @classmethod
-    def is_feed_requiring_init(cls, feed) -> bool:
-        return feed in cls.INIT_REQUIRING_EXCHANGE_FEEDS
-
-    def feed_to_exchange(self, feed):
-        ret: str = self.get_exchange_feed(feed)
-        if ret == octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value:
-            self.logger.error("{} is not supported on {}".format(feed, self.get_name()))
-            raise ValueError(f"{feed} is not supported on {self.get_name()}")
-        return ret
-
-    def get_pair_from_exchange(self, pair: str) -> str:
-        raise NotImplementedError("get_pair_from_exchange is not implemented")
-
-    def get_exchange_pair(self, pair: str) -> str:
-        raise NotImplementedError("get_exchange_pair is not implemented")
-
-    def get_max_handled_pair_with_time_frame(self) -> int:
-        """
-        :return: the maximum number of simultaneous pairs * time_frame that this exchange can handle.
-        """
-        return octobot_trading.constants.INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME

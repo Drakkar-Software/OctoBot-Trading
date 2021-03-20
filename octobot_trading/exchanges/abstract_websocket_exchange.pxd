@@ -18,10 +18,25 @@ cimport octobot_trading.exchanges.exchange_manager as exchange_manager
 
 cdef class AbstractWebsocketExchange:
     cdef public dict config
+    cdef public dict books
 
     cdef public exchange_manager.ExchangeManager exchange_manager
 
     cdef public str name
+    cdef public str exchange_id
+    cdef public str api_key
+    cdef public str api_secret
+    cdef public str api_password
 
+    cdef public list currencies
+    cdef public list pairs
+    cdef public list time_frames
+    cdef public list channels
+
+    cdef public object exchange
     cdef public object client
     cdef public object logger
+    cdef public object bot_mainloop
+
+    cpdef object get_book_instance(self, str symbol)
+    cpdef void initialize(self, list currencies=*, list pairs=*, list time_frames=*, list channels=*)
