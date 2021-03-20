@@ -16,19 +16,63 @@
 #  License along with this library.
 
 import abc
+import asyncio
 
 import octobot_commons.logging as logging
+import octobot_trading.constants
+import octobot_trading.enums
+import octobot_trading.exchange_channel as exchange_channel
+import octobot_trading.exchange_data as exchange_data
 
 
 class AbstractWebsocketExchange:
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, config, exchange_manager):
+    EXCHANGE_FEEDS = {}
+
+    INIT_REQUIRING_EXCHANGE_FEEDS = set()
+
+    def __init__(self,
+                 config: object,
+                 exchange_manager: object,
+                 api_key: str = None,
+                 api_secret: str = None,
+                 api_password: str = None):
         self.config = config
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.api_password = api_password
+
         self.exchange_manager = exchange_manager
+        self.exchange = self.exchange_manager.exchange
+        self.exchange_id = self.exchange_manager.id
+
+        self.bot_mainloop = asyncio.get_event_loop()
+
+        self.currencies = []
+        self.pairs = []
+        self.time_frames = []
+        self.channels = []
+
+        self.books = {}
+
         self.client = None
         self.name = self.get_name()
         self.logger = logging.get_logger(f"WebSocket - {self.name}")
+
+    def initialize(self, currencies=None, pairs=None, time_frames=None, channels=None):
+        self.pairs = [self.get_exchange_pair(pair) for pair in pairs] if pairs else []
+        self.channels = [self.feed_to_exchange(channel) for channel in channels] if channels else []
+        self.time_frames = time_frames if time_frames is not None else []
+        self.currencies = currencies if currencies else []
+
+    async def push_to_channel(self, channel_name, **kwargs):
+        try:
+            asyncio.run_coroutine_threadsafe(
+                exchange_channel.get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
+                self.bot_mainloop)
+        except Exception as e:
+            self.logger.error(f"Push to {channel_name} failed : {e}")
 
     # Abstract methods
     @classmethod
@@ -60,6 +104,10 @@ class AbstractWebsocketExchange:
         raise NotImplementedError("wait_sockets not implemented")
 
     @abc.abstractmethod
+    async def subscribe(self):
+        raise NotImplementedError("subscribe is not implemented")
+
+    @abc.abstractmethod
     async def close_and_restart_sockets(self):
         raise NotImplementedError("close_and_restart_sockets not implemented")
 
@@ -70,3 +118,62 @@ class AbstractWebsocketExchange:
     @abc.abstractmethod
     async def close_sockets(self):
         raise NotImplementedError("close_sockets not implemented")
+
+    @abc.abstractmethod
+    async def do_auth(self):
+        NotImplementedError("do_auth is not implemented")
+
+    @classmethod
+    def is_handling_spot(cls) -> bool:
+        return False
+
+    @classmethod
+    def is_handling_margin(cls) -> bool:
+        return False
+
+    @classmethod
+    def is_handling_future(cls) -> bool:
+        return False
+
+    @classmethod
+    def get_feeds(cls) -> dict:
+        return cls.EXCHANGE_FEEDS
+
+    @classmethod
+    def get_exchange_feed(cls, feed) -> str:
+        return cls.EXCHANGE_FEEDS.get(feed, octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value)
+
+    @classmethod
+    def is_feed_requiring_init(cls, feed) -> bool:
+        return feed in cls.INIT_REQUIRING_EXCHANGE_FEEDS
+
+    def feed_to_exchange(self, feed):
+        ret: str = self.get_exchange_feed(feed)
+        if ret == octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value:
+            self.logger.error("{} is not supported on {}".format(feed, self.get_name()))
+            raise ValueError(f"{feed} is not supported on {self.get_name()}")
+        return ret
+
+    def get_book_instance(self, symbol):
+        try:
+            return self.books[symbol]
+        except KeyError:
+            self.books[symbol] = exchange_data.OrderBookManager()
+            return self.books[symbol]
+
+    def get_pair_from_exchange(self, pair: str) -> str:
+        raise NotImplementedError("get_pair_from_exchange is not implemented")
+
+    def get_exchange_pair(self, pair: str) -> str:
+        raise NotImplementedError("get_exchange_pair is not implemented")
+
+    def get_max_handled_pair_with_time_frame(self) -> int:
+        """
+        :return: the maximum number of simultaneous pairs * time_frame that this exchange can handle.
+        """
+        return octobot_trading.constants.INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME
+
+    def _should_authenticate(self):
+        return not self.exchange_manager.without_auth \
+            and not self.exchange_manager.is_trader_simulated \
+            and self.api_key and self.api_secret

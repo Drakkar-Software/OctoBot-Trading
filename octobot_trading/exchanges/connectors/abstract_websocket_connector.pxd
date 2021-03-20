@@ -17,11 +17,6 @@
 cimport octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 
 cdef class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
-    cdef public str exchange_id
-    cdef str api_key
-    cdef str api_secret
-    cdef str api_password
-
     cdef int timeout
     cdef int timeout_interval
     cdef int last_ping_time
@@ -31,22 +26,13 @@ cdef class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchan
     cdef bint is_authenticated
     cdef bint use_testnet
 
-    cdef public list currencies
-    cdef public list pairs
-    cdef public list time_frames
-    cdef public list channels
-
     cdef public dict endpoint_args
-    cdef public dict books
 
     # objects
-    cdef public object exchange
     cdef public object websocket
     cdef object _watch_task
     cdef object last_msg
-    cdef object bot_mainloop
 
-    cpdef void initialize(self, list currencies=*, list pairs=*, list time_frames=*, list channels=*)
     cpdef void on_open(self)
     cpdef void on_auth(self, bint status)
     cpdef void on_close(self)
@@ -55,7 +41,6 @@ cdef class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchan
     cpdef start(self)
     cpdef stop(self)
     cpdef close(self)
-    cpdef object get_book_instance(self, str symbol)
 
     cpdef bint _should_authenticate(self)
     cpdef int get_max_handled_pair_with_time_frame(self)
