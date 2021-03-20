@@ -308,6 +308,7 @@ class WebsocketFeeds(enum.Enum):
     L2_BOOK = 'l2_book'
     L3_BOOK = 'l3_book'
     BOOK_TICKER = 'book_ticker'
+    BOOK_DELTA = 'book_delta'
     TRADES = 'trades'
     LIQUIDATIONS = 'liquidations'
     MINI_TICKER = 'mini_ticker'
@@ -316,10 +317,15 @@ class WebsocketFeeds(enum.Enum):
     KLINE = 'kline'
     FUNDING = 'funding'
     MARK_PRICE = 'mark_price'
+    MARKET_INFO = 'market_info'
     ORDERS = 'orders'
+    FUTURES_INDEX = 'futures_index'
+    OPEN_INTEREST = 'open_interest'
     PORTFOLIO = 'portfolio'
     POSITION = 'position'
     TRADE = 'trade'
+    TRANSACTIONS = 'transactions'
+    VOLUME = 'volume'
     UNSUPPORTED = 'unsupported'
 
 
