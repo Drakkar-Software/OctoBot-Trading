@@ -34,7 +34,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         self.websocket_connectors_executors = None
         self.websocket_connector = None
 
-        self.trader_pairs = []
+        self.pairs = []
         self.time_frames = []
 
         self.channels = []
@@ -45,10 +45,10 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
 
     async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
         self.websocket_connector = self.get_exchange_connector_class(self.exchange_manager)
-        self.trader_pairs = trader_pairs
+        self.pairs = trader_pairs
         self.time_frames = time_frames
 
-        if self.trader_pairs:
+        if self.pairs:
             # unauthenticated
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.TRADES)
             await self.add_feed(octobot_trading.enums.WebsocketFeeds.L2_BOOK)
