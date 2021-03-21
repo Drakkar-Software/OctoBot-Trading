@@ -36,7 +36,7 @@ class CryptofeedWebSocketExchange(exchanges_types.WebSocketExchange):
     def create_feeds(self):
         try:
             connector = self.websocket_connector(config=self.config, exchange_manager=self.exchange_manager)
-            connector.initialize(pairs=self.trader_pairs, time_frames=self.time_frames, channels=self.channels)
+            connector.initialize(pairs=self.pairs, time_frames=self.time_frames, channels=self.channels)
             self.websocket_connectors.append(connector)
         except ValueError as e:
             self.logger.exception(e, True, f"Fail to create feed : {e}")

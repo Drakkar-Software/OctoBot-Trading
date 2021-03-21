@@ -132,15 +132,15 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def book(self, feed, symbol, book, timestamp, receipt_timestamp):
         if symbol:
             symbol = self.get_pair_from_exchange(symbol)
-            book_instance = self.get_book_instance(symbol)
-
-            book_instance.handle_new_books(book[cryptofeed_constants.ASK], book[cryptofeed_constants.BID])
-
-            await self.push_to_channel(trading_constants.ORDER_BOOK_CHANNEL,
-                                       symbol=symbol,
-                                       asks=book_instance.asks,
-                                       bids=book_instance.bids,
-                                       update_order_book=False)
+            # book_instance = self.get_book_instance(symbol)
+            #
+            # book_instance.handle_new_books(book[cryptofeed_constants.ASK], book[cryptofeed_constants.BID])
+            #
+            # await self.push_to_channel(trading_constants.ORDER_BOOK_CHANNEL,
+            #                            symbol=symbol,
+            #                            asks=book_instance.asks,
+            #                            bids=book_instance.bids,
+            #                            update_order_book=False)
 
     async def candle(self, feed, symbol, start, stop, interval, trades, open_price, close_price, high_price,
                      low_price, volume, closed, timestamp, receipt_timestamp):
@@ -190,7 +190,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def transactions(self, **kwargs):
         pass  # Whale alert only
 
-    def get_pair_from_exchange(self, pair: str) -> str:
+    def get_pair_from_exchange(self, pair) -> str:
         try:
             return symbol_util.convert_symbol(
                 symbol=pair,
@@ -202,7 +202,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             self.logger.error(f"Failed to get market of {pair}")
         return ""
 
-    def get_exchange_pair(self, pair: str) -> str:
+    def get_exchange_pair(self, pair) -> str:
         try:
             return symbol_util.convert_symbol(
                 symbol=pair,

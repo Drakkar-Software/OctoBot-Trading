@@ -41,7 +41,7 @@ class CCXTWebSocketExchange(exchanges_types.WebSocketExchange):
                                                  api_key=key,
                                                  api_secret=secret,
                                                  api_password=password)
-            connector.initialize(pairs=self.trader_pairs, time_frames=self.time_frames, channels=self.channels)
+            connector.initialize(pairs=self.pairs, time_frames=self.time_frames, channels=self.channels)
             self.websocket_connectors.append(connector)
 
         except ValueError as e:

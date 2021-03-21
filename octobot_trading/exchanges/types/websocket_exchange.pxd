@@ -20,9 +20,6 @@ cimport octobot_trading.exchanges.abstract_websocket_exchange as abstract_websoc
 cdef class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     cdef public str exchange_name
 
-    cdef public list trader_pairs
-    cdef public list time_frames
-    cdef public list channels
     cdef public list websocket_connectors_tasks
     cdef public list websocket_connectors
 

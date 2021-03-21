@@ -40,3 +40,6 @@ cdef class AbstractWebsocketExchange:
 
     cpdef object get_book_instance(self, str symbol)
     cpdef void initialize(self, list currencies=*, list pairs=*, list time_frames=*, list channels=*)
+    cpdef bint _should_authenticate(self)
+    cpdef int get_max_handled_pair_with_time_frame(self)
+    cpdef str feed_to_exchange(self, feed)
