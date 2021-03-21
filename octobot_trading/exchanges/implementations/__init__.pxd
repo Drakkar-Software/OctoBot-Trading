@@ -42,6 +42,10 @@ from octobot_trading.exchanges.implementations cimport ccxt_websocket_exchange
 from octobot_trading.exchanges.implementations.ccxt_websocket_exchange cimport (
     CCXTWebSocketExchange,
 )
+from octobot_trading.exchanges.implementations cimport cryptofeed_websocket_exchange
+from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange cimport (
+    CryptofeedWebSocketExchange,
+)
 
 __all__ = [
     "SpotExchangeSimulator",
@@ -51,4 +55,5 @@ __all__ = [
     "MarginCCXTExchange",
     "SpotCCXTExchange",
     "CCXTWebSocketExchange",
+    "CryptofeedWebSocketExchange",
 ]

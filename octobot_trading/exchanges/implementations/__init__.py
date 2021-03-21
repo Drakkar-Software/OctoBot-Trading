@@ -47,6 +47,10 @@ from octobot_trading.exchanges.implementations import default_spot_ccxt_exchange
 from octobot_trading.exchanges.implementations.default_spot_ccxt_exchange import (
     DefaultCCXTSpotExchange,
 )
+from octobot_trading.exchanges.implementations import cryptofeed_websocket_exchange
+from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange import (
+    CryptofeedWebSocketExchange,
+)
 
 __all__ = [
     "SpotExchangeSimulator",
@@ -57,4 +61,5 @@ __all__ = [
     "SpotCCXTExchange",
     "CCXTWebSocketExchange",
     "DefaultCCXTSpotExchange",
+    "CryptofeedWebSocketExchange",
 ]

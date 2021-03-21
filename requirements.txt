@@ -19,7 +19,8 @@ click-shell==2.0
 
 # Websocket requirements
 websockets==8.1
-cryptofeed==1.7.0
+# cryptofeed==1.7.0
+git+https://github.com/bmoscon/cryptofeed.git # add candle support (unreleased 1.8.0)
 
 # other requirements
 sortedcontainers==2.3.0

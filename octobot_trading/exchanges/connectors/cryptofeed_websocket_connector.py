@@ -25,6 +25,7 @@ import octobot_commons.enums as commons_enums
 import octobot_commons.logging as commons_logging
 import octobot_commons.symbol_util as symbol_util
 import octobot_trading.constants as trading_constants
+import octobot_trading.enums as trading_enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 from octobot_trading.enums import WebsocketFeeds as Feeds
 
@@ -59,7 +60,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         raise NotImplementedError("get_feed_name not implemented")
 
     def subscribe_candle_feed(self, exchange_symbols):
-        callback = self.callback_by_feed[self.EXCHANGE_FEEDS[Feeds.CANDLE]]
+        candle_callback = self.callback_by_feed[self.EXCHANGE_FEEDS[Feeds.CANDLE]]
 
         for time_frame in self.time_frames:
             self.client.add_feed(self.get_feed_name(),
@@ -67,9 +68,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  candle_closed_only=False,
                                  symbols=exchange_symbols,
                                  channels=[cryptofeed_constants.CANDLES],
-                                 callbacks={cryptofeed_constants.CANDLES: callback})
+                                 callbacks={cryptofeed_constants.CANDLES: candle_callback})
 
-    def subscribe(self):
+    def subscribe_feeds(self):
         exchange_symbols = [
             self.get_exchange_pair(pair)
             for pair in self.pairs
@@ -93,7 +94,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     def start(self):
         try:
-            self.subscribe()
+            self.subscribe_feeds()
         except Exception as e:
             self.logger.error(f"Failed to subscribe when creating websocket feed : {e}")
         try:
@@ -106,41 +107,40 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def ticker(self, feed, symbol, bid, ask, timestamp, receipt_timestamp):
         if symbol:
             symbol = self.get_pair_from_exchange(symbol)
-            # await self.push_to_channel(trading_constants.ORDER_BOOK_TICKER_CHANNEL,
-            #                            symbol=symbol,
-            #                            ask_quantity=ask,
-            #                            ask_price=None,
-            #                            bid_quantity=bid,
-            #                            bid_price=None)
+            await self.push_to_channel(trading_constants.ORDER_BOOK_TICKER_CHANNEL,
+                                       symbol=symbol,
+                                       ask_quantity=ask,
+                                       ask_price=None,
+                                       bid_quantity=bid,
+                                       bid_price=None)
 
     async def trade(self, feed, symbol, order_id, timestamp, side, amount, price, receipt_timestamp):
         if symbol:
             symbol = self.get_pair_from_exchange(symbol)
-            # await self.push_to_channel(trading_constants.RECENT_TRADES_CHANNEL,
-            #                            symbol=symbol,
-            #                            recent_trades=[{
-            #                                trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: timestamp,
-            #                                trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value: symbol,
-            #                                trading_enums.ExchangeConstantsOrderColumns.ID.value: order_id,
-            #                                trading_enums.ExchangeConstantsOrderColumns.TYPE.value: None,
-            #                                trading_enums.ExchangeConstantsOrderColumns.SIDE.value: side,
-            #                                trading_enums.ExchangeConstantsOrderColumns.PRICE.value: float(price),
-            #                                trading_enums.ExchangeConstantsOrderColumns.AMOUNT.value: float(amount)
-            #                            }])
+            await self.push_to_channel(trading_constants.RECENT_TRADES_CHANNEL,
+                                       symbol=symbol,
+                                       recent_trades=[{
+                                           trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: timestamp,
+                                           trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value: symbol,
+                                           trading_enums.ExchangeConstantsOrderColumns.ID.value: order_id,
+                                           trading_enums.ExchangeConstantsOrderColumns.TYPE.value: None,
+                                           trading_enums.ExchangeConstantsOrderColumns.SIDE.value: side,
+                                           trading_enums.ExchangeConstantsOrderColumns.PRICE.value: float(price),
+                                           trading_enums.ExchangeConstantsOrderColumns.AMOUNT.value: float(amount)
+                                       }])
 
     async def book(self, feed, symbol, book, timestamp, receipt_timestamp):
         if symbol:
             symbol = self.get_pair_from_exchange(symbol)
             book_instance = self.get_book_instance(symbol)
 
-            # book_instance.handle_new_books(self._parse_book(book[cryptofeed_constants.ASK]),
-            #                                self._parse_book(book[cryptofeed_constants.BID]))
-            #
-            # await self.push_to_channel(trading_constants.ORDER_BOOK_CHANNEL,
-            #                            symbol=symbol,
-            #                            asks=book_instance.asks,
-            #                            bids=book_instance.bids,
-            #                            update_order_book=False)
+            book_instance.handle_new_books(book[cryptofeed_constants.ASK], book[cryptofeed_constants.BID])
+
+            await self.push_to_channel(trading_constants.ORDER_BOOK_CHANNEL,
+                                       symbol=symbol,
+                                       asks=book_instance.asks,
+                                       bids=book_instance.bids,
+                                       update_order_book=False)
 
     async def candle(self, feed, symbol, start, stop, interval, trades, open_price, close_price, high_price,
                      low_price, volume, closed, timestamp, receipt_timestamp):
@@ -155,20 +155,19 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                 float(close_price),
                 float(volume),
             ]
-            # if not closed:
-            #     await self.push_to_channel(trading_constants.KLINE_CHANNEL,
-            #                                time_frame=time_frame,
-            #                                symbol=symbol,
-            #                                kline=candle)
-            # else:
-            #     await self.push_to_channel(trading_constants.OHLCV_CHANNEL,
-            #                                time_frame=time_frame,
-            #                                symbol=symbol,
-            #                                candle=candle)
+            if not closed:
+                await self.push_to_channel(trading_constants.KLINE_CHANNEL,
+                                           time_frame=time_frame,
+                                           symbol=symbol,
+                                           kline=candle)
+            else:
+                await self.push_to_channel(trading_constants.OHLCV_CHANNEL,
+                                           time_frame=time_frame,
+                                           symbol=symbol,
+                                           candle=candle)
 
     async def delta(self, feed, symbol, delta, timestamp, receipt_timestamp):
-        if symbol:
-            symbol = self.get_pair_from_exchange(symbol)
+        pass
 
     async def liquidations(self, feed, symbol, side, leaves_qty, price, order_id, receipt_timestamp):
         pass
@@ -177,8 +176,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         pass
 
     async def open_interest(self, feed, symbol, open_interest, timestamp, receipt_timestamp):
-        if symbol:
-            symbol = self.get_pair_from_exchange(symbol)
+        pass
 
     async def volume(self, **kwargs):
         pass
@@ -186,10 +184,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def futures_index(self, **kwargs):
         pass
 
-    async def market_info(**kwargs):
+    async def market_info(self, **kwargs):
         pass  # Coingecko only
 
-    async def transactions(**kwargs):
+    async def transactions(self, **kwargs):
         pass  # Whale alert only
 
     def get_pair_from_exchange(self, pair: str) -> str:
@@ -202,7 +200,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             )
         except Exception:
             self.logger.error(f"Failed to get market of {pair}")
-            return None
+        return ""
 
     def get_exchange_pair(self, pair: str) -> str:
         try:
@@ -214,4 +212,4 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             )
         except Exception:
             self.logger.error(f"Failed to get market of {pair}")
-            return None
+        return ""

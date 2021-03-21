@@ -14,14 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 
-cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
-    cdef public dict callback_by_feed
+cimport octobot_trading.exchanges.types as exchanges_types
 
-    cpdef str get_pair_from_exchange(self, str pair)
-    cpdef str get_exchange_pair(self, str pair)
-
-    cdef void start(self)
-    cdef void subscribe_feeds(self)
-    cdef void subscribe_candle_feed(self, list exchange_symbols)
+cdef class CryptofeedWebSocketExchange(exchanges_types.WebSocketExchange):
+    pass
