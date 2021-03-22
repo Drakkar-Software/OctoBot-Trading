@@ -15,6 +15,7 @@
 #  License along with this library.
 import sys
 import asyncio
+import os
 from os import path
 
 import aiohttp
@@ -27,7 +28,8 @@ from octobot_tentacles_manager.api.installer import install_all_tentacles
 from octobot_tentacles_manager.constants import TENTACLES_PATH
 from octobot_tentacles_manager.managers.tentacles_setup_manager import TentaclesSetupManager
 
-TENTACLES_LATEST_URL = "https://www.tentacles.octobot.online/repository/tentacles/officials/base/latest.zip"
+OCTOBOT_ONLINE = os.getenv("TENTACLES_OCTOBOT_ONLINE_URL", "https://tentacles.octobot.online")
+TENTACLES_LATEST_URL = f"{OCTOBOT_ONLINE}/repository/tentacles/officials/base/latest.zip"
 
 
 @pytest.fixture
