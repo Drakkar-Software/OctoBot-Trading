@@ -70,12 +70,12 @@ class TestExchangeConfig:
         config = load_test_config()
         config[CONFIG_CRYPTO_CURRENCIES] = {
             "Bitcoin": {
-                "pairs": "*",
+                "pairs": ["*"],
                 "quote": "BTC"
             },
             "Ethereum": {
                 "enabled": False,
-                "pairs": "*",
+                "pairs": ["*"],
                 "quote": "ETH"
             }
         }
@@ -104,13 +104,13 @@ class TestExchangeConfig:
         config = load_test_config()
         config[CONFIG_CRYPTO_CURRENCIES] = {
             "Bitcoin": {
-                "pairs": "*",
+                "pairs": ["*"],
                 "quote": "BTC",
                 "add": ["BTC/USDT"]
             },
             "Ethereum": {
                 "enabled": False,
-                "pairs": "*",
+                "pairs": ["*"],
                 "quote": "ETH",
                 "add": ["ETH/USDT"]
             }
