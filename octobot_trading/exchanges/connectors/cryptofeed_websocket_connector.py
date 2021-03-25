@@ -43,7 +43,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.callback_by_feed = {
             cryptofeed_constants.TRADES: cryptofeed_callbacks.TradeCallback(self.trade),
             cryptofeed_constants.TICKER: cryptofeed_callbacks.TickerCallback(self.ticker),
-            cryptofeed_constants.CANDLES: cryptofeed_callbacks.CandleCallback(self.candle),
+            cryptofeed_constants.CANDLES: cryptofeed_callbacks.CandleCallback(self.candle),  # pylint: disable=E1101
             cryptofeed_constants.L2_BOOK: cryptofeed_callbacks.BookCallback(self.book),
             cryptofeed_constants.L3_BOOK: cryptofeed_callbacks.BookCallback(self.book),
             cryptofeed_constants.FUNDING: cryptofeed_callbacks.FundingCallback(self.funding),
@@ -68,8 +68,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  candle_interval=time_frame.value,
                                  candle_closed_only=False,
                                  symbols=exchange_symbols,
-                                 channels=[cryptofeed_constants.CANDLES],
-                                 callbacks={cryptofeed_constants.CANDLES: candle_callback})
+                                 channels=[cryptofeed_constants.CANDLES],  # pylint: disable=E1101
+                                 callbacks={cryptofeed_constants.CANDLES: candle_callback})  # pylint: disable=E1101
 
     def subscribe_feeds(self):
         exchange_symbols = [
