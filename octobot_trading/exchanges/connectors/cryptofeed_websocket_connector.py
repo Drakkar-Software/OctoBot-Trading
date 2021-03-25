@@ -28,6 +28,7 @@ import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 from octobot_trading.enums import WebsocketFeeds as Feeds
+from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC
 
 
 class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
@@ -132,15 +133,31 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def book(self, feed, symbol, book, timestamp, receipt_timestamp):
         if symbol:
             symbol = self.get_pair_from_exchange(symbol)
-            # book_instance = self.get_book_instance(symbol)
-            #
-            # book_instance.handle_new_books(book[cryptofeed_constants.ASK], book[cryptofeed_constants.BID])
-            #
-            # await self.push_to_channel(trading_constants.ORDER_BOOK_CHANNEL,
-            #                            symbol=symbol,
-            #                            asks=book_instance.asks,
-            #                            bids=book_instance.bids,
-            #                            update_order_book=False)
+            book_instance = self.get_book_instance(symbol)
+
+            book_instance.handle_book_adds(
+                self._convert_book_prices_to_orders(
+                    book_prices=book[cryptofeed_constants.ASK],
+                    book_side=trading_enums.TradeOrderSide.SELL.value) +
+                self._convert_book_prices_to_orders(
+                    book_prices=book[cryptofeed_constants.BID],
+                    book_side=trading_enums.TradeOrderSide.BUY.value))
+
+            await self.push_to_channel(trading_constants.ORDER_BOOK_CHANNEL,
+                                       symbol=symbol,
+                                       asks=book_instance.asks,
+                                       bids=book_instance.bids,
+                                       update_order_book=False)
+
+    def _convert_book_prices_to_orders(self, book_prices, book_side):
+        return [
+            {
+                ECOBIC.PRICE.value: float(order_price),
+                ECOBIC.SIZE.value: float(order_size),
+                ECOBIC.SIDE.value: book_side,
+            }
+            for order_price, order_size in book_prices.items()
+        ]
 
     async def candle(self, feed, symbol, start, stop, interval, trades, open_price, close_price, high_price,
                      low_price, volume, closed, timestamp, receipt_timestamp):
