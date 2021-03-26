@@ -43,14 +43,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Integrate hitbtc order fix https://github.com/ccxt/ccxt/pull/8744
  
-## [1.12.0] - 2021-03-25
-### Added 
-- Cryptofeed websocket connector
- 
 ## [1.11.39] - 2021-03-22 
 ### Updated 
 - tentacles url
 
+## [1.12.0] - 2021-03-25
+### Added 
+- Cryptofeed websocket connector
+ 
 ## [1.11.38] - 2021-03-06 
 ### Updated 
 - Force chardet version

@@ -51,6 +51,12 @@ class AuthenticationError(Exception):
     """
 
 
+class PortfolioNegativeValueError(Exception):
+    """
+    Raised when the portfolio is being updated with a negative value
+    """
+
+
 class MissingOrderException(Exception):
     """
     Raised when an order is missing

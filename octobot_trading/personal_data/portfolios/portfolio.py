@@ -19,6 +19,7 @@ import copy
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 import octobot_trading.util as util
 
 
@@ -227,8 +228,26 @@ class Portfolio(util.Initializable):
         :param available: the available delta
         :param total: the total delta
         """
-        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += available
-        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += total
+        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += self._ensure_portfolio_update_validness(
+            currency, self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE], available
+        )
+        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += self._ensure_portfolio_update_validness(
+            currency, self.portfolio[currency][common_constants.PORTFOLIO_TOTAL], total
+        )
+
+    def _ensure_portfolio_update_validness(self, currency, origin_quantity, update_quantity):
+        """
+        Ensure that the portfolio final value is not negative.
+        Raise a PortfolioNegativeValueError if the final value is negative
+        :param currency: the currency to update
+        :param origin_quantity: the original currency value
+        :param update_quantity: the update value
+        :return:
+        """
+        if origin_quantity + update_quantity < 0:
+            raise errors.PortfolioNegativeValueError(f"Trying to update {currency} with {update_quantity} "
+                                                     f"but quantity was {origin_quantity}")
+        return update_quantity
 
     def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
         """
