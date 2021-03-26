@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Integrate hitbtc order fix https://github.com/ccxt/ccxt/pull/8744
  
-## [1.11.39] - 2021-03-22 
+## [1.12.1] - 2021-03-26
 ### Updated 
 - tentacles url
 
