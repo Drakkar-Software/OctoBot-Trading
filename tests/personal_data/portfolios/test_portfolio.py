@@ -20,6 +20,7 @@ import octobot_commons.constants as commons_constants
 
 import octobot_trading.constants as constants
 from octobot_trading.enums import TraderOrderType, TradeOrderSide
+import octobot_trading.errors as errors
 from octobot_trading.personal_data.orders import BuyLimitOrder
 from octobot_trading.personal_data.orders import SellLimitOrder
 from octobot_trading.personal_data.orders import StopLossOrder
@@ -908,3 +909,26 @@ async def test_parse_currency_balance(backtesting_trader):
         assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: 0,
                                                                     commons_constants.PORTFOLIO_TOTAL: None}) == \
                {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+
+
+async def test_update_portfolio_data(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+
+    if not os.getenv('CYTHON_IGNORE'):
+        with pytest.raises(errors.PortfolioNegativeValueError):
+            portfolio_manager.portfolio._update_portfolio_data("USDT", -2000)
+        with pytest.raises(errors.PortfolioNegativeValueError):
+            portfolio_manager.portfolio._update_portfolio_data("BTC", -20)
+
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        # Test buy order
+        btc_limit_buy2 = BuyLimitOrder(trader)
+        btc_limit_buy2.update(order_type=TraderOrderType.BUY_LIMIT,
+                              symbol="BTC/USDT",
+                              current_price=10,
+                              quantity=5000000000,
+                              price=10)
+
+        portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy2, True)
+
