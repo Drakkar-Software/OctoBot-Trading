@@ -25,12 +25,9 @@ class CCXTWebsocketConnector(abstract_websocket_connector.AbstractWebsocketConne
     def __init__(self,
                  config: object,
                  exchange_manager: object,
-                 api_key: str = None,
-                 api_secret: str = None,
-                 api_password: str = None,
                  timeout: int = 120,
                  timeout_interval: int = 5):
-        super().__init__(config, exchange_manager, api_key, api_secret, api_password, timeout, timeout_interval)
+        super().__init__(config, exchange_manager, timeout, timeout_interval)
         commons_logging.set_logging_level(self.LOGGERS, logging.WARNING)
 
         self.async_ccxt_client = None

@@ -36,12 +36,9 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     def __init__(self,
                  config: object,
                  exchange_manager: object,
-                 api_key: str = None,
-                 api_secret: str = None,
-                 api_password: str = None,
                  timeout: int = 120,
                  timeout_interval: int = 5):
-        super().__init__(config, exchange_manager, api_key, api_secret, api_password)
+        super().__init__(config, exchange_manager)
         commons_logging.set_logging_level(self.LOGGERS, logging.WARNING)
 
         self.timeout = timeout

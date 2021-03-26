@@ -65,7 +65,7 @@ class AbstractWebsocketExchange:
         Exchange credentials
         :return: key, secret, password
         """
-        return self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_name)
+        return self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_manager.exchange_name)
 
     async def push_to_channel(self, channel_name, **kwargs):
         try:
@@ -175,6 +175,7 @@ class AbstractWebsocketExchange:
         return octobot_trading.constants.INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME
 
     def _should_authenticate(self):
+        api_key, api_secret, _ = self.get_exchange_credentials()
         return not self.exchange_manager.without_auth \
             and not self.exchange_manager.is_trader_simulated \
-            and self.api_key and self.api_secret
+            and api_key and api_secret
