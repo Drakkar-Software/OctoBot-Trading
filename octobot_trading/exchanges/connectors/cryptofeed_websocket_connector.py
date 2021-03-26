@@ -37,6 +37,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     def __init__(self, config: object, exchange_manager: object):
         super().__init__(config, exchange_manager)
+        self.fix_signal_handler()
         self.client = cryptofeed.FeedHandler()
         commons_logging.set_logging_level(self.LOGGERS, logging.DEBUG)
 
@@ -59,6 +60,13 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     @classmethod
     def get_feed_name(cls):
         raise NotImplementedError("get_feed_name not implemented")
+
+    def fix_signal_handler(self):
+        """
+        Websocket are started in a new thread thus signal handle cannot be used
+        add_signal_handler() can only be called from the main thread
+        """
+        cryptofeed.feedhandler.SIGNALS = ()
 
     def subscribe_candle_feed(self, exchange_symbols):
         candle_callback = self.callback_by_feed[self.EXCHANGE_FEEDS[Feeds.CANDLE]]
