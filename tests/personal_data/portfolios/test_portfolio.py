@@ -20,6 +20,7 @@ import octobot_commons.constants as commons_constants
 
 import octobot_trading.constants as constants
 from octobot_trading.enums import TraderOrderType, TradeOrderSide
+import octobot_trading.personal_data.portfolios.portfolio as portfolio
 import octobot_trading.errors as errors
 from octobot_trading.personal_data.orders import BuyLimitOrder
 from octobot_trading.personal_data.orders import SellLimitOrder
@@ -32,6 +33,8 @@ from tests.exchanges import backtesting_trader, backtesting_config, backtesting_
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
+from tests.util.test_hook_methods import restore_origin_method, restore_hook_on_method
+
 pytestmark = pytest.mark.asyncio
 
 
@@ -915,6 +918,9 @@ async def test_update_portfolio_data(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
+    # disable hook on _ensure_portfolio_update_validness
+    restore_origin_method(portfolio, "_ensure_portfolio_update_validness")
+
     if not os.getenv('CYTHON_IGNORE'):
         with pytest.raises(errors.PortfolioNegativeValueError):
             portfolio_manager.portfolio._update_portfolio_data("USDT", -2000)
@@ -932,3 +938,5 @@ async def test_update_portfolio_data(backtesting_trader):
 
         portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy2, True)
 
+    # enable hook on _ensure_portfolio_update_validness
+    restore_hook_on_method(portfolio, "_ensure_portfolio_update_validness")
