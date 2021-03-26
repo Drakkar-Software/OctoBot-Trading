@@ -107,6 +107,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         except Exception as e:
             self.logger.error(f"Failed to subscribe when creating websocket feed : {e}")
         try:
+            # without this two lines `There is no current event loop in thread`
+            # is raised when calling `client.run()`
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             self.client.run()
