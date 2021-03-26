@@ -24,9 +24,6 @@ cdef class AbstractWebsocketExchange:
 
     cdef public str name
     cdef public str exchange_id
-    cdef public str api_key
-    cdef public str api_secret
-    cdef public str api_password
 
     cdef public list currencies
     cdef public list pairs
@@ -38,6 +35,7 @@ cdef class AbstractWebsocketExchange:
     cdef public object logger
     cdef public object bot_mainloop
 
+    cpdef object get_exchange_credentials(self)
     cpdef object get_book_instance(self, str symbol)
     cpdef void initialize(self, list currencies=*, list pairs=*, list time_frames=*, list channels=*)
     cpdef bint _should_authenticate(self)

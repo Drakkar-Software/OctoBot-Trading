@@ -35,12 +35,7 @@ class CCXTWebSocketExchange(exchanges_types.WebSocketExchange):
 
     def create_feeds(self):
         try:
-            key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_name)
-            connector = self.websocket_connector(config=self.config,
-                                                 exchange_manager=self.exchange_manager,
-                                                 api_key=key,
-                                                 api_secret=secret,
-                                                 api_password=password)
+            connector = self.websocket_connector(config=self.config, exchange_manager=self.exchange_manager)
             connector.initialize(pairs=self.pairs, time_frames=self.time_frames, channels=self.channels)
             self.websocket_connectors.append(connector)
 

@@ -34,14 +34,8 @@ class AbstractWebsocketExchange:
 
     def __init__(self,
                  config: object,
-                 exchange_manager: object,
-                 api_key: str = None,
-                 api_secret: str = None,
-                 api_password: str = None):
+                 exchange_manager: object):
         self.config = config
-        self.api_key = api_key
-        self.api_secret = api_secret
-        self.api_password = api_password
 
         self.exchange_manager = exchange_manager
         self.exchange = self.exchange_manager.exchange
@@ -65,6 +59,13 @@ class AbstractWebsocketExchange:
         self.channels = [self.feed_to_exchange(channel) for channel in channels] if channels else []
         self.time_frames = time_frames if time_frames is not None else []
         self.currencies = currencies if currencies else []
+
+    def get_exchange_credentials(self):
+        """
+        Exchange credentials
+        :return: key, secret, password
+        """
+        return self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_name)
 
     async def push_to_channel(self, channel_name, **kwargs):
         try:
