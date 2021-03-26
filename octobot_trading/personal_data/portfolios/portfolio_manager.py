@@ -18,6 +18,7 @@ import octobot_commons.constants as commons_constants
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 import octobot_trading.personal_data as personal_data
 import octobot_trading.util as util
 
@@ -119,14 +120,19 @@ class PortfolioManager(util.Initializable):
     def _refresh_simulated_trader_portfolio_from_order(self, order):
         """
         Handle a balance update from an order request when simulating
+        Catch a PortfolioNegativeValueError when calling portfolio update method and returns False if raised
         :param order: the order that should update portfolio
         :return: True if the portfolio was updated
         """
-        if order.is_filled():
-            self.portfolio.update_portfolio_from_filled_order(order)
-        else:
-            self.portfolio.update_portfolio_available(order, is_new_order=False)
-        return True
+        try:
+            if order.is_filled():
+                self.portfolio.update_portfolio_from_filled_order(order)
+            else:
+                self.portfolio.update_portfolio_available(order, is_new_order=False)
+            return True
+        except errors.PortfolioNegativeValueError as portfolio_negative_value_error:
+            self.logger.error(f"Failed to update portfolio : {portfolio_negative_value_error}")
+            return False
 
     def _load_portfolio(self):
         """
