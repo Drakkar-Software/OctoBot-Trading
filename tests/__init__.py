@@ -22,11 +22,15 @@ import aiohttp
 import pytest
 import requests
 
+import octobot_trading.personal_data.portfolios.portfolio as portfolio
 import octobot_commons.asyncio_tools as asyncio_tools
 from octobot_commons.tests.test_config import load_test_config
 from octobot_tentacles_manager.api.installer import install_all_tentacles
 from octobot_tentacles_manager.constants import TENTACLES_PATH
 from octobot_tentacles_manager.managers.tentacles_setup_manager import TentaclesSetupManager
+
+from octobot_trading.errors import PortfolioNegativeValueError
+from tests.util.test_hook_methods import setup_hook_on_method
 
 OCTOBOT_ONLINE = os.getenv("TENTACLES_OCTOBOT_ONLINE_URL", "https://tentacles.octobot.online")
 TENTACLES_LATEST_URL = f"{OCTOBOT_ONLINE}/repository/tentacles/officials/base/latest.zip"
@@ -80,5 +84,15 @@ def _configure_async_test_loop():
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
+def setup_test_hooks():
+    def portfolio_ensure_portfolio_update_validness_hook(*args):
+        # disable PortfolioNegativeValueError raise
+        return args[2]
+    setup_hook_on_method(portfolio,
+                         portfolio._ensure_portfolio_update_validness.__name__,
+                         portfolio_ensure_portfolio_update_validness_hook)
+
 # set default values for async loop
 _configure_async_test_loop()
+
+setup_test_hooks()
