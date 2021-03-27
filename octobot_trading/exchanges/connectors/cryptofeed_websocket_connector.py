@@ -38,6 +38,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     def __init__(self, config: object, exchange_manager: object):
         super().__init__(config, exchange_manager)
         self.fix_signal_handler()
+        self.fix_logger()
         self.client = cryptofeed.FeedHandler()
         commons_logging.set_logging_level(self.LOGGERS, logging.DEBUG)
 
@@ -60,6 +61,12 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     @classmethod
     def get_feed_name(cls):
         raise NotImplementedError("get_feed_name not implemented")
+
+    def fix_logger(self):
+        """
+        Replace cryptofeed feedhandler logger because it writes logs into "cryptofeed.log" file
+        """
+        cryptofeed.feedhandler.LOG = self.logger
 
     def fix_signal_handler(self):
         """
