@@ -16,13 +16,11 @@
 import sys
 import asyncio
 import os
-from os import path
 
 import aiohttp
 import pytest
 import requests
 
-import octobot_trading.personal_data.portfolios.portfolio as portfolio
 import octobot_commons.asyncio_tools as asyncio_tools
 from octobot_commons.tests.test_config import load_test_config
 from octobot_tentacles_manager.api.installer import install_all_tentacles
@@ -30,8 +28,6 @@ from octobot_tentacles_manager.constants import TENTACLES_PATH
 from octobot_tentacles_manager.managers.tentacles_setup_manager import TentaclesSetupManager
 
 from octobot_trading.errors import PortfolioNegativeValueError
-from tests.util.test_hook_methods import setup_hook_on_method
-
 OCTOBOT_ONLINE = os.getenv("TENTACLES_OCTOBOT_ONLINE_URL", "https://tentacles.octobot.online")
 TENTACLES_LATEST_URL = f"{OCTOBOT_ONLINE}/repository/tentacles/officials/base/latest.zip"
 
@@ -62,13 +58,13 @@ async def install_tentacles():
         open(_tentacles_local_path(), 'wb').write(r.content)
 
     def _cleanup(raises=True):
-        if path.exists(TENTACLES_PATH):
+        if os.path.exists(TENTACLES_PATH):
             TentaclesSetupManager.delete_tentacles_arch(force=True, raises=raises)
 
     def _tentacles_local_path():
-        return path.join("tests", "static", "tentacles.zip")
+        return os.path.join("tests", "static", "tentacles.zip")
 
-    if not path.exists(_tentacles_local_path()):
+    if not os.path.exists(_tentacles_local_path()):
         _download_tentacles()
 
     _cleanup(False)
@@ -84,15 +80,5 @@ def _configure_async_test_loop():
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
-def setup_test_hooks():
-    def portfolio_ensure_portfolio_update_validness_hook(*args):
-        # disable PortfolioNegativeValueError raise
-        return args[2]
-    setup_hook_on_method(portfolio,
-                         portfolio.ensure_portfolio_update_validness.__name__,
-                         portfolio_ensure_portfolio_update_validness_hook)
-
 # set default values for async loop
 _configure_async_test_loop()
-
-setup_test_hooks()
