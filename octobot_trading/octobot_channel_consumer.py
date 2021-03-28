@@ -83,7 +83,9 @@ async def _handle_creation(bot_id, action, data):
                 f"Error when initializing trading mode, {exchange_name} "
                 f"exchange connection is closed to increase performances: {e}")
         except Exception as e:
-            logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
+            logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).exception(
+                e,
+                True,
                 f"Error when creating a new {exchange_name} exchange connexion: {e.__class__.__name__} {e}")
 
 
