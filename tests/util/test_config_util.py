@@ -52,8 +52,18 @@ def test_is_currency_enabled(config):
 
 def test_get_symbols(config):
     assert util.get_symbols(config, True) == FULL_PAIRS_LIST
+    # with wildcard currency
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_CRYPTO_PAIRS] = \
+        commons_constants.CONFIG_WILDCARD
+    list_without_bitcoin = _filter_by_base(FULL_PAIRS_LIST, "BTC")
+    assert util.get_symbols(config, True) == list_without_bitcoin
 
     # with disabled currency
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_CRYPTO_PAIRS] = [
+        'BTC/USDT',
+        'BTC/EUR',
+        'BTC/USDC'
+    ]
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
     list_without_bitcoin = _filter_by_base(FULL_PAIRS_LIST, "BTC")
     assert util.get_symbols(config, True) == list_without_bitcoin

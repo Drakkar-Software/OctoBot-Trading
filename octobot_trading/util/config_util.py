@@ -56,6 +56,7 @@ def get_symbols(config, enabled_only) -> list:
             for currency, crypto_currency_data in config[commons_constants.CONFIG_CRYPTO_CURRENCIES].items()
             if not enabled_only or is_currency_enabled(config, currency, True)
             for symbol in crypto_currency_data[commons_constants.CONFIG_CRYPTO_PAIRS]
+            if symbol != commons_constants.CONFIG_SYMBOLS_WILDCARD[0]
         ]
     return []
 
