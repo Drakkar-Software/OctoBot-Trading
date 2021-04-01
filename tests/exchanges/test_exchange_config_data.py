@@ -100,6 +100,34 @@ class TestExchangeConfig:
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
 
+    async def test_traded_pairs_with_invalid_wildcard(self):
+        config = load_test_config()
+
+        # missing quote key
+        config[CONFIG_CRYPTO_CURRENCIES] = {
+            "Bitcoin": {
+                "pairs": ["*"]
+            },
+            "Ethereum": {
+                "enabled": True,
+                "pairs": ["*"],
+                "quote": "ETH"
+            }
+        }
+        _, exchange_manager = await self.init_default(config=config)
+
+        assert "ETC/ETH" in exchange_manager.exchange_config.traded_symbol_pairs
+        assert "ADA/ETH" in exchange_manager.exchange_config.traded_symbol_pairs
+        assert "BNB/ETH" in exchange_manager.exchange_config.all_config_symbol_pairs
+        assert "ADA/ETH" in exchange_manager.exchange_config.all_config_symbol_pairs
+        assert "Ethereum" in exchange_manager.exchange_config.traded_cryptocurrencies
+
+        # invalid BTC wildcard config
+        assert "Bitcoin" not in exchange_manager.exchange_config.traded_cryptocurrencies
+
+        cancel_ccxt_throttle_task()
+        await exchange_manager.stop()
+
     async def test_traded_pairs_with_add(self):
         config = load_test_config()
         config[CONFIG_CRYPTO_CURRENCIES] = {
