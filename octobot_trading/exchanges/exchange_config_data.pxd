@@ -38,8 +38,10 @@ cdef class ExchangeConfig(util.Initializable):
 
     cdef void _set_config_time_frame(self)
     cdef void _set_config_traded_pairs(self)
+    cdef set _set_config_traded_pair(self, str cryptocurrency, set traded_symbol_pairs_set, set existing_pairs)
     cdef void _populate_non_wildcard_pairs(self, str cryptocurrency, set existing_pairs, bint is_enabled)
-    cdef void _populate_wildcard_pairs(self, str cryptocurrency, set existing_pairs, bint is_enabled)
+    # return object to forward exceptions
+    cdef object _populate_wildcard_pairs(self, str cryptocurrency, set existing_pairs, bint is_enabled)
     cdef list _add_tradable_symbols_from_config(self, str cryptocurrency, list filtered_symbols)
     cdef object _add_tradable_symbols(self, str cryptocurrency, list symbols)
     cdef list _add_tradable_time_frames(self, list time_frames)

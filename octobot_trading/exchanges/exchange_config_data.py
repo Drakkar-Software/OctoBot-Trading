@@ -17,6 +17,7 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.constants as constants
 import octobot_commons.logging as logging
+import octobot_commons.errors as errors
 
 import octobot_trading.util as util
 
@@ -69,6 +70,14 @@ class ExchangeConfig(util.Initializable):
         traded_symbol_pairs_set = set()
         existing_pairs = set()
         for cryptocurrency in self.config[constants.CONFIG_CRYPTO_CURRENCIES]:
+            traded_symbol_pairs_set = self._set_config_traded_pair(cryptocurrency,
+                                                                   traded_symbol_pairs_set,
+                                                                   existing_pairs)
+        self.traded_symbol_pairs = list(traded_symbol_pairs_set)
+        self.all_config_symbol_pairs = list(existing_pairs)
+
+    def _set_config_traded_pair(self, cryptocurrency, traded_symbol_pairs_set, existing_pairs):
+        try:
             if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS]:
                 is_enabled = util.is_currency_enabled(self.config, cryptocurrency, True)
                 if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS] != \
@@ -90,8 +99,9 @@ class ExchangeConfig(util.Initializable):
                                    f"this asset can't be traded and related orders won't be loaded. "
                                    f"OctoBot requires at least one trading pair in configuration to handle an asset. "
                                    f"You can add trading pair(s) for each asset in the configuration section.")
-        self.traded_symbol_pairs = list(traded_symbol_pairs_set)
-        self.all_config_symbol_pairs = list(existing_pairs)
+        except errors.ConfigError as err:
+            self._logger.error(str(err))
+        return traded_symbol_pairs_set
 
     def _populate_non_wildcard_pairs(self, cryptocurrency, existing_pairs, is_enabled):
         if self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS] != \
@@ -111,8 +121,13 @@ class ExchangeConfig(util.Initializable):
                 self.traded_cryptocurrencies[cryptocurrency] = currency_pairs
 
     def _populate_wildcard_pairs(self, cryptocurrency, existing_pairs, is_enabled):
-        wildcard_pairs_list = self._create_wildcard_symbol_list(self.config[constants.CONFIG_CRYPTO_CURRENCIES]
-                                              [cryptocurrency][constants.CONFIG_CRYPTO_QUOTE])
+        try:
+            wildcard_pairs_list = self._create_wildcard_symbol_list(self.config[constants.CONFIG_CRYPTO_CURRENCIES]
+                                                  [cryptocurrency][constants.CONFIG_CRYPTO_QUOTE])
+        except KeyError as e:
+            raise errors.ConfigError(f"Impossible to use a wildcard configuration for {cryptocurrency}: missing {e} "
+                                     f"value in {cryptocurrency} {constants.CONFIG_CRYPTO_CURRENCIES} "
+                                     f"configuration.")
 
         # additional pairs
         if constants.CONFIG_CRYPTO_ADD in self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency]:
