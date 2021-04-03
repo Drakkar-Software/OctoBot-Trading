@@ -137,3 +137,4 @@ class TestBitstampRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value]
             assert ticker[Ectc.TIMESTAMP.value]
+            RealExchangeTester.check_ticker_typing(ticker)
