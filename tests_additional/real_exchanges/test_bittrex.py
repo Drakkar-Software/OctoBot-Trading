@@ -136,3 +136,5 @@ class TestBittrexRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value] is None
+            RealExchangeTester.check_ticker_typing(ticker, check_open=False, check_high=False,
+                                                   check_low=False, check_base_volume=False, check_timestamp=False)

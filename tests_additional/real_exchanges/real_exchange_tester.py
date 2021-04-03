@@ -17,6 +17,9 @@ from ccxt import Exchange
 
 from octobot_commons.constants import MINUTE_TO_SECONDS, MSECONDS_TO_SECONDS
 from octobot_commons.enums import TimeFrames, TimeFramesMinutes
+from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
+    ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
+    ExchangeConstantsTickersColumns as Ectc
 from tests_additional.real_exchanges import get_exchange_manager
 
 
@@ -125,3 +128,19 @@ class RealExchangeTester:
     @staticmethod
     def ensure_elements_order(elements, sort_key, reverse=False):
         assert sorted(elements, key=lambda x: x[sort_key], reverse=reverse) == elements
+
+    @staticmethod
+    def check_ticker_typing(ticker, check_open=True, check_high=True, check_low=True,
+                            check_close=True, check_base_volume=True, check_timestamp=True):
+        if check_open:
+            assert isinstance(ticker[Ectc.OPEN.value], (float, int))
+        if check_high:
+            assert isinstance(ticker[Ectc.HIGH.value], (float, int))
+        if check_low:
+            assert isinstance(ticker[Ectc.LOW.value], (float, int))
+        if check_close:
+            assert isinstance(ticker[Ectc.CLOSE.value], (float, int))
+        if check_base_volume:
+            assert isinstance(ticker[Ectc.BASE_VOLUME.value], (float, int))
+        if check_timestamp:
+            assert isinstance(ticker[Ectc.TIMESTAMP.value], (float, int))
