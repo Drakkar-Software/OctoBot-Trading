@@ -557,7 +557,8 @@ class TestTrader:
         assert second_limit_buy in orders_manager.get_open_orders()
 
         assert initial_portfolio != portfolio_manager.portfolio
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 2
+        # 0.002 as fees
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 1.998
         assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 0.5
         assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == 2
 
@@ -597,8 +598,9 @@ class TestTrader:
         assert initial_portfolio != portfolio_manager.portfolio
         assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 9
         assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == 9
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 10
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_TOTAL] == 10
+        # 0.01 as fee
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 9.99
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_TOTAL] == 9.99
 
         await self.stop(exchange_manager)
 
