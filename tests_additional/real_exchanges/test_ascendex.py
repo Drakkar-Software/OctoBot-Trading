@@ -27,8 +27,8 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestBitMaxRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "bitmax"
+class TestAscendExRealExchangeTester(RealExchangeTester):
+    EXCHANGE_NAME = "ascendex"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
 
@@ -54,11 +54,11 @@ class TestBitMaxRealExchangeTester(RealExchangeTester):
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2)
             assert market_status[Ecmsc.PRECISION.value]
-            # on BitMax, precision is a decimal instead of a number of digits
+            # on AscendEx, precision is a decimal instead of a number of digits
             assert 0 < market_status[Ecmsc.PRECISION.value][
-                Ecmsc.PRECISION_AMOUNT.value] < 1  # to be fixed in bitmax tentacle
+                Ecmsc.PRECISION_AMOUNT.value] < 1  # to be fixed in AscendEx tentacle
             assert 0 < market_status[Ecmsc.PRECISION.value][
-                Ecmsc.PRECISION_PRICE.value] < 1  # to be fixed in bitmax tentacle
+                Ecmsc.PRECISION_PRICE.value] < 1  # to be fixed in AscendEx tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
@@ -90,7 +90,7 @@ class TestBitMaxRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
-        # limit param is not yet handled on bitmax, consider orderbook with a least 6 bids and asks
+        # limit param is not yet handled on AscendEx, consider orderbook with a least 6 bids and asks
         order_book = await self.get_order_book()
         assert len(order_book[Ecobic.ASKS.value]) > 5
         assert len(order_book[Ecobic.ASKS.value][0]) == 2

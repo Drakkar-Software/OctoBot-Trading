@@ -9,7 +9,7 @@ OctoBot-Commons>=1.5.13, <1.6
 OctoBot-Tentacles-Manager>=2.4.9, <2.5
 
 # Exchange connection requirements
-ccxt==1.46.33 # always ensure real exchanges tests are passing before changing the ccxt version
+ccxt==1.46.34 # always ensure real exchanges tests are passing before changing the ccxt version
 cryptography # Never specify a version (managed by https://github.com/Drakkar-Software/OctoBot-PyPi-Linux-Deployer)
 
 # CLI requirements
