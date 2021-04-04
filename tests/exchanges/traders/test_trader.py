@@ -15,17 +15,18 @@
 #  License along with this library.
 import copy
 import os
+import ccxt.async_support
 
 import pytest
 import time
-from mock import AsyncMock, patch
+from mock import AsyncMock, patch, Mock
 
 from tests import event_loop
 import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.personal_data.orders import Order
-from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus
+from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, FeePropertyColumns
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.personal_data.orders import BuyLimitOrder
@@ -40,6 +41,10 @@ from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
+FEES_MOCK = {
+    FeePropertyColumns.COST.value: 0.1,
+    FeePropertyColumns.CURRENCY.value: "BQX"
+}
 
 class TestTrader:
     DEFAULT_SYMBOL = "BTC/USDT"
@@ -547,7 +552,11 @@ class TestTrader:
         # Fill only 1st one
         limit_buy.filled_price = 4
         limit_buy.status = OrderStatus.FILLED
-        await limit_buy.on_fill(force_fill=True)
+        with patch.object(ccxt.async_support.binance, "calculate_fee", Mock(return_value=FEES_MOCK)) \
+                as calculate_fee_mock:
+            await limit_buy.on_fill(force_fill=True)
+            # ensure call ccxt calculate_fee for order fees
+            calculate_fee_mock.assert_called_once()
 
         # added filled orders as filled trades
         assert len(trades_manager.trades) == 1
@@ -557,8 +566,8 @@ class TestTrader:
         assert second_limit_buy in orders_manager.get_open_orders()
 
         assert initial_portfolio != portfolio_manager.portfolio
-        # 0.002 as fees
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 1.998
+        # (mocked) fees are taken into account
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 2 - 0.1
         assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 0.5
         assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == 2
 
@@ -587,7 +596,10 @@ class TestTrader:
 
         assert not trades_manager.trades
 
-        await limit_buy.on_fill(force_fill=True)
+        with patch.object(ccxt.async_support.binance, "calculate_fee", Mock(return_value=FEES_MOCK)) \
+                as calculate_fee_mock:
+            await limit_buy.on_fill(force_fill=True)
+            calculate_fee_mock.assert_called_once()
 
         assert limit_buy not in orders_manager.get_open_orders()
 
@@ -598,9 +610,9 @@ class TestTrader:
         assert initial_portfolio != portfolio_manager.portfolio
         assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 9
         assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == 9
-        # 0.01 as fee
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 9.99
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_TOTAL] == 9.99
+        # 0.1 as fee
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 9.9
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_TOTAL] == 9.9
 
         await self.stop(exchange_manager)
 
