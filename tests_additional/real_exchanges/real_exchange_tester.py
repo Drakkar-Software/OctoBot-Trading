@@ -17,9 +17,7 @@ from ccxt import Exchange
 
 from octobot_commons.constants import MINUTE_TO_SECONDS, MSECONDS_TO_SECONDS
 from octobot_commons.enums import TimeFrames, TimeFramesMinutes
-from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
-    ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
-    ExchangeConstantsTickersColumns as Ectc
+from octobot_trading.enums import ExchangeConstantsTickersColumns as Ectc
 from tests_additional.real_exchanges import get_exchange_manager
 
 
@@ -27,6 +25,7 @@ class RealExchangeTester:
     # enter exchange name as a class variable here
     EXCHANGE_NAME = None
     SYMBOL = None
+    SYMBOL_2 = None
     # default is 1h, change if necessary
     TIME_FRAME = TimeFrames.ONE_HOUR
 
@@ -89,9 +88,12 @@ class RealExchangeTester:
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
             return exchange_manager.exchange.time_frames
 
-    async def get_market_status(self):
+    async def get_market_statuses(self):
+        # return 2 different market status with different traded pairs to reduce possible
+        # side effects using only one pair.
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
-            return exchange_manager.exchange.get_market_status(self.SYMBOL)
+            return exchange_manager.exchange.get_market_status(self.SYMBOL), \
+                   exchange_manager.exchange.get_market_status(self.SYMBOL_2)
 
     async def get_symbol_prices(self, limit=None, **kwargs):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
