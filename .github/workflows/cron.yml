@@ -25,6 +25,7 @@ jobs:
     - name: Compile project
       if: matrix.type == 'cython'
       env:
+        DISABLE_SENTRY: True
         CYTHON_IGNORE: true
       run: |
         python setup.py build_ext --inplace
