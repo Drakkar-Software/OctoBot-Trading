@@ -15,10 +15,12 @@
 #  License along with this library.
 import math
 import pytest
+import decimal
 
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 from octobot_trading.personal_data.orders import check_and_adapt_order_details_if_necessary, split_orders, \
-    adapt_quantity, trunc_with_n_decimal_digits, add_dusts_to_quantity_if_necessary, adapt_price
+    adapt_quantity, trunc_with_n_decimal_digits, add_dusts_to_quantity_if_necessary, adapt_price, \
+    decimal_trunc_with_n_decimal_digits
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
@@ -39,7 +41,7 @@ async def test_adapt_price():
     # will use default (CURRENCY_DEFAULT_MAX_PRICE_DIGITS)
     symbol_market = {Ecmsc.PRECISION.value: {}}
     assert adapt_price(symbol_market, 0.0001) == 0.0001
-    assert adapt_price(symbol_market, 0.00015) == 0.00014999
+    assert adapt_price(symbol_market, 0.00015) == 0.00015
     assert adapt_price(symbol_market, 0.005) == 0.005
     assert adapt_price(symbol_market, 1) == 1.0000000000000000000000001
     assert adapt_price(symbol_market, 1) == 1
@@ -455,7 +457,30 @@ async def test_trunc_with_n_decimal_digits():
     assert trunc_with_n_decimal_digits(578.000145000156, 3) == 578
     assert trunc_with_n_decimal_digits(578.000145000156, 4) == 578.0001
     assert trunc_with_n_decimal_digits(578.000145000156, 7) == 578.000145
+    assert trunc_with_n_decimal_digits(11111111111111578.000145000156, 7) == 11111111111111578.000145
     assert trunc_with_n_decimal_digits(578.000145000156, 9) == 578.000145
     assert trunc_with_n_decimal_digits(578.000145000156, 10) == 578.0001450001
     assert trunc_with_n_decimal_digits(578.000145000156, 12) == 578.000145000156
+    assert trunc_with_n_decimal_digits(11111111111111578.000145000156, 12) == 11111111111111578.000145000156
     assert math.isnan(trunc_with_n_decimal_digits(math.nan, 12))
+
+
+async def test_decimal_trunc_with_n_decimal_digits():
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(1.00000000001), 10)) == 1
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(1.00000000001), 11)) == 1.00000000001
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(578.000145000156), 3)) == 578
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(578.000145000156), 4)) == 578.0001
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(578.000145000156), 7)) == 578.000145
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(11111111111111578.000145000156), 7)) == \
+           11111111111111578.000145
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(578.000145000156), 9)) == 578.000145
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(578.000145000156), 10)) == 578.0001450001
+    # warning here, in python, float(578.000145000156) is not a finite number, therefore its decimal representation
+    # is rounded to 578.000145000155. Use str in constructor to get the accurate representation (see next assert)
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(578.000145000156), 12)) == \
+           578.000145000155
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal("578.000145000156"), 12)) == \
+           578.000145000156
+    assert float(decimal_trunc_with_n_decimal_digits(decimal.Decimal(11111111111111578.000145000156), 12)) == \
+           11111111111111578.000145000156
+    assert math.isnan(decimal_trunc_with_n_decimal_digits(decimal.Decimal(math.nan), 12))
