@@ -16,15 +16,9 @@
 #  License along with this library.
 
 cpdef double adapt_price(dict symbol_market, double price)
-cpdef object decimal_adapt_price(dict symbol_market, object price)
 cpdef double adapt_quantity(dict symbol_market, double quantity)
-cpdef object decimal_adapt_quantity(dict symbol_market, object quantity)
 cpdef list adapt_order_quantity_because_quantity(object limiting_value, object max_value, object quantity_to_adapt, double price, dict symbol_market)
-cpdef list decimal_adapt_order_quantity_because_quantity(object limiting_value, object max_value, object quantity_to_adapt, object price, dict symbol_market)
 cpdef list adapt_order_quantity_because_price(object limiting_value, object max_value, double price, dict symbol_market)
-cpdef list decimal_adapt_order_quantity_because_price(object limiting_value, object max_value, object price, dict symbol_market)
 cpdef list split_orders(object total_order_price, object max_cost, object valid_quantity, object max_quantity, double price, object quantity, dict symbol_market)
-cpdef list decimal_split_orders(object total_order_price, object max_cost, object valid_quantity, object max_quantity, object price, object quantity, dict symbol_market)
 cpdef object add_dusts_to_quantity_if_necessary(object quantity, double price, dict symbol_market, object current_symbol_holding)
 cpdef check_and_adapt_order_details_if_necessary(object quantity, double price, dict symbol_market, object fixed_symbol_data=*)
-cpdef decimal_check_and_adapt_order_details_if_necessary(object quantity, object price, dict symbol_market, object fixed_symbol_data=*)

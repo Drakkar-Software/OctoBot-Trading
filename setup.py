@@ -87,6 +87,7 @@ packages_list = [
     "octobot_trading.personal_data.trades.channel.trades",
     "octobot_trading.personal_data.orders.order",
     "octobot_trading.personal_data.orders.order_adapter",
+    "octobot_trading.personal_data.orders.decimal_order_adapter",
     "octobot_trading.personal_data.orders.orders_manager",
     "octobot_trading.personal_data.orders.order_state",
     "octobot_trading.personal_data.orders.order_util",

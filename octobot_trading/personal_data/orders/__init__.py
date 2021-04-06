@@ -72,20 +72,22 @@ from octobot_trading.personal_data.orders.order_util import (
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
     adapt_price,
-    decimal_adapt_price,
     adapt_quantity,
-    decimal_adapt_quantity,
     trunc_with_n_decimal_digits,
-    decimal_trunc_with_n_decimal_digits,
     adapt_order_quantity_because_quantity,
-    decimal_adapt_order_quantity_because_quantity,
     adapt_order_quantity_because_price,
-    decimal_adapt_order_quantity_because_price,
     split_orders,
-    decimal_split_orders,
     check_and_adapt_order_details_if_necessary,
-    decimal_check_and_adapt_order_details_if_necessary,
     add_dusts_to_quantity_if_necessary,
+)
+from octobot_trading.personal_data.orders.decimal_order_adapter import (
+    decimal_adapt_price,
+    decimal_adapt_quantity,
+    decimal_trunc_with_n_decimal_digits,
+    decimal_adapt_order_quantity_because_quantity,
+    decimal_adapt_order_quantity_because_price,
+    decimal_split_orders,
+    decimal_check_and_adapt_order_details_if_necessary,
 )
 from octobot_trading.personal_data.orders import order_factory
 from octobot_trading.personal_data.orders.order_factory import (
