@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import math
-import decimal
 
 import octobot_trading.constants as constants
 import octobot_trading.exchanges as exchanges
@@ -36,15 +35,9 @@ def adapt_quantity(symbol_market, quantity):
 
 def trunc_with_n_decimal_digits(value, digits):  # TODO migrate to commons
     try:
-        # decimal.Decimal can add unnecessary complexity in numbers, only use it when necessary
-        if len(str(value).split(".")[-1]) > digits:
-            if digits > 0:
-                return float(decimal.Decimal(value).quantize(decimal.Decimal(f".{'0' * digits}"),
-                                                             rounding=decimal.ROUND_DOWN))
-            else:
-                return math.floor(value)
-        return value
-    except (ValueError, decimal.InvalidOperation):
+        # force exact representation
+        return float("{0:.{1}f}".format(math.trunc(value * 10 ** digits) / (10 ** digits), digits if digits > 1 else 1))
+    except ValueError:
         return value
 
 

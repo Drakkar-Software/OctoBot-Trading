@@ -38,7 +38,7 @@ async def test_adapt_price():
     # will use default (CURRENCY_DEFAULT_MAX_PRICE_DIGITS)
     symbol_market = {Ecmsc.PRECISION.value: {}}
     assert personal_data.adapt_price(symbol_market, 0.0001) == 0.0001
-    assert personal_data.adapt_price(symbol_market, 0.00015) == 0.00015
+    assert personal_data.adapt_price(symbol_market, 0.00015) == 0.00014999
     assert personal_data.adapt_price(symbol_market, 0.005) == 0.005
     assert personal_data.adapt_price(symbol_market, 1) == 1.0000000000000000000000001
     assert personal_data.adapt_price(symbol_market, 1) == 1
