@@ -54,6 +54,30 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         # Define trading modes default consumer priority level
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
+    def is_cryptocurrency_wildcard(self):
+        """
+        Should be True only if self.trading_mode.get_is_cryptocurrency_wildcard() is already True
+        But can overwritten (with return False) to disable wildcard trigger when get_is_cryptocurrency_wildcard() is True
+        :return: True if the mode producer should be triggered by all cryptocurrencies
+        """
+        return self.trading_mode.get_is_cryptocurrency_wildcard()
+
+    def is_symbol_wildcard(self):
+        """
+        Should be True only if self.trading_mode.get_is_symbol_wildcard() is already True
+        But can overwritten (with return False) to disable wildcard trigger when get_is_symbol_wildcard() is True
+        :return: True if the mode producer should be triggered by all symbols
+        """
+        return self.trading_mode.get_is_symbol_wildcard()
+
+    def is_time_frame_wildcard(self):
+        """
+        Should be True only if self.trading_mode.get_is_time_frame_wildcard() is already True
+        But can overwritten (with return False) to disable wildcard trigger when get_is_time_frame_wildcard() is True
+        :return: True if the mode producer should be triggered by all timeframes
+        """
+        return self.trading_mode.get_is_time_frame_wildcard()
+
     # noinspection PyArgumentList
     async def start(self) -> None:
         """
@@ -70,12 +94,16 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 priority_level=self.priority_level,
                 matrix_id=exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                                       self.exchange_manager.id).matrix_id,
-                cryptocurrency=self.trading_mode.cryptocurrency if self.trading_mode.cryptocurrency \
-                    else common_constants.CONFIG_WILDCARD,
-                symbol=self.trading_mode.symbol if self.trading_mode.symbol else common_constants.CONFIG_WILDCARD,
+                cryptocurrency=self.trading_mode.cryptocurrency
+                if self.trading_mode.cryptocurrency is not None and not self.is_cryptocurrency_wildcard()
+                else common_constants.CONFIG_WILDCARD,
+                symbol=self.trading_mode.symbol
+                if self.trading_mode.symbol is not None and not self.is_symbol_wildcard()
+                else common_constants.CONFIG_WILDCARD,
                 evaluator_type=evaluators_enums.EvaluatorMatrixTypes.STRATEGIES.value,
                 exchange_name=self.exchange_name,
-                time_frame=self.trading_mode.time_frame if self.trading_mode.time_frame
+                time_frame=self.trading_mode.time_frame
+                if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard()
                 else common_constants.CONFIG_WILDCARD)
         except (KeyError, ImportError):
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
