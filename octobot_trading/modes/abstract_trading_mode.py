@@ -123,10 +123,16 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         return True
 
     async def initialize(self) -> None:
+        """
+        Triggers producers and consumers creation
+        """
         self.producers = await self.create_producers()
         self.consumers = await self.create_consumers()
 
     async def stop(self) -> None:
+        """
+        Stops all producers and consumers
+        """
         for producer in self.producers:
             await producer.stop()
         for consumer in self.consumers:
@@ -181,6 +187,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         return mode_consumer
 
     def load_config(self) -> None:
+        """
+        Try to load TradingMode tentacle config.
+        Calls set_default_config() if the tentacle config is empty
+        """
         # try with this class name
         self.trading_config = tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config,
                                                                         self.__class__)
