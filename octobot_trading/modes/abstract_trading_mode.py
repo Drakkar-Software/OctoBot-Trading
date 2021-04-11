@@ -19,14 +19,20 @@ import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 import octobot_commons.tentacles_management as abstract_tentacle
 
+import async_channel.constants as channel_constants
+
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.configuration as tm_configuration
 
 import octobot_trading.constants as constants
+import octobot_trading.exchange_channel as exchanges_channel
 
 
 class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     __metaclass__ = abc.ABCMeta
+
+    MODE_PRODUCER_CLASSES = []
+    MODE_CONSUMER_CLASSES = []
 
     def __init__(self, config, exchange_manager):
         super().__init__()
@@ -128,10 +134,51 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         self.exchange_manager = None
 
     async def create_producers(self) -> list:
-        raise NotImplementedError("create_producers not implemented")
+        """
+        Creates the instance of producers listed in MODE_PRODUCER_CLASSES
+        :return: the list of producers created
+        """
+        return [
+            await self._create_mode_producer(mode_producer_class)
+            for mode_producer_class in self.MODE_PRODUCER_CLASSES
+        ]
+
+    async def _create_mode_producer(self, mode_producer_class):
+        """
+        Creates a new :mode_producer_class: instance and starts it
+        :param mode_producer_class: the trading mode producer class to create
+        :return: the producer class created
+        """
+        mode_producer = mode_producer_class(
+            exchanges_channel.get_chan(constants.MODE_CHANNEL, self.exchange_manager.id),
+            self.config, self, self.exchange_manager)
+        await mode_producer.run()
+        return mode_producer
 
     async def create_consumers(self) -> list:
-        raise NotImplementedError("create_consumers not implemented")
+        """
+        Creates the instance of consumers listed in MODE_CONSUMER_CLASSES
+        :return: the list of consumers created
+        """
+        return [
+            await self._create_mode_consumer(mode_consumer_class)
+            for mode_consumer_class in self.MODE_CONSUMER_CLASSES
+        ]
+
+    async def _create_mode_consumer(self, mode_consumer_class):
+        """
+        Creates a new :mode_consumer_class: instance and subscribe this new consumer to the trading mode channel
+        :param mode_consumer_class: the trading mode consumer class to create
+        :return: the consumer class created
+        """
+        mode_consumer = mode_consumer_class(self)
+        await exchanges_channel.get_chan(constants.MODE_CHANNEL, self.exchange_manager.id).new_consumer(
+            consumer_instance=mode_consumer,
+            trading_mode_name=self.get_name(),
+            cryptocurrency=self.cryptocurrency if self.cryptocurrency else channel_constants.CHANNEL_WILDCARD,
+            symbol=self.symbol if self.symbol else channel_constants.CHANNEL_WILDCARD,
+            time_frame=self.time_frame if self.time_frame else channel_constants.CHANNEL_WILDCARD)
+        return mode_consumer
 
     def load_config(self) -> None:
         # try with this class name
