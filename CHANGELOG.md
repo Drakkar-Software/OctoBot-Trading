@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.6] - 2021-04-10
+### Added
+- TradingMode producers and consumer automated creation with class attributes
+
 ## [1.12.5] - 2021-04-09 
 ### Added
 - AbstractModeProducer cryptocurrencies, symbols and timeframes wildcard subscription to MatrixChannel through boolean methods
