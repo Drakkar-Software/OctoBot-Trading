@@ -132,6 +132,29 @@ def test_get_reference_market(config):
     assert util.get_reference_market(config) == trading_constants.DEFAULT_REFERENCE_MARKET
 
 
+def test_get_traded_pairs_by_currency(config):
+    assert util.get_traded_pairs_by_currency(config) == FULL_PAIRS_BY_CRYPTO_DICT
+    # with wildcard currency
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_CRYPTO_PAIRS] = \
+        commons_constants.CONFIG_WILDCARD
+    dict_without_bitcoin = _replace_value_by_key(FULL_PAIRS_BY_CRYPTO_DICT, "Bitcoin", commons_constants.CONFIG_WILDCARD)
+    assert util.get_traded_pairs_by_currency(config) == dict_without_bitcoin
+
+    # with disabled currency
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_CRYPTO_PAIRS] = [
+        'BTC/USDT',
+        'BTC/EUR',
+        'BTC/USDC'
+    ]
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
+    dict_without_bitcoin = _filter_by_key(FULL_PAIRS_BY_CRYPTO_DICT, "Bitcoin")
+    assert util.get_traded_pairs_by_currency(config) == dict_without_bitcoin
+
+    # with empty pairs
+    config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_CRYPTO_PAIRS] = []
+    assert util.get_traded_pairs_by_currency(config) == _filter_by_key(FULL_PAIRS_BY_CRYPTO_DICT, "Bitcoin")
+
+
 FULL_PAIRS_LIST = [
     'BTC/USDT',
     'BTC/EUR',
@@ -151,6 +174,23 @@ FULL_PAIRS_LIST = [
     'XVG/BTC'
 ]
 
+FULL_PAIRS_BY_CRYPTO_DICT = {
+    'Bitcoin': ['BTC/USDT', 'BTC/EUR', 'BTC/USDC'],
+    'Neo': ['NEO/BTC'],
+    'Ethereum': ['ETH/USDT'],
+    'Icon': ['ICX/BTC'],
+    'VeChain': ['VEN/BTC'],
+    'Nano': ['XRB/BTC'],
+    'Cardano': ['ADA/BTC'],
+    'Ontology': ['ONT/BTC'],
+    'Stellar': ['XLM/BTC'],
+    'Power Ledger': ['POWR/BTC'],
+    'Ethereum Classic': ['ETC/BTC'],
+    'WAX': ['WAX/BTC'],
+    'XRP': ['XRP/BTC'],
+    'Verge': ['XVG/BTC']
+}
+
 
 def _test_enabled(config, func, config_key, current_val):
     assert func(config) is current_val
@@ -164,6 +204,21 @@ def _test_enabled(config, func, config_key, current_val):
 
 def _filter_by_base(pairs, filtered_base):
     return [s for s in pairs if symbol_util.split_symbol(s)[0] != filtered_base]
+
+
+def _filter_by_key(pairs_by_cypto, filtered_key):
+    return {
+        crypto: pairs
+        for crypto, pairs in pairs_by_cypto.items()
+        if crypto != filtered_key
+    }
+
+
+def _replace_value_by_key(pairs_by_cypto, filtered_key, replaced_value):
+    return {
+        crypto: pairs if crypto != filtered_key else replaced_value
+        for crypto, pairs in pairs_by_cypto.items()
+    }
 
 
 def _select_by_base_or_quote(pairs, base_or_quote):

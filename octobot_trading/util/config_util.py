@@ -94,3 +94,13 @@ def get_reference_market(config) -> str:
     # The reference market is the currency unit of the calculated quantity value
     return config[commons_constants.CONFIG_TRADING].get(commons_constants.CONFIG_TRADER_REFERENCE_MARKET,
                                                         trading_constants.DEFAULT_REFERENCE_MARKET)
+
+
+def get_traded_pairs_by_currency(config):
+    return {
+        currency: val[commons_constants.CONFIG_CRYPTO_PAIRS]
+        for currency, val in config[commons_constants.CONFIG_CRYPTO_CURRENCIES].items()
+        if commons_constants.CONFIG_CRYPTO_PAIRS in val
+           and val[commons_constants.CONFIG_CRYPTO_PAIRS]
+           and is_currency_enabled(config, currency, True)
+    }
