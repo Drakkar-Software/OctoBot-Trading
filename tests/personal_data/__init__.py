@@ -13,3 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+DEFAULT_ORDER_SYMBOL = "BTC/USDT"
+DEFAULT_SYMBOL_QUANTITY = 10
+DEFAULT_MARKET_QUANTITY = 1000

@@ -46,6 +46,7 @@ FEES_MOCK = {
     FeePropertyColumns.CURRENCY.value: "BQX"
 }
 
+
 class TestTrader:
     DEFAULT_SYMBOL = "BTC/USDT"
     EXCHANGE_MANAGER_CLASS_STRING = "binance"
@@ -168,7 +169,6 @@ class TestTrader:
 
         await self.stop(exchange_manager)
 
-
     async def test_cancel_open_orders_default_symbol(self):
         config, exchange_manager, trader_inst = await self.init_default()
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
@@ -195,10 +195,10 @@ class TestTrader:
         # Test buy order
         limit_buy_2 = BuyLimitOrder(trader_inst)
         limit_buy_2.update(order_type=TraderOrderType.BUY_LIMIT,
-                          symbol=self.DEFAULT_SYMBOL,
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                           symbol=self.DEFAULT_SYMBOL,
+                           current_price=30,
+                           quantity=10,
+                           price=30)
 
         await trader_inst.create_order(limit_buy_1)
         await trader_inst.create_order(limit_sell)

@@ -21,20 +21,19 @@ from octobot_trading.enums import TraderOrderType
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
+from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_SYMBOL_QUANTITY
 from tests.personal_data.orders import sell_limit_order
 from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
 
 pytestmark = pytest.mark.asyncio
-
-DEFAULT_SYMBOL_ORDER = "BTC/USDT"
 
 
 async def test_sell_limit_order_trigger(sell_limit_order):
     order_price = random_price(min_value=2)
     sell_limit_order.update(
         price=order_price,
-        quantity=random_quantity(),
-        symbol=DEFAULT_SYMBOL_ORDER,
+        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.SELL_LIMIT,
     )
     sell_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
@@ -43,7 +42,7 @@ async def test_sell_limit_order_trigger(sell_limit_order):
         sell_limit_order
     )
     price_events_manager = sell_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
+        DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(max_value=order_price - 1),
                              timestamp=sell_limit_order.timestamp)])

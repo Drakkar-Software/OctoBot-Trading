@@ -17,6 +17,7 @@ import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TraderOrderType
+from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_SYMBOL_QUANTITY
 from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
 
 from tests import event_loop
@@ -25,15 +26,13 @@ from tests.personal_data.orders import stop_loss_sell_order, stop_loss_buy_order
 
 pytestmark = pytest.mark.asyncio
 
-DEFAULT_SYMBOL_ORDER = "BTC/USDT"
-
 
 async def test_stop_loss_sell_order_trigger(stop_loss_sell_order):
     order_price = random_price()
     stop_loss_sell_order.update(
         price=order_price,
-        quantity=random_quantity(),
-        symbol=DEFAULT_SYMBOL_ORDER,
+        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.STOP_LOSS,
 
     )
@@ -43,7 +42,7 @@ async def test_stop_loss_sell_order_trigger(stop_loss_sell_order):
         stop_loss_sell_order
     )
     price_events_manager = stop_loss_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
+        DEFAULT_ORDER_SYMBOL).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(min_value=order_price + 1),
@@ -66,8 +65,8 @@ async def test_stop_loss_buy_order_trigger(stop_loss_buy_order):
     order_price = random_price()
     stop_loss_buy_order.update(
         price=order_price,
-        quantity=random_quantity(),
-        symbol=DEFAULT_SYMBOL_ORDER,
+        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.STOP_LOSS,
     )
     stop_loss_buy_order.exchange_manager.is_backtesting = True  # force update_order_status
@@ -76,7 +75,7 @@ async def test_stop_loss_buy_order_trigger(stop_loss_buy_order):
         stop_loss_buy_order
     )
     price_events_manager = stop_loss_buy_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
+        DEFAULT_ORDER_SYMBOL).price_events_manager
     # stop loss buy order triggers when price is above or equal to its trigger price
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(max_value=order_price - 1),

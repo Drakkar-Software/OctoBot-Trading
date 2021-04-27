@@ -19,6 +19,7 @@ import pytest
 import octobot_commons.constants as commons_constants
 
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 from octobot_trading.enums import TraderOrderType, TradeOrderSide
 from octobot_trading.personal_data.orders import BuyLimitOrder
 from octobot_trading.personal_data.orders import SellLimitOrder
