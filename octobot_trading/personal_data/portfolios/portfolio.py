@@ -138,7 +138,8 @@ class Portfolio(util.Initializable):
         :param order: the order to be taken into account
         """
         # stop losses and take profits aren't using available portfolio
-        if not _check_available_should_update(order):
+        # restoring available portfolio when order type is stop loss or take profit
+        if not _should_update_available(order):
             self.update_portfolio_available_from_order(order)
 
         currency, market = order.get_currency_and_market()
@@ -155,7 +156,7 @@ class Portfolio(util.Initializable):
         :param is_new_order: True if this is a new order
         :return: None
         """
-        if _check_available_should_update(order):
+        if _should_update_available(order):
             self.update_portfolio_available_from_order(order, is_new_order)
 
     def get_portfolio_from_amount_dict(self, amount_dict):
@@ -276,7 +277,7 @@ class Portfolio(util.Initializable):
             self._update_currency_portfolio(currency=currency_to_reset, available=reset_quantity)
 
 
-def _check_available_should_update(order):
+def _should_update_available(order):
     """
     Check if the order has impact on availability
     :param order: The order to check
