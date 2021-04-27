@@ -34,9 +34,10 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USD"
     SYMBOL_2 = "ETH/BTC"
     DEFAULT_CANDLE_LIMIT = 100
+    SLEEP_TIME = 10
 
     async def test_time_frames(self):
-        await asyncio.sleep(10)  # prevent rate api limit
+        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         time_frames = await self.time_frames()
         assert all(time_frame in time_frames for time_frame in (
             TimeFrames.ONE_MINUTE.value,
@@ -53,7 +54,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_get_market_status(self):
-        await asyncio.sleep(10)  # prevent rate api limit
+        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         for market_status in await self.get_market_statuses():
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2)
@@ -66,7 +67,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_COST.value))
 
     async def test_get_symbol_prices(self):
-        await asyncio.sleep(10)  # prevent rate api limit
+        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         # without limit
         symbol_prices = await self.get_symbol_prices()
         assert len(symbol_prices) == self.DEFAULT_CANDLE_LIMIT
@@ -93,7 +94,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_order_book(self):
-        await asyncio.sleep(10)  # prevent rate api limit
+        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         # bitfinex2 only supports 1, 25 and 100 size
         # https://docs.bitfinex.com/reference#rest-public-book
         order_book = await self.get_order_book(limit=25)
@@ -103,19 +104,19 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
-        await asyncio.sleep(10)  # prevent rate api limit
+        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         recent_trades = await self.get_recent_trades()
         assert len(recent_trades) == 50
         # check trades order (oldest first)
         self.ensure_elements_order(recent_trades, Ecoc.TIMESTAMP.value)
 
     async def test_get_price_ticker(self):
-        await asyncio.sleep(10)  # prevent rate api limit
+        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         ticker = await self.get_price_ticker()
         self._check_ticker(ticker, self.SYMBOL, check_content=True)
 
     async def test_get_all_currencies_price_ticker(self):
-        await asyncio.sleep(10)  # prevent rate api limit
+        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         tickers = await self.get_all_currencies_price_ticker()
         for symbol, ticker in tickers.items():
             self._check_ticker(ticker, symbol)
