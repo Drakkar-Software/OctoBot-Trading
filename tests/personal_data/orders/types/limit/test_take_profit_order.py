@@ -16,7 +16,8 @@
 import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
-from octobot_trading.enums import TraderOrderType
+from octobot_trading.enums import TraderOrderType, TradeOrderSide
+from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_SYMBOL_QUANTITY, DEFAULT_MARKET_QUANTITY
 
 from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
 from tests import event_loop
@@ -25,24 +26,23 @@ from tests.personal_data.orders import take_profit_sell_order, take_profit_buy_o
 
 pytestmark = pytest.mark.asyncio
 
-DEFAULT_SYMBOL_ORDER = "BTC/USDT"
-
 
 async def test_take_profit_sell_order_trigger(take_profit_sell_order):
     order_price = random_price(min_value=2)
     take_profit_sell_order.update(
         price=order_price,
-        quantity=random_quantity(),
-        symbol=DEFAULT_SYMBOL_ORDER,
+        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.TAKE_PROFIT,
     )
+    take_profit_sell_order.side = TradeOrderSide.SELL
     take_profit_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
     await take_profit_sell_order.initialize()
     take_profit_sell_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
         take_profit_sell_order
     )
     price_events_manager = take_profit_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
+        DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(max_value=order_price - 1),
                              timestamp=take_profit_sell_order.timestamp)])
@@ -66,17 +66,18 @@ async def test_take_profit_buy_order_trigger(take_profit_buy_order):
     order_price = random_price()
     take_profit_buy_order.update(
         price=order_price,
-        quantity=random_quantity(),
-        symbol=DEFAULT_SYMBOL_ORDER,
+        quantity=random_quantity(max_value=DEFAULT_MARKET_QUANTITY / order_price),
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.TAKE_PROFIT,
     )
+    take_profit_buy_order.side = TradeOrderSide.BUY
     take_profit_buy_order.exchange_manager.is_backtesting = True  # force update_order_status
     await take_profit_buy_order.initialize()
     take_profit_buy_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
         take_profit_buy_order
     )
     price_events_manager = take_profit_buy_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
+        DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(min_value=order_price - 1),
                              timestamp=take_profit_buy_order.timestamp)])

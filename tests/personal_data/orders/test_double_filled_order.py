@@ -17,6 +17,7 @@ import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TraderOrderType
+from tests.personal_data import DEFAULT_SYMBOL_QUANTITY, DEFAULT_ORDER_SYMBOL
 from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
 
 from tests import event_loop
@@ -25,24 +26,22 @@ from tests.personal_data.orders import stop_loss_sell_order, sell_limit_order
 
 pytestmark = pytest.mark.asyncio
 
-DEFAULT_SYMBOL_ORDER = "BTC/USDT"
-
 
 async def test_stop_loss_and_limit(stop_loss_sell_order, sell_limit_order):
     # fill both orders: stop loss first
     limit_order_price = random_price()
-    quantity = random_quantity()
+    quantity = random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY)
     sell_limit_order.update(
         price=limit_order_price,
         quantity=quantity,
-        symbol=DEFAULT_SYMBOL_ORDER,
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.SELL_LIMIT,
     )
     stop_order_price = random_price(max_value=limit_order_price-1)
     stop_loss_sell_order.update(
         price=stop_order_price,
         quantity=quantity,
-        symbol=DEFAULT_SYMBOL_ORDER,
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.STOP_LOSS,
         linked_to=sell_limit_order
     )
@@ -53,7 +52,7 @@ async def test_stop_loss_and_limit(stop_loss_sell_order, sell_limit_order):
     await stop_loss_sell_order.initialize()
     await sell_limit_order.initialize()
     price_events_manager = stop_loss_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
+        DEFAULT_ORDER_SYMBOL).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
     # sell limit order triggers when price is above or equal to its trigger price
     # here trigger both: stop order is triggered first (initialized first): sell limit order should be
@@ -74,18 +73,18 @@ async def test_stop_loss_and_limit(stop_loss_sell_order, sell_limit_order):
 async def test_limit_and_stop_loss(stop_loss_sell_order, sell_limit_order):
     # fill both orders: limit first
     limit_order_price = random_price()
-    quantity = random_quantity()
+    quantity = random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY)
     sell_limit_order.update(
         price=limit_order_price,
         quantity=quantity,
-        symbol=DEFAULT_SYMBOL_ORDER,
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.SELL_LIMIT,
     )
     stop_order_price = random_price(max_value=limit_order_price-1)
     stop_loss_sell_order.update(
         price=stop_order_price,
         quantity=quantity,
-        symbol=DEFAULT_SYMBOL_ORDER,
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.STOP_LOSS,
         linked_to=sell_limit_order
     )
@@ -96,7 +95,7 @@ async def test_limit_and_stop_loss(stop_loss_sell_order, sell_limit_order):
     await sell_limit_order.initialize()
     await stop_loss_sell_order.initialize()
     price_events_manager = stop_loss_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
+        DEFAULT_ORDER_SYMBOL).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
     # sell limit order triggers when price is above or equal to its trigger price
     # here trigger both: limit is triggered first (initialized first): sell stop loss order should be

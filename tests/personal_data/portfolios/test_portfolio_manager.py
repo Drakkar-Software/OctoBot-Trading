@@ -23,6 +23,7 @@ from tests.exchanges import backtesting_trader, backtesting_config, backtesting_
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
+from tests.personal_data import DEFAULT_MARKET_QUANTITY
 from tests.test_utils.random_numbers import random_price, random_quantity
 
 pytestmark = pytest.mark.asyncio
@@ -105,9 +106,10 @@ async def test_refresh_simulated_trader_portfolio_from_order(backtesting_trader)
         portfolio_manager._refresh_simulated_trader_portfolio_from_order(order)
         update_portfolio_available_mock.assert_called_once()
 
+    price = random_price()
     order.update(
         price=random_price(),
-        quantity=random_quantity(),
+        quantity=random_quantity(max_value=DEFAULT_MARKET_QUANTITY / price),
         symbol="BTC/USDT"
     )
     await order.on_fill(force_fill=True)

@@ -17,6 +17,7 @@ import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TraderOrderType
+from tests.personal_data import DEFAULT_SYMBOL_QUANTITY, DEFAULT_ORDER_SYMBOL
 from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
 
 from tests import event_loop
@@ -25,15 +26,13 @@ from tests.personal_data.orders import take_profit_limit_order
 
 pytestmark = pytest.mark.asyncio
 
-DEFAULT_SYMBOL_ORDER = "BTC/USDT"
-
 
 async def test_take_profit_limit_order_trigger(take_profit_limit_order):
     order_price = random_price(min_value=2)
     take_profit_limit_order.update(
         price=order_price,
-        quantity=random_quantity(),
-        symbol=DEFAULT_SYMBOL_ORDER,
+        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.TAKE_PROFIT_LIMIT,
     )
     take_profit_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
@@ -42,7 +41,7 @@ async def test_take_profit_limit_order_trigger(take_profit_limit_order):
         take_profit_limit_order
     )
     price_events_manager = take_profit_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
+        DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
         [random_recent_trade(price=random_price(max_value=order_price - 1),
                              timestamp=take_profit_limit_order.timestamp)])

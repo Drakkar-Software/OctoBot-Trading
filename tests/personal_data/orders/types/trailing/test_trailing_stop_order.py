@@ -22,6 +22,7 @@ from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.exchange_data.prices.price_events_manager import PriceEventsManager
 from octobot_trading.enums import TradeOrderType, TradeOrderSide, MarkPriceSources
 from octobot_trading.personal_data.orders import TrailingStopOrder
+from tests.personal_data import DEFAULT_SYMBOL_QUANTITY, DEFAULT_ORDER_SYMBOL, DEFAULT_MARKET_QUANTITY
 
 from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
 from tests import event_loop
@@ -29,8 +30,6 @@ from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.personal_data.orders import trailing_stop_order
 
 pytestmark = pytest.mark.asyncio
-
-DEFAULT_SYMBOL_ORDER = "BTC/USDT"
 
 
 async def test_trailing_stop_trigger(trailing_stop_order):
@@ -65,7 +64,7 @@ async def test_trailing_stop_trigger(trailing_stop_order):
 async def test_trailing_stop_with_new_price(trailing_stop_order):
     trailing_stop_order, order_price, price_events_manager = await initialize_trailing_stop(trailing_stop_order)
     await trailing_stop_order.set_trailing_percent(2)
-    new_trailing_price = random_price(min_value=order_price + 1)
+    new_trailing_price = random_price(min_value=order_price * 0.99, max_value=order_price * 1.01)
 
     # set mark price
     set_mark_price(trailing_stop_order, new_trailing_price)
@@ -88,7 +87,7 @@ async def test_trailing_stop_with_new_price(trailing_stop_order):
 async def test_trailing_stop_with_new_old_price(trailing_stop_order):
     trailing_stop_order, order_price, price_events_manager = await initialize_trailing_stop(trailing_stop_order)
     await trailing_stop_order.set_trailing_percent(5)
-    new_trailing_price = random_price(min_value=order_price + 1)
+    new_trailing_price = random_price(min_value=order_price * 0.99, max_value=order_price * 1.01)
 
     # set mark price
     set_mark_price(trailing_stop_order, new_trailing_price)
@@ -109,10 +108,10 @@ async def test_trailing_stop_with_new_old_price(trailing_stop_order):
 
 
 async def test_trailing_stop_with_new_price_inversed(trailing_stop_order):
-    trailing_stop_order, order_price, price_events_manager = await initialize_trailing_stop(trailing_stop_order)
-    trailing_stop_order.side = TradeOrderSide.BUY
+    trailing_stop_order, order_price, price_events_manager = await initialize_trailing_stop(trailing_stop_order,
+                                                                                            side=TradeOrderSide.BUY)
     await trailing_stop_order.set_trailing_percent(5)
-    new_trailing_price = random_price(max_value=order_price - 1)
+    new_trailing_price = random_price(min_value=order_price * 0.99, max_value=order_price * 1.01)
 
     # set mark price
     set_mark_price(trailing_stop_order, new_trailing_price)
@@ -133,18 +132,22 @@ async def test_trailing_stop_with_new_price_inversed(trailing_stop_order):
     assert trailing_stop_order.is_filled()
 
 
-async def initialize_trailing_stop(order) -> Tuple[TrailingStopOrder, float, PriceEventsManager]:
+async def initialize_trailing_stop(order, side=TradeOrderSide.SELL) -> Tuple[TrailingStopOrder, float, PriceEventsManager]:
     order_price = random_price()
+    order_max_quantity = DEFAULT_SYMBOL_QUANTITY \
+        if side is TradeOrderSide.SELL else DEFAULT_MARKET_QUANTITY / order_price
     order.update(
         price=order_price,
-        quantity=random_quantity(),
-        symbol=DEFAULT_SYMBOL_ORDER,
+        # divide quantity by 2 to prevent trailing price movement to impact usable quantity
+        quantity=random_quantity(max_value=order_max_quantity / 2),
+        symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TradeOrderType.TRAILING_STOP,
     )
+    order.side = side
     order.exchange_manager.is_backtesting = True  # force update_order_status
     await order.initialize()
     price_events_manager = order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_SYMBOL_ORDER).price_events_manager
+        DEFAULT_ORDER_SYMBOL).price_events_manager
     order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order)
     return order, order_price, price_events_manager
 
