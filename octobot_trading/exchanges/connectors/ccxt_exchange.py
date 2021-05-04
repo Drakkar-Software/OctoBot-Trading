@@ -179,11 +179,12 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                 symbol: str,
                                 time_frame: octobot_commons.enums.TimeFrames,
                                 limit: int = None,
+                                since: int = None,
                                 **kwargs: dict) -> typing.Optional[list]:
         try:
             if limit:
-                return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, params=kwargs)
-            return await self.client.fetch_ohlcv(symbol, time_frame.value, params=kwargs)
+                return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, since=since, params=kwargs)
+            return await self.client.fetch_ohlcv(symbol, time_frame.value, since=since, params=kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
