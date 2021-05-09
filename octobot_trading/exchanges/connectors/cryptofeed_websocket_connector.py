@@ -55,7 +55,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             cryptofeed_constants.OPEN_INTEREST: cryptofeed_callbacks.OpenInterestCallback(self.open_interest),
             cryptofeed_constants.FUTURES_INDEX: cryptofeed_callbacks.FuturesIndexCallback(self.futures_index),
             cryptofeed_constants.MARKET_INFO: cryptofeed_callbacks.MarketInfoCallback(self.market_info),
-            cryptofeed_constants.TRANSACTIONS: cryptofeed_callbacks.TransactionsCallback(self.transactions),
+            # cryptofeed_constants.TRANSACTIONS: cryptofeed_callbacks.TransactionsCallback(self.transactions),
         }
 
     @classmethod
@@ -220,9 +220,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     async def market_info(self, **kwargs):
         pass  # Coingecko only
-
-    async def transactions(self, **kwargs):
-        pass  # Whale alert only
 
     def get_pair_from_exchange(self, pair) -> str:
         try:

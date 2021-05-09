@@ -70,6 +70,8 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
             self.logger.debug("Sending keepalive...")
             await asyncio.sleep(self.timeout_interval)
 
+    # pylint: disable=E1101
+    # We need to ignore pylint E1101 (no-member) because of websockets legacy aliases
     async def _connect(self):
         delay: int = 1
         self._watch_task = None
