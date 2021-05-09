@@ -31,11 +31,10 @@ async def test_take_profit_sell_order_trigger(take_profit_sell_order):
     order_price = random_price(min_value=2)
     take_profit_sell_order.update(
         price=order_price,
-        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY / 10),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.TAKE_PROFIT,
     )
-    take_profit_sell_order.side = TradeOrderSide.SELL
     take_profit_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
     await take_profit_sell_order.initialize()
     take_profit_sell_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
@@ -66,11 +65,10 @@ async def test_take_profit_buy_order_trigger(take_profit_buy_order):
     order_price = random_price()
     take_profit_buy_order.update(
         price=order_price,
-        quantity=random_quantity(max_value=DEFAULT_MARKET_QUANTITY / order_price),
+        quantity=random_quantity(max_value=DEFAULT_MARKET_QUANTITY / (order_price * 2)),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.TAKE_PROFIT,
     )
-    take_profit_buy_order.side = TradeOrderSide.BUY
     take_profit_buy_order.exchange_manager.is_backtesting = True  # force update_order_status
     await take_profit_buy_order.initialize()
     take_profit_buy_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(

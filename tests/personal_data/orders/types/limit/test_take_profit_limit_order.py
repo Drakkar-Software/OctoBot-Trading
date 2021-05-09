@@ -29,9 +29,10 @@ pytestmark = pytest.mark.asyncio
 
 async def test_take_profit_limit_order_trigger(take_profit_limit_order):
     order_price = random_price(min_value=2)
+    take_profit_limit_order.limit_price = order_price + 10
     take_profit_limit_order.update(
         price=order_price,
-        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY / 10),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.TAKE_PROFIT_LIMIT,
     )

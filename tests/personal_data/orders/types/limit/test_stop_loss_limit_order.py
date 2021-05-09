@@ -29,13 +29,13 @@ pytestmark = pytest.mark.asyncio
 
 async def test_stop_loss_limit_order_trigger(stop_loss_limit_order):
     order_price = random_price()
+    stop_loss_limit_order.limit_price = order_price - 10
     stop_loss_limit_order.update(
         price=order_price,
-        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY / 10),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.STOP_LOSS_LIMIT,
     )
-    stop_loss_limit_order.side = TradeOrderSide.SELL
     stop_loss_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
     await stop_loss_limit_order.initialize()
     stop_loss_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
