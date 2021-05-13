@@ -27,23 +27,25 @@ class TickerUpdater(ticker_channel.TickerProducer):
     CHANNEL_NAME = constants.TICKER_CHANNEL
     TICKER_REFRESH_TIME = 64
     TICKER_FUTURE_REFRESH_TIME = 14
+    TICKER_REFRESH_DELAY_THRESHOLD = 10
 
     def __init__(self, channel):
         super().__init__(channel)
         self._added_pairs = []
         self.is_fetching_future_data = False
+        self.refresh_time = self.TICKER_REFRESH_TIME
 
     async def start(self):
         if self._should_use_future():
             self.is_fetching_future_data = True
-            self.TICKER_REFRESH_TIME = self.TICKER_FUTURE_REFRESH_TIME
+            self.refresh_time = self.TICKER_FUTURE_REFRESH_TIME
         if self.channel.is_paused:
             await self.pause()
         else:
             # initialize ticker
             await asyncio.gather(*[self._fetch_ticker(pair)
                                    for pair in self._get_pairs_to_update()])
-            await asyncio.sleep(self.TICKER_REFRESH_TIME)
+            await asyncio.sleep(self.refresh_time)
             await self.start_update_loop()
 
     async def start_update_loop(self):
@@ -52,7 +54,7 @@ class TickerUpdater(ticker_channel.TickerProducer):
                 for pair in self._get_pairs_to_update():
                     await self._fetch_ticker(pair)
 
-                await asyncio.sleep(self.TICKER_REFRESH_TIME)
+                await asyncio.sleep(self.refresh_time)
             except errors.NotSupported:
                 self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
                 await self.pause()
@@ -166,10 +168,22 @@ class TickerUpdater(ticker_channel.TickerProducer):
             if to_add_pairs:
                 self._added_pairs += to_add_pairs
                 self.logger.info(f"Added pairs : {to_add_pairs}")
+                self._update_refresh_time()
 
         if removed_pairs:
             self._added_pairs -= removed_pairs
             self.logger.info(f"Removed pairs : {removed_pairs}")
+            self._update_refresh_time()
+
+    def _update_refresh_time(self):
+        if self.is_fetching_future_data:
+            # do not change ticker update rate on futures
+            return
+        pairs_to_update_count = len(self._get_pairs_to_update())
+        delay_multiplier = pairs_to_update_count // self.TICKER_REFRESH_DELAY_THRESHOLD + 1
+        # there can be many ticker requests when a large number of currency is in a
+        # portfolio, in this case, limit those requests
+        self.refresh_time = self.TICKER_REFRESH_TIME * delay_multiplier
 
     # async def config_callback(self, exchange, cryptocurrency, symbols, time_frames):
     #     if symbols:

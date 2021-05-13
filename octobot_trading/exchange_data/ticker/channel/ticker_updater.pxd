@@ -19,7 +19,9 @@ cimport octobot_trading.exchange_data.ticker.channel.ticker as ticker_channel
 cdef class TickerUpdater(ticker_channel.TickerProducer):
     cdef list _added_pairs
     cdef bint is_fetching_future_data
+    cdef int refresh_time
 
     cdef dict _cleanup_ticker_dict(self, dict ticker)
     cdef list _get_pairs_to_update(self)
     cdef bint _should_use_future(self)
+    cdef void _update_refresh_time(self)
