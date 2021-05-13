@@ -77,7 +77,8 @@ class CancelOrderState(order_state.OrderState):
 
             # update portfolio after close
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
-                await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
+                await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order,
+                                                                                                            False)
 
             # notify order filled
             await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order,

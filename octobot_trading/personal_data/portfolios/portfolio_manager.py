@@ -54,14 +54,16 @@ class PortfolioManager(util.Initializable):
             return self.portfolio.update_portfolio_from_balance(balance, force_replace=not is_diff_update)
         return False
 
-    async def handle_balance_update_from_order(self, order) -> bool:
+    async def handle_balance_update_from_order(self, order, require_exchange_update: bool) -> bool:
         """
         Handle a balance update from an order request
         :param order: the order
+        :param require_exchange_update: when True, will sync with exchange portfolio, otherwise will predict the
+        portfolio changes using order data (as in trading simulator)
         :return: True if the portfolio was updated
         """
         if self.trader.is_enabled:
-            if self.trader.simulate:
+            if self.trader.simulate or not require_exchange_update:
                 return self._refresh_simulated_trader_portfolio_from_order(order)
             # on real trading: reload portfolio to ensure portfolio sync
             return await self._refresh_real_trader_portfolio()

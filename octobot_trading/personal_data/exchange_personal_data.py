@@ -71,9 +71,12 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
-    async def handle_portfolio_update_from_order(self, order, should_notify: bool = True) -> bool:
+    async def handle_portfolio_update_from_order(self, order,
+                                                 require_exchange_update: bool = True,
+                                                 should_notify: bool = True) -> bool:
         try:
-            changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order)
+            changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order,
+                                                                                          require_exchange_update)
             if should_notify:
                 await exchange_channel.get_chan(octobot_trading.constants.BALANCE_CHANNEL, self.exchange_manager.id). \
                     get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
