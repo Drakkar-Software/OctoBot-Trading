@@ -62,21 +62,33 @@ async def test_handle_balance_update_from_order(backtesting_trader):
         return
 
     with patch.object(portfolio_manager, '_refresh_real_trader_portfolio',
-                      new=AsyncMock()) as _refresh_real_trader_portfolio_mock:
+                      new=AsyncMock()) as _refresh_real_trader_portfolio_mock, \
+        patch.object(portfolio_manager, '_refresh_simulated_trader_portfolio_from_order',
+                     new=Mock()) as _refresh_simulated_trader_portfolio_from_order_mock:
         _refresh_real_trader_portfolio_mock.assert_not_called()
-        await portfolio_manager.handle_balance_update_from_order(order)
+        await portfolio_manager.handle_balance_update_from_order(order, True)
         _refresh_real_trader_portfolio_mock.assert_called_once()
+        _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
+        _refresh_real_trader_portfolio_mock.reset_mock()
+        await portfolio_manager.handle_balance_update_from_order(order, False)
+        _refresh_real_trader_portfolio_mock.assert_not_called()
+        _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
 
     trader.simulate = True
     with patch.object(portfolio_manager, '_refresh_simulated_trader_portfolio_from_order',
                       new=Mock()) as _refresh_simulated_trader_portfolio_from_order_mock:
         _refresh_simulated_trader_portfolio_from_order_mock.assert_not_called()
-        await portfolio_manager.handle_balance_update_from_order(order)
+        await portfolio_manager.handle_balance_update_from_order(order, True)
+        _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
+        _refresh_simulated_trader_portfolio_from_order_mock.reset_mock()
+        # ensure no side effect with require_exchange_update param
+        await portfolio_manager.handle_balance_update_from_order(order, False)
         _refresh_simulated_trader_portfolio_from_order_mock.assert_called_once()
 
     trader.is_enabled = False
     trader.simulate = False
-    assert not await portfolio_manager.handle_balance_update_from_order(order)
+    assert not await portfolio_manager.handle_balance_update_from_order(order, True)
+    assert not await portfolio_manager.handle_balance_update_from_order(order, False)
 
 
 async def test_refresh_simulated_trader_portfolio_from_order(backtesting_trader):
