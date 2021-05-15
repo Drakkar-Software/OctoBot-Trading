@@ -36,10 +36,10 @@ class PositionsManager(util.Initializable):
         self._reset_positions()
 
     def get_open_positions(self, symbol=None, since=-1, limit=-1):
-        return self._select_positions(True, symbol, since, limit)
+        return self._select_positions(status=enums.PositionStatus.OPEN, symbol=symbol, since=since, limit=limit)
 
     def get_closed_positions(self, symbol=None, since=-1, limit=-1):
-        return self._select_positions(False, symbol, since, limit)
+        return self._select_positions(status=enums.PositionStatus.CLOSED, symbol=symbol, since=since, limit=limit)
 
     def upsert_position(self, position_id, raw_position) -> bool:
         if position_id not in self.positions:
