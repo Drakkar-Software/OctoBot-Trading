@@ -103,6 +103,7 @@ from octobot_trading.personal_data.positions import (
     PositionsUpdater,
     PositionsManager,
     FutureContract,
+    create_position_instance_from_raw,
 )
 from octobot_trading.personal_data import trades
 from octobot_trading.personal_data.trades import (
@@ -227,6 +228,7 @@ __all__ = [
     "PositionsUpdater",
     "PositionsManager",
     "FutureContract",
+    "create_position_instance_from_raw",
     "TradesManager",
     "TradesProducer",
     "TradesChannel",

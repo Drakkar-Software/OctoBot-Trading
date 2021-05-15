@@ -66,7 +66,7 @@ cdef class Position(util.Initializable):
 
     cpdef dict to_dict(self)
 
-    cpdef bint update_position_from_raw(self, dict raw_position)
+    cpdef bint update_from_raw(self, dict raw_position)
     cpdef bint is_liquidated(self)
 
 cdef class ShortPosition(Position):
