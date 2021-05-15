@@ -112,7 +112,7 @@ class Position:
     def is_liquidated(self):
         return self.status is enums.PositionStatus.LIQUIDATING
 
-    def update_position_from_raw(self, raw_position):
+    def update_from_raw(self, raw_position):
         currency, market = self.exchange_manager.get_exchange_quote_and_base(
             raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value])
         return self._update(**{

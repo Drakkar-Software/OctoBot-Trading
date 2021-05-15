@@ -17,9 +17,9 @@ import collections
 
 import octobot_commons.logging as logging
 
-import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
 import octobot_trading.util as util
+import octobot_trading.personal_data.positions.position_factory as position_factory
 
 
 class PositionsManager(util.Initializable):
@@ -35,6 +35,9 @@ class PositionsManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_positions()
 
+    def get_symbol_open_position(self, symbol):
+        return self.get_open_positions(symbol=symbol)
+
     def get_open_positions(self, symbol=None, since=-1, limit=-1):
         return self._select_positions(status=enums.PositionStatus.OPEN, symbol=symbol, since=since, limit=limit)
 
@@ -43,7 +46,7 @@ class PositionsManager(util.Initializable):
 
     def upsert_position(self, position_id, raw_position) -> bool:
         if position_id not in self.positions:
-            self.positions[position_id] = self._create_position_from_raw(raw_position)
+            self.positions[position_id] = position_factory.create_position_instance_from_raw(raw_position)
             self._check_positions_size()
             return True
 
@@ -62,13 +65,8 @@ class PositionsManager(util.Initializable):
         if len(self.positions) > self.MAX_POSITIONS_COUNT:
             self._remove_oldest_positions(int(self.MAX_POSITIONS_COUNT / 2))
 
-    def _create_position_from_raw(self, raw_position):
-        position = personal_data.Position(self.trader)
-        position.update_position_from_raw(raw_position)
-        return position
-
     def _update_position_from_raw(self, position, raw_position):
-        return position.update_position_from_raw(raw_position)
+        return position.update_from_raw(raw_position)
 
     def _select_positions(self, status=enums.PositionStatus.OPEN, symbol=None, since=-1, limit=-1):
         positions = [

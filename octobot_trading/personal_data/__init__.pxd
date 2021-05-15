@@ -62,6 +62,7 @@ from octobot_trading.personal_data.positions cimport (
     PositionsUpdater,
     PositionsManager,
     FutureContract,
+    create_position_instance_from_raw,
 )
 from octobot_trading.personal_data cimport trades
 from octobot_trading.personal_data.trades cimport (
@@ -129,6 +130,7 @@ __all__ = [
     "FutureContract",
     "PositionsUpdater",
     "PositionsManager",
+    "create_position_instance_from_raw",
     "TradesManager",
     "TradesProducer",
     "TradesChannel",

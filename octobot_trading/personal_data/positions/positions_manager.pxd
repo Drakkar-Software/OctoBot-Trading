@@ -29,11 +29,11 @@ cdef class PositionsManager(util.Initializable):
 
     cdef void _reset_positions(self)
     cdef void _check_positions_size(self)
-    cdef positions_personal_data.Position _create_position_from_raw(self, dict raw_position)
     cdef void _remove_oldest_positions(self, int nb_to_remove)
     cdef list _select_positions(self, object status=*, str symbol=*, int since=*, int limit=*)
 
     cpdef bint upsert_position(self, str position_id, dict raw_position)
     cpdef bint upsert_position_instance(self, positions_personal_data.Position position)
+    cpdef positions_personal_data.Position get_symbol_open_position(self, str symbol=*)
     cpdef list get_open_positions(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_closed_positions(self, str symbol=*, int since=*, int limit=*)
