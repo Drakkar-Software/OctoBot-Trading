@@ -21,4 +21,6 @@ cdef class MarginPortfolio(portfolio_class.Portfolio):
     cdef dict _parse_currency_balance(self, dict currency_balance)
     cdef dict _create_currency_portfolio(self, double available, double total, double margin=*)
     cdef void _set_currency_portfolio(self, str currency, double available, double total, double margin=*)
-    cdef void _update_currency_portfolio(self, str currency, double available=*, double total=*, double margin=*)
+
+    # return object to ensure PortfolioNegativeValueError forwarding
+    cdef object _update_currency_portfolio(self, str currency, double available=*, double total=*, double margin=*)

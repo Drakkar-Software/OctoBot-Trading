@@ -35,28 +35,31 @@ cdef class Portfolio(util.Initializable):
     # public methods
     cpdef double get_currency_portfolio(self, str currency, str portfolio_type=*)
     cpdef double get_currency_from_given_portfolio(self, str currency, str portfolio_type=*)
-    cpdef bint update_portfolio_from_balance(self, dict balance, bint force_replace=*)
-    cpdef void update_portfolio_available(self, order_class.Order order, bint is_new_order=*)
-    cpdef void update_portfolio_from_filled_order(self, order_class.Order order)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
-    # cpdef dict get_portfolio_from_amount_dict(self, dict amount_dict) can't be cythonized for now
     cpdef void reset(self)
+    # return object to ensure PortfolioNegativeValueError forwarding
+    cpdef object update_portfolio_from_balance(self, dict balance, bint force_replace=*)
+    cpdef object update_portfolio_available(self, order_class.Order order, bint is_new_order=*)
+    cpdef object update_portfolio_from_filled_order(self, order_class.Order order)
+    # cpdef dict get_portfolio_from_amount_dict(self, dict amount_dict) can't be cythonized for now
 
     # abstract methods
-    cpdef void update_portfolio_data_from_order(self, order_class.Order order, str currency, str market)
-    cpdef void update_portfolio_available_from_order(self, order_class.Order order, bint increase_quantity=*)
     cpdef void log_portfolio_update_from_order(self, order_class.Order order, str currency, str market)
+    # return object to ensure PortfolioNegativeValueError forwarding
+    cpdef object update_portfolio_data_from_order(self, order_class.Order order, str currency, str market)
+    cpdef object update_portfolio_available_from_order(self, order_class.Order order, bint increase_quantity=*)
 
     # private methods
-    cdef void _update_portfolio_data(self, str currency, double value, bint total=*, bint available=*)
     cdef void _reset_currency_portfolio(self, str currency)
     cdef dict _parse_currency_balance(self, dict currency_balance)
     cdef dict _create_currency_portfolio(self, double available, double total)
     cdef void _set_currency_portfolio(self, str currency, double available, double total)
-    cdef void _update_currency_portfolio(self, str currency, double available=*, double total=*)
     cdef void _reset_all_portfolio_available(self)
-    cdef void _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
+    # return object to ensure PortfolioNegativeValueError forwarding
+    cdef object _update_portfolio_data(self, str currency, double value, bint total=*, bint available=*)
+    cdef object _update_currency_portfolio(self, str currency, double available=*, double total=*)
+    cdef object _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 
 cdef bint _should_update_available(order_class.Order order)
 
-cpdef double ensure_portfolio_update_validness(str currency, double origin_quantity, double update_quantity)
+cpdef object ensure_portfolio_update_validness(str currency, double origin_quantity, double update_quantity)

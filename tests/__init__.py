@@ -27,7 +27,6 @@ from octobot_tentacles_manager.api.installer import install_all_tentacles
 from octobot_tentacles_manager.constants import TENTACLES_PATH
 from octobot_tentacles_manager.managers.tentacles_setup_manager import TentaclesSetupManager
 
-from octobot_trading.errors import PortfolioNegativeValueError
 OCTOBOT_ONLINE = os.getenv("TENTACLES_OCTOBOT_ONLINE_URL", "https://tentacles.octobot.online")
 TENTACLES_LATEST_URL = f"{OCTOBOT_ONLINE}/repository/tentacles/officials/base/latest.zip"
 
