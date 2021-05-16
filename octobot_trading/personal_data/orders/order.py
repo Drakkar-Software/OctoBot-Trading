@@ -38,43 +38,55 @@ class Order(util.Initializable):
         super().__init__()
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
-        self.status = enums.OrderStatus.OPEN
-        self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
-        self.executed_time = 0
         self.lock = asyncio.Lock()
-        self.linked_orders = []
-
         self.is_synchronized_with_exchange = False
         self.is_from_this_octobot = True
-        self.order_id = trader.parse_order_id(None)
         self.simulated = trader.simulate
 
         self.logger_name = None
+        self.order_id = trader.parse_order_id(None)
+        self.status = enums.OrderStatus.OPEN
         self.symbol = None
         self.currency = None
         self.market = None
         self.taker_or_maker = None
         self.timestamp = 0
+        self.side = side
+
+        # original order attributes
+        self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
         self.origin_price = 0
         self.created_last_price = 0
         self.origin_quantity = 0
         self.origin_stop_price = 0
-        self.order_type = None
-        self.side = side
-        self.filled_quantity = 0
-        self.linked_portfolio = None
-        self.linked_to = None
-        self.canceled_time = 0
-        self.fee = None
-        self.filled_price = 0
-        self.order_profitability = 0
-        self.total_cost = 0
 
+        # order type attributes
+        self.order_type = None
         # raw exchange order type, used to create order dict
         self.exchange_order_type = None
 
+        # filled order attributes
+        self.filled_quantity = 0
+        self.filled_price = 0
+        self.fee = None
+        self.total_cost = 0
+        self.order_profitability = 0
+        self.executed_time = 0
+
+        # canceled order attributes
+        self.canceled_time = 0
+
+        # linked objects attributes
+        self.linked_portfolio = None
+        self.linked_to = None
+        self.linked_orders = []
+
         # order state is initialized in initialize_impl()
         self.state = None
+
+        # future trading attributes
+        # when True : reduce position quantity only without opening a new position if order.quantity > position.quantity
+        self.reduce_only = False
 
     @classmethod
     def get_name(cls):
@@ -88,7 +100,7 @@ class Order(util.Initializable):
     def update(self, symbol, order_id="", status=enums.OrderStatus.OPEN,
                current_price=0.0, quantity=0.0, price=0.0, stop_price=0.0,
                quantity_filled=0.0, filled_price=0.0, average_price=0.0, fee=None, total_cost=0.0,
-               timestamp=None, linked_to=None, linked_portfolio=None, order_type=None) -> bool:
+               timestamp=None, linked_to=None, linked_portfolio=None, order_type=None, reduce_only=False) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -178,6 +190,10 @@ class Order(util.Initializable):
 
         if self.taker_or_maker is None:
             self._update_taker_maker()
+
+        if not self.reduce_only:
+            self.reduce_only = reduce_only
+
         return changed
 
     async def initialize_impl(self, **kwargs):
@@ -299,6 +315,12 @@ class Order(util.Initializable):
     def is_self_managed(self):
         return not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
 
+    def is_long(self):
+        return self.side is enums.TradeOrderSide.BUY
+
+    def is_short(self):
+        return self.side is enums.TradeOrderSide.SELL
+
     def update_from_raw(self, raw_order):
         if self.side is None or self.order_type is None:
             try:
@@ -324,7 +346,8 @@ class Order(util.Initializable):
             average_price=average_price,
             total_cost=raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value, 0.0),
             fee=raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value, None),
-            timestamp=raw_order.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value, None)
+            timestamp=raw_order.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value, None),
+            reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False),
         )
 
     def consider_as_filled(self):
@@ -383,7 +406,8 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.origin_quantity,
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
             enums.ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
-            enums.ExchangeConstantsOrderColumns.FEE.value: self.fee
+            enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
+            enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only
         }
 
     def clear(self):
