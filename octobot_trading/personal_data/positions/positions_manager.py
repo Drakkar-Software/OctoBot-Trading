@@ -46,7 +46,7 @@ class PositionsManager(util.Initializable):
 
     def upsert_position(self, position_id, raw_position) -> bool:
         if position_id not in self.positions:
-            self.positions[position_id] = position_factory.create_position_instance_from_raw(raw_position)
+            self.positions[position_id] = position_factory.create_position_instance_from_raw(self.trader, raw_position)
             self._check_positions_size()
             return True
 

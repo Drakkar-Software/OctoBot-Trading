@@ -34,6 +34,6 @@ cdef class PositionsManager(util.Initializable):
 
     cpdef bint upsert_position(self, str position_id, dict raw_position)
     cpdef bint upsert_position_instance(self, positions_personal_data.Position position)
-    cpdef positions_personal_data.Position get_symbol_open_position(self, str symbol=*)
+    cpdef positions_personal_data.Position get_symbol_open_position(self, str symbol)
     cpdef list get_open_positions(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_closed_positions(self, str symbol=*, int since=*, int limit=*)
