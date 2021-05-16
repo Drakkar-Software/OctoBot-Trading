@@ -40,6 +40,7 @@ cdef class Order(util.Initializable):
     cdef public bint is_synchronized_with_exchange
     cdef public bint is_from_this_octobot
     cdef public bint simulated
+    cdef public bint reduce_only
 
     cdef public str symbol
     cdef public str currency
@@ -86,7 +87,8 @@ cdef class Order(util.Initializable):
             object timestamp=*,
             object linked_to=*,
             object linked_portfolio=*,
-            object order_type=*)
+            object order_type=*,
+            bint reduce_only=*)
 
     cdef void _update_type_from_raw(self, dict raw_order)
     cdef void _update_taker_maker(self)
@@ -99,6 +101,8 @@ cdef class Order(util.Initializable):
     cpdef bint is_filled(self)
     cpdef bint is_cancelled(self)
     cpdef bint is_closed(self)
+    cpdef bint is_long(self)
+    cpdef bint is_short(self)
     cpdef bint is_refreshing(self)
     cpdef void on_fill_actions(self)
     cpdef dict get_computed_fee(self, object forced_value=*)

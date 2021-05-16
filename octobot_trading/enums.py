@@ -244,6 +244,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     TAKER = "taker"
     ORDER = "order"
     TAKERORMAKER = "takerOrMaker"
+    REDUCE_ONLY = "reduceOnly"
 
 
 class ExchangeConstantsPositionColumns(enum.Enum):
