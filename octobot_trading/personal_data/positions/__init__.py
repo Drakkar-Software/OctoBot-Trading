@@ -39,6 +39,11 @@ from octobot_trading.personal_data.positions.contracts import (
     FutureContract,
 )
 
+from octobot_trading.personal_data.positions import position_util
+from octobot_trading.personal_data.positions.position_util import (
+    parse_position_status,
+)
+
 from octobot_trading.personal_data.positions import position_factory
 from octobot_trading.personal_data.positions.position_factory import (
     create_position_instance_from_raw,
@@ -55,4 +60,5 @@ __all__ = [
     "PositionsManager",
     "FutureContract",
     "create_position_instance_from_raw",
+    "parse_position_status",
 ]

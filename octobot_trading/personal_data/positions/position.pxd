@@ -36,6 +36,7 @@ cdef class Position(util.Initializable):
     cdef public double liquidation_price
     cdef public double quantity
     cdef public double value
+    cdef public double margin
     cdef public double unrealised_pnl
     cdef public double realised_pnl
 
@@ -66,7 +67,7 @@ cdef class Position(util.Initializable):
 
     cpdef dict to_dict(self)
 
-    cpdef bint update_from_raw(self, dict raw_position)
+    cpdef object update_from_raw(self, dict raw_position)
     cpdef bint is_liquidated(self)
 
 cdef class ShortPosition(Position):

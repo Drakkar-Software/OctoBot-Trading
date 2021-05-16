@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
+import octobot_trading.personal_data.positions.position_util as position_util
 
 
 class Position:
@@ -113,27 +114,25 @@ class Position:
         return self.status is enums.PositionStatus.LIQUIDATING
 
     def update_from_raw(self, raw_position):
-        currency, market = self.exchange_manager.get_exchange_quote_and_base(
-            raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value])
+        symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
+        currency, market = self.exchange_manager.get_exchange_quote_and_base(symbol)
         return self._update(**{
-            "symbol": self.exchange_manager.get_exchange_symbol(
-                raw_position[enums.ExchangeConstantsPositionColumns.SYMBOL.value]),
+            "symbol": symbol,
             "currency": currency,
             "market": market,
-            "entry_price": raw_position[enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value],
-            "mark_price": raw_position[enums.ExchangeConstantsPositionColumns.MARK_PRICE.value],
-            "liquidation_price": raw_position[enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value],
-            "quantity": raw_position[enums.ExchangeConstantsPositionColumns.QUANTITY.value],
-            "value": raw_position[enums.ExchangeConstantsPositionColumns.VALUE.value],
-            "margin": raw_position[enums.ExchangeConstantsPositionColumns.MARGIN.value],
-            "position_id": None,
-            "timestamp": raw_position[enums.ExchangeConstantsPositionColumns.TIMESTAMP.value],
-            "unrealised_pnl": raw_position[enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value],
-            "realised_pnl": raw_position[enums.ExchangeConstantsPositionColumns.REALISED_PNL.value],
-            "leverage": raw_position[enums.ExchangeConstantsPositionColumns.LEVERAGE.value],
-            "status": raw_position[enums.ExchangeConstantsPositionColumns.STATUS.value],
-            "side": raw_position[enums.ExchangeConstantsPositionColumns.SIDE.value]
-            if enums.ExchangeConstantsPositionColumns.SIDE.value in raw_position else None
+            "entry_price": raw_position.get(enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value, 0.0),
+            "mark_price": raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, 0.0),
+            "liquidation_price": raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, 0.0),
+            "quantity": raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, 0.0),
+            "value": raw_position.get(enums.ExchangeConstantsPositionColumns.VALUE.value, 0.0),
+            "margin": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN.value, 0.0),
+            "position_id": str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, None)),
+            "timestamp": raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0.0),
+            "unrealised_pnl": raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, 0.0),
+            "realised_pnl": raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, 0.0),
+            "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, 0),
+            "status": position_util.parse_position_status(raw_position),
+            "side": raw_position.get(enums.ExchangeConstantsPositionColumns.SIDE.value, None)
         })
 
     def to_dict(self):
