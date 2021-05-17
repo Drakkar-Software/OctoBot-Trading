@@ -20,6 +20,7 @@ import octobot_commons.logging as logging
 import octobot_trading.enums as enums
 import octobot_trading.util as util
 import octobot_trading.personal_data.positions.position_factory as position_factory
+import octobot_trading.personal_data.positions.position as position_class
 
 
 class PositionsManager(util.Initializable):
@@ -64,6 +65,11 @@ class PositionsManager(util.Initializable):
     def _check_positions_size(self):
         if len(self.positions) > self.MAX_POSITIONS_COUNT:
             self._remove_oldest_positions(int(self.MAX_POSITIONS_COUNT / 2))
+
+    def _create_position_from_raw(self, raw_position):
+        position = position_class.Position(self.trader)
+        position.update_from_raw(raw_position)
+        return position
 
     def _update_position_from_raw(self, position, raw_position):
         return position.update_from_raw(raw_position)

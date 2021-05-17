@@ -113,6 +113,12 @@ class Position:
     def is_liquidated(self):
         return self.status is enums.PositionStatus.LIQUIDATING
 
+    def is_long(self):
+        return self.side is enums.PositionSide.LONG
+
+    def is_short(self):
+        return self.side is enums.PositionSide.SHORT
+
     def update_from_raw(self, raw_position):
         symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
         currency, market = self.exchange_manager.get_exchange_quote_and_base(symbol)
@@ -155,9 +161,14 @@ class Position:
 
     def _check_for_liquidation(self):
         """
-        _check_for_liquidation will define the rules for a simulated position to be liquidated
+        _check_for_liquidation will defines rules for a simulated position to be liquidated
         """
-        raise NotImplementedError("_check_for_liquidation not implemented")
+        if self.is_short():
+            if self.mark_price >= self.liquidation_price:
+                self.status = enums.PositionStatus.LIQUIDATING
+        elif self.is_long():
+            if self.mark_price <= self.liquidation_price:
+                self.status = enums.PositionStatus.LIQUIDATING
 
     async def close(self):
         await self.trader.notify_position_close(self)
@@ -176,14 +187,3 @@ class Position:
         # update P&L
         # TODO
 
-
-class ShortPosition(Position):
-    def _check_for_liquidation(self):
-        if self.mark_price >= self.liquidation_price:
-            self.status = enums.PositionStatus.LIQUIDATING
-
-
-class LongPosition(Position):
-    def _check_for_liquidation(self):
-        if self.mark_price <= self.liquidation_price:
-            self.status = enums.PositionStatus.LIQUIDATING
