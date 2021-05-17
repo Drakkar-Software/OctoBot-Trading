@@ -18,7 +18,7 @@ click-completion==0.5.2
 click-shell==2.0
 
 # Websocket requirements
-websockets==9.0.1
+websockets==9.0.2
 cryptofeed==1.9.0
 
 # other requirements
