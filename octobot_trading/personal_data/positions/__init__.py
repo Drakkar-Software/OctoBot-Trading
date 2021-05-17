@@ -17,8 +17,6 @@
 from octobot_trading.personal_data.positions import position
 from octobot_trading.personal_data.positions.position import (
     Position,
-    ShortPosition,
-    LongPosition,
 )
 
 from octobot_trading.personal_data.positions import channel
@@ -54,8 +52,6 @@ __all__ = [
     "PositionsChannel",
     "PositionsUpdaterSimulator",
     "Position",
-    "ShortPosition",
-    "LongPosition",
     "PositionsUpdater",
     "PositionsManager",
     "FutureContract",
