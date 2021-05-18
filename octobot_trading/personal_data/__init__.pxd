@@ -14,6 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.personal_data cimport state
+from octobot_trading.personal_data.state cimport (
+    State,
+)
 from octobot_trading.personal_data cimport orders
 from octobot_trading.personal_data.orders cimport (
     Order,
@@ -81,6 +85,7 @@ from octobot_trading.personal_data.exchange_personal_data cimport (
 )
 
 __all__ = [
+    "State",
     "Order",
     "OrderState",
     "OrdersUpdater",

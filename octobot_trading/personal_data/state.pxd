@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -13,20 +14,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import OrderStatus
-from tests import event_loop
-from tests.exchanges import simulated_trader, simulated_exchange_manager
-from tests.personal_data.orders import sell_limit_order
+cimport octobot_trading.util as util
 
-import pytest
+cdef class State(util.Initializable):
+    cdef public object state  # item of OrderStates
+    cdef public object lock  # item of asyncio.Lock
 
-pytestmark = pytest.mark.asyncio
+    cdef public bint is_from_exchange_data
 
-
-async def test_on_order_refresh_successful(sell_limit_order):
-    sell_limit_order.status = OrderStatus.CLOSED
-    sell_limit_order.exchange_manager.is_backtesting = True
-    await sell_limit_order.initialize()
-    await sell_limit_order.state.on_refresh_successful()
-    assert sell_limit_order.is_closed()
-    sell_limit_order.clear()
+    cpdef bint is_refreshing(self)
+    cpdef bint is_open(self)
+    cpdef bint is_pending(self)
+    cpdef bint is_closed(self)
+    cpdef void clear(self)
+    cpdef object get_logger(self)
+    cpdef void log_event_message(self, str state_message, object error=*)

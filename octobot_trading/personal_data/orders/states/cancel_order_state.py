@@ -50,7 +50,7 @@ class CancelOrderState(order_state.OrderState):
     def is_status_cancelled(self) -> bool:
         return not self.is_status_pending() and self.order.status in constants.CANCEL_ORDER_STATUS_SCOPE
 
-    async def on_order_refresh_successful(self):
+    async def on_refresh_successful(self):
         """
         Verify the order is properly canceled
         """
@@ -62,7 +62,7 @@ class CancelOrderState(order_state.OrderState):
             await self.update()
         else:
             await order_state_factory.create_order_state(self.order, is_from_exchange_data=True,
-                                                         ignore_states=[enums.OrderStates.OPEN])
+                                                         ignore_states=[enums.States.OPEN])
 
     async def terminate(self):
         """
@@ -70,7 +70,7 @@ class CancelOrderState(order_state.OrderState):
         `force_close = True` because we know that the order is successfully cancelled.
         """
         try:
-            self.log_order_event_message("cancelled")
+            self.log_event_message(enums.StatesMessages.CANCELLED)
 
             # set cancel time
             self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()

@@ -14,20 +14,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.util as util
+cimport octobot_trading.personal_data.state as state_class
 
-cdef class OrderState(util.Initializable):
+cdef class OrderState(state_class.State):
     cdef public object order  # instance of Order
-    cdef public object state  # item of OrderStates
-    cdef public object lock  # item of asyncio.Lock
 
-    cdef public bint is_from_exchange_data
-
-    cpdef bint is_refreshing(self)
     cpdef bint is_open(self)
-    cpdef bint is_pending(self)
     cpdef bint is_filled(self)
-    cpdef bint is_closed(self)
     cpdef bint is_canceled(self)
-    cpdef void clear(self)
-    cpdef void log_order_event_message(self, str state_message)

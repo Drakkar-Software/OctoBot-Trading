@@ -72,7 +72,7 @@ async def test_update_calls_nothing_when_refreshing(buy_limit_order):
         return
     with patch.object(state, 'synchronize', new=AsyncMock()) as order_state_synchronize_mock, \
             patch.object(state, 'terminate', new=AsyncMock()) as order_state_terminate_mock:
-        state.state = enums.OrderStates.REFRESHING
+        state.state = enums.States.REFRESHING
         await state.update()
         order_state_synchronize_mock.assert_not_called()
         order_state_terminate_mock.assert_not_called()

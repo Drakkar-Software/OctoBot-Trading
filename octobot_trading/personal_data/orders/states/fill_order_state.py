@@ -44,7 +44,7 @@ class FillOrderState(order_state.OrderState):
     def is_status_filled(self) -> bool:
         return not self.is_status_pending() and self.order.status in constants.FILL_ORDER_STATUS_SCOPE
 
-    async def on_order_refresh_successful(self):
+    async def on_refresh_successful(self):
         """
         Synchronize the filling status with the exchange
         can be a partially filled
@@ -59,7 +59,7 @@ class FillOrderState(order_state.OrderState):
             await self.update()
         else:
             await order_state_factory.create_order_state(self.order, is_from_exchange_data=True,
-                                                         ignore_states=[enums.OrderStates.OPEN])
+                                                         ignore_states=[enums.States.OPEN])
 
     async def terminate(self):
         """
@@ -68,7 +68,7 @@ class FillOrderState(order_state.OrderState):
         `force_close = True` because we know that the order is successfully filled.
         """
         try:
-            self.log_order_event_message("filled")
+            self.log_event_message(enums.StatesMessages.FILLED)
 
             # call filling actions
             self.order.on_fill_actions()
