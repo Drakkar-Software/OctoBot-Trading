@@ -16,6 +16,10 @@
 
 import octobot_trading.enums
 
+from octobot_trading.personal_data import state
+from octobot_trading.personal_data.state import (
+    State,
+)
 from octobot_trading.personal_data import orders
 from octobot_trading.personal_data.orders import (
     Order,
@@ -148,6 +152,7 @@ TraderOrderTypeClasses = {
 }
 
 __all__ = [
+    "State",
     "Order",
     "parse_order_type",
     "is_valid",

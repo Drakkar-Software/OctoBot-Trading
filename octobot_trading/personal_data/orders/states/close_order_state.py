@@ -20,26 +20,26 @@ import octobot_trading.personal_data.orders.order_state as order_state
 class CloseOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data, force_close=True):
         super().__init__(order, is_from_exchange_data)
-        self.state = enums.OrderStates.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
-            else enums.OrderStates.CLOSING
+        self.state = enums.States.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
+            else enums.States.CLOSING
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:
-            self.state = enums.OrderStates.CLOSED
+            self.state = enums.States.CLOSED
         return await super().initialize_impl()
 
     def is_pending(self) -> bool:
-        return self.state is enums.OrderStates.CLOSING
+        return self.state is enums.States.CLOSING
 
     def is_closed(self) -> bool:
-        return self.state is enums.OrderStates.CLOSED
+        return self.state is enums.States.CLOSED
 
-    async def on_order_refresh_successful(self):
+    async def on_refresh_successful(self):
         """
         Verify the order is properly closed
         """
         if self.order.status is enums.OrderStatus.CLOSED:
-            self.state = enums.OrderStates.CLOSED
+            self.state = enums.States.CLOSED
             await self.update()
 
     async def terminate(self):
@@ -47,7 +47,7 @@ class CloseOrderState(order_state.OrderState):
         Handle order to trade conversion
         """
         try:
-            self.log_order_event_message("closed")
+            self.log_event_message(enums.StatesMessages.CLOSED)
 
             # add to trade history and notify
             await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(

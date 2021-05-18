@@ -80,6 +80,7 @@ packages_list = [
     "octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater_simulator",
     "octobot_trading.exchange_data.ohlcv.channel.ohlcv",
     "octobot_trading.personal_data.exchange_personal_data",
+    "octobot_trading.personal_data.state",
     "octobot_trading.personal_data.trades.trades_manager",
     "octobot_trading.personal_data.trades.trade",
     "octobot_trading.personal_data.trades.trade_factory",

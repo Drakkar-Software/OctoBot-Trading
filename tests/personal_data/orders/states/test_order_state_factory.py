@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_trading.enums import OrderStatus, OrderStates
+from octobot_trading.enums import OrderStatus, OrderStates, States
 from octobot_trading.personal_data.orders import create_order_state
 
 import pytest
@@ -27,27 +27,27 @@ pytestmark = pytest.mark.asyncio
 async def test_create_order_state_open(buy_limit_order):
     buy_limit_order.status = OrderStatus.OPEN
     await create_order_state(buy_limit_order)
-    assert buy_limit_order.state.state is OrderStates.OPEN
+    assert buy_limit_order.state.state is States.OPEN
 
 
 async def test_create_order_state_cancel(buy_limit_order):
     buy_limit_order.status = OrderStatus.CANCELED
     await create_order_state(buy_limit_order)
     # can be CANCELED or instant CLOSED
-    assert buy_limit_order.state.state in [OrderStates.FILLED, OrderStates.CLOSED]
+    assert buy_limit_order.state.state in [OrderStates.FILLED, States.CLOSED]
 
 
 async def test_create_order_state_fill(buy_limit_order):
     buy_limit_order.status = OrderStatus.FILLED
     await create_order_state(buy_limit_order)
     # can be FILLED or instant CLOSED
-    assert buy_limit_order.state.state in [OrderStates.FILLED, OrderStates.CLOSED]
+    assert buy_limit_order.state.state in [OrderStates.FILLED, States.CLOSED]
 
 
 async def test_create_order_state_close(buy_limit_order):
     buy_limit_order.status = OrderStatus.CLOSED
     await create_order_state(buy_limit_order)
-    assert buy_limit_order.state.state is OrderStates.CLOSED
+    assert buy_limit_order.state.state is States.CLOSED
 
 
 async def test_create_order_state_fill_to_open_without_ignore(buy_limit_order):
@@ -55,22 +55,22 @@ async def test_create_order_state_fill_to_open_without_ignore(buy_limit_order):
     await create_order_state(buy_limit_order)
     buy_limit_order.status = OrderStatus.OPEN
     await create_order_state(buy_limit_order, ignore_states=[])
-    assert buy_limit_order.state.state is OrderStates.OPEN
+    assert buy_limit_order.state.state is States.OPEN
 
 
 async def test_create_order_state_fill_to_open_with_ignore(buy_limit_order):
     buy_limit_order.status = OrderStatus.FILLED
     await create_order_state(buy_limit_order)
     buy_limit_order.status = OrderStatus.OPEN
-    await create_order_state(buy_limit_order, ignore_states=[OrderStates.OPEN])
+    await create_order_state(buy_limit_order, ignore_states=[States.OPEN])
     # can be FILLED or instant CLOSED
-    assert buy_limit_order.state.state in [OrderStates.FILLED, OrderStates.CLOSED]
+    assert buy_limit_order.state.state in [OrderStates.FILLED, States.CLOSED]
 
 
 async def test_create_order_state_cancel_to_open_with_ignore(buy_limit_order):
     buy_limit_order.status = OrderStatus.CANCELED
     await create_order_state(buy_limit_order)
     buy_limit_order.status = OrderStatus.OPEN
-    await create_order_state(buy_limit_order, ignore_states=[OrderStates.OPEN])
+    await create_order_state(buy_limit_order, ignore_states=[States.OPEN])
     # can be CANCELED or instant CLOSED
-    assert buy_limit_order.state.state in [OrderStates.CANCELED, OrderStates.CLOSED]
+    assert buy_limit_order.state.state in [OrderStates.CANCELED, States.CLOSED]

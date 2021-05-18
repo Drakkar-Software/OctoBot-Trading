@@ -21,11 +21,11 @@ import octobot_trading.personal_data.orders.states.order_state_factory as order_
 class OpenOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
-        self.state = enums.OrderStates.OPEN if is_from_exchange_data \
+        self.state = enums.States.OPEN if is_from_exchange_data \
                                                or self.order.simulated \
                                                or self.order.is_self_managed() \
                                                or self.order.status is enums.OrderStatus.OPEN \
-            else enums.OrderStates.OPENING
+            else enums.States.OPENING
 
         self.has_terminated = False
 
@@ -37,7 +37,7 @@ class OpenOrderState(order_state.OrderState):
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:
-            self.state = enums.OrderStates.OPEN
+            self.state = enums.States.OPEN
 
         # update the availability of the currency in the portfolio
         self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio. \
@@ -45,7 +45,7 @@ class OpenOrderState(order_state.OrderState):
 
         return await super().initialize_impl()
 
-    async def on_order_refresh_successful(self):
+    async def on_refresh_successful(self):
         """
         Verify the order is properly created and still OrderStatus.OPEN
         """
@@ -55,7 +55,7 @@ class OpenOrderState(order_state.OrderState):
             self.get_logger().warning(f"on_order_refresh_successful triggered on cleared order: ignoring update.")
         elif self.state is self.order.state.state:
             if self.order.status is enums.OrderStatus.OPEN:
-                self.state = enums.OrderStates.OPEN
+                self.state = enums.States.OPEN
                 await self.update()
             else:
                 if self.order.status is enums.OrderStatus.CLOSED:
@@ -71,7 +71,7 @@ class OpenOrderState(order_state.OrderState):
         Should wait for being replaced by a FillOrderState or a CancelOrderState
         """
         if not self.has_terminated:
-            self.log_order_event_message("open")
+            self.log_event_message(enums.StatesMessages.OPEN)
 
             # notify order manager of a new open order
             await self.order.exchange_manager.exchange_personal_data.handle_order_instance_update(self.order,
@@ -79,4 +79,4 @@ class OpenOrderState(order_state.OrderState):
             self.has_terminated = True
 
     def is_pending(self) -> bool:
-        return self.state is enums.OrderStates.OPENING
+        return self.state is enums.States.OPENING

@@ -60,18 +60,37 @@ class OrderStatus(enum.Enum):
     UNKNOWN = "unknown"
 
 
-class OrderStates(enum.Enum):
+class States(enum.Enum):
     OPENING = "opening"
     OPEN = "open"
+    CLOSING = "closing"
+    CLOSED = "closed"
+    REFRESHING = "refreshing"
+    UNKNOWN = "unknown"
+
+
+class StatesMessages(enum.Enum):
+    SYNCHRONIZING = "synchronizing"
+    ALREADY_SYNCHRONIZING = "synchronizing"
+    SYNCHRONIZING_ERROR = "synchronizing_error"
+    CANCELLED = "cancelled"
+    OPEN = "open"
+    CLOSED = "closed"
+    FILLED = "filled"
+
+
+class OrderStates(enum.Enum):
     FILLING = "filling"
     PARTIALLY_FILLED = "partially_filled"
     FILLED = "filled"
     CANCELING = "canceling"
     CANCELED = "canceled"
-    CLOSING = "closing"
-    CLOSED = "closed"
-    REFRESHING = "refreshing"
-    UNKNOWN = "unknown"
+
+
+class PositionStates(enum.Enum):
+    LIQUIDATING = "liquidating"
+    LIQUIDATED = "liquidated"
+    AUTO_DELEVERAGING = "auto_deleveraging"
 
 
 class PositionStatus(enum.Enum):

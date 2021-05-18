@@ -121,7 +121,7 @@ class ExchangePersonalData(util.Initializable):
 
                 if changed:
                     updated_order = self.orders_manager.get_order(order_id)
-                    asyncio.create_task(updated_order.state.on_order_refresh_successful())
+                    asyncio.create_task(updated_order.state.on_refresh_successful())
 
                     if should_notify:
                         await self.handle_order_update_notification(updated_order, is_new_order)
@@ -141,7 +141,7 @@ class ExchangePersonalData(util.Initializable):
             changed: bool = self.orders_manager.upsert_order_instance(order)
 
             if changed:
-                asyncio.create_task(order.state.on_order_refresh_successful())
+                asyncio.create_task(order.state.on_refresh_successful())
 
                 if should_notify:
                     await self.handle_order_update_notification(order, is_new_order)
