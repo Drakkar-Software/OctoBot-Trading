@@ -98,6 +98,7 @@ from octobot_trading.personal_data.portfolios import (
 )
 from octobot_trading.personal_data import positions
 from octobot_trading.personal_data.positions import (
+    PositionState,
     PositionsProducer,
     PositionsChannel,
     PositionsUpdaterSimulator,
@@ -227,6 +228,7 @@ __all__ = [
     "SpotPortfolio",
     "PositionsUpdaterSimulator",
     "Position",
+    "PositionState",
     "PositionsUpdater",
     "PositionsManager",
     "FutureContract",
