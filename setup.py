@@ -128,6 +128,7 @@ packages_list = [
     "octobot_trading.personal_data.portfolios.channel.balance",
     "octobot_trading.personal_data.positions.position",
     "octobot_trading.personal_data.positions.position_factory",
+    "octobot_trading.personal_data.positions.position_state",
     "octobot_trading.personal_data.positions.position_util",
     "octobot_trading.personal_data.positions.positions_manager",
     "octobot_trading.personal_data.positions.channel.positions",

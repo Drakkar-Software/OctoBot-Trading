@@ -14,6 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.personal_data.positions import position_state
+from octobot_trading.personal_data.positions.position_state import (
+    PositionState,
+)
+
 from octobot_trading.personal_data.positions import position
 from octobot_trading.personal_data.positions.position import (
     Position,
@@ -48,6 +53,7 @@ from octobot_trading.personal_data.positions.position_factory import (
 )
 
 __all__ = [
+    "PositionState",
     "PositionsProducer",
     "PositionsChannel",
     "PositionsUpdaterSimulator",
