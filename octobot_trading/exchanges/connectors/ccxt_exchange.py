@@ -162,10 +162,12 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             balance = await self.client.fetch_balance(params=kwargs)
 
             # remove not currency specific keys
-            balance.pop(constants.CONFIG_PORTFOLIO_INFO, None)
             balance.pop(constants.CONFIG_PORTFOLIO_FREE, None)
             balance.pop(constants.CONFIG_PORTFOLIO_USED, None)
             balance.pop(constants.CONFIG_PORTFOLIO_TOTAL, None)
+            balance.pop(constants.CCXT_INFO, None)
+            balance.pop(constants.CCXT_DATETIME, None)
+            balance.pop(constants.CCXT_TIMESTAMP, None)
             return balance
 
         except ccxt.InvalidNonce as e:
