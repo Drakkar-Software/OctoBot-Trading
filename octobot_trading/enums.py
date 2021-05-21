@@ -95,6 +95,11 @@ class TraderOrderType(enum.Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
+class ExchangeConstantsCCXTColumns(enum.Enum):
+    TIMESTAMP = "timestamp"
+    DATETIME = "datetime"
+
+
 class ExchangeConstantsFundingColumns(enum.Enum):
     SYMBOL = "symbol"
     LAST_FUNDING_TIME = "last_funding_time"

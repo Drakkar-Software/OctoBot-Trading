@@ -166,8 +166,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             balance.pop(constants.CONFIG_PORTFOLIO_USED, None)
             balance.pop(constants.CONFIG_PORTFOLIO_TOTAL, None)
             balance.pop(constants.CCXT_INFO, None)
-            balance.pop(constants.CCXT_DATETIME, None)
-            balance.pop(constants.CCXT_TIMESTAMP, None)
+            balance.pop(enums.ExchangeConstantsCCXTColumns.DATETIME.value, None)
+            balance.pop(enums.ExchangeConstantsCCXTColumns.TIMESTAMP.value, None)
             return balance
 
         except ccxt.InvalidNonce as e:
