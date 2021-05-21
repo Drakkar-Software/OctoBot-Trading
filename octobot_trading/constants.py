@@ -18,13 +18,17 @@ import octobot_trading.enums as enums
 
 # Strings
 CURRENT_PORTFOLIO_STRING = "Current Portfolio :"
-CONFIG_PORTFOLIO_INFO = "info"
 CONFIG_PORTFOLIO_FREE = "free"
 CONFIG_PORTFOLIO_USED = "used"
 CONFIG_PORTFOLIO_TOTAL = "total"
 CONFIG_PORTFOLIO_MARGIN = "margin"
 REAL_TRADER_STR = "[Real Trader] "
 SIMULATOR_TRADER_STR = "[Simulator] "
+
+# CCXT fields
+CCXT_TIMESTAMP = "timestamp"
+CCXT_DATETIME = "datetime"
+CCXT_INFO = "info"
 
 # Trader
 DEFAULT_REFERENCE_MARKET = "BTC"
