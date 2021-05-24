@@ -94,11 +94,11 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         ]
 
         if self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and \
-                self.EXCHANGE_FEEDS.get(Feeds.CANDLE) is not Feeds.UNSUPPORTED:
+                self.EXCHANGE_FEEDS.get(Feeds.CANDLE) != Feeds.UNSUPPORTED.value:
             self.subscribe_candle_feed(exchange_symbols)
 
         # drop unsupported channels
-        self.channels = [channel for channel in self.channels if channel not in [Feeds.UNSUPPORTED,
+        self.channels = [channel for channel in self.channels if channel not in [Feeds.UNSUPPORTED.value,
                                                                                  self.EXCHANGE_FEEDS.get(
                                                                                      Feeds.CANDLE)]]
         callbacks = {
