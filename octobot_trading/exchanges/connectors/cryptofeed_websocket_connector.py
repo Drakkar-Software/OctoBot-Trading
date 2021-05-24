@@ -27,12 +27,13 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
+import octobot_trading.exchanges.connectors.abstract_websocket_connector as abstract_websocket_connector
 from octobot_trading.enums import WebsocketFeeds as Feeds
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC
 
 
 class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
-    LOGGERS = ["feedhandler"]
+    CRYPTOFEED_LOGGERS = ["feedhandler"] + abstract_websocket_connector.AbstractWebsocketConnector.LOGGERS
     CRYPTOFEED_DEFAULT_MARKET_SEPARATOR = "-"
 
     def __init__(self, config: object, exchange_manager: object):
@@ -40,7 +41,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.fix_signal_handler()
         self.fix_logger()
         self.client = cryptofeed.FeedHandler()
-        commons_logging.set_logging_level(self.LOGGERS, logging.DEBUG)
+        commons_logging.set_logging_level(self.CRYPTOFEED_LOGGERS, logging.WARNING)
 
         self.callback_by_feed = {
             cryptofeed_constants.TRADES: cryptofeed_callbacks.TradeCallback(self.trade),
