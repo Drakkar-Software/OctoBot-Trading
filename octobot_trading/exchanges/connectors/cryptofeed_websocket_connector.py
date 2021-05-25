@@ -36,6 +36,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     CRYPTOFEED_LOGGERS = ["feedhandler"] + abstract_websocket_connector.AbstractWebsocketConnector.LOGGERS
     CRYPTOFEED_DEFAULT_MARKET_SEPARATOR = "-"
 
+    INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
+
     def __init__(self, config: object, exchange_manager: object):
         super().__init__(config, exchange_manager)
         self.fix_signal_handler()
