@@ -64,6 +64,9 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
     def _get_time_frames(self):
         return self.channel.exchange_manager.exchange_config.traded_time_frames
 
+    async def fetch_and_push(self):
+        return await self._initialize()
+
     async def _initialize(self):
         try:
             await asyncio.gather(*[
