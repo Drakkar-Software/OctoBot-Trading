@@ -45,17 +45,17 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
         self.callback_by_feed = {
             cryptofeed_constants.TRADES: cryptofeed_callbacks.TradeCallback(self.trade),
-            cryptofeed_constants.TICKER: cryptofeed_callbacks.TickerCallback(self.ticker),
+            # cryptofeed_constants.TICKER: cryptofeed_callbacks.TickerCallback(self.ticker),
             cryptofeed_constants.CANDLES: cryptofeed_callbacks.CandleCallback(self.candle),  # pylint: disable=E1101
-            cryptofeed_constants.L2_BOOK: cryptofeed_callbacks.BookCallback(self.book),
-            cryptofeed_constants.L3_BOOK: cryptofeed_callbacks.BookCallback(self.book),
-            cryptofeed_constants.FUNDING: cryptofeed_callbacks.FundingCallback(self.funding),
-            cryptofeed_constants.LIQUIDATIONS: cryptofeed_callbacks.LiquidationCallback(self.liquidations),
-            cryptofeed_constants.BOOK_DELTA: cryptofeed_callbacks.BookUpdateCallback(self.delta),
-            cryptofeed_constants.VOLUME: cryptofeed_callbacks.VolumeCallback(self.volume),
-            cryptofeed_constants.OPEN_INTEREST: cryptofeed_callbacks.OpenInterestCallback(self.open_interest),
-            cryptofeed_constants.FUTURES_INDEX: cryptofeed_callbacks.FuturesIndexCallback(self.futures_index),
-            cryptofeed_constants.MARKET_INFO: cryptofeed_callbacks.MarketInfoCallback(self.market_info),
+            # cryptofeed_constants.L2_BOOK: cryptofeed_callbacks.BookCallback(self.book),
+            # cryptofeed_constants.L3_BOOK: cryptofeed_callbacks.BookCallback(self.book),
+            # cryptofeed_constants.FUNDING: cryptofeed_callbacks.FundingCallback(self.funding),
+            # cryptofeed_constants.LIQUIDATIONS: cryptofeed_callbacks.LiquidationCallback(self.liquidations),
+            # cryptofeed_constants.BOOK_DELTA: cryptofeed_callbacks.BookUpdateCallback(self.delta),
+            # cryptofeed_constants.VOLUME: cryptofeed_callbacks.VolumeCallback(self.volume),
+            # cryptofeed_constants.OPEN_INTEREST: cryptofeed_callbacks.OpenInterestCallback(self.open_interest),
+            # cryptofeed_constants.FUTURES_INDEX: cryptofeed_callbacks.FuturesIndexCallback(self.futures_index),
+            # cryptofeed_constants.MARKET_INFO: cryptofeed_callbacks.MarketInfoCallback(self.market_info),
             # cryptofeed_constants.TRANSACTIONS: cryptofeed_callbacks.TransactionsCallback(self.transactions),
         }
 
@@ -104,6 +104,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         callbacks = {
             channel: self.callback_by_feed[channel]
             for channel in self.channels
+            if self.callback_by_feed.get(channel)
         }
         self.client.add_feed(self.get_feed_name(),
                              symbols=exchange_symbols,
