@@ -39,23 +39,20 @@ async def create_exchange_producers(exchange_manager) -> None:
     Create exchange channels producers according to exchange manager context (backtesting, simulator, real)
     :param exchange_manager: the related exchange manager
     """
+    import octobot_trading.personal_data as personal_data
 
     # Always init exchange user data first on real trading
     if _should_create_authenticated_producers(exchange_manager):
-        await _create_authenticated_producers(exchange_manager)
+        await _create_producers(exchange_manager, personal_data.AUTHENTICATED_UPDATER_PRODUCERS)
 
     # Real data producers
     if _should_create_unauthenticated_producers(exchange_manager):
         import octobot_trading.exchange_data as exchange_data
-        for updater in exchange_data.UNAUTHENTICATED_UPDATER_PRODUCERS:
-            if not exchanges.is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
-                await updater(exchange_channel.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+        await _create_producers(exchange_manager, exchange_data.UNAUTHENTICATED_UPDATER_PRODUCERS)
 
     # Simulated producers
     if _should_create_simulated_producers(exchange_manager):
-        import octobot_trading.personal_data as personal_data
-        for updater in personal_data.AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS:
-            await updater(exchange_channel.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+        await _create_producers(exchange_manager, personal_data.AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS)
 
 
 def _should_create_authenticated_producers(exchange_manager):
@@ -87,30 +84,19 @@ def _should_create_unauthenticated_producers(exchange_manager):
     return not exchange_manager.is_backtesting
 
 
-async def _create_authenticated_producers(exchange_manager) -> None:
+async def _create_producers(exchange_manager, producers_classes) -> None:
     """
-    Create real authenticated producers
+    Create a list of producer instance
     :param exchange_manager: the related exchange manager
+    :param producers_classes: the list of producer classes
     """
-    import octobot_trading.personal_data as personal_data
-    for updater in personal_data.AUTHENTICATED_UPDATER_PRODUCERS:
-        if exchanges.is_exchange_managed_by_websocket(exchange_manager, updater.CHANNEL_NAME):
-            # websocket is handling this channel: initialize data if required
-            if exchanges.is_websocket_feed_requiring_init(exchange_manager, updater.CHANNEL_NAME):
-                try:
-                    updater(exchange_channel.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).trigger_single_update()
-                except Exception as e:
-                    exchange_manager.logger.exception(e, True,
-                                                      f"Error when initializing data for {updater.CHANNEL_NAME} "
-                                                      f"channel required by websocket: {e}")
-        else:
-            # no websocket for this channel: start an updater
-            await updater(exchange_channel.get_chan(updater.CHANNEL_NAME, exchange_manager.id)).run()
+    for updater in producers_classes:
+        await _create_producer(exchange_manager, updater)
 
 
-async def _create_authenticated_producer(exchange_manager, producer) -> channel_producer.Producer:
+async def _create_producer(exchange_manager, producer) -> channel_producer.Producer:
     """
-    Create real authenticated producers
+    Create a producer instance
     :param exchange_manager: the related exchange manager
     :param producer: the producer to create
     :return: the producer instance created
@@ -142,7 +128,7 @@ async def create_authenticated_producer_from_parent(exchange_manager,
     """
     producer = _get_authenticated_producer_from_parent(parent_producer_class)
     if producer is not None:
-        producer_instance = await _create_authenticated_producer(exchange_manager, producer)
+        producer_instance = await _create_producer(exchange_manager, producer)
         if force_register_producer:
             await producer_instance.channel.register_producer(producer_instance)
 

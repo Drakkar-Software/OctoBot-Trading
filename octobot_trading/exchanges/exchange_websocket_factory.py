@@ -21,10 +21,12 @@ def is_exchange_managed_by_websocket(exchange_manager, channel):
     """
     # TODO improve checker
     """
-    return not exchange_manager.rest_only and exchange_manager.has_websocket and \
-           channel in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS and \
-           any([exchange_manager.exchange_web_socket.is_feed_available(feed)
-                for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
+    return not exchange_manager.rest_only \
+           and exchange_manager.has_websocket \
+           and not exchange_manager.is_backtesting \
+           and channel in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS \
+           and any([exchange_manager.exchange_web_socket.is_feed_available(feed)
+                    for feed in octobot_trading.constants.WEBSOCKET_FEEDS_TO_TRADING_CHANNELS[channel]])
 
 
 def is_websocket_feed_requiring_init(exchange_manager, channel):
