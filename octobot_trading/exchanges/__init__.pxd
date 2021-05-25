@@ -82,6 +82,7 @@ from octobot_trading.exchanges.implementations cimport (
     MarginExchangeSimulator,
     MarginCCXTExchange,
     CCXTWebSocketExchange,
+    CryptofeedWebSocketExchange,
 )
 
 from octobot_trading.exchanges.exchange_builder cimport (
@@ -138,5 +139,6 @@ __all__ = [
     "MarginExchangeSimulator",
     "MarginCCXTExchange",
     "CCXTWebSocketExchange",
+    "CryptofeedWebSocketExchange",
     "CryptofeedWebsocketConnector",
 ]

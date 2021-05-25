@@ -92,6 +92,7 @@ from octobot_trading.exchanges.implementations import (
     FutureCCXTExchange,
     MarginExchangeSimulator,
     MarginCCXTExchange,
+    CryptofeedWebSocketExchange,
 )
 from octobot_trading.exchanges import exchange_builder
 from octobot_trading.exchanges.exchange_builder import (
@@ -135,6 +136,7 @@ __all__ = [
     "Trader",
     "CCXTWebSocketExchange",
     "DefaultCCXTSpotExchange",
+    "CryptofeedWebSocketExchange",
     "SpotExchangeSimulator",
     "SpotCCXTExchange",
     "FutureExchangeSimulator",
