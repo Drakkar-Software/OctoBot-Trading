@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.12] - 2021-05-26
+### Fixed
+- [Exchanges][CryptoFeedWebsocket] Feeds stop and close
+- [Updater][OHLCV] Initialization with websockets
+
 ## [1.12.11] - 2021-05-24
 ### Fixed
 - [Exchanges][CryptoFeedWebsocket] Feeds handling and websockets logging
