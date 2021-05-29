@@ -187,7 +187,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             symbol = self.get_pair_from_exchange(symbol)
             time_frame = commons_enums.TimeFrames(interval)
             candle = [
-                timestamp,
+                start,
                 float(open_price),
                 float(high_price),
                 float(low_price),
