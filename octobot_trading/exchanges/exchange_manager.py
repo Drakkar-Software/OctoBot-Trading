@@ -180,6 +180,8 @@ class ExchangeManager(util.Initializable):
         return len(self.exchange_config.traded_symbol_pairs) * len(self.exchange_config.traded_time_frames)
 
     def get_is_overloaded(self):
+        if self.has_websocket:
+            return False
         max_handled = self.exchange.get_max_handled_pair_with_time_frame()
         return max_handled != constants.INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME and max_handled < \
             self.get_currently_handled_pair_with_time_frame()
