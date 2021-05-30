@@ -141,6 +141,10 @@ def get_is_backtesting(exchange_manager) -> bool:
     return exchange_manager.is_backtesting
 
 
+def get_has_websocket(exchange_manager) -> bool:
+    return exchange_manager.has_websocket
+
+
 def get_trading_pairs(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_symbol_pairs
 
