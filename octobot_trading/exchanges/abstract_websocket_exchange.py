@@ -56,7 +56,8 @@ class AbstractWebsocketExchange:
 
     def initialize(self, currencies=None, pairs=None, time_frames=None, channels=None):
         self.pairs = [self.get_exchange_pair(pair) for pair in pairs] if pairs else []
-        self.channels = [self.feed_to_exchange(channel) for channel in channels] if channels else []
+        # inner list required for cythonization
+        self.channels = list(set([self.feed_to_exchange(channel) for channel in channels])) if channels else []
         self.time_frames = time_frames if time_frames is not None else []
         self.currencies = currencies if currencies else []
 
