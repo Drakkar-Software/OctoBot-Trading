@@ -76,8 +76,21 @@ class ExchangeManager(util.Initializable):
         await exchanges.create_exchanges(self)
 
     async def stop(self, warning_on_missing_elements=True):
+        """
+        Stops exchange manager relative tasks : websockets, trading mode, and exchange channels
+        :param warning_on_missing_elements: warn on missing element
+        """
+        # stop websockets if any
+        if self.has_websocket:
+            await self.exchange_web_socket.stop_sockets()
+            await self.exchange_web_socket.close_sockets()
+            self.exchange_web_socket = None
+
+        # stop trading modes
         for trading_mode in self.trading_modes:
             await trading_mode.stop()
+
+        # stop exchange channels
         if self.exchange is not None:
             if not self.exchange_only:
                 await exchange_channel.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
