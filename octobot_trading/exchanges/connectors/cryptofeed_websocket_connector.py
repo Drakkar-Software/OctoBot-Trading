@@ -60,6 +60,14 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             # cryptofeed_constants.MARKET_INFO: cryptofeed_callbacks.MarketInfoCallback(self.market_info),
             # cryptofeed_constants.TRANSACTIONS: cryptofeed_callbacks.TransactionsCallback(self.transactions),
         }
+        self._set_async_callbacks()
+
+    def _set_async_callbacks(self):
+        """
+        Prevent `inspect.iscoroutinefunction` to return False when callback are cythonized
+        """
+        for callback in self.callback_by_feed.values():
+            callback.is_async = True
 
     @classmethod
     def get_feed_name(cls):
