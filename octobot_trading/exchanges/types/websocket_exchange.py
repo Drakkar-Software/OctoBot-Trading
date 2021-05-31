@@ -152,12 +152,18 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             await websocket.reconnect()
 
     async def stop_sockets(self):
-        for websocket in self.websocket_connectors:
-            websocket.stop()
+        try:
+            for websocket in self.websocket_connectors:
+                websocket.stop()
+        except Exception as e:
+            self.logger.error(f"Error when stopping sockets : {e}")
 
     async def close_sockets(self):
-        for websocket in self.websocket_connectors:
-            websocket.close()
+        try:
+            for websocket in self.websocket_connectors:
+                websocket.close()
+        except Exception as e:
+            self.logger.error(f"Error when closing sockets : {e}")
         for websocket_task in self.websocket_connectors_tasks:
             websocket_task.cancel()
         thread_util.stop_thread_pool_executor_non_gracefully(self.websocket_connectors_executors)
