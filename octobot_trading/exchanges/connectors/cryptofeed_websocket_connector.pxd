@@ -22,6 +22,7 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cpdef str get_pair_from_exchange(self, str pair)
     cpdef str get_exchange_pair(self, str pair)
     cpdef void start(self)
+    cpdef void _set_async_callbacks(self)
 
     cdef void subscribe_feeds(self)
     cdef void subscribe_candle_feed(self, list exchange_symbols)
