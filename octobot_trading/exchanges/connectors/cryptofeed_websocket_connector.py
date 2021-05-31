@@ -262,8 +262,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
         return cls.get_name() == exchange_candidate_name
 
-    async def stop(self):
+    def stop(self):
         self.client.stop()
 
-    async def close(self):
+    def close(self):
         self.client.close()
