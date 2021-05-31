@@ -263,7 +263,11 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         return cls.get_name() == exchange_candidate_name
 
     def stop(self):
-        self.client.stop()
+        # let the thread stop by itself
+        # self.client.stop()
+        pass
 
     def close(self):
-        self.client.close()
+        # prevent FeedHandler : "run the AsyncIO event loop one last time"
+        # self.client.close()
+        pass
