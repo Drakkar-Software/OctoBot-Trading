@@ -47,7 +47,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
 
     async def start(self):
         if not self.is_initialized:
-            await self._initialize()
+            await self._initialize(False)
         await self.resume()
 
     async def handle_timestamp(self, timestamp, **kwargs):
