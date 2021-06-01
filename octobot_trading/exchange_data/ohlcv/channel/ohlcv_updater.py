@@ -48,7 +48,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         Creates OHLCV refresh tasks
         """
         if not self.is_initialized:
-            await self._initialize()
+            await self._initialize(False)
         if self.channel is not None:
             if self.channel.is_paused:
                 await self.pause()
@@ -65,24 +65,27 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         return self.channel.exchange_manager.exchange_config.traded_time_frames
 
     async def fetch_and_push(self):
-        return await self._initialize()
+        return await self._initialize(True)
 
-    async def _initialize(self):
+    async def _initialize(self, push_initialization_candles):
         try:
-            await asyncio.gather(*[
+            initial_candles_data = await asyncio.gather(*[
                 self._initialize_candles(time_frame, pair, True)
                 for time_frame in self._get_time_frames()
                 for pair in self._get_traded_pairs()
             ])
+            if push_initialization_candles:
+                await self._push_initial_candles(initial_candles_data)
         except Exception as e:
             self.logger.exception(e, True, f"Error while initializing candles: {e}")
         finally:
             self.logger.debug("Candle history initial fetch completed")
             self.is_initialized = True
 
-    async def _initialize_candles(self, time_frame, pair, should_retry):
+    async def _initialize_candles(self, time_frame, pair, should_retry) -> (str, common_enums.TimeFrames, list):
         """
         Manage timeframe OHLCV data refreshing for all pairs
+        :return: a tuple with (trading pair, time_frame, fetched candles)
         """
         self._set_initialized(pair, time_frame, False)
         # fetch history
@@ -98,16 +101,28 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             await self.channel.exchange_manager.get_symbol_data(pair) \
                 .handle_candles_update(time_frame, candles[:-1], replace_all=True, partial=False)
             self.logger.debug(f"Candle history loaded for {pair} on {time_frame}")
+            return pair, time_frame, candles
         elif should_retry:
             # When candle history cannot be loaded, retry to load it later
             self.logger.warning(f"Failed to initialize candle history for {pair} on {time_frame}. Retrying in "
                                 f"{self.OHLCV_INITIALIZATION_RETRY_DELAY} seconds")
             # retry only once
             await asyncio.sleep(self.OHLCV_INITIALIZATION_RETRY_DELAY)
-            await self._initialize_candles(time_frame, pair, False)
+            return await self._initialize_candles(time_frame, pair, False)
         else:
             self.logger.warning(f"Failed to initialize candle history for {pair} on {time_frame}. Retrying on "
                                 f"the next time frame update")
+            return None
+
+    async def _push_initial_candles(self, initial_candles_data):
+        self.logger.debug("Pushing completed initialization candles")
+        for initial_candles_tuple in initial_candles_data:
+            if initial_candles_tuple is not None:
+                pair, time_frame, candles = initial_candles_tuple
+                await self._push_complete_candles(time_frame, pair, candles)
+
+    async def _push_complete_candles(self, time_frame, pair, candles):
+        await self.push(time_frame, pair, candles[:-1], partial=True)  # push only completed candles
 
     async def _ensure_candles_initialization(self, pair):
         init_coroutines = tuple(
@@ -153,7 +168,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                         else:
                             # A fresh candle happened
                             last_candle_timestamp = current_candle_timestamp
-                            await self.push(time_frame, pair, candles[:-1], partial=True)  # push only completed candles
+                            await self._push_complete_candles(time_frame, pair, candles)
 
                         await asyncio.sleep(self._ensure_correct_sleep_time(should_sleep_time, time_frame_sleep))
                     else:
