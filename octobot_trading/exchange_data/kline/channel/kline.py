@@ -27,7 +27,7 @@ class KlineProducer(exchanges_channel.ExchangeChannelProducer):
     async def perform(self, time_frame, symbol, kline):
         try:
             if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
-                    self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
+                    self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame.value):
                 await self.channel.exchange_manager.get_symbol_data(symbol).handle_kline_update(time_frame, kline)
                 await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
                                 get_pair_cryptocurrency(symbol),
