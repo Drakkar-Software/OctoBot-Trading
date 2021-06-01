@@ -27,7 +27,7 @@ class OHLCVProducer(exchanges_channel.ExchangeChannelProducer):
     async def perform(self, time_frame, symbol, candle, replace_all=False, partial=False):
         try:
             if self.channel.get_filtered_consumers(symbol=constants.CHANNEL_WILDCARD) or \
-                    self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame):
+                    self.channel.get_filtered_consumers(symbol=symbol, time_frame=time_frame.value):
                 await self.channel.exchange_manager.get_symbol_data(symbol) \
                     .handle_candles_update(time_frame, candle, replace_all=replace_all, partial=partial)
                 if candle and (partial or replace_all):
