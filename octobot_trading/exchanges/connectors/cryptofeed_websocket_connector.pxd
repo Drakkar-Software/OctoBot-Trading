@@ -25,4 +25,7 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cpdef void _set_async_callbacks(self)
 
     cdef void subscribe_feeds(self)
+    cdef void _filter_exchange_pairs_and_timeframes(self)
+    cdef void _filter_exchange_symbols(self, object exchange)
+    cdef void _filter_exchange_time_frames(self, object exchange)
     cdef void subscribe_candle_feed(self, list exchange_symbols)
