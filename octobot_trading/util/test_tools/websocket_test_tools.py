@@ -44,6 +44,11 @@ async def test_unauthenticated_push_to_channel_coverage_websocket(
         time_frames: list,
         expected_pushed_channels: set = None,
         time_before_assert: int = 120):
+
+    # To fix `TypeError: can't set attributes of built-in/extension type 'datetime.date'`
+    class TestAbstractWebsocketExchange(websocket_exchange_class):
+        pass
+
     pushed_channel_names = set()
     if expected_pushed_channels is None:
         expected_pushed_channels = EXPECTED_PUSHED_CHANNELS
@@ -54,8 +59,8 @@ async def test_unauthenticated_push_to_channel_coverage_websocket(
     with mock.patch.object(websocket_connector_class,
                            'push_to_channel',
                            new=mock_push_to_channel):
-        ws_exchange = websocket_exchange_class(config, exchange_manager)
-        with mock.patch.object(websocket_exchange_class,
+        ws_exchange = TestAbstractWebsocketExchange(config, exchange_manager)
+        with mock.patch.object(TestAbstractWebsocketExchange,
                                'get_exchange_connector_class',
                                new=mock.Mock()) as get_exchange_connector_class_mock:
             get_exchange_connector_class_mock.return_value = websocket_connector_class
