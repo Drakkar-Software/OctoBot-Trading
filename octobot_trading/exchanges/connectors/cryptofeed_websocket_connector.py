@@ -19,6 +19,7 @@ import logging
 import cryptofeed
 import cryptofeed.callback as cryptofeed_callbacks
 import cryptofeed.defines as cryptofeed_constants
+import cryptofeed.exchanges as cryptofeed_exchanges
 
 import octobot_commons
 import octobot_commons.enums as commons_enums
@@ -96,16 +97,12 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  symbols=exchange_symbols,
                                  channels=[cryptofeed_constants.CANDLES],  # pylint: disable=E1101
                                  callbacks={cryptofeed_constants.CANDLES: candle_callback})  # pylint: disable=E1101
+            self.logger.debug(f"Subscribed to the {time_frame.value} time frame for {', '.join(exchange_symbols)}")
 
     def subscribe_feeds(self):
-        exchange_symbols = [
-            self.get_exchange_pair(pair)
-            for pair in self.pairs
-        ]
-
         if self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and \
                 self.EXCHANGE_FEEDS.get(Feeds.CANDLE) != Feeds.UNSUPPORTED.value:
-            self.subscribe_candle_feed(exchange_symbols)
+            self.subscribe_candle_feed(self.pairs)
 
         # drop unsupported channels
         self.channels = [channel for channel in self.channels if channel not in [Feeds.UNSUPPORTED.value,
@@ -117,15 +114,48 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             if self.callback_by_feed.get(channel)
         }
         self.client.add_feed(self.get_feed_name(),
-                             symbols=exchange_symbols,
+                             symbols=self.pairs,
                              channels=self.channels,
                              callbacks=callbacks)
+        for channel in self.channels:
+            self.logger.debug(f"Subscribed to {channel}")
+
+    def _filter_exchange_pairs_and_timeframes(self):
+        exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](
+            config=self.client.config
+        )
+        self._filter_exchange_symbols(exchange)
+        self._filter_exchange_time_frames(exchange)
+
+    def _filter_exchange_symbols(self, exchange):
+        filtered_pairs = []
+        for pair in self.pairs:
+            if pair in exchange.normalized_symbol_mapping:
+                filtered_pairs.append(pair)
+            else:
+                self.logger.error(f"{self.get_pair_from_exchange(pair)} pair is not supported by this "
+                                  f"exchange's websocket")
+        self.pairs = filtered_pairs
+
+    def _filter_exchange_time_frames(self, exchange):
+        try:
+            filtered_time_frames = []
+            for time_frame in self.time_frames:
+                if time_frame.value in exchange.valid_candle_intervals:
+                    filtered_time_frames.append(time_frame)
+                else:
+                    self.logger.error(f"{time_frame.value} time frame is not supported by this exchange's websocket")
+            self.time_frames = filtered_time_frames
+        except AttributeError:
+            # exchange.valid_candle_intervals is not implemented in each cryptofeed exchange
+            pass
 
     def start(self):
         try:
+            self._filter_exchange_pairs_and_timeframes()
             self.subscribe_feeds()
         except Exception as e:
-            self.logger.error(f"Failed to subscribe when creating websocket feed : {e}")
+            self.logger.exception(e, True, f"Failed to subscribe when creating websocket feed : {e}")
         try:
             # without this two lines `There is no current event loop in thread`
             # is raised when calling `client.run()`

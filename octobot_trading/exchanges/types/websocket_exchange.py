@@ -84,6 +84,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         if self.is_feed_available(feed_name):
             self.channels.append(feed_name)
             self.handled_feeds[feed_name] = True
+            self.logger.debug(f"{self.exchange_manager.exchange_name}'s websocket is handling {feed_name.value}")
         else:
             self.handled_feeds[feed_name] = False
             self.logger.debug(f"{self.exchange_manager.exchange_name}'s websocket is not handling {feed_name.value}")
