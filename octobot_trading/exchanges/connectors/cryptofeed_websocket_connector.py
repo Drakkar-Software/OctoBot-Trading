@@ -17,6 +17,7 @@ import asyncio
 import logging
 
 import cryptofeed
+import cryptofeed.connection_handler
 import cryptofeed.callback as cryptofeed_callbacks
 import cryptofeed.defines as cryptofeed_constants
 import cryptofeed.exchanges as cryptofeed_exchanges
@@ -79,6 +80,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         Replace cryptofeed feedhandler logger because it writes logs into "cryptofeed.log" file
         """
         cryptofeed.feedhandler.LOG = self.logger
+        cryptofeed.connection_handler.LOG = self.logger
 
     def fix_signal_handler(self):
         """
@@ -95,6 +97,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  candle_interval=time_frame.value,
                                  candle_closed_only=False,
                                  symbols=exchange_symbols,
+                                 log_message_on_error=True,
                                  channels=[cryptofeed_constants.CANDLES],  # pylint: disable=E1101
                                  callbacks={cryptofeed_constants.CANDLES: candle_callback})  # pylint: disable=E1101
             self.logger.debug(f"Subscribed to the {time_frame.value} time frame for {', '.join(exchange_symbols)}")
@@ -164,6 +167,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             self.client.run()
         except Exception as e:
             self.logger.error(f"Failed to start websocket feed : {e}")
+        self.logger.warning("Websocket master thread terminated, this should not happen during bot run"
+                            " with a valid configuration")
 
     async def ticker(self, feed, symbol, bid, ask, timestamp, receipt_timestamp):
         if symbol:
