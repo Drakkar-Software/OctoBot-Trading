@@ -80,7 +80,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         """
         :return: ccxt client login option dict, can be overwritten to custom exchange login
         """
-        return {}
+        if self.exchange_manager.is_future:
+            return {'defaultType': 'future'}
+        if self.exchange_manager.is_margin:
+            return {'defaultType': 'margin'}
+        return {'defaultType': 'spot'}
 
     async def _ensure_auth(self):
         try:
