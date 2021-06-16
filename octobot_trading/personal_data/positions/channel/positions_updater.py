@@ -19,6 +19,7 @@ import asyncio
 import octobot_commons.async_job as async_job
 
 import octobot_trading.errors as errors
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.channel.positions as positions_channel
 import octobot_trading.constants as constants
 
@@ -125,11 +126,15 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         if open_positions:
             await self.push(positions=open_positions, is_closed=False, is_liquidated=False)
 
+    def _is_valid_position(self, position_dict):
+        return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
+               in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+
     async def fetch_open_positions(self):
         open_positions = [
             position
-            for symbol, position in (await self.channel.exchange_manager.exchange.get_open_positions()).items()
-            if position and symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
+            for position in await self.channel.exchange_manager.exchange.get_open_positions()
+            if self._is_valid_position(position)
         ]
 
         if open_positions:

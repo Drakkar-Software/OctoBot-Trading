@@ -30,8 +30,7 @@ class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
             for position in positions:
                 if not position:
                     continue
-                symbol: str = self.channel.exchange_manager.get_exchange_symbol(
-                    position[enums.ExchangeConstantsPositionColumns.SYMBOL.value])
+                symbol: str = position[enums.ExchangeConstantsPositionColumns.SYMBOL.value]
                 if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
                         self.channel.get_filtered_consumers(symbol=symbol):
                     position_id: str = position[enums.ExchangeConstantsPositionColumns.ID.value]
