@@ -26,6 +26,7 @@ cdef class FutureExchange(abstract_exchange.AbstractExchange):
     """
     Parsers
     """
+    cpdef list parse_positions(self, list positions)
     cpdef dict parse_position(self, dict position_dict)
     cpdef dict parse_funding(self, dict funding_dict, bint from_ticker=*)
     cpdef dict parse_mark_price(self, dict mark_price_dict, bint from_ticker=*)
