@@ -160,6 +160,13 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     Parsers
     """
 
+    def parse_positions(self, positions) -> list:
+        """
+        :param positions: a list of positions dict to parse
+        :return: uniformized positions
+        """
+        return [self.parse_position(position) for position in positions]
+
     def parse_position(self, position_dict) -> dict:
         """
         :param position_dict: the position dict
