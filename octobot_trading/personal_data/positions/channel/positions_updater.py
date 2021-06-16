@@ -98,20 +98,26 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         Update open positions from exchange
         :param is_from_bot: True if the position was created by OctoBot
         """
-        if self.should_use_open_position_per_symbol:
-            await self.fetch_open_position_per_symbol()
-        else:
-            await self.fetch_open_positions()
-        # TODO handle_post_open_position_update
+        try:
+            if self.should_use_open_position_per_symbol:
+                await self.fetch_open_position_per_symbol()
+            else:
+                await self.fetch_open_positions()
+            # TODO handle_post_open_position_update
+        except Exception as e:
+            self.logger.exception(e, True, f"Fail to update open positions : {e}")
 
     async def _closed_orders_fetch_and_push(self) -> None:
         """
         Update closed positions from exchange
         """
-        if self.should_use_open_position_per_symbol:
-            await self.fetch_close_position_per_symbol()
-        else:
-            await self.fetch_close_positions()
+        try:
+            if self.should_use_open_position_per_symbol:
+                await self.fetch_close_position_per_symbol()
+            else:
+                await self.fetch_close_positions()
+        except Exception as e:
+            self.logger.error(f"Fail to update open positions : {e}")
 
     def _should_run(self):
         return self.channel.exchange_manager.is_future
