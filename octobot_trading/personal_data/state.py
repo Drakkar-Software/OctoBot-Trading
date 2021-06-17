@@ -68,7 +68,7 @@ class State(util.Initializable):
         """
         Log a state event
         """
-        self.get_logger().info(state_message)
+        self.get_logger().info(state_message.value)
 
     async def initialize_impl(self) -> None:
         """

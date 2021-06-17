@@ -16,6 +16,13 @@
 #  License along with this library.
 cimport octobot_trading.personal_data.positions.channel.positions as positions_channel
 
+cimport octobot_commons.async_job as async_job
 
 cdef class PositionsUpdater(positions_channel.PositionsProducer):
     cdef public bint should_use_open_position_per_symbol
+
+    cdef async_job.AsyncJob open_positions_job
+    cdef async_job.AsyncJob closed_positions_job
+    cdef async_job.AsyncJob position_update_job
+
+    cdef bint _should_run(self)

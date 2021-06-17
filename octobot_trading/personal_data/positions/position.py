@@ -39,6 +39,9 @@ class Position:
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
 
+        # position state is initialized in initialize_impl()
+        self.state = None
+
     def _should_change(self, original_value, new_value):
         if new_value and original_value != new_value:
             return True
@@ -186,4 +189,14 @@ class Position:
 
         # update P&L
         # TODO
+
+    def __str__(self):
+        return self.to_string()
+
+    def to_string(self):
+        return (f"{self.symbol} | "
+                f"MarkPrice : {self.mark_price} | "
+                f"Quantity : {self.quantity} | "
+                f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
+                f"id : {self.position_id}")
 

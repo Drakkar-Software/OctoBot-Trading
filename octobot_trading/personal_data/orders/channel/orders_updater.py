@@ -153,7 +153,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         await super().stop()
         self.open_orders_job.stop()
         self.closed_orders_job.stop()
-        self.open_orders_job.stop()
+        self.order_update_job.stop()
 
     async def resume(self) -> None:
         """
