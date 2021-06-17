@@ -25,10 +25,6 @@ class PositionState(state_class.State):
     def __init__(self, position, is_from_exchange_data):
         super().__init__(is_from_exchange_data)
 
-        # ensure position has not been cleared
-        if position.is_cleared():
-            raise octobot_trading.errors.InvalidOrderState(f"Position has already been cleared. Position: {position}")
-
         # related position
         self.position = position
 

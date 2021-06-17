@@ -22,7 +22,7 @@ async def create_position_state(position, is_from_exchange_data=False, ignore_st
 
     if position.status is enums.PositionStatus.OPEN and enums.States.OPEN not in ignore_states:
         await position.on_open(force_open=False, is_from_exchange_data=is_from_exchange_data)
-    elif position.status in enums.PositionStatus.CLOSED and enums.States.CLOSED not in ignore_states:
+    elif position.status is enums.PositionStatus.CLOSED and enums.States.CLOSED not in ignore_states:
         await position.on_close(force_close=False, is_from_exchange_data=is_from_exchange_data)
-    elif position.status in enums.PositionStatus.LIQUIDATING and enums.PositionStates.LIQUIDATED not in ignore_states:
+    elif position.status is enums.PositionStatus.LIQUIDATING and enums.PositionStates.LIQUIDATED not in ignore_states:
         await position.on_liquidate(force_liquidate=False, is_from_exchange_data=is_from_exchange_data)

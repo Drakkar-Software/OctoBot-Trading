@@ -214,7 +214,7 @@ class ExchangePersonalData(util.Initializable):
 
     async def handle_position_update(self, symbol, position_id, position, should_notify: bool = True):
         try:
-            changed: bool = self.positions_manager.upsert_position(position_id, position)
+            changed: bool = await self.positions_manager.upsert_position(position_id, position)
             if should_notify:
                 position_instance = self.positions_manager[position_id]
                 await exchange_channel.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,

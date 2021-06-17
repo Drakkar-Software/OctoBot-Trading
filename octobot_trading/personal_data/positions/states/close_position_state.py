@@ -18,8 +18,8 @@ import octobot_trading.personal_data.positions.position_state as position_state
 
 
 class ClosePositionState(position_state.PositionState):
-    def __init__(self, order, is_from_exchange_data, force_close=True):
-        super().__init__(order, is_from_exchange_data)
+    def __init__(self, position, is_from_exchange_data, force_close=True):
+        super().__init__(position, is_from_exchange_data)
         self.state = enums.States.CLOSED if is_from_exchange_data or force_close or self.position.simulated \
             else enums.States.CLOSING
 
