@@ -14,13 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
-import octobot_trading.personal_data.orders.order_state as order_state
+import octobot_trading.personal_data.positions.position_state as position_state
 
 
-class CloseOrderState(order_state.OrderState):
+class ClosePositionState(position_state.PositionState):
     def __init__(self, order, is_from_exchange_data, force_close=True):
         super().__init__(order, is_from_exchange_data)
-        self.state = enums.States.CLOSED if is_from_exchange_data or force_close or self.order.simulated \
+        self.state = enums.States.CLOSED if is_from_exchange_data or force_close or self.position.simulated \
             else enums.States.CLOSING
 
     async def initialize_impl(self, forced=False) -> None:
@@ -36,29 +36,14 @@ class CloseOrderState(order_state.OrderState):
 
     async def on_refresh_successful(self):
         """
-        Verify the order is properly closed
+        Verify the position is properly closed
         """
-        if self.order.status is enums.OrderStatus.CLOSED:
+        if self.position.status is enums.PositionStatus.CLOSED:
             self.state = enums.States.CLOSED
             await self.update()
 
     async def terminate(self):
         """
-        Handle order to trade conversion
+        Add position to history
         """
-        try:
-            self.log_event_message(enums.StatesMessages.CLOSED)
-
-            # add to trade history and notify
-            await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
-                self.order.trader.convert_order_to_trade(self.order))
-
-            # remove order from open_orders
-            self.order.exchange_manager.exchange_personal_data.orders_manager.remove_order_instance(self.order)
-        except Exception as e:
-            self.get_logger().exception(e, True, f"Fail to execute close state termination : {e}.")
-            raise
-
-    async def _synchronize_with_exchange(self, force_synchronization=False):
-        # Nothing to synchronize
-        pass
+        pass  # TODO

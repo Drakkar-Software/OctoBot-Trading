@@ -13,20 +13,24 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position_util as position_util
+import octobot_trading.personal_data.positions.states as positions_states
+import octobot_trading.util as util
 
 
-class Position:
+class Position(util.Initializable):
     def __init__(self, trader):
+        super().__init__()
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
+        self.simulated = trader.simulate
 
         self.position_id = None
         self.timestamp = 0
         self.symbol = None
         self.currency, self.market = None, None
-        self.creation_time = 0
         self.entry_price = 0
         self.mark_price = 0
         self.quantity = 0
@@ -39,8 +43,39 @@ class Position:
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
 
+        # original position attributes
+        self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
+
         # position state is initialized in initialize_impl()
         self.state = None
+
+    async def initialize_impl(self, **kwargs):
+        """
+        Initialize position status update tasks
+        """
+        await positions_states.create_position_state(self, **kwargs)
+        if not self.is_closed():
+            pass  # TODO update position status
+
+    async def update_position_status(self, force_refresh=False):
+        """
+        update_position_status will define the rules for a simulated position to be closed / liquidated
+        Should be called after updating position.mark_price
+        """
+        # liquidation check
+        if self._check_for_liquidation():
+            await positions_states.create_position_state(self, is_from_exchange_data=False)
+
+        if not self.simulated:
+            # update P&L
+            # TODO
+            pass
+
+    def is_open(self):
+        return self.state is None or self.state.is_open()
+
+    def is_closed(self):
+        return self.state.is_closed() if self.state is not None else self.status is enums.PositionStatus.CLOSED
 
     def _should_change(self, original_value, new_value):
         if new_value and original_value != new_value:
@@ -165,30 +200,17 @@ class Position:
     def _check_for_liquidation(self):
         """
         _check_for_liquidation will defines rules for a simulated position to be liquidated
+        :return: True if the position is being liquidated else False
         """
         if self.is_short():
             if self.mark_price >= self.liquidation_price:
                 self.status = enums.PositionStatus.LIQUIDATING
-        elif self.is_long():
+                return True
+        if self.is_long():
             if self.mark_price <= self.liquidation_price:
                 self.status = enums.PositionStatus.LIQUIDATING
-
-    async def close(self):
-        await self.trader.notify_position_close(self)
-
-    async def liquidate(self):
-        await self.trader.notify_position_liquidate(self)
-
-    async def update_status(self, mark_price):
-        self.mark_price = mark_price
-
-        # liquidation check
-        self._check_for_liquidation()
-        if self.is_liquidated():
-            await self.liquidate()
-
-        # update P&L
-        # TODO
+                return True
+        return False
 
     def __str__(self):
         return self.to_string()

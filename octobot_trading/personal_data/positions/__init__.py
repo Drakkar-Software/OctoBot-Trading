@@ -24,6 +24,14 @@ from octobot_trading.personal_data.positions.position import (
     Position,
 )
 
+from octobot_trading.personal_data.positions import states
+from octobot_trading.personal_data.positions.states import (
+    ClosePositionState,
+    LiquidatePositionState,
+    OpenPositionState,
+    create_position_state,
+)
+
 from octobot_trading.personal_data.positions import channel
 from octobot_trading.personal_data.positions.channel import (
     PositionsProducer,
@@ -63,4 +71,8 @@ __all__ = [
     "FutureContract",
     "create_position_instance_from_raw",
     "parse_position_status",
+    "ClosePositionState",
+    "LiquidatePositionState",
+    "OpenPositionState",
+    "create_position_state",
 ]
