@@ -202,7 +202,10 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :param status: the position raw status
         :return: the uniformized position status
         """
-        raise NotImplementedError("parse_position_status is not implemented")
+        try:
+            return octobot_trading.enums.PositionStatus(status)
+        except ValueError:
+            return ValueError("Could not parse position status")
 
     def parse_position_side(self, side):
         """

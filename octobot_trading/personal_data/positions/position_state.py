@@ -17,6 +17,7 @@
 import octobot_trading.constants
 import octobot_trading.enums as enums
 import octobot_trading.errors
+import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.personal_data.state as state_class
 
 
@@ -44,7 +45,16 @@ class PositionState(state_class.State):
                                    f"{self.position.exchange_manager.exchange_name}")
 
     async def _synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
-        pass # TODO
+        """
+        Ask PositionsChannel Internal producer to refresh the position from the exchange
+        :param force_synchronization: When True, for the update of the position from the exchange
+        :return: the result of PositionsProducer.update_position_from_exchange()
+        """
+        return (await exchange_channel.get_chan(octobot_trading.constants.ORDERS_CHANNEL,
+                                                self.position.exchange_manager.id).get_internal_producer().
+                update_position_from_exchange(position=self.position,
+                                              wait_for_refresh=True,
+                                              force_job_execution=force_synchronization))
 
     def clear(self):
         """

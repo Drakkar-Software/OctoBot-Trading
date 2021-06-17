@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+cimport octobot_trading.personal_data.positions.position_state as positions_states
 cimport octobot_trading.util as util
 
 cdef class Position(util.Initializable):
@@ -28,6 +29,8 @@ cdef class Position(util.Initializable):
 
     cdef public object status # PositionStatus
     cdef public object side # PositionSide
+
+    cdef public positions_states.PositionState state
 
     cdef public int leverage
 
@@ -71,3 +74,4 @@ cdef class Position(util.Initializable):
     cpdef bint is_liquidated(self)
     cpdef bint is_long(self)
     cpdef bint is_short(self)
+    cpdef str to_string(self)

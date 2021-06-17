@@ -28,4 +28,4 @@ cdef class State(util.Initializable):
     cpdef bint is_closed(self)
     cpdef void clear(self)
     cpdef object get_logger(self)
-    cpdef void log_event_message(self, str state_message, object error=*)
+    cpdef void log_event_message(self, object state_message, object error=*)
