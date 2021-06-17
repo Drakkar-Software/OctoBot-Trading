@@ -105,7 +105,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 await self.fetch_open_positions()
             # TODO handle_post_open_position_update
         except Exception as e:
-            self.logger.exception(e, True, f"Fail to update open positions : {e}")
+            self.logger.error(f"Fail to update open positions : {e}")
 
     async def _closed_orders_fetch_and_push(self) -> None:
         """

@@ -15,22 +15,22 @@
 #  License along with this library.
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position_state as position_state
-import octobot_trading.personal_data.positions.states.position_state_factory as order_state_factory
+import octobot_trading.personal_data.positions.states.position_state_factory as position_state_factory
 
 
 class OpenPositionState(position_state.PositionState):
-    def __init__(self, order, is_from_exchange_data):
-        super().__init__(order, is_from_exchange_data)
+    def __init__(self, position, is_from_exchange_data):
+        super().__init__(position, is_from_exchange_data)
         self.state = enums.States.OPEN if is_from_exchange_data \
                                           or self.position.simulated \
-                                          or self.position.status is enums.OrderStatus.OPEN \
+                                          or self.position.status is enums.PositionStatus.OPEN \
             else enums.States.OPENING
 
         self.has_terminated = False
 
     def is_open(self) -> bool:
         """
-        :return: True if the Order is considered as open
+        :return: True if the Position is considered as open
         """
         return not (self.is_pending() or self.is_refreshing())
 
@@ -52,9 +52,9 @@ class OpenPositionState(position_state.PositionState):
                 self.state = enums.States.OPEN
                 await self.update()
             else:
-                if self.position.status is enums.OrderStatus.CLOSED:
+                if self.position.status is enums.PositionStatus.CLOSED:
                     self.position.state = None
-                await order_state_factory.create_position_state(self.position, is_from_exchange_data=True)
+                await position_state_factory.create_position_state(self.position, is_from_exchange_data=True)
         else:
             self.get_logger().debug(f"on_refresh_successful triggered from previous state "
                                     f"after state change on {self.position}")

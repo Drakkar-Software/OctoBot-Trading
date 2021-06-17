@@ -49,19 +49,26 @@ class Position(util.Initializable):
         # position state is initialized in initialize_impl()
         self.state = None
 
+    @classmethod
+    def get_name(cls):
+        return cls.__name__
+
     async def initialize_impl(self, **kwargs):
         """
         Initialize position status update tasks
         """
         await positions_states.create_position_state(self, **kwargs)
         if not self.is_closed():
-            pass  # TODO update position status
+            await self.update_position_status()
 
     async def update_position_status(self, force_refresh=False):
         """
         update_position_status will define the rules for a simulated position to be closed / liquidated
         Should be called after updating position.mark_price
         """
+        if not self.mark_price:
+            return
+
         # liquidation check
         if self._check_for_liquidation():
             await positions_states.create_position_state(self, is_from_exchange_data=False)
@@ -76,6 +83,18 @@ class Position(util.Initializable):
 
     def is_closed(self):
         return self.state.is_closed() if self.state is not None else self.status is enums.PositionStatus.CLOSED
+
+    async def on_open(self, force_open=False, is_from_exchange_data=False):
+        self.state = positions_states.OpenPositionState(self, is_from_exchange_data=is_from_exchange_data)
+        await self.state.initialize(forced=force_open)
+
+    async def on_liquidate(self, force_liquidate=False, is_from_exchange_data=False):
+        self.state = positions_states.LiquidatePositionState(self, is_from_exchange_data=is_from_exchange_data)
+        await self.state.initialize(forced=force_liquidate)
+
+    async def on_close(self, force_close=False, is_from_exchange_data=False):
+        self.state = positions_states.ClosePositionState(self, is_from_exchange_data=is_from_exchange_data)
+        await self.state.initialize(forced=force_close)
 
     def _should_change(self, original_value, new_value):
         if new_value and original_value != new_value:

@@ -18,28 +18,28 @@ import octobot_trading.personal_data.positions.position_state as position_state
 
 
 class LiquidatePositionState(position_state.PositionState):
-    def __init__(self, order, is_from_exchange_data, force_liquidate=True):
-        super().__init__(order, is_from_exchange_data)
+    def __init__(self, position, is_from_exchange_data, force_liquidate=True):
+        super().__init__(position, is_from_exchange_data)
         self.state = enums.PositionStates.LIQUIDATED \
             if is_from_exchange_data or force_liquidate or self.position.simulated else enums.PositionStates.LIQUIDATING
 
     async def initialize_impl(self, forced=False) -> None:
         if forced:
-            self.state = enums.States.LIQUIDATED
+            self.state = enums.PositionStates.LIQUIDATED
         return await super().initialize_impl()
 
     def is_pending(self) -> bool:
-        return self.state is enums.States.LIQUIDATING
+        return self.state is enums.PositionStates.LIQUIDATING
 
     def is_closed(self) -> bool:
-        return self.state is enums.States.LIQUIDATED
+        return self.state is enums.PositionStates.LIQUIDATED
 
     async def on_refresh_successful(self):
         """
         Verify the position is properly closed
         """
         if self.position.status is enums.PositionStatus.LIQUIDATED:
-            self.state = enums.States.LIQUIDATED
+            self.state = enums.PositionStates.LIQUIDATED
             await self.update()
 
     async def terminate(self):

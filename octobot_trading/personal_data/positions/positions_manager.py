@@ -45,9 +45,11 @@ class PositionsManager(util.Initializable):
     def get_closed_positions(self, symbol=None, since=-1, limit=-1):
         return self._select_positions(status=enums.PositionStatus.CLOSED, symbol=symbol, since=since, limit=limit)
 
-    def upsert_position(self, position_id, raw_position) -> bool:
+    async def upsert_position(self, position_id, raw_position) -> bool:
         if position_id not in self.positions:
-            self.positions[position_id] = position_factory.create_position_instance_from_raw(self.trader, raw_position)
+            new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position)
+            self.positions[position_id] = new_position
+            await new_position.initialize(is_from_exchange_data=True)
             self._check_positions_size()
             return True
 
