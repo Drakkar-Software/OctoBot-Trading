@@ -108,6 +108,10 @@ from octobot_trading.personal_data.positions import (
     FutureContract,
     create_position_instance_from_raw,
     parse_position_status,
+    ClosePositionState,
+    LiquidatePositionState,
+    OpenPositionState,
+    create_position_state,
 )
 from octobot_trading.personal_data import trades
 from octobot_trading.personal_data.trades import (
@@ -229,6 +233,10 @@ __all__ = [
     "PositionsUpdaterSimulator",
     "Position",
     "PositionState",
+    "ClosePositionState",
+    "LiquidatePositionState",
+    "OpenPositionState",
+    "create_position_state",
     "PositionsUpdater",
     "PositionsManager",
     "FutureContract",
