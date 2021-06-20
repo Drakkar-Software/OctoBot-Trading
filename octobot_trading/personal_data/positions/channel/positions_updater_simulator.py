@@ -51,41 +51,33 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         """
         for position in copy.copy(
                 self.exchange_manager.exchange_personal_data.positions_manager.get_open_positions(symbol=symbol)):
-            position_closed = False
             try:
                 # ask orders to update their status
                 async with position.lock:
-                    position_closed = await self._update_position_status(position,
-                                                                         mark_price)
+                    await self._update_position_status(position, mark_price)
             except Exception as e:
                 raise e
             finally:
                 # ensure always call fill callback
-                if position_closed:
+                if position.is_liquidated():
                     await exchanges_channel.get_chan(constants.POSITIONS_CHANNEL, self.channel.exchange_manager.id) \
                         .get_internal_producer().send(cryptocurrency=cryptocurrency,
                                                       symbol=position.symbol,
                                                       order=position.to_dict(),
-                                                      is_from_bot=True,
                                                       is_liquidated=position.is_liquidated(),
-                                                      is_closed=True,
                                                       is_updated=False)
 
     async def _update_position_status(self, position: positions.Position, mark_price):
         """
         Call position status update
         """
-        position_closed = False
         try:
             await position.update_status(mark_price)
 
             if position.status is enums.PositionStatus.LIQUIDATING:
-                position_closed = True
                 self.logger.debug(f"{position.symbol} (ID : {position.position_id})"
-                                  f" closed on {self.channel.exchange.name} "
+                                  f" liquidated on {self.channel.exchange.name} "
                                   f"at {position.mark_price} "
                                   f"by {'liquidation' if position.is_liquidated() else 'manual close'}")
-                await position.close()
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update position status : {e} (concerned position : {position}).")
-        return position_closed

@@ -222,9 +222,7 @@ class ExchangePersonalData(util.Initializable):
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                           symbol=symbol,
                           position=position_instance.to_dict(),
-                          is_closed=False,
                           is_updated=changed,
-                          is_from_bot=True,
                           is_liquidated=position_instance.is_liquidated())
             return changed
         except Exception as e:
@@ -240,9 +238,7 @@ class ExchangePersonalData(util.Initializable):
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(position.symbol),
                           symbol=position.symbol,
                           position=position,
-                          is_closed=False,
                           is_updated=changed,
-                          is_from_bot=True,
                           is_liquidated=position.is_liquidated())
             return changed
         except Exception as e:
