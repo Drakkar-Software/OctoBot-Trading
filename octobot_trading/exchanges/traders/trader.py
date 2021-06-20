@@ -69,6 +69,10 @@ class Trader(util.Initializable):
             self.risk = risk
         return self.risk
 
+    """
+    Orders
+    """
+
     async def create_order(self, order, portfolio: object = None, loaded: bool = False):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
@@ -280,29 +284,8 @@ class Trader(util.Initializable):
                 orders += await self._sell_everything(symbol, inverted, timeout=timeout)
         return orders
 
-    """
-    Positions
-    """
-
-    async def notify_position_cancel(self, position):
-        # # update portfolio with ended order
-        # async with self.exchange_manager.exchange_personal_data.get_order_portfolio(order).lock:
-        #     self.exchange_manager.exchange_personal_data.get_order_portfolio(order) \
-        #         .update_portfolio_available(order, is_new_order=False)
-        pass  # TODO
-
-    async def notify_position_close(self, position):
-        pass  # TODO
-
-    async def notify_position_liquidate(self, position):
-        pass  # TODO
-
     def parse_order_id(self, order_id):
         return order_id
-
-    """
-    Order tools
-    """
 
     def convert_order_to_trade(self, order):
         """
@@ -310,3 +293,26 @@ class Trader(util.Initializable):
         :return: the new Trade instance from order
         """
         return trade_factory.create_trade_from_order(order)
+
+    """
+    Positions
+    """
+
+    async def close_position(self, position, limit_price=None) -> None:
+        """
+        Creates a close position order
+        :param position: the position to close
+        :param limit_price: the close order limit price if None uses a market order
+        """
+        # TODO use reduce only param
+        if limit_price is None:
+            # TODO market order
+            pass
+        else:
+            pass
+
+    async def set_leverage(self, position):
+        pass  # TODO
+
+    async def set_margin_type(self, new_margin_type):
+        pass  # TODO
