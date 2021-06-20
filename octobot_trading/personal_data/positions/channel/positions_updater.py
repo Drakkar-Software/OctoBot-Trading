@@ -26,14 +26,13 @@ import octobot_trading.constants as constants
 
 class PositionsUpdater(positions_channel.PositionsProducer):
     """
-    Update open and close positions from exchange
+    Update open positions from exchange
     Can also be used to update a specific positions from exchange
     """
 
     CHANNEL_NAME = constants.POSITIONS_CHANNEL
     POSITIONS_STARTING_REFRESH_TIME = 12
     OPEN_POSITION_REFRESH_TIME = 9
-    CLOSE_POSITION_REFRESH_TIME = 137
     TIME_BETWEEN_POSITIONS_REFRESH = 3
 
     def __init__(self, channel):
@@ -44,9 +43,6 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         self.open_positions_job = async_job.AsyncJob(self._open_positions_fetch_and_push,
                                                      execution_interval_delay=self.OPEN_POSITION_REFRESH_TIME,
                                                      min_execution_delay=self.TIME_BETWEEN_POSITIONS_REFRESH)
-        self.closed_positions_job = async_job.AsyncJob(self._closed_orders_fetch_and_push,
-                                                       execution_interval_delay=self.CLOSE_POSITION_REFRESH_TIME,
-                                                       min_execution_delay=self.TIME_BETWEEN_POSITIONS_REFRESH)
         self.position_update_job = async_job.AsyncJob(self._position_fetch_and_push,
                                                       is_periodic=False,
                                                       enable_multiple_runs=True)
@@ -68,11 +64,11 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         Initialize data before starting jobs
         """
         try:
-            await self.fetch_and_push(is_from_bot=False)
+            await self.fetch_and_push()
         except NotImplementedError:
             self.should_use_open_position_per_symbol = True
             try:
-                await self.fetch_and_push(is_from_bot=False)
+                await self.fetch_and_push()
             except NotImplementedError:
                 self.logger.warning("Position updater cannot fetch positions : required methods are not implemented")
                 await self.stop()
@@ -94,20 +90,17 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         await asyncio.sleep(self.POSITIONS_STARTING_REFRESH_TIME)
         await self.open_positions_job.run()
 
-    async def fetch_and_push(self, is_from_bot=True):
+    async def fetch_and_push(self):
         """
         Update open and closed positions from exchange
-        :param is_from_bot: True if the position was created by OctoBot
         :param limit: the exchange request positions count limit
         """
-        await self._open_positions_fetch_and_push(is_from_bot=is_from_bot)
+        await self._open_positions_fetch_and_push()
         await asyncio.sleep(self.TIME_BETWEEN_POSITIONS_REFRESH)
-        await self._closed_orders_fetch_and_push()
 
-    async def _open_positions_fetch_and_push(self, is_from_bot=True):
+    async def _open_positions_fetch_and_push(self):
         """
         Update open positions from exchange
-        :param is_from_bot: True if the position was created by OctoBot
         """
         try:
             if self.should_use_open_position_per_symbol:
@@ -115,18 +108,6 @@ class PositionsUpdater(positions_channel.PositionsProducer):
             else:
                 await self.fetch_open_positions()
             # TODO handle_post_open_position_update
-        except Exception as e:
-            self.logger.error(f"Fail to update open positions : {e}")
-
-    async def _closed_orders_fetch_and_push(self) -> None:
-        """
-        Update closed positions from exchange
-        """
-        try:
-            if self.should_use_open_position_per_symbol:
-                await self.fetch_close_position_per_symbol()
-            else:
-                await self.fetch_close_positions()
         except Exception as e:
             self.logger.error(f"Fail to update open positions : {e}")
 
@@ -141,7 +122,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 open_positions += positions
 
         if open_positions:
-            await self.push(positions=open_positions, is_closed=False, is_liquidated=False)
+            await self.push(positions=open_positions, is_liquidated=False)
 
     def _is_valid_position(self, position_dict):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
@@ -155,13 +136,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         ]
 
         if open_positions:
-            await self.push(positions=open_positions, is_closed=False, is_liquidated=False)
-
-    async def fetch_close_position_per_symbol(self):
-        pass  # TODO
-
-    async def fetch_close_positions(self):
-        pass  # TODO
+            await self.push(positions=open_positions, is_liquidated=False)
 
     async def update_position_from_exchange(self, position,
                                             should_notify=False,
@@ -207,7 +182,6 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         if not self._should_run():
             return
         self.open_positions_job.stop()
-        self.closed_positions_job.stop()
         self.position_update_job.stop()
 
     async def resume(self) -> None:
