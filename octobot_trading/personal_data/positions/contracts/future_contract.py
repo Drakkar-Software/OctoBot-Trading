@@ -21,7 +21,7 @@ class FutureContract:
         self.pair = pair
 
         self.contract_type = enums.FutureContractType.INVERSE_PERPETUAL
-        self.margin_type = enums.MarginType.ISOLATE
+        self.margin_type = enums.MarginType.ISOLATED
         self.expiration_timestamp = 0
 
         self.minimum_tick_size = 0.5
@@ -40,4 +40,4 @@ class FutureContract:
         """
         :return: True if the contract use isolation margin
         """
-        return self.margin_type is enums.MarginType.ISOLATE
+        return self.margin_type is enums.MarginType.ISOLATED

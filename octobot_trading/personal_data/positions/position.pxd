@@ -30,6 +30,7 @@ cdef class Position(util.Initializable):
     cdef public str position_id
 
     cdef public object status # PositionStatus
+    cdef public object margin_type # MarginType
     cdef public object side # PositionSide
 
     cdef public positions_states.PositionState state
@@ -65,6 +66,7 @@ cdef class Position(util.Initializable):
                       double unrealised_pnl,
                       double realised_pnl,
                       int leverage,
+                      object margin_type,
                       object status=*,
                       object side=*)
     cdef bint _check_for_liquidation(self)

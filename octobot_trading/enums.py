@@ -284,6 +284,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     VALUE = "value"
     MARGIN = "margin"
     LEVERAGE = "leverage"
+    MARGIN_TYPE = "margin_type"
     STATUS = "status"
     SIDE = "side"
 
@@ -362,7 +363,7 @@ class RestExchangePairsRefreshMaxThresholds(enum.Enum):
 
 class MarginType(enum.Enum):
     CROSS = "cross"
-    ISOLATE = "isolate"
+    ISOLATED = "isolated"
 
 
 class FutureContractType(enum.Enum):
