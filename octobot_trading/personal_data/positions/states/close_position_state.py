@@ -46,4 +46,4 @@ class ClosePositionState(position_state.PositionState):
         """
         Add position to history
         """
-        pass  # TODO
+        # TODO

@@ -38,7 +38,7 @@ class LiquidatePositionState(position_state.PositionState):
         """
         Verify the position is properly closed
         """
-        if self.position.status is enums.PositionStatus.LIQUIDATED:
+        if self.position.status is enums.PositionStatus.LIQUIDATING:
             self.state = enums.PositionStates.LIQUIDATED
             await self.update()
 
@@ -46,4 +46,4 @@ class LiquidatePositionState(position_state.PositionState):
         """
         Handle position to trade conversion
         """
-        pass  # TODO
+        # TODO
