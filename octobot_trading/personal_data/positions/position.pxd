@@ -22,7 +22,7 @@ cdef class Position(util.Initializable):
     cdef object trader
     cdef object exchange_manager
 
-    cdef public bint is_simulated
+    cdef public bint simulated
 
     cdef public str symbol
     cdef public str currency
@@ -78,3 +78,4 @@ cdef class Position(util.Initializable):
     cpdef bint is_short(self)
     cpdef bint is_open(self)
     cpdef str to_string(self)
+    cpdef void clear(self)

@@ -55,6 +55,11 @@ class PositionsManager(util.Initializable):
         # TODO
         return False
 
+    def clear(self):
+        for position in self.positions.values():
+            position.clear()
+        self._reset_positions()
+
     # private
     def _create_position_from_raw(self, raw_position):
         position = position_class.Position(self.trader)
