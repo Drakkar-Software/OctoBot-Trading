@@ -53,6 +53,16 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         self.position_update_job.add_job_dependency(self.open_positions_job)
         self.open_positions_job.add_job_dependency(self.position_update_job)
 
+    async def initialize_contracts(self) -> None:
+        """
+        Initialize exchange FutureContracts required to manage positions
+        """
+        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            try:
+                await self.channel.exchange_manager.exchange.load_pair_future_contract(pair)
+            except Exception as e:
+                self.logger.warning(f"Failed to load {pair} contract info : {e}")
+
     async def initialize(self) -> None:
         """
         Initialize data before starting jobs
@@ -79,6 +89,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         if not self._should_run():
             return
 
+        await self.initialize_contracts()
         await self.initialize()
         await asyncio.sleep(self.POSITIONS_STARTING_REFRESH_TIME)
         await self.open_positions_job.run()
