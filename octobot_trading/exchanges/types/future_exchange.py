@@ -15,8 +15,6 @@
 #  License along with this library.
 import asyncio
 
-import octobot_commons.asyncio_tools as asyncio_tools
-
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.personal_data.positions.contracts as contracts
@@ -38,13 +36,6 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         super().__init__(config, exchange_manager)
         self.pair_contracts = {}
 
-    async def load_pairs_future_contracts(self):
-        """
-        Create a new Contract instance for each traded pair
-        """
-        for pair in self.exchange_manager.exchange_config.traded_symbol_pairs:
-            await self.load_pair_future_contract(pair)
-
     async def load_pair_future_contract(self, pair: str):
         """
         Create a new FutureContract for the pair
@@ -58,14 +49,13 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     def get_pair_future_contract(self, pair):
         """
         Return the FutureContract instance associated to the pair
-        TODO create if not exist
         :param pair: the pair
         :return: the FutureContract instance
         """
         try:
             return self.pair_contracts[pair]
         except KeyError:
-            asyncio_tools.run_coroutine_in_asyncio_loop(self.load_pair_future_contract(pair), asyncio.get_event_loop())
+            asyncio.create_task(self.load_pair_future_contract(pair))
             return self.pair_contracts[pair]
 
     def set_pair_future_contract(self, pair, future_contract):
