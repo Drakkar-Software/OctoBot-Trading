@@ -39,6 +39,12 @@ class PositionsManager(util.Initializable):
     def get_position_by_id(self, position_id):
         return self.positions.get(position_id, None)
 
+    def get_symbol_leverage(self, symbol):
+        return self._select_positions(symbol=symbol).leverage
+
+    def get_symbol_margin_type(self, symbol):
+        return self._select_positions(symbol=symbol).margin_type
+
     async def upsert_position(self, position_id, raw_position) -> bool:
         if position_id not in self.positions:
             new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position)

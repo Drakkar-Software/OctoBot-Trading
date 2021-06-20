@@ -37,11 +37,14 @@ class Position(util.Initializable):
         self.value = 0
         self.margin = 0
         self.liquidation_price = 0
-        self.unrealised_pnl = 0
-        self.realised_pnl = 0
         self.leverage = 0
+        self.margin_type = 0
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
+
+        # PNL
+        self.unrealised_pnl = 0
+        self.realised_pnl = 0
 
         # original position attributes
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
@@ -96,7 +99,7 @@ class Position(util.Initializable):
                 entry_price, mark_price, liquidation_price,
                 quantity, value, margin,
                 unrealised_pnl, realised_pnl,
-                leverage, status=None, side=None):
+                leverage, margin_type, status=None, side=None):
         changed: bool = False
 
         if self._should_change(self.position_id, position_id):
@@ -137,6 +140,10 @@ class Position(util.Initializable):
 
         if self._should_change(self.leverage, leverage):
             self.leverage = int(leverage)
+            changed = True
+
+        if self._should_change(self.margin_type, margin_type):
+            self.margin_type = int(margin_type)
             changed = True
 
         if self._should_change(self.entry_price, entry_price):
@@ -186,6 +193,7 @@ class Position(util.Initializable):
             "unrealised_pnl": raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, 0.0),
             "realised_pnl": raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, 0.0),
             "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, 0),
+            "margin_type": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value, None),
             "status": position_util.parse_position_status(raw_position),
             "side": raw_position.get(enums.ExchangeConstantsPositionColumns.SIDE.value, None)
         })
@@ -206,6 +214,7 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value: self.unrealised_pnl,
             enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
             enums.ExchangeConstantsPositionColumns.LEVERAGE.value: self.leverage,
+            enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value: self.margin_type,
         }
 
     def _check_for_liquidation(self):
