@@ -98,7 +98,6 @@ class PositionStatus(enum.Enum):
     LIQUIDATED = "liquidated"
     OPEN = "open"
     ADL = "auto_deleveraging"
-    CLOSED = "closed"
 
 
 class TraderOrderType(enum.Enum):

@@ -58,8 +58,7 @@ class Position(util.Initializable):
         Initialize position status update tasks
         """
         await positions_states.create_position_state(self, **kwargs)
-        if not self.is_closed():
-            await self.update_position_status()
+        await self.update_position_status()
 
     async def update_position_status(self, force_refresh=False):
         """
@@ -81,9 +80,6 @@ class Position(util.Initializable):
     def is_open(self):
         return self.state is None or self.state.is_open()
 
-    def is_closed(self):
-        return self.state.is_closed() if self.state is not None else self.status is enums.PositionStatus.CLOSED
-
     async def on_open(self, force_open=False, is_from_exchange_data=False):
         self.state = positions_states.OpenPositionState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_open)
@@ -91,10 +87,6 @@ class Position(util.Initializable):
     async def on_liquidate(self, force_liquidate=False, is_from_exchange_data=False):
         self.state = positions_states.LiquidatePositionState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_liquidate)
-
-    async def on_close(self, force_close=False, is_from_exchange_data=False):
-        self.state = positions_states.ClosePositionState(self, is_from_exchange_data=is_from_exchange_data)
-        await self.state.initialize(forced=force_close)
 
     def _should_change(self, original_value, new_value):
         if new_value and original_value != new_value:

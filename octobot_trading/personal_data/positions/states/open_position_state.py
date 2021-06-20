@@ -52,8 +52,6 @@ class OpenPositionState(position_state.PositionState):
                 self.state = enums.States.OPEN
                 await self.update()
             else:
-                if self.position.status is enums.PositionStatus.CLOSED:
-                    self.position.state = None
                 await position_state_factory.create_position_state(self.position, is_from_exchange_data=True)
         else:
             self.get_logger().debug(f"on_refresh_successful triggered from previous state "
@@ -61,7 +59,7 @@ class OpenPositionState(position_state.PositionState):
 
     async def terminate(self):
         """
-        Should wait for being replaced by a ClosePositionState or a LiquidatePositionState
+        Should wait for being replaced by a LiquidatePositionState
         """
         if not self.has_terminated:
             self.log_event_message(enums.StatesMessages.OPEN)

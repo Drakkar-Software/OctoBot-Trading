@@ -19,13 +19,9 @@ from octobot_trading.personal_data.positions.states.position_state_factory impor
     create_position_state,
 )
 
-from octobot_trading.personal_data.positions.states import close_position_state
 from octobot_trading.personal_data.positions.states import open_position_state
 from octobot_trading.personal_data.positions.states import liquidate_position_state
 
-from octobot_trading.personal_data.positions.states.close_position_state import (
-    ClosePositionState,
-)
 from octobot_trading.personal_data.positions.states.liquidate_position_state import (
     LiquidatePositionState,
 )
@@ -34,7 +30,6 @@ from octobot_trading.personal_data.positions.states.open_position_state import (
 )
 
 __all__ = [
-    "ClosePositionState",
     "LiquidatePositionState",
     "OpenPositionState",
     "create_position_state",
