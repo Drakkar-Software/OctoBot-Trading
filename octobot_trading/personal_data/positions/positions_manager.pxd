@@ -33,3 +33,4 @@ cdef class PositionsManager(util.Initializable):
     cpdef bint upsert_position_instance(self, positions_personal_data.Position position)
     cpdef positions_personal_data.Position get_symbol_position(self, str symbol)
     cpdef positions_personal_data.Position get_position_by_id(self, str position_id)
+    cpdef void clear(self)

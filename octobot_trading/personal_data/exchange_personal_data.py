@@ -253,5 +253,7 @@ class ExchangePersonalData(util.Initializable):
             self.portfolio_manager.clear()
         if self.orders_manager is not None:
             self.orders_manager.clear()
+        if self.positions_manager is not None:
+            self.positions_manager.clear()
         if self.trades_manager is not None:
             self.trades_manager.clear()

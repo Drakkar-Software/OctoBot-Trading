@@ -233,3 +233,7 @@ class Position(util.Initializable):
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
                 f"id : {self.position_id}")
 
+    def clear(self):
+        self.state.clear()
+        self.trader = None
+        self.exchange_manager = None
