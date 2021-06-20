@@ -134,7 +134,6 @@ packages_list = [
     "octobot_trading.personal_data.positions.channel.positions",
     "octobot_trading.personal_data.positions.channel.positions_updater",
     "octobot_trading.personal_data.positions.channel.positions_updater_simulator",
-    "octobot_trading.personal_data.positions.states.close_position_state",
     "octobot_trading.personal_data.positions.states.liquidate_position_state",
     "octobot_trading.personal_data.positions.states.open_position_state",
     "octobot_trading.personal_data.positions.states.position_state_factory",

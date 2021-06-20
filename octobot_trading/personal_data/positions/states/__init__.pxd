@@ -14,11 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.positions.states cimport close_position_state
-from octobot_trading.personal_data.positions.states.close_position_state cimport (
-    ClosePositionState
-)
-
 from octobot_trading.personal_data.positions.states cimport liquidate_position_state
 from octobot_trading.personal_data.positions.states.liquidate_position_state cimport (
     LiquidatePositionState
@@ -30,7 +25,6 @@ from octobot_trading.personal_data.positions.states.open_position_state cimport 
 )
 
 __all__ = [
-    "ClosePositionState",
     "LiquidatePositionState",
     "OpenPositionState",
 ]

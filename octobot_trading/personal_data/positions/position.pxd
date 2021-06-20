@@ -77,5 +77,4 @@ cdef class Position(util.Initializable):
     cpdef bint is_long(self)
     cpdef bint is_short(self)
     cpdef bint is_open(self)
-    cpdef bint is_closed(self)
     cpdef str to_string(self)

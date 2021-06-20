@@ -67,7 +67,6 @@ from octobot_trading.personal_data.positions cimport (
     FutureContract,
     create_position_instance_from_raw,
     parse_position_status,
-    ClosePositionState,
     LiquidatePositionState,
     OpenPositionState,
 )
@@ -134,7 +133,6 @@ __all__ = [
     "PositionsUpdaterSimulator",
     "Position",
     "PositionState",
-    "ClosePositionState",
     "LiquidatePositionState",
     "OpenPositionState",
     "FutureContract",
