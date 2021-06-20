@@ -15,6 +15,8 @@
 #  License along with this library.
 import asyncio
 
+import octobot_commons.asyncio_tools as asyncio_tools
+
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.personal_data.positions.contracts as contracts
@@ -48,6 +50,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         Create a new FutureContract for the pair
         :param pair: the pair
         """
+        self.logger.debug(f"Loading {pair} contract...")
         self.pair_contracts[pair] = contracts.FutureContract(pair)
         self.pair_contracts[pair].current_leverage = await self.get_symbol_leverage(pair)
         self.pair_contracts[pair].margin_type = await self.get_margin_type_leverage(pair)
@@ -62,7 +65,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         try:
             return self.pair_contracts[pair]
         except KeyError:
-            asyncio.run(self.load_pair_future_contract(pair))
+            asyncio_tools.run_coroutine_in_asyncio_loop(self.load_pair_future_contract(pair), asyncio.get_event_loop())
             return self.pair_contracts[pair]
 
     def set_pair_future_contract(self, pair, future_contract):
