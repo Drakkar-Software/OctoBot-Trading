@@ -57,6 +57,10 @@ class OpenPositionState(position_state.PositionState):
             self.get_logger().debug(f"on_refresh_successful triggered from previous state "
                                     f"after state change on {self.position}")
 
+    async def _synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
+        # Disable open position synchronization for now, let position updater refresh positions
+        pass
+
     async def terminate(self):
         """
         Should wait for being replaced by a LiquidatePositionState
@@ -64,9 +68,6 @@ class OpenPositionState(position_state.PositionState):
         if not self.has_terminated:
             self.log_event_message(enums.StatesMessages.OPEN)
 
-            # notify position manager of a new open position
-            await self.position.exchange_manager.exchange_personal_data.handle_position_instance_update(self.position,
-                                                                                                        should_notify=True)
             self.has_terminated = True
 
     def is_pending(self) -> bool:
