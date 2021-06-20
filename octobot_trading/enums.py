@@ -95,6 +95,7 @@ class PositionStates(enum.Enum):
 
 class PositionStatus(enum.Enum):
     LIQUIDATING = "liquidating"
+    LIQUIDATED = "liquidated"
     OPEN = "open"
     ADL = "auto_deleveraging"
     CLOSED = "closed"
