@@ -157,6 +157,11 @@ TraderOrderTypeClasses = {
     octobot_trading.enums.TraderOrderType.UNKNOWN: UnknownOrder,
 }
 
+TraderPositionTypeClasses = {
+    octobot_trading.enums.TraderPositionType.CROSS: CrossPosition,
+    octobot_trading.enums.TraderPositionType.ISOLATED: IsolatedPosition,
+}
+
 __all__ = [
     "State",
     "Order",
@@ -255,4 +260,6 @@ __all__ = [
     "ExchangePersonalData",
     "AUTHENTICATED_UPDATER_PRODUCERS",
     "AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS",
+    "TraderOrderTypeClasses",
+    "TraderPositionTypeClasses",
 ]

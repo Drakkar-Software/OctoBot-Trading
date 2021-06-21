@@ -114,6 +114,11 @@ class TraderOrderType(enum.Enum):
     UNKNOWN = "unknown"  # default value when the order type info is missing in the exchange data
 
 
+class TraderPositionType(enum.Enum):
+    CROSS = "cross"
+    ISOLATED = "isolated"
+
+
 class ExchangeConstantsCCXTColumns(enum.Enum):
     TIMESTAMP = "timestamp"
     DATETIME = "datetime"
