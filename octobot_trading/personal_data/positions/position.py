@@ -65,20 +65,10 @@ class Position(util.Initializable):
 
     async def update_position_status(self, force_refresh=False):
         """
-        update_position_status will define the rules for a simulated position to be closed / liquidated
+        update_position_status will define the rules for a simulated position to be liquidated
         Should be called after updating position.mark_price
         """
-        if not self.mark_price:
-            return
-
-        # liquidation check
-        if self._check_for_liquidation():
-            await positions_states.create_position_state(self, is_from_exchange_data=False)
-
-        if not self.simulated:
-            # update P&L
-            # TODO
-            pass
+        raise NotImplementedError("update_position_status not implemented")
 
     def is_open(self):
         return self.state is None or self.state.is_open()
