@@ -14,8 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.positions.types.cross_position cimport cross_position
-from octobot_trading.personal_data.positions.types.isolated_position cimport isolated_position
+from octobot_trading.personal_data.positions.types cimport cross_position
+from octobot_trading.personal_data.positions.types cimport isolated_position
 
 from octobot_trading.personal_data.positions.types.cross_position cimport (
     CrossPosition,

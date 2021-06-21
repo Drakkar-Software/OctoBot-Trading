@@ -17,9 +17,14 @@ import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
 
 
-def create_position_instance_from_raw(trader, raw_order, force_open=False):
-    position = personal_data.Position(trader)
-    position.update_from_raw(raw_order)
+def create_position_instance_from_raw(trader, raw_position, force_open=False):
+    position_type = personal_data.parse_position_type(raw_position)
+    position = create_position_from_type(trader, position_type)
+    position.update_from_raw(raw_position)
     if force_open:
         position.status = enums.PositionStatus.OPEN
     return position
+
+
+def create_position_from_type(trader, position_type):
+    return personal_data.TraderPositionTypeClasses[position_type](trader)

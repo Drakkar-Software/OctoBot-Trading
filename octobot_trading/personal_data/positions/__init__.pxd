@@ -22,6 +22,7 @@ from octobot_trading.personal_data.positions.position_state cimport (
 from octobot_trading.personal_data.positions cimport position
 from octobot_trading.personal_data.positions.position cimport (
     Position,
+    parse_position_type,
 )
 
 from octobot_trading.personal_data.positions cimport types
@@ -62,6 +63,7 @@ from octobot_trading.personal_data.positions.position_util cimport (
 from octobot_trading.personal_data.positions cimport position_factory
 from octobot_trading.personal_data.positions.position_factory cimport (
     create_position_instance_from_raw,
+    create_position_from_type,
 )
 
 __all__ = [
@@ -70,12 +72,14 @@ __all__ = [
     "PositionsChannel",
     "PositionsUpdaterSimulator",
     "Position",
+    "parse_position_type",
     "CrossPosition",
     "IsolatedPosition",
     "PositionsUpdater",
     "PositionsManager",
     "FutureContract",
     "create_position_instance_from_raw",
+    "create_position_from_type",
     "parse_position_status",
     "LiquidatePositionState",
     "OpenPositionState",

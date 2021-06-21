@@ -17,9 +17,8 @@ import collections
 
 import octobot_commons.logging as logging
 
-import octobot_trading.util as util
 import octobot_trading.personal_data.positions.position_factory as position_factory
-import octobot_trading.personal_data.positions.position as position_class
+import octobot_trading.util as util
 
 
 class PositionsManager(util.Initializable):
@@ -46,15 +45,34 @@ class PositionsManager(util.Initializable):
         return self._select_positions(symbol=symbol).margin_type
 
     async def upsert_position(self, position_id, raw_position) -> bool:
+        """
+        Create or update a position from a raw dictionary
+        :param position_id: the position id
+        :param raw_position: the position raw dictionary
+        :return: True when the creation or the update succeeded
+        """
         if position_id not in self.positions:
             new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position)
-            self.positions[position_id] = new_position
-            await new_position.initialize(is_from_exchange_data=True)
-            return True
+            return await self._finalize_position_creation(new_position)
 
         return self._update_position_from_raw(self.positions[position_id], raw_position)
 
+    async def recreate_position(self, position) -> bool:
+        """
+        Recreate position from an existing position instance
+        :param position: the position instance to recreate
+        :return: True when the recreation succeeded
+        """
+        new_position = position_factory.create_position_instance_from_raw(self.trader, position.to_dict())
+        position.clear()
+        return await self._finalize_position_creation(new_position)
+
     def upsert_position_instance(self, position) -> bool:
+        """
+        Save an existing position instance to positions list
+        :param position: the position instance
+        :return: True when the operation succeeded
+        """
         if position.position_id not in self.positions:
             self.positions[position.position_id] = position
             return True
@@ -62,15 +80,19 @@ class PositionsManager(util.Initializable):
         return False
 
     def clear(self):
+        """
+        Clear all positions and the position OrderedDict
+        :return:
+        """
         for position in self.positions.values():
             position.clear()
         self._reset_positions()
 
     # private
-    def _create_position_from_raw(self, raw_position):
-        position = position_class.Position(self.trader)
-        position.update_from_raw(raw_position)
-        return position
+    async def _finalize_position_creation(self, new_position) -> bool:
+        self.positions[new_position.position_id] = new_position
+        await new_position.initialize(is_from_exchange_data=True)
+        return True
 
     def _update_position_from_raw(self, position, raw_position):
         return position.update_from_raw(raw_position)
