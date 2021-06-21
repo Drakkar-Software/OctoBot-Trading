@@ -42,7 +42,7 @@ DEFAULT_EXCHANGE_TIME_LAG = 10
 DEFAULT_BACKTESTING_TIME_LAG = 0
 INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME = -1
 
-FULL_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm", "bitcoincom",
+FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm", "bitcoincom",
                             "bitfinex", "bitfinex2", "bitmex", "idex"]
 
 TESTED_EXCHANGES = ["binance", "bitmax", "kucoin", "coinbasepro"]
