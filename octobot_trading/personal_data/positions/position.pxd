@@ -81,3 +81,5 @@ cdef class Position(util.Initializable):
     cpdef bint is_open(self)
     cpdef str to_string(self)
     cpdef void clear(self)
+
+cpdef object parse_position_type(dict raw_position)

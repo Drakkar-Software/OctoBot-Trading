@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position_util as position_util
@@ -38,7 +39,7 @@ class Position(util.Initializable):
         self.margin = 0
         self.liquidation_price = 0
         self.leverage = 0
-        self.margin_type = 0
+        self.margin_type = None
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
 
@@ -133,8 +134,13 @@ class Position(util.Initializable):
             changed = True
 
         if self._should_change(self.margin_type, margin_type):
-            self.margin_type = int(margin_type)
-            changed = True
+            if self.margin_type is not None:
+                # The margin type changed, we have to recreate the position
+                self.margin_type = margin_type
+                asyncio.create_task(
+                    self.exchange_manager.exchange_personal_data.positions_manager.recreate_position(self))
+
+            self.margin_type = margin_type
 
         if self._should_change(self.entry_price, entry_price):
             self.entry_price = float(entry_price)
@@ -236,3 +242,7 @@ class Position(util.Initializable):
         self.state.clear()
         self.trader = None
         self.exchange_manager = None
+
+
+def parse_position_type(raw_position):
+    return enums.TraderPositionType(raw_position[enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value])
