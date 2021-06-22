@@ -97,7 +97,7 @@ class PositionsManager(util.Initializable):
         :return: True when the process succeeded
         """
         self.positions[new_position.position_id] = new_position
-        await new_position.initialize_positions(is_from_exchange_data=is_from_exchange_data)
+        await new_position.initialize(is_from_exchange_data=is_from_exchange_data)
         return True
 
     def _create_symbol_position(self, symbol):

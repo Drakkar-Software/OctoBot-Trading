@@ -19,6 +19,7 @@ from octobot_commons.enums import PriceIndexes
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ECOC
 
 MAX_PRICE = 10e7
+MAX_INT = 10e7
 MAX_QUANTITY = 10e7
 MAX_FUNDING_RATE = 100
 MAX_TIMESTAMP = 2000000000
@@ -30,6 +31,10 @@ def random_timestamp(min_value=0, max_value=MAX_TIMESTAMP):
 
 def random_price(min_value=0, max_value=None):
     return uniform(min_value, max_value if max_value is not None else MAX_PRICE)
+
+
+def random_int(min_value=0, max_value=None):
+    return randrange(min_value, max_value if max_value is not None else MAX_INT)
 
 
 def random_prices(min_value=0, count=2):

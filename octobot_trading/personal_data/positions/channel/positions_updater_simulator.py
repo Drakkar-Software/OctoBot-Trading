@@ -17,23 +17,28 @@ import copy
 
 import octobot_commons.logging as logging
 
-import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
-import octobot_trading.personal_data.positions.channel.positions_updater as positions_updater
+import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.personal_data.positions as positions
-import octobot_trading.enums as enums
+import octobot_trading.personal_data.positions.channel.positions_updater as positions_updater
 
 
 class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
-    def __init__(self, channel):
-        super().__init__(channel)
-        self.exchange_manager = None
-
     async def start(self):
-        self.exchange_manager = self.channel.exchange_manager
-        self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.exchange_manager.exchange.name}]")
+        if not self._should_run():
+            return
+        await self.initialize()
+
+    async def initialize(self) -> None:
+        """
+        Initialize positions and future contracts
+        """
+        await self.initialize_contracts()
+        self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
+        self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.channel.exchange_manager.exchange.name}]")
         await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.handle_mark_price)
+        self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
 
     async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
         """
@@ -50,34 +55,28 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         Ask liquidation and P&L update process if required
         """
         for position in copy.copy(
-                self.exchange_manager.exchange_personal_data.positions_manager.get_open_positions(symbol=symbol)):
-            try:
-                # ask orders to update their status
-                async with position.lock:
-                    await self._update_position_status(position, mark_price)
-            except Exception as e:
-                raise e
-            finally:
-                # ensure always call fill callback
-                if position.is_liquidated():
-                    await exchanges_channel.get_chan(constants.POSITIONS_CHANNEL, self.channel.exchange_manager.id) \
-                        .get_internal_producer().send(cryptocurrency=cryptocurrency,
-                                                      symbol=position.symbol,
-                                                      order=position.to_dict(),
-                                                      is_liquidated=position.is_liquidated(),
-                                                      is_updated=False)
+                self.channel.exchange_manager.exchange_personal_data.positions_manager.get_open_positions(
+                    symbol=symbol)):
+            await self._update_position_status(position, mark_price)
+
+            if position.is_liquidated():
+                await exchanges_channel.get_chan(constants.POSITIONS_CHANNEL, self.channel.exchange_manager.id) \
+                    .get_internal_producer().send(cryptocurrency=cryptocurrency,
+                                                  symbol=position.symbol,
+                                                  order=position.to_dict(),
+                                                  is_liquidated=position.is_liquidated(),
+                                                  is_updated=False)
 
     async def _update_position_status(self, position: positions.Position, mark_price):
         """
         Call position status update
         """
         try:
-            await position.update_status(mark_price)
+            position.mark_price = mark_price
+            await position.update_position_status()
 
-            if position.status is enums.PositionStatus.LIQUIDATING:
+            if position.is_liquidated():
                 self.logger.debug(f"{position.symbol} (ID : {position.position_id})"
-                                  f" liquidated on {self.channel.exchange.name} "
-                                  f"at {position.mark_price} "
-                                  f"by {'liquidation' if position.is_liquidated() else 'manual close'}")
+                                  f" liquidated on {self.channel.exchange.name} at {position.mark_price} ")
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update position status : {e} (concerned position : {position}).")
