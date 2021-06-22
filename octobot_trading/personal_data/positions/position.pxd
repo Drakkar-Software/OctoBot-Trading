@@ -70,6 +70,7 @@ cdef class Position(util.Initializable):
                       object status=*,
                       object side=*)
     cdef bint _check_for_liquidation(self)
+    cdef bint _switch_side_if_necessary(self)
     cdef bint _should_change(self, object original_value, object new_value)
 
     cpdef dict to_dict(self)

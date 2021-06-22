@@ -111,6 +111,7 @@ class Position(util.Initializable):
 
         if self._should_change(self.quantity, quantity):
             self.quantity = float(quantity)
+            self._switch_side_if_necessary()
             changed = True
 
         if self._should_change(self.value, value):
@@ -137,8 +138,7 @@ class Position(util.Initializable):
             if self.margin_type is not None:
                 # The margin type changed, we have to recreate the position
                 self.margin_type = margin_type
-                asyncio.create_task(
-                    self.exchange_manager.exchange_personal_data.positions_manager.recreate_position(self))
+                asyncio.create_task(self.recreate())
 
             self.margin_type = margin_type
 
@@ -158,7 +158,7 @@ class Position(util.Initializable):
             self.side = enums.PositionSide(side)
 
         if self.side is enums.PositionSide.UNKNOWN and self.quantity:
-            self.side = enums.PositionSide.LONG if self.quantity > 0 else enums.PositionSide.SHORT
+            self._switch_side_if_necessary()
 
         return changed
 
@@ -170,6 +170,9 @@ class Position(util.Initializable):
 
     def is_short(self):
         return self.side is enums.PositionSide.SHORT
+
+    async def recreate(self):
+        self.exchange_manager.exchange_personal_data.positions_manager.recreate_position(self)
 
     async def update_from_filled_order(self, order):
         self.quantity = order.filled_quantity if order.is_long() else -order.filled_quantity
@@ -187,12 +190,13 @@ class Position(util.Initializable):
             "quantity": raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, 0.0),
             "value": raw_position.get(enums.ExchangeConstantsPositionColumns.VALUE.value, 0.0),
             "margin": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN.value, 0.0),
-            "position_id": str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, None)),
+            "position_id": str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
             "timestamp": raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0.0),
             "unrealised_pnl": raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, 0.0),
             "realised_pnl": raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, 0.0),
             "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, 0),
-            "margin_type": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value, None),
+            "margin_type": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value,
+                                            enums.TraderPositionType.ISOLATED),
             "status": position_util.parse_position_status(raw_position),
             "side": raw_position.get(enums.ExchangeConstantsPositionColumns.SIDE.value, None)
         })
@@ -231,6 +235,15 @@ class Position(util.Initializable):
                 return True
         return False
 
+    def _switch_side_if_necessary(self):
+        """
+        check if self.side still represents the position side
+        """
+        if self.quantity >= 0 and self.is_short():
+            self.side = enums.PositionSide.LONG
+        else:
+            self.side = enums.PositionSide.SHORT
+
     def __str__(self):
         return self.to_string()
 
@@ -242,10 +255,21 @@ class Position(util.Initializable):
                 f"id : {self.position_id}")
 
     def clear(self):
+        """
+        Clear position references
+        """
         self.state.clear()
         self.trader = None
         self.exchange_manager = None
 
 
 def parse_position_type(raw_position):
-    return enums.TraderPositionType(raw_position[enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value])
+    """
+    Parse the raw position type to match a enums.TraderPositionType value
+    :param raw_position: the raw position dict
+    :return: the enums.TraderPositionType value
+    """
+    try:
+        return enums.TraderPositionType(raw_position[enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value])
+    except ValueError:
+        return enums.TraderPositionType.ISOLATED
