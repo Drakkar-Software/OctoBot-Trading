@@ -13,11 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_state as order_state
 import octobot_trading.personal_data.orders.states.order_state_factory as order_state_factory
-import octobot_trading.personal_data.positions.position_factory as position_factory
 
 
 class FillOrderState(order_state.OrderState):

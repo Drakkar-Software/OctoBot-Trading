@@ -1,3 +1,4 @@
+
 # cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
@@ -18,4 +19,4 @@ cimport octobot_trading.personal_data.positions.channel.positions_updater as pos
 
 
 cdef class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
-    cdef object exchange_manager
+    pass

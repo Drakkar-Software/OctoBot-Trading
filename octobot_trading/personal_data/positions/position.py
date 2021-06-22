@@ -271,5 +271,5 @@ def parse_position_type(raw_position):
     """
     try:
         return enums.TraderPositionType(raw_position[enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value])
-    except ValueError:
+    except (KeyError, ValueError):
         return enums.TraderPositionType.ISOLATED

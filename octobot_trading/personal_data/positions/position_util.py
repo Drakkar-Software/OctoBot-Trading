@@ -20,4 +20,4 @@ def parse_position_status(raw_position):
     try:
         return enums.PositionStatus(raw_position[enums.ExchangeConstantsPositionColumns.STATUS.value])
     except KeyError:
-        return KeyError("Could not parse new position status")
+        return None

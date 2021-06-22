@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
-import octobot_trading.errors as errors
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 
@@ -22,7 +21,7 @@ from tests import event_loop
 from tests.exchanges import exchange_manager
 from tests.exchanges.traders import trader_simulator
 from tests.exchanges.traders import trader
-from tests.test_utils.random_numbers import random_price
+from tests.test_utils.random_numbers import random_int, random_quantity
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -36,9 +35,27 @@ async def test_create_position_instance_from_raw(trader_simulator):
         enums.ExchangeConstantsPositionColumns.STATUS.value: enums.PositionStatus.ADL.value
     }
     position = personal_data.create_position_instance_from_raw(trader_inst, raw_position)
-    position_open = personal_data.create_position_instance_from_raw(trader_inst, raw_position, force_open=True)
+    position_leverage = random_int(max_value=200)
+    position_quantity = random_quantity(max_value=1000)
+    cross_position_open = personal_data.create_position_instance_from_raw(trader_inst, {
+        enums.ExchangeConstantsPositionColumns.SYMBOL.value: "BTC/USDT",
+        enums.ExchangeConstantsPositionColumns.LEVERAGE.value: position_leverage,
+        enums.ExchangeConstantsPositionColumns.QUANTITY.value: position_quantity,
+        enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value: enums.TraderPositionType.CROSS.value
+    })
     assert position.symbol == "BTC/USDT"
     assert position.market == "USDT"
     assert position.currency == "BTC"
     assert position.status == enums.PositionStatus.ADL
-    assert position_open.status == enums.PositionStatus.OPEN
+    assert isinstance(position, personal_data.IsolatedPosition)
+
+    assert cross_position_open.status == enums.PositionStatus.OPEN
+    assert cross_position_open.leverage == position_leverage
+    assert cross_position_open.quantity == position_quantity
+    assert isinstance(cross_position_open, personal_data.CrossPosition)
+
+
+async def test_create_symbol_position(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    position = personal_data.create_symbol_position(trader_inst, "BTC/USDT")
+    assert position.symbol == "BTC/USDT"
