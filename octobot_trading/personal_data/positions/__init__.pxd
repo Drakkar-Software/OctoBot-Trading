@@ -64,6 +64,7 @@ from octobot_trading.personal_data.positions cimport position_factory
 from octobot_trading.personal_data.positions.position_factory cimport (
     create_position_instance_from_raw,
     create_position_from_type,
+    create_symbol_position,
 )
 
 __all__ = [
@@ -80,6 +81,7 @@ __all__ = [
     "FutureContract",
     "create_position_instance_from_raw",
     "create_position_from_type",
+    "create_symbol_position",
     "parse_position_status",
     "LiquidatePositionState",
     "OpenPositionState",

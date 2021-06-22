@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 import collections
 
 import octobot_commons.logging as logging
@@ -26,7 +27,7 @@ class PositionsManager(util.Initializable):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
         self.trader = trader
-        self.positions_initialized = False  # TODO
+        self.positions_initialized = False
         self.positions = collections.OrderedDict()
 
     async def initialize_impl(self):
@@ -53,9 +54,9 @@ class PositionsManager(util.Initializable):
         """
         if position_id not in self.positions:
             new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position)
-            return await self._finalize_position_creation(new_position)
+            return await self._finalize_position_creation(new_position, is_from_exchange_data=True)
 
-        return self._update_position_from_raw(self.positions[position_id], raw_position)
+        return self.positions[position_id].update_from_raw(raw_position)
 
     async def recreate_position(self, position) -> bool:
         """
@@ -82,29 +83,48 @@ class PositionsManager(util.Initializable):
     def clear(self):
         """
         Clear all positions and the position OrderedDict
-        :return:
         """
         for position in self.positions.values():
             position.clear()
         self._reset_positions()
 
     # private
-    async def _finalize_position_creation(self, new_position) -> bool:
+    async def _finalize_position_creation(self, new_position, is_from_exchange_data=False) -> bool:
+        """
+        Ends a position creation process
+        :param new_position: the new position instance
+        :param is_from_exchange_data: True when the exchange creation comes from exchange data
+        :return: True when the process succeeded
+        """
         self.positions[new_position.position_id] = new_position
-        await new_position.initialize(is_from_exchange_data=True)
+        await new_position.initialize_positions(is_from_exchange_data=is_from_exchange_data)
         return True
 
-    def _update_position_from_raw(self, position, raw_position):
-        return position.update_from_raw(raw_position)
+    def _create_symbol_position(self, symbol):
+        """
+        Creates a position when it doesn't exist for the specified symbol
+        :return: the new symbol position instance
+        """
+        new_position = position_factory.create_symbol_position(self.trader, symbol)
+        asyncio.create_task(self._finalize_position_creation(new_position))
+        return new_position
 
     def _select_positions(self, symbol=None):
+        """
+        Filter positions by symbol
+        :param symbol: the symbol to match, all symbol are considered when symbol is None
+        :return: positions matching the symbol selector
+        """
         if symbol is None:
             return self.positions
         for position in self.positions:
             if position.symbol == symbol:
                 return position
-        return None
+        return self._create_symbol_position(symbol)
 
     def _reset_positions(self):
+        """
+        Clear all position references
+        """
         self.positions_initialized = False
         self.positions = collections.OrderedDict()
