@@ -17,6 +17,7 @@ import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.orders.order_state as order_state
 import octobot_trading.personal_data.orders.states.order_state_factory as order_state_factory
+import octobot_trading.personal_data.positions.position_factory as position_factory
 
 
 class FillOrderState(order_state.OrderState):
@@ -96,6 +97,11 @@ class FillOrderState(order_state.OrderState):
 
             # call order on_filled callback
             await self.order.on_filled()
+
+            # update position if any
+            if self.order.exchange_manager.is_future:
+                await self.order.exchange_manager.exchange_personal_data.positions_manager \
+                    .get_symbol_position(self.order.symbol).update_from_filled_order(self)
 
             # set close state
             await self.order.on_close(force_close=True)  # TODO force ?
