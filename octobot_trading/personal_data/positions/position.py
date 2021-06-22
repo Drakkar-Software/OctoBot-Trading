@@ -171,6 +171,9 @@ class Position(util.Initializable):
     def is_short(self):
         return self.side is enums.PositionSide.SHORT
 
+    async def update_from_filled_order(self, order):
+        self.quantity = order.filled_quantity if order.is_long() else -order.filled_quantity
+
     def update_from_raw(self, raw_position):
         symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
         currency, market = self.exchange_manager.get_exchange_quote_and_base(symbol)
