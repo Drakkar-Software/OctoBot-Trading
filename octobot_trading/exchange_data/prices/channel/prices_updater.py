@@ -47,6 +47,8 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
                 await self.subscribe()
             elif self._should_run():
                 await self.start_fetching()
+            else:
+                self.logger.debug(f"{self.__class__.__name__} wont be used, stopping...")
 
     async def subscribe(self):
         self.recent_trades_consumer = await exchanges_channel.get_chan(constants.RECENT_TRADES_CHANNEL,
@@ -140,5 +142,8 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
                      timestamp=funding_rate[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
 
     def _should_run(self) -> bool:
-        return self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE and \
-               not self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER
+        return not (
+                self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE
+                or self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER
+                or self.channel.exchange_manager.exchange.MARK_PRICE_IN_POSITION
+        )
