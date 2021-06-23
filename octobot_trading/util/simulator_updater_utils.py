@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import async_channel.channels as channels
+import octobot_commons.channels_name as channels_name
 
 
 async def stop_and_pause(producer) -> None:
@@ -26,3 +28,24 @@ async def stop_and_pause(producer) -> None:
     except KeyError:
         pass
     producer.time_consumer = None
+
+
+async def pause_time_consumer(producer) -> None:
+    """
+    Unregister the provided producer's time consumer
+    :param producer: the producer to pause
+    """
+    if producer.time_consumer is not None:
+        await channels.get_chan(
+            channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).remove_consumer(producer.time_consumer)
+
+
+async def resume_time_consumer(producer, producer_time_callback) -> None:
+    """
+    Register the provided producer's time consumer
+    :param producer: the producer to resume
+    :param producer_time_callback: the producer TIME_CHANNEL callback
+    """
+    if producer.time_consumer is None and not producer.channel.is_paused:
+        producer.time_consumer = await channels.get_chan(
+            channels_name.OctoBotBacktestingChannelsName.TIME_CHANNEL.value).new_consumer(producer_time_callback)

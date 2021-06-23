@@ -24,6 +24,8 @@ from octobot_trading.util import config_util
 
 from octobot_trading.util.simulator_updater_utils import (
     stop_and_pause,
+    pause_time_consumer,
+    resume_time_consumer,
 )
 from octobot_trading.util.config_util import (
     is_trader_enabled,
@@ -40,6 +42,8 @@ from octobot_trading.util.config_util import (
 
 __all__ = [
     "stop_and_pause",
+    "pause_time_consumer",
+    "resume_time_consumer",
     "Initializable",
     "is_trader_enabled",
     "is_trader_simulator_enabled",

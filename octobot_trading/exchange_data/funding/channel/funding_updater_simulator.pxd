@@ -14,7 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+cimport async_channel.consumer as consumer
 cimport octobot_trading.exchange_data.funding.channel.funding_updater as funding_updater
 
 cdef class FundingUpdaterSimulator(funding_updater.FundingUpdater):
-    pass
+    cdef public consumer.Consumer time_consumer

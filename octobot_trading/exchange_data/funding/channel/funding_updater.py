@@ -17,14 +17,13 @@
 import asyncio
 import typing
 
-import time
-
-import octobot_trading.errors as errors
+import octobot_commons.async_job as async_job
 import octobot_commons.constants as common_constants
 
 import octobot_trading.exchange_data.funding.channel.funding as funding_channel
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 
 
 class FundingUpdater(funding_channel.FundingProducer):
@@ -44,50 +43,43 @@ class FundingUpdater(funding_channel.FundingProducer):
     FUNDING_REFRESH_TIME_MIN = 0.2 * common_constants.HOURS_TO_SECONDS
     FUNDING_REFRESH_TIME_MAX = 8 * common_constants.HOURS_TO_SECONDS
 
+    def __init__(self, channel):
+        super().__init__(channel)
+
+        # create async jobs
+        self.fetch_funding_job = async_job.AsyncJob(self._funding_fetch_and_push,
+                                                    execution_interval_delay=self.FUNDING_REFRESH_TIME,
+                                                    min_execution_delay=self.FUNDING_REFRESH_TIME_MIN)
+
+    async def initialize(self) -> None:
+        """
+        Initialize data before starting fetch_funding_job
+        """
+        next_funding_times = await self._funding_fetch_and_push()
+        if next_funding_times \
+                and not all(next_funding_time > self.FUNDING_REFRESH_TIME for next_funding_time in next_funding_times):
+            min_next_funding_time = min(next_funding_times)
+            await asyncio.sleep(self._get_time_until_next_funding(min_next_funding_time))
+            # call initialize until a next_funding_time < self.FUNDING_REFRESH_TIME before starting fetch_funding_job
+            await self.initialize()
+
     async def start(self) -> None:
         """
-        Starts the funding fetching process
+        Start updater jobs
         """
         if not self._should_run():
             return
-        if self.channel.is_paused:
-            await self.pause()
-        else:
-            await self.start_update_loop()
 
-    async def start_update_loop(self):
-        while not self.should_stop and not self.channel.is_paused:
-            next_funding_time, sleep_time = await self.before_update()
-            try:
-                for (
-                    pair
-                ) in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-                    next_funding_time_candidate = await self.fetch_symbol_funding_rate(
-                        pair
-                    )
-                    if next_funding_time_candidate is not None:
-                        next_funding_time = next_funding_time_candidate
-            except (errors.NotSupported, NotImplementedError):
-                self.logger.warning(
-                    f"{self.channel.exchange_manager.exchange_name} is not supporting updates"
-                )
-                await self.pause()
-            finally:
-                if next_funding_time:
-                    should_sleep_time = next_funding_time - time.time()
-                    sleep_time = (
-                        should_sleep_time
-                        if should_sleep_time < self.FUNDING_REFRESH_TIME_MAX
-                        else self.FUNDING_REFRESH_TIME
-                    )
-                await asyncio.sleep(sleep_time)
+        await self.initialize()
+        await self.fetch_funding_job.run()
 
-    async def before_update(self) -> (int, int):
-        """
-        Called to initialize funding update
-        :return: the next funding time and the sleep time
-        """
-        return None, self.FUNDING_REFRESH_TIME_MIN
+    async def _funding_fetch_and_push(self) -> list:
+        next_funding_times = []
+        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            next_funding_time_candidate = await self.fetch_symbol_funding_rate(pair)
+            if next_funding_time_candidate is not None:
+                next_funding_times.append(next_funding_time_candidate)
+        return next_funding_times
 
     async def fetch_symbol_funding_rate(self, symbol: str) -> typing.Optional[int]:
         """
@@ -96,49 +88,82 @@ class FundingUpdater(funding_channel.FundingProducer):
         :return: the next funding time
         """
         try:
-            funding: dict = await self.channel.exchange_manager.exchange.get_funding_rate(
-                symbol
-            )
+            funding: dict = await self.channel.exchange_manager.exchange.get_funding_rate(symbol)
 
             if funding:
-                next_funding_time = funding[
-                    enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value
-                ]
-                await self.push(
+                next_funding_time = funding[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value]
+                await self._push_funding(
                     symbol=symbol,
-                    funding_rate=funding[
-                        enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value
-                    ],
+                    funding_rate=funding[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
                     next_funding_time=next_funding_time,
-                    timestamp=funding[
-                        enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value
-                    ],
-                )
+                    last_funding_time=funding[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
                 return next_funding_time
         except (errors.NotSupported, NotImplementedError) as ne:
-            raise ne
+            self.logger.exception(ne, True, f"get_funding_rate is not supported by "
+                                            f"{self.channel.exchange_manager.exchange.name} : {ne}")
         except Exception as e:
-            self.logger.exception(e, True, f"Fail to update funding rate : {e}")
+            self.logger.error(f"Fail to update funding rate on {self.channel.exchange_manager.exchange.name} : {e}")
         return None
 
-    def _should_run(self) -> bool:
+    async def _push_funding(self, symbol, funding_rate, next_funding_time=None, last_funding_time=None) -> None:
+        """
+        Push funding data to channel
+        :param symbol: the funding symbol
+        :param funding_rate: the funding rate
+        :param next_funding_time: the next funding time
+        :param last_funding_time: the last funding time
+        """
+        if last_funding_time is None:
+            last_funding_time = self.channel.exchange_manager.exchange.get_exchange_current_time()
+        if next_funding_time is None:
+            next_funding_time = last_funding_time + self.FUNDING_REFRESH_TIME_MAX
+        await self.push(
+            symbol=symbol,
+            funding_rate=funding_rate,
+            next_funding_time=next_funding_time,
+            timestamp=last_funding_time,
+        )
+
+    def _should_run(self):
         """
         Check if the funding update should run
         :return: the check result
         """
         if not self.channel.exchange_manager.is_future:
             return False
-        return (
-            not self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE
-            and not self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
+        return not (
+                self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE
+                or self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
         )
+
+    def _get_time_until_next_funding(self, next_funding_time):
+        """
+        Calculates the time between now and the next funding time (should not be > FUNDING_REFRESH_TIME_MAX)
+        :param next_funding_time: the next funding time
+        :return:
+        """
+        should_sleep_time = next_funding_time - self.channel.exchange_manager.exchange.get_exchange_current_time()
+        return (
+            should_sleep_time
+            if should_sleep_time < self.FUNDING_REFRESH_TIME_MAX
+            else self.FUNDING_REFRESH_TIME
+        )
+
+    async def stop(self) -> None:
+        """
+        Stop producer by stopping fetch_funding_job
+        """
+        await super().stop()
+        if not self._should_run():
+            return
+        self.fetch_funding_job.stop()
 
     async def resume(self) -> None:
         """
-        Resume updater process
+        Resume producer by restarting fetch_funding_job
         """
+        await super().resume()
         if not self._should_run():
             return
-        await super().resume()
         if not self.is_running:
             await self.run()
