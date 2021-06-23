@@ -79,12 +79,12 @@ class TickerUpdater(ticker_channel.TickerProducer):
         try:
             # at least require close, volume and timestamp
             return ticker and \
-                all(ticker[field] is not None
-                    for field in (
-                        enums.ExchangeConstantsTickersColumns.CLOSE.value,
-                        enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value,
-                        enums.ExchangeConstantsTickersColumns.TIMESTAMP.value
-                    ))
+                   all(ticker[field] is not None
+                       for field in (
+                           enums.ExchangeConstantsTickersColumns.CLOSE.value,
+                           enums.ExchangeConstantsTickersColumns.BASE_VOLUME.value,
+                           enums.ExchangeConstantsTickersColumns.TIMESTAMP.value
+                       ))
         except KeyError:
             return False
 
@@ -129,8 +129,10 @@ class TickerUpdater(ticker_channel.TickerProducer):
 
     def _should_use_future(self):
         return self.channel.exchange_manager.is_future and \
-               (self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
-                or self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER)
+               (
+                       self.channel.exchange_manager.exchange.FUNDING_IN_TICKER
+                       or self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER
+               )
 
     async def parse_future_data(self, symbol: str, ticker: dict):
         if self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER:

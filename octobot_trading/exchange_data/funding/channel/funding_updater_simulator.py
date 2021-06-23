@@ -15,9 +15,30 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.exchange_data.funding.channel.funding_updater as funding_updater
+import octobot_trading.util as util
 
 
 class FundingUpdaterSimulator(funding_updater.FundingUpdater):
     """
-    The Funding Update Simulator fetch the exchange funding rate and send it to the Funding Channel
+    The Funding Update Simulator simulates the exchange funding rate and send it to the Funding Channel
     """
+    def __init__(self, channel):
+        super().__init__(channel)
+        self.time_consumer = None
+
+    async def start(self):
+        await self.resume()
+
+    async def handle_timestamp(self, timestamp, **kwargs):
+        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            # TODO funding_rate ?
+            await self._push_funding(symbol=pair, funding_rate=0, last_funding_time=timestamp)
+
+    async def pause(self):
+        await util.pause_time_consumer(self)
+
+    async def stop(self):
+        await util.stop_and_pause(self)
+
+    async def resume(self):
+        await util.resume_time_consumer(self, self.handle_timestamp)

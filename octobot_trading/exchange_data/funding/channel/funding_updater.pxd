@@ -15,7 +15,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 cimport octobot_trading.exchange_data.funding.channel.funding as funding_channel
+cimport octobot_commons.async_job as async_job
 
 
 cdef class FundingUpdater(funding_channel.FundingProducer):
-    pass
+    cdef async_job.AsyncJob fetch_funding_job
+
+    cdef bint _should_run(self)
+    cdef int _get_time_until_next_funding(self, int next_funding_time)
