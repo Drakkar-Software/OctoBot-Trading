@@ -25,3 +25,4 @@ cdef class PositionsUpdater(positions_channel.PositionsProducer):
     cdef async_job.AsyncJob position_update_job
 
     cdef bint _should_run(self)
+    cdef bint _should_push_mark_price(self)

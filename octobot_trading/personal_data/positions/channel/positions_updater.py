@@ -22,6 +22,7 @@ import octobot_trading.errors as errors
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.channel.positions as positions_channel
 import octobot_trading.constants as constants
+import octobot_trading.exchange_channel as exchanges_channel
 
 
 class PositionsUpdater(positions_channel.PositionsProducer):
@@ -129,7 +130,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 open_positions += positions
 
         if open_positions:
-            await self.push(positions=open_positions, is_liquidated=False)
+            await self._push_open_positions(open_positions)
 
     def _is_valid_position(self, position_dict):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
@@ -143,7 +144,23 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         ]
 
         if open_positions:
-            await self.push(positions=open_positions, is_liquidated=False)
+            await self._push_open_positions(open_positions)
+
+    async def _push_open_positions(self, open_positions):
+        await self.push(positions=open_positions, is_liquidated=False)
+
+        if self._should_push_mark_price():
+            for position in open_positions:
+                await self.extract_mark_price(position)
+
+    async def extract_mark_price(self, position_dict: dict):
+        try:
+            await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL,
+                                             self.channel.exchange_manager.id).get_internal_producer(). \
+                push(symbol=position_dict[enums.ExchangeConstantsPositionColumns.SYMBOL.value],
+                     mark_price=position_dict[enums.ExchangeConstantsPositionColumns.MARK_PRICE.value])
+        except Exception as e:
+            self.logger.exception(e, True, f"Fail to update mark price from position : {e}")
 
     async def update_position_from_exchange(self, position,
                                             should_notify=False,
@@ -180,6 +197,9 @@ class PositionsUpdater(positions_channel.PositionsProducer):
             self.logger.debug(f"Received update for {position} on {exchange_name}: {raw_position}")
             await self.channel.exchange_manager.exchange_personal_data.handle_position_update_from_raw(
                 position.position_id, raw_position, should_notify=should_notify)
+
+    def _should_push_mark_price(self):
+        return self.channel.exchange_manager.exchange.MARK_PRICE_IN_POSITION
 
     async def stop(self) -> None:
         """
