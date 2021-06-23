@@ -44,10 +44,17 @@ async def _create_websocket(exchange_manager, websocket_class_name, socket_manag
     try:
         exchange_manager.exchange_web_socket = socket_manager.get_websocket_client(exchange_manager.config,
                                                                                    exchange_manager)
-        await _init_websocket(exchange_manager)
-        exchange_manager.logger.info(f"{socket_manager.get_name()} connected to {exchange_manager.exchange.name}")
+        if exchange_manager.is_valid_account:
+            await _init_websocket(exchange_manager)
+            exchange_manager.logger.info(f"{socket_manager.get_name()} connected to {exchange_manager.exchange.name}")
+        else:
+            exchange_manager.logger.error(f"Impossible start websockets for {exchange_manager.exchange.name}: "
+                                          f"incompatible account")
+            exchange_manager.exchange_web_socket = None
+            exchange_manager.has_websocket = False
     except Exception as e:
-        exchange_manager.logger.error(f"Fail to init websocket for {websocket_class_name} : {e}")
+        exchange_manager.logger.error(f"Fail to init websocket for {websocket_class_name} "
+                                      f"({exchange_manager.exchange.name}): {e}")
         exchange_manager.exchange_web_socket = None
         exchange_manager.has_websocket = False
         raise e
