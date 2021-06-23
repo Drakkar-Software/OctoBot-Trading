@@ -56,6 +56,8 @@ cdef class ExchangeManager(util.Initializable):
     cdef public abstract_exchange.AbstractExchange exchange
     cdef public abstract_websocket.AbstractWebsocketExchange exchange_web_socket
     cdef public exchange_config_data.ExchangeConfig exchange_config
+    cdef public object exchange_backend
+    cdef public bint is_valid_account
     cdef public object exchange_symbols_data
     cdef public object exchange_personal_data
 

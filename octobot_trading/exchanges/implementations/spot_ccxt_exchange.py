@@ -78,14 +78,15 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     async def _create_specific_order(self, order_type, symbol, quantity, price=None):
         created_order = None
+        params = self.exchange_manager.exchange_backend.get_orders_parameters(None)
         if order_type == enums.TraderOrderType.BUY_MARKET:
-            created_order = await self.connector.client.create_market_buy_order(symbol, quantity)
+            created_order = await self.connector.client.create_market_buy_order(symbol, quantity, params=params)
         elif order_type == enums.TraderOrderType.BUY_LIMIT:
-            created_order = await self.connector.client.create_limit_buy_order(symbol, quantity, price)
+            created_order = await self.connector.client.create_limit_buy_order(symbol, quantity, price, params=params)
         elif order_type == enums.TraderOrderType.SELL_MARKET:
-            created_order = await self.connector.client.create_market_sell_order(symbol, quantity)
+            created_order = await self.connector.client.create_market_sell_order(symbol, quantity, params=params)
         elif order_type == enums.TraderOrderType.SELL_LIMIT:
-            created_order = await self.connector.client.create_limit_sell_order(symbol, quantity, price)
+            created_order = await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS:
             created_order = None
         elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:

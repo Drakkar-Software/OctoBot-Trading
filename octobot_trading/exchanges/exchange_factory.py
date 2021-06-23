@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import trading_backend
 
 import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
@@ -51,6 +52,8 @@ async def create_real_exchange(exchange_manager) -> None:
 
     try:
         await exchange_manager.exchange.initialize()
+        _create_exchange_backend(exchange_manager)
+        await _initialize_exchange_backend(exchange_manager)
     except errors.AuthenticationError:
         exchange_manager.logger.error("Authentication error, retrying without authentication...")
         exchange_manager.without_auth = True
@@ -67,6 +70,23 @@ async def initialize_real_exchange(exchange_manager):
         # search for websocket
         if exchanges.check_web_socket_config(exchange_manager.config, exchange_manager.exchange.name):
             await exchanges.search_and_create_websocket(exchange_manager)
+
+
+def _create_exchange_backend(exchange_manager):
+    try:
+        exchange_manager.exchange_backend = trading_backend.exchange_factory.create_exchange_backend(
+            exchange_manager.exchange
+        )
+    except Exception as e:
+        exchange_manager.logger.exception(e, True, f"Error when creating exchange backend: {e}")
+
+
+async def _initialize_exchange_backend(exchange_manager):
+    if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated():
+        exchange_manager.is_valid_account, message = await exchange_manager.exchange_backend.is_valid_account()
+        if not exchange_manager.is_valid_account:
+            exchange_manager.logger.error(f"Incompatible {exchange_manager.exchange.name} account to use websockets: "
+                                          f"{message}")
 
 
 async def _create_rest_exchange(exchange_manager) -> None:
