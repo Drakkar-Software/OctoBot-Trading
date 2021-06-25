@@ -109,28 +109,28 @@ class Position(util.Initializable):
                 self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
             self.timestamp = self.creation_time
 
-        if self._should_change(self.quantity, quantity):
+        if self._should_change(self.quantity, float(quantity)):
             self.quantity = float(quantity)
             self._switch_side_if_necessary()
             changed = True
 
-        if self._should_change(self.value, value):
+        if self._should_change(self.value, float(value)):
             self.value = float(value)
             changed = True
 
-        if self._should_change(self.margin, margin):
+        if self._should_change(self.margin, float(margin)):
             self.margin = float(margin)
             changed = True
 
-        if self._should_change(self.unrealised_pnl, unrealised_pnl):
+        if self._should_change(self.unrealised_pnl, float(unrealised_pnl)):
             self.unrealised_pnl = float(unrealised_pnl)
             changed = True
 
-        if self._should_change(self.realised_pnl, realised_pnl):
+        if self._should_change(self.realised_pnl, float(realised_pnl)):
             self.realised_pnl = float(realised_pnl)
             changed = True
 
-        if self._should_change(self.leverage, leverage):
+        if self._should_change(self.leverage, int(leverage)):
             self.leverage = int(leverage)
             changed = True
 
@@ -142,13 +142,13 @@ class Position(util.Initializable):
 
             self.margin_type = margin_type
 
-        if self._should_change(self.entry_price, entry_price):
+        if self._should_change(self.entry_price, float(entry_price)):
             self.entry_price = float(entry_price)
 
-        if self._should_change(self.mark_price, mark_price):
+        if self._should_change(self.mark_price, float(mark_price)):
             self.mark_price = float(mark_price)
 
-        if self._should_change(self.liquidation_price, liquidation_price):
+        if self._should_change(self.liquidation_price, float(liquidation_price)):
             self.liquidation_price = float(liquidation_price)
 
         if self._should_change(self.status.value, status):
