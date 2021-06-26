@@ -82,11 +82,18 @@ def _create_exchange_backend(exchange_manager):
 
 
 async def _initialize_exchange_backend(exchange_manager):
-    if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated():
-        exchange_manager.is_valid_account, message = await exchange_manager.exchange_backend.is_valid_account()
-        if not exchange_manager.is_valid_account:
-            exchange_manager.logger.error(f"Incompatible {exchange_manager.exchange.name} account to use websockets: "
-                                          f"{message}")
+    if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated() \
+            and not exchange_manager.is_trader_simulated:
+        try:
+            exchange_manager.is_valid_account, message = await exchange_manager.exchange_backend.is_valid_account()
+            if not exchange_manager.is_valid_account:
+                exchange_manager.logger.error(
+                    f"Incompatible {exchange_manager.exchange.name.capitalize()} account to use websockets: {message}. "
+                    f"OctoBot relies on exchanges profits sharing to remain 100% free, please create a "
+                    f"new {exchange_manager.exchange.name.capitalize()} account to support the project.")
+        except Exception as e:
+            exchange_manager.is_valid_account = False
+            exchange_manager.logger.exception(e, True, f"Error when loading exchange account: {e}")
 
 
 async def _create_rest_exchange(exchange_manager) -> None:
