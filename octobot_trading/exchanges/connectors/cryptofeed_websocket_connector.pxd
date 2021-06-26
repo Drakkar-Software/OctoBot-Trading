@@ -18,6 +18,11 @@ cimport octobot_trading.exchanges.abstract_websocket_exchange as abstract_websoc
 
 cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     cdef public dict callback_by_feed
+    cdef public dict callbacks
+
+    cdef public list channels
+
+    cdef public object candle_callback
 
     cpdef str get_pair_from_exchange(self, str pair)
     cpdef str get_exchange_pair(self, str pair)
@@ -29,3 +34,4 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef void _filter_exchange_symbols(self, object exchange)
     cdef void _filter_exchange_time_frames(self, object exchange)
     cdef void subscribe_candle_feed(self, list exchange_symbols)
+    cdef void _subscribe_all_pairs_feed(self)

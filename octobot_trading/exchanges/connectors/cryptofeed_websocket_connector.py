@@ -31,7 +31,8 @@ import octobot_trading.enums as trading_enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 import octobot_trading.exchanges.connectors.abstract_websocket_connector as abstract_websocket_connector
 from octobot_trading.enums import WebsocketFeeds as Feeds
-from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC
+from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC, \
+    ExchangeConstantsTickersColumns as Ectc
 
 
 class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
@@ -42,6 +43,11 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     def __init__(self, config: object, exchange_manager: object):
         super().__init__(config, exchange_manager)
+        self.channels = []
+
+        self.callbacks = {}
+        self.candle_callback = None
+
         self.fix_signal_handler()
         self.fix_logger()
         self.client = cryptofeed.FeedHandler()
@@ -49,7 +55,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
         self.callback_by_feed = {
             cryptofeed_constants.TRADES: cryptofeed_callbacks.TradeCallback(self.trade),
-            # cryptofeed_constants.TICKER: cryptofeed_callbacks.TickerCallback(self.ticker),
+            cryptofeed_constants.TICKER: cryptofeed_callbacks.TickerCallback(self.ticker),
             cryptofeed_constants.CANDLES: cryptofeed_callbacks.CandleCallback(self.candle),  # pylint: disable=E1101
             # cryptofeed_constants.L2_BOOK: cryptofeed_callbacks.BookCallback(self.book),
             # cryptofeed_constants.L3_BOOK: cryptofeed_callbacks.BookCallback(self.book),
@@ -90,36 +96,37 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         cryptofeed.feedhandler.SIGNALS = ()
 
     def subscribe_candle_feed(self, exchange_symbols):
-        candle_callback = self.callback_by_feed[self.EXCHANGE_FEEDS[Feeds.CANDLE]]
-
         for time_frame in self.time_frames:
             self.client.add_feed(self.get_feed_name(),
                                  candle_interval=time_frame.value,
                                  candle_closed_only=False,
                                  symbols=exchange_symbols,
                                  log_message_on_error=True,
-                                 channels=[cryptofeed_constants.CANDLES],  # pylint: disable=E1101
-                                 callbacks={cryptofeed_constants.CANDLES: candle_callback})  # pylint: disable=E1101
+                                 channels=[cryptofeed_constants.CANDLES],
+                                 callbacks={cryptofeed_constants.CANDLES: self.candle_callback})
             self.logger.debug(f"Subscribed to the {time_frame.value} time frame for {', '.join(exchange_symbols)}")
 
     def subscribe_feeds(self):
-        if self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and \
-                self.EXCHANGE_FEEDS.get(Feeds.CANDLE) != Feeds.UNSUPPORTED.value:
+        if self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and self.EXCHANGE_FEEDS.get(Feeds.CANDLE) != Feeds.UNSUPPORTED.value:
+            self.candle_callback = self.callback_by_feed[self.EXCHANGE_FEEDS[Feeds.CANDLE]]
             self.subscribe_candle_feed(self.pairs)
 
         # drop unsupported channels
         self.channels = [channel for channel in self.channels if channel not in [Feeds.UNSUPPORTED.value,
                                                                                  self.EXCHANGE_FEEDS.get(
                                                                                      Feeds.CANDLE)]]
-        callbacks = {
+        self.callbacks = {
             channel: self.callback_by_feed[channel]
             for channel in self.channels
             if self.callback_by_feed.get(channel)
         }
+        self._subscribe_all_pairs_feed()
+
+    def _subscribe_all_pairs_feed(self):
         self.client.add_feed(self.get_feed_name(),
                              symbols=self.pairs,
                              channels=self.channels,
-                             callbacks=callbacks)
+                             callbacks=self.callbacks)
         for channel in self.channels:
             self.logger.debug(f"Subscribed to {channel}")
 
@@ -173,12 +180,12 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def ticker(self, feed, symbol, bid, ask, timestamp, receipt_timestamp):
         if symbol:
             symbol = self.get_pair_from_exchange(symbol)
-            await self.push_to_channel(trading_constants.ORDER_BOOK_TICKER_CHANNEL,
-                                       symbol=symbol,
-                                       ask_quantity=ask,
-                                       ask_price=None,
-                                       bid_quantity=bid,
-                                       bid_price=None)
+            # await self.push_to_channel(trading_constants.ORDER_BOOK_TICKER_CHANNEL,
+            #                            symbol=symbol,
+            #                            ask_quantity=None,
+            #                            ask_price=ask,
+            #                            bid_quantity=None,
+            #                            bid_price=bid)
 
     async def trade(self, feed, symbol, order_id, timestamp, side, amount, price, receipt_timestamp):
         if symbol:
@@ -237,6 +244,20 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                 float(close_price),
                 float(volume),
             ]
+            ticker = {
+               Ectc.HIGH.value: float(high_price),
+               Ectc.LOW.value: float(low_price),
+               Ectc.BID.value: None,
+               Ectc.BID_VOLUME.value: None,
+               Ectc.ASK.value: None,
+               Ectc.ASK_VOLUME.value: None,
+               Ectc.OPEN.value: float(open_price),
+               Ectc.CLOSE.value: float(close_price),
+               Ectc.LAST.value: float(close_price),
+               Ectc.PREVIOUS_CLOSE.value: None,
+               Ectc.BASE_VOLUME.value: float(volume),
+               Ectc.TIMESTAMP.value: timestamp,
+           }
             if not closed:
                 await self.push_to_channel(trading_constants.KLINE_CHANNEL,
                                            time_frame=time_frame,
@@ -247,6 +268,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                            time_frame=time_frame,
                                            symbol=symbol,
                                            candle=candle)
+            await self.push_to_channel(trading_constants.TICKER_CHANNEL,
+                                       symbol=symbol,
+                                       ticker=ticker)
 
     async def delta(self, feed, symbol, delta, timestamp, receipt_timestamp):
         pass
@@ -292,6 +316,19 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         except Exception:
             self.logger.error(f"Failed to get market of {pair}")
         return ""
+
+    async def remove_feed(self, feed) -> None:
+        """
+        Stops and removes a feed from running feeds
+        :param feed: the feed instance to remove
+        """
+        try:
+            feed.stop()
+            self.client.feeds.remove(feed)
+        except ValueError as ve:
+            self.logger.error(f"Failed to remove feed from the list of feed : {ve}")
+        except Exception as e:
+            self.logger.error(f"Failed remove feed : {e}")
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
