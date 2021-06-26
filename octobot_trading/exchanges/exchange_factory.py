@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import trading_backend
+import ccxt
 
 import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
@@ -91,6 +92,10 @@ async def _initialize_exchange_backend(exchange_manager):
                     f"Incompatible {exchange_manager.exchange.name.capitalize()} account to use websockets: {message}. "
                     f"OctoBot relies on exchanges profits sharing to remain 100% free, please create a "
                     f"new {exchange_manager.exchange.name.capitalize()} account to support the project.")
+        except ccxt.InvalidNonce as err:
+            exchanges.log_time_sync_error(exchange_manager.logger, exchange_manager.exchange.name,
+                                          err, "account details")
+            exchange_manager.is_valid_account = False
         except Exception as e:
             exchange_manager.is_valid_account = False
             exchange_manager.logger.exception(e, True, f"Error when loading exchange account: {e}")

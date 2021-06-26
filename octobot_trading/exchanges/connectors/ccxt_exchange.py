@@ -174,10 +174,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             balance.pop(enums.ExchangeConstantsCCXTColumns.TIMESTAMP.value, None)
             return balance
 
-        except ccxt.InvalidNonce as e:
-            self.logger.error(f"Error when loading {self.name} real trader portfolio: {e}. "
-                              f"To fix this, please synchronize your computer's clock. ")
-            raise e
+        except ccxt.InvalidNonce as err:
+            exchanges.log_time_sync_error(self.logger, self.name, err, "real trader portfolio")
+            raise err
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
 
