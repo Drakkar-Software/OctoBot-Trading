@@ -75,6 +75,10 @@ def get_exchange_manager_id(exchange_manager) -> str:
     return exchange_manager.id
 
 
+def get_exchange_manager_is_sandboxed(exchange_manager) -> bool:
+    return exchange_manager.is_sandboxed
+
+
 def get_exchange_current_time(exchange_manager) -> float:
     return exchange_manager.exchange.get_exchange_current_time()
 
