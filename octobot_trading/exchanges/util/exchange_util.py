@@ -73,3 +73,17 @@ def get_order_side(order_type):
     return enums.TradeOrderSide.BUY.value if order_type in (enums.TraderOrderType.BUY_LIMIT,
                                                             enums.TraderOrderType.BUY_MARKET) \
         else enums.TradeOrderSide.SELL.value
+
+
+def log_time_sync_error(logger, exchange_name, error, details):
+    docs_url = "https://docs.octobot.online"
+    try:
+        import octobot.constants
+        docs_url = octobot.constants.OCTOBOT_DOCS_URL
+    except ImportError:
+        pass
+    logger.error(
+        f"Time synchronization error when loading your {exchange_name.capitalize()} {details}. "
+        f"To fix this, please synchronize your computer's clock. See "
+        f"{docs_url}/pages/Installation-Troubleshoot.html#time-synchronization "
+        f"Error: {error}")

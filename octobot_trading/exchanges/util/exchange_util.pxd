@@ -19,6 +19,7 @@ cpdef object get_margin_exchange_class(str exchange_name, object tentacles_setup
 cpdef object get_future_exchange_class(str exchange_name, object tentacles_setup_config)
 cpdef object get_spot_exchange_class(str exchange_name, object tentacles_setup_config)
 cpdef str get_order_side(object order_type)
+cpdef void log_time_sync_error(object logger, str exchange_name, object error, str details)
 
 cdef object search_exchange_class_from_exchange_name(object exchange_class,
                                                      str exchange_name,
