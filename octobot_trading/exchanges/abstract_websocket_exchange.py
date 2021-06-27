@@ -163,13 +163,19 @@ class AbstractWebsocketExchange:
             self.books[symbol] = exchange_data.OrderBookManager()
             return self.books[symbol]
 
-    def get_pair_from_exchange(self, pair: str) -> str:
+    def get_pair_from_exchange(self, pair):
         raise NotImplementedError("get_pair_from_exchange is not implemented")
 
-    def get_exchange_pair(self, pair: str) -> str:
+    def get_exchange_pair(self, pair):
         raise NotImplementedError("get_exchange_pair is not implemented")
 
-    def get_max_handled_pair_with_time_frame(self) -> int:
+    def add_pair(self, pair):
+        raise NotImplementedError("add_pair is not implemented")
+
+    def add_time_frame(self, time_frame):
+        raise NotImplementedError("add_time_frame is not implemented")
+
+    def get_max_handled_pair_with_time_frame(self):
         """
         :return: the maximum number of simultaneous pairs * time_frame that this exchange can handle.
         """
