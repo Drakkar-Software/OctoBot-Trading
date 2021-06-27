@@ -56,7 +56,7 @@ class CCXTWebsocketConnector(abstract_websocket_connector.AbstractWebsocketConne
     def get_ccxt_async_client(cls):
         raise NotImplementedError("get_ccxt_async_client is not implemented")
 
-    def get_pair_from_exchange(self, pair: str) -> str:
+    def get_pair_from_exchange(self, pair):
         try:
             return self.ccxt_client.market(pair)["symbol"]
         except ccxt.errors.BadSymbol:
@@ -66,7 +66,7 @@ class CCXTWebsocketConnector(abstract_websocket_connector.AbstractWebsocketConne
                 self.logger.error(f"Failed to get market of {pair}")
                 return None
 
-    def get_exchange_pair(self, pair: str) -> str:
+    def get_exchange_pair(self, pair):
         if pair in self.ccxt_client.symbols:
             try:
                 return self.ccxt_client.market(pair)["id"]

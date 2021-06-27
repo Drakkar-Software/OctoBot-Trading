@@ -47,9 +47,14 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
         self.callbacks = {}
         self.candle_callback = None
+        self.cryptofeed_exchange = None
 
-        self.fix_signal_handler()
-        self.fix_logger()
+        self.filtered_pairs = []
+        self.filtered_timeframes = []
+
+        self._fix_signal_handler()
+        self._fix_logger()
+
         self.client = cryptofeed.FeedHandler()
         commons_logging.set_logging_level(self.CRYPTOFEED_LOGGERS, logging.WARNING)
 
@@ -70,100 +75,22 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         }
         self._set_async_callbacks()
 
-    def _set_async_callbacks(self):
-        """
-        Prevent `inspect.iscoroutinefunction` to return False when callback are cythonized
-        """
-        for callback in self.callback_by_feed.values():
-            callback.is_async = True
+    """
+    Abstract methods
+    """
 
     @classmethod
     def get_feed_name(cls):
         raise NotImplementedError("get_feed_name not implemented")
 
-    def fix_logger(self):
-        """
-        Replace cryptofeed feedhandler logger because it writes logs into "cryptofeed.log" file
-        """
-        cryptofeed.feedhandler.LOG = self.logger
-        cryptofeed.connection_handler.LOG = self.logger
-
-    def fix_signal_handler(self):
-        """
-        Websocket are started in a new thread thus signal handle cannot be used
-        add_signal_handler() can only be called from the main thread
-        """
-        cryptofeed.feedhandler.SIGNALS = ()
-
-    def subscribe_candle_feed(self, exchange_symbols):
-        for time_frame in self.time_frames:
-            self.client.add_feed(self.get_feed_name(),
-                                 candle_interval=time_frame.value,
-                                 candle_closed_only=False,
-                                 symbols=exchange_symbols,
-                                 log_message_on_error=True,
-                                 channels=[cryptofeed_constants.CANDLES],
-                                 callbacks={cryptofeed_constants.CANDLES: self.candle_callback})
-            self.logger.debug(f"Subscribed to the {time_frame.value} time frame for {', '.join(exchange_symbols)}")
-
-    def subscribe_feeds(self):
-        if self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and self.EXCHANGE_FEEDS.get(Feeds.CANDLE) != Feeds.UNSUPPORTED.value:
-            self.candle_callback = self.callback_by_feed[self.EXCHANGE_FEEDS[Feeds.CANDLE]]
-            self.subscribe_candle_feed(self.pairs)
-
-        # drop unsupported channels
-        self.channels = [channel for channel in self.channels if channel not in [Feeds.UNSUPPORTED.value,
-                                                                                 self.EXCHANGE_FEEDS.get(
-                                                                                     Feeds.CANDLE)]]
-        self.callbacks = {
-            channel: self.callback_by_feed[channel]
-            for channel in self.channels
-            if self.callback_by_feed.get(channel)
-        }
-        self._subscribe_all_pairs_feed()
-
-    def _subscribe_all_pairs_feed(self):
-        self.client.add_feed(self.get_feed_name(),
-                             symbols=self.pairs,
-                             channels=self.channels,
-                             callbacks=self.callbacks)
-        for channel in self.channels:
-            self.logger.debug(f"Subscribed to {channel}")
-
-    def _filter_exchange_pairs_and_timeframes(self):
-        exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](
-            config=self.client.config
-        )
-        self._filter_exchange_symbols(exchange)
-        self._filter_exchange_time_frames(exchange)
-
-    def _filter_exchange_symbols(self, exchange):
-        filtered_pairs = []
-        for pair in self.pairs:
-            if pair in exchange.normalized_symbol_mapping:
-                filtered_pairs.append(pair)
-            else:
-                self.logger.error(f"{self.get_pair_from_exchange(pair)} pair is not supported by this "
-                                  f"exchange's websocket")
-        self.pairs = filtered_pairs
-
-    def _filter_exchange_time_frames(self, exchange):
-        try:
-            filtered_time_frames = []
-            for time_frame in self.time_frames:
-                if time_frame.value in exchange.valid_candle_intervals:
-                    filtered_time_frames.append(time_frame)
-                else:
-                    self.logger.error(f"{time_frame.value} time frame is not supported by this exchange's websocket")
-            self.time_frames = filtered_time_frames
-        except AttributeError:
-            # exchange.valid_candle_intervals is not implemented in each cryptofeed exchange
-            pass
+    """
+    Abstract implementations
+    """
 
     def start(self):
         try:
             self._filter_exchange_pairs_and_timeframes()
-            self.subscribe_feeds()
+            self._subscribe_feeds()
         except Exception as e:
             self.logger.exception(e, True, f"Failed to subscribe when creating websocket feed : {e}")
         try:
@@ -176,6 +103,214 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             self.logger.error(f"Failed to start websocket feed : {e}")
         self.logger.warning("Websocket master thread terminated, this should not happen during bot run"
                             " with a valid configuration")
+
+    def stop(self):
+        # let the thread stop by itself
+        # self.client.stop()
+        pass
+
+    def close(self):
+        # prevent FeedHandler : "run the AsyncIO event loop one last time"
+        # self.client.close()
+        pass
+
+    def add_pair(self, pair):
+        if self._is_supported_pair(pair):
+            self.filtered_pairs.append(pair)
+        else:
+            self.logger.error(f"{self.get_pair_from_exchange(pair)} pair is not supported by this exchange's websocket")
+
+    def add_time_frame(self, time_frame):
+        try:
+            if time_frame.value in self.cryptofeed_exchange.valid_candle_intervals:
+                self.filtered_timeframes.append(time_frame)
+            else:
+                self.logger.error(f"{time_frame.value} time frame is not supported by this exchange's websocket")
+        except AttributeError:
+            # exchange.valid_candle_intervals is not implemented in each cryptofeed exchange
+            pass
+
+    async def reconnect(self):
+        """
+        Removes and stops all running feeds an recreate them
+        """
+        self._remove_all_feeds()
+
+        if self.candle_callback is not None:
+            self._subscribe_candle_feed()
+        self._subscribe_all_pairs_feed()
+
+    @classmethod
+    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
+        return cls.get_name() == exchange_candidate_name
+
+    def get_pair_from_exchange(self, pair):
+        try:
+            return symbol_util.convert_symbol(
+                symbol=pair,
+                symbol_separator=self.CRYPTOFEED_DEFAULT_MARKET_SEPARATOR,
+                new_symbol_separator=octobot_commons.MARKET_SEPARATOR,
+                should_uppercase=True,
+            )
+        except Exception:
+            self.logger.error(f"Failed to get market of {pair}")
+        return ""
+
+    def get_exchange_pair(self, pair) -> str:
+        try:
+            return symbol_util.convert_symbol(
+                symbol=pair,
+                symbol_separator=octobot_commons.MARKET_SEPARATOR,
+                new_symbol_separator=self.CRYPTOFEED_DEFAULT_MARKET_SEPARATOR,
+                should_uppercase=True,
+            )
+        except Exception:
+            self.logger.error(f"Failed to get market of {pair}")
+        return ""
+
+    """
+    Private methods
+    """
+
+    def _subscribe_feeds(self):
+        """
+        Subscribe time frame related feeds and time frame unrelated feeds
+        """
+        if self._should_run_candle_feed():
+            self.candle_callback = self.callback_by_feed[self.EXCHANGE_FEEDS[Feeds.CANDLE]]
+            self._subscribe_candle_feed()
+
+        # drop unsupported channels
+        self.channels = [channel for channel in self.channels if channel not in [Feeds.UNSUPPORTED.value,
+                                                                                 self.EXCHANGE_FEEDS.get(
+                                                                                     Feeds.CANDLE)]]
+        self.callbacks = {
+            channel: self.callback_by_feed[channel]
+            for channel in self.channels
+            if self.callback_by_feed.get(channel)
+        }
+        self._subscribe_all_pairs_feed()
+
+    def _subscribe_candle_feed(self):
+        """
+        Subscribes a new candle feed for each time frame
+        """
+        for time_frame in self.time_frames:
+            self.client.add_feed(self.get_feed_name(),
+                                 candle_interval=time_frame.value,
+                                 candle_closed_only=False,
+                                 symbols=self.filtered_pairs,
+                                 log_message_on_error=True,
+                                 channels=[cryptofeed_constants.CANDLES],
+                                 callbacks={cryptofeed_constants.CANDLES: self.candle_callback})
+            self.logger.debug(f"Subscribed to the {time_frame.value} time frame for {', '.join(self.filtered_pairs)}")
+
+    def _subscribe_all_pairs_feed(self):
+        """
+        Subscribes all time frame unrelated feeds
+        """
+        self.client.add_feed(self.get_feed_name(),
+                             symbols=self.filtered_pairs,
+                             channels=self.channels,
+                             callbacks=self.callbacks)
+        for channel in self.channels:
+            self.logger.debug(f"Subscribed to {channel}")
+
+    def _filter_exchange_pairs_and_timeframes(self):
+        """
+        Instantiates cryptofeed exchange and populates self.filtered_pairs and self.filtered_timeframes
+        """
+        self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](
+            config=self.client.config
+        )
+        self._filter_exchange_symbols()
+        self._filter_exchange_time_frames()
+
+    def _filter_exchange_symbols(self):
+        """
+        Populates self.filtered_pairs from self.pairs when pair is supported by the cryptofeed exchange
+        """
+        for pair in self.pairs:
+            self.add_pair(pair)
+
+    def _filter_exchange_time_frames(self):
+        """
+        Populates self.filtered_timeframes from self.time_frames when time frame is supported by the cryptofeed exchange
+        """
+        for time_frame in self.time_frames:
+            self.add_time_frame(time_frame)
+
+    def _should_run_candle_feed(self):
+        return self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and self.EXCHANGE_FEEDS.get(
+            Feeds.CANDLE) != Feeds.UNSUPPORTED.value
+
+    def _is_supported_pair(self, pair):
+        return pair in self.cryptofeed_exchange.normalized_symbol_mapping
+
+    def _is_supported_time_frame(self, time_frame):
+        return time_frame.value in self.cryptofeed_exchange.valid_candle_intervals
+
+    def _convert_book_prices_to_orders(self, book_prices, book_side):
+        """
+        Convert a book_prices format : {PRICE_1: SIZE_1, PRICE_2: SIZE_2...}
+        to OctoBot's order book format
+        :param book_prices: an order book dictionary
+        :param book_side: a TradeOrderSide value
+        :return: the list of order book data converted
+        """
+        return [
+            {
+                ECOBIC.PRICE.value: float(order_price),
+                ECOBIC.SIZE.value: float(order_size),
+                ECOBIC.SIDE.value: book_side,
+            }
+            for order_price, order_size in book_prices.items()
+        ]
+
+    def _set_async_callbacks(self):
+        """
+        Prevent `inspect.iscoroutinefunction` to return False when callback are cythonized
+        """
+        for callback in self.callback_by_feed.values():
+            callback.is_async = True
+
+    def _remove_all_feeds(self):
+        """
+        Call remove_feed for each client feeds
+        """
+        for feed in self.client.feeds:
+            self._remove_feed(feed)
+
+    def _remove_feed(self, feed):
+        """
+        Stops and removes a feed from running feeds
+        :param feed: the feed instance to remove
+        """
+        try:
+            feed.stop()
+            self.client.feeds.remove(feed)
+        except ValueError as ve:
+            self.logger.error(f"Failed to remove feed from the list of feed : {ve}")
+        except Exception as e:
+            self.logger.error(f"Failed remove feed : {e}")
+
+    def _fix_signal_handler(self):
+        """
+        Websocket are started in a new thread thus signal handle cannot be used
+        add_signal_handler() can only be called from the main thread
+        """
+        cryptofeed.feedhandler.SIGNALS = ()
+
+    def _fix_logger(self):
+        """
+        Replace cryptofeed feedhandler logger because it writes logs into "cryptofeed.log" file
+        """
+        cryptofeed.feedhandler.LOG = self.logger
+        cryptofeed.connection_handler.LOG = self.logger
+
+    """
+    Callbacks
+    """
 
     async def ticker(self, feed, symbol, bid, ask, timestamp, receipt_timestamp):
         if symbol:
@@ -221,16 +356,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                        bids=book_instance.bids,
                                        update_order_book=False)
 
-    def _convert_book_prices_to_orders(self, book_prices, book_side):
-        return [
-            {
-                ECOBIC.PRICE.value: float(order_price),
-                ECOBIC.SIZE.value: float(order_size),
-                ECOBIC.SIDE.value: book_side,
-            }
-            for order_price, order_size in book_prices.items()
-        ]
-
     async def candle(self, feed, symbol, start, stop, interval, trades, open_price, close_price, high_price,
                      low_price, volume, closed, timestamp, receipt_timestamp):
         if symbol:
@@ -245,19 +370,20 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                 float(volume),
             ]
             ticker = {
-               Ectc.HIGH.value: float(high_price),
-               Ectc.LOW.value: float(low_price),
-               Ectc.BID.value: None,
-               Ectc.BID_VOLUME.value: None,
-               Ectc.ASK.value: None,
-               Ectc.ASK_VOLUME.value: None,
-               Ectc.OPEN.value: float(open_price),
-               Ectc.CLOSE.value: float(close_price),
-               Ectc.LAST.value: float(close_price),
-               Ectc.PREVIOUS_CLOSE.value: None,
-               Ectc.BASE_VOLUME.value: float(volume),
-               Ectc.TIMESTAMP.value: timestamp,
-           }
+                Ectc.HIGH.value: float(high_price),
+                Ectc.LOW.value: float(low_price),
+                Ectc.BID.value: None,
+                Ectc.BID_VOLUME.value: None,
+                Ectc.ASK.value: None,
+                Ectc.ASK_VOLUME.value: None,
+                Ectc.OPEN.value: float(open_price),
+                Ectc.CLOSE.value: float(close_price),
+                Ectc.LAST.value: float(close_price),
+                Ectc.PREVIOUS_CLOSE.value: None,
+                Ectc.BASE_VOLUME.value: float(volume),
+                Ectc.TIMESTAMP.value: timestamp,
+            }
+
             if not closed:
                 await self.push_to_channel(trading_constants.KLINE_CHANNEL,
                                            time_frame=time_frame,
@@ -292,54 +418,3 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     async def market_info(self, **kwargs):
         pass  # Coingecko only
-
-    def get_pair_from_exchange(self, pair) -> str:
-        try:
-            return symbol_util.convert_symbol(
-                symbol=pair,
-                symbol_separator=self.CRYPTOFEED_DEFAULT_MARKET_SEPARATOR,
-                new_symbol_separator=octobot_commons.MARKET_SEPARATOR,
-                should_uppercase=True,
-            )
-        except Exception:
-            self.logger.error(f"Failed to get market of {pair}")
-        return ""
-
-    def get_exchange_pair(self, pair) -> str:
-        try:
-            return symbol_util.convert_symbol(
-                symbol=pair,
-                symbol_separator=octobot_commons.MARKET_SEPARATOR,
-                new_symbol_separator=self.CRYPTOFEED_DEFAULT_MARKET_SEPARATOR,
-                should_uppercase=True,
-            )
-        except Exception:
-            self.logger.error(f"Failed to get market of {pair}")
-        return ""
-
-    async def remove_feed(self, feed) -> None:
-        """
-        Stops and removes a feed from running feeds
-        :param feed: the feed instance to remove
-        """
-        try:
-            feed.stop()
-            self.client.feeds.remove(feed)
-        except ValueError as ve:
-            self.logger.error(f"Failed to remove feed from the list of feed : {ve}")
-        except Exception as e:
-            self.logger.error(f"Failed remove feed : {e}")
-
-    @classmethod
-    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
-        return cls.get_name() == exchange_candidate_name
-
-    def stop(self):
-        # let the thread stop by itself
-        # self.client.stop()
-        pass
-
-    def close(self):
-        # prevent FeedHandler : "run the AsyncIO event loop one last time"
-        # self.client.close()
-        pass
