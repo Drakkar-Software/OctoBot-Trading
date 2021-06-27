@@ -170,5 +170,13 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         thread_util.stop_thread_pool_executor_non_gracefully(self.websocket_connectors_executors)
         self.websocket_connectors_executors = None
 
+    def add_pair(self, pair):
+        for websocket in self.websocket_connectors:
+            websocket.add_pair(pair)
+
+    def add_time_frame(self, time_frame):
+        for websocket in self.websocket_connectors:
+            websocket.add_time_frame(time_frame)
+
     def is_handling(self, feed_name):
         return feed_name in self.handled_feeds[feed_name] and self.handled_feeds[feed_name]

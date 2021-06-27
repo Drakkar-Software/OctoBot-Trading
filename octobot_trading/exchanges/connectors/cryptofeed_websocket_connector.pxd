@@ -20,18 +20,26 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef public dict callback_by_feed
     cdef public dict callbacks
 
-    cdef public list channels
+    cdef public list filtered_pairs
+    cdef public list filtered_timeframes
 
     cdef public object candle_callback
+    cdef public object cryptofeed_exchange
 
-    cpdef str get_pair_from_exchange(self, str pair)
-    cpdef str get_exchange_pair(self, str pair)
     cpdef void start(self)
     cpdef void _set_async_callbacks(self)
 
-    cdef void subscribe_feeds(self)
+    cdef void _subscribe_feeds(self)
+    cdef bint _is_supported_pair(self, pair)
+    cdef bint _is_supported_time_frame(self, object time_frame)
     cdef void _filter_exchange_pairs_and_timeframes(self)
-    cdef void _filter_exchange_symbols(self, object exchange)
-    cdef void _filter_exchange_time_frames(self, object exchange)
-    cdef void subscribe_candle_feed(self, list exchange_symbols)
+    cdef void _filter_exchange_symbols(self)
+    cdef void _filter_exchange_time_frames(self)
+    cdef void _subscribe_candle_feed(self)
     cdef void _subscribe_all_pairs_feed(self)
+    cdef bint _should_run_candle_feed(self)
+    cdef void _remove_all_feeds(self)
+    cdef void _remove_feed(self, object feed)
+    cdef void _fix_signal_handler(self)
+    cdef void _fix_logger(self)
+    cdef list _convert_book_prices_to_orders(self, dict book_prices, str book_side)
