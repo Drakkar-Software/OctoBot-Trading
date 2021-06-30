@@ -20,5 +20,3 @@ cimport octobot_trading.exchange_data.kline.channel.kline as kline_channel
 cdef class KlineUpdater(kline_channel.KlineProducer):
     cdef list tasks
     cdef int refresh_time
-
-    cdef __create_time_frame_kline_task(self, object time_frame)

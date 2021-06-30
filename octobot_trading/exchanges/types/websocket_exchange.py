@@ -104,7 +104,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         return cls.__name__
 
     @classmethod
-    def has_name(cls, exchange_manager: object) -> bool:
+    def has_name(cls, exchange_manager: object) -> bool:  # pylint: disable=arguments-renamed
         return cls.get_exchange_connector_class(exchange_manager) is not None
 
     def create_feeds(self):
