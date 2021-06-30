@@ -38,8 +38,8 @@ cdef class AbstractWebsocketExchange:
     cpdef object get_exchange_credentials(self)
     cpdef object get_book_instance(self, str symbol)
 
-    cpdef void add_pair(self, str pair)
-    cpdef void add_time_frame(self, object time_frame)
+    cpdef void add_pairs(self, list pairs)
+    cpdef void add_time_frames(self, list time_frames)
     cpdef void initialize(self, list currencies=*, list pairs=*, list time_frames=*, list channels=*)
 
     cpdef bint _should_authenticate(self)

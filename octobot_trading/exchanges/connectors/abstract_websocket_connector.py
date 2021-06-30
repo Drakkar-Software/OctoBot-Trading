@@ -121,6 +121,9 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
         self.stop()
         await self._connect()
 
+    async def reset(self):
+        await self.reconnect()
+
     def on_open(self):
         self.logger.info("Connected")
 

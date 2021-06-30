@@ -169,11 +169,11 @@ class AbstractWebsocketExchange:
     def get_exchange_pair(self, pair):
         raise NotImplementedError("get_exchange_pair is not implemented")
 
-    def add_pair(self, pair):
-        raise NotImplementedError("add_pair is not implemented")
+    def add_pairs(self, pairs):
+        raise NotImplementedError("add_pairs is not implemented")
 
-    def add_time_frame(self, time_frame):
-        raise NotImplementedError("add_time_frame is not implemented")
+    def add_time_frames(self, time_frames):
+        raise NotImplementedError("add_time_frames is not implemented")
 
     def get_max_handled_pair_with_time_frame(self):
         """

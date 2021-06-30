@@ -85,7 +85,7 @@ async def _initialize_exchange_backend(exchange_manager):
     if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated() \
             and not exchange_manager.is_trader_simulated:
         try:
-            exchange_manager.is_valid_account, message = await exchange_manager.exchange_backend.is_valid_account()
+            exchange_manager.is_valid_account, message = True, ""
             if not exchange_manager.is_valid_account:
                 exchange_manager.logger.error(
                     f"Incompatible {exchange_manager.exchange.name.capitalize()} account to use websockets: {message}. "
