@@ -17,6 +17,7 @@
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_trading.api as trading_api
 import octobot_trading.exchanges as exchanges
+import octobot_tentacles_manager.api as tentacles_manager_api
 
 
 async def create_test_exchange_manager(
@@ -24,13 +25,29 @@ async def create_test_exchange_manager(
         exchange_name: str,
         is_spot_only: bool = True,
         is_margin: bool = False,
-        is_future: bool = False) -> exchanges.ExchangeManager:
-    exchange_manager_instance = exchanges.ExchangeManager(config, exchange_name)
-    exchange_manager_instance.is_spot_only = is_spot_only
-    exchange_manager_instance.is_margin = is_margin
-    exchange_manager_instance.is_future = is_future
-    await exchange_manager_instance.initialize()
-    return exchange_manager_instance
+        is_future: bool = False,
+        rest_only: bool = False,
+        is_real: bool = True,
+        is_sandboxed: bool = False) -> exchanges.ExchangeManager:
+    builder = exchanges.create_exchange_builder_instance(config, exchange_name)
+    builder.disable_trading_mode()
+    builder.use_tentacles_setup_config(tentacles_manager_api.get_tentacles_setup_config())
+    if is_spot_only:
+        builder.is_spot_only()
+    if is_margin:
+        builder.is_margin()
+    if is_future:
+        builder.is_future()
+    if rest_only:
+        builder.is_rest_only()
+    if is_sandboxed:
+        builder.is_sandboxed(is_sandboxed)
+    if is_real:
+        builder.is_real()
+    else:
+        builder.is_simulated()
+    await builder.build()
+    return builder.exchange_manager
 
 
 async def stop_test_exchange_manager(exchange_manager_instance: exchanges.ExchangeManager):
