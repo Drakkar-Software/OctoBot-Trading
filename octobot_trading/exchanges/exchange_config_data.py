@@ -13,12 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import copy
+
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.constants as constants
 import octobot_commons.logging as logging
 import octobot_commons.errors as errors
 
+import octobot_trading.exchange_channel as exchange_channel
+import octobot_trading.constants as trading_constants
 import octobot_trading.util as util
 
 
@@ -32,12 +36,19 @@ class ExchangeConfig(util.Initializable):
 
         # dict of exchange supported pairs by enabled currencies from self.config
         self.traded_cryptocurrencies = {}
+
         # list of exchange supported enabled pairs from self.config
         self.traded_symbol_pairs = []
-        # list of exchange supported pairs from self.config
+
+        # list of exchange supported pairs from self.config (used to initialize evaluators and more)
         self.all_config_symbol_pairs = []
+
+        # list of exchange supported pairs on which we want to collect data through updaters or websocket
+        self.watched_pairs = []
+
         # list of exchange supported time frames
         self.traded_time_frames = []
+
         # list of time frames to be used for real-time purposes (short time frames)
         self.real_time_time_frames = []
 
@@ -53,17 +64,24 @@ class ExchangeConfig(util.Initializable):
     def get_shortest_time_frame(self):
         return self.traded_time_frames[-1]
 
-    async def handle_symbol_update(self, exchange: str, exchange_id: str, crypto_currency: str, symbols: list) -> tuple:
+    async def add_watched_symbols(self, symbols):
+        new_valid_symbols = [
+            symbol
+            for symbol in symbols
+            if self._is_valid_symbol(symbol, []) and symbol not in self.watched_pairs
+        ]
         try:
-            return self._add_tradable_symbols(crypto_currency, symbols)
-        except Exception as e:
-            self._logger.exception(e, True, f"Fail to handle symbol update : {e}")
+            if new_valid_symbols:
+                self.watched_pairs += new_valid_symbols
 
-    async def handle_time_frame_update(self, exchange: str, exchange_id: str, time_frames: list) -> list:
-        try:
-            return self._add_tradable_time_frames(time_frames)
+                if self.exchange_manager.has_websocket:
+                    self.exchange_manager.exchange_web_socket.add_pairs(new_valid_symbols)
+                    await self.exchange_manager.exchange_web_socket.close_and_restart_sockets()
+
+                await exchange_channel.get_chan(trading_constants.TICKER_CHANNEL,
+                                                self.exchange_manager.id).modify(added_pairs=new_valid_symbols)
         except Exception as e:
-            self._logger.exception(e, True, f"Fail to handle time frame update : {e}")
+            self._logger.error(f"Failed to add new watched symbols {symbols} : {e}")
 
     def _set_config_traded_pairs(self):
         self.traded_cryptocurrencies = {}
@@ -75,6 +93,7 @@ class ExchangeConfig(util.Initializable):
                                                                    existing_pairs)
         self.traded_symbol_pairs = list(traded_symbol_pairs_set)
         self.all_config_symbol_pairs = list(existing_pairs)
+        self.watched_pairs = copy.deepcopy(self.all_config_symbol_pairs)
 
     def _set_config_traded_pair(self, cryptocurrency, traded_symbol_pairs_set, existing_pairs):
         try:
@@ -123,7 +142,7 @@ class ExchangeConfig(util.Initializable):
     def _populate_wildcard_pairs(self, cryptocurrency, existing_pairs, is_enabled):
         try:
             wildcard_pairs_list = self._create_wildcard_symbol_list(self.config[constants.CONFIG_CRYPTO_CURRENCIES]
-                                                  [cryptocurrency][constants.CONFIG_CRYPTO_QUOTE])
+                                                                    [cryptocurrency][constants.CONFIG_CRYPTO_QUOTE])
         except KeyError as e:
             raise errors.ConfigError(f"Impossible to use a wildcard configuration for {cryptocurrency}: missing {e} "
                                      f"value in {cryptocurrency} {constants.CONFIG_CRYPTO_CURRENCIES} "
@@ -162,35 +181,13 @@ class ExchangeConfig(util.Initializable):
         return [
             symbol
             for symbol in self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_ADD]
-            if self.exchange_manager.symbol_exists(symbol) and symbol not in filtered_symbols
+            if self._is_valid_symbol(symbol, filtered_symbols)
         ]
+
+    def _is_valid_symbol(self, symbol, filtered_symbols):
+        return self.exchange_manager.symbol_exists(symbol) and symbol not in filtered_symbols
 
     def _create_wildcard_symbol_list(self, cryptocurrency):
         return [s for s in [ExchangeConfig._is_tradable_with_cryptocurrency(symbol, cryptocurrency)
                             for symbol in self.exchange_manager.client_symbols]
                 if s is not None]
-
-    def _add_tradable_symbols(self, cryptocurrency, symbols):
-        if cryptocurrency not in self.config[constants.CONFIG_CRYPTO_CURRENCIES]:
-            # TODO use exchange config
-            self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency] = {}
-            self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS] = symbols
-            return cryptocurrency, symbols
-
-        # TODO manage wildcard
-        symbols_to_add = [s for s in symbols
-                          if self.exchange_manager.symbol_exists(s)
-                          and s not in self.config[constants.CONFIG_CRYPTO_CURRENCIES]
-                          [cryptocurrency][constants.CONFIG_CRYPTO_PAIRS]]
-
-        # TODO use exchange config
-        self.config[constants.CONFIG_CRYPTO_CURRENCIES][cryptocurrency][constants.CONFIG_CRYPTO_PAIRS] += symbols_to_add
-
-        return None, symbols_to_add
-
-    def _add_tradable_time_frames(self, time_frames):
-        # TODO use exchange config
-        time_frames_to_add = [tf for tf in time_frames
-                              if self.exchange_manager.time_frame_exists(tf)
-                              and tf not in self.config[constants.CONFIG_TIME_FRAME]]
-        return time_frames_to_add

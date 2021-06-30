@@ -26,6 +26,8 @@ import octobot_commons
 import octobot_commons.enums as commons_enums
 import octobot_commons.logging as commons_logging
 import octobot_commons.symbol_util as symbol_util
+import octobot_commons.time_frame_manager as time_frame_manager
+
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
@@ -47,10 +49,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
         self.callbacks = {}
         self.candle_callback = None
-        self.cryptofeed_exchange = None
 
         self.filtered_pairs = []
         self.filtered_timeframes = []
+        self.min_timeframe = None
 
         self._fix_signal_handler()
         self._fix_logger()
@@ -74,6 +76,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             # cryptofeed_constants.TRANSACTIONS: cryptofeed_callbacks.TransactionsCallback(self.transactions),
         }
         self._set_async_callbacks()
+
+        # Creates cryptofeed exchange instance
+        self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](config=self.client.config)
 
     """
     Abstract methods
@@ -114,31 +119,34 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         # self.client.close()
         pass
 
-    def add_pair(self, pair):
-        if self._is_supported_pair(pair):
-            self.filtered_pairs.append(pair)
-        else:
-            self.logger.error(f"{self.get_pair_from_exchange(pair)} pair is not supported by this exchange's websocket")
+    def add_pairs(self, pairs):
+        """
+        Add new pairs to self.filtered_pairs
+        :param pairs: the list of pair to add
+        """
+        for pair in pairs:
+            self._add_pair(self.get_exchange_pair(pair))
 
-    def add_time_frame(self, time_frame):
-        try:
-            if time_frame.value in self.cryptofeed_exchange.valid_candle_intervals:
-                self.filtered_timeframes.append(time_frame)
-            else:
-                self.logger.error(f"{time_frame.value} time frame is not supported by this exchange's websocket")
-        except AttributeError:
-            # exchange.valid_candle_intervals is not implemented in each cryptofeed exchange
-            pass
+    def add_time_frames(self, time_frames):
+        """
+        Add new time_frames to self.filtered_time_frames
+        :param time_frames: the list of time_frame to add
+        """
+        for time_frame in time_frames:
+            self._add_time_frame(time_frame)
 
-    async def reconnect(self):
+    async def reset(self):
         """
         Removes and stops all running feeds an recreate them
         """
-        self._remove_all_feeds()
+        try:
+            self._remove_all_feeds()
 
-        if self.candle_callback is not None:
-            self._subscribe_candle_feed()
-        self._subscribe_all_pairs_feed()
+            if self.candle_callback is not None:
+                self._subscribe_candle_feed()
+            self._subscribe_all_pairs_feed()
+        except Exception as e:
+            self.logger.error(f"Failed to reconnect to websocket : {e}")
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
@@ -218,27 +226,49 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     def _filter_exchange_pairs_and_timeframes(self):
         """
-        Instantiates cryptofeed exchange and populates self.filtered_pairs and self.filtered_timeframes
+        Populates self.filtered_pairs and self.filtered_timeframes
         """
-        self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](
-            config=self.client.config
-        )
         self._filter_exchange_symbols()
         self._filter_exchange_time_frames()
+
+    def _add_pair(self, pair):
+        """
+        Add a pair to self.filtered_pairs if supported
+        :param pair: the pair to add
+        """
+        if self._is_supported_pair(pair):
+            self.filtered_pairs.append(pair)
+        else:
+            self.logger.error(f"{self.get_pair_from_exchange(pair)} pair is not supported by this exchange's websocket")
 
     def _filter_exchange_symbols(self):
         """
         Populates self.filtered_pairs from self.pairs when pair is supported by the cryptofeed exchange
         """
         for pair in self.pairs:
-            self.add_pair(pair)
+            self._add_pair(pair)
+
+    def _add_time_frame(self, time_frame):
+        """
+        Add a time frame to self.filtered_timeframes if supported
+        :param time_frame: the time frame to add
+        """
+        try:
+            if time_frame.value in self.cryptofeed_exchange.valid_candle_intervals:
+                self.filtered_timeframes.append(time_frame)
+            else:
+                self.logger.error(f"{time_frame.value} time frame is not supported by this exchange's websocket")
+        except AttributeError:
+            # exchange.valid_candle_intervals is not implemented in each cryptofeed exchange
+            pass
 
     def _filter_exchange_time_frames(self):
         """
         Populates self.filtered_timeframes from self.time_frames when time frame is supported by the cryptofeed exchange
         """
         for time_frame in self.time_frames:
-            self.add_time_frame(time_frame)
+            self._add_time_frame(time_frame)
+        self.min_timeframe = time_frame_manager.find_min_time_frame(self.filtered_timeframes)
 
     def _should_run_candle_feed(self):
         return self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and self.EXCHANGE_FEEDS.get(
@@ -394,9 +424,12 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                            time_frame=time_frame,
                                            symbol=symbol,
                                            candle=candle)
-            await self.push_to_channel(trading_constants.TICKER_CHANNEL,
-                                       symbol=symbol,
-                                       ticker=ticker)
+
+            # Push a new ticker if necessary : only push on the min timeframe
+            if time_frame is self.min_timeframe:
+                await self.push_to_channel(trading_constants.TICKER_CHANNEL,
+                                           symbol=symbol,
+                                           ticker=ticker)
 
     async def delta(self, feed, symbol, delta, timestamp, receipt_timestamp):
         pass

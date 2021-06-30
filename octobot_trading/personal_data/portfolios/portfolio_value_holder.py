@@ -266,8 +266,7 @@ class PortfolioValueHolder:
         :param symbols_to_add: the list of symbol to add to the TICKER_CHANNEL producer watch list
         """
         asyncio.run_coroutine_threadsafe(
-            exchange_channel.get_chan(constants.TICKER_CHANNEL, self.portfolio_manager.exchange_manager.id).
-                modify(added_pairs=symbols_to_add),
+            self.portfolio_manager.exchange_manager.exchange_config.add_watched_symbols(symbols_to_add),
             asyncio.get_running_loop())
 
     def _inform_no_matching_symbol(self, currency):

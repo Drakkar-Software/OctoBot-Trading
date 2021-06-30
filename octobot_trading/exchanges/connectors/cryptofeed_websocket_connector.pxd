@@ -23,12 +23,16 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef public list filtered_pairs
     cdef public list filtered_timeframes
 
+    cdef public object min_timeframe
     cdef public object candle_callback
     cdef public object cryptofeed_exchange
 
     cpdef void start(self)
     cpdef void _set_async_callbacks(self)
 
+    cdef void _subscribe_feeds(self)
+    cdef void _add_pair(self, str pair)
+    cdef void _add_time_frame(self, object time_frame)
     cdef void _subscribe_feeds(self)
     cdef bint _is_supported_pair(self, pair)
     cdef bint _is_supported_time_frame(self, object time_frame)

@@ -150,7 +150,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
 
     async def close_and_restart_sockets(self):
         for websocket in self.websocket_connectors:
-            await websocket.reconnect()
+            await websocket.reset()
 
     async def stop_sockets(self):
         try:
@@ -170,13 +170,13 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         thread_util.stop_thread_pool_executor_non_gracefully(self.websocket_connectors_executors)
         self.websocket_connectors_executors = None
 
-    def add_pair(self, pair):
+    def add_pairs(self, pairs):
         for websocket in self.websocket_connectors:
-            websocket.add_pair(pair)
+            websocket.add_pairs(pairs)
 
-    def add_time_frame(self, time_frame):
+    def add_time_frames(self, time_frames):
         for websocket in self.websocket_connectors:
-            websocket.add_time_frame(time_frame)
+            websocket.add_time_frames(time_frames)
 
     def is_handling(self, feed_name):
         return feed_name in self.handled_feeds[feed_name] and self.handled_feeds[feed_name]
