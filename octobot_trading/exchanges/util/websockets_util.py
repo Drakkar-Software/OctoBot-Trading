@@ -15,6 +15,8 @@
 #  License along with this library.
 import octobot_commons.tentacles_management as tentacles_management
 import octobot_commons.constants as commons_constants
+import octobot_tentacles_manager.api as api
+import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 
 
 def force_disable_web_socket(config, exchange_name) -> bool:
@@ -32,3 +34,17 @@ def search_websocket_class(websocket_class, exchange_manager):
         if socket_manager.has_name(exchange_manager):
             return socket_manager
     return None
+
+
+def supports_websocket(exchange_name, tentacles_setup_config) -> bool:
+    for connector in abstract_websocket.AbstractWebsocketExchange.__subclasses__():
+        try:
+            if api.get_class_from_name_with_activated_required_tentacles(
+                name=exchange_name,
+                tentacles_setup_config=tentacles_setup_config,
+                parent_class=connector
+            ) is not None:
+                return True
+        except NotImplementedError:
+            pass
+    return False

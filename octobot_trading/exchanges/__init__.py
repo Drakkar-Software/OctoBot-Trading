@@ -60,6 +60,7 @@ from octobot_trading.exchanges.util import (
     force_disable_web_socket,
     check_web_socket_config,
     search_websocket_class,
+    supports_websocket,
 )
 from octobot_trading.exchanges import exchange_websocket_factory
 from octobot_trading.exchanges.exchange_websocket_factory import (
@@ -160,4 +161,5 @@ __all__ = [
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",
+    "supports_websocket",
 ]

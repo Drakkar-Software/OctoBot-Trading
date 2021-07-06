@@ -32,6 +32,7 @@ from octobot_trading.exchanges.util.websockets_util import (
     force_disable_web_socket,
     check_web_socket_config,
     search_websocket_class,
+    supports_websocket,
 )
 
 __all__ = [
@@ -45,4 +46,5 @@ __all__ = [
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",
+    "supports_websocket",
 ]
