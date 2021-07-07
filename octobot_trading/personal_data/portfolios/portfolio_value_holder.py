@@ -19,7 +19,6 @@ import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 import octobot_commons.symbol_util as symbol_util
 
-import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
 
 

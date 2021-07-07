@@ -55,6 +55,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.min_timeframe = None
 
         self._fix_signal_handler()
+
+        # Manage cryptofeed loggers
+        self.client_logger = logging.getLogger(f"WebSocketClient - {self.name}")
+        self.client_logger.setLevel(logging.WARNING)
         self._fix_logger()
 
         self.client = None
@@ -357,8 +361,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         """
         Replace cryptofeed feedhandler logger because it writes logs into "cryptofeed.log" file
         """
-        cryptofeed.feedhandler.LOG = self.logger
-        cryptofeed.connection_handler.LOG = self.logger
+        cryptofeed.feedhandler.LOG = self.client_logger
+        cryptofeed.connection_handler.LOG = self.client_logger
 
     """
     Callbacks
