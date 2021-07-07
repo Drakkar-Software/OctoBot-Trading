@@ -26,6 +26,7 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef public object min_timeframe
     cdef public object candle_callback
     cdef public object cryptofeed_exchange
+    cdef public object client_logger
 
     cpdef void start(self)
     cpdef void _set_async_callbacks(self)
