@@ -32,6 +32,9 @@ class AbstractWebsocketExchange:
 
     INIT_REQUIRING_EXCHANGE_FEEDS = set()
 
+    # Used to ignore a feed when almost one of the corresponding feed is supported
+    IGNORED_FEED_PAIRS = {}
+
     def __init__(self,
                  config: object,
                  exchange_manager: object):
@@ -149,12 +152,32 @@ class AbstractWebsocketExchange:
     def is_feed_requiring_init(cls, feed) -> bool:
         return feed in cls.INIT_REQUIRING_EXCHANGE_FEEDS
 
+    @classmethod
+    def is_feed_supported(cls, feed_name) -> bool:
+        return feed_name != octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value
+
+    @classmethod
+    def should_ignore_feed(cls, feed):
+        """
+        Checks if a feed should be ignored
+        :param feed: the feed (instance of octobot_trading.enums.WebsocketFeeds)
+        :return: True when the feed is already covered by another one
+        """
+        ignored_feed_candidate_list = cls.IGNORED_FEED_PAIRS.get(feed, [])
+        if not ignored_feed_candidate_list:
+            return False
+        for feed_candidate in list(cls.EXCHANGE_FEEDS.keys()):
+            if feed_candidate in ignored_feed_candidate_list and \
+                    cls.is_feed_supported(cls.EXCHANGE_FEEDS[feed_candidate]):
+                return True
+        return False
+
     def feed_to_exchange(self, feed):
-        ret: str = self.get_exchange_feed(feed)
-        if ret == octobot_trading.enums.WebsocketFeeds.UNSUPPORTED.value:
+        feed_name: str = self.get_exchange_feed(feed)
+        if not self.is_feed_supported(feed_name):
             self.logger.error("{} is not supported on {}".format(feed, self.get_name()))
             raise ValueError(f"{feed} is not supported on {self.get_name()}")
-        return ret
+        return feed_name
 
     def get_book_instance(self, symbol):
         try:
