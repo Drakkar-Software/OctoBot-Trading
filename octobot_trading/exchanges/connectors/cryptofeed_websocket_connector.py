@@ -57,7 +57,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self._fix_signal_handler()
         self._fix_logger()
 
-        self.client = cryptofeed.FeedHandler()
+        self.client = None
         commons_logging.set_logging_level(self.CRYPTOFEED_LOGGERS, logging.WARNING)
 
         self.callback_by_feed = {
@@ -77,6 +77,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         }
         self._set_async_callbacks()
 
+        # Create cryptofeed FeedHandler instance
+        self._create_client()
+
         # Creates cryptofeed exchange instance
         self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](config=self.client.config)
 
@@ -91,6 +94,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     """
     Abstract implementations
     """
+
+    def _create_client(self):
+        self.client = cryptofeed.FeedHandler()
 
     def start(self):
         try:
@@ -109,15 +115,28 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.logger.warning("Websocket master thread terminated, this should not happen during bot run"
                             " with a valid configuration")
 
-    def stop(self):
-        # let the thread stop by itself
-        # self.client.stop()
-        pass
+    async def stop(self):
+        """
+        Reimplementation of self.client.stop() without calling loop.run_until_complete()
+        """
+        try:
+            for feed in self.client.feeds:
+                feed.stop()
+            for feed in self.client.feeds:
+                await feed.shutdown()
+            if self.client.raw_data_collection:
+                self.client.raw_data_collection.stop()
+        except Exception as e:
+            self.logger.error(f"Failed to stop websocket feed : {e}")
 
-    def close(self):
-        # prevent FeedHandler : "run the AsyncIO event loop one last time"
-        # self.client.close()
-        pass
+    async def close(self):
+        """
+        Can't call self.client.close() because it uses loop operations
+        """
+        try:
+            self.client = None
+        except Exception as e:
+            self.logger.error(f"Failed to close websocket feed : {e}")
 
     def add_pairs(self, pairs):
         """
@@ -141,7 +160,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         """
         try:
             self._remove_all_feeds()
+            await self.stop()
+            await self.close()
 
+            self._create_client()
             if self.candle_callback is not None:
                 self._subscribe_candle_feed()
             self._subscribe_all_pairs_feed()

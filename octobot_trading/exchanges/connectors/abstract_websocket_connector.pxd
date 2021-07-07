@@ -37,6 +37,4 @@ cdef class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchan
     cpdef void on_auth(self, bint status)
     cpdef void on_close(self)
     cpdef void on_error(self, str error)
-    cpdef start(self)
-    cpdef stop(self)
-    cpdef close(self)
+    cpdef void start(self)
