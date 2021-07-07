@@ -43,6 +43,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
 
+    IGNORED_FEED_PAIRS = {
+        Feeds.TRADES: [Feeds.TICKER]
+    }
+
     def __init__(self, config: object, exchange_manager: object):
         super().__init__(config, exchange_manager)
         self.channels = []
@@ -141,6 +145,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         for time_frame in time_frames:
             self._add_time_frame(time_frame)
 
+    def subscribe_feeds(self):
+        if self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and self.is_feed_supported(self.EXCHANGE_FEEDS.get(Feeds.CANDLE)):
+            self.subscribe_candle_feed(self.pairs)
     async def reset(self):
         """
         Removes and stops all running feeds an recreate them
@@ -244,7 +251,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.callbacks = {
             channel: self.callback_by_feed[channel]
             for channel in self.channels
-            if self.callback_by_feed.get(channel)
+            if self.callback_by_feed.get(channel) and not self.should_ignore_feed(self.callback_by_feed[channel])
         }
         self._subscribe_all_pairs_feed()
 
