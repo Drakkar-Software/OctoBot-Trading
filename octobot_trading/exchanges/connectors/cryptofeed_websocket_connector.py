@@ -98,26 +98,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     """
     Abstract implementations
     """
-
-    def _create_client(self):
-        self.client = cryptofeed.FeedHandler()
-
     def start(self):
-        try:
-            self._filter_exchange_pairs_and_timeframes()
-            self._subscribe_feeds()
-        except Exception as e:
-            self.logger.exception(e, True, f"Failed to subscribe when creating websocket feed : {e}")
-        try:
-            # without this two lines `There is no current event loop in thread`
-            # is raised when calling `client.run()`
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            self.client.run()
-        except Exception as e:
-            self.logger.error(f"Failed to start websocket feed : {e}")
-        self.logger.warning("Websocket master thread terminated, this should not happen during bot run"
-                            " with a valid configuration")
+        self._init_client()
+        self._start_client()
 
     async def stop(self):
         """
@@ -171,6 +154,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             if self.candle_callback is not None:
                 self._subscribe_candle_feed()
             self._subscribe_all_pairs_feed()
+            self._start_client(should_create_loop=False)
         except Exception as e:
             self.logger.error(f"Failed to reconnect to websocket : {e}")
 
@@ -179,6 +163,11 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         return cls.get_name() == exchange_candidate_name
 
     def get_pair_from_exchange(self, pair):
+        """
+        Convert a cryptofeed symbol format to uniformized symbol format
+        :param pair: the pair to format
+        :return: the formatted pair when success else an empty string
+        """
         try:
             return symbol_util.convert_symbol(
                 symbol=pair,
@@ -191,6 +180,11 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         return ""
 
     def get_exchange_pair(self, pair) -> str:
+        """
+        Convert an uniformized symbol format to a cryptofeed symbol format
+        :param pair: the pair to format
+        :return: the cryptofeed pair when success else an empty string
+        """
         try:
             return symbol_util.convert_symbol(
                 symbol=pair,
@@ -205,6 +199,35 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     """
     Private methods
     """
+    def _create_client(self):
+        self.client = cryptofeed.FeedHandler()
+
+    def _init_client(self):
+        """
+        Prepares client configuration and instantiates client feeds
+        """
+        try:
+            self._filter_exchange_pairs_and_timeframes()
+            self._subscribe_feeds()
+        except Exception as e:
+            self.logger.exception(e, True, f"Failed to subscribe when creating websocket feed : {e}")
+
+    def _start_client(self, should_create_loop=True):
+        """
+        Creates client async loop and start client
+        :param should_create_loop: When True creates a new async loop. When False uses the current one
+        """
+        try:
+            if should_create_loop:
+                # without this two lines `There is no current event loop in thread`
+                # is raised when calling `client.run()`
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            self.client.run(start_loop=should_create_loop)
+        except Exception as e:
+            self.logger.error(f"Failed to start websocket feed : {e}")
+        self.logger.warning("Websocket master thread terminated, this should not happen during bot run"
+                            " with a valid configuration")
 
     def _subscribe_feeds(self):
         """
