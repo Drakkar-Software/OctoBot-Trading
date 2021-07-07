@@ -152,12 +152,12 @@ class AbstractWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
     def on_error(self, error):
         self.logger.error(f"Error : {error}")
 
-    def stop(self):
+    async def stop(self):
         self.websocket.close()
         self.exchange_manager = None
 
-    def close(self):
-        self.stop()
+    async def close(self):
+        await self.stop()
         self._watch_task.cancel()
         self.is_connected = False
         self.websocket.close()

@@ -155,14 +155,14 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     async def stop_sockets(self):
         try:
             for websocket in self.websocket_connectors:
-                websocket.stop()
+                await websocket.stop()
         except Exception as e:
             self.logger.error(f"Error when stopping sockets : {e}")
 
     async def close_sockets(self):
         try:
             for websocket in self.websocket_connectors:
-                websocket.close()
+                await websocket.close()
         except Exception as e:
             self.logger.error(f"Error when closing sockets : {e}")
         for websocket_task in self.websocket_connectors_tasks:
