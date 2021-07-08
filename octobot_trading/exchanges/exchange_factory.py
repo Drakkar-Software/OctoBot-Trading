@@ -110,7 +110,7 @@ async def _create_rest_exchange(exchange_manager) -> None:
     elif exchange_manager.is_margin and not exchange_manager.is_spot_only:
         await _search_and_create_margin_exchange(exchange_manager)
     else:
-        await _search_and_create_spot_exchange(exchange_manager)
+        await search_and_create_spot_exchange(exchange_manager)
 
     if not exchange_manager.exchange:
         raise Exception("Can't create an exchange instance that match the exchange configuration")
@@ -138,7 +138,7 @@ async def init_simulated_exchange(exchange_manager):
     await exchange_manager.exchange.create_backtesting_exchange_producers()
 
 
-async def _search_and_create_spot_exchange(exchange_manager) -> None:
+async def search_and_create_spot_exchange(exchange_manager) -> None:
     """
     Create a spot exchange if a SpotExchange matching class is found
     :param exchange_manager: the related exchange manager

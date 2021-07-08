@@ -29,3 +29,5 @@ cdef bint _is_exchange_candidate_matching(object exchange_candidate,
                                           str exchange_name,
                                           object tentacles_setup_config,
                                           bint enable_default=*)
+cdef str _get_time_sync_error_message(str exchange_name, str details)
+cdef dict _get_minimal_exchange_config(str exchange_name, dict exchange_config)

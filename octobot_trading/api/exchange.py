@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import trading_backend
 
 import octobot_trading.constants
 import octobot_trading.exchanges as exchanges
@@ -179,6 +180,14 @@ def get_currently_handled_pair_with_time_frame(exchange_manager) -> int:
 
 def is_overloaded(exchange_manager) -> bool:
     return exchange_manager.get_is_overloaded()
+
+
+async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config) -> (bool, str):
+    return await exchanges.is_compatible_account(exchange_name, exchange_config, tentacles_setup_config)
+
+
+def is_sponsoring(exchange_name: str) -> bool:
+    return trading_backend.is_sponsoring(exchange_name)
 
 
 def cancel_ccxt_throttle_task():
