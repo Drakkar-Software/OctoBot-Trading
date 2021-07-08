@@ -13,13 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import trading_backend
+
 import octobot_commons.logging as logging
+import octobot_commons.constants as common_constants
 import octobot_commons.tentacles_management as tentacles_management
 
 import octobot_tentacles_manager.api as api
 
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.types as exchanges_types
+import octobot_trading.exchanges.exchange_manager as exchange_manager
+import octobot_trading.exchanges.exchange_factory as exchange_factory
 
 
 def get_margin_exchange_class(exchange_name, tentacles_setup_config):
@@ -76,14 +81,56 @@ def get_order_side(order_type):
 
 
 def log_time_sync_error(logger, exchange_name, error, details):
+    logger.error(
+        f"{_get_time_sync_error_message(exchange_name, details)} Error: {error}")
+
+
+def _get_time_sync_error_message(exchange_name, details):
     docs_url = "https://docs.octobot.online"
     try:
         import octobot.constants
         docs_url = octobot.constants.OCTOBOT_DOCS_URL
     except ImportError:
         pass
-    logger.error(
-        f"Time synchronization error when loading your {exchange_name.capitalize()} {details}. "
-        f"To fix this, please synchronize your computer's clock. See "
-        f"{docs_url}/pages/Installation-Troubleshoot.html#time-synchronization "
-        f"Error: {error}")
+    return f"Time synchronization error when loading your {exchange_name.capitalize()} {details}. " \
+        f"To fix this, please synchronize your computer's clock. See " \
+        f"{docs_url}/pages/Installation-Troubleshoot.html#time-synchronization"
+
+
+def _get_minimal_exchange_config(exchange_name, exchange_config):
+    return {
+        common_constants.CONFIG_EXCHANGES: {
+            exchange_name: exchange_config
+        },
+        common_constants.CONFIG_TRADER: {
+            common_constants.CONFIG_ENABLED_OPTION: False
+        },
+        common_constants.CONFIG_SIMULATOR: {
+            common_constants.CONFIG_ENABLED_OPTION: False
+        }
+    }
+
+
+async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config) -> (bool, str):
+    local_exchange_manager = exchange_manager.ExchangeManager(
+        _get_minimal_exchange_config(exchange_name, exchange_config),
+        exchange_name
+    )
+    local_exchange_manager.tentacles_setup_config = tentacles_setup_config
+    # Avoid exchange authentication error log
+    local_exchange_manager.is_collecting = True
+    await exchange_factory.search_and_create_spot_exchange(local_exchange_manager)
+    backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
+    try:
+        is_compatible, error = await backend.is_valid_account()
+        return is_compatible, \
+            f"Please create a new {exchange_name.capitalize()} unrefereed account to use websockets. {error}." \
+            if error else error
+    except trading_backend.TimeSyncError:
+        return False, _get_time_sync_error_message(exchange_name, "account details")
+    except trading_backend.ExchangeAuthError:
+        return False, f"Invalid {exchange_name.capitalize()} authentication details"
+    except Exception as e:
+        return False, f"Error when loading exchange account: {e}"
+    finally:
+        await local_exchange_manager.exchange.stop()
