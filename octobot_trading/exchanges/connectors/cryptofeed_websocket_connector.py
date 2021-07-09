@@ -44,7 +44,22 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
 
     IGNORED_FEED_PAIRS = {
-        Feeds.TRADES: [Feeds.TICKER]
+        Feeds.TRADES: [Feeds.TICKER],  # When ticker is available : no need to calculate mark price from recent trades
+        Feeds.TICKER: [Feeds.CANDLE]  # When candles are available : use min timeframe kline to push ticker
+    }
+
+    CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS = {
+        cryptofeed_constants.TRADES: Feeds.TRADES,
+        cryptofeed_constants.TICKER: Feeds.TICKER,
+        cryptofeed_constants.CANDLES: Feeds.CANDLE,
+        cryptofeed_constants.L2_BOOK: Feeds.L2_BOOK,
+        cryptofeed_constants.L3_BOOK: Feeds.L3_BOOK,
+        cryptofeed_constants.FUNDING: Feeds.FUNDING,
+        cryptofeed_constants.LIQUIDATIONS: Feeds.LIQUIDATIONS,
+        cryptofeed_constants.BOOK_DELTA: Feeds.BOOK_DELTA,
+        cryptofeed_constants.OPEN_INTEREST: Feeds.OPEN_INTEREST,
+        cryptofeed_constants.FUTURES_INDEX: Feeds.FUTURES_INDEX,
+        cryptofeed_constants.MARKET_INFO: Feeds.MARKET_INFO
     }
 
     def __init__(self, config: object, exchange_manager: object):
@@ -76,12 +91,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             # cryptofeed_constants.L3_BOOK: cryptofeed_callbacks.BookCallback(self.book),
             # cryptofeed_constants.FUNDING: cryptofeed_callbacks.FundingCallback(self.funding),
             # cryptofeed_constants.LIQUIDATIONS: cryptofeed_callbacks.LiquidationCallback(self.liquidations),
-            # cryptofeed_constants.BOOK_DELTA: cryptofeed_callbacks.BookUpdateCallback(self.delta),
-            # cryptofeed_constants.VOLUME: cryptofeed_callbacks.VolumeCallback(self.volume),
+            # cryptofeed_constants.BOOK_DELTA: cryptofeed_callbacks.BookUpdateCallback(self.delta)
             # cryptofeed_constants.OPEN_INTEREST: cryptofeed_callbacks.OpenInterestCallback(self.open_interest),
             # cryptofeed_constants.FUTURES_INDEX: cryptofeed_callbacks.FuturesIndexCallback(self.futures_index),
             # cryptofeed_constants.MARKET_INFO: cryptofeed_callbacks.MarketInfoCallback(self.market_info),
-            # cryptofeed_constants.TRANSACTIONS: cryptofeed_callbacks.TransactionsCallback(self.transactions),
         }
         self._set_async_callbacks()
 
@@ -145,9 +158,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         for time_frame in time_frames:
             self._add_time_frame(time_frame)
 
-    def subscribe_feeds(self):
-        if self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and self.is_feed_supported(self.EXCHANGE_FEEDS.get(Feeds.CANDLE)):
-            self.subscribe_candle_feed(self.pairs)
     async def reset(self):
         """
         Removes and stops all running feeds an recreate them
@@ -233,8 +243,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             self.client.run(start_loop=should_create_loop)
         except Exception as e:
             self.logger.error(f"Failed to start websocket feed : {e}")
-        self.logger.warning("Websocket master thread terminated, this should not happen during bot run"
-                            " with a valid configuration")
 
     def _subscribe_feeds(self):
         """
@@ -251,7 +259,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.callbacks = {
             channel: self.callback_by_feed[channel]
             for channel in self.channels
-            if self.callback_by_feed.get(channel) and not self.should_ignore_feed(self.callback_by_feed[channel])
+            if self.callback_by_feed.get(channel) and
+               not self.should_ignore_feed(self.CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS[channel])
         }
         self._subscribe_all_pairs_feed()
 
@@ -497,9 +506,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         pass
 
     async def open_interest(self, feed, symbol, open_interest, timestamp, receipt_timestamp):
-        pass
-
-    async def volume(self, **kwargs):
         pass
 
     async def futures_index(self, **kwargs):

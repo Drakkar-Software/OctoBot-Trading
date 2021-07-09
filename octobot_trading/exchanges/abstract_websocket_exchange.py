@@ -32,7 +32,7 @@ class AbstractWebsocketExchange:
 
     INIT_REQUIRING_EXCHANGE_FEEDS = set()
 
-    # Used to ignore a feed when almost one of the corresponding feed is supported
+    # Used to ignore a feed when at least one of the corresponding feed is supported
     IGNORED_FEED_PAIRS = {}
 
     def __init__(self,
