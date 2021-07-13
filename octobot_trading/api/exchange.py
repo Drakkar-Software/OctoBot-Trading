@@ -190,6 +190,10 @@ def is_sponsoring(exchange_name: str) -> bool:
     return trading_backend.is_sponsoring(exchange_name)
 
 
+def is_valid_account(exchange_manager) -> bool:
+    return exchange_manager.is_valid_account
+
+
 def cancel_ccxt_throttle_task():
     for task in asyncio.all_tasks():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise
