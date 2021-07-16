@@ -90,7 +90,8 @@ async def _initialize_exchange_backend(exchange_manager):
                 exchange_manager.logger.error(
                     f"Incompatible {exchange_manager.exchange.name.capitalize()} account to use websockets: {message}. "
                     f"OctoBot relies on exchanges profits sharing to remain 100% free, please create a "
-                    f"new {exchange_manager.exchange.name.capitalize()} account to support the project.")
+                    f"new {exchange_manager.exchange.name.capitalize()} account to support the project. "
+                    f"{exchanges.get_partners_explanation_message()}")
         except trading_backend.TimeSyncError as err:
             exchanges.log_time_sync_error(exchange_manager.logger, exchange_manager.exchange.name,
                                           err, "account details")

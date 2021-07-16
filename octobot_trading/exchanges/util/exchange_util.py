@@ -85,16 +85,22 @@ def log_time_sync_error(logger, exchange_name, error, details):
         f"{_get_time_sync_error_message(exchange_name, details)} Error: {error}")
 
 
-def _get_time_sync_error_message(exchange_name, details):
-    docs_url = "https://docs.octobot.online"
+def _get_docs_url():
     try:
         import octobot.constants
-        docs_url = octobot.constants.OCTOBOT_DOCS_URL
+        return octobot.constants.OCTOBOT_DOCS_URL
     except ImportError:
-        pass
+        return "https://docs.octobot.online"
+
+
+def _get_time_sync_error_message(exchange_name, details):
     return f"Time synchronization error when loading your {exchange_name.capitalize()} {details}. " \
         f"To fix this, please synchronize your computer's clock. See " \
-        f"{docs_url}/pages/Installation-Troubleshoot.html#time-synchronization"
+        f"{_get_docs_url()}/pages/Installation-Troubleshoot.html#time-synchronization"
+
+
+def get_partners_explanation_message():
+    return f"More info on partner exchanges on {_get_docs_url()}/pages/Exchanges.html#partner-exchanges-support-octobot"
 
 
 def _get_minimal_exchange_config(exchange_name, exchange_config):
@@ -123,9 +129,8 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
     try:
         is_compatible, error = await backend.is_valid_account()
-        return is_compatible, \
-            f"Please create a new {exchange_name.capitalize()} unrefereed account to use websockets. {error}." \
-            if error else error
+        message = f"Please create a new {exchange_name.capitalize()} unrefereed account to use websockets. {error}."
+        return is_compatible, message if error else error
     except trading_backend.TimeSyncError:
         return False, _get_time_sync_error_message(exchange_name, "account details")
     except trading_backend.ExchangeAuthError:

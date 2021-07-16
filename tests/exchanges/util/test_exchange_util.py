@@ -55,6 +55,20 @@ async def test_is_compatible_account_with_checked_exchange(exchange_config, tent
         is_valid_account_mock.assert_called_once()
 
 
+def test_get_partners_explanation_message():
+    assert "docs" in exchanges.get_partners_explanation_message()
+
+
+def test_log_time_sync_error():
+    logger = mock.Mock()
+    exchanges.log_time_sync_error(logger, "exchange_name", "error", "details")
+    args = logger.error.call_args[0][0]
+    assert "exchange_name".capitalize() in args
+    assert "error" in args
+    assert "details" in args
+    assert "docs" in args
+
+
 async def test_is_compatible_account_with_unchecked_exchange(exchange_config, tentacles_setup_config):
     compatible, error = await exchanges.is_compatible_account("hitbtc", exchange_config, tentacles_setup_config)
     assert compatible is False
