@@ -26,6 +26,7 @@ from octobot_trading.exchanges.util.exchange_util import (
     get_spot_exchange_class,
     get_order_side,
     log_time_sync_error,
+    get_partners_explanation_message,
     is_compatible_account,
 )
 from octobot_trading.exchanges.util import websockets_util
@@ -44,6 +45,7 @@ __all__ = [
     "get_spot_exchange_class",
     "get_order_side",
     "log_time_sync_error",
+    "get_partners_explanation_message",
     "is_compatible_account",
     "force_disable_web_socket",
     "check_web_socket_config",
