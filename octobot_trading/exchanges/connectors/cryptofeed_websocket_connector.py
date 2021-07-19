@@ -253,14 +253,16 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             self._subscribe_candle_feed()
 
         # drop unsupported channels
-        self.channels = [channel for channel in self.channels if channel not in [Feeds.UNSUPPORTED.value,
-                                                                                 self.EXCHANGE_FEEDS.get(
-                                                                                     Feeds.CANDLE)]]
+        self.channels = [
+            channel
+            for channel in self.channels
+            if channel not in [Feeds.UNSUPPORTED.value, self.EXCHANGE_FEEDS.get(Feeds.CANDLE)]
+               and not self.should_ignore_feed(self.CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS[channel])
+        ]
         self.callbacks = {
             channel: self.callback_by_feed[channel]
             for channel in self.channels
-            if self.callback_by_feed.get(channel) and
-               not self.should_ignore_feed(self.CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS[channel])
+            if self.callback_by_feed.get(channel)
         }
         self._subscribe_all_pairs_feed()
 
@@ -276,18 +278,19 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  log_message_on_error=True,
                                  channels=[cryptofeed_constants.CANDLES],
                                  callbacks={cryptofeed_constants.CANDLES: self.candle_callback})
-            self.logger.debug(f"Subscribed to the {time_frame.value} time frame for {', '.join(self.filtered_pairs)}")
+            self.logger.debug(f"Subscribed to the {time_frame.value} time frame OHLCV for {', '.join(self.filtered_pairs)}")
 
     def _subscribe_all_pairs_feed(self):
         """
         Subscribes all time frame unrelated feeds
         """
-        self.client.add_feed(self.get_feed_name(),
-                             symbols=self.filtered_pairs,
-                             channels=self.channels,
-                             callbacks=self.callbacks)
-        for channel in self.channels:
-            self.logger.debug(f"Subscribed to {channel}")
+        if self.channels:
+            self.client.add_feed(self.get_feed_name(),
+                                 symbols=self.filtered_pairs,
+                                 channels=self.channels,
+                                 callbacks=self.callbacks)
+            for channel in self.channels:
+                self.logger.debug(f"Subscribed to {channel}")
 
     def _filter_exchange_pairs_and_timeframes(self):
         """
