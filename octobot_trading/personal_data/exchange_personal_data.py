@@ -97,7 +97,7 @@ class ExchangePersonalData(util.Initializable):
 
             if should_notify:
                 await exchange_channel.get_chan(octobot_trading.constants.BALANCE_PROFITABILITY_CHANNEL,
-                                         self.exchange_manager.id).get_internal_producer() \
+                                                self.exchange_manager.id).get_internal_producer() \
                     .send(profitability=portfolio_profitability.profitability,
                           profitability_percent=portfolio_profitability.profitability_percent,
                           market_profitability_percent=portfolio_profitability.market_profitability_percent,

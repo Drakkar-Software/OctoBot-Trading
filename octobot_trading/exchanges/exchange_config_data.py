@@ -73,10 +73,10 @@ class ExchangeConfig(util.Initializable):
         try:
             if new_valid_symbols:
                 self.watched_pairs += new_valid_symbols
-
+                self._logger.debug(f"Adding watched symbols: {new_valid_symbols}")
                 if self.exchange_manager.has_websocket:
                     self.exchange_manager.exchange_web_socket.add_pairs(new_valid_symbols)
-                    await self.exchange_manager.exchange_web_socket.close_and_restart_sockets()
+                    await self.exchange_manager.exchange_web_socket.close_and_restart_sockets(debounce_duration=1)
 
                 await exchange_channel.get_chan(trading_constants.TICKER_CHANNEL,
                                                 self.exchange_manager.id).modify(added_pairs=new_valid_symbols)
