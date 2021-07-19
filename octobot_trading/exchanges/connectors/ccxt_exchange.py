@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
 import logging
 
 import ccxt.async_support as ccxt
@@ -53,7 +54,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             if self._should_authenticate():
                 await self._ensure_auth()
 
-            await self.client.load_markets()
+            with self.error_describer():
+                await self.client.load_markets()
 
             # initialize symbols and timeframes
             self.symbols = set(self.client.symbols)  \
@@ -163,16 +165,17 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if not kwargs:
             kwargs = {}
         try:
-            balance = await self.client.fetch_balance(params=kwargs)
+            with self.error_describer():
+                balance = await self.client.fetch_balance(params=kwargs)
 
-            # remove not currency specific keys
-            balance.pop(constants.CONFIG_PORTFOLIO_FREE, None)
-            balance.pop(constants.CONFIG_PORTFOLIO_USED, None)
-            balance.pop(constants.CONFIG_PORTFOLIO_TOTAL, None)
-            balance.pop(constants.CCXT_INFO, None)
-            balance.pop(enums.ExchangeConstantsCCXTColumns.DATETIME.value, None)
-            balance.pop(enums.ExchangeConstantsCCXTColumns.TIMESTAMP.value, None)
-            return balance
+                # remove not currency specific keys
+                balance.pop(constants.CONFIG_PORTFOLIO_FREE, None)
+                balance.pop(constants.CONFIG_PORTFOLIO_USED, None)
+                balance.pop(constants.CONFIG_PORTFOLIO_TOTAL, None)
+                balance.pop(constants.CCXT_INFO, None)
+                balance.pop(enums.ExchangeConstantsCCXTColumns.DATETIME.value, None)
+                balance.pop(enums.ExchangeConstantsCCXTColumns.TIMESTAMP.value, None)
+                return balance
 
         except ccxt.InvalidNonce as err:
             exchanges.log_time_sync_error(self.logger, self.name, err, "real trader portfolio")
@@ -187,9 +190,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                 since: int = None,
                                 **kwargs: dict) -> typing.Optional[list]:
         try:
-            if limit:
-                return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit, since=since, params=kwargs)
-            return await self.client.fetch_ohlcv(symbol, time_frame.value, since=since, params=kwargs)
+            with self.error_describer():
+                if limit:
+                    return await self.client.fetch_ohlcv(symbol, time_frame.value, limit=limit,
+                                                         since=since, params=kwargs)
+                return await self.client.fetch_ohlcv(symbol, time_frame.value, since=since, params=kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
@@ -210,7 +215,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     # return up to ten bidasks on each side of the order book stack
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
         try:
-            return await self.client.fetch_order_book(symbol, limit=limit, params=kwargs)
+            with self.error_describer():
+                return await self.client.fetch_order_book(symbol, limit=limit, params=kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
@@ -218,7 +224,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
         try:
-            return await self.client.fetch_trades(symbol, limit=limit, params=kwargs)
+            with self.error_describer():
+                return await self.client.fetch_trades(symbol, limit=limit, params=kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
@@ -227,7 +234,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
     async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
         try:
-            return await self.client.fetch_ticker(symbol, params=kwargs)
+            with self.error_describer():
+                return await self.client.fetch_ticker(symbol, params=kwargs)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
@@ -235,7 +243,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         try:
-            self.all_currencies_price_ticker = await self.client.fetch_tickers(params=kwargs)
+            with self.error_describer():
+                self.all_currencies_price_ticker = await self.client.fetch_tickers(params=kwargs)
             return self.all_currencies_price_ticker
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
@@ -246,7 +255,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         if self.client.has['fetchOrder']:
             try:
-                return await self.client.fetch_order(order_id, symbol, params=kwargs)
+                with self.error_describer():
+                    return await self.client.fetch_order(order_id, symbol, params=kwargs)
                 # self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order) TODO
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
@@ -259,38 +269,43 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_all_orders(self, symbol: str = None, since: int = None,
                              limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOrders']:
-            return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
+            with self.error_describer():
+                return await self.client.fetch_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOrders")
 
     async def get_open_orders(self, symbol: str = None, since: int = None,
                               limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchOpenOrders']:
-            return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
+            with self.error_describer():
+                return await self.client.fetch_open_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOpenOrders")
 
     async def get_closed_orders(self, symbol: str = None, since: int = None,
                                 limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchClosedOrders']:
-            return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
+            with self.error_describer():
+                return await self.client.fetch_closed_orders(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchClosedOrders")
 
     async def get_my_recent_trades(self, symbol: str = None, since: int = None,
                                    limit: int = None, **kwargs: dict) -> list:
         if self.client.has['fetchMyTrades'] or self.client.has['fetchTrades']:
-            if self.client.has['fetchMyTrades']:
-                return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=kwargs)
-            elif self.client.has['fetchTrades']:
-                return await self.client.fetch_trades(symbol=symbol, since=since, limit=limit, params=kwargs)
+            with self.error_describer():
+                if self.client.has['fetchMyTrades']:
+                    return await self.client.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=kwargs)
+                elif self.client.has['fetchTrades']:
+                    return await self.client.fetch_trades(symbol=symbol, since=since, limit=limit, params=kwargs)
         else:
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchMyTrades nor fetchTrades")
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         cancel_resp = None
         try:
-            cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, **kwargs)
+            with self.error_describer():
+                cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, **kwargs)
             try:
                 cancelled_order = await self.get_order(order_id, symbol=symbol, **kwargs)
                 return cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order)
@@ -495,3 +510,16 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         """
         # 15 pairs, each on 3 time frames
         return 45
+
+    @contextlib.contextmanager
+    def error_describer(self):
+        try:
+            yield
+        except ccxt.DDoSProtection as e:
+            # raised upon rate limit issues, last response data might have details on what is happening
+            self.logger.error(
+                f"DDoSProtection triggered [{e} ({e.__class__.__name__})]. "
+                f"Last response headers: {self.client.last_response_headers} "
+                f"Last json response: {self.client.last_json_response}"
+            )
+            raise
