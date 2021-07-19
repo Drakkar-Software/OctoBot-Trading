@@ -73,6 +73,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.filtered_timeframes = []
         self.min_timeframe = None
 
+        self.local_loop = None
+
         self._fix_signal_handler()
 
         # Manage cryptofeed loggers
@@ -238,8 +240,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             if should_create_loop:
                 # without this two lines `There is no current event loop in thread`
                 # is raised when calling `client.run()`
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+                self.local_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self.local_loop)
+            self.logger.debug(f"Starting websocket client with {len(self.client.feeds)} feeds.")
             self.client.run(start_loop=should_create_loop)
         except Exception as e:
             self.logger.error(f"Failed to start websocket feed : {e}")
