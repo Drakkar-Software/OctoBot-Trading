@@ -93,14 +93,22 @@ def _get_docs_url():
         return "https://docs.octobot.online"
 
 
+def _get_exchanges_docs_url():
+    try:
+        import octobot.constants
+        return octobot.constants.OCTOBOT_EXCHANGES_DOCS_URL
+    except ImportError:
+        return "https://exchanges.docs.octobot.online"
+
+
 def _get_time_sync_error_message(exchange_name, details):
     return f"Time synchronization error when loading your {exchange_name.capitalize()} {details}. " \
         f"To fix this, please synchronize your computer's clock. See " \
-        f"{_get_docs_url()}/pages/Installation-Troubleshoot.html#time-synchronization"
+        f"{_get_docs_url()}/installation/installation-troubleshoot#time-synchronization"
 
 
 def get_partners_explanation_message():
-    return f"More info on partner exchanges on {_get_docs_url()}/pages/Exchanges.html#partner-exchanges-support-octobot"
+    return f"More info on partner exchanges on {_get_exchanges_docs_url()}/#partner-exchanges-support-octobot"
 
 
 def _get_minimal_exchange_config(exchange_name, exchange_config):
