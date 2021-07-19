@@ -113,7 +113,7 @@ class AbstractWebsocketExchange:
         raise NotImplementedError("subscribe is not implemented")
 
     @abc.abstractmethod
-    async def close_and_restart_sockets(self):
+    async def close_and_restart_sockets(self, debounce_duration=0):
         raise NotImplementedError("close_and_restart_sockets not implemented")
 
     @abc.abstractmethod
@@ -191,6 +191,9 @@ class AbstractWebsocketExchange:
 
     def get_exchange_pair(self, pair):
         raise NotImplementedError("get_exchange_pair is not implemented")
+
+    async def reset(self):
+        raise NotImplementedError("reset is not implemented")
 
     def add_pairs(self, pairs):
         raise NotImplementedError("add_pairs is not implemented")

@@ -32,8 +32,13 @@ cdef class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     cdef public bint is_websocket_running
     cdef public bint is_websocket_authenticated
 
+    cdef public object restart_task
+    cdef public bint restarting
+
     # public
     cpdef bint is_handling(self, str feed_name)
     cpdef bint is_feed_available(self, object feed)
     cpdef bint is_feed_requiring_init(self, object feed)
     cpdef void create_feeds(self)
+
+    cdef void _call_reset_ws_wrapper(self)

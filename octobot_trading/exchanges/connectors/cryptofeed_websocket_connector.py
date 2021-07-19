@@ -133,6 +133,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             if self.client.raw_data_collection:
                 self.client.raw_data_collection.stop()
         except Exception as e:
+            self.logger.exception(e, False)
             self.logger.error(f"Failed to stop websocket feed : {e}")
 
     async def close(self):

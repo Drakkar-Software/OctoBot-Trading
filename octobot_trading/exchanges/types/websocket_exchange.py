@@ -14,9 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import threading
 import concurrent.futures as futures
 
 import octobot_commons.thread_util as thread_util
+import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 import octobot_trading.exchanges.connectors.abstract_websocket_connector as abstract_websocket_connector
@@ -42,6 +44,9 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
 
         self.is_websocket_running = False
         self.is_websocket_authenticated = False
+
+        self.restart_task = None
+        self.restarting = False
 
     async def init_websocket(self, time_frames, trader_pairs, tentacles_setup_config):
         self.websocket_connector = self.get_exchange_connector_class(self.exchange_manager)
@@ -148,14 +153,34 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
     async def wait_sockets(self):
         await asyncio.wait(self.websocket_connectors_tasks)
 
-    async def close_and_restart_sockets(self):
-        for websocket in self.websocket_connectors:
-            await websocket.reset()
+    def _call_reset_ws_wrapper(self):
+        self.restarting = True
+        try:
+            for websocket in self.websocket_connectors:
+                asyncio_tools.run_coroutine_in_asyncio_loop(websocket.reset(), websocket.local_loop)
+        except Exception as e:
+            self.logger.exception(e, True, f"Error when resetting websockets {e}")
+        finally:
+            self.restarting = False
+
+    async def _inner_close_and_restart_sockets(self, debounce_duration):
+        # asyncio.sleep to make it easily cancellable to reschedule later calls
+        await asyncio.sleep(debounce_duration)
+        if self.restarting:
+            self.logger.debug("Restart attempt but a restart is already in progress.")
+            return
+        # reset might take up to a few seconds, no need to wait for it and block the whole async loop
+        threading.Thread(target=self._call_reset_ws_wrapper, name=f"ResetWSWrapper").start()
+
+    async def close_and_restart_sockets(self, debounce_duration=0):
+        if self.restart_task is not None and not self.restart_task.done():
+            self.restart_task.cancel()
+        self.restart_task = asyncio.create_task(self._inner_close_and_restart_sockets(debounce_duration))
 
     async def stop_sockets(self):
         try:
             for websocket in self.websocket_connectors:
-                await websocket.stop()
+                asyncio_tools.run_coroutine_in_asyncio_loop(websocket.stop(), websocket.local_loop)
         except Exception as e:
             self.logger.error(f"Error when stopping sockets : {e}")
 
