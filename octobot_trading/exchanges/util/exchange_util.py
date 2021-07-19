@@ -146,4 +146,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     except Exception as e:
         return False, f"Error when loading exchange account: {e}"
     finally:
+        # do not log stopping message
+        local_exchange_manager.exchange.connector.logger.disable(True)
         await local_exchange_manager.exchange.stop()
+        local_exchange_manager.exchange.connector.logger.disable(False)
