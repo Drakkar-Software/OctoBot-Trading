@@ -15,6 +15,7 @@
 #  License along with this library.
 import asyncio
 import logging
+import threading
 
 import cryptofeed
 import cryptofeed.connection_handler
@@ -23,6 +24,7 @@ import cryptofeed.defines as cryptofeed_constants
 import cryptofeed.exchanges as cryptofeed_exchanges
 
 import octobot_commons
+import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_commons.enums as commons_enums
 import octobot_commons.logging as commons_logging
 import octobot_commons.symbol_util as symbol_util
@@ -74,6 +76,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.min_timeframe = None
 
         self.local_loop = None
+        self.is_websocket_restarting = False
 
         self._fix_signal_handler()
 
@@ -121,10 +124,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self._init_client()
         self._start_client()
 
-    async def stop(self):
-        """
-        Reimplementation of self.client.stop() without calling loop.run_until_complete()
-        """
+    async def _inner_stop(self):
         try:
             for feed in self.client.feeds:
                 feed.stop()
@@ -135,6 +135,15 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         except Exception as e:
             self.logger.exception(e, False)
             self.logger.error(f"Failed to stop websocket feed : {e}")
+
+    async def stop(self):
+        """
+        Reimplementation of self.client.stop() without calling loop.run_until_complete()
+        """
+        if asyncio.get_event_loop() is self.local_loop:
+            await self._inner_stop()
+        else:
+            asyncio_tools.run_coroutine_in_asyncio_loop(self._inner_stop(), self.local_loop)
 
     async def close(self):
         """
@@ -161,7 +170,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         for time_frame in time_frames:
             self._add_time_frame(time_frame)
 
-    async def reset(self):
+    async def _inner_reset(self):
         """
         Removes and stops all running feeds an recreate them
         """
@@ -177,6 +186,24 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             self._start_client(should_create_loop=False)
         except Exception as e:
             self.logger.error(f"Failed to reconnect to websocket : {e}")
+
+    def _call_inner_reset(self):
+        self.is_websocket_restarting = True
+        try:
+            asyncio_tools.run_coroutine_in_asyncio_loop(self._inner_reset(), self.local_loop)
+        except Exception as e:
+            self.logger.exception(e, True, f"Error when resetting websockets {e}")
+        finally:
+            self.is_websocket_restarting = False
+
+    async def reset(self):
+        if self.is_websocket_restarting:
+            self.logger.debug("Reset attempt but a reset is already in progress.")
+            return
+        # force is_websocket_restarting here also to avoid multithreading issues
+        self.is_websocket_restarting = True
+        # reset might take up to a few seconds, no need to wait for it and block the whole async loop
+        threading.Thread(target=self._call_inner_reset, name=f"{self.name}ResetWrapper").start()
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
