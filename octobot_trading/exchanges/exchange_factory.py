@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
 import trading_backend
 
 import octobot_trading.errors as errors
@@ -85,6 +87,9 @@ async def _initialize_exchange_backend(exchange_manager):
     if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated() \
             and not exchange_manager.is_trader_simulated:
         try:
+            if await _is_supporting(exchange_manager):
+                exchange_manager.is_valid_account = True
+                return True
             exchange_manager.is_valid_account, message = await exchange_manager.exchange_backend.is_valid_account()
             if not exchange_manager.is_valid_account:
                 exchange_manager.logger.error(
@@ -99,6 +104,24 @@ async def _initialize_exchange_backend(exchange_manager):
         except Exception as e:
             exchange_manager.is_valid_account = False
             exchange_manager.logger.exception(e, True, f"Error when loading exchange account: {e}")
+        finally:
+            if exchange_manager.is_valid_account:
+                exchange_manager.logger.info("On behalf of the OctoBot team, thank you for "
+                                             "actively supporting the project !")
+
+
+async def _is_supporting(exchange_manager) -> bool:
+    if exchange_manager.community_authenticator is None:
+        return False
+    try:
+        if not exchange_manager.community_authenticator.is_initialized():
+            initialization_timeout = 5
+            await exchange_manager.community_authenticator.await_initialization(initialization_timeout)
+        if exchange_manager.community_authenticator.supports.is_supporting():
+            return True
+    except asyncio.TimeoutError:
+        pass
+    return False
 
 
 async def _create_rest_exchange(exchange_manager) -> None:

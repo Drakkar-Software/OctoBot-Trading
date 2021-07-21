@@ -47,6 +47,7 @@ class OctoBotChannelTradingDataKeys(enum.Enum):
     BACKTESTING = "backtesting"
     MATRIX_ID = "matrix_id"
     TENTACLES_SETUP_CONFIG = "tentacles_setup_config"
+    AUTHENTICATOR = "authenticator"
 
 
 async def octobot_channel_callback(bot_id, subject, action, data) -> None:
@@ -69,6 +70,7 @@ async def _handle_creation(bot_id, action, data):
             exchange_builder = exchanges.create_exchange_builder_instance(config, exchange_name) \
                 .has_matrix(data[OctoBotChannelTradingDataKeys.MATRIX_ID.value]) \
                 .use_tentacles_setup_config(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value]) \
+                .use_community_authenticator(data[OctoBotChannelTradingDataKeys.AUTHENTICATOR.value]) \
                 .set_bot_id(bot_id)
             _set_exchange_type_details(exchange_builder, config, data[OctoBotChannelTradingDataKeys.BACKTESTING.value])
             await exchange_builder.build()
