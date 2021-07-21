@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.4] - 2021-07-21
+### Updated
+- [Exchanges] handle supporters authentication
+
+### Fixed
+- [Exchanges] optimize websockets initialization and pairs addition
+
 ## [1.13.3] - 2021-07-13
 ### Updated
 - [Exchanges] add is_valid_account on api
