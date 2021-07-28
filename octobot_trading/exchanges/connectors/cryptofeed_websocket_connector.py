@@ -60,8 +60,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         cryptofeed_constants.LIQUIDATIONS: Feeds.LIQUIDATIONS,
         cryptofeed_constants.BOOK_DELTA: Feeds.BOOK_DELTA,
         cryptofeed_constants.OPEN_INTEREST: Feeds.OPEN_INTEREST,
-        cryptofeed_constants.FUTURES_INDEX: Feeds.FUTURES_INDEX,
-        cryptofeed_constants.MARKET_INFO: Feeds.MARKET_INFO
+        cryptofeed_constants.FUTURES_INDEX: Feeds.FUTURES_INDEX
     }
 
     def __init__(self, config: object, exchange_manager: object):
@@ -99,7 +98,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             # cryptofeed_constants.BOOK_DELTA: cryptofeed_callbacks.BookUpdateCallback(self.delta)
             # cryptofeed_constants.OPEN_INTEREST: cryptofeed_callbacks.OpenInterestCallback(self.open_interest),
             # cryptofeed_constants.FUTURES_INDEX: cryptofeed_callbacks.FuturesIndexCallback(self.futures_index),
-            # cryptofeed_constants.MARKET_INFO: cryptofeed_callbacks.MarketInfoCallback(self.market_info),
         }
         self._set_async_callbacks()
 
@@ -545,5 +543,5 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def futures_index(self, **kwargs):
         pass
 
-    async def market_info(self, **kwargs):
-        pass  # Coingecko only
+    async def order(feed, symbol, data: dict, receipt_timestamp):
+        print(f"{feed}: {symbol}: Order update: {data}")
