@@ -348,7 +348,6 @@ class WebsocketFeeds(enum.Enum):
     KLINE = 'kline'
     FUNDING = 'funding'
     MARK_PRICE = 'mark_price'
-    MARKET_INFO = 'market_info'
     ORDERS = 'orders'
     FUTURES_INDEX = 'futures_index'
     OPEN_INTEREST = 'open_interest'
