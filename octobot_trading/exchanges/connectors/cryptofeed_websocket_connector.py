@@ -20,8 +20,10 @@ import threading
 import cryptofeed
 import cryptofeed.connection_handler
 import cryptofeed.callback as cryptofeed_callbacks
+import cryptofeed.config as cryptofeed_config
 import cryptofeed.defines as cryptofeed_constants
 import cryptofeed.exchanges as cryptofeed_exchanges
+import cryptofeed.standards as cryptofeed_standards
 
 import octobot_commons
 import octobot_commons.asyncio_tools as asyncio_tools
@@ -60,7 +62,13 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         cryptofeed_constants.LIQUIDATIONS: Feeds.LIQUIDATIONS,
         cryptofeed_constants.BOOK_DELTA: Feeds.BOOK_DELTA,
         cryptofeed_constants.OPEN_INTEREST: Feeds.OPEN_INTEREST,
-        cryptofeed_constants.FUTURES_INDEX: Feeds.FUTURES_INDEX
+        cryptofeed_constants.FUTURES_INDEX: Feeds.FUTURES_INDEX,
+        cryptofeed_constants.LAST_PRICE: Feeds.LAST_PRICE,
+        cryptofeed_constants.ORDER_INFO: Feeds.ORDERS,
+        cryptofeed_constants.USER_FILLS: Feeds.TRADE,
+        cryptofeed_constants.ACC_TRANSACTIONS: Feeds.TRANSACTIONS,
+        cryptofeed_constants.ACC_BALANCES: Feeds.PORTFOLIO,
+        cryptofeed_constants.USER_DATA: None,
     }
 
     def __init__(self, config: object, exchange_manager: object):
@@ -85,12 +93,14 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self._fix_logger()
 
         self.client = None
+        self.client_config = None
         commons_logging.set_logging_level(self.CRYPTOFEED_LOGGERS, logging.WARNING)
 
         self.callback_by_feed = {
-            cryptofeed_constants.TRADES: cryptofeed_callbacks.TradeCallback(self.trade),
+            cryptofeed_constants.TRADES: cryptofeed_callbacks.TradeCallback(self.trades),
             cryptofeed_constants.TICKER: cryptofeed_callbacks.TickerCallback(self.ticker),
-            cryptofeed_constants.CANDLES: cryptofeed_callbacks.CandleCallback(self.candle),  # pylint: disable=E1101
+            cryptofeed_constants.CANDLES: cryptofeed_callbacks.CandleCallback(self.candle),
+            cryptofeed_constants.LAST_PRICE: cryptofeed_callbacks.LastPriceCallback(self.last_price),
             # cryptofeed_constants.L2_BOOK: cryptofeed_callbacks.BookCallback(self.book),
             # cryptofeed_constants.L3_BOOK: cryptofeed_callbacks.BookCallback(self.book),
             # cryptofeed_constants.FUNDING: cryptofeed_callbacks.FundingCallback(self.funding),
@@ -98,6 +108,11 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             # cryptofeed_constants.BOOK_DELTA: cryptofeed_callbacks.BookUpdateCallback(self.delta)
             # cryptofeed_constants.OPEN_INTEREST: cryptofeed_callbacks.OpenInterestCallback(self.open_interest),
             # cryptofeed_constants.FUTURES_INDEX: cryptofeed_callbacks.FuturesIndexCallback(self.futures_index),
+            cryptofeed_constants.ORDER_INFO: cryptofeed_callbacks.OrderInfoCallback(self.order),
+            cryptofeed_constants.USER_FILLS: cryptofeed_callbacks.UserFillsCallback(self.trade),
+            cryptofeed_constants.ACC_TRANSACTIONS: cryptofeed_callbacks.AccTransactionsCallback(self.transaction),
+            cryptofeed_constants.ACC_BALANCES: cryptofeed_callbacks.AccBalancesCallback(self.balance),
+            cryptofeed_constants.USER_DATA: cryptofeed_callbacks.UserDataCallback(self.user_data),
         }
         self._set_async_callbacks()
 
@@ -105,7 +120,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self._create_client()
 
         # Creates cryptofeed exchange instance
-        self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](config=self.client.config)
+        self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](config=self.client_config)
 
     """
     Abstract methods
@@ -118,6 +133,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     """
     Abstract implementations
     """
+
     def start(self):
         self._init_client()
         self._start_client()
@@ -244,14 +260,42 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     """
     Private methods
     """
+
     def _create_client(self):
-        self.client = cryptofeed.FeedHandler()
+        """
+        Creates cryptofeed client instance
+        """
+        self._create_client_config()
+        self.client = cryptofeed.FeedHandler(config=self.client_config)
+
+    def _create_client_config(self):
+        """
+        Creates cryptofeed config
+        """
+        self.client_config = cryptofeed_config.Config()
+        self.client_config.config.get('log', {})['filename'] = ""
+        self.client_config.config.get('rest', {}).get('log', {})['filename'] = ""
+        self.client_config.config[self.get_feed_name().lower()] = self._get_credentials_config()
+
+    def _get_credentials_config(self):
+        """
+        Add exchange credentials to FeedHandler client config
+        """
+        if self._should_authenticate() and self.exchange.authenticated():
+            key_id, key_secret, key_passphrase = self.get_exchange_credentials()
+            return {
+                "key_id": key_id,
+                "key_secret": key_secret,
+                "key_passphrase": key_passphrase
+            }
+        return {}
 
     def _init_client(self):
         """
         Prepares client configuration and instantiates client feeds
         """
         try:
+            self.client.config = self.client_config
             self._filter_exchange_pairs_and_timeframes()
             self._subscribe_feeds()
         except Exception as e:
@@ -275,25 +319,34 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     def _subscribe_feeds(self):
         """
-        Subscribe time frame related feeds and time frame unrelated feeds
+        Prepares the subscription of unauthenticated and authenticated feeds and subscribe all
         """
         if self._should_run_candle_feed():
             self.candle_callback = self.callback_by_feed[self.EXCHANGE_FEEDS[Feeds.CANDLE]]
             self._subscribe_candle_feed()
 
         # drop unsupported channels
-        self.channels = [
-            channel
-            for channel in self.channels
-            if channel not in [Feeds.UNSUPPORTED.value, self.EXCHANGE_FEEDS.get(Feeds.CANDLE)]
-               and not self.should_ignore_feed(self.CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS[channel])
-        ]
+        self.channels = [channel for channel in self.channels if self._is_supported_channel(channel)]
+
         self.callbacks = {
             channel: self.callback_by_feed[channel]
             for channel in self.channels
             if self.callback_by_feed.get(channel)
         }
+
         self._subscribe_all_pairs_feed()
+
+    def _is_supported_channel(self, channel):
+        """
+        Checks if the channel is supported
+        :param channel: the channel name
+        :return: True if the channel is not unsupported, not ignored
+        and if it's an authenticated channel if the exchange is authenticated
+        """
+        if cryptofeed_standards.is_authenticated_channel(channel) and not self.exchange.authenticated():
+            return False
+        return channel not in [Feeds.UNSUPPORTED.value, self.EXCHANGE_FEEDS.get(Feeds.CANDLE)] \
+               and not self.should_ignore_feed(self.CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS[channel])
 
     def _subscribe_candle_feed(self):
         """
@@ -307,7 +360,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  log_message_on_error=True,
                                  channels=[cryptofeed_constants.CANDLES],
                                  callbacks={cryptofeed_constants.CANDLES: self.candle_callback})
-            self.logger.debug(f"Subscribed to the {time_frame.value} time frame OHLCV for {', '.join(self.filtered_pairs)}")
+            self.logger.debug(
+                f"Subscribed to the {time_frame.value} time frame OHLCV for {', '.join(self.filtered_pairs)}")
 
     def _subscribe_all_pairs_feed(self):
         """
@@ -449,7 +503,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             #                            bid_quantity=None,
             #                            bid_price=bid)
 
-    async def trade(self, feed, symbol, order_id, timestamp, side, amount, price, receipt_timestamp):
+    async def trades(self, feed, symbol, order_id, timestamp, side, amount, price, receipt_timestamp):
         if symbol:
             symbol = self.get_pair_from_exchange(symbol)
             await self.push_to_channel(trading_constants.RECENT_TRADES_CHANNEL,
@@ -543,5 +597,53 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def futures_index(self, **kwargs):
         pass
 
-    async def order(feed, symbol, data: dict, receipt_timestamp):
-        print(f"{feed}: {symbol}: Order update: {data}")
+    async def order(self, feed, symbol, data, receipt_timestamp):
+        """
+        Cryptofeed order callback
+        :param feed: the feed
+        :param symbol: the order symbol
+        :param data: a dict of miscellaneous data
+        :param receipt_timestamp: received timestamp
+        """
+        await self.push_to_channel(trading_constants.ORDERS_CHANNEL, orders=[self.exchange.parse_order(data)])
+
+    async def trade(self, feed, symbol, data, receipt_timestamp):
+        """
+        Cryptofeed filled order callback
+        :param feed: the feed
+        :param symbol: the filled order symbol
+        :param data: a dict of miscellaneous data
+        :param receipt_timestamp: received timestamp
+        """
+        await self.push_to_channel(trading_constants.TRADES_CHANNEL, trades=[self.exchange.parse_trade(data)])
+
+    async def balance(self, feed, accounts):
+        """
+        Cryptofeed balance callback
+        :param feed: the feed
+        :param accounts: the balance dict
+        """
+
+    async def transaction(self, **kwargs):
+        """
+        Cryptofeed transaction callback
+        """
+
+    async def last_price(self, feed, symbol, last_price, receipt_timestamp):
+        """
+        Cryptofeed last price callback
+        :param feed: the feed
+        :param symbol: the last price symbol
+        :param last_price: the last price
+        :param receipt_timestamp: received timestamp
+        """
+
+    async def user_data(self, feed, data, receipt_timestamp):
+        """
+        Cryptofeed user data callback
+        Entrypoint of order, trades, etc. updates
+        Example : https://docs.deribit.com/#user-changes-instrument_name-interval
+        :param feed: the feed
+        :param data: received user data
+        :param receipt_timestamp: received timestamp
+        """
