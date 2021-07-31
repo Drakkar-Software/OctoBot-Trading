@@ -70,7 +70,7 @@ async def _handle_creation(bot_id, action, data):
             exchange_builder = exchanges.create_exchange_builder_instance(config, exchange_name) \
                 .has_matrix(data[OctoBotChannelTradingDataKeys.MATRIX_ID.value]) \
                 .use_tentacles_setup_config(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value]) \
-                .use_community_authenticator(data[OctoBotChannelTradingDataKeys.AUTHENTICATOR.value]) \
+                .use_community_authenticator(data.get(OctoBotChannelTradingDataKeys.AUTHENTICATOR.value, None)) \
                 .set_bot_id(bot_id)
             _set_exchange_type_details(exchange_builder, config, data[OctoBotChannelTradingDataKeys.BACKTESTING.value])
             await exchange_builder.build()
