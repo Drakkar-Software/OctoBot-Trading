@@ -63,12 +63,12 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         cryptofeed_constants.BOOK_DELTA: Feeds.BOOK_DELTA,
         cryptofeed_constants.OPEN_INTEREST: Feeds.OPEN_INTEREST,
         cryptofeed_constants.FUTURES_INDEX: Feeds.FUTURES_INDEX,
-        cryptofeed_constants.LAST_PRICE: Feeds.LAST_PRICE,
+        # cryptofeed_constants.LAST_PRICE: Feeds.LAST_PRICE,
         cryptofeed_constants.ORDER_INFO: Feeds.ORDERS,
         cryptofeed_constants.USER_FILLS: Feeds.TRADE,
         cryptofeed_constants.ACC_TRANSACTIONS: Feeds.TRANSACTIONS,
         cryptofeed_constants.ACC_BALANCES: Feeds.PORTFOLIO,
-        cryptofeed_constants.USER_DATA: None,
+        # cryptofeed_constants.USER_DATA: None,
     }
 
     def __init__(self, config: object, exchange_manager: object):
@@ -100,7 +100,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             cryptofeed_constants.TRADES: cryptofeed_callbacks.TradeCallback(self.trades),
             cryptofeed_constants.TICKER: cryptofeed_callbacks.TickerCallback(self.ticker),
             cryptofeed_constants.CANDLES: cryptofeed_callbacks.CandleCallback(self.candle),
-            cryptofeed_constants.LAST_PRICE: cryptofeed_callbacks.LastPriceCallback(self.last_price),
+            # cryptofeed_constants.LAST_PRICE: cryptofeed_callbacks.LastPriceCallback(self.last_price),
             # cryptofeed_constants.L2_BOOK: cryptofeed_callbacks.BookCallback(self.book),
             # cryptofeed_constants.L3_BOOK: cryptofeed_callbacks.BookCallback(self.book),
             # cryptofeed_constants.FUNDING: cryptofeed_callbacks.FundingCallback(self.funding),
@@ -109,10 +109,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             # cryptofeed_constants.OPEN_INTEREST: cryptofeed_callbacks.OpenInterestCallback(self.open_interest),
             # cryptofeed_constants.FUTURES_INDEX: cryptofeed_callbacks.FuturesIndexCallback(self.futures_index),
             cryptofeed_constants.ORDER_INFO: cryptofeed_callbacks.OrderInfoCallback(self.order),
-            cryptofeed_constants.USER_FILLS: cryptofeed_callbacks.UserFillsCallback(self.trade),
+            # cryptofeed_constants.USER_FILLS: cryptofeed_callbacks.UserFillsCallback(self.trade),
             cryptofeed_constants.ACC_TRANSACTIONS: cryptofeed_callbacks.AccTransactionsCallback(self.transaction),
             cryptofeed_constants.ACC_BALANCES: cryptofeed_callbacks.AccBalancesCallback(self.balance),
-            cryptofeed_constants.USER_DATA: cryptofeed_callbacks.UserDataCallback(self.user_data),
+            # cryptofeed_constants.USER_DATA: cryptofeed_callbacks.UserDataCallback(self.user_data),
         }
         self._set_async_callbacks()
 
