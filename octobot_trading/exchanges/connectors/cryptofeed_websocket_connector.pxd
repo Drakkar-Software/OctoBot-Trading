@@ -27,6 +27,7 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef public object candle_callback
     cdef public object cryptofeed_exchange
     cdef public object client_logger
+    cdef public object client_config
 
     cdef public object local_loop
     cdef public bint is_websocket_restarting
