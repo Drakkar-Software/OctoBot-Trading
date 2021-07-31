@@ -117,7 +117,7 @@ class PositionsManager(util.Initializable):
         """
         if symbol is None:
             return self.positions
-        for position in self.positions:
+        for position in list(self.positions.values()):
             if position.symbol == symbol:
                 return position
         return self._create_symbol_position(symbol)
