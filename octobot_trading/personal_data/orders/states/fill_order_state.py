@@ -100,7 +100,7 @@ class FillOrderState(order_state.OrderState):
             # update position if any
             if self.order.exchange_manager.is_future:
                 await self.order.exchange_manager.exchange_personal_data.positions_manager \
-                    .get_symbol_position(self.order.symbol).update_from_filled_order(self)
+                    .get_symbol_position(self.order.symbol).update_from_filled_order(self.order)
 
             # set close state
             await self.order.on_close(force_close=True)  # TODO force ?
