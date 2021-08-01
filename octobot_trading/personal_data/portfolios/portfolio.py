@@ -13,11 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 import copy
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
+import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.util as util
@@ -40,7 +40,7 @@ class Portfolio(util.Initializable):
 
         self.logger = logging.get_logger(
             f"{self.__class__.__name__}{'Simulator' if is_simulated else ''}[{exchange_name}]")
-        self.lock = asyncio.Lock()
+        self.lock = asyncio_tools.RLock()
         self.portfolio = None
 
     async def initialize_impl(self):
