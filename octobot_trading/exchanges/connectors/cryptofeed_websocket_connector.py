@@ -273,15 +273,19 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         Creates cryptofeed config
         """
         self.client_config = cryptofeed_config.Config()
-        self.client_config.config.get('log', {})['filename'] = ""
-        self.client_config.config.get('rest', {}).get('log', {})['filename'] = ""
+        try:
+            # Disable cryptofeed log file
+            self.client_config.config['log']['filename'] = ""
+            self.client_config.config['rest']['log']['filename'] = ""
+        except KeyError:
+            pass
         self.client_config.config[self.get_feed_name().lower()] = self._get_credentials_config()
 
     def _get_credentials_config(self):
         """
         Add exchange credentials to FeedHandler client config
         """
-        if self._should_authenticate() and self.exchange.authenticated():
+        if self._should_use_authenticated_feeds():
             key_id, key_secret, key_passphrase = self.get_exchange_credentials()
             return {
                 "key_id": key_id,
@@ -336,6 +340,12 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
         self._subscribe_all_pairs_feed()
 
+    def _should_use_authenticated_feeds(self):
+        """
+        :return: True when authenticated feeds shouldn't be added
+        """
+        return self._should_authenticate() and self.exchange.authenticated() and not self.exchange_manager.is_sandboxed
+
     def _is_supported_channel(self, channel):
         """
         Checks if the channel is supported
@@ -343,7 +353,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :return: True if the channel is not unsupported, not ignored
         and if it's an authenticated channel if the exchange is authenticated
         """
-        if cryptofeed_standards.is_authenticated_channel(channel) and not self.exchange.authenticated():
+        if cryptofeed_standards.is_authenticated_channel(channel) and not self._should_use_authenticated_feeds():
             return False
         return channel not in [Feeds.UNSUPPORTED.value, self.EXCHANGE_FEEDS.get(Feeds.CANDLE)] \
                and not self.should_ignore_feed(self.CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS[channel])
