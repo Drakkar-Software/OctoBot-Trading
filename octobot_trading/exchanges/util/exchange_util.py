@@ -96,7 +96,7 @@ def _get_docs_url():
 def _get_exchanges_docs_url():
     try:
         import octobot.constants
-        return octobot.constants.OCTOBOT_EXCHANGES_DOCS_URL
+        return octobot.constants.EXCHANGES_DOCS_URL
     except ImportError:
         return "https://exchanges.docs.octobot.online"
 
