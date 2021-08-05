@@ -197,5 +197,5 @@ def is_valid_account(exchange_manager) -> bool:
 def cancel_ccxt_throttle_task():
     for task in asyncio.all_tasks():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise
-        if str(task._coro).startswith("<coroutine object throttle.<locals>.run at"):
+        if str(task._coro).startswith("<coroutine object Throttler.looper at"):
             task.cancel()
