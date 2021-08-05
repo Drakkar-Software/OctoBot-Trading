@@ -163,13 +163,11 @@ class ExchangeConfig(util.Initializable):
         for time_frame in time_frame_manager.get_config_time_frame(self.config):
             if self.exchange_manager.time_frame_exists(time_frame.value):
                 self.traded_time_frames.append(time_frame)
-        if not self.exchange_manager.is_backtesting or not self.traded_time_frames:
-            # add shortest time frame for realtime evaluators or if no time frame at all has
-            # been registered in backtesting
-            client_shortest_time_frame = time_frame_manager.find_min_time_frame(
-                self.exchange_manager.client_time_frames,
-                constants.MIN_EVAL_TIME_FRAME)
-            self.real_time_time_frames.append(client_shortest_time_frame)
+        # add shortest time frame for realtime evaluators
+        client_shortest_time_frame = time_frame_manager.find_min_time_frame(
+            self.exchange_manager.client_time_frames,
+            constants.MIN_EVAL_TIME_FRAME)
+        self.real_time_time_frames.append(client_shortest_time_frame)
         self.traded_time_frames = list(set().union(self.traded_time_frames, self.real_time_time_frames))
         self.traded_time_frames = time_frame_manager.sort_time_frames(self.traded_time_frames, reverse=True)
 
