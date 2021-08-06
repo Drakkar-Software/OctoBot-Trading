@@ -108,7 +108,7 @@ def _get_time_sync_error_message(exchange_name, details):
 
 
 def get_partners_explanation_message():
-    return f"More info on partner exchanges on {_get_exchanges_docs_url()}/#partner-exchanges-support-octobot"
+    return f"More info on partner exchanges on {_get_exchanges_docs_url()}#partner-exchanges-support-octobot"
 
 
 def _get_minimal_exchange_config(exchange_name, exchange_config):
