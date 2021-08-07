@@ -515,12 +515,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def ticker(self, feed, symbol, bid, ask, timestamp, receipt_timestamp):
         if symbol:
             symbol = self.get_pair_from_exchange(symbol)
-            # await self.push_to_channel(trading_constants.ORDER_BOOK_TICKER_CHANNEL,
-            #                            symbol=symbol,
-            #                            ask_quantity=None,
-            #                            ask_price=ask,
-            #                            bid_quantity=None,
-            #                            bid_price=bid)
+            await self.push_to_channel(channel_name=trading_constants.MARK_PRICE_CHANNEL,
+                                       symbol=symbol,
+                                       mark_price=float((ask + bid) / 2),
+                                       mark_price_source=trading_enums.MarkPriceSources.TICKER_CLOSE_PRICE.value)
 
     async def trades(self, feed, symbol, order_id, timestamp, side, amount, price, receipt_timestamp):
         if symbol:
