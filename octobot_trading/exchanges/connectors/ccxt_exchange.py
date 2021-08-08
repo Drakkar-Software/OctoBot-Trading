@@ -264,7 +264,12 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 # update_order_attribute(order_id, ecoc.STATUS.value, OrderStatus.CANCELED.value) TODO
                 pass
         else:
-            raise octobot_trading.errors.NotSupported("This exchange doesn't support fetchOrder")
+            # When fetch_order is not supported, uses get_open_orders and extract order id
+            open_orders = await self.get_open_orders(symbol=symbol)
+            for order in open_orders:
+                if order.get(ecoc.ID.value, None) == order_id:
+                    return order
+        return None # OrderNotFound
 
     async def get_all_orders(self, symbol: str = None, since: int = None,
                              limit: int = None, **kwargs: dict) -> list:
