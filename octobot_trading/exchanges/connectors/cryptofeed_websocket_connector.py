@@ -515,6 +515,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def ticker(self, feed, symbol, bid, ask, timestamp, receipt_timestamp):
         if symbol:
             symbol = self.get_pair_from_exchange(symbol)
+            # Can't create a full ticker from bid, ask, timestamp and symbol data
+            # Push (ask + bid) / 2 as close price in MARK_PRICE channel
             await self.push_to_channel(channel_name=trading_constants.MARK_PRICE_CHANNEL,
                                        symbol=symbol,
                                        mark_price=float((ask + bid) / 2),
