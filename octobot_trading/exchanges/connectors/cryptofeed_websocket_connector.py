@@ -23,7 +23,6 @@ import cryptofeed.callback as cryptofeed_callbacks
 import cryptofeed.config as cryptofeed_config
 import cryptofeed.defines as cryptofeed_constants
 import cryptofeed.exchanges as cryptofeed_exchanges
-import cryptofeed.standards as cryptofeed_standards
 
 import octobot_commons
 import octobot_commons.asyncio_tools as asyncio_tools
@@ -53,6 +52,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     }
 
     CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS = {
+        # Unauthenticated
         cryptofeed_constants.TRADES: Feeds.TRADES,
         cryptofeed_constants.TICKER: Feeds.TICKER,
         cryptofeed_constants.CANDLES: Feeds.CANDLE,
@@ -64,11 +64,17 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         cryptofeed_constants.OPEN_INTEREST: Feeds.OPEN_INTEREST,
         cryptofeed_constants.FUTURES_INDEX: Feeds.FUTURES_INDEX,
         # cryptofeed_constants.LAST_PRICE: Feeds.LAST_PRICE,
-        cryptofeed_constants.ORDER_INFO: Feeds.ORDERS,
-        cryptofeed_constants.USER_FILLS: Feeds.TRADE,
-        cryptofeed_constants.ACC_TRANSACTIONS: Feeds.TRANSACTIONS,
-        cryptofeed_constants.ACC_BALANCES: Feeds.PORTFOLIO,
+
+        # Authenticated
+        cryptofeed_constants.TRANSACTIONS: Feeds.TRANSACTIONS,
+        cryptofeed_constants.BALANCES: Feeds.PORTFOLIO,
         # cryptofeed_constants.USER_DATA: None,
+        cryptofeed_constants.PLACE_ORDER: Feeds.ORDERS,
+        cryptofeed_constants.CANCEL_ORDER: Feeds.ORDERS,
+        cryptofeed_constants.ORDER_STATUS: Feeds.ORDERS,
+        cryptofeed_constants.ORDER_INFO: Feeds.ORDERS,
+        cryptofeed_constants.TRADE_HISTORY: Feeds.TRADE,
+        cryptofeed_constants.USER_FILLS: Feeds.TRADE,
     }
 
     def __init__(self, config: object, exchange_manager: object):
@@ -110,8 +116,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             # cryptofeed_constants.FUTURES_INDEX: cryptofeed_callbacks.FuturesIndexCallback(self.futures_index),
             cryptofeed_constants.ORDER_INFO: cryptofeed_callbacks.OrderInfoCallback(self.order),
             # cryptofeed_constants.USER_FILLS: cryptofeed_callbacks.UserFillsCallback(self.trade),
-            cryptofeed_constants.ACC_TRANSACTIONS: cryptofeed_callbacks.AccTransactionsCallback(self.transaction),
-            cryptofeed_constants.ACC_BALANCES: cryptofeed_callbacks.AccBalancesCallback(self.balance),
+            cryptofeed_constants.TRANSACTIONS: cryptofeed_callbacks.TransactionsCallback(self.transaction),
+            cryptofeed_constants.BALANCES: cryptofeed_callbacks.BalancesCallback(self.balance),
             # cryptofeed_constants.USER_DATA: cryptofeed_callbacks.UserDataCallback(self.user_data),
         }
         self._set_async_callbacks()
@@ -353,7 +359,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :return: True if the channel is not unsupported, not ignored
         and if it's an authenticated channel if the exchange is authenticated
         """
-        if cryptofeed_standards.is_authenticated_channel(channel) and not self._should_use_authenticated_feeds():
+        if self.cryptofeed_exchange.is_authenticated_channel(channel) and not self._should_use_authenticated_feeds():
             return False
         return channel not in [Feeds.UNSUPPORTED.value, self.EXCHANGE_FEEDS.get(Feeds.CANDLE)] \
                and not self.should_ignore_feed(self.CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS[channel])
