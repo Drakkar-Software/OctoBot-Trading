@@ -15,6 +15,7 @@
 #  License along with this library.
 
 import octobot_commons.asyncio_tools as asyncio_tools
+import octobot_commons.constants as commons_constants
 import octobot_trading.api as trading_api
 import octobot_trading.exchanges as exchanges
 import octobot_tentacles_manager.api as tentacles_manager_api
@@ -29,6 +30,9 @@ async def create_test_exchange_manager(
         rest_only: bool = False,
         is_real: bool = True,
         is_sandboxed: bool = False) -> exchanges.ExchangeManager:
+    # enable exchange name in config
+    config[commons_constants.CONFIG_EXCHANGES][exchange_name] = {commons_constants.CONFIG_ENABLED_OPTION: True}
+    
     builder = exchanges.create_exchange_builder_instance(config, exchange_name)
     builder.disable_trading_mode()
     builder.use_tentacles_setup_config(tentacles_manager_api.get_tentacles_setup_config())
