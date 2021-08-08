@@ -15,6 +15,7 @@
 #  License along with this library.
 import asyncio
 import logging
+import os
 import threading
 
 import cryptofeed
@@ -281,8 +282,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.client_config = cryptofeed_config.Config()
         try:
             # Disable cryptofeed log file
-            self.client_config.config['log']['filename'] = ""
-            self.client_config.config['rest']['log']['filename'] = ""
+            self.client_config.config['log']['filename'] = os.devnull
+            self.client_config.config['rest']['log']['filename'] = os.devnull
         except KeyError:
             pass
         self.client_config.config[self.get_feed_name().lower()] = self._get_credentials_config()
