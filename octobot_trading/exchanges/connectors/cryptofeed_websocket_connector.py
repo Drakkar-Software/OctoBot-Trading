@@ -78,6 +78,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         cryptofeed_constants.USER_FILLS: Feeds.TRADE,
     }
 
+    EXCHANGE_CONSTRUCTOR_KWARGS = {}
+
     def __init__(self, config: object, exchange_manager: object):
         super().__init__(config, exchange_manager)
         self.channels = []
@@ -127,7 +129,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self._create_client()
 
         # Creates cryptofeed exchange instance
-        self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](config=self.client_config)
+        self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](
+            config=self.client_config, **self.EXCHANGE_CONSTRUCTOR_KWARGS)
 
     """
     Abstract methods
@@ -372,7 +375,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         for time_frame in self.time_frames:
             self.client.add_feed(self.get_feed_name(),
                                  candle_interval=time_frame.value,
-                                 candle_closed_only=False,
                                  symbols=self.filtered_pairs,
                                  log_message_on_error=True,
                                  channels=[cryptofeed_constants.CANDLES],
