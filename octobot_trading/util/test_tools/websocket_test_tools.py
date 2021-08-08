@@ -15,9 +15,11 @@
 #  License along with this library
 
 import asyncio
+import contextlib
 
 import octobot_commons.channels_name as channels_name
 import octobot_trading.exchanges as exchanges
+import octobot_trading.util.test_tools.exchanges_test_tools as exchanges_test_tools
 
 try:
     import mock
@@ -33,6 +35,17 @@ EXPECTED_PUSHED_CHANNELS = {
     channels_name.OctoBotTradingChannelsName.KLINE_CHANNEL.value,
     channels_name.OctoBotTradingChannelsName.TICKER_CHANNEL.value
 }
+
+
+@contextlib.asynccontextmanager
+async def ws_exchange_manager(config: object, exchange_name: str):
+    exchange_manager_instance = None
+    try:
+        exchange_manager_instance = await exchanges_test_tools.create_test_exchange_manager(
+            config=config, exchange_name=exchange_name)
+        yield exchange_manager_instance
+    finally:
+        await exchanges_test_tools.stop_test_exchange_manager(exchange_manager_instance)
 
 
 async def test_unauthenticated_push_to_channel_coverage_websocket(
@@ -70,6 +83,7 @@ async def test_unauthenticated_push_to_channel_coverage_websocket(
             await ws_exchange.start_sockets()
             await asyncio.sleep(time_before_assert)
 
-    assert pushed_channel_names == expected_pushed_channels
-
-    await ws_exchange.close_sockets()
+    try:
+        assert pushed_channel_names == expected_pushed_channels
+    finally:
+        await ws_exchange.close_sockets()
