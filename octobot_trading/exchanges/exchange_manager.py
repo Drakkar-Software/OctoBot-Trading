@@ -87,6 +87,7 @@ class ExchangeManager(util.Initializable):
         if self.has_websocket:
             await self.exchange_web_socket.stop_sockets()
             await self.exchange_web_socket.close_sockets()
+            self.exchange_web_socket.clear()
             self.exchange_web_socket = None
 
         # stop trading modes

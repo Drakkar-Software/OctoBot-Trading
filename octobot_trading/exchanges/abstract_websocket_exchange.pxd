@@ -49,3 +49,4 @@ cdef class AbstractWebsocketExchange:
     cpdef str feed_to_exchange(self, object feed)
     cpdef str get_pair_from_exchange(self, str pair)
     cpdef str get_exchange_pair(self, str pair)
+    cpdef void clear(self)
