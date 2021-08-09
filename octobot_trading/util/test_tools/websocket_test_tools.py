@@ -87,3 +87,4 @@ async def test_unauthenticated_push_to_channel_coverage_websocket(
         assert pushed_channel_names == expected_pushed_channels
     finally:
         await ws_exchange.close_sockets()
+        ws_exchange.clear()

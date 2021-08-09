@@ -212,3 +212,7 @@ class AbstractWebsocketExchange:
         return not self.exchange_manager.without_auth \
             and not self.exchange_manager.is_trader_simulated \
             and api_key and api_secret
+
+    def clear(self):
+        self.exchange = None
+        self.exchange_manager = None
