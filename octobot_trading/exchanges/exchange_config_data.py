@@ -46,6 +46,9 @@ class ExchangeConfig(util.Initializable):
         # list of exchange supported pairs on which we want to collect data through updaters or websocket
         self.watched_pairs = []
 
+        # list of required time frames from configuration that are available
+        self.available_required_time_frames = []
+
         # list of exchange supported time frames
         self.traded_time_frames = []
 
@@ -162,15 +165,17 @@ class ExchangeConfig(util.Initializable):
     def _set_config_time_frame(self):
         for time_frame in time_frame_manager.get_config_time_frame(self.config):
             if self.exchange_manager.time_frame_exists(time_frame.value):
-                self.traded_time_frames.append(time_frame)
-        if not self.exchange_manager.is_backtesting or not self.traded_time_frames:
+                self.available_required_time_frames.append(time_frame)
+        if not self.exchange_manager.is_backtesting or not self.available_required_time_frames:
             # add shortest time frame for realtime evaluators or if no time frame at all has
             # been registered in backtesting
             client_shortest_time_frame = time_frame_manager.find_min_time_frame(
                 self.exchange_manager.client_time_frames,
                 constants.MIN_EVAL_TIME_FRAME)
             self.real_time_time_frames.append(client_shortest_time_frame)
-        self.traded_time_frames = list(set().union(self.traded_time_frames, self.real_time_time_frames))
+        self.available_required_time_frames = time_frame_manager.sort_time_frames(self.available_required_time_frames,
+                                                                                  reverse=True)
+        self.traded_time_frames = list(set().union(self.available_required_time_frames, self.real_time_time_frames))
         self.traded_time_frames = time_frame_manager.sort_time_frames(self.traded_time_frames, reverse=True)
 
     @staticmethod
