@@ -191,6 +191,6 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         return feed_name in self.handled_feeds[feed_name] and self.handled_feeds[feed_name]
 
     def clear(self):
-        super().clear()
+        super(WebSocketExchange, self).clear()
         for connector in self.websocket_connectors:
             connector.clear()
