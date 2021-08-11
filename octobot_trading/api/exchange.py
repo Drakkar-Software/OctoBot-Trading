@@ -38,8 +38,8 @@ def get_exchange_manager_from_exchange_name_and_id(exchange_name, exchange_id) -
     return exchanges.Exchanges.instance().get_exchange(exchange_name, exchange_id).exchange_manager
 
 
-def get_exchange_time_frames_without_real_time(exchange_name, exchange_id) -> list:
-    return exchanges.Exchanges.instance().get_exchange(exchange_name, exchange_id).time_frames_without_real_time
+def get_exchange_available_required_time_frames(exchange_name, exchange_id) -> list:
+    return exchanges.Exchanges.instance().get_exchange(exchange_name, exchange_id).available_required_time_frames
 
 
 # prefer get_exchange_configurations_from_exchange_name when possible
