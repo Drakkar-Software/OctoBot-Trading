@@ -59,7 +59,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         try:
             await self.fetch_and_push(is_from_bot=False)
         except errors.NotSupported:
-            self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
+            self.logger.error(f"{self.channel.exchange_manager.exchange_name} is not supporting open orders updates")
             await self.pause()
         except Exception as e:
             self.logger.error(f"Fail to initialize orders : {e}")
@@ -79,9 +79,14 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         :param is_from_bot: True if the order was created by OctoBot
         :param limit: the exchange request orders count limit
         """
+        # should not raise: open orders are necessary
         await self._open_orders_fetch_and_push(is_from_bot=is_from_bot, limit=limit)
         await asyncio.sleep(self.TIME_BETWEEN_ORDERS_REFRESH)
-        await self._closed_orders_fetch_and_push(limit=limit)
+        try:
+            # can raise, closed orders are not critical data
+            await self._closed_orders_fetch_and_push(limit=limit)
+        except errors.NotSupported:
+            self.logger.debug(f"{self.channel.exchange_manager.exchange_name} is not supporting closed orders updates")
 
     async def _open_orders_fetch_and_push(self, is_from_bot=True, limit=ORDERS_UPDATE_LIMIT):
         """
