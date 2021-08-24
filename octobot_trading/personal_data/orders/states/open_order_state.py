@@ -39,9 +39,11 @@ class OpenOrderState(order_state.OrderState):
         if forced:
             self.state = enums.States.OPEN
 
-        # update the availability of the currency in the portfolio
-        self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio. \
-            update_portfolio_available(self.order, is_new_order=True)
+        if self.order.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized:
+            # update the availability of the currency in the portfolio if order is not
+            # from exchange initialization (otherwise it's already taken into account in portfolio)
+            self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio. \
+                update_portfolio_available(self.order, is_new_order=True)
 
         return await super().initialize_impl()
 

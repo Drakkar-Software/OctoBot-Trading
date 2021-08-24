@@ -27,6 +27,7 @@ cdef class OrdersManager(util.Initializable):
     cdef exchanges.Trader trader
 
     cdef public object orders
+    cdef public bint are_exchange_orders_initialized
 
     cdef void _reset_orders(self)
     cdef void _check_orders_size(self)
