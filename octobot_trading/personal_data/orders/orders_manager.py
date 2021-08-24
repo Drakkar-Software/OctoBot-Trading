@@ -34,6 +34,8 @@ class OrdersManager(util.Initializable):
         self.trader = trader
         self.orders_initialized = False  # TODO
         self.orders = collections.OrderedDict()
+        # if this the orders manager completed the initial exchange orders sync phase (only on real trader)
+        self.are_exchange_orders_initialized = self.trader.simulate
 
     async def initialize_impl(self):
         self._reset_orders()
