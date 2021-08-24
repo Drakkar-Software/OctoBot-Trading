@@ -137,7 +137,9 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
     try:
         is_compatible, error = await backend.is_valid_account()
-        message = f"Please create a new {exchange_name.capitalize()} account to use websockets. {error}."
+        message = f"[REST API] {exchange_name.capitalize()} connection can be faster " \
+                  f"using websockets. {error}. " \
+                  f"Please create a new {exchange_name.capitalize()} account to use websockets. "
         return is_compatible, message if error else error
     except trading_backend.TimeSyncError:
         return False, _get_time_sync_error_message(exchange_name, "account details")
