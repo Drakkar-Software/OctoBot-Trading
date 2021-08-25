@@ -24,12 +24,17 @@ cdef class CCXTExchange(abstract_exchange.AbstractExchange):
 
     cdef public bint is_authenticated
 
+    cdef dict options
+    cdef dict headers
+
     # private
     cdef void _create_client(self)
 
     # @staticmethod waiting for a future version of cython
     # cdef bint _ensure_order_details_completeness(object order, list order_required_fields=*)
 
+    cpdef void add_header(self, str header_key, object header_value)
+    cpdef void add_option(self, str option_key, object option_value)
     cpdef dict get_ccxt_client_login_options(self)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)
 

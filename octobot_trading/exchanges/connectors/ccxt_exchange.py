@@ -45,6 +45,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         self.all_currencies_price_ticker = None
         self.is_authenticated = False
 
+        self.options = self.get_ccxt_client_login_options()
+        self.headers = self.exchange_manager.exchange_backend.get_headers()
+
         self._create_exchange_type()
         self._create_client()
 
@@ -88,6 +91,22 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             return {'defaultType': 'margin'}
         return {'defaultType': 'spot'}
 
+    def add_header(self, header_key, header_value):
+        """
+        Add a new header to ccxt client
+        :param header_key: the header key
+        :param header_value: the header value
+        """
+        self.headers[header_key] = header_value
+
+    def add_option(self, option_key, option_value):
+        """
+        Add a new option to ccxt client
+        :param option_key: the option key
+        :param option_value: the option value
+        """
+        self.options[option_key] = option_value
+
     async def _ensure_auth(self):
         try:
             await self.get_balance()
@@ -118,7 +137,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                     'password': password,
                     'verbose': False,
                     'enableRateLimit': True,
-                    'options': self.get_ccxt_client_login_options()
+                    'options': self.options,
+                    'headers': self.headers
                 })
                 if self._should_authenticate():
                     self.client.checkRequiredCredentials()
@@ -143,7 +163,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return self.exchange_type({
             'verbose': False,
             'enableRateLimit': True,
-            'options': self.get_ccxt_client_login_options()
+            'options': self.options,
+            'headers': self.headers
         })
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
