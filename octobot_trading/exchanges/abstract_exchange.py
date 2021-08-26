@@ -102,6 +102,13 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("is_supporting_exchange is not implemented")
 
+    @classmethod
+    def is_supporting_sandbox(cls) -> bool:
+        """
+        :return: True if the exchange is supporting sandbox mode
+        """
+        return True
+
     def get_exchange_current_time(self):
         """
         :return: the exchange current time in seconds
