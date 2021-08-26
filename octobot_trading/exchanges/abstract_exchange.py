@@ -253,14 +253,15 @@ class AbstractExchange(util.Initializable):
         raise NotImplementedError("cancel_order is not implemented")
 
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: float,
-                           price: float = None, stop_price=None, **kwargs: dict) -> dict:
+                           price: float = None, stop_price=None, params: dict = None, **kwargs: dict) -> dict:
         """
         Create a order on the exchange
         :param order_type: the order type
         :param symbol: the order symbol
         :param quantity: the order quantity
         :param price: the order price
-        :param stop_price: the orde rstop price
+        :param stop_price: the order stop price
+        :param params: the order request params
         :return: the created order dict
         """
         raise NotImplementedError("create_order is not implemented")
