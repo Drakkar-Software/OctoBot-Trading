@@ -55,7 +55,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def initialize_impl(self):
         try:
-            self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
+            if self.exchange_manager.exchange.is_supporting_sandbox():
+                self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
+
             if self._should_authenticate():
                 await self._ensure_auth()
 
