@@ -76,31 +76,6 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             self.logger.error(e)
         return None
 
-    async def _create_specific_order(self, order_type, symbol, quantity, price=None):
-        created_order = None
-        params = self.exchange_manager.exchange_backend.get_orders_parameters(None)
-        if order_type == enums.TraderOrderType.BUY_MARKET:
-            created_order = await self.connector.client.create_market_buy_order(symbol, quantity, params=params)
-        elif order_type == enums.TraderOrderType.BUY_LIMIT:
-            created_order = await self.connector.client.create_limit_buy_order(symbol, quantity, price, params=params)
-        elif order_type == enums.TraderOrderType.SELL_MARKET:
-            created_order = await self.connector.client.create_market_sell_order(symbol, quantity, params=params)
-        elif order_type == enums.TraderOrderType.SELL_LIMIT:
-            created_order = await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
-        elif order_type == enums.TraderOrderType.STOP_LOSS:
-            created_order = None
-        elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
-            created_order = None
-        elif order_type == enums.TraderOrderType.TAKE_PROFIT:
-            created_order = None
-        elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
-            created_order = None
-        elif order_type == enums.TraderOrderType.TRAILING_STOP:
-            created_order = None
-        elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
-            created_order = None
-        return created_order
-
     def _ensure_order_details_completeness(self, order, order_required_fields=None, order_non_empty_fields=None):
         if order_required_fields is None:
             order_required_fields = self.ORDER_REQUIRED_FIELDS
@@ -109,6 +84,61 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         # ensure all order_required_fields are present and all order_non_empty_fields are not empty
         return all(key in order for key in order_required_fields) and \
             all(order[key] for key in order_non_empty_fields)
+
+    async def _create_specific_order(self, order_type, symbol, quantity, price=None) -> dict:
+        created_order = None
+        params = self.exchange_manager.exchange_backend.get_orders_parameters(None)
+        if order_type == enums.TraderOrderType.BUY_MARKET:
+            created_order = await self._create_market_buy_order(symbol, quantity, params=params)
+        elif order_type == enums.TraderOrderType.BUY_LIMIT:
+            created_order = await self._create_limit_buy_order(symbol, quantity, price, params=params)
+        elif order_type == enums.TraderOrderType.SELL_MARKET:
+            created_order = await self._create_market_sell_order(symbol, quantity, params=params)
+        elif order_type == enums.TraderOrderType.SELL_LIMIT:
+            created_order = await self._create_limit_sell_order(symbol, quantity, price, params=params)
+        elif order_type == enums.TraderOrderType.STOP_LOSS:
+            created_order = await self._create_market_stop_loss_order(symbol, quantity, price, params=params)
+        elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
+            created_order = await self._create_limit_stop_loss_order(symbol, quantity, price, params=params)
+        elif order_type == enums.TraderOrderType.TAKE_PROFIT:
+            created_order = await self._create_market_take_profit_order(symbol, quantity, price, params=params)
+        elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
+            created_order = await self._create_limit_take_profit_order(symbol, quantity, price, params=params)
+        elif order_type == enums.TraderOrderType.TRAILING_STOP:
+            created_order = await self._create_market_trailing_stop_order(symbol, quantity, price, params=params)
+        elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
+            created_order = await self._create_limit_trailing_stop_order(symbol, quantity, price, params=params)
+        return created_order
+
+    async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.client.create_market_buy_order(symbol, quantity, params=params)
+
+    async def _create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.client.create_limit_buy_order(symbol, quantity, price, params=params)
+
+    async def _create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.client.create_market_sell_order(symbol, quantity, params=params)
+
+    async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
+
+    async def _create_market_stop_loss_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return None
+
+    async def _create_limit_stop_loss_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return None
+
+    async def _create_market_take_profit_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return None
+
+    async def _create_limit_take_profit_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return None
+
+    async def _create_market_trailing_stop_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return None
+
+    async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, params=None) -> dict:
+        return None
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()
