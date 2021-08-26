@@ -45,8 +45,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         self.all_currencies_price_ticker = None
         self.is_authenticated = False
 
-        self.options = self.get_ccxt_client_login_options()
-        self.headers = self.exchange_manager.exchange_backend.get_headers()
+        self.headers = {}
+        self.options = {}
+        # add default options
+        self.add_options(self.get_ccxt_client_login_options())
 
         self._create_exchange_type()
         self._create_client()
@@ -91,21 +93,25 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             return {'defaultType': 'margin'}
         return {'defaultType': 'spot'}
 
-    def add_header(self, header_key, header_value):
+    def add_headers(self, headers_dict):
         """
-        Add a new header to ccxt client
-        :param header_key: the header key
-        :param header_value: the header value
+        Add new headers to ccxt client
+        :param headers_dict: the additional header keys and values as dict
         """
-        self.headers[header_key] = header_value
+        for header_key, header_value in headers_dict.items():
+            self.headers[header_key] = header_value
+            if self.client is not None:
+                self.client.headers[header_key] = header_value
 
-    def add_option(self, option_key, option_value):
+    def add_options(self, options_dict):
         """
-        Add a new option to ccxt client
-        :param option_key: the option key
-        :param option_value: the option value
+        Add new options to ccxt client
+        :param options_dict: the additional option keys and values as dict
         """
-        self.options[option_key] = option_value
+        for option_key, option_value in options_dict.items():
+            self.options[option_key] = option_value
+            if self.client is not None:
+                self.client.options[option_key] = option_value
 
     async def _ensure_auth(self):
         try:
