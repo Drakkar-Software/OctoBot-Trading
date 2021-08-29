@@ -376,3 +376,8 @@ class FutureContractType(enum.Enum):
     PERPETUAL = "perpetual"
     INVERSE_EXPIRABLE = "inverse_expirable"
     EXPIRABLE = "expirable"
+
+
+class SubAccountColumns(enum.Enum):
+    ID = "id"
+    NAME = "name"

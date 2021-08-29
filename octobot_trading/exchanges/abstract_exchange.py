@@ -348,6 +348,12 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("switch_to_account is not available on this exchange")
 
+    async def get_sub_account_list(self):
+        """
+        :return: the exchange sub account list if supported by the exchange
+        """
+        raise NotImplementedError("get_sub_account_list is not available on this exchange")
+
     """
     Parsers
     """
