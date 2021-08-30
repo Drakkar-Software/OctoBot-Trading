@@ -224,6 +224,10 @@ class ExchangeManager(util.Initializable):
             configuration.decrypt_element_if_possible(common_constants.CONFIG_EXCHANGE_PASSWORD, config_exchange, None)
         )
 
+    def get_exchange_sub_account_id(self, exchange_name):
+        config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
+        return config_exchange.get(common_constants.CONFIG_EXCHANGE_SUB_ACCOUNT, None)
+
     def __str__(self):
         exchange_type = 'rest'
         exchange_type = 'spot only' if self.is_spot_only else exchange_type
