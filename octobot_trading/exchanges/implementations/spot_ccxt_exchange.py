@@ -51,7 +51,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: float, price: float = None,
                            stop_price=None, params: dict = None, **kwargs: dict) -> typing.Optional[dict]:
         try:
-            created_order = await self._create_specific_order(order_type, symbol, quantity, price=price, params=params)
+            created_order = await self._create_order_with_retry(order_type, symbol, quantity, price, params)
             # some exchanges are not returning the full order details on creation: fetch it if necessary
             if created_order and not self._ensure_order_details_completeness(created_order):
                 if ecoc.ID.value in created_order:
@@ -75,6 +75,17 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.error(e)
         return None
+
+    async def _create_order_with_retry(self, order_type, symbol, quantity, price, params) -> dict:
+        try:
+            return await self._create_specific_order(order_type, symbol, quantity, price=price, params=params)
+        except (ccxt.InvalidOrder, ccxt.BadRequest) as e:
+            # can be raised when exchange precision/limits rules change
+            self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
+                              f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
+            await self.connector.client.load_markets(reload=True)
+            # retry order creation with updated markets (ccxt will use the updated market values)
+            return await self._create_specific_order(order_type, symbol, quantity, price=price, params=params)
 
     def _ensure_order_details_completeness(self, order, order_required_fields=None, order_non_empty_fields=None):
         if order_required_fields is None:
