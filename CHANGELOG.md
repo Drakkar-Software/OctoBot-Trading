@@ -4,7 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.13.13] - 2021-08-25
+## [1.13.13] - 2021-08-30
+### Added
+- [Exchange Manager] exchange subaccount
+- [CCXTExchange] exchange subaccount list
+
+### Updated
+- [CCXTExchange] order precision and limits when required
+
+### Removed
+- [Order Manager] Order limit
+
+## [1.13.12] - 2021-08-25
 ### Added
 - [CCXTExchange] options and headers setters
 
