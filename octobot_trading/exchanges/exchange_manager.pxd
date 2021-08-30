@@ -82,5 +82,6 @@ cdef class ExchangeManager(util.Initializable):
     cpdef int get_currently_handled_pair_with_time_frame(self)
     cpdef bint get_is_overloaded(self)
     cpdef tuple get_exchange_credentials(self, object logger, str exchange_name)
+    cpdef str get_exchange_sub_account_id(self, str exchange_name)
     cpdef bint should_decrypt_token(self, object logger)
     cpdef object get_symbol_data(self, str symbol)
