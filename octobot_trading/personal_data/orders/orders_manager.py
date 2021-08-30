@@ -26,7 +26,7 @@ import octobot_trading.personal_data.orders.order_factory as order_factory
 
 
 class OrdersManager(util.Initializable):
-    MAX_ORDERS_COUNT = 2000
+    MAX_ORDERS_COUNT = 0
 
     def __init__(self, trader):
         super().__init__()
@@ -99,7 +99,7 @@ class OrdersManager(util.Initializable):
         self.orders = collections.OrderedDict()
 
     def _check_orders_size(self):
-        if len(self.orders) > self.MAX_ORDERS_COUNT:
+        if self.MAX_ORDERS_COUNT and len(self.orders) > self.MAX_ORDERS_COUNT:
             self._remove_oldest_orders(int(self.MAX_ORDERS_COUNT / 2))
 
     def _select_orders(self, state=None, symbol=None, since=-1, limit=-1):
