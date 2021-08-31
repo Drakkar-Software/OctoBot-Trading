@@ -78,6 +78,14 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         cryptofeed_constants.USER_FILLS: Feeds.TRADE,
     }
 
+    CANDLE_CHANNELS = [
+        cryptofeed_constants.CANDLES,
+    ]
+    WATCHED_PAIR_CHANNELS = [
+        cryptofeed_constants.TRADES,
+        cryptofeed_constants.TICKER,
+    ]
+
     EXCHANGE_CONSTRUCTOR_KWARGS = {}
 
     def __init__(self, config: object, exchange_manager: object):
@@ -88,6 +96,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.candle_callback = None
 
         self.filtered_pairs = []
+        self.watched_pairs = []
         self.filtered_timeframes = []
         self.min_timeframe = None
 
@@ -178,13 +187,14 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         except Exception as e:
             self.logger.error(f"Failed to close websocket feed : {e}")
 
-    def add_pairs(self, pairs):
+    def add_pairs(self, pairs, watching_only=False):
         """
         Add new pairs to self.filtered_pairs
         :param pairs: the list of pair to add
+        :param watching_only: if pairs are for watching or trading purpose
         """
         for pair in pairs:
-            self._add_pair(self.get_exchange_pair(pair))
+            self._add_pair(self.get_exchange_pair(pair), watching_only=watching_only)
 
     def add_time_frames(self, time_frames):
         """
@@ -206,7 +216,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             self._create_client()
             if self.candle_callback is not None:
                 self._subscribe_candle_feed()
-            self._subscribe_all_pairs_feed()
+            self._subscribe_pairs_feeds()
             self._start_client(should_create_loop=False)
         except Exception as e:
             self.logger.error(f"Failed to reconnect to websocket : {e}")
@@ -348,7 +358,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             if self.callback_by_feed.get(channel)
         }
 
-        self._subscribe_all_pairs_feed()
+        self._subscribe_pairs_feeds()
 
     def _should_use_authenticated_feeds(self):
         """
@@ -377,22 +387,42 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  candle_interval=time_frame.value,
                                  symbols=self.filtered_pairs,
                                  log_message_on_error=True,
-                                 channels=[cryptofeed_constants.CANDLES],
-                                 callbacks={cryptofeed_constants.CANDLES: self.candle_callback})
+                                 channels=self.CANDLE_CHANNELS,
+                                 callbacks=self.callbacks)
             self.logger.debug(
                 f"Subscribed to the {time_frame.value} time frame OHLCV for {', '.join(self.filtered_pairs)}")
 
-    def _subscribe_all_pairs_feed(self):
+    def _subscribe_pairs_feeds(self):
         """
         Subscribes all time frame unrelated feeds
+        """
+        self._subscribe_traded_pairs_feed()
+        self._subscribe_watched_pairs_feed()
+
+    def _subscribe_traded_pairs_feed(self):
+        """
+        Subscribes all time frame unrelated feeds for traded pairs
         """
         if self.channels:
             self.client.add_feed(self.get_feed_name(),
                                  symbols=self.filtered_pairs,
+                                 log_message_on_error=True,
                                  channels=self.channels,
                                  callbacks=self.callbacks)
             for channel in self.channels:
                 self.logger.debug(f"Subscribed to {channel}")
+
+    def _subscribe_watched_pairs_feed(self):
+        """
+        Subscribes all time frame unrelated feeds for watched pairs
+        """
+        channels = [channel for channel in self.WATCHED_PAIR_CHANNELS if self._is_supported_channel(channel)]
+        if self.watched_pairs and channels:
+            self.client.add_feed(self.get_feed_name(),
+                                 symbols=self.watched_pairs,
+                                 log_message_on_error=True,
+                                 channels=channels,
+                                 callbacks=self.callbacks)
 
     def _filter_exchange_pairs_and_timeframes(self):
         """
@@ -401,13 +431,17 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self._filter_exchange_symbols()
         self._filter_exchange_time_frames()
 
-    def _add_pair(self, pair):
+    def _add_pair(self, pair, watching_only):
         """
         Add a pair to self.filtered_pairs if supported
         :param pair: the pair to add
+        :param watching_only: when True add pair to watched_pairs else to filtered_pairs
         """
         if self._is_supported_pair(pair):
-            self.filtered_pairs.append(pair)
+            if watching_only:
+                self.watched_pairs.append(pair)
+            else:
+                self.filtered_pairs.append(pair)
         else:
             self.logger.error(f"{self.get_pair_from_exchange(pair)} pair is not supported by this exchange's websocket")
 
@@ -416,7 +450,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         Populates self.filtered_pairs from self.pairs when pair is supported by the cryptofeed exchange
         """
         for pair in self.pairs:
-            self._add_pair(pair)
+            self._add_pair(pair, watching_only=False)
 
     def _add_time_frame(self, time_frame):
         """

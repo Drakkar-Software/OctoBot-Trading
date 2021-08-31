@@ -179,9 +179,9 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         thread_util.stop_thread_pool_executor_non_gracefully(self.websocket_connectors_executors)
         self.websocket_connectors_executors = None
 
-    def add_pairs(self, pairs):
+    def add_pairs(self, pairs, watching_only=False):
         for websocket in self.websocket_connectors:
-            websocket.add_pairs(pairs)
+            websocket.add_pairs(pairs, watching_only=watching_only)
 
     def add_time_frames(self, time_frames):
         for websocket in self.websocket_connectors:

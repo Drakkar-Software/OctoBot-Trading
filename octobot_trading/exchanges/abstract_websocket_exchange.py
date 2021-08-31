@@ -195,10 +195,19 @@ class AbstractWebsocketExchange:
     async def reset(self):
         raise NotImplementedError("reset is not implemented")
 
-    def add_pairs(self, pairs):
+    def add_pairs(self, pairs, watching_only=False):
+        """
+        Add new pairs to self.filtered_pairs
+        :param pairs: the list of pair to add
+        :param watching_only: if pairs are for watching or trading purpose
+        """
         raise NotImplementedError("add_pairs is not implemented")
 
     def add_time_frames(self, time_frames):
+        """
+        Add new time_frames to self.filtered_time_frames
+        :param time_frames: the list of time_frame to add
+        """
         raise NotImplementedError("add_time_frames is not implemented")
 
     def get_max_handled_pair_with_time_frame(self):
