@@ -45,7 +45,7 @@ INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME = -1
 FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm", "bitcoincom",
                             "bitfinex", "bitfinex2", "bitmex", "idex"]
 
-TESTED_EXCHANGES = ["binance", "ftx", "okex", "bitmax", "kucoin", "coinbasepro"]
+TESTED_EXCHANGES = ["binance", "ftx", "okex", "gateio", "huobi", "huobipro", "ascendex", "kucoin", "coinbasepro"]
 SIMULATOR_TESTED_EXCHANGES = ["bybit"]
 
 CONFIG_DEFAULT_FEES = 0.1
