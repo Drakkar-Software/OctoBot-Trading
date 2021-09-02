@@ -95,6 +95,8 @@ from octobot_trading.personal_data.portfolios import (
     FuturePortfolio,
     MarginPortfolio,
     SpotPortfolio,
+    parse_decimal_portfolio,
+    portfolio_to_float,
 )
 from octobot_trading.personal_data import positions
 from octobot_trading.personal_data.positions import (
@@ -239,6 +241,8 @@ __all__ = [
     "FuturePortfolio",
     "MarginPortfolio",
     "SpotPortfolio",
+    "parse_decimal_portfolio",
+    "portfolio_to_float",
     "PositionsUpdaterSimulator",
     "Position",
     "parse_position_type",

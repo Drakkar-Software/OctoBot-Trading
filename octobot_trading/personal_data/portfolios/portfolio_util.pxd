@@ -10,17 +10,10 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General License for more details.
+#  Lesser General Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
-cdef class MarginPortfolio(portfolio_class.Portfolio):
-    cdef void _reset_currency_portfolio(self, str currency)
-    cdef dict _parse_currency_balance(self, dict currency_balance)
-    cdef dict _create_currency_portfolio(self, object available, object total, object margin=*)
-    cdef void _set_currency_portfolio(self, str currency, object available, object total, object margin=*)
-
-    # return object to ensure PortfolioNegativeValueError forwarding
-    cdef object _update_currency_portfolio(self, str currency, object available=*, object total=*, object margin=*)
+cpdef dict parse_decimal_portfolio(dict portfolio)
+cpdef dict portfolio_to_float(dict portfolio)

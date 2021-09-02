@@ -19,6 +19,7 @@ from octobot_commons import enums as common_enums
 
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
+import octobot_trading.personal_data as personal_data
 from octobot_trading import enums as enums
 
 
@@ -117,7 +118,7 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
         return await self.connector.switch_to_account(account_type=account_type)
 
     def parse_balance(self, balance):
-        return self.connector.parse_balance(balance)
+        return personal_data.parse_decimal_portfolio(self.connector.parse_balance(balance))
 
     def parse_trade(self, trade):
         return self.connector.parse_trade(trade)

@@ -26,8 +26,8 @@ cdef class PortfolioValueHolder:
     cdef object logger
     cdef object config
 
-    cdef public double portfolio_origin_value
-    cdef public double portfolio_current_value
+    cdef public object portfolio_origin_value
+    cdef public object portfolio_current_value
 
     cdef public dict last_prices_by_trading_pair
     cdef public dict origin_crypto_currencies_values
@@ -43,13 +43,13 @@ cdef class PortfolioValueHolder:
     cpdef bint update_origin_crypto_currencies_values(self, str symbol, double mark_price)
     cpdef dict get_current_crypto_currencies_values(self)
     cpdef dict get_current_holdings_values(self)
-    cpdef double get_origin_portfolio_current_value(self, bint refresh_values=*)
-    # cpdef double get_currency_holding_ratio(self, str currency)
+    cpdef object get_origin_portfolio_current_value(self, bint refresh_values=*)
+    # cpdef object get_currency_holding_ratio(self, str currency)
 
-    cdef double _update_portfolio_current_value(self, dict portfolio, dict currencies_values=*, bint fill_currencies_values=*)
+    cdef object _update_portfolio_current_value(self, dict portfolio, dict currencies_values=*, bint fill_currencies_values=*)
     cdef void _fill_currencies_values(self, dict currencies_values)
     cdef dict _update_portfolio_and_currencies_current_value(self)
-    cdef double _check_currency_initialization(self, str currency, double currency_value)
+    cdef object _check_currency_initialization(self, str currency, object currency_value)
     cdef void _recompute_origin_portfolio_initial_value(self)
     cdef void _try_to_ask_ticker_missing_symbol_data(self, str currency, str symbol, str reversed_symbol)
     cdef void _ask_ticker_data_for_currency(self, list symbols_to_add)
