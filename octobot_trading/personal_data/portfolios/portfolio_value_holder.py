@@ -34,8 +34,8 @@ class PortfolioValueHolder:
 
         self.initializing_symbol_prices = set()
 
-        self.portfolio_origin_value = 0
-        self.portfolio_current_value = 0
+        self.portfolio_origin_value = constants.ZERO
+        self.portfolio_current_value = constants.ZERO
 
         self.last_prices_by_trading_pair = {}
         self.origin_portfolio = None
@@ -72,7 +72,7 @@ class PortfolioValueHolder:
             if market == self.portfolio_manager.reference_market:
                 self.origin_crypto_currencies_values[currency] = mark_price
             else:
-                self.origin_crypto_currencies_values[market] = 1 / mark_price
+                self.origin_crypto_currencies_values[market] = constants.ONE / mark_price
         self.last_prices_by_trading_pair[symbol] = mark_price
         return origin_currencies_should_be_updated
 
@@ -102,7 +102,7 @@ class PortfolioValueHolder:
         """
         return self._evaluate_value(currency, self.portfolio_manager.portfolio.get_currency_from_given_portfolio(
             currency, common_constants.PORTFOLIO_TOTAL)) / self.portfolio_current_value \
-            if self.portfolio_current_value else 0
+            if self.portfolio_current_value else constants.ZERO
 
     async def handle_profitability_recalculation(self, force_recompute_origin_portfolio) -> None:
         """
@@ -129,7 +129,7 @@ class PortfolioValueHolder:
         Init origin portfolio values if necessary
         :param force_recompute_origin_portfolio: when True, force origin portfolio computation
         """
-        if self.portfolio_origin_value == 0:
+        if self.portfolio_origin_value == constants.ZERO:
             # try to update portfolio origin value if it's not known yet
             await self._init_origin_portfolio_and_currencies_value()
         if force_recompute_origin_portfolio:
@@ -189,7 +189,7 @@ class PortfolioValueHolder:
         :return: the currency value
         """
         # easy case --> the current currency is the reference currency or the quantity is 0
-        if currency == self.portfolio_manager.reference_market or quantity == 0:
+        if currency == self.portfolio_manager.reference_market or quantity == constants.ZERO:
             return quantity
         currency_value = self._try_get_value_of_currency(currency, quantity, raise_error)
         return self._check_currency_initialization(currency=currency, currency_value=currency_value)
@@ -201,7 +201,7 @@ class PortfolioValueHolder:
         :param currency_value: the currency value
         :return: currency_value after checking
         """
-        if currency_value > 0 and currency in self.initializing_symbol_prices:
+        if currency_value > constants.ZERO and currency in self.initializing_symbol_prices:
             self.initializing_symbol_prices.remove(currency)
         return currency_value
 
@@ -228,7 +228,7 @@ class PortfolioValueHolder:
                 return self.last_prices_by_trading_pair[symbol] * quantity
 
             if self.portfolio_manager.exchange_manager.symbol_exists(reversed_symbol) and \
-                    self.last_prices_by_trading_pair[reversed_symbol] != 0:
+                    self.last_prices_by_trading_pair[reversed_symbol] != constants.ZERO:
                 return quantity / self.last_prices_by_trading_pair[reversed_symbol]
 
             if currency not in self.missing_currency_data_in_exchange:
@@ -239,7 +239,7 @@ class PortfolioValueHolder:
                 self._try_to_ask_ticker_missing_symbol_data(currency, symbol, reversed_symbol)
                 if raise_error:
                     raise missing_data_exception
-        return 0
+        return constants.ZERO
 
     def _try_to_ask_ticker_missing_symbol_data(self, currency, symbol, reversed_symbol):
         """
@@ -316,11 +316,11 @@ class PortfolioValueHolder:
             currency_to_evaluate = currency
             try:
                 if currency not in evaluated_currencies:
-                    evaluated_pair_values[currency] = self._evaluate_value(currency, 1)
+                    evaluated_pair_values[currency] = self._evaluate_value(currency, constants.ONE)
                     evaluated_currencies.add(currency)
                 if market not in evaluated_currencies:
                     currency_to_evaluate = market
-                    evaluated_pair_values[market] = self._evaluate_value(market, 1)
+                    evaluated_pair_values[market] = self._evaluate_value(market, constants.ONE)
                     evaluated_currencies.add(market)
             except KeyError:
                 missing_tickers.add(currency_to_evaluate)
@@ -343,7 +343,7 @@ class PortfolioValueHolder:
             try:
                 if currency not in evaluated_currencies and self._should_currency_be_considered(
                         currency, portfolio, ignore_missing_currency_data):
-                    evaluated_pair_values[currency] = self._evaluate_value(currency, 1)
+                    evaluated_pair_values[currency] = self._evaluate_value(currency, constants.ONE)
                     evaluated_currencies.add(currency)
             except KeyError:
                 missing_tickers.add(currency)
@@ -370,11 +370,11 @@ class PortfolioValueHolder:
         :param raise_error: When True, forward exceptions
         :return: the currency value
         """
-        if currency in portfolio and portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL] != 0:
+        if currency in portfolio and portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL] != constants.ZERO:
             if currencies_values and currency in currencies_values:
                 return currencies_values[currency] * portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL]
             return self._evaluate_value(currency, portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL], raise_error)
-        return 0
+        return constants.ZERO
 
     def _should_currency_be_considered(self, currency, portfolio, ignore_missing_currency_data):
         """
@@ -386,5 +386,5 @@ class PortfolioValueHolder:
         :return: True if enough data is available to evaluate currency value
         """
         return (currency not in self.missing_currency_data_in_exchange or ignore_missing_currency_data) and \
-               (portfolio[currency][common_constants.PORTFOLIO_TOTAL] > 0 or currency in
+               (portfolio[currency][common_constants.PORTFOLIO_TOTAL] > constants.ZERO or currency in
                 self.portfolio_manager.portfolio_profitability.valuated_currencies)

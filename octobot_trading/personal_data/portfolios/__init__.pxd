@@ -46,6 +46,11 @@ from octobot_trading.personal_data.portfolios.types cimport (
     MarginPortfolio,
     SpotPortfolio,
 )
+from octobot_trading.personal_data.portfolios cimport portfolio_util
+from octobot_trading.personal_data.portfolios.portfolio_util import (
+    parse_decimal_portfolio,
+    portfolio_to_float,
+)
 
 __all__ = [
     "BalanceUpdaterSimulator",
@@ -63,4 +68,6 @@ __all__ = [
     "FuturePortfolio",
     "MarginPortfolio",
     "SpotPortfolio",
+    "parse_decimal_portfolio",
+    "portfolio_to_float",
 ]

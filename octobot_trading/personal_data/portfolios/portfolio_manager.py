@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
 
@@ -94,7 +96,7 @@ class PortfolioManager(util.Initializable):
         """
         return await self.portfolio_profitability. \
             update_profitability(force_recompute_origin_portfolio=self.portfolio_value_holder.
-                                 update_origin_crypto_currencies_values(symbol, mark_price))
+                                 update_origin_crypto_currencies_values(symbol, decimal.Decimal(str(mark_price))))
 
     async def _refresh_real_trader_portfolio(self) -> bool:
         """
@@ -147,8 +149,9 @@ class PortfolioManager(util.Initializable):
         """
         Load new portfolio from config settings
         """
-        portfolio_amount_dict = self.config[commons_constants.CONFIG_SIMULATOR][
-            commons_constants.CONFIG_STARTING_PORTFOLIO]
+        portfolio_amount_dict = personal_data.parse_decimal_portfolio(
+            self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]
+        )
 
         try:
             self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))

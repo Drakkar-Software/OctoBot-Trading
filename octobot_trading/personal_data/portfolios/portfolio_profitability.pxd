@@ -28,16 +28,16 @@ cdef class PortfolioProfitability:
     cdef portfolio_manager.PortfolioManager portfolio_manager
     cdef portfolio_value_holder.PortfolioValueHolder value_manager
 
-    cdef public double profitability
-    cdef public double profitability_percent
-    cdef public double profitability_diff
-    cdef public double market_profitability_percent
-    cdef public double initial_portfolio_current_profitability
+    cdef public object profitability
+    cdef public object profitability_percent
+    cdef public object profitability_diff
+    cdef public object market_profitability_percent
+    cdef public object initial_portfolio_current_profitability
 
     cdef set traded_currencies_without_market_specific
     cdef public set valuated_currencies
 
-    cdef double _calculate_average_market_profitability(self)
+    cdef object _calculate_average_market_profitability(self)
     cdef void _reset_before_profitability_calculation(self)
     cdef void _update_profitability_calculation(self)
     cdef void _update_portfolio_delta(self)

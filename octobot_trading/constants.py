@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
+import decimal
 
 import octobot_trading.enums as enums
 
@@ -41,6 +42,11 @@ TENTACLES_TRADING_MODE_PATH = "Mode"
 DEFAULT_EXCHANGE_TIME_LAG = 10
 DEFAULT_BACKTESTING_TIME_LAG = 0
 INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME = -1
+
+# Decimal default values (decimals are immutable, can be stored as constant)
+ZERO = decimal.Decimal(0)
+ONE = decimal.Decimal(1)
+ONE_HUNDRED = decimal.Decimal(100)
 
 FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm", "bitcoincom",
                             "bitfinex", "bitfinex2", "bitmex", "idex"]

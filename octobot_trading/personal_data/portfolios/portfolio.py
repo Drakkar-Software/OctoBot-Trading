@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import copy
+import decimal
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
@@ -21,6 +22,7 @@ import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.util as util
+import octobot_trading.personal_data as personal_data
 
 
 class Portfolio(util.Initializable):
@@ -80,7 +82,7 @@ class Portfolio(util.Initializable):
             self.portfolio = new_balance
         else:
             self.portfolio.update(new_balance)
-        self.logger.debug(f"Portfolio updated | {constants.CURRENT_PORTFOLIO_STRING} {self.portfolio}")
+        self.logger.debug(f"Portfolio updated | {constants.CURRENT_PORTFOLIO_STRING} {self}")
         return True
 
     def get_currency_from_given_portfolio(self, currency, portfolio_type=common_constants.PORTFOLIO_AVAILABLE):
@@ -165,10 +167,13 @@ class Portfolio(util.Initializable):
         :param amount_dict:
         :return: the portfolio dictionary
         """
-        if not all(isinstance(i, (int, float)) for i in amount_dict.values()):
-            raise RuntimeError("Portfolio has to be initialized using numbers")
+        if not all(isinstance(i, decimal.Decimal) for i in amount_dict.values()):
+            raise RuntimeError("Portfolio has to be initialized using decimal.Decimal")
         return {currency: self._create_currency_portfolio(available=total, total=total)
                 for currency, total in amount_dict.items()}
+
+    def __str__(self):
+        return f"{personal_data.portfolio_to_float(self.portfolio)}"
 
     def _update_portfolio_data(self, currency, value, total=True, available=False):
         """
@@ -180,8 +185,8 @@ class Portfolio(util.Initializable):
         """
         if currency in self.portfolio:
             self._update_currency_portfolio(currency,
-                                            available=value if available else 0,
-                                            total=value if total else 0)
+                                            available=value if available else constants.ZERO,
+                                            total=value if total else constants.ZERO)
         else:
             self._set_currency_portfolio(currency=currency, available=value, total=value)
 
@@ -194,9 +199,11 @@ class Portfolio(util.Initializable):
         """
         return self._create_currency_portfolio(
             available=currency_balance.get(constants.CONFIG_PORTFOLIO_FREE,
-                                           currency_balance.get(common_constants.PORTFOLIO_AVAILABLE, 0)) or 0,
+                                           currency_balance.get(common_constants.PORTFOLIO_AVAILABLE,
+                                                                constants.ZERO)) or constants.ZERO,
             total=currency_balance.get(constants.CONFIG_PORTFOLIO_TOTAL,
-                                       currency_balance.get(common_constants.PORTFOLIO_TOTAL, 0)) or 0)
+                                       currency_balance.get(common_constants.PORTFOLIO_TOTAL,
+                                                            constants.ZERO)) or constants.ZERO)
 
     def _create_currency_portfolio(self, available, total):
         """
@@ -205,14 +212,17 @@ class Portfolio(util.Initializable):
         :param total: the total value
         :return: the portfolio dictionary
         """
-        return {common_constants.PORTFOLIO_AVAILABLE: available, common_constants.PORTFOLIO_TOTAL: total}
+        return {
+            common_constants.PORTFOLIO_AVAILABLE: available,
+            common_constants.PORTFOLIO_TOTAL: total
+        }
 
     def _reset_currency_portfolio(self, currency):
         """
         Reset the currency portfolio to 0
         :param currency: the currency to reset
         """
-        self._set_currency_portfolio(currency=currency, available=0, total=0)
+        self._set_currency_portfolio(currency=currency, available=constants.ZERO, total=constants.ZERO)
 
     def _set_currency_portfolio(self, currency, available, total):
         """
@@ -223,7 +233,7 @@ class Portfolio(util.Initializable):
         """
         self.portfolio[currency] = self._create_currency_portfolio(available=available, total=total)
 
-    def _update_currency_portfolio(self, currency, available=0, total=0):
+    def _update_currency_portfolio(self, currency, available=constants.ZERO, total=constants.ZERO):
         """
         Update the currency portfolio
         :param currency: the currency to update
@@ -295,7 +305,7 @@ def ensure_portfolio_update_validness(currency, origin_quantity, update_quantity
     :param update_quantity: the update value
     :return: the updated quantity
     """
-    if origin_quantity + update_quantity < 0:
+    if origin_quantity + update_quantity < constants.ZERO:
         raise errors.PortfolioNegativeValueError(f"Trying to update {currency} with {update_quantity} "
                                                  f"but quantity was {origin_quantity}")
     return update_quantity

@@ -36,6 +36,7 @@ from octobot_trading.personal_data.portfolios import sub_portfolio
 from octobot_trading.personal_data.portfolios import portfolio_manager
 from octobot_trading.personal_data.portfolios import portfolio_value_holder
 from octobot_trading.personal_data.portfolios import types
+from octobot_trading.personal_data.portfolios import portfolio_util
 
 
 from octobot_trading.personal_data.portfolios.portfolio_factory import (
@@ -58,6 +59,10 @@ from octobot_trading.personal_data.portfolios.types import (
     MarginPortfolio,
     SpotPortfolio,
 )
+from octobot_trading.personal_data.portfolios.portfolio_util import (
+    parse_decimal_portfolio,
+    portfolio_to_float,
+)
 
 __all__ = [
     "BalanceUpdaterSimulator",
@@ -77,4 +82,6 @@ __all__ = [
     "FuturePortfolio",
     "MarginPortfolio",
     "SpotPortfolio",
+    "parse_decimal_portfolio",
+    "portfolio_to_float",
 ]

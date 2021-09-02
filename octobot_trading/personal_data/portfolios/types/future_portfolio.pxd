@@ -19,8 +19,8 @@ cimport octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 cdef class FuturePortfolio(portfolio_class.Portfolio):
     cdef void _update_portfolio_from_future_order(self,
                                               object order,
-                                              double order_quantity,
-                                              double order_price,
+                                              object order_quantity,
+                                              object order_price,
                                               bint subtract_fees=*,
                                               bint inverse_calculation=*,
                                               bint update_available=*,

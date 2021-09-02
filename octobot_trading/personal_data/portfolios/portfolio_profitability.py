@@ -13,11 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
 import octobot_commons.logging as logging
 import octobot_commons.symbol_util as symbol_util
 
 import octobot_trading.util as util
+import octobot_trading.constants as constants
 
 
 class PortfolioProfitability:
@@ -33,11 +33,11 @@ class PortfolioProfitability:
                                          f"{self.portfolio_manager.exchange_manager.exchange_name}]")
 
         # profitability attributes
-        self.profitability = 0
-        self.profitability_percent = 0
-        self.profitability_diff = 0
-        self.market_profitability_percent = 0
-        self.initial_portfolio_current_profitability = 0
+        self.profitability = constants.ZERO
+        self.profitability_percent = constants.ZERO
+        self.profitability_diff = constants.ZERO
+        self.market_profitability_percent = constants.ZERO
+        self.initial_portfolio_current_profitability = constants.ZERO
 
         # buffer of currencies excluding market only used currencies ex: conf = btc/usd, eth/btc, ltc/btc, here usd
         # is market only => not used to compute market average profitability
@@ -65,7 +65,7 @@ class PortfolioProfitability:
         try:
             await self.portfolio_manager.handle_profitability_recalculation(force_recompute_origin_portfolio)
             self._update_profitability_calculation()
-            return self.profitability_diff != 0
+            return self.profitability_diff != constants.ZERO
         except KeyError as missing_data_exception:
             self.logger.warning(f"Missing ticker data to calculate profitability")
             self.logger.warning(f"Missing {missing_data_exception} ticker data to calculate profitability")
@@ -77,10 +77,10 @@ class PortfolioProfitability:
         Prepare profitability calculation
         """
         self.profitability_diff = self.profitability_percent
-        self.profitability = 0
-        self.profitability_percent = 0
-        self.market_profitability_percent = 0
-        self.initial_portfolio_current_profitability = 0
+        self.profitability = constants.ZERO
+        self.profitability_percent = constants.ZERO
+        self.market_profitability_percent = constants.ZERO
+        self.initial_portfolio_current_profitability = constants.ZERO
 
     def _update_profitability_calculation(self):
         """
@@ -89,13 +89,14 @@ class PortfolioProfitability:
         initial_portfolio_current_value = self.value_manager.get_origin_portfolio_current_value()
         self.profitability = self.value_manager.portfolio_current_value - self.value_manager.portfolio_origin_value
 
-        if self.value_manager.portfolio_origin_value > 0:
-            self.profitability_percent = (100 * self.value_manager.portfolio_current_value /
-                                          self.value_manager.portfolio_origin_value) - 100
-            self.initial_portfolio_current_profitability = \
-                (100 * initial_portfolio_current_value / self.value_manager.portfolio_origin_value) - 100
+        if self.value_manager.portfolio_origin_value > constants.ZERO:
+            self.profitability_percent = (constants.ONE_HUNDRED * self.value_manager.portfolio_current_value /
+                                          self.value_manager.portfolio_origin_value) - constants.ONE_HUNDRED
+            self.initial_portfolio_current_profitability = (constants.ONE_HUNDRED * initial_portfolio_current_value /
+                                                            self.value_manager.portfolio_origin_value) - \
+                                                           constants.ONE_HUNDRED
         else:
-            self.profitability_percent = 0
+            self.profitability_percent = constants.ZERO
         self._update_portfolio_delta()
 
     def _update_portfolio_delta(self):
@@ -114,9 +115,10 @@ class PortfolioProfitability:
                          for currency, value
                          in self._only_symbol_currency_filter(self.value_manager.
                                                               current_crypto_currencies_values).items()
-                         if self.value_manager.origin_crypto_currencies_values[currency] > 0]
+                         if self.value_manager.origin_crypto_currencies_values[currency] > constants.ZERO]
 
-        return sum(origin_values) / len(origin_values) * 100 - 100 if origin_values else 0
+        return sum(origin_values) / len(origin_values) * constants.ONE_HUNDRED - constants.ONE_HUNDRED \
+            if origin_values else constants.ZERO
 
     def _only_symbol_currency_filter(self, currency_dict):
         """

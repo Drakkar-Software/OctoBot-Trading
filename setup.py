@@ -120,6 +120,7 @@ packages_list = [
     "octobot_trading.personal_data.portfolios.portfolio",
     "octobot_trading.personal_data.portfolios.portfolio_factory",
     "octobot_trading.personal_data.portfolios.portfolio_profitability",
+    "octobot_trading.personal_data.portfolios.portfolio_util",
     "octobot_trading.personal_data.portfolios.types.spot_portfolio",
     "octobot_trading.personal_data.portfolios.types.future_portfolio",
     "octobot_trading.personal_data.portfolios.types.margin_portfolio",

@@ -33,8 +33,8 @@ cdef class Portfolio(util.Initializable):
     cdef bint _is_simulated
 
     # public methods
-    cpdef double get_currency_portfolio(self, str currency, str portfolio_type=*)
-    cpdef double get_currency_from_given_portfolio(self, str currency, str portfolio_type=*)
+    cpdef object get_currency_portfolio(self, str currency, str portfolio_type=*)
+    cpdef object get_currency_from_given_portfolio(self, str currency, str portfolio_type=*)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
     cpdef void reset(self)
     # return object to ensure PortfolioNegativeValueError forwarding
@@ -52,14 +52,14 @@ cdef class Portfolio(util.Initializable):
     # private methods
     cdef void _reset_currency_portfolio(self, str currency)
     cdef dict _parse_currency_balance(self, dict currency_balance)
-    cdef dict _create_currency_portfolio(self, double available, double total)
-    cdef void _set_currency_portfolio(self, str currency, double available, double total)
+    cdef dict _create_currency_portfolio(self, object available, object total)
+    cdef void _set_currency_portfolio(self, str currency, object available, object total)
     cdef void _reset_all_portfolio_available(self)
     # return object to ensure PortfolioNegativeValueError forwarding
-    cdef object _update_portfolio_data(self, str currency, double value, bint total=*, bint available=*)
-    cdef object _update_currency_portfolio(self, str currency, double available=*, double total=*)
+    cdef object _update_portfolio_data(self, str currency, object value, bint total=*, bint available=*)
+    cdef object _update_currency_portfolio(self, str currency, object available=*, object total=*)
     cdef object _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 
 cdef bint _should_update_available(order_class.Order order)
 
-cpdef object ensure_portfolio_update_validness(str currency, double origin_quantity, double update_quantity)
+cpdef object ensure_portfolio_update_validness(str currency, object origin_quantity, object update_quantity)

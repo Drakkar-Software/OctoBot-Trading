@@ -204,7 +204,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 balance.pop(constants.CCXT_INFO, None)
                 balance.pop(enums.ExchangeConstantsCCXTColumns.DATETIME.value, None)
                 balance.pop(enums.ExchangeConstantsCCXTColumns.TIMESTAMP.value, None)
-                return balance
+                return personal_data.parse_decimal_portfolio(balance)
 
         except ccxt.InvalidNonce as err:
             exchanges.log_time_sync_error(self.logger, self.name, err, "real trader portfolio")
