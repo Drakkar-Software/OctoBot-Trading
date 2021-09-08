@@ -18,7 +18,8 @@ import pytest
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TraderOrderType, TradeOrderSide
 from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_SYMBOL_QUANTITY
-from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
+from tests.test_utils.random_numbers import decimal_random_price, random_price, decimal_random_quantity, \
+    random_recent_trade
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -28,11 +29,11 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_stop_loss_limit_order_trigger(stop_loss_limit_order):
-    order_price = random_price()
+    order_price = decimal_random_price()
     stop_loss_limit_order.limit_price = order_price - 10
     stop_loss_limit_order.update(
         price=order_price,
-        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY / 10),
+        quantity=decimal_random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY / 10),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.STOP_LOSS_LIMIT,
     )
@@ -44,7 +45,7 @@ async def test_stop_loss_limit_order_trigger(stop_loss_limit_order):
     price_events_manager = stop_loss_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(min_value=order_price + 1),
+        [random_recent_trade(price=random_price(min_value=float(order_price + 1)),
                              timestamp=stop_loss_limit_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not stop_loss_limit_order.is_filled()

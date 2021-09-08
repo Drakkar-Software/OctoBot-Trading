@@ -37,9 +37,11 @@ class PortfolioValueHolder:
         self.portfolio_origin_value = constants.ZERO
         self.portfolio_current_value = constants.ZERO
 
+        # values in decimal.Decimal
         self.last_prices_by_trading_pair = {}
         self.origin_portfolio = None
 
+        # values in decimal.Decimal
         self.origin_crypto_currencies_values = {}
         self.current_crypto_currencies_values = {}
 
@@ -50,7 +52,7 @@ class PortfolioValueHolder:
         """
         Update origin cryptocurrencies value
         :param symbol: the symbol to update
-        :param mark_price: the symbol mark price value
+        :param mark_price: the symbol mark price value in decimal.Decimal
         :return: True if the origin portfolio should be recomputed
         """
         currency, market = symbol_util.split_symbol(symbol)

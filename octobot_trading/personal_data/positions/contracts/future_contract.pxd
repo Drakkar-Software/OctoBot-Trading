@@ -25,9 +25,9 @@ cdef class FutureContract:
     cdef public double expiration_timestamp
 
     cdef public double minimum_tick_size
-    cdef public double contract_size
-    cdef public double current_leverage
-    cdef public double maximum_leverage
+    cdef public object contract_size
+    cdef public object current_leverage
+    cdef public object maximum_leverage
 
     cpdef bint is_inverse_contract(self)
     cpdef bint is_isolated(self)

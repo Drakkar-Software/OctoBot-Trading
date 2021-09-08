@@ -13,9 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 import pytest
 
-from tests.test_utils.random_numbers import random_quantity
+from tests.test_utils.random_numbers import random_quantity, decimal_random_quantity
 from tests.personal_data.portfolios import update_portfolio_balance
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 from tests import event_loop
@@ -69,7 +70,7 @@ async def test_random_quantity_handle_balance_update(backtesting_trader):
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     portfolio_profitability = portfolio_manager.portfolio_profitability
     portfolio_value_holder = portfolio_manager.portfolio_value_holder
-    original_symbol_quantity = 10
+    original_symbol_quantity = decimal.Decimal(str(10))
 
     # set the original values
     await portfolio_manager.handle_balance_updated()
@@ -80,10 +81,10 @@ async def test_random_quantity_handle_balance_update(backtesting_trader):
     assert portfolio_value_holder.portfolio_current_value == original_symbol_quantity
 
     new_btc_available = random_quantity(max_value=15)  # shouldn't impact profitability
-    new_btc_total = random_quantity(min_value=new_btc_available, max_value=15)
-    new_prof_percent = (100 * new_btc_total / original_symbol_quantity) - 100
-    update_portfolio_balance({'BTC': {'available': new_btc_available, 'total': new_btc_total}},
-                                           exchange_manager)
+    new_btc_total = decimal_random_quantity(min_value=new_btc_available, max_value=15)
+    new_prof_percent = decimal.Decimal(str((100 * new_btc_total / original_symbol_quantity) - 100))
+    update_portfolio_balance({'BTC': {'available': decimal.Decimal(str(new_btc_available)), 'total': new_btc_total}},
+                             exchange_manager)
     await portfolio_manager.handle_balance_updated()
     assert portfolio_profitability.profitability == new_btc_total - original_symbol_quantity
     assert portfolio_profitability.profitability_percent == new_prof_percent
@@ -91,8 +92,8 @@ async def test_random_quantity_handle_balance_update(backtesting_trader):
     assert portfolio_value_holder.portfolio_origin_value == original_symbol_quantity
     assert portfolio_value_holder.portfolio_current_value == new_btc_total
 
-    new_btc_total_2 = random_quantity(min_value=new_btc_available, max_value=12)
-    new_prof_percent_2 = (100 * new_btc_total_2 / original_symbol_quantity) - 100
+    new_btc_total_2 = decimal_random_quantity(min_value=new_btc_available, max_value=12)
+    new_prof_percent_2 = decimal.Decimal(str((100 * new_btc_total_2 / original_symbol_quantity) - 100))
     update_portfolio_balance({'BTC': {'total': new_btc_total_2}}, exchange_manager)
     await portfolio_manager.handle_balance_updated()
     assert portfolio_profitability.profitability == new_btc_total_2 - original_symbol_quantity

@@ -17,10 +17,14 @@ import octobot_commons.constants
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants
+import octobot_trading.personal_data as personal_data
 
 
-def get_portfolio(exchange_manager) -> dict:
-    return exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+def get_portfolio(exchange_manager, as_decimal=True) -> dict:
+    return _format_portfolio(
+        exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio,
+        as_decimal
+    )
 
 
 def get_portfolio_currency(exchange_manager, currency,
@@ -31,8 +35,17 @@ def get_portfolio_currency(exchange_manager, currency,
     )
 
 
-def get_origin_portfolio(exchange_manager) -> dict:
-    return exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
+def get_origin_portfolio(exchange_manager, as_decimal=True) -> dict:
+    return _format_portfolio(
+        exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio,
+        as_decimal
+    )
+
+
+def _format_portfolio(portfolio, as_decimal) -> dict:
+    if as_decimal:
+        return portfolio
+    return personal_data.portfolio_to_float(portfolio)
 
 
 async def refresh_real_trader_portfolio(exchange_manager) -> bool:

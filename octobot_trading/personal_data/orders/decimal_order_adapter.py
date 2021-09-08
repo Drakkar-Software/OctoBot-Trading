@@ -39,10 +39,10 @@ def decimal_trunc_with_n_decimal_digits(value, digits):  # TODO migrate to commo
     try:
         # decimal.Decimal can add unnecessary complexity in numbers, only use it when necessary
         if len(str(value).split(".")[-1]) > digits:
-            if digits > 0:
+            if digits > constants.ZERO:
                 return value.quantize(decimal.Decimal(f".{'0' * digits}"), rounding=decimal.ROUND_DOWN)
             else:
-                return value // 1
+                return value // constants.ONE
         return value
     except (ValueError, decimal.InvalidOperation):
         return value
@@ -54,12 +54,12 @@ def decimal_adapt_order_quantity_because_quantity(limiting_value, max_value, qua
     rest_order_quantity = limiting_value % max_value
     after_rest_quantity_to_adapt = quantity_to_adapt
 
-    if rest_order_quantity > 0:
+    if rest_order_quantity > constants.ZERO:
         after_rest_quantity_to_adapt -= rest_order_quantity
         valid_last_order_quantity = decimal_adapt_quantity(symbol_market, rest_order_quantity)
         orders.append((valid_last_order_quantity, price))
 
-    other_orders_quantity = (after_rest_quantity_to_adapt + max_value) / (nb_full_orders + 1)
+    other_orders_quantity = (after_rest_quantity_to_adapt + max_value) / (nb_full_orders + constants.ONE)
     valid_other_orders_quantity = decimal_adapt_quantity(symbol_market, other_orders_quantity)
     orders += [(valid_other_orders_quantity, price)] * int(nb_full_orders)
     return orders
@@ -69,7 +69,7 @@ def decimal_adapt_order_quantity_because_price(limiting_value, max_value, price,
     orders = []
     nb_full_orders = limiting_value // max_value
     rest_order_cost = limiting_value % max_value
-    if rest_order_cost > 0:
+    if rest_order_cost > constants.ZERO:
         valid_last_order_quantity = decimal_adapt_quantity(symbol_market, rest_order_cost / price)
         orders.append((valid_last_order_quantity, price))
 
@@ -124,7 +124,7 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
     :param fixed_symbol_data:
     :return:
     """
-    if quantity.is_nan() or price.is_nan() or price == 0:
+    if quantity.is_nan() or price.is_nan() or price == constants.ZERO:
         return []
 
     symbol_market_limits = symbol_market[Ecmsc.LIMITS.value]
@@ -203,3 +203,44 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
     else:
         # impossible to check if order is valid: refuse it
         return []
+
+
+def decimal_add_dusts_to_quantity_if_necessary(quantity, price, symbol_market, current_symbol_holding):
+    """
+    Adds remaining quantity to the order if the remaining quantity is too small
+    :param quantity:
+    :param price:
+    :param symbol_market:
+    :param current_symbol_holding:
+    :return:
+    """
+    if price == constants.ZERO:
+        return quantity
+
+    remaining_portfolio_amount = decimal.Decimal("{1:.{0}f}".format(constants.CURRENCY_DEFAULT_MAX_PRICE_DIGITS,
+                                                                    current_symbol_holding - quantity))
+    remaining_max_total_order_price = remaining_portfolio_amount * price
+
+    symbol_market_limits = symbol_market[Ecmsc.LIMITS.value]
+
+    limit_amount = symbol_market_limits[Ecmsc.LIMITS_AMOUNT.value]
+    limit_cost = symbol_market_limits[Ecmsc.LIMITS_COST.value]
+
+    if not (personal_data.is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value) and
+            personal_data.is_valid(limit_cost, Ecmsc.LIMITS_COST_MIN.value)):
+        fixed_market_status = exchanges.ExchangeMarketStatusFixer(symbol_market, price).market_status
+        limit_amount = fixed_market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_AMOUNT.value]
+        limit_cost = fixed_market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value]
+
+    min_quantity = limit_amount.get(Ecmsc.LIMITS_AMOUNT_MIN.value, math.nan)
+    min_cost = limit_cost.get(Ecmsc.LIMITS_COST_MIN.value, math.nan)
+
+    # check with 40% more than remaining total not to require huge market moves to sell this asset
+    min_cost_to_consider = decimal.Decimal(str(min_cost)) * decimal.Decimal(str(1.4))
+    min_quantity_to_consider = decimal.Decimal(str(min_quantity)) * decimal.Decimal(str(1.4))
+
+    if remaining_max_total_order_price < min_cost_to_consider \
+            or remaining_portfolio_amount < min_quantity_to_consider:
+        return current_symbol_holding
+    else:
+        return quantity

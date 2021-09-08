@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import contextlib
+import decimal
 import logging
 
 import ccxt.async_support as ccxt
@@ -356,12 +357,14 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return cancel_resp is not None
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
-        return self.client.calculate_fee(symbol=symbol,
+        fees = self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
                                          side=exchanges.get_order_side(order_type),
-                                         amount=quantity,
-                                         price=price,
+                                         amount=float(quantity),
+                                         price=float(price),
                                          takerOrMaker=taker_or_maker)
+        fees[enums.FeePropertyColumns.COST] = decimal.Decimal(str(fees[enums.FeePropertyColumns.COST.value]))
+        return fees
 
     def get_fees(self, symbol):
         try:

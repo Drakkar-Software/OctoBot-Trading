@@ -47,6 +47,7 @@ INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME = -1
 ZERO = decimal.Decimal(0)
 ONE = decimal.Decimal(1)
 ONE_HUNDRED = decimal.Decimal(100)
+NaN = decimal.Decimal("nan")
 
 FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm", "bitcoincom",
                             "bitfinex", "bitfinex2", "bitmex", "idex"]

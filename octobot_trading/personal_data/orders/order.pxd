@@ -49,22 +49,22 @@ cdef class Order(util.Initializable):
     cdef public str order_id
     cdef public str logger_name
 
-    cdef public double origin_price
-    cdef public double origin_stop_price
-    cdef public double origin_quantity
-    cdef public double market_total_fees
-    cdef public double filled_quantity
-    cdef public double filled_price
-    cdef public double total_cost
-    cdef public double created_last_price
-    cdef public double order_profitability
+    cdef public object origin_price
+    cdef public object origin_stop_price
+    cdef public object origin_quantity
+    cdef public object market_total_fees
+    cdef public object filled_quantity
+    cdef public object filled_price
+    cdef public object total_cost
+    cdef public object created_last_price
+    cdef public object order_profitability
 
     cdef public double timestamp
     cdef public double creation_time
     cdef public double canceled_time
     cdef public double executed_time
 
-    cdef public dict fee # Dict[str, Union[str, double]]
+    cdef public dict fee # Dict[str, Union[str, decimal.Decimal]]
 
     cdef list last_prices
     cdef public list linked_orders
@@ -75,15 +75,15 @@ cdef class Order(util.Initializable):
             str symbol,
             str order_id=*,
             object status=*,
-            double current_price=*,
-            double quantity=*,
-            double price=*,
-            double stop_price=*,
-            double quantity_filled=*,
-            double filled_price=*,
-            double average_price=*,
+            object current_price=*,
+            object quantity=*,
+            object price=*,
+            object stop_price=*,
+            object quantity_filled=*,
+            object filled_price=*,
+            object average_price=*,
             dict fee=*,
-            double total_cost=*,
+            object total_cost=*,
             object timestamp=*,
             object linked_to=*,
             object linked_portfolio=*,
@@ -96,7 +96,7 @@ cdef class Order(util.Initializable):
     cpdef str to_string(self)
     cpdef add_linked_order(self, Order order)
     cpdef tuple get_currency_and_market(self)
-    cpdef double get_total_fees(self, str currency)
+    cpdef object get_total_fees(self, str currency)
     cpdef bint is_open(self)
     cpdef bint is_filled(self)
     cpdef bint is_cancelled(self)
@@ -106,7 +106,7 @@ cdef class Order(util.Initializable):
     cpdef bint is_refreshing(self)
     cpdef void on_fill_actions(self)
     cpdef dict get_computed_fee(self, object forced_value=*)
-    cpdef double get_profitability(self)
+    cpdef object get_profitability(self)
     cpdef double generate_executed_time(self)
     cpdef bint is_self_managed(self)
     cpdef object update_from_raw(self, dict raw_order)

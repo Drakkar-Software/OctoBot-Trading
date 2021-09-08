@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_backtesting.api as backtesting_api
 import octobot_backtesting.importers as importers
 
@@ -180,17 +182,17 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
 
         precision = self.get_market_status(symbol)[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value] \
             [enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
-        cost = float(number_util.round_into_str_with_max_digits(quantity * rate, precision))
+        cost = float(number_util.round_into_str_with_max_digits(float(quantity) * rate, precision))
 
         if order_type == enums.TraderOrderType.SELL_MARKET or order_type == enums.TraderOrderType.SELL_LIMIT:
-            cost = float(number_util.round_into_str_with_max_digits(cost * price, precision))
+            cost = float(number_util.round_into_str_with_max_digits(cost * float(price), precision))
             fee_currency = market
 
         return {
             enums.FeePropertyColumns.TYPE.value: taker_or_maker,
             enums.FeePropertyColumns.CURRENCY.value: fee_currency,
             enums.FeePropertyColumns.RATE.value: rate,
-            enums.FeePropertyColumns.COST.value: cost
+            enums.FeePropertyColumns.COST.value: decimal.Decimal(str(cost)),
         }
 
     def get_time_frames(self, importer):

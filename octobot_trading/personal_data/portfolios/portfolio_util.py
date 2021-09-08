@@ -28,6 +28,13 @@ def parse_decimal_portfolio(portfolio):
     return decimal_portfolio
 
 
+def parse_decimal_config_portfolio(portfolio):
+    return {
+        symbol: decimal.Decimal(str(symbol_balance))
+        for symbol, symbol_balance in portfolio.items()
+    }
+
+
 def portfolio_to_float(portfolio):
     float_portfolio = {}
     for symbol, symbol_balance in portfolio.items():

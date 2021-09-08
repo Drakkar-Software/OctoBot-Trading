@@ -48,13 +48,15 @@ async def test_load_portfolio(backtesting_trader):
 async def test_get_portfolio_from_amount_dict(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    assert portfolio_manager.portfolio.get_portfolio_from_amount_dict({"zyx": 10, "BTC": decimal.Decimal('1')}) == {
+    assert portfolio_manager.portfolio.get_portfolio_from_amount_dict({"zyx":  decimal.Decimal(str(10)), "BTC": decimal.Decimal('1')}) == {
         'zyx': {'available': decimal.Decimal('10'), 'total': decimal.Decimal('10')},
         'BTC': {'available': decimal.Decimal('1'), 'total': decimal.Decimal('1')}
     }
     assert portfolio_manager.portfolio.get_portfolio_from_amount_dict({}) == {}
     with pytest.raises(RuntimeError):
         portfolio_manager.portfolio.get_portfolio_from_amount_dict({"zyx": "10", "BTC": decimal.Decimal('1')})
+    with pytest.raises(RuntimeError):
+        portfolio_manager.portfolio.get_portfolio_from_amount_dict({"BTC": 1})
 
 
 async def test_get_currency_portfolio(backtesting_trader):
@@ -208,33 +210,33 @@ async def test_update_portfolio_with_filled_orders(backtesting_trader):
 
     # force fees => should have consequences
     exchange_manager.exchange.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES] = {
-        commons_constants.CONFIG_SIMULATOR_FEES_MAKER: decimal.Decimal('0.05'),
-        commons_constants.CONFIG_SIMULATOR_FEES_TAKER: decimal.Decimal('0.1')
+        commons_constants.CONFIG_SIMULATOR_FEES_MAKER: 0.05,
+        commons_constants.CONFIG_SIMULATOR_FEES_TAKER: 0.1
     }
 
     # Test buy order
     market_sell = SellMarketOrder(trader)
     market_sell.update(order_type=TraderOrderType.SELL_MARKET,
                        symbol="BTC/USDT",
-                       current_price=70,
-                       quantity=3,
-                       price=70)
+                       current_price=decimal.Decimal(str(70)),
+                       quantity=decimal.Decimal(str(3)),
+                       price=decimal.Decimal(str(70)))
 
     # Test sell order
     limit_sell = SellLimitOrder(trader)
     limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
-                      current_price=100,
-                      quantity=4.2,
-                      price=100)
+                      current_price=decimal.Decimal(str(100)),
+                      quantity=decimal.Decimal(str(4.2)),
+                      price=decimal.Decimal(str(100)))
 
     # Test stop loss order
     stop_loss = StopLossOrder(trader)
     stop_loss.update(order_type=TraderOrderType.STOP_LOSS,
                      symbol="BTC/USDT",
-                     current_price=80,
-                     quantity=4.2,
-                     price=80)
+                     current_price=decimal.Decimal(str(80)),
+                     quantity=decimal.Decimal(str(4.2)),
+                     price=decimal.Decimal(str(80)))
 
     limit_sell.add_linked_order(stop_loss)
     stop_loss.add_linked_order(limit_sell)
@@ -243,9 +245,9 @@ async def test_update_portfolio_with_filled_orders(backtesting_trader):
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="BTC/USDT",
-                     current_price=50,
-                     quantity=2,
-                     price=50)
+                     current_price=decimal.Decimal(str(50)),
+                     quantity=decimal.Decimal(str(2)),
+                     price=decimal.Decimal(str(50)))
 
     # update portfolio with creations
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
@@ -316,25 +318,25 @@ async def test_update_portfolio_with_cancelled_orders(backtesting_trader):
     market_sell = SellMarketOrder(trader)
     market_sell.update(order_type=TraderOrderType.SELL_MARKET,
                        symbol="BTC/USDT",
-                       current_price=80,
-                       quantity=4.1,
-                       price=80)
+                       current_price=decimal.Decimal(str(80)),
+                       quantity=decimal.Decimal(str(4.1)),
+                       price=decimal.Decimal(str(80)))
 
     # Test sell order
     limit_sell = SellLimitOrder(trader)
     limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
-                      current_price=10,
-                      quantity=4.2,
-                      price=10)
+                      current_price=decimal.Decimal(str(10)),
+                      quantity=decimal.Decimal(str(4.2)),
+                      price=decimal.Decimal(str(10)))
 
     # Test stop loss order
     stop_loss = StopLossOrder(trader)
     stop_loss.update(order_type=TraderOrderType.STOP_LOSS,
                      symbol="BTC/USDT",
-                     current_price=80,
-                     quantity=3.6,
-                     price=80)
+                     current_price=decimal.Decimal(str(80)),
+                     quantity=decimal.Decimal(str(3.6)),
+                     price=decimal.Decimal(str(80)))
 
     portfolio_manager.portfolio.update_portfolio_available(stop_loss, True)
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
@@ -343,9 +345,9 @@ async def test_update_portfolio_with_cancelled_orders(backtesting_trader):
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="BTC/USDT",
-                     current_price=50,
-                     quantity=4,
-                     price=50)
+                     current_price=decimal.Decimal(str(50)),
+                     quantity=decimal.Decimal(str(4)),
+                     price=decimal.Decimal(str(50)))
 
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
@@ -390,25 +392,25 @@ async def test_update_portfolio_with_stop_loss_sell_orders(backtesting_trader):
     limit_sell = SellLimitOrder(trader)
     limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
-                      current_price=90,
-                      quantity=4,
-                      price=90)
+                      current_price=decimal.Decimal(str(90)),
+                      quantity=decimal.Decimal(str(4)),
+                      price=decimal.Decimal(str(90)))
 
     # Test buy order
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="BTC/USDT",
-                     current_price=50,
-                     quantity=4,
-                     price=50)
+                     current_price=decimal.Decimal(str(50)),
+                     quantity=decimal.Decimal(str(4)),
+                     price=decimal.Decimal(str(50)))
 
     # Test stop loss order
     stop_loss = StopLossOrder(trader, side=TradeOrderSide.SELL)
     stop_loss.update(order_type=TraderOrderType.STOP_LOSS,
                      symbol="BTC/USDT",
-                     current_price=60,
-                     quantity=4,
-                     price=60)
+                     current_price=decimal.Decimal(str(60)),
+                     quantity=decimal.Decimal(str(4)),
+                     price=decimal.Decimal(str(60)))
 
     portfolio_manager.portfolio.update_portfolio_available(stop_loss, True)
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
@@ -455,25 +457,25 @@ async def test_update_portfolio_with_stop_loss_buy_orders(backtesting_trader):
     limit_sell = SellLimitOrder(trader)
     limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
-                      current_price=90,
-                      quantity=4,
-                      price=90)
+                      current_price=decimal.Decimal(str(90)),
+                      quantity=decimal.Decimal(str(4)),
+                      price=decimal.Decimal(str(90)))
 
     # Test buy order
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="BTC/USDT",
-                     current_price=50,
-                     quantity=4,
-                     price=50)
+                     current_price=decimal.Decimal(str(50)),
+                     quantity=decimal.Decimal(str(4)),
+                     price=decimal.Decimal(str(50)))
 
     # Test stop loss order
     stop_loss = StopLossOrder(trader, side=TradeOrderSide.BUY)
     stop_loss.update(order_type=TraderOrderType.STOP_LOSS,
                      symbol="BTC/USDT",
-                     current_price=60,
-                     quantity=4,
-                     price=60)
+                     current_price=decimal.Decimal(str(60)),
+                     quantity=decimal.Decimal(str(4)),
+                     price=decimal.Decimal(str(60)))
 
     portfolio_manager.portfolio.update_portfolio_available(stop_loss, True)
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
@@ -521,57 +523,57 @@ async def test_update_portfolio_with_some_filled_orders(backtesting_trader):
     limit_sell = SellLimitOrder(trader)
     limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
-                      current_price=90,
-                      quantity=4,
-                      price=90)
+                      current_price=decimal.Decimal(str(90)),
+                      quantity=decimal.Decimal(str(4)),
+                      price=decimal.Decimal(str(90)))
 
     # Test buy order
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="BTC/USDT",
-                     current_price=60,
-                     quantity=2,
-                     price=60)
+                     current_price=decimal.Decimal(str(60)),
+                     quantity=decimal.Decimal(str(2)),
+                     price=decimal.Decimal(str(60)))
 
     # Test buy order
     limit_buy_2 = BuyLimitOrder(trader)
     limit_buy_2.update(order_type=TraderOrderType.BUY_LIMIT,
                        symbol="BTC/USDT",
-                       current_price=50,
-                       quantity=4,
-                       price=50)
+                       current_price=decimal.Decimal(str(50)),
+                       quantity=decimal.Decimal(str(4)),
+                       price=decimal.Decimal(str(50)))
 
     # Test sell order
     limit_sell_2 = SellLimitOrder(trader)
     limit_sell_2.update(order_type=TraderOrderType.SELL_LIMIT,
                         symbol="BTC/USDT",
-                        current_price=10,
-                        quantity=2,
-                        price=10)
+                        current_price=decimal.Decimal(str(10)),
+                        quantity=decimal.Decimal(str(2)),
+                        price=decimal.Decimal(str(10)))
 
     # Test stop loss order
     stop_loss_2 = StopLossOrder(trader)
     stop_loss_2.update(order_type=TraderOrderType.STOP_LOSS,
                        symbol="BTC/USDT",
-                       current_price=10,
-                       quantity=2,
-                       price=10)
+                       current_price=decimal.Decimal(str(10)),
+                       quantity=decimal.Decimal(str(2)),
+                       price=decimal.Decimal(str(10)))
 
     # Test sell order
     limit_sell_3 = SellLimitOrder(trader)
     limit_sell_3.update(order_type=TraderOrderType.SELL_LIMIT,
                         symbol="BTC/USDT",
-                        current_price=20,
-                        quantity=1,
-                        price=20)
+                        current_price=decimal.Decimal(str(20)),
+                        quantity=decimal.Decimal(str(1)),
+                        price=decimal.Decimal(str(20)))
 
     # Test stop loss order
     stop_loss_3 = StopLossOrder(trader)
     stop_loss_3.update(order_type=TraderOrderType.STOP_LOSS,
                        symbol="BTC/USDT",
-                       current_price=20,
-                       quantity=1,
-                       price=20)
+                       current_price=decimal.Decimal(str(20)),
+                       quantity=decimal.Decimal(str(1)),
+                       price=decimal.Decimal(str(20)))
 
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_2, True)
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_3, True)
@@ -597,17 +599,17 @@ async def test_update_portfolio_with_some_filled_orders(backtesting_trader):
     stop_loss_4 = StopLossOrder(trader, side=TradeOrderSide.BUY)
     stop_loss_4.update(order_type=TraderOrderType.STOP_LOSS,
                        symbol="BTC/USDT",
-                       current_price=20,
-                       quantity=4,
-                       price=20)
+                       current_price=decimal.Decimal(str(20)),
+                       quantity=decimal.Decimal(str(4)),
+                       price=decimal.Decimal(str(20)))
 
     # Test stop loss order
     stop_loss_5 = StopLossOrder(trader, side=TradeOrderSide.BUY)
     stop_loss_5.update(order_type=TraderOrderType.STOP_LOSS,
                        symbol="BTC/USDT",
-                       current_price=200,
-                       quantity=4,
-                       price=20)
+                       current_price=decimal.Decimal(str(200)),
+                       quantity=decimal.Decimal(str(4)),
+                       price=decimal.Decimal(str(20)))
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_5, True)
 
     # portfolio did not change as stop losses are not affecting available funds
@@ -670,121 +672,121 @@ async def test_update_portfolio_with_multiple_filled_orders(backtesting_trader):
     limit_sell = SellLimitOrder(trader)
     limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
-                      current_price=90,
-                      quantity=4,
-                      price=90)
+                      current_price=decimal.Decimal(str(90)),
+                      quantity=decimal.Decimal(str(4)),
+                      price=decimal.Decimal(str(90)))
 
     # Test buy order
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="BTC/USDT",
-                     current_price=60,
-                     quantity=2,
-                     price=60)
+                     current_price=decimal.Decimal(str(60)),
+                     quantity=decimal.Decimal(str(2)),
+                     price=decimal.Decimal(str(60)))
 
     # Test buy order
     limit_buy_2 = BuyLimitOrder(trader)
     limit_buy_2.update(order_type=TraderOrderType.BUY_LIMIT,
                        symbol="BTC/USDT",
-                       current_price=50,
-                       quantity=4,
-                       price=50)
+                       current_price=decimal.Decimal(str(50)),
+                       quantity=decimal.Decimal(str(4)),
+                       price=decimal.Decimal(str(50)))
 
     # Test buy order
     limit_buy_3 = BuyLimitOrder(trader)
     limit_buy_3.update(order_type=TraderOrderType.BUY_LIMIT,
                        symbol="BTC/USDT",
-                       current_price=46,
-                       quantity=2,
-                       price=46)
+                       current_price=decimal.Decimal(str(46)),
+                       quantity=decimal.Decimal(str(2)),
+                       price=decimal.Decimal(str(46)))
 
     # Test buy order
     limit_buy_4 = BuyLimitOrder(trader)
     limit_buy_4.update(order_type=TraderOrderType.BUY_LIMIT,
                        symbol="BTC/USDT",
-                       current_price=41,
-                       quantity=1.78,
-                       price=41)
+                       current_price=decimal.Decimal(str(41)),
+                       quantity=decimal.Decimal(str(1.78)),
+                       price=decimal.Decimal(str(41)))
 
     # Test buy order
     limit_buy_5 = BuyLimitOrder(trader)
     limit_buy_5.update(order_type=TraderOrderType.BUY_LIMIT,
                        symbol="BTC/USDT",
-                       current_price=0.2122427,
-                       quantity=3.72448,
-                       price=0.2122427)
+                       current_price=decimal.Decimal(str(0.2122427)),
+                       quantity=decimal.Decimal(str(3.72448)),
+                       price=decimal.Decimal(str(0.2122427)))
 
     # Test buy order
     limit_buy_6 = BuyLimitOrder(trader)
     limit_buy_6.update(order_type=TraderOrderType.BUY_LIMIT,
                        symbol="BTC/USDT",
-                       current_price=430,
-                       quantity=1.05,
-                       price=430)
+                       current_price=decimal.Decimal(str(430)),
+                       quantity=decimal.Decimal(str(1.05)),
+                       price=decimal.Decimal(str(430)))
 
     # Test sell order
     limit_sell_2 = SellLimitOrder(trader)
     limit_sell_2.update(order_type=TraderOrderType.SELL_LIMIT,
                         symbol="BTC/USDT",
-                        current_price=10,
-                        quantity=2,
-                        price=10)
+                        current_price=decimal.Decimal(str(10)),
+                        quantity=decimal.Decimal(str(2)),
+                        price=decimal.Decimal(str(10)))
 
     # Test stop loss order
     stop_loss_2 = StopLossOrder(trader)
     stop_loss_2.update(order_type=TraderOrderType.STOP_LOSS,
                        symbol="BTC/USDT",
-                       current_price=10,
-                       quantity=2,
-                       price=10)
+                       current_price=decimal.Decimal(str(10)),
+                       quantity=decimal.Decimal(str(2)),
+                       price=decimal.Decimal(str(10)))
 
     # Test sell order
     limit_sell_3 = SellLimitOrder(trader)
     limit_sell_3.update(order_type=TraderOrderType.SELL_LIMIT,
                         symbol="BTC/USDT",
-                        current_price=20,
-                        quantity=1,
-                        price=20)
+                        current_price=decimal.Decimal(str(20)),
+                        quantity=decimal.Decimal(str(1)),
+                        price=decimal.Decimal(str(20)))
 
     # Test stop loss order
     stop_loss_3 = StopLossOrder(trader)
     stop_loss_3.update(order_type=TraderOrderType.STOP_LOSS,
                        symbol="BTC/USDT",
-                       current_price=20,
-                       quantity=1,
-                       price=20)
+                       current_price=decimal.Decimal(str(20)),
+                       quantity=decimal.Decimal(str(1)),
+                       price=decimal.Decimal(str(20)))
 
     # Test sell order
     limit_sell_4 = SellLimitOrder(trader)
     limit_sell_4.update(order_type=TraderOrderType.SELL_LIMIT,
                         symbol="BTC/USDT",
-                        current_price=50,
-                        quantity=0.2,
-                        price=50)
+                        current_price=decimal.Decimal(str(50)),
+                        quantity=decimal.Decimal(str(0.2)),
+                        price=decimal.Decimal(str(50)))
 
     # Test stop loss order
     stop_loss_4 = StopLossOrder(trader, side=TradeOrderSide.BUY)
     stop_loss_4.update(order_type=TraderOrderType.STOP_LOSS,
                        symbol="BTC/USDT",
-                       current_price=45,
-                       quantity=0.2,
-                       price=45)
+                       current_price=decimal.Decimal(str(45)),
+                       quantity=decimal.Decimal(str(0.2)),
+                       price=decimal.Decimal(str(45)))
 
     # Test sell order
     limit_sell_5 = SellLimitOrder(trader)
     limit_sell_5.update(order_type=TraderOrderType.SELL_LIMIT,
                         symbol="BTC/USDT",
-                        current_price=11,
-                        quantity=0.7,
-                        price=11)
+                        current_price=decimal.Decimal(str(11)),
+                        quantity=decimal.Decimal(str(0.7)),
+                        price=decimal.Decimal(str(11)))
 
     # Test stop loss order
     stop_loss_5 = StopLossOrder(trader)
     stop_loss_5.update(order_type=TraderOrderType.STOP_LOSS,
                        symbol="BTC/USDT",
-                       current_price=9,
-                       quantity=0.7,
-                       price=9)
+                       current_price=decimal.Decimal(str(9)),
+                       quantity=decimal.Decimal(str(0.7)),
+                       price=decimal.Decimal(str(9)))
 
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_2, True)
     portfolio_manager.portfolio.update_portfolio_available(stop_loss_3, True)
@@ -854,9 +856,9 @@ async def test_update_portfolio_with_multiple_symbols_orders(backtesting_trader)
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                       symbol="ETH/USDT",
-                      current_price=7,
-                      quantity=100,
-                      price=7)
+                      current_price=decimal.Decimal(str(7)),
+                      quantity=decimal.Decimal(str(100)),
+                      price=decimal.Decimal(str(7)))
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
@@ -891,9 +893,9 @@ async def test_update_portfolio_with_multiple_symbols_orders(backtesting_trader)
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                       symbol="LTC/BTC",
-                      current_price=0.0135222,
-                      quantity=100,
-                      price=0.0135222)
+                      current_price=decimal.Decimal(str(0.0135222)),
+                      quantity=decimal.Decimal(str(100)),
+                      price=decimal.Decimal(str(0.0135222)))
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
@@ -928,9 +930,9 @@ async def test_update_portfolio_with_multiple_symbols_orders(backtesting_trader)
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="XRP/BTC",
-                     current_price=0.00012232132312312,
-                     quantity=3000.1214545,
-                     price=0.00012232132312312)
+                     current_price=decimal.Decimal(str(0.00012232132312312)),
+                     quantity=decimal.Decimal(str(3000.1214545)),
+                     price=decimal.Decimal(str(0.00012232132312312)))
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
@@ -969,9 +971,9 @@ async def test_reset_portfolio_available(backtesting_trader):
     limit_sell = SellLimitOrder(trader)
     limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
-                      current_price=90,
-                      quantity=4,
-                      price=90)
+                      current_price=decimal.Decimal(str(90)),
+                      quantity=decimal.Decimal(str(4)),
+                      price=decimal.Decimal(str(90)))
 
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
     portfolio_manager.portfolio.reset_portfolio_available()
@@ -993,18 +995,18 @@ async def test_reset_portfolio_available(backtesting_trader):
     limit_sell = SellLimitOrder(trader)
     limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
-                      current_price=90,
-                      quantity=4,
-                      price=90)
+                      current_price=decimal.Decimal(str(90)),
+                      quantity=decimal.Decimal(str(4)),
+                      price=decimal.Decimal(str(90)))
 
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
     # Test buy order
     limit_buy = BuyLimitOrder(trader)
     limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                      symbol="VEN/BTC",
-                     current_price=0.5,
-                     quantity=4,
-                     price=0.5)
+                     current_price=decimal.Decimal(str(0.5)),
+                     quantity=decimal.Decimal(str(4)),
+                     price=decimal.Decimal(str(0.5)))
 
     portfolio_manager.portfolio.update_portfolio_available(limit_buy, True)
 
@@ -1012,9 +1014,9 @@ async def test_reset_portfolio_available(backtesting_trader):
     btc_limit_buy = BuyLimitOrder(trader)
     btc_limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                          symbol="BTC/USDT",
-                         current_price=10,
-                         quantity=50,
-                         price=10)
+                         current_price=decimal.Decimal(str(10)),
+                         quantity=decimal.Decimal(str(50)),
+                         price=decimal.Decimal(str(10)))
 
     portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy, True)
 
@@ -1022,14 +1024,14 @@ async def test_reset_portfolio_available(backtesting_trader):
     btc_limit_buy2 = BuyLimitOrder(trader)
     btc_limit_buy2.update(order_type=TraderOrderType.BUY_LIMIT,
                           symbol="BTC/USDT",
-                          current_price=10,
-                          quantity=50,
-                          price=10)
+                          current_price=decimal.Decimal(str(10)),
+                          quantity=decimal.Decimal(str(50)),
+                          price=decimal.Decimal(str(10)))
 
     portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy2, True)
 
     # reset equivalent of the ven buy order
-    portfolio_manager.portfolio.reset_portfolio_available("BTC", 4 * 0.5)
+    portfolio_manager.portfolio.reset_portfolio_available("BTC", decimal.Decimal(str(4 * 0.5)))
 
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
                                                               commons_constants.PORTFOLIO_AVAILABLE) == decimal.Decimal(
@@ -1079,38 +1081,38 @@ async def test_parse_currency_balance(backtesting_trader):
 
     if not os.getenv('CYTHON_IGNORE'):
         # 0 values
-        assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: 0,
-                                                                    commons_constants.PORTFOLIO_TOTAL: 0.0}) == \
-               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+        assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO,
+                                                                    commons_constants.PORTFOLIO_TOTAL: constants.ZERO}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO, commons_constants.PORTFOLIO_TOTAL: constants.ZERO}
 
-        assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: 0,
-                                                                    commons_constants.PORTFOLIO_TOTAL: 0.0}) == \
-               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+        assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: constants.ZERO,
+                                                                    commons_constants.PORTFOLIO_TOTAL: constants.ZERO}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO, commons_constants.PORTFOLIO_TOTAL: constants.ZERO}
 
         # None values
         assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: None,
-                                                                    commons_constants.PORTFOLIO_TOTAL: 0.0}) == \
-               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+                                                                    commons_constants.PORTFOLIO_TOTAL: constants.ZERO}) == \
+               {commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO, commons_constants.PORTFOLIO_TOTAL: constants.ZERO}
 
         assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: None,
                                                                     commons_constants.PORTFOLIO_TOTAL: None}) == \
-               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+               {commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO, commons_constants.PORTFOLIO_TOTAL: constants.ZERO}
 
-        assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: 0,
+        assert portfolio_manager.portfolio._parse_currency_balance({commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO,
                                                                     commons_constants.PORTFOLIO_TOTAL: None}) == \
-               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+               {commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO, commons_constants.PORTFOLIO_TOTAL: constants.ZERO}
 
         assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: None,
                                                                     commons_constants.PORTFOLIO_TOTAL: 0.0}) == \
-               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+               {commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO, commons_constants.PORTFOLIO_TOTAL: constants.ZERO}
 
         assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: None,
                                                                     commons_constants.PORTFOLIO_TOTAL: None}) == \
-               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+               {commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO, commons_constants.PORTFOLIO_TOTAL: constants.ZERO}
 
-        assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: 0,
+        assert portfolio_manager.portfolio._parse_currency_balance({constants.CONFIG_PORTFOLIO_FREE: constants.ZERO,
                                                                     commons_constants.PORTFOLIO_TOTAL: None}) == \
-               {commons_constants.PORTFOLIO_AVAILABLE: 0, commons_constants.PORTFOLIO_TOTAL: 0}
+               {commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO, commons_constants.PORTFOLIO_TOTAL: constants.ZERO}
 
 
 async def test_update_portfolio_data(backtesting_trader):
@@ -1119,17 +1121,17 @@ async def test_update_portfolio_data(backtesting_trader):
 
     if not os.getenv('CYTHON_IGNORE'):
         with pytest.raises(errors.PortfolioNegativeValueError):
-            portfolio_manager.portfolio._update_portfolio_data("USDT", -2000)
+            portfolio_manager.portfolio._update_portfolio_data("USDT", decimal.Decimal(-2000))
         with pytest.raises(errors.PortfolioNegativeValueError):
-            portfolio_manager.portfolio._update_portfolio_data("BTC", -20)
+            portfolio_manager.portfolio._update_portfolio_data("BTC", decimal.Decimal(-20))
 
     with pytest.raises(errors.PortfolioNegativeValueError):
         # Test buy order
         btc_limit_buy2 = BuyLimitOrder(trader)
         btc_limit_buy2.update(order_type=TraderOrderType.BUY_LIMIT,
                               symbol="BTC/USDT",
-                              current_price=10,
-                              quantity=5000000000,
-                              price=10)
+                              current_price=decimal.Decimal("10"),
+                              quantity=decimal.Decimal("5000000000"),
+                              price=decimal.Decimal("10"))
 
         portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy2, True)

@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 import json
 import time
 
@@ -86,10 +87,10 @@ class TestTradeFactory:
         assert trade.origin_order_id == '12345-67890:09876/54321'
         assert trade.trade_type == TraderOrderType.BUY_LIMIT
         assert trade.symbol == 'ETH/BTC'
-        assert trade.total_cost == 0.10376526
-        assert trade.executed_quantity == 1.5
-        assert trade.origin_price == 0.06917684
-        assert trade.executed_price == 0.06917684
+        assert trade.total_cost == decimal.Decimal(str(0.10376526))
+        assert trade.executed_quantity == decimal.Decimal(str(1.5))
+        assert trade.origin_price == decimal.Decimal(str(0.06917684))
+        assert trade.executed_price == decimal.Decimal(str(0.06917684))
         assert trade.executed_time == 1502962946216
         assert trade.status == OrderStatus.FILLED
         assert trade.is_closing_order is True
@@ -133,11 +134,11 @@ class TestTradeFactory:
         assert trade.simulated is True
         assert trade.trade_type == TraderOrderType.SELL_LIMIT
         assert trade.symbol == 'BTC/USDT'
-        assert trade.total_cost == 0.076094524
-        assert trade.executed_quantity == 1.1
-        assert trade.origin_quantity == 1.5
-        assert trade.origin_price == 7684
-        assert trade.executed_price == 7684
+        assert trade.total_cost == decimal.Decimal(str(0.076094524))
+        assert trade.executed_quantity == decimal.Decimal(str(1.1))
+        assert trade.origin_quantity == decimal.Decimal(str(1.5))
+        assert trade.origin_price == decimal.Decimal("7684")
+        assert trade.executed_price == decimal.Decimal("7684")
         assert trade.status == OrderStatus.FILLED
         assert trade.is_closing_order is True
 
@@ -187,11 +188,11 @@ class TestTradeFactory:
         assert trade.simulated is True
         assert trade.trade_type == TraderOrderType.SELL_LIMIT
         assert trade.symbol == 'BTC/USDT'
-        assert trade.total_cost == 0.076094524
-        assert trade.executed_quantity == 1.1
-        assert trade.origin_quantity == 1.5
-        assert trade.origin_price == 7684
-        assert trade.executed_price == 7684
+        assert trade.total_cost == decimal.Decimal(str(0.076094524))
+        assert trade.executed_quantity == decimal.Decimal(str(1.1))
+        assert trade.origin_quantity == decimal.Decimal(str(1.5))
+        assert trade.origin_price == decimal.Decimal(str(7684))
+        assert trade.executed_price == decimal.Decimal(str(7684))
         assert trade.status == OrderStatus.OPEN
         assert trade.is_closing_order is False
 
@@ -203,14 +204,14 @@ class TestTradeFactory:
         trade = create_trade_instance(trader,
                                       order_type=TraderOrderType.SELL_MARKET,
                                       symbol="ETH/USDT",
-                                      quantity_filled=1.2,
-                                      total_cost=10)
+                                      quantity_filled=decimal.Decimal(str(1.2)),
+                                      total_cost=decimal.Decimal(str(10)))
 
         assert trade.trade_id is not None
 
         assert trade.symbol == "ETH/USDT"
         assert trade.trade_type == TraderOrderType.SELL_MARKET
-        assert round(trade.executed_quantity, 3) == 1.2
-        assert trade.total_cost == 10
+        assert round(trade.executed_quantity, 3) == decimal.Decimal(str(1.2))
+        assert trade.total_cost == decimal.Decimal(str(10))
 
         await self.stop(exchange_manager)

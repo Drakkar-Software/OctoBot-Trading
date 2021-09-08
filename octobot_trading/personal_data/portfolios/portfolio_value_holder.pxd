@@ -40,7 +40,7 @@ cdef class PortfolioValueHolder:
 
     cdef portfolio_manager.PortfolioManager portfolio_manager
 
-    cpdef bint update_origin_crypto_currencies_values(self, str symbol, double mark_price)
+    cpdef bint update_origin_crypto_currencies_values(self, str symbol, object mark_price)
     cpdef dict get_current_crypto_currencies_values(self)
     cpdef dict get_current_holdings_values(self)
     cpdef object get_origin_portfolio_current_value(self, bint refresh_values=*)
@@ -67,9 +67,8 @@ cdef class PortfolioValueHolder:
                                                     set valuated_currencies,
                                                     set missing_tickers,
                                                     bint ignore_missing_currency_data)
-    cdef double _evaluate_portfolio_value(self, dict portfolio, dict currencies_values=*)
-    cdef double _evaluate_portfolio_value(self, dict portfolio, dict currencies_values=*)
+    cdef object _evaluate_portfolio_value(self, dict portfolio, dict currencies_values=*)
     cdef bint _should_currency_be_considered(self, str currency, dict portfolio, bint ignore_missing_currency_data)
-    # cdef double _evaluate_value(self, str currency, double quantity, bint raise_error=*)
-    # cdef double _try_get_value_of_currency(self, str currency, double quantity, bint raise_error)
-    # cdef double _get_currency_value(self, dict portfolio, str currency, dict currencies_values=*, bint raise_error=*)
+    # cdef object _evaluate_value(self, str currency, object quantity, bint raise_error=*)
+    # cdef object _try_get_value_of_currency(self, str currency, object quantity, bint raise_error)
+    # cdef object _get_currency_value(self, dict portfolio, str currency, dict currencies_values=*, bint raise_error=*)

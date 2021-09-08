@@ -13,11 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
+import octobot_trading.constants as constants
 import octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
 
 class SubPortfolio(portfolio_class.Portfolio):
-    DEFAULT_SUB_PORTFOLIO_PERCENT = 0.5
+    DEFAULT_SUB_PORTFOLIO_PERCENT = decimal.Decimal("0.5")
 
     def __init__(self, config, trader, parent_portfolio, percent, is_relative=True):
         self.parent_portfolio = parent_portfolio
@@ -47,7 +50,7 @@ class SubPortfolio(portfolio_class.Portfolio):
         pass
 
     def set_percent(self, percent):
-        if percent and percent > 0:
+        if percent and percent > constants.ZERO:
             self.percent = percent
         else:
             self.percent = self.DEFAULT_SUB_PORTFOLIO_PERCENT

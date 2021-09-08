@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 
 
 class FutureContract:
@@ -25,9 +26,9 @@ class FutureContract:
         self.expiration_timestamp = 0
 
         self.minimum_tick_size = 0.5
-        self.contract_size = 1
-        self.maximum_leverage = 1
-        self.current_leverage = 1
+        self.contract_size = constants.ONE
+        self.maximum_leverage = constants.ONE
+        self.current_leverage = constants.ONE
 
     def is_inverse_contract(self):
         """

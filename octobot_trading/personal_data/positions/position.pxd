@@ -37,14 +37,14 @@ cdef class Position(util.Initializable):
 
     cdef public int leverage
 
-    cdef public double entry_price
-    cdef public double mark_price
-    cdef public double liquidation_price
-    cdef public double quantity
-    cdef public double value
-    cdef public double margin
-    cdef public double unrealised_pnl
-    cdef public double realised_pnl
+    cdef public object entry_price
+    cdef public object mark_price
+    cdef public object liquidation_price
+    cdef public object quantity
+    cdef public object value
+    cdef public object margin
+    cdef public object unrealised_pnl
+    cdef public object realised_pnl
 
     cdef public double timestamp
     cdef public double creation_time
@@ -57,14 +57,14 @@ cdef class Position(util.Initializable):
                       str currency,
                       str market,
                       double timestamp,
-                      double entry_price,
-                      double mark_price,
-                      double liquidation_price,
-                      double quantity,
-                      double value,
-                      double margin,
-                      double unrealised_pnl,
-                      double realised_pnl,
+                      object entry_price,
+                      object mark_price,
+                      object liquidation_price,
+                      object quantity,
+                      object value,
+                      object margin,
+                      object unrealised_pnl,
+                      object realised_pnl,
                       int leverage,
                       object margin_type,
                       object status=*,

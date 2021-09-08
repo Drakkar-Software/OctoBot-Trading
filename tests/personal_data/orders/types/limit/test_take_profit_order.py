@@ -19,7 +19,7 @@ from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TraderOrderType, TradeOrderSide
 from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_SYMBOL_QUANTITY, DEFAULT_MARKET_QUANTITY
 
-from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
+from tests.test_utils.random_numbers import decimal_random_price, random_price, decimal_random_quantity, random_recent_trade
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.personal_data.orders import take_profit_sell_order, take_profit_buy_order
@@ -28,10 +28,10 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_take_profit_sell_order_trigger(take_profit_sell_order):
-    order_price = random_price(min_value=2)
+    order_price = decimal_random_price(min_value=2)
     take_profit_sell_order.update(
         price=order_price,
-        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY / 10),
+        quantity=decimal_random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY / 10),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.TAKE_PROFIT,
     )
@@ -43,7 +43,7 @@ async def test_take_profit_sell_order_trigger(take_profit_sell_order):
     price_events_manager = take_profit_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(max_value=order_price - 1),
+        [random_recent_trade(price=random_price(max_value=float(order_price - 1)),
                              timestamp=take_profit_sell_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not take_profit_sell_order.is_filled()
@@ -62,10 +62,10 @@ async def test_take_profit_sell_order_trigger(take_profit_sell_order):
 
 
 async def test_take_profit_buy_order_trigger(take_profit_buy_order):
-    order_price = random_price()
+    order_price = decimal_random_price()
     take_profit_buy_order.update(
         price=order_price,
-        quantity=random_quantity(max_value=DEFAULT_MARKET_QUANTITY / (order_price * 2)),
+        quantity=decimal_random_quantity(max_value=DEFAULT_MARKET_QUANTITY / (order_price * 2)),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.TAKE_PROFIT,
     )
@@ -77,7 +77,7 @@ async def test_take_profit_buy_order_trigger(take_profit_buy_order):
     price_events_manager = take_profit_buy_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(min_value=order_price - 1),
+        [random_recent_trade(price=random_price(min_value=float(order_price - 1)),
                              timestamp=take_profit_buy_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not take_profit_buy_order.is_filled()

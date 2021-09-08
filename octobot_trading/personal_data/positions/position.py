@@ -14,11 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position_util as position_util
 import octobot_trading.personal_data.positions.states as positions_states
 import octobot_trading.util as util
+import octobot_trading.constants as constants
 
 
 class Position(util.Initializable):
@@ -32,20 +34,20 @@ class Position(util.Initializable):
         self.timestamp = 0
         self.symbol = None
         self.currency, self.market = None, None
-        self.entry_price = 0
-        self.mark_price = 0
-        self.quantity = 0
-        self.value = 0
-        self.margin = 0
-        self.liquidation_price = 0
+        self.entry_price = constants.ZERO
+        self.mark_price = constants.ZERO
+        self.quantity = constants.ZERO
+        self.value = constants.ZERO
+        self.margin = constants.ZERO
+        self.liquidation_price = constants.ZERO
         self.leverage = 0
         self.margin_type = None
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
 
         # PNL
-        self.unrealised_pnl = 0
-        self.realised_pnl = 0
+        self.unrealised_pnl = constants.ZERO
+        self.realised_pnl = constants.ZERO
 
         # original position attributes
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
@@ -109,25 +111,25 @@ class Position(util.Initializable):
                 self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
             self.timestamp = self.creation_time
 
-        if self._should_change(self.quantity, float(quantity)):
-            self.quantity = float(quantity)
+        if self._should_change(self.quantity, quantity):
+            self.quantity = quantity
             self._switch_side_if_necessary()
             changed = True
 
-        if self._should_change(self.value, float(value)):
-            self.value = float(value)
+        if self._should_change(self.value, value):
+            self.value = value
             changed = True
 
-        if self._should_change(self.margin, float(margin)):
-            self.margin = float(margin)
+        if self._should_change(self.margin, margin):
+            self.margin = margin
             changed = True
 
-        if self._should_change(self.unrealised_pnl, float(unrealised_pnl)):
-            self.unrealised_pnl = float(unrealised_pnl)
+        if self._should_change(self.unrealised_pnl, unrealised_pnl):
+            self.unrealised_pnl = unrealised_pnl
             changed = True
 
-        if self._should_change(self.realised_pnl, float(realised_pnl)):
-            self.realised_pnl = float(realised_pnl)
+        if self._should_change(self.realised_pnl, realised_pnl):
+            self.realised_pnl = realised_pnl
             changed = True
 
         if self._should_change(self.leverage, int(leverage)):
@@ -142,14 +144,14 @@ class Position(util.Initializable):
 
             self.margin_type = margin_type
 
-        if self._should_change(self.entry_price, float(entry_price)):
-            self.entry_price = float(entry_price)
+        if self._should_change(self.entry_price, entry_price):
+            self.entry_price = entry_price
 
-        if self._should_change(self.mark_price, float(mark_price)):
-            self.mark_price = float(mark_price)
+        if self._should_change(self.mark_price, mark_price):
+            self.mark_price = mark_price
 
-        if self._should_change(self.liquidation_price, float(liquidation_price)):
-            self.liquidation_price = float(liquidation_price)
+        if self._should_change(self.liquidation_price, liquidation_price):
+            self.liquidation_price = liquidation_price
 
         if self._should_change(self.status.value, status):
             self.status = enums.PositionStatus(status)
@@ -184,16 +186,16 @@ class Position(util.Initializable):
             "symbol": symbol,
             "currency": currency,
             "market": market,
-            "entry_price": raw_position.get(enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value, 0.0),
-            "mark_price": raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, 0.0),
-            "liquidation_price": raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, 0.0),
-            "quantity": raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, 0.0),
-            "value": raw_position.get(enums.ExchangeConstantsPositionColumns.VALUE.value, 0.0),
-            "margin": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN.value, 0.0),
+            "entry_price": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value, 0.0))),
+            "mark_price": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, 0.0))),
+            "liquidation_price": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, 0.0))),
+            "quantity": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, 0.0))),
+            "value": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.VALUE.value, 0.0))),
+            "margin": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN.value, 0.0))),
             "position_id": str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
             "timestamp": raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0.0),
-            "unrealised_pnl": raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, 0.0),
-            "realised_pnl": raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, 0.0),
+            "unrealised_pnl": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, 0.0))),
+            "realised_pnl": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, 0.0))),
             "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, 0),
             "margin_type": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value,
                                             enums.TraderPositionType.ISOLATED),
@@ -249,8 +251,8 @@ class Position(util.Initializable):
 
     def to_string(self):
         return (f"{self.symbol} | "
-                f"MarkPrice : {self.mark_price} | "
-                f"Quantity : {self.quantity} | "
+                f"MarkPrice : {str(self.mark_price)} | "
+                f"Quantity : {str(self.quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
                 f"id : {self.position_id}")
 

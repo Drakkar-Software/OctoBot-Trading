@@ -13,12 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.types.limit.limit_order as limit_order
 
 
 class TakeProfitLimitOrder(limit_order.LimitOrder):
-    UNINITIALIZED_LIMIT_PRICE = -1
+    UNINITIALIZED_LIMIT_PRICE = decimal.Decimal("-1")
 
     def __init__(self, trader, side=enums.TradeOrderSide.SELL, limit_price=UNINITIALIZED_LIMIT_PRICE):
         super().__init__(trader, side)
