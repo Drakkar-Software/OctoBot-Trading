@@ -388,7 +388,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  symbols=self.filtered_pairs,
                                  log_message_on_error=True,
                                  channels=self.CANDLE_CHANNELS,
-                                 callbacks=self.callbacks)
+                                 callbacks={cryptofeed_constants.CANDLES: self.candle_callback})
             self.logger.debug(
                 f"Subscribed to the {time_frame.value} time frame OHLCV for {', '.join(self.filtered_pairs)}")
 
