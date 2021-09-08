@@ -84,6 +84,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     WATCHED_PAIR_CHANNELS = [
         cryptofeed_constants.TRADES,
         cryptofeed_constants.TICKER,
+        cryptofeed_constants.CANDLES,
     ]
 
     EXCHANGE_CONSTRUCTOR_KWARGS = {}
@@ -350,13 +351,17 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             self._subscribe_candle_feed()
 
         # drop unsupported channels
-        self.channels = [channel for channel in self.channels if self._is_supported_channel(channel)]
+        self.channels = [channel for channel in self.channels
+                         if self._is_supported_channel(channel) and not self.EXCHANGE_FEEDS.get(Feeds.CANDLE)]
 
         self.callbacks = {
             channel: self.callback_by_feed[channel]
             for channel in self.channels
             if self.callback_by_feed.get(channel)
         }
+
+        # Add candle callback to callbacks
+        self.callbacks[self.EXCHANGE_FEEDS[Feeds.CANDLE]] = self.candle_callback
 
         self._subscribe_pairs_feeds()
 
@@ -375,7 +380,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         """
         if self.cryptofeed_exchange.is_authenticated_channel(channel) and not self._should_use_authenticated_feeds():
             return False
-        return channel not in [Feeds.UNSUPPORTED.value, self.EXCHANGE_FEEDS.get(Feeds.CANDLE)] \
+        return channel != Feeds.UNSUPPORTED.value \
                and not self.should_ignore_feed(self.CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS[channel])
 
     def _subscribe_candle_feed(self):
@@ -423,6 +428,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  log_message_on_error=True,
                                  channels=channels,
                                  callbacks=self.callbacks)
+            for channel in channels:
+                self.logger.debug(f"Subscribed to {channel} for {', '.join(self.watched_pairs)}")
 
     def _filter_exchange_pairs_and_timeframes(self):
         """
@@ -593,6 +600,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     async def candle(self, feed, symbol, start, stop, interval, trades, open_price, close_price, high_price,
                      low_price, volume, closed, timestamp, receipt_timestamp):
         if symbol:
+            origin_symbol = symbol
             symbol = self.get_pair_from_exchange(symbol)
             time_frame = commons_enums.TimeFrames(interval)
             candle = [
@@ -618,16 +626,17 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                 Ectc.TIMESTAMP.value: timestamp,
             }
 
-            if not closed:
-                await self.push_to_channel(trading_constants.KLINE_CHANNEL,
-                                           time_frame=time_frame,
-                                           symbol=symbol,
-                                           kline=candle)
-            else:
-                await self.push_to_channel(trading_constants.OHLCV_CHANNEL,
-                                           time_frame=time_frame,
-                                           symbol=symbol,
-                                           candle=candle)
+            if origin_symbol not in self.watched_pairs:
+                if not closed:
+                    await self.push_to_channel(trading_constants.KLINE_CHANNEL,
+                                               time_frame=time_frame,
+                                               symbol=symbol,
+                                               kline=candle)
+                else:
+                    await self.push_to_channel(trading_constants.OHLCV_CHANNEL,
+                                               time_frame=time_frame,
+                                               symbol=symbol,
+                                               candle=candle)
 
             # Push a new ticker if necessary : only push on the min timeframe
             if time_frame is self.min_timeframe:
