@@ -35,5 +35,5 @@ cdef class Trader(util.Initializable):
 
     # methods
     cpdef str parse_order_id(self, str order_id)
-    cpdef double set_risk(self, object risk)
+    cpdef object set_risk(self, object risk)
     cpdef object convert_order_to_trade(self, object order)
