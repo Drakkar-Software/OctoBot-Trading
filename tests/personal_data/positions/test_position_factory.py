@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 import pytest
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
@@ -21,7 +22,7 @@ from tests import event_loop
 from tests.exchanges import exchange_manager
 from tests.exchanges.traders import trader_simulator
 from tests.exchanges.traders import trader
-from tests.test_utils.random_numbers import random_int, random_quantity
+from tests.test_utils.random_numbers import random_int, random_quantity, decimal_random_quantity
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -36,7 +37,7 @@ async def test_create_position_instance_from_raw(trader_simulator):
     }
     position = personal_data.create_position_instance_from_raw(trader_inst, raw_position)
     position_leverage = random_int(max_value=200)
-    position_quantity = random_quantity(max_value=1000)
+    position_quantity = decimal_random_quantity(max_value=1000)
     cross_position_open = personal_data.create_position_instance_from_raw(trader_inst, {
         enums.ExchangeConstantsPositionColumns.SYMBOL.value: "BTC/USDT",
         enums.ExchangeConstantsPositionColumns.LEVERAGE.value: position_leverage,

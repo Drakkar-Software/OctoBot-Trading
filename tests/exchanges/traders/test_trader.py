@@ -16,6 +16,7 @@
 import copy
 import os
 import ccxt.async_support
+import decimal
 
 import pytest
 import time
@@ -37,6 +38,7 @@ from octobot_trading.personal_data.orders import StopLossOrder
 from octobot_trading.exchanges.traders.trader import Trader
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
+import octobot_trading.constants as constants
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -90,17 +92,17 @@ class TestTrader:
 
         config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_RISK] = 0
         trader_1 = TraderSimulator(config, exchange_manager)
-        assert round(trader_1.risk, 2) == commons_constants.CONFIG_TRADER_RISK_MIN
+        assert round(trader_1.risk, 2) == decimal.Decimal(str(commons_constants.CONFIG_TRADER_RISK_MIN))
         await self.stop(exchange_manager)
 
         config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_RISK] = 2
         trader_2 = TraderSimulator(config, exchange_manager)
-        assert trader_2.risk == commons_constants.CONFIG_TRADER_RISK_MAX
+        assert trader_2.risk == decimal.Decimal(str(commons_constants.CONFIG_TRADER_RISK_MAX))
         await self.stop(exchange_manager)
 
         config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_RISK] = 0.5
         trader_2 = TraderSimulator(config, exchange_manager)
-        assert trader_2.risk == 0.5
+        assert trader_2.risk == decimal.Decimal(str(0.5))
         await self.stop(exchange_manager)
 
     async def test_cancel_limit_order(self):
@@ -111,9 +113,9 @@ class TestTrader:
         limit_buy = BuyLimitOrder(trader_inst)
         limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                          symbol=self.DEFAULT_SYMBOL,
-                         current_price=70,
-                         quantity=10,
-                         price=70)
+                         current_price=decimal.Decimal("70"),
+                         quantity=decimal.Decimal("10"),
+                         price=decimal.Decimal("70"))
 
         assert limit_buy not in orders_manager.get_open_orders()
 
@@ -135,9 +137,9 @@ class TestTrader:
         stop_order = StopLossOrder(trader_inst)
         stop_order.update(order_type=TraderOrderType.STOP_LOSS,
                           symbol=self.DEFAULT_SYMBOL,
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         assert stop_order not in orders_manager.get_open_orders()
 
@@ -158,9 +160,9 @@ class TestTrader:
         limit_buy = BuyLimitOrder(trader_inst)
         limit_buy.update(order_type=TraderOrderType.SELL_LIMIT,
                          symbol=self.DEFAULT_SYMBOL,
-                         current_price=70,
-                         quantity=10,
-                         price=70)
+                         current_price=decimal.Decimal("70"),
+                         quantity=decimal.Decimal("10"),
+                         price=decimal.Decimal("70"))
 
         # 1. cancel order: success
         assert await trader_inst.cancel_order(limit_buy) is True
@@ -180,25 +182,25 @@ class TestTrader:
         limit_buy_1 = BuyLimitOrder(trader_inst)
         limit_buy_1.update(order_type=TraderOrderType.BUY_LIMIT,
                            symbol=self.DEFAULT_SYMBOL,
-                           current_price=70,
-                           quantity=10,
-                           price=70)
+                           current_price=decimal.Decimal("70"),
+                           quantity=decimal.Decimal("10"),
+                           price=decimal.Decimal("70"))
 
         # Test sell order
         limit_sell = SellLimitOrder(trader_inst)
         limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                           symbol=self.DEFAULT_SYMBOL,
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         # Test buy order
         limit_buy_2 = BuyLimitOrder(trader_inst)
         limit_buy_2.update(order_type=TraderOrderType.BUY_LIMIT,
                            symbol=self.DEFAULT_SYMBOL,
-                           current_price=30,
-                           quantity=10,
-                           price=30)
+                           current_price=decimal.Decimal("30"),
+                           quantity=decimal.Decimal("10"),
+                           price=decimal.Decimal("30"))
 
         await trader_inst.create_order(limit_buy_1)
         await trader_inst.create_order(limit_sell)
@@ -234,33 +236,33 @@ class TestTrader:
         market_buy = BuyMarketOrder(trader_inst)
         market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                           symbol="BTC/USDC",
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         # Test buy order
         limit_sell = SellLimitOrder(trader_inst)
         limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                           symbol="NANO/USDT",
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         # Test sell order
         market_sell = SellMarketOrder(trader_inst)
         market_sell.update(order_type=TraderOrderType.SELL_MARKET,
                            symbol=self.DEFAULT_SYMBOL,
-                           current_price=70,
-                           quantity=10,
-                           price=70)
+                           current_price=decimal.Decimal("70"),
+                           quantity=decimal.Decimal("10"),
+                           price=decimal.Decimal("70"))
 
         # Test buy order
         limit_buy = BuyLimitOrder(trader_inst)
         limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                          symbol=self.DEFAULT_SYMBOL,
-                         current_price=70,
-                         quantity=10,
-                         price=70)
+                         current_price=decimal.Decimal("70"),
+                         quantity=decimal.Decimal("10"),
+                         price=decimal.Decimal("70"))
 
         await trader_inst.create_order(market_buy)
         await trader_inst.create_order(market_sell)
@@ -295,33 +297,33 @@ class TestTrader:
         market_buy = BuyMarketOrder(trader_inst)
         market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                           symbol="BTC/USDC",
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         # Test buy order
         limit_sell = SellLimitOrder(trader_inst)
         limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                           symbol="XRP/BTC",
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         # Test sell order
         market_sell = SellMarketOrder(trader_inst)
         market_sell.update(order_type=TraderOrderType.SELL_MARKET,
                            symbol=self.DEFAULT_SYMBOL,
-                           current_price=70,
-                           quantity=10,
-                           price=70)
+                           current_price=decimal.Decimal("70"),
+                           quantity=decimal.Decimal("10"),
+                           price=decimal.Decimal("70"))
 
         # Test buy order
         limit_buy = BuyLimitOrder(trader_inst)
         limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
                          symbol=self.DEFAULT_SYMBOL,
-                         current_price=70,
-                         quantity=10,
-                         price=70)
+                         current_price=decimal.Decimal("70"),
+                         quantity=decimal.Decimal("10"),
+                         price=decimal.Decimal("70"))
 
         # create order notifier to prevent None call
         await trader_inst.create_order(market_buy)
@@ -381,25 +383,25 @@ class TestTrader:
         market_buy = BuyMarketOrder(trader_inst)
         market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                           symbol="BTC/USDC",
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         # Test buy order
         limit_sell = SellLimitOrder(trader_inst)
         limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                           symbol="NANO/USDT",
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         # Test stop loss order
         stop_loss = StopLossOrder(trader_inst)
         stop_loss.update(order_type=TraderOrderType.STOP_LOSS,
                          symbol="BTC/USDT",
-                         current_price=60,
-                         quantity=10,
-                         price=60)
+                         current_price=decimal.Decimal("60"),
+                         quantity=decimal.Decimal("10"),
+                         price=decimal.Decimal("60"))
 
         await trader_inst.create_order(market_buy)
         await trader_inst.create_order(stop_loss)
@@ -432,9 +434,9 @@ class TestTrader:
         limit_buy = create_order_instance(trader=trader_inst,
                                           order_type=TraderOrderType.BUY_LIMIT,
                                           symbol="BQX/BTC",
-                                          current_price=4,
-                                          quantity=2,
-                                          price=4)
+                                          current_price=decimal.Decimal("4"),
+                                          quantity=decimal.Decimal("2"),
+                                          price=decimal.Decimal("4"))
 
         await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
 
@@ -463,9 +465,9 @@ class TestTrader:
         stop_order = create_order_instance(trader=trader_inst,
                                            order_type=TraderOrderType.BUY_LIMIT,
                                            symbol="BQX/BTC",
-                                           current_price=4,
-                                           quantity=2,
-                                           price=4,
+                                           current_price=decimal.Decimal("4"),
+                                           quantity=decimal.Decimal("2"),
+                                           price=decimal.Decimal("4"),
                                            side=TradeOrderSide.SELL)
 
         await trader_inst.create_order(stop_order, portfolio_manager.portfolio)
@@ -495,9 +497,9 @@ class TestTrader:
         stop_order = create_order_instance(trader=trader_inst,
                                            order_type=TraderOrderType.BUY_LIMIT,
                                            symbol="BQX/BTC",
-                                           current_price=4,
-                                           quantity=2,
-                                           price=4,
+                                           current_price=decimal.Decimal("4"),
+                                           quantity=decimal.Decimal("2"),
+                                           price=decimal.Decimal("4"),
                                            side=TradeOrderSide.BUY)
 
         await trader_inst.create_order(stop_order, portfolio_manager.portfolio)
@@ -527,9 +529,9 @@ class TestTrader:
         limit_buy = create_order_instance(trader=trader_inst,
                                           order_type=TraderOrderType.BUY_LIMIT,
                                           symbol="BQX/BTC",
-                                          current_price=4,
-                                          quantity=2,
-                                          price=4)
+                                          current_price=decimal.Decimal("4"),
+                                          quantity=decimal.Decimal("2"),
+                                          price=decimal.Decimal("4"))
 
         await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
 
@@ -537,9 +539,9 @@ class TestTrader:
         second_limit_buy = create_order_instance(trader=trader_inst,
                                                  order_type=TraderOrderType.BUY_LIMIT,
                                                  symbol="VEN/BTC",
-                                                 current_price=1,
-                                                 quantity=1.5,
-                                                 price=1)
+                                                 current_price=decimal.Decimal("1"),
+                                                 quantity=decimal.Decimal("1.5"),
+                                                 price=decimal.Decimal("1"))
 
         await trader_inst.create_order(second_limit_buy, portfolio_manager.portfolio)
 
@@ -567,9 +569,9 @@ class TestTrader:
 
         assert initial_portfolio != portfolio_manager.portfolio
         # (mocked) fees are taken into account
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 2 - 0.1
-        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 0.5
-        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == 2
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == decimal.Decimal(str(2 - 0.1))
+        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == decimal.Decimal("0.5")
+        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == decimal.Decimal("2")
 
         await self.stop(exchange_manager)
 
@@ -584,9 +586,9 @@ class TestTrader:
         limit_buy = create_order_instance(trader=trader_inst,
                                           order_type=TraderOrderType.BUY_LIMIT,
                                           symbol="BQX/BTC",
-                                          current_price=0.1,
-                                          quantity=10,
-                                          price=0.1)
+                                          current_price=decimal.Decimal("0.1"),
+                                          quantity=decimal.Decimal("10"),
+                                          price=decimal.Decimal("0.1"))
 
         await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
 
@@ -608,11 +610,11 @@ class TestTrader:
         assert all(trade.status is OrderStatus.FILLED for trade in trades_manager.trades.values())
 
         assert initial_portfolio != portfolio_manager.portfolio
-        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 9
-        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == 9
+        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == decimal.Decimal("9")
+        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == decimal.Decimal("9")
         # 0.1 as fee
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 9.9
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_TOTAL] == 9.9
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == decimal.Decimal("9.9")
+        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_TOTAL] == decimal.Decimal("9.9")
 
         await self.stop(exchange_manager)
 
@@ -625,25 +627,25 @@ class TestTrader:
         market_buy = BuyMarketOrder(trader_inst)
         market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                           symbol="BTC/USDC",
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         # Test buy order
         limit_sell = SellLimitOrder(trader_inst)
         limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
                           symbol="NANO/USDT",
-                          current_price=70,
-                          quantity=10,
-                          price=70)
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
 
         # Test stop loss order
         stop_loss = StopLossOrder(trader_inst)
         stop_loss.update(order_type=TraderOrderType.STOP_LOSS,
                          symbol="BTC/USDT",
-                         current_price=60,
-                         quantity=10,
-                         price=60)
+                         current_price=decimal.Decimal("60"),
+                         quantity=decimal.Decimal("10"),
+                         price=decimal.Decimal("60"))
 
         stop_loss.linked_orders = [limit_sell]
         limit_sell.linked_orders = [stop_loss]
@@ -677,12 +679,12 @@ class TestTrader:
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
         portfolio_manager.portfolio.portfolio["ADA"] = {
-            commons_constants.PORTFOLIO_AVAILABLE: 1500,
-            commons_constants.PORTFOLIO_TOTAL: 1500
+            commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("1500"),
+            commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("1500")
         }
         portfolio_manager.portfolio.portfolio["USDT"] = {
-            commons_constants.PORTFOLIO_AVAILABLE: 1000,
-            commons_constants.PORTFOLIO_TOTAL: 1000
+            commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("1000"),
+            commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("1000")
         }
 
         if not os.getenv('CYTHON_IGNORE'):
@@ -702,7 +704,7 @@ class TestTrader:
 
             assert sell_ADA_order.symbol == "ADA/BTC"
             assert sell_ADA_order.order_type == TraderOrderType.SELL_MARKET
-            assert sell_ADA_order.origin_quantity == 1500
+            assert sell_ADA_order.origin_quantity == decimal.Decimal("1500")
 
             assert sell_USDT_order.symbol == "BTC/USDT"
             assert sell_USDT_order.order_type == TraderOrderType.BUY_MARKET
@@ -717,12 +719,12 @@ class TestTrader:
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
         portfolio_manager.portfolio.portfolio["ADA"] = {
-            commons_constants.PORTFOLIO_AVAILABLE: 1500,
-            commons_constants.PORTFOLIO_TOTAL: 1500
+            commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("1500"),
+            commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("1500")
         }
         portfolio_manager.portfolio.portfolio["USDT"] = {
-            commons_constants.PORTFOLIO_AVAILABLE: 1000,
-            commons_constants.PORTFOLIO_TOTAL: 1000
+            commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("1000"),
+            commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("1000")
         }
 
         if not os.getenv('CYTHON_IGNORE'):
@@ -756,8 +758,8 @@ class TestTrader:
             assert len(orders) == 0
 
             portfolio_manager.portfolio.portfolio["XRP"] = {
-                commons_constants.PORTFOLIO_AVAILABLE: 0,
-                commons_constants.PORTFOLIO_TOTAL: 0
+                commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO,
+                commons_constants.PORTFOLIO_TOTAL: constants.ZERO
             }
 
         if not os.getenv('CYTHON_IGNORE'):
@@ -775,8 +777,8 @@ class TestTrader:
             assert len(orders) == 0
 
             portfolio_manager.portfolio.portfolio["ICX"] = {
-                commons_constants.PORTFOLIO_AVAILABLE: 0.0000001,
-                commons_constants.PORTFOLIO_TOTAL: 0.0000001
+                commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("0.0000001"),
+                commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("0.0000001")
             }
 
         if not os.getenv('CYTHON_IGNORE'):
@@ -806,10 +808,10 @@ class TestTrader:
         order_to_test.update_from_raw(exchange_order)
 
         assert order_to_test.status == OrderStatus.PARTIALLY_FILLED
-        assert order_to_test.filled_quantity == 1.568415145687741563132
-        assert order_to_test.filled_price == 10.1444215411
+        assert order_to_test.filled_quantity == decimal.Decimal("1.5684151456877415")
+        assert order_to_test.filled_price == decimal.Decimal("10.1444215411")
         # assert order_to_test.fee == 0.001
-        assert order_to_test.total_cost == 100.1444215411
+        assert order_to_test.total_cost == decimal.Decimal("100.1444215411")
 
         await self.stop(exchange_manager)
 
@@ -835,11 +837,11 @@ class TestTrader:
         assert order_to_test.order_type == TraderOrderType.SELL_LIMIT
         assert order_to_test.status == OrderStatus.OPEN
         assert order_to_test.linked_to is None
-        assert order_to_test.origin_stop_price == 0.0
-        assert order_to_test.origin_quantity == 1564.7216721637
-        assert order_to_test.origin_price == 10254.4515
-        assert order_to_test.filled_quantity == 15.15467
-        assert order_to_test.creation_time != 0.0
+        assert order_to_test.origin_stop_price == constants.ZERO
+        assert order_to_test.origin_quantity == decimal.Decimal("1564.7216721637")
+        assert order_to_test.origin_price == decimal.Decimal("10254.4515")
+        assert order_to_test.filled_quantity == decimal.Decimal("15.15467")
+        assert order_to_test.creation_time != constants.ZERO
         assert order_to_test.order_id == "1546541123"
 
         await self.stop(exchange_manager)

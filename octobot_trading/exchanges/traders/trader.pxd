@@ -22,7 +22,7 @@ cimport octobot_trading.util as util
 cdef class Trader(util.Initializable):
     cdef dict config
 
-    cdef public double risk
+    cdef public object risk
 
     cdef public str trader_type_str
 
@@ -35,5 +35,5 @@ cdef class Trader(util.Initializable):
 
     # methods
     cpdef str parse_order_id(self, str order_id)
-    cpdef double set_risk(self, double risk)
+    cpdef double set_risk(self, object risk)
     cpdef object convert_order_to_trade(self, object order)

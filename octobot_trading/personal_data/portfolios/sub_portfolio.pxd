@@ -25,11 +25,11 @@ cimport octobot_trading.personal_data.orders.order as order_class
 cdef class SubPortfolio(portfolio_class.Portfolio):
     cdef public portfolio_class.Portfolio parent_portfolio
 
-    cdef public double percent
+    cdef public object percent
 
     cdef public bint is_relative
 
     cpdef void update_from_parent(self)
-    cpdef void set_percent(self, double percent)
+    cpdef void set_percent(self, object percent)
     cpdef object update_portfolio_available(self, order_class.Order order, bint is_new_order=*)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)

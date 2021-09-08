@@ -14,12 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import decimal
+
 import octobot_commons.logging as logging
 
 import octobot_commons.constants
 import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.order_util as order_util
-import octobot_trading.personal_data.orders.order_adapter as order_adapter
+import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.personal_data.trades.trade_factory as trade_factory
 import octobot_trading.enums
 import octobot_trading.constants
@@ -35,12 +37,12 @@ class Trader(util.Initializable):
         self.exchange_manager = exchange_manager
         self.config = config
 
-        self.risk = 0
+        self.risk = octobot_trading.constants.ZERO
         try:
-            self.set_risk(self.config[octobot_commons.constants.CONFIG_TRADING]
-                          [octobot_commons.constants.CONFIG_TRADER_RISK])
+            self.set_risk(decimal.Decimal(str(self.config[octobot_commons.constants.CONFIG_TRADING]
+                          [octobot_commons.constants.CONFIG_TRADER_RISK])))
         except KeyError:
-            self.set_risk(0)
+            self.set_risk(octobot_trading.constants.ZERO)
 
         # logging
         self.trader_type_str = octobot_trading.constants.REAL_TRADER_STR
@@ -61,10 +63,12 @@ class Trader(util.Initializable):
         return util.is_trader_enabled(config)
 
     def set_risk(self, risk):
-        if risk < octobot_commons.constants.CONFIG_TRADER_RISK_MIN:
-            self.risk = octobot_commons.constants.CONFIG_TRADER_RISK_MIN
-        elif risk > octobot_commons.constants.CONFIG_TRADER_RISK_MAX:
-            self.risk = octobot_commons.constants.CONFIG_TRADER_RISK_MAX
+        min_risk = decimal.Decimal(str(octobot_commons.constants.CONFIG_TRADER_RISK_MIN))
+        max_risk = decimal.Decimal(str(octobot_commons.constants.CONFIG_TRADER_RISK_MAX))
+        if risk < min_risk:
+            self.risk = min_risk
+        elif risk > max_risk:
+            self.risk = max_risk
         else:
             self.risk = risk
         return self.risk
@@ -248,7 +252,7 @@ class Trader(util.Initializable):
                     quantity = 0
             else:
                 quantity = current_symbol_holding
-            for order_quantity, order_price in order_adapter.check_and_adapt_order_details_if_necessary(quantity, price,
+            for order_quantity, order_price in decimal_order_adapter.decimal_check_and_adapt_order_details_if_necessary(quantity, price,
                                                                                                         symbol_market):
                 current_order = order_factory.create_order_instance(trader=self,
                                                                     order_type=order_type,

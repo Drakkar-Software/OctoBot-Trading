@@ -14,9 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.logging as logging
+import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
@@ -99,6 +101,7 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
             .prices_manager.get_mark_price(timeout=timeout)
     except asyncio.TimeoutError:
         raise asyncio.TimeoutError("Mark price is not available")
+    decimal_mark_price = decimal.Decimal(str(mark_price))
 
     currency, market = symbol_util.split_symbol(symbol)
 
@@ -107,11 +110,11 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
     current_market_quantity = exchange_manager.exchange_personal_data.portfolio_manager.portfolio\
         .get_currency_portfolio(market)
 
-    market_quantity = current_market_quantity / mark_price if mark_price else 0
+    market_quantity = current_market_quantity / decimal_mark_price if decimal_mark_price else constants.ZERO
 
     symbol_market = exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
-    return current_symbol_holding, current_market_quantity, market_quantity, mark_price, symbol_market
+    return current_symbol_holding, current_market_quantity, market_quantity, decimal_mark_price, symbol_market
 
 
 def total_fees_from_order_dict(order_dict, currency):
@@ -120,8 +123,16 @@ def total_fees_from_order_dict(order_dict, currency):
 
 def get_fees_for_currency(fee, currency):
     if fee and fee[enums.FeePropertyColumns.CURRENCY.value] == currency:
-        return fee[enums.FeePropertyColumns.COST.value]
-    return 0
+        return decimal.Decimal(str(fee[enums.FeePropertyColumns.COST.value]))
+    return constants.ZERO
+
+
+def parse_raw_fees(raw_fees):
+    fees = raw_fees
+    if fees and enums.ExchangeConstantsOrderColumns.COST.value in fees:
+        raw_fees[enums.ExchangeConstantsOrderColumns.COST.value] = \
+            decimal.Decimal(str(raw_fees[enums.ExchangeConstantsOrderColumns.COST.value]))
+    return fees
 
 
 def parse_order_status(raw_order):

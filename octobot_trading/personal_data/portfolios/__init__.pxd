@@ -49,6 +49,7 @@ from octobot_trading.personal_data.portfolios.types cimport (
 from octobot_trading.personal_data.portfolios cimport portfolio_util
 from octobot_trading.personal_data.portfolios.portfolio_util import (
     parse_decimal_portfolio,
+    parse_decimal_config_portfolio,
     portfolio_to_float,
 )
 
@@ -69,5 +70,6 @@ __all__ = [
     "MarginPortfolio",
     "SpotPortfolio",
     "parse_decimal_portfolio",
+    "parse_decimal_config_portfolio",
     "portfolio_to_float",
 ]

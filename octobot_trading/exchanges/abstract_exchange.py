@@ -559,8 +559,8 @@ class AbstractExchange(util.Initializable):
         return self.connector.get_max_handled_pair_with_time_frame()
 
     def log_order_creation_error(self, error, order_type, symbol, quantity, price, stop_price):
-        order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {quantity}, price: {price}," \
-                     f" stop_price: {stop_price}"
+        order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {str(quantity)}, price: {str(price)}," \
+                     f" stop_price: {str(stop_price)}"
         self.logger.error(f"Failed to create order : {error.__class__.__name__} {error}: ({order_desc})")
 
     def handle_token_error(self, error):

@@ -91,7 +91,7 @@ class PortfolioManager(util.Initializable):
         """
         Handle a mark price update notification
         :param symbol: the update symbol
-        :param mark_price: the updated mark price
+        :param mark_price: the updated mark price in float
         :return: True if profitability changed
         """
         return await self.portfolio_profitability. \
@@ -149,17 +149,10 @@ class PortfolioManager(util.Initializable):
         """
         Load new portfolio from config settings
         """
-        portfolio_amount_dict = personal_data.parse_decimal_portfolio(
+        portfolio_amount_dict = personal_data.parse_decimal_config_portfolio(
             self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]
         )
-
-        try:
-            self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
-        except Exception as balance_update_exception:
-            self.logger.exception(balance_update_exception, True, f"Error when loading trading history, "
-                                                                  f"will reset history. ({balance_update_exception})")
-            self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(
-                self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]))
+        self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
 
     def clear(self):
         """

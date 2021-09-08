@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_commons.logging as logging
 
 import octobot_trading.util as util
@@ -57,7 +59,7 @@ def get_trader_risk(exchange_manager) -> float:
     return exchange_manager.trader.risk
 
 
-def set_trader_risk(exchange_manager, risk) -> float:
+def set_trader_risk(exchange_manager, risk: decimal.Decimal) -> float:
     return exchange_manager.trader.set_risk(risk)
 
 

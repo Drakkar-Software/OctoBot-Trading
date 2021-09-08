@@ -32,25 +32,24 @@ cdef class Trade:
     cdef public bint simulated
     cdef public bint is_closing_order
 
-    cdef public double origin_price
-    cdef public double origin_quantity
-    cdef public double market_total_fees
-    cdef public double executed_quantity
-    cdef public double executed_price
-    cdef public double total_cost
-    cdef public double trade_profitability
+    cdef public object origin_price
+    cdef public object origin_quantity
+    cdef public object executed_quantity
+    cdef public object executed_price
+    cdef public object total_cost
+    cdef public object trade_profitability
 
     cdef public double timestamp
     cdef public double creation_time
     cdef public double canceled_time
     cdef public double executed_time
 
-    cdef public dict fee # Dict[str, Union[str, double]]
+    cdef public dict fee # Dict[str, Union[str, decimal.Decimal]]
 
     cdef public object exchange_trade_type # raw exchange trade type, used to create trade dict
 
     cpdef double get_time(self)
-    cpdef double get_quantity(self)
+    cpdef object get_quantity(self)
     cpdef void update_from_order(self,
                                  object order,
                                  double canceled_time=*,

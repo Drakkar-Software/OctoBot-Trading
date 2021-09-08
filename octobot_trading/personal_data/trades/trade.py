@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 
 
@@ -38,17 +39,17 @@ class Trade:
         self.currency = None
         self.market = None
         self.taker_or_maker = None
-        self.origin_price = 0
-        self.origin_quantity = 0
+        self.origin_price = constants.ZERO
+        self.origin_quantity = constants.ZERO
         self.trade_type = None
         self.side = None
-        self.executed_quantity = 0
+        self.executed_quantity = constants.ZERO
         self.canceled_time = 0
         self.executed_time = 0
         self.fee = None
-        self.executed_price = 0
-        self.trade_profitability = 0
-        self.total_cost = 0
+        self.executed_price = constants.ZERO
+        self.trade_profitability = constants.ZERO
+        self.total_cost = constants.ZERO
 
         # raw exchange trade type, used to create trade dict
         self.exchange_trade_type = None

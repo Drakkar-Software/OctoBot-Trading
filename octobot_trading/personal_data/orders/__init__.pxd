@@ -70,6 +70,7 @@ from octobot_trading.personal_data.orders.order_util cimport (
     check_cost,
     total_fees_from_order_dict,
     get_fees_for_currency,
+    parse_raw_fees,
     parse_order_status,
     parse_is_cancelled,
 )
@@ -96,6 +97,7 @@ __all__ = [
     "check_cost",
     "total_fees_from_order_dict",
     "get_fees_for_currency",
+    "parse_raw_fees",
     "parse_order_status",
     "parse_is_cancelled",
     "OrderState",

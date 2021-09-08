@@ -52,12 +52,12 @@ class SpotPortfolio(portfolio_class.Portfolio):
 
         # when buy order
         if order.side == enums.TradeOrderSide.BUY:
-            new_quantity = - order.origin_quantity * order.origin_price * (1 if increase_quantity else -1)
+            new_quantity = - order.origin_quantity * order.origin_price * (constants.ONE if increase_quantity else -constants.ONE)
             self._update_portfolio_data(market, new_quantity, False, True)
 
         # when sell order
         else:
-            new_quantity = - order.origin_quantity * (1 if increase_quantity else -1)
+            new_quantity = - order.origin_quantity * (constants.ONE if increase_quantity else -constants.ONE)
             self._update_portfolio_data(currency, new_quantity, False, True)
 
     def log_portfolio_update_from_order(self, order, currency, market):

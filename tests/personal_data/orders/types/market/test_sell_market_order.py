@@ -17,7 +17,7 @@ import pytest
 
 from octobot_trading.enums import TraderOrderType
 from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_SYMBOL_QUANTITY
-from tests.test_utils.random_numbers import random_price, random_quantity
+from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
 
 from octobot_trading.personal_data.orders.states.open_order_state import OpenOrderState
 from tests import event_loop
@@ -28,10 +28,10 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_sell_market_order_trigger(sell_market_order):
-    order_price = random_price()
+    order_price = decimal_random_price()
     sell_market_order.update(
         price=order_price,
-        quantity=random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        quantity=decimal_random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.SELL_MARKET,
     )

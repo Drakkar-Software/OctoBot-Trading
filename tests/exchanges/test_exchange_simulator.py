@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 
 import pytest
 import octobot_trading.constants as constants
@@ -79,13 +80,13 @@ async def test_get_trade_fee(backtesting_trader):
 
     buy_market_fee = exchange_manager.exchange.get_trade_fee(DEFAULT_BACKTESTING_SYMBOL, TraderOrderType.BUY_MARKET, 10,
                                                              100, ExchangeConstantsMarketPropertyColumns.TAKER.value)
-    _assert_fee(buy_market_fee, DEFAULT_BACKTESTING_CURRENCY, 0.01, 0.001,
+    _assert_fee(buy_market_fee, DEFAULT_BACKTESTING_CURRENCY, decimal.Decimal("0.01"), 0.001,
                 ExchangeConstantsMarketPropertyColumns.TAKER.value)
 
     sell_market_fee = exchange_manager.exchange.get_trade_fee(
         DEFAULT_BACKTESTING_SYMBOL, TraderOrderType.SELL_MARKET, 10, 100,
         ExchangeConstantsMarketPropertyColumns.TAKER.value)
-    _assert_fee(sell_market_fee, DEFAULT_BACKTESTING_MARKET, 1, 0.001,
+    _assert_fee(sell_market_fee, DEFAULT_BACKTESTING_MARKET, constants.ONE, 0.001,
                 ExchangeConstantsMarketPropertyColumns.TAKER.value)
 
 

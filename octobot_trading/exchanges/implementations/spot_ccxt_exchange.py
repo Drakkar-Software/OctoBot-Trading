@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 import typing
 
 import ccxt.async_support as ccxt
@@ -49,8 +50,9 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
         return exchange_connectors.CCXTExchange.is_supporting_exchange(exchange_candidate_name)
 
-    async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: float, price: float = None,
-                           stop_price=None, params: dict = None, **kwargs: dict) -> typing.Optional[dict]:
+    async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
+                           price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
+                           params: dict = None, **kwargs: dict) -> typing.Optional[dict]:
         try:
             created_order = await self._create_order_with_retry(order_type, symbol, quantity, price, params)
             # some exchanges are not returning the full order details on creation: fetch it if necessary
@@ -62,7 +64,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
             # on some exchange, market order are not not including price, add it manually to ensure uniformity
             if created_order[ecoc.PRICE.value] is None and price is not None:
-                created_order[ecoc.PRICE.value] = price
+                created_order[ecoc.PRICE.value] = float(price)
 
             return self.clean_order(created_order)
 
@@ -77,7 +79,8 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             self.logger.error(e)
         return None
 
-    async def _create_order_with_retry(self, order_type, symbol, quantity, price, params) -> dict:
+    async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
+                                       price: decimal.Decimal, params) -> dict:
         try:
             return await self._create_specific_order(order_type, symbol, quantity, price=price, params=params)
         except (ccxt.InvalidOrder, ccxt.BadRequest) as e:
@@ -97,30 +100,43 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return all(key in order for key in order_required_fields) and \
             all(order[key] for key in order_non_empty_fields)
 
-    async def _create_specific_order(self, order_type, symbol, quantity, price=None, params=None) -> dict:
+    async def _create_specific_order(self, order_type, symbol, quantity: decimal.Decimal, price: decimal.Decimal = None,
+                                     params=None) -> dict:
         created_order = None
+        float_quantity = float(quantity)
+        float_price = float(price)
         params = {} if params is None else params
         params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
         if order_type == enums.TraderOrderType.BUY_MARKET:
-            created_order = await self._create_market_buy_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_market_buy_order(symbol, float_quantity, price=float_price,
+                                                                params=params)
         elif order_type == enums.TraderOrderType.BUY_LIMIT:
-            created_order = await self._create_limit_buy_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_limit_buy_order(symbol, float_quantity, price=float_price,
+                                                               params=params)
         elif order_type == enums.TraderOrderType.SELL_MARKET:
-            created_order = await self._create_market_sell_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_market_sell_order(symbol, float_quantity, price=float_price,
+                                                                 params=params)
         elif order_type == enums.TraderOrderType.SELL_LIMIT:
-            created_order = await self._create_limit_sell_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_limit_sell_order(symbol, float_quantity, price=float_price,
+                                                                params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS:
-            created_order = await self._create_market_stop_loss_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_market_stop_loss_order(symbol, float_quantity, price=float_price,
+                                                                      params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
-            created_order = await self._create_limit_stop_loss_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_limit_stop_loss_order(symbol, float_quantity, price=float_price,
+                                                                     params=params)
         elif order_type == enums.TraderOrderType.TAKE_PROFIT:
-            created_order = await self._create_market_take_profit_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_market_take_profit_order(symbol, float_quantity, price=float_price,
+                                                                        params=params)
         elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
-            created_order = await self._create_limit_take_profit_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_limit_take_profit_order(symbol, float_quantity, price=float_price,
+                                                                       params=params)
         elif order_type == enums.TraderOrderType.TRAILING_STOP:
-            created_order = await self._create_market_trailing_stop_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_market_trailing_stop_order(symbol, float_quantity, price=float_price,
+                                                                          params=params)
         elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
-            created_order = await self._create_limit_trailing_stop_order(symbol, quantity, price=price, params=params)
+            created_order = await self._create_limit_trailing_stop_order(symbol, float_quantity, price=float_price,
+                                                                         params=params)
         return created_order
 
     async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:

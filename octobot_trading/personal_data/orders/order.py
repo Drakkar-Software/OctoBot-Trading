@@ -16,9 +16,11 @@
 import asyncio
 import typing
 import contextlib
+import decimal
 
 import octobot_commons.logging as logging
 
+import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.states as orders_states
@@ -55,10 +57,10 @@ class Order(util.Initializable):
 
         # original order attributes
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
-        self.origin_price = 0
-        self.created_last_price = 0
-        self.origin_quantity = 0
-        self.origin_stop_price = 0
+        self.origin_price = constants.ZERO
+        self.created_last_price = constants.ZERO
+        self.origin_quantity = constants.ZERO
+        self.origin_stop_price = constants.ZERO
 
         # order type attributes
         self.order_type = None
@@ -66,11 +68,11 @@ class Order(util.Initializable):
         self.exchange_order_type = None
 
         # filled order attributes
-        self.filled_quantity = 0
-        self.filled_price = 0
+        self.filled_quantity = constants.ZERO
+        self.filled_price = constants.ZERO
         self.fee = None
-        self.total_cost = 0
-        self.order_profitability = 0
+        self.total_cost = constants.ZERO
+        self.order_profitability = constants.ZERO
         self.executed_time = 0
 
         # canceled order attributes
@@ -98,8 +100,9 @@ class Order(util.Initializable):
         return self.logger_name
 
     def update(self, symbol, order_id="", status=enums.OrderStatus.OPEN,
-               current_price=0.0, quantity=0.0, price=0.0, stop_price=0.0,
-               quantity_filled=0.0, filled_price=0.0, average_price=0.0, fee=None, total_cost=0.0,
+               current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
+               quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
+               fee=None, total_cost=constants.ZERO,
                timestamp=None, linked_to=None, linked_portfolio=None, order_type=None, reduce_only=False) -> bool:
         changed: bool = False
 
@@ -330,22 +333,23 @@ class Order(util.Initializable):
             except KeyError:
                 logging.get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
-        filled_price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0)
+        filled_price = decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0)))
         # set average price with real average price if available, use filled_price otherwise
-        average_price = raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value, 0.0) or filled_price
+        average_price = decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value, 0.0)
+                                            or filled_price))
 
         return self.update(
             symbol=str(raw_order.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value, None)),
-            current_price=raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0),
-            quantity=raw_order.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value, 0.0),
-            price=raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0),
+            current_price=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0))),
+            quantity=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value, 0.0))),
+            price=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0))),
             status=order_util.parse_order_status(raw_order),
             order_id=str(raw_order.get(enums.ExchangeConstantsOrderColumns.ID.value, None)),
-            quantity_filled=raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value, 0.0),
-            filled_price=filled_price,
-            average_price=average_price,
-            total_cost=raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value, 0.0),
-            fee=raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value, None),
+            quantity_filled=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value, 0.0))),
+            filled_price=decimal.Decimal(str(filled_price)),
+            average_price=decimal.Decimal(str(average_price)),
+            total_cost=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value, 0.0))),
+            fee=order_util.parse_raw_fees(raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value, None)),
             timestamp=raw_order.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value, None),
             reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False),
         )
@@ -354,22 +358,22 @@ class Order(util.Initializable):
         self.status = enums.OrderStatus.FILLED
         if self.executed_time == 0:
             self.executed_time = self.timestamp
-        if self.filled_quantity == 0:
+        if self.filled_quantity == constants.ZERO:
             self.filled_quantity = self.origin_quantity
-        if self.filled_price == 0:
+        if self.filled_price == constants.ZERO:
             self.filled_price = self.origin_price
 
     def update_order_from_raw(self, raw_order):
         self.status = order_util.parse_order_status(raw_order)
-        self.total_cost = raw_order[enums.ExchangeConstantsOrderColumns.COST.value]
-        self.filled_quantity = raw_order[enums.ExchangeConstantsOrderColumns.FILLED.value]
-        self.filled_price = raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value]
+        self.total_cost = decimal.Decimal(str(raw_order[enums.ExchangeConstantsOrderColumns.COST.value] or 0))
+        self.filled_quantity = decimal.Decimal(str(raw_order[enums.ExchangeConstantsOrderColumns.FILLED.value] or 0))
+        self.filled_price = decimal.Decimal(str(raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value] or 0))
         if not self.filled_price and self.filled_quantity:
             self.filled_price = self.total_cost / self.filled_quantity
 
         self._update_taker_maker()
 
-        self.fee = raw_order[enums.ExchangeConstantsOrderColumns.FEE.value]
+        self.fee = order_util.parse_raw_fees(raw_order[enums.ExchangeConstantsOrderColumns.FEE.value])
 
         self.executed_time = self.trader.exchange.get_uniform_timestamp(
             raw_order[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value])
@@ -424,8 +428,8 @@ class Order(util.Initializable):
     def to_string(self):
         return (f"{self.symbol} | "
                 f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
-                f"Price : {self.origin_price} | "
-                f"Quantity : {self.origin_quantity} | "
+                f"Price : {str(self.origin_price)} | "
+                f"Quantity : {str(self.origin_quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
                 f"id : {self.order_id}")
 

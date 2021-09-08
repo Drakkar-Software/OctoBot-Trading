@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import pytest
 from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
@@ -52,31 +54,31 @@ async def test_update_portfolio_available_from_order_in_inverse_market(backtesti
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
-                      current_price=1000,
-                      quantity=10,
-                      price=1000)
+                      current_price=decimal.Decimal(str(1000)),
+                      quantity=decimal.Decimal(str(10)),
+                      price=decimal.Decimal(str(1000)))
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 9.99
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(9.99))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == decimal.Decimal(str(1000))
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
-                      current_price=74,
-                      quantity=23,
-                      price=74)
+                      current_price=decimal.Decimal(str(74)),
+                      quantity=decimal.Decimal(str(23)),
+                      price=decimal.Decimal(str(74)))
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 9.67918918918919
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert round(portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE), 15) == decimal.Decimal("9.679189189189189")
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == decimal.Decimal(str(1000))
 
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
@@ -95,16 +97,16 @@ async def test_update_portfolio_available_from_order_in_inverse_market_with_leve
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
-                      current_price=1000,
-                      quantity=10,
-                      price=1000)
+                      current_price=decimal.Decimal(str(1000)),
+                      quantity=decimal.Decimal(str(10)),
+                      price=decimal.Decimal(str(1000)))
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 9.999
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(9.999))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == decimal.Decimal(str(1000))
 
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
@@ -123,43 +125,43 @@ async def test_update_portfolio_available_from_order_with_leverage(backtesting_t
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
-                      current_price=555,
-                      quantity=10,
-                      price=555)
+                      current_price=decimal.Decimal(str(555)),
+                      quantity=decimal.Decimal(str(10)),
+                      price=decimal.Decimal(str(555)))
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 995
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(995))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == decimal.Decimal(str(1000))
 
     # Test sell order
     market_sell = SellMarketOrder(trader)
     market_sell.update(order_type=TraderOrderType.SELL_MARKET,
                        symbol="BTC/USDT",
-                       current_price=555,
-                       quantity=3,
-                       price=555)
+                       current_price=decimal.Decimal(str(555)),
+                       quantity=decimal.Decimal(str(3)),
+                       price=decimal.Decimal(str(555)))
 
     # test sell order creation
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 993.5
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(993.5))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == decimal.Decimal(str(1000))
 
     # Test limit order to restore initial portfolio with a is_new=False and a quantity of 10 + 3
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
-                      current_price=555,
-                      quantity=13,
-                      price=555)
+                      current_price=decimal.Decimal(str(555)),
+                      quantity=decimal.Decimal(str(13)),
+                      price=decimal.Decimal(str(555)))
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, False)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == decimal.Decimal(str(1000))

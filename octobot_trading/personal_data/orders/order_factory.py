@@ -15,6 +15,7 @@
 #  License along with this library.
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 
 
 def create_order_from_raw(trader, raw_order):
@@ -41,15 +42,15 @@ def create_order_instance(trader,
                           symbol,
                           current_price,
                           quantity,
-                          price=0.0,
-                          stop_price=0.0,
+                          price=constants.ZERO,
+                          stop_price=constants.ZERO,
                           linked_to=None,
                           status=enums.OrderStatus.OPEN,
                           order_id=None,
-                          filled_price=0.0,
-                          average_price=0.0,
-                          quantity_filled=0.0,
-                          total_cost=0.0,
+                          filled_price=constants.ZERO,
+                          average_price=constants.ZERO,
+                          quantity_filled=constants.ZERO,
+                          total_cost=constants.ZERO,
                           timestamp=0,
                           linked_portfolio=None,
                           side=None):

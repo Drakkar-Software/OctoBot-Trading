@@ -50,7 +50,7 @@ class PricesManager(util.Initializable):
         if it's not the first update for MarkPriceSources.RECENT_TRADE_AVERAGE
         Set the mark price if the mark price come from MarkPriceSources.TICKER_CLOSE_PRICE and
         if other sources have expired
-        :param mark_price: the mark price value from mark_price_source
+        :param mark_price: the mark price value from mark_price_source in float
         :param mark_price_source: the mark_price source (from MarkPriceSources)
         :return True if mark price got updated
         """

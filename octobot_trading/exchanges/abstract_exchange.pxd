@@ -37,7 +37,7 @@ cdef class AbstractExchange(util.Initializable):
 
     # exchange requests
     cpdef dict get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
-    cpdef dict get_trade_fee(self, str symbol, object order_type, double quantity, double price, str taker_or_maker)
+    cpdef dict get_trade_fee(self, str symbol, object order_type, object quantity, object price, str taker_or_maker)
     cpdef dict get_fees(self, str symbol)
     cpdef double get_uniform_timestamp(self, double timestamp)
     cpdef str get_pair_from_exchange(self, str pair)
@@ -81,7 +81,7 @@ cdef class AbstractExchange(util.Initializable):
     cdef void _uniformize_candle_timestamps(self, list candle)
 
     # utils
-    cpdef void log_order_creation_error(self, object error, object order_type, str symbol, double quantity,
+    cpdef void log_order_creation_error(self, object error, object order_type, str symbol, object quantity,
                                         object price, object stop_price)
     cpdef void handle_token_error(self, object error)
     cpdef bint is_supported_order_type(self, object order_type)

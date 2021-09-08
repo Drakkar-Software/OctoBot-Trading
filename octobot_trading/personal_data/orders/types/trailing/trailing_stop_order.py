@@ -14,16 +14,18 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.personal_data.orders.order as order_class
 
 
 class TrailingStopOrder(order_class.Order):
-    UNINITIALIZED_TRAILING_PERCENT = -1
-    DEFAULT_TRAILING_PERCENT = 5
+    UNINITIALIZED_TRAILING_PERCENT = decimal.Decimal(str(-1))
+    DEFAULT_TRAILING_PERCENT = decimal.Decimal(str(5))
 
     def __init__(self, trader, side=enums.TradeOrderSide.SELL, trailing_percent=UNINITIALIZED_TRAILING_PERCENT):
         super().__init__(trader, side=side)
@@ -80,9 +82,9 @@ class TrailingStopOrder(order_class.Order):
         """
         trailing_price_factor = (self.trailing_percent
                                  if self.trailing_percent != self.UNINITIALIZED_TRAILING_PERCENT
-                                 else self.DEFAULT_TRAILING_PERCENT) / 100
-        trailing_price_factor *= 1 if self.side is enums.TradeOrderSide.BUY else -1
-        return new_price * (1 + trailing_price_factor)
+                                 else self.DEFAULT_TRAILING_PERCENT) / decimal.Decimal("100")
+        trailing_price_factor *= constants.ONE if self.side is enums.TradeOrderSide.BUY else -constants.ONE
+        return new_price * (constants.ONE + trailing_price_factor)
 
     def _create_hit_tasks(self):
         """
@@ -130,7 +132,7 @@ class TrailingStopOrder(order_class.Order):
             get_exchange_symbol_data(self.symbol).prices_manager
         logging.get_logger(self.get_logger_name()).debug(f"New price hit {prices_manager.mark_price}, "
                                                          f"replacing stop...")
-        await self._reset_events(prices_manager.mark_price, prices_manager.mark_price_set_time)
+        await self._reset_events(decimal.Decimal(str(prices_manager.mark_price)), prices_manager.mark_price_set_time)
 
     async def on_filled(self):
         """

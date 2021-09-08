@@ -65,6 +65,7 @@ from octobot_trading.personal_data.orders.order_util import (
     check_cost,
     total_fees_from_order_dict,
     get_fees_for_currency,
+    parse_raw_fees,
     parse_order_status,
     parse_is_cancelled,
     get_pre_order_data,
@@ -88,6 +89,7 @@ from octobot_trading.personal_data.orders.decimal_order_adapter import (
     decimal_adapt_order_quantity_because_price,
     decimal_split_orders,
     decimal_check_and_adapt_order_details_if_necessary,
+    decimal_add_dusts_to_quantity_if_necessary,
 )
 from octobot_trading.personal_data.orders import order_factory
 from octobot_trading.personal_data.orders.order_factory import (
@@ -105,6 +107,7 @@ __all__ = [
     "check_cost",
     "total_fees_from_order_dict",
     "get_fees_for_currency",
+    "parse_raw_fees",
     "parse_order_status",
     "parse_is_cancelled",
     "get_pre_order_data",
@@ -125,6 +128,7 @@ __all__ = [
     "check_and_adapt_order_details_if_necessary",
     "decimal_check_and_adapt_order_details_if_necessary",
     "add_dusts_to_quantity_if_necessary",
+    "decimal_add_dusts_to_quantity_if_necessary",
     "create_order_from_raw",
     "create_order_instance_from_raw",
     "create_order_from_type",

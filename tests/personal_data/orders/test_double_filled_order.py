@@ -18,7 +18,8 @@ import pytest
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TraderOrderType
 from tests.personal_data import DEFAULT_SYMBOL_QUANTITY, DEFAULT_ORDER_SYMBOL
-from tests.test_utils.random_numbers import random_price, random_quantity, random_recent_trade
+from tests.test_utils.random_numbers import decimal_random_price, random_price, decimal_random_quantity, \
+    random_recent_trade
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -29,15 +30,15 @@ pytestmark = pytest.mark.asyncio
 
 async def test_stop_loss_and_limit(stop_loss_sell_order, sell_limit_order):
     # fill both orders: stop loss first
-    limit_order_price = random_price()
-    quantity = random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY)
+    limit_order_price = decimal_random_price()
+    quantity = decimal_random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY)
     sell_limit_order.update(
         price=limit_order_price,
         quantity=quantity,
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.SELL_LIMIT,
     )
-    stop_order_price = random_price(max_value=limit_order_price-1)
+    stop_order_price = decimal_random_price(max_value=limit_order_price-1)
     stop_loss_sell_order.update(
         price=stop_order_price,
         quantity=quantity,
@@ -59,9 +60,9 @@ async def test_stop_loss_and_limit(stop_loss_sell_order, sell_limit_order):
     # cancelled and not filled even though its price has been hit
     price_events_manager.handle_recent_trades(
          [
-            random_recent_trade(price=random_price(max_value=stop_order_price - 1),
+            random_recent_trade(price=random_price(max_value=float(stop_order_price - 1)),
                                 timestamp=stop_loss_sell_order.timestamp),
-            random_recent_trade(price=random_price(min_value=limit_order_price + 1),
+            random_recent_trade(price=random_price(min_value=float(limit_order_price + 1)),
                                 timestamp=sell_limit_order.timestamp)
          ]
     )
@@ -72,15 +73,15 @@ async def test_stop_loss_and_limit(stop_loss_sell_order, sell_limit_order):
 
 async def test_limit_and_stop_loss(stop_loss_sell_order, sell_limit_order):
     # fill both orders: limit first
-    limit_order_price = random_price()
-    quantity = random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY)
+    limit_order_price = decimal_random_price()
+    quantity = decimal_random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY)
     sell_limit_order.update(
         price=limit_order_price,
         quantity=quantity,
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.SELL_LIMIT,
     )
-    stop_order_price = random_price(max_value=limit_order_price-1)
+    stop_order_price = decimal_random_price(max_value=limit_order_price-1)
     stop_loss_sell_order.update(
         price=stop_order_price,
         quantity=quantity,
@@ -102,9 +103,9 @@ async def test_limit_and_stop_loss(stop_loss_sell_order, sell_limit_order):
     # cancelled and not filled even though its price has been hit
     price_events_manager.handle_recent_trades(
          [
-            random_recent_trade(price=random_price(max_value=stop_order_price - 1),
+            random_recent_trade(price=random_price(max_value=float(stop_order_price - 1)),
                                 timestamp=sell_limit_order.timestamp),
-            random_recent_trade(price=random_price(min_value=limit_order_price + 1),
+            random_recent_trade(price=random_price(min_value=float(limit_order_price + 1)),
                                 timestamp=stop_loss_sell_order.timestamp)
          ]
     )
