@@ -119,6 +119,7 @@ from octobot_trading.api.portfolio import (
     get_portfolio_currency,
     get_origin_portfolio,
     refresh_real_trader_portfolio,
+    format_portfolio,
 )
 from octobot_trading.api.profitability import (
     get_profitability_stats,
@@ -225,8 +226,9 @@ __all__ = [
     "get_portfolio_currency",
     "get_origin_portfolio",
     "refresh_real_trader_portfolio",
-    "get_profitability_stats",
     "get_origin_portfolio_value",
+    "get_profitability_stats",
+    "format_portfolio",
     "get_current_portfolio_value",
     "get_current_holdings_values",
     "get_reference_market",

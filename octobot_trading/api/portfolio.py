@@ -21,7 +21,7 @@ import octobot_trading.personal_data as personal_data
 
 
 def get_portfolio(exchange_manager, as_decimal=True) -> dict:
-    return _format_portfolio(
+    return format_portfolio(
         exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio,
         as_decimal
     )
@@ -36,13 +36,13 @@ def get_portfolio_currency(exchange_manager, currency,
 
 
 def get_origin_portfolio(exchange_manager, as_decimal=True) -> dict:
-    return _format_portfolio(
+    return format_portfolio(
         exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio,
         as_decimal
     )
 
 
-def _format_portfolio(portfolio, as_decimal) -> dict:
+def format_portfolio(portfolio, as_decimal) -> dict:
     if as_decimal:
         return portfolio
     return personal_data.portfolio_to_float(portfolio)
