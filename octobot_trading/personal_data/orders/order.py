@@ -305,7 +305,7 @@ class Order(util.Initializable):
 
     async def default_exchange_update_order_status(self):
         result = await self.exchange_manager.exchange.get_order(self.order_id, self.symbol)
-        new_status = self.trader.parse_status(result)
+        new_status = self.exchange_manager.exchange.connector.parse_status(result)
         self.is_synchronized_with_exchange = True
         if new_status in {enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED}:
             await self.on_fill()
