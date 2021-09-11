@@ -23,7 +23,8 @@ import octobot_trading.util as util
 
 
 class TradesManager(util.Initializable):
-    MAX_TRADES_COUNT = 500
+    # memory usage for 100000 trades: approx 180 Mo
+    MAX_TRADES_COUNT = 100000
 
     def __init__(self, trader):
         super().__init__()
@@ -79,7 +80,7 @@ class TradesManager(util.Initializable):
     # private
     def _check_trades_size(self):
         if len(self.trades) > self.MAX_TRADES_COUNT:
-            self._remove_oldest_trades(int(self.MAX_TRADES_COUNT / 2))
+            self._remove_oldest_trades(int(self.MAX_TRADES_COUNT / 10))
 
     def _reset_trades(self):
         self.trades_initialized = False
