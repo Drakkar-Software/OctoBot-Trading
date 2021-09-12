@@ -17,17 +17,18 @@
 
 
 cdef class FutureContract:
-    cdef str pair
+    cdef readonly str pair
 
-    cdef public object contract_type
-    cdef public object margin_type
+    cdef readonly object contract_type
+    cdef readonly object margin_type
 
-    cdef public double expiration_timestamp
+    cdef readonly double creation_date
+    cdef readonly double expiration_date
 
-    cdef public double minimum_tick_size
-    cdef public object contract_size
-    cdef public object current_leverage
-    cdef public object maximum_leverage
+    cdef readonly double minimum_tick_size
+    cdef readonly object contract_size
+    cdef readonly object current_leverage
+    cdef readonly object maximum_leverage
 
     cpdef bint is_inverse_contract(self)
     cpdef bint is_isolated(self)
