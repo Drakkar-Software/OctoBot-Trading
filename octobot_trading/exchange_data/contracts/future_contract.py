@@ -23,7 +23,9 @@ class FutureContract:
 
         self.contract_type = enums.FutureContractType.INVERSE_PERPETUAL
         self.margin_type = enums.MarginType.ISOLATED
-        self.expiration_timestamp = 0
+
+        self.creation_date = 0
+        self.expiration_date = 0
 
         self.minimum_tick_size = 0.5
         self.contract_size = constants.ONE
@@ -32,6 +34,8 @@ class FutureContract:
 
     def is_inverse_contract(self):
         """
+        Inverse Contract is a contract using the coin itself as collateral
+        if not inverted the contract uses fiat as the collateral
         :return: True if the contract is an inverse contract
         """
         return self.contract_type in [enums.FutureContractType.INVERSE_EXPIRABLE,

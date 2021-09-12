@@ -51,11 +51,6 @@ from octobot_trading.personal_data.positions.positions_manager import (
     PositionsManager,
 )
 
-from octobot_trading.personal_data.positions import contracts
-from octobot_trading.personal_data.positions.contracts import (
-    FutureContract,
-)
-
 from octobot_trading.personal_data.positions import position_util
 from octobot_trading.personal_data.positions.position_util import (
     parse_position_status,
@@ -79,7 +74,6 @@ __all__ = [
     "IsolatedPosition",
     "PositionsUpdater",
     "PositionsManager",
-    "FutureContract",
     "create_position_instance_from_raw",
     "create_position_from_type",
     "create_symbol_position",

@@ -14,8 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.positions.contracts cimport future_contract
-from octobot_trading.personal_data.positions.contracts.future_contract cimport (
+from octobot_trading.exchange_data.contracts cimport future_contract
+from octobot_trading.exchange_data.contracts.future_contract cimport (
     FutureContract,
 )
 
