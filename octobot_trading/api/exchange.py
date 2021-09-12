@@ -21,6 +21,7 @@ import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data as exchange_data
+import octobot_trading.octobot_channel_consumer as octobot_channel_consumer
 
 
 def create_exchange_builder(config, exchange_name: str) -> exchanges.ExchangeBuilder:
@@ -219,3 +220,9 @@ def cancel_ccxt_throttle_task():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise
         if str(task._coro).startswith("<coroutine object Throttler.looper at"):
             task.cancel()
+
+
+def set_exchange_builder_details(exchange_builder, config, backtesting) -> None:
+    octobot_channel_consumer.set_exchange_type_details(exchange_builder=exchange_builder,
+                                                       config=config,
+                                                       backtesting=backtesting)
