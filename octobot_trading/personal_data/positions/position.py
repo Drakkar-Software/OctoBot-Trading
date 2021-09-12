@@ -30,6 +30,7 @@ class Position(util.Initializable):
         self.exchange_manager = trader.exchange_manager
         self.simulated = trader.simulate
 
+        self.logger_name = None
         self.position_id = None
         self.timestamp = 0
         self.symbol = None
@@ -58,6 +59,14 @@ class Position(util.Initializable):
     @classmethod
     def get_name(cls):
         return cls.__name__
+
+    def get_logger_name(self):
+        """
+        :return: The position logger name
+        """
+        if self.logger_name is None:
+            self.logger_name = f"{self.get_name()} | {self.position_id}"
+        return self.logger_name
 
     async def initialize_impl(self, **kwargs):
         """
