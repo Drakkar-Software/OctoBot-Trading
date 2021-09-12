@@ -85,6 +85,10 @@ from octobot_trading.exchange_data.ticker import (
     MiniTickerChannel,
     TickerUpdaterSimulator,
 )
+from octobot_trading.exchange_data import contracts
+from octobot_trading.exchange_data.contracts import (
+    FutureContract,
+)
 from octobot_trading.exchange_data import exchange_symbol_data
 from octobot_trading.exchange_data.exchange_symbol_data import (
     ExchangeSymbolData,
@@ -179,6 +183,7 @@ __all__ = [
     "MiniTickerProducer",
     "MiniTickerChannel",
     "TickerUpdaterSimulator",
+    "FutureContract",
     "ExchangeSymbolsData",
     "ExchangeSymbolData",
     "UNAUTHENTICATED_UPDATER_PRODUCERS",

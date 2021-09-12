@@ -17,7 +17,7 @@ import asyncio
 
 import octobot_trading.enums
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
-import octobot_trading.personal_data.positions.contracts as contracts
+import octobot_trading.exchange_data.contracts as contracts
 
 
 class FutureExchange(abstract_exchange.AbstractExchange):
