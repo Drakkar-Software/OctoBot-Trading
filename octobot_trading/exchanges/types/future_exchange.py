@@ -44,7 +44,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         self.logger.debug(f"Loading {pair} contract...")
         self.pair_contracts[pair] = contracts.FutureContract(pair)
         self.pair_contracts[pair].current_leverage = await self.get_symbol_leverage(pair)
-        self.pair_contracts[pair].margin_type = await self.get_margin_type_leverage(pair)
+        self.pair_contracts[pair].margin_type = await self.get_margin_type(pair)
 
     def get_pair_future_contract(self, pair):
         """
@@ -71,12 +71,17 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     """
 
     async def get_symbol_open_positions(self, symbol: str) -> list:
+        """
+        Get the current user open symbol position list
+        :param symbol: the position symbol
+        :return: the user open symbol position list
+        """
         raise NotImplementedError("get_symbol_open_positions is not implemented")
 
     async def get_open_positions(self, **kwargs: dict) -> dict:
         """
-        Get the user current futures
-        :return: the user futures
+        Get the current user open position list
+        :return: the user open position list
         """
         raise NotImplementedError("get_open_positions is not implemented")
 
@@ -120,13 +125,18 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     """
 
     async def get_symbol_leverage(self, symbol: str):
+        """
+        :param symbol: the symbol
+        :return: the current symbol leverage multiplier
+        """
         raise NotImplementedError("get_symbol_leverage is not implemented")
 
-    async def get_margin_type_leverage(self, symbol: str):
-        raise NotImplementedError("get_margin_type_leverage is not implemented")
-
-    async def get_symbol_leverage_info(self, symbol: str, limit: int = 1) -> list:
-        raise NotImplementedError("get_symbol_leverage_info is not implemented")
+    async def get_margin_type(self, symbol: str):
+        """
+        :param symbol: the symbol
+        :return: the margin type for the requested symbol. Can be MarginType.ISOLATED or MarginType.CROSS
+        """
+        raise NotImplementedError("get_margin_type is not implemented")
 
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         """
@@ -145,9 +155,6 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :return: the update result
         """
         raise NotImplementedError("set_symbol_margin_type is not implemented")
-
-    async def set_position_isolated_margin(self, symbol: str, quantity: float, increase_quantity=True):
-        raise NotImplementedError("set_position_isolated_margin is not implemented")
 
     """
     Parsers
