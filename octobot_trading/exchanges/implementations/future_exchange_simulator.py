@@ -84,3 +84,9 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         return self.connector.get_trade_fee(symbol, order_type, quantity, price, taker_or_maker)
+
+    def get_time_frames(self, importer):
+        return self.connector.get_time_frames(importer)
+
+    def get_current_future_candles(self):
+        return self.connector.current_future_candles
