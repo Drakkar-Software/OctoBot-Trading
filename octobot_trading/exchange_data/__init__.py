@@ -110,7 +110,8 @@ UNAUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = {
         trading_constants.RECENT_TRADES_CHANNEL: RecentTradeUpdaterSimulator,
         trading_constants.TICKER_CHANNEL: TickerUpdaterSimulator,
         trading_constants.KLINE_CHANNEL: KlineUpdaterSimulator,
-        trading_constants.MARK_PRICE_CHANNEL: MarkPriceUpdaterSimulator
+        trading_constants.MARK_PRICE_CHANNEL: MarkPriceUpdaterSimulator,
+        trading_constants.FUNDING_CHANNEL: FundingUpdaterSimulator
     }
 
 # Required data to run updater (requires at least one per list)
@@ -121,16 +122,18 @@ SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE = {
                                               backtesting_enums.ExchangeDataTables.OHLCV],
     trading_constants.TICKER_CHANNEL: [backtesting_enums.ExchangeDataTables.TICKER,
                                        backtesting_enums.ExchangeDataTables.OHLCV],
-    trading_constants.KLINE_CHANNEL: [backtesting_enums.ExchangeDataTables.KLINE]
+    trading_constants.KLINE_CHANNEL: [backtesting_enums.ExchangeDataTables.KLINE],
+    trading_constants.FUNDING_CHANNEL: [backtesting_enums.ExchangeDataTables.FUNDING]
 }
 
 # Required data to run real data updater (requires each per list)
 SIMULATOR_PRODUCERS_TO_REAL_DATA_TYPE = {
     trading_constants.OHLCV_CHANNEL: [backtesting_enums.ExchangeDataTables.OHLCV],
     trading_constants.ORDER_BOOK_CHANNEL: [backtesting_enums.ExchangeDataTables.ORDER_BOOK],
-    trading_constants. RECENT_TRADES_CHANNEL: [backtesting_enums.ExchangeDataTables.RECENT_TRADES],
+    trading_constants.RECENT_TRADES_CHANNEL: [backtesting_enums.ExchangeDataTables.RECENT_TRADES],
     trading_constants.TICKER_CHANNEL: [backtesting_enums.ExchangeDataTables.TICKER],
     trading_constants.KLINE_CHANNEL: [backtesting_enums.ExchangeDataTables.KLINE],
+    trading_constants.FUNDING_CHANNEL: [backtesting_enums.ExchangeDataTables.FUNDING],
 }
 
 __all__ = [
