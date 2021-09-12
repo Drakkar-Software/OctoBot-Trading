@@ -416,13 +416,15 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                                  channels=self.channels,
                                  callbacks=self.callbacks)
             for channel in self.channels:
-                self.logger.debug(f"Subscribed to {channel}")
+                self.logger.debug(f"Subscribed to {channel} for {', '.join(self.filtered_pairs)}")
 
     def _subscribe_watched_pairs_feed(self):
         """
         Subscribes all time frame unrelated feeds for watched pairs
         """
-        channels = [channel for channel in self.WATCHED_PAIR_CHANNELS if self._is_supported_channel(channel)]
+        channels = [channel
+                    for channel in self.WATCHED_PAIR_CHANNELS
+                    if self._is_supported_channel(channel) and channel in self.channels]
         if self.watched_pairs and channels:
             self.client.add_feed(self.get_feed_name(),
                                  symbols=self.watched_pairs,
