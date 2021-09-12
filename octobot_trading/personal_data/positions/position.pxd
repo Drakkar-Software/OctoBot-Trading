@@ -28,6 +28,7 @@ cdef class Position(util.Initializable):
     cdef public str currency
     cdef public str market
     cdef public str position_id
+    cdef public str logger_name
 
     cdef public object status # PositionStatus
     cdef public object margin_type # MarginType
@@ -82,5 +83,7 @@ cdef class Position(util.Initializable):
     cpdef bint is_open(self)
     cpdef str to_string(self)
     cpdef void clear(self)
+
+    cpdef str get_logger_name(self)
 
 cpdef object parse_position_type(dict raw_position)
