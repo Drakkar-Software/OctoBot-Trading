@@ -72,7 +72,7 @@ async def _handle_creation(bot_id, action, data):
                 .use_tentacles_setup_config(data[OctoBotChannelTradingDataKeys.TENTACLES_SETUP_CONFIG.value]) \
                 .use_community_authenticator(data.get(OctoBotChannelTradingDataKeys.AUTHENTICATOR.value, None)) \
                 .set_bot_id(bot_id)
-            _set_exchange_type_details(exchange_builder, config, data[OctoBotChannelTradingDataKeys.BACKTESTING.value])
+            set_exchange_type_details(exchange_builder, config, data[OctoBotChannelTradingDataKeys.BACKTESTING.value])
             await exchange_builder.build()
             await channel_instances.get_chan_at_id(channels_name.OctoBotChannelsName.OCTOBOT_CHANNEL.value,
                                                    bot_id).get_internal_producer() \
@@ -91,32 +91,34 @@ async def _handle_creation(bot_id, action, data):
                 f"Error when creating a new {exchange_name} exchange connexion: {e.__class__.__name__} {e}")
 
 
-def _set_exchange_type_details(exchange_builder, config, backtesting):
+def set_exchange_type_details(exchange_builder, config, backtesting):
     # real, simulator, backtesting
     if util.is_trader_enabled(config):
         exchange_builder.is_real()
     elif util.is_trader_simulator_enabled(config):
         exchange_builder.is_simulated()
     if backtesting is not None:
+        exchange_builder.is_simulated()
+        exchange_builder.is_rest_only()
         exchange_builder.is_backtesting(backtesting)
     # use exchange sandbox
     exchange_builder.is_sandboxed(
-        config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+        config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
             commons_constants.CONFIG_EXCHANGE_SANDBOXED, False)
     )
     # exchange trading type
-    if config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+    if config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
             commons_constants.CONFIG_EXCHANGE_FUTURE, False):
         exchange_builder.is_future(True)
-    elif config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+    elif config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
             commons_constants.CONFIG_EXCHANGE_MARGIN, False):
         exchange_builder.is_margin(True)
-    elif config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+    elif config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
             commons_constants.CONFIG_EXCHANGE_SPOT, True):
         # Use spot trading as default trading type
         exchange_builder.is_spot_only(True)
 
     # rest, web socket
-    if config[commons_constants.CONFIG_EXCHANGES][exchange_builder.exchange_name].get(
+    if config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
             commons_constants.CONFIG_EXCHANGE_REST_ONLY, False):
         exchange_builder.is_rest_only()
