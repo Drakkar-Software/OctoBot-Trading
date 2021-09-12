@@ -60,7 +60,7 @@ def get_trader_risk(exchange_manager) -> float:
 
 
 def set_trader_risk(exchange_manager, risk: decimal.Decimal) -> float:
-    return exchange_manager.trader.set_risk(risk)
+    return exchange_manager.trader.set_risk(decimal.Decimal(risk))
 
 
 async def sell_all_everything_for_reference_market(exchange_manager) -> list:
