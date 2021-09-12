@@ -87,6 +87,7 @@ from octobot_trading.exchange_data.ticker import (
 )
 from octobot_trading.exchange_data import contracts
 from octobot_trading.exchange_data.contracts import (
+    MarginContract,
     FutureContract,
 )
 from octobot_trading.exchange_data import exchange_symbol_data
@@ -186,6 +187,7 @@ __all__ = [
     "MiniTickerProducer",
     "MiniTickerChannel",
     "TickerUpdaterSimulator",
+    "MarginContract",
     "FutureContract",
     "ExchangeSymbolsData",
     "ExchangeSymbolData",

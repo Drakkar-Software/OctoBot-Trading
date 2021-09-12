@@ -13,18 +13,24 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 
-from octobot_trading.exchange_data.contracts cimport margin_contract
-from octobot_trading.exchange_data.contracts.margin_contract cimport (
-    MarginContract,
-)
 
-from octobot_trading.exchange_data.contracts cimport future_contract
-from octobot_trading.exchange_data.contracts.future_contract cimport (
-    FutureContract,
-)
+class MarginContract:
+    def __init__(self, pair):
+        self.pair = pair
 
-__all__ = [
-    "MarginContract",
-    "FutureContract",
-]
+        self.margin_type = enums.MarginType.ISOLATED
+
+        self.contract_size = constants.ONE
+        self.maximum_leverage = constants.ONE
+        self.current_leverage = constants.ONE
+
+    def is_isolated(self):
+        """
+        Margin in isolated margin mode is independent for each trading pair
+        Margin in cross margin mode is shared among the user’s margin account
+        :return: True if the contract use isolation margin
+        """
+        return self.margin_type is enums.MarginType.ISOLATED
