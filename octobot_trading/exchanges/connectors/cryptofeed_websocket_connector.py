@@ -424,7 +424,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         """
         channels = [channel
                     for channel in self.WATCHED_PAIR_CHANNELS
-                    if self._is_supported_channel(channel) and channel in self.channels]
+                    if self._is_supported_channel(channel) and (channel in self.channels or not self.channels)]
         if self.watched_pairs and channels:
             self.client.add_feed(self.get_feed_name(),
                                  symbols=self.watched_pairs,

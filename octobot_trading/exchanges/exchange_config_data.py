@@ -96,7 +96,9 @@ class ExchangeConfig(util.Initializable):
                                                                    existing_pairs)
         self.traded_symbol_pairs = list(traded_symbol_pairs_set)
         self.all_config_symbol_pairs = list(existing_pairs)
-        self.watched_pairs = copy.deepcopy(self.all_config_symbol_pairs)
+
+        # only add self.traded_symbol_pairs to watched pairs as not every existing_pairs are being collected
+        self.watched_pairs = copy.deepcopy(self.traded_symbol_pairs)
 
     def _set_config_traded_pair(self, cryptocurrency, traded_symbol_pairs_set, existing_pairs):
         try:
