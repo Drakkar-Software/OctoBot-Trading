@@ -117,5 +117,6 @@ cdef class Order(util.Initializable):
     cpdef str get_logger_name(self)
 
 cdef object _get_sell_and_buy_types(object order_type)
+cdef object _infer_order_type_from_maker_or_taker(dict raw_order, object side)
 
 cpdef tuple parse_order_type(dict raw_order)
