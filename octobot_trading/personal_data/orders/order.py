@@ -449,25 +449,28 @@ def parse_order_type(raw_order):
             order_type = enums.TradeOrderType(raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value])
         except ValueError as e:
             if raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value] is None:
+                # Last chance: try to infer order type from taker / maker status
+                if enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value in raw_order:
+                    return side, _infer_order_type_from_maker_or_taker(raw_order, side)
                 # No order type info: use unknown order type
                 return side, enums.TraderOrderType.UNKNOWN
             else:
                 # Incompatible order type info: raise error
                 raise e
 
-        if order_type == enums.TradeOrderType.UNKNOWN:
+        if order_type is enums.TradeOrderType.UNKNOWN:
             parsed_order_type = enums.TraderOrderType.UNKNOWN
-        elif side == enums.TradeOrderSide.BUY:
-            if order_type == enums.TradeOrderType.LIMIT or order_type == enums.TradeOrderType.LIMIT_MAKER:
+        elif side is enums.TradeOrderSide.BUY:
+            if order_type is enums.TradeOrderType.LIMIT or order_type == enums.TradeOrderType.LIMIT_MAKER:
                 parsed_order_type = enums.TraderOrderType.BUY_LIMIT
-            elif order_type == enums.TradeOrderType.MARKET:
+            elif order_type is enums.TradeOrderType.MARKET:
                 parsed_order_type = enums.TraderOrderType.BUY_MARKET
             else:
                 parsed_order_type = _get_sell_and_buy_types(order_type)
-        elif side == enums.TradeOrderSide.SELL:
-            if order_type == enums.TradeOrderType.LIMIT or order_type == enums.TradeOrderType.LIMIT_MAKER:
+        elif side is enums.TradeOrderSide.SELL:
+            if order_type is enums.TradeOrderType.LIMIT or order_type is enums.TradeOrderType.LIMIT_MAKER:
                 parsed_order_type = enums.TraderOrderType.SELL_LIMIT
-            elif order_type == enums.TradeOrderType.MARKET:
+            elif order_type is enums.TradeOrderType.MARKET:
                 parsed_order_type = enums.TraderOrderType.SELL_MARKET
             else:
                 parsed_order_type = _get_sell_and_buy_types(order_type)
@@ -476,37 +479,49 @@ def parse_order_type(raw_order):
         return None, None
 
 
+def _infer_order_type_from_maker_or_taker(raw_order, side):
+    is_taker = raw_order[enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value] \
+               == enums.ExchangeConstantsOrderColumns.TAKER.value
+    if side is enums.TradeOrderSide.BUY:
+        if is_taker:
+            return enums.TraderOrderType.BUY_MARKET
+        return enums.TraderOrderType.BUY_LIMIT
+    if is_taker:
+        return enums.TraderOrderType.SELL_MARKET
+    return enums.TraderOrderType.SELL_LIMIT
+
+
 def _get_trade_order_type(order_type: enums.TraderOrderType) -> typing.Optional[enums.TradeOrderType]:
-    if order_type == enums.TraderOrderType.BUY_LIMIT or order_type == enums.TraderOrderType.SELL_LIMIT:
+    if order_type is enums.TraderOrderType.BUY_LIMIT or order_type is enums.TraderOrderType.SELL_LIMIT:
         return enums.TradeOrderType.LIMIT
-    if order_type == enums.TraderOrderType.BUY_MARKET or order_type == enums.TraderOrderType.SELL_MARKET:
+    if order_type is enums.TraderOrderType.BUY_MARKET or order_type is enums.TraderOrderType.SELL_MARKET:
         return enums.TradeOrderType.MARKET
-    elif order_type == enums.TraderOrderType.TAKE_PROFIT:
+    elif order_type is enums.TraderOrderType.TAKE_PROFIT:
         return enums.TradeOrderType.TAKE_PROFIT
-    elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
+    elif order_type is enums.TraderOrderType.TAKE_PROFIT_LIMIT:
         return enums.TradeOrderType.TAKE_PROFIT_LIMIT
-    elif order_type == enums.TraderOrderType.STOP_LOSS:
+    elif order_type is enums.TraderOrderType.STOP_LOSS:
         return enums.TradeOrderType.STOP_LOSS
-    elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
+    elif order_type is enums.TraderOrderType.STOP_LOSS_LIMIT:
         return enums.TradeOrderType.STOP_LOSS_LIMIT
-    elif order_type == enums.TraderOrderType.TRAILING_STOP:
+    elif order_type is enums.TraderOrderType.TRAILING_STOP:
         return enums.TradeOrderType.TRAILING_STOP
-    elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
+    elif order_type is enums.TraderOrderType.TRAILING_STOP_LIMIT:
         return enums.TradeOrderType.TRAILING_STOP_LIMIT
     return None
 
 
 def _get_sell_and_buy_types(order_type) -> typing.Optional[enums.TraderOrderType]:
-    if order_type == enums.TradeOrderType.STOP_LOSS:
+    if order_type is enums.TradeOrderType.STOP_LOSS:
         return enums.TraderOrderType.STOP_LOSS
-    elif order_type == enums.TradeOrderType.STOP_LOSS_LIMIT:
+    elif order_type is enums.TradeOrderType.STOP_LOSS_LIMIT:
         return enums.TraderOrderType.STOP_LOSS_LIMIT
-    elif order_type == enums.TradeOrderType.TAKE_PROFIT:
+    elif order_type is enums.TradeOrderType.TAKE_PROFIT:
         return enums.TraderOrderType.TAKE_PROFIT
-    elif order_type == enums.TradeOrderType.TAKE_PROFIT_LIMIT:
+    elif order_type is enums.TradeOrderType.TAKE_PROFIT_LIMIT:
         return enums.TraderOrderType.TAKE_PROFIT_LIMIT
-    elif order_type == enums.TradeOrderType.TRAILING_STOP:
+    elif order_type is enums.TradeOrderType.TRAILING_STOP:
         return enums.TraderOrderType.TRAILING_STOP
-    elif order_type == enums.TradeOrderType.TRAILING_STOP_LIMIT:
+    elif order_type is enums.TradeOrderType.TRAILING_STOP_LIMIT:
         return enums.TraderOrderType.TRAILING_STOP_LIMIT
     return None

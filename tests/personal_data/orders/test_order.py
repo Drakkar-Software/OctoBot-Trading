@@ -125,3 +125,33 @@ def test_order_state_creation(trader_simulator):
     # errors.InvalidOrderState exception is caught by context manager
     with order_inst.order_state_creation():
         raise errors.InvalidOrderState()
+
+
+def test_parse_order_type():
+    untyped_raw_order = {
+        enums.ExchangeConstantsOrderColumns.SIDE.value: enums.TradeOrderSide.BUY.value,
+        enums.ExchangeConstantsOrderColumns.TYPE.value: None,
+    }
+    untyped_raw_with_maker_order = {
+        enums.ExchangeConstantsOrderColumns.SIDE.value: enums.TradeOrderSide.BUY.value,
+        enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value: enums.ExchangeConstantsOrderColumns.MAKER.value,
+        enums.ExchangeConstantsOrderColumns.TYPE.value: None,
+    }
+    typed_raw_order = {
+        enums.ExchangeConstantsOrderColumns.SIDE.value: enums.TradeOrderSide.SELL.value,
+        enums.ExchangeConstantsOrderColumns.TYPE.value: enums.TradeOrderType.MARKET,
+    }
+    assert personal_data.parse_order_type({}) == \
+           (None, None)
+    assert personal_data.parse_order_type(untyped_raw_order) == \
+           (enums.TradeOrderSide.BUY, enums.TraderOrderType.UNKNOWN)
+    assert personal_data.parse_order_type(untyped_raw_with_maker_order) == \
+           (enums.TradeOrderSide.BUY, enums.TraderOrderType.BUY_LIMIT)
+    untyped_raw_with_maker_order[enums.ExchangeConstantsOrderColumns.SIDE.value] = enums.TradeOrderSide.SELL.value
+    assert personal_data.parse_order_type(untyped_raw_with_maker_order) == \
+           (enums.TradeOrderSide.SELL, enums.TraderOrderType.SELL_LIMIT)
+    assert personal_data.parse_order_type(typed_raw_order) == \
+           (enums.TradeOrderSide.SELL, enums.TraderOrderType.SELL_MARKET)
+    typed_raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value] = enums.TradeOrderType.LIMIT
+    assert personal_data.parse_order_type(typed_raw_order) == \
+           (enums.TradeOrderSide.SELL, enums.TraderOrderType.SELL_LIMIT)
