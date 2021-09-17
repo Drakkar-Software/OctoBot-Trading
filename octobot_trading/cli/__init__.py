@@ -1,4 +1,4 @@
-# pylint: disable=global-statement
+# pylint: disable=global-statement, global-variable-not-assigned
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
