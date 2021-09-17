@@ -362,7 +362,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         }
 
         # Add candle callback to callbacks
-        self.callbacks[self.EXCHANGE_FEEDS[Feeds.CANDLE]] = self.candle_callback
+        try:
+            self.callbacks[self.EXCHANGE_FEEDS[Feeds.CANDLE]] = self.candle_callback
+        except KeyError:
+            pass  # ignore candle callback when Candles feed is not supported
 
         self._subscribe_pairs_feeds()
 
