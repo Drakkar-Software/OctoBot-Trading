@@ -29,10 +29,12 @@ async def create_test_exchange_manager(
         is_future: bool = False,
         rest_only: bool = False,
         is_real: bool = True,
-        is_sandboxed: bool = False) -> exchanges.ExchangeManager:
-    # enable exchange name in config
-    config[commons_constants.CONFIG_EXCHANGES][exchange_name] = {commons_constants.CONFIG_ENABLED_OPTION: True}
-    
+        is_sandboxed: bool = False,
+        ignore_exchange_config: bool = True) -> exchanges.ExchangeManager:
+    if ignore_exchange_config:
+        # enable exchange name in config
+        config[commons_constants.CONFIG_EXCHANGES][exchange_name] = {commons_constants.CONFIG_ENABLED_OPTION: True}
+
     builder = exchanges.create_exchange_builder_instance(config, exchange_name)
     builder.disable_trading_mode()
     builder.use_tentacles_setup_config(tentacles_manager_api.get_tentacles_setup_config())

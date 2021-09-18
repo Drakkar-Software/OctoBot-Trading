@@ -41,7 +41,7 @@ class SpotRestExchangeTests:
     async def initialize(self):
         self.exchange_manager_instance = await exchanges_test_tools.create_test_exchange_manager(
             config=self.config, exchange_name=self.exchange_name,
-            rest_only=True, is_spot_only=True, is_sandboxed=True)
+            rest_only=True, is_spot_only=True, is_sandboxed=True, ignore_exchange_config=False)
         await self.exchange_manager_instance.trader.initialize()
 
     async def run(self, symbol):
