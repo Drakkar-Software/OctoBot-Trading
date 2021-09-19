@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.23] - 2021-09-19
+### Fixed
+- [Trades] Handle trades from canceled orders
+- [Orders] Handle orders with None price data
+
 ## [1.13.22] - 2021-09-16
 ### Fixed
 - [Orders] Improve order parsing when no order type is available
