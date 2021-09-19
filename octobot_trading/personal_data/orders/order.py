@@ -363,6 +363,11 @@ class Order(util.Initializable):
         if self.filled_price == constants.ZERO:
             self.filled_price = self.origin_price
 
+    def consider_as_canceled(self):
+        self.status = enums.OrderStatus.CANCELED
+        if self.canceled_time == 0:
+            self.canceled_time = self.timestamp
+
     def update_order_from_raw(self, raw_order):
         self.status = order_util.parse_order_status(raw_order)
         self.total_cost = decimal.Decimal(str(raw_order[enums.ExchangeConstantsOrderColumns.COST.value] or 0))
