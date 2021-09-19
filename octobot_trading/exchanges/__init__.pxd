@@ -39,6 +39,10 @@ from octobot_trading.exchanges.abstract_websocket_exchange cimport (
     AbstractWebsocketExchange,
 )
 
+from octobot_trading.exchanges.basic_exchange_wrapper cimport (
+    BasicExchangeWrapper,
+)
+
 from octobot_trading.exchanges.exchange_manager cimport (
     ExchangeManager,
 )
@@ -122,6 +126,7 @@ __all__ = [
     "AbstractWebsocketConnector",
     "CCXTWebsocketConnector",
     "AbstractWebsocketExchange",
+    "BasicExchangeWrapper",
     "FutureExchange",
     "MarginExchange",
     "SpotExchange",

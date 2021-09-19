@@ -381,3 +381,8 @@ class FutureContractType(enum.Enum):
 class SubAccountColumns(enum.Enum):
     ID = "id"
     NAME = "name"
+
+
+class ExchangeWrapperLibs(enum.Enum):
+    ASYNC_CCXT = "async_ccxt"
+    CCXT = "ccxt"

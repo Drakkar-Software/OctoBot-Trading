@@ -149,6 +149,7 @@ packages_list = [
     "octobot_trading.exchanges.exchange_manager",
     "octobot_trading.exchanges.abstract_exchange",
     "octobot_trading.exchanges.abstract_websocket_exchange",
+    "octobot_trading.exchanges.basic_exchange_wrapper",
     "octobot_trading.exchanges.exchange_websocket_factory",
     "octobot_trading.exchanges.exchange_config_data",
     "octobot_trading.exchanges.exchange_builder",
