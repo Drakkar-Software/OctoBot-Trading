@@ -129,7 +129,7 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         return abstract_websocket_connector.AbstractWebsocketConnector.is_handling_spot.__name__
 
     async def start_sockets(self):
-        if any(self.handled_feeds.values()):
+        if any(self.handled_feeds.values() and self.websocket_connectors):
             try:
                 self.websocket_connectors_executors = futures.ThreadPoolExecutor(
                     max_workers=len(self.websocket_connectors),
@@ -143,9 +143,9 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
             except ValueError as e:
                 self.logger.error(f"Failed to start websocket on {self.exchange_name} : {e}")
 
-        if not self.is_websocket_running:
-            self.logger.error(f"{self.exchange_manager.exchange_name.title()}'s "
-                              f"websocket is not handling anything, it will not be started, ")
+        if self.websocket_connectors and not self.is_websocket_running:
+            self.logger.debug(f"{self.exchange_manager.exchange_name.title()}'s "
+                              f"websocket is not handling anything, it will not be started.")
 
     async def wait_sockets(self):
         await asyncio.wait(self.websocket_connectors_tasks)
