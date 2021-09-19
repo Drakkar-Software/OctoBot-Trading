@@ -111,6 +111,7 @@ cdef class Order(util.Initializable):
     cpdef bint is_self_managed(self)
     cpdef object update_from_raw(self, dict raw_order)
     cpdef void consider_as_filled(self)
+    cpdef void consider_as_canceled(self)
     cpdef dict to_dict(self)
     cpdef void clear(self)
     cpdef bint is_to_be_maintained(self)

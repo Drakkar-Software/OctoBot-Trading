@@ -25,8 +25,10 @@ def create_trade_instance_from_raw(trader, raw_trade):
         order = order_factory.create_order_from_raw(trader, raw_trade)
         order.update_from_raw(raw_trade)
         if order.status is enums.OrderStatus.CANCELED:
-            order.cancel_order()
+            # ensure order is considered canceled
+            order.consider_as_canceled()
         else:
+            # ensure order is considered filled
             order.consider_as_filled()
         return create_trade_from_order(order)
     except KeyError:
