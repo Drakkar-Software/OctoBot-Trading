@@ -185,8 +185,9 @@ class Position(util.Initializable):
     async def recreate(self):
         self.exchange_manager.exchange_personal_data.positions_manager.recreate_position(self)
 
-    async def update_from_filled_order(self, order):
-        self.quantity = order.filled_quantity if order.is_long() else -order.filled_quantity
+    async def update_size(self, size):
+        self.quantity = size
+        self._switch_side_if_necessary()
 
     def update_from_raw(self, raw_position):
         symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
@@ -228,7 +229,8 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value: self.unrealised_pnl,
             enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
             enums.ExchangeConstantsPositionColumns.LEVERAGE.value: self.leverage,
-            enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value: self.margin_type,
+            enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value:
+                self.margin_type.value if self.margin_type is not None else "",
         }
 
     def _check_for_liquidation(self):
@@ -250,7 +252,7 @@ class Position(util.Initializable):
         """
         check if self.side still represents the position side
         """
-        if self.quantity >= 0 and self.is_short():
+        if self.quantity >= 0 and (self.is_short() or self.side is enums.PositionSide.UNKNOWN):
             self.side = enums.PositionSide.LONG
         else:
             self.side = enums.PositionSide.SHORT

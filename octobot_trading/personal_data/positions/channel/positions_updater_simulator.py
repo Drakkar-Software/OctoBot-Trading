@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import copy
 
 import octobot_commons.logging as logging
 import octobot_trading.constants as constants
