@@ -340,15 +340,17 @@ class Order(util.Initializable):
 
         return self.update(
             symbol=str(raw_order.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value, None)),
-            current_price=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0))),
-            quantity=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value, 0.0))),
-            price=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0))),
+            current_price=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0)
+                                              or 0.0)),
+            quantity=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value, 0.0) or 0.0)),
+            price=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0.0)),
             status=order_util.parse_order_status(raw_order),
             order_id=str(raw_order.get(enums.ExchangeConstantsOrderColumns.ID.value, None)),
-            quantity_filled=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value, 0.0))),
+            quantity_filled=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value, 0.0)
+                                                or 0.0)),
             filled_price=decimal.Decimal(str(filled_price)),
             average_price=decimal.Decimal(str(average_price)),
-            total_cost=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value, 0.0))),
+            total_cost=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value, 0.0) or 0.0)),
             fee=order_util.parse_raw_fees(raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value, None)),
             timestamp=raw_order.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value, None),
             reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False),
