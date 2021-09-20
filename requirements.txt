@@ -10,15 +10,15 @@ OctoBot-Tentacles-Manager>=2.6.0, <2.7
 trading-backend>=1.0.11
 
 # Exchange connection requirements
-ccxt==1.56.59 # always ensure real exchanges tests are passing before changing the ccxt version
+ccxt==1.56.63 # always ensure real exchanges tests are passing before changing the ccxt version
 cryptography # Never specify a version (managed by https://github.com/Drakkar-Software/OctoBot-PyPi-Linux-Deployer)
 
 # Websocket requirements
-websockets==9.1
-cryptofeed==1.9.3
+websockets==10.0
+cryptofeed==2.0.0
 
 # other requirements
-sortedcontainers==2.3.0
+sortedcontainers==2.4.0
 yarl==1.6.3
 idna<2.9,>=2.5
 multidict>=4.5,<5.0
