@@ -24,6 +24,7 @@ import cryptofeed.callback as cryptofeed_callbacks
 import cryptofeed.config as cryptofeed_config
 import cryptofeed.defines as cryptofeed_constants
 import cryptofeed.exchanges as cryptofeed_exchanges
+import cryptofeed.types as cryptofeed_types
 
 import octobot_commons
 import octobot_commons.asyncio_tools as asyncio_tools
@@ -57,25 +58,25 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         cryptofeed_constants.TRADES: Feeds.TRADES,
         cryptofeed_constants.TICKER: Feeds.TICKER,
         cryptofeed_constants.CANDLES: Feeds.CANDLE,
+        cryptofeed_constants.L1_BOOK: Feeds.L1_BOOK,
         cryptofeed_constants.L2_BOOK: Feeds.L2_BOOK,
         cryptofeed_constants.L3_BOOK: Feeds.L3_BOOK,
         cryptofeed_constants.FUNDING: Feeds.FUNDING,
         cryptofeed_constants.LIQUIDATIONS: Feeds.LIQUIDATIONS,
-        cryptofeed_constants.BOOK_DELTA: Feeds.BOOK_DELTA,
         cryptofeed_constants.OPEN_INTEREST: Feeds.OPEN_INTEREST,
-        cryptofeed_constants.FUTURES_INDEX: Feeds.FUTURES_INDEX,
-        # cryptofeed_constants.LAST_PRICE: Feeds.LAST_PRICE,
+        cryptofeed_constants.INDEX: Feeds.FUTURES_INDEX,
 
         # Authenticated
         cryptofeed_constants.TRANSACTIONS: Feeds.TRANSACTIONS,
         cryptofeed_constants.BALANCES: Feeds.PORTFOLIO,
-        # cryptofeed_constants.USER_DATA: None,
         cryptofeed_constants.PLACE_ORDER: Feeds.ORDERS,
         cryptofeed_constants.CANCEL_ORDER: Feeds.ORDERS,
+        cryptofeed_constants.ORDERS: Feeds.ORDERS,
         cryptofeed_constants.ORDER_STATUS: Feeds.ORDERS,
         cryptofeed_constants.ORDER_INFO: Feeds.ORDERS,
         cryptofeed_constants.TRADE_HISTORY: Feeds.TRADE,
-        cryptofeed_constants.USER_FILLS: Feeds.TRADE,
+        cryptofeed_constants.FILLS: Feeds.TRADE,
+        cryptofeed_constants.POSITIONS: Feeds.POSITION,
     }
 
     CANDLE_CHANNELS = [
@@ -116,22 +117,21 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         commons_logging.set_logging_level(self.CRYPTOFEED_LOGGERS, logging.WARNING)
 
         self.callback_by_feed = {
+            # Unauthenticated
             cryptofeed_constants.TRADES: cryptofeed_callbacks.TradeCallback(self.trades),
             cryptofeed_constants.TICKER: cryptofeed_callbacks.TickerCallback(self.ticker),
             cryptofeed_constants.CANDLES: cryptofeed_callbacks.CandleCallback(self.candle),
-            # cryptofeed_constants.LAST_PRICE: cryptofeed_callbacks.LastPriceCallback(self.last_price),
-            # cryptofeed_constants.L2_BOOK: cryptofeed_callbacks.BookCallback(self.book),
-            # cryptofeed_constants.L3_BOOK: cryptofeed_callbacks.BookCallback(self.book),
-            # cryptofeed_constants.FUNDING: cryptofeed_callbacks.FundingCallback(self.funding),
-            # cryptofeed_constants.LIQUIDATIONS: cryptofeed_callbacks.LiquidationCallback(self.liquidations),
-            # cryptofeed_constants.BOOK_DELTA: cryptofeed_callbacks.BookUpdateCallback(self.delta)
-            # cryptofeed_constants.OPEN_INTEREST: cryptofeed_callbacks.OpenInterestCallback(self.open_interest),
-            # cryptofeed_constants.FUTURES_INDEX: cryptofeed_callbacks.FuturesIndexCallback(self.futures_index),
+            cryptofeed_constants.FUNDING: cryptofeed_callbacks.FundingCallback(self.funding),
+            cryptofeed_constants.OPEN_INTEREST: cryptofeed_callbacks.OpenInterestCallback(self.open_interest),
+            cryptofeed_constants.LIQUIDATIONS: cryptofeed_callbacks.LiquidationCallback(self.liquidations),
+            cryptofeed_constants.INDEX: cryptofeed_callbacks.IndexCallback(self.index),
+            cryptofeed_constants.L2_BOOK: cryptofeed_callbacks.BookCallback(self.book),
+
+            # Authenticated
             cryptofeed_constants.ORDER_INFO: cryptofeed_callbacks.OrderInfoCallback(self.order),
-            # cryptofeed_constants.USER_FILLS: cryptofeed_callbacks.UserFillsCallback(self.trade),
             cryptofeed_constants.TRANSACTIONS: cryptofeed_callbacks.TransactionsCallback(self.transaction),
             cryptofeed_constants.BALANCES: cryptofeed_callbacks.BalancesCallback(self.balance),
-            # cryptofeed_constants.USER_DATA: cryptofeed_callbacks.UserDataCallback(self.user_data),
+            cryptofeed_constants.FILLS: cryptofeed_callbacks.UserFillsCallback(self.fill),
         }
         self._set_async_callbacks()
 
@@ -501,7 +501,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         """
         Convert a book_prices format : {PRICE_1: SIZE_1, PRICE_2: SIZE_2...}
         to OctoBot's order book format
-        :param book_prices: an order book dictionary
+        :param book_prices: an order book dictionary (order_book.SortedDict)
         :param book_side: a TradeOrderSide value
         :return: the list of order book data converted
         """
@@ -511,7 +511,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                 ECOBIC.SIZE.value: float(order_size),
                 ECOBIC.SIDE.value: book_side,
             }
-            for order_price, order_size in book_prices.items()
+            for order_price, order_size in book_prices.to_dict().items()
         ]
 
     def _set_async_callbacks(self):
@@ -559,159 +559,183 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     Callbacks
     """
 
-    async def ticker(self, feed, symbol, bid, ask, timestamp, receipt_timestamp):
-        if symbol:
-            symbol = self.get_pair_from_exchange(symbol)
-            # Can't create a full ticker from bid, ask, timestamp and symbol data
-            # Push (ask + bid) / 2 as close price in MARK_PRICE channel
-            await self.push_to_channel(channel_name=trading_constants.MARK_PRICE_CHANNEL,
-                                       symbol=symbol,
-                                       mark_price=float((ask + bid) / 2),
-                                       mark_price_source=trading_enums.MarkPriceSources.TICKER_CLOSE_PRICE.value)
+    async def ticker(self, ticker: cryptofeed_types.Ticker, receipt_timestamp: float):
+        """
+        Cryptofeed ticker callback
+        :param ticker: the ticker object defined in cryptofeed.types.Ticker
+        :param receipt_timestamp: received timestamp
+        """
+        symbol = self.get_pair_from_exchange(ticker.symbol)
+        # Can't create a full ticker from bid, ask, timestamp and symbol data
+        # Push (ask + bid) / 2 as close price in MARK_PRICE channel
+        await self.push_to_channel(channel_name=trading_constants.MARK_PRICE_CHANNEL,
+                                   symbol=symbol,
+                                   mark_price=float((ticker.ask + ticker.bid) / 2),
+                                   mark_price_source=trading_enums.MarkPriceSources.TICKER_CLOSE_PRICE.value)
 
-    async def trades(self, feed, symbol, order_id, timestamp, side, amount, price, receipt_timestamp):
-        if symbol:
-            symbol = self.get_pair_from_exchange(symbol)
-            await self.push_to_channel(trading_constants.RECENT_TRADES_CHANNEL,
-                                       symbol=symbol,
-                                       recent_trades=[{
-                                           trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: timestamp,
-                                           trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value: symbol,
-                                           trading_enums.ExchangeConstantsOrderColumns.ID.value: order_id,
-                                           trading_enums.ExchangeConstantsOrderColumns.TYPE.value: None,
-                                           trading_enums.ExchangeConstantsOrderColumns.SIDE.value: side,
-                                           trading_enums.ExchangeConstantsOrderColumns.PRICE.value: float(price),
-                                           trading_enums.ExchangeConstantsOrderColumns.AMOUNT.value: float(amount)
-                                       }])
+    async def trades(self, trade: cryptofeed_types.Trade, receipt_timestamp: float):
+        """
+        Cryptofeed ticker callback
+        :param trade: the trade object defined in cryptofeed.types.Trade
+        :param receipt_timestamp: received timestamp
+        """
+        symbol = self.get_pair_from_exchange(trade.symbol)
+        await self.push_to_channel(trading_constants.RECENT_TRADES_CHANNEL,
+                                   symbol=symbol,
+                                   recent_trades=[{
+                                       trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: trade.timestamp,
+                                       trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value: symbol,
+                                       trading_enums.ExchangeConstantsOrderColumns.ID.value: trade.id,
+                                       trading_enums.ExchangeConstantsOrderColumns.TYPE.value: None,
+                                       trading_enums.ExchangeConstantsOrderColumns.SIDE.value: trade.side,
+                                       trading_enums.ExchangeConstantsOrderColumns.PRICE.value: float(trade.price),
+                                       trading_enums.ExchangeConstantsOrderColumns.AMOUNT.value: float(trade.amount)
+                                   }])
 
-    async def book(self, feed, symbol, book, timestamp, receipt_timestamp):
-        if symbol:
-            symbol = self.get_pair_from_exchange(symbol)
-            book_instance = self.get_book_instance(symbol)
+    async def book(self, order_book: cryptofeed_types.OrderBook, receipt_timestamp: float):
+        """
+        Cryptofeed orderbook callback
+        :param order_book: the order_book object defined in cryptofeed.types.OrderBook
+        :param receipt_timestamp: received timestamp
+        """
+        symbol = self.get_pair_from_exchange(order_book.symbol)
+        book_instance = self.get_book_instance(symbol)
 
-            book_instance.handle_book_adds(
-                self._convert_book_prices_to_orders(
-                    book_prices=book[cryptofeed_constants.ASK],
-                    book_side=trading_enums.TradeOrderSide.SELL.value) +
-                self._convert_book_prices_to_orders(
-                    book_prices=book[cryptofeed_constants.BID],
-                    book_side=trading_enums.TradeOrderSide.BUY.value))
+        book_instance.handle_book_adds(
+            self._convert_book_prices_to_orders(
+                book_prices=order_book.book.asks,
+                book_side=trading_enums.TradeOrderSide.SELL.value) +
+            self._convert_book_prices_to_orders(
+                book_prices=order_book.book.bids,
+                book_side=trading_enums.TradeOrderSide.BUY.value))
 
-            await self.push_to_channel(trading_constants.ORDER_BOOK_CHANNEL,
-                                       symbol=symbol,
-                                       asks=book_instance.asks,
-                                       bids=book_instance.bids,
-                                       update_order_book=False)
+        await self.push_to_channel(trading_constants.ORDER_BOOK_CHANNEL,
+                                   symbol=symbol,
+                                   asks=book_instance.asks,
+                                   bids=book_instance.bids,
+                                   update_order_book=False)
 
-    async def candle(self, feed, symbol, start, stop, interval, trades, open_price, close_price, high_price,
-                     low_price, volume, closed, timestamp, receipt_timestamp):
-        if symbol:
-            origin_symbol = symbol
-            symbol = self.get_pair_from_exchange(symbol)
-            time_frame = commons_enums.TimeFrames(interval)
-            candle = [
-                start,
-                float(open_price),
-                float(high_price),
-                float(low_price),
-                float(close_price),
-                float(volume),
-            ]
-            ticker = {
-                Ectc.HIGH.value: float(high_price),
-                Ectc.LOW.value: float(low_price),
-                Ectc.BID.value: None,
-                Ectc.BID_VOLUME.value: None,
-                Ectc.ASK.value: None,
-                Ectc.ASK_VOLUME.value: None,
-                Ectc.OPEN.value: float(open_price),
-                Ectc.CLOSE.value: float(close_price),
-                Ectc.LAST.value: float(close_price),
-                Ectc.PREVIOUS_CLOSE.value: None,
-                Ectc.BASE_VOLUME.value: float(volume),
-                Ectc.TIMESTAMP.value: timestamp,
-            }
+    async def candle(self, candle_data: cryptofeed_types.Candle, receipt_timestamp: float):
+        """
+        Cryptofeed candle callback
+        :param candle_data: the candle object defined in cryptofeed.types.Candle
+        :param receipt_timestamp: received timestamp
+        """
+        symbol = self.get_pair_from_exchange(candle_data.symbol)
+        time_frame = commons_enums.TimeFrames(candle_data.interval)
+        candle = [
+            candle_data.start,
+            float(candle_data.open),
+            float(candle_data.high),
+            float(candle_data.low),
+            float(candle_data.close),
+            float(candle_data.volume),
+        ]
+        ticker = {
+            Ectc.HIGH.value: float(candle_data.high),
+            Ectc.LOW.value: float(candle_data.low),
+            Ectc.BID.value: None,
+            Ectc.BID_VOLUME.value: None,
+            Ectc.ASK.value: None,
+            Ectc.ASK_VOLUME.value: None,
+            Ectc.OPEN.value: float(candle_data.open),
+            Ectc.CLOSE.value: float(candle_data.close),
+            Ectc.LAST.value: float(candle_data.close),
+            Ectc.PREVIOUS_CLOSE.value: None,
+            Ectc.BASE_VOLUME.value: float(candle_data.volume),
+            Ectc.TIMESTAMP.value: candle_data.timestamp,
+        }
 
-            if origin_symbol not in self.watched_pairs:
-                if not closed:
-                    await self.push_to_channel(trading_constants.KLINE_CHANNEL,
-                                               time_frame=time_frame,
-                                               symbol=symbol,
-                                               kline=candle)
-                else:
-                    await self.push_to_channel(trading_constants.OHLCV_CHANNEL,
-                                               time_frame=time_frame,
-                                               symbol=symbol,
-                                               candle=candle)
-
-            # Push a new ticker if necessary : only push on the min timeframe
-            if time_frame is self.min_timeframe:
-                await self.push_to_channel(trading_constants.TICKER_CHANNEL,
+        if candle_data.symbol not in self.watched_pairs:
+            if not candle_data.closed:
+                await self.push_to_channel(trading_constants.KLINE_CHANNEL,
+                                           time_frame=time_frame,
                                            symbol=symbol,
-                                           ticker=ticker)
+                                           kline=candle)
+            else:
+                await self.push_to_channel(trading_constants.OHLCV_CHANNEL,
+                                           time_frame=time_frame,
+                                           symbol=symbol,
+                                           candle=candle)
 
-    async def delta(self, feed, symbol, delta, timestamp, receipt_timestamp):
-        pass
+        # Push a new ticker if necessary : only push on the min timeframe
+        if time_frame is self.min_timeframe:
+            await self.push_to_channel(trading_constants.TICKER_CHANNEL,
+                                       symbol=symbol,
+                                       ticker=ticker)
 
-    async def liquidations(self, feed, symbol, side, leaves_qty, price, order_id, receipt_timestamp):
-        pass
+    async def liquidations(self, liquidation: cryptofeed_types.Liquidation, receipt_timestamp: float):
+        """
+        Cryptofeed liquidation callback
+        :param liquidation: the liquidation object defined in cryptofeed.types.Liquidation
+        :param receipt_timestamp: received timestamp
+        """
 
-    async def funding(self, **kwargs):
-        pass
+    async def funding(self, funding: cryptofeed_types.Funding, receipt_timestamp: float):
+        """
+        Cryptofeed funding callback
+        :param funding: the funding object defined in cryptofeed.types.Funding
+        :param receipt_timestamp: received timestamp
+        """
+        symbol = self.get_pair_from_exchange(funding.symbol)
+        await self.push_to_channel(trading_constants.FUNDING_CHANNEL,
+                                   symbol=symbol,
+                                   funding_rate=funding.rate,
+                                   next_funding_time=funding.next_funding_time,
+                                   timestamp=funding.timestamp)
+        await self.push_to_channel(trading_constants.MARK_PRICE_CHANNEL,
+                                   symbol=symbol,
+                                   mark_price=funding.mark_price)
 
-    async def open_interest(self, feed, symbol, open_interest, timestamp, receipt_timestamp):
-        pass
+    async def open_interest(self, open_interest: cryptofeed_types.OpenInterest, receipt_timestamp: float):
+        """
+        Cryptofeed open interest callback
+        :param open_interest: the open_interest object defined in cryptofeed.types.OpenInterest
+        :param receipt_timestamp: received timestamp
+        """
 
-    async def futures_index(self, **kwargs):
-        pass
+    async def index(self, index: cryptofeed_types.Index, receipt_timestamp: float):
+        """
+        Cryptofeed future index callback
+        :param index: the index object defined in cryptofeed.types.Index
+        :param receipt_timestamp: received timestamp
+        """
 
-    async def order(self, feed, symbol, data, receipt_timestamp):
+    async def order(self, order: cryptofeed_types.OrderInfo, receipt_timestamp: float):
         """
         Cryptofeed order callback
-        :param feed: the feed
-        :param symbol: the order symbol
-        :param data: a dict of miscellaneous data
+        :param order the order object defined in cryptofeed.types.?
         :param receipt_timestamp: received timestamp
         """
-        await self.push_to_channel(trading_constants.ORDERS_CHANNEL, orders=[self.exchange.parse_order(data)])
+        await self.push_to_channel(trading_constants.ORDERS_CHANNEL, orders=[self.exchange.parse_order(order)])
 
-    async def trade(self, feed, symbol, data, receipt_timestamp):
+    async def trade(self, trade, receipt_timestamp: float):
         """
         Cryptofeed filled order callback
-        :param feed: the feed
-        :param symbol: the filled order symbol
-        :param data: a dict of miscellaneous data
+        :param trade: the trade object defined in cryptofeed.types.?
         :param receipt_timestamp: received timestamp
         """
-        await self.push_to_channel(trading_constants.TRADES_CHANNEL, trades=[self.exchange.parse_trade(data)])
+        await self.push_to_channel(trading_constants.TRADES_CHANNEL, trades=[self.exchange.parse_trade(trade)])
 
-    async def balance(self, feed, accounts):
+    async def balance(self, balance: cryptofeed_types.Balance, receipt_timestamp: float):
         """
         Cryptofeed balance callback
-        :param feed: the feed
-        :param accounts: the balance dict
+        :param balance: the balance object defined in cryptofeed.types.Balance
+        :param receipt_timestamp: received timestamp
         """
+        await self.push_to_channel(trading_constants.BALANCE_CHANNEL,
+                                   balance=self.exchange.parse_balance(balance.balance))
 
-    async def transaction(self, **kwargs):
+    async def transaction(self, transaction: cryptofeed_types.Transaction, receipt_timestamp: float):
         """
         Cryptofeed transaction callback
-        """
-
-    async def last_price(self, feed, symbol, last_price, receipt_timestamp):
-        """
-        Cryptofeed last price callback
-        :param feed: the feed
-        :param symbol: the last price symbol
-        :param last_price: the last price
+        :param transaction: the transaction object defined in cryptofeed.types.Transaction
         :param receipt_timestamp: received timestamp
         """
 
-    async def user_data(self, feed, data, receipt_timestamp):
+    async def fill(self, fill: cryptofeed_types.Fill, receipt_timestamp: float):
         """
-        Cryptofeed user data callback
-        Entrypoint of order, trades, etc. updates
-        Example : https://docs.deribit.com/#user-changes-instrument_name-interval
-        :param feed: the feed
-        :param data: received user data
+        Cryptofeed fill callback
+        :param fill: the fill object defined in cryptofeed.types.Fill
         :param receipt_timestamp: received timestamp
         """
