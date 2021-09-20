@@ -336,6 +336,7 @@ class MarkPriceSources(enum.Enum):
 
 
 class WebsocketFeeds(enum.Enum):
+    L1_BOOK = 'l1_book'
     L2_BOOK = 'l2_book'
     L3_BOOK = 'l3_book'
     BOOK_TICKER = 'book_ticker'
