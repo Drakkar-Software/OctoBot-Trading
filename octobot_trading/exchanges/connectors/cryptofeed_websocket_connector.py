@@ -79,6 +79,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         cryptofeed_constants.POSITIONS: Feeds.POSITION,
     }
 
+    PAIR_INDEPENDENT_CHANNELS = [
+        cryptofeed_constants.BALANCES,
+    ]
     CANDLE_CHANNELS = [
         cryptofeed_constants.CANDLES,
     ]
@@ -217,7 +220,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             self._create_client()
             if self.candle_callback is not None:
                 self._subscribe_candle_feed()
-            self._subscribe_pairs_feeds()
+            self._subscribe_channels_feeds()
             self._start_client(should_create_loop=False)
         except Exception as e:
             self.logger.error(f"Failed to reconnect to websocket : {e}")
@@ -367,7 +370,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         except KeyError:
             pass  # ignore candle callback when Candles feed is not supported
 
-        self._subscribe_pairs_feeds()
+        self._subscribe_channels_feeds()
 
     def _should_use_authenticated_feeds(self):
         """
@@ -392,34 +395,43 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         Subscribes a new candle feed for each time frame
         """
         for time_frame in self.time_frames:
-            self.client.add_feed(self.get_feed_name(),
-                                 candle_interval=time_frame.value,
-                                 symbols=self.filtered_pairs,
-                                 log_message_on_error=True,
-                                 channels=self.CANDLE_CHANNELS,
-                                 callbacks={cryptofeed_constants.CANDLES: self.candle_callback})
-            self.logger.debug(
-                f"Subscribed to the {time_frame.value} time frame OHLCV for {', '.join(self.filtered_pairs)}")
+            self._subscribe_feed(
+                symbols=self.filtered_pairs,
+                candle_interval=time_frame.value,
+                channels=self.CANDLE_CHANNELS,
+                callbacks={cryptofeed_constants.CANDLES: self.candle_callback}
+            )
 
-    def _subscribe_pairs_feeds(self):
+    def _subscribe_channels_feeds(self):
         """
         Subscribes all time frame unrelated feeds
         """
+        self._subscribe_pair_independent_feed()
         self._subscribe_traded_pairs_feed()
         self._subscribe_watched_pairs_feed()
+
+    def _subscribe_pair_independent_feed(self):
+        """
+        Subscribes all pair unrelated feeds
+        """
+        channels = [channel for channel in self.channels if self._is_pair_independent_feed(channel)]
+        if channels:
+            self._subscribe_feed(
+                channels=channels,
+                callbacks=self.callbacks
+            )
 
     def _subscribe_traded_pairs_feed(self):
         """
         Subscribes all time frame unrelated feeds for traded pairs
         """
-        if self.channels:
-            self.client.add_feed(self.get_feed_name(),
-                                 symbols=self.filtered_pairs,
-                                 log_message_on_error=True,
-                                 channels=self.channels,
-                                 callbacks=self.callbacks)
-            for channel in self.channels:
-                self.logger.debug(f"Subscribed to {channel} for {', '.join(self.filtered_pairs)}")
+        channels = [channel for channel in self.channels if not self._is_pair_independent_feed(channel)]
+        if channels:
+            self._subscribe_feed(
+                symbols=self.filtered_pairs,
+                channels=channels,
+                callbacks=self.callbacks
+            )
 
     def _subscribe_watched_pairs_feed(self):
         """
@@ -429,13 +441,34 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                     for channel in self.WATCHED_PAIR_CHANNELS
                     if self._is_supported_channel(channel) and (channel in self.channels or not self.channels)]
         if self.watched_pairs and channels:
-            self.client.add_feed(self.get_feed_name(),
-                                 symbols=self.watched_pairs,
-                                 log_message_on_error=True,
-                                 channels=channels,
-                                 callbacks=self.callbacks)
-            for channel in channels:
-                self.logger.debug(f"Subscribed to {channel} for {', '.join(self.watched_pairs)}")
+            self._subscribe_feed(
+                symbols=self.watched_pairs,
+                channels=channels,
+                callbacks=self.callbacks
+            )
+
+    def _subscribe_feed(self, channels, callbacks, symbols=None, candle_interval=None):
+        """
+        Subscribe a new feed
+        :param symbols: the feed symbols
+        :param candle_interval: the feed candle_interval
+        :param channels: the feed channels
+        :param callbacks: the feed callbacks
+        """
+        feed_kwargs = {}
+        if symbols:
+            feed_kwargs["symbols"] = symbols
+        if candle_interval:
+            feed_kwargs["candle_interval"] = candle_interval
+        self.client.add_feed(self.get_feed_name(),
+                             log_message_on_error=True,
+                             callbacks=callbacks,
+                             channels=channels,
+                             **feed_kwargs)
+        for channel in channels:
+            symbols_str = f"for {', '.join(symbols)}" if symbols else ""
+            candle_interval_str = f"on {candle_interval}" if candle_interval else ""
+            self.logger.debug(f"Subscribed to {channel} {symbols_str} {candle_interval_str}")
 
     def _filter_exchange_pairs_and_timeframes(self):
         """
@@ -496,6 +529,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     def _is_supported_time_frame(self, time_frame):
         return time_frame.value in self.cryptofeed_exchange.valid_candle_intervals
+
+    def _is_pair_independent_feed(self, feed):
+        return feed in self.PAIR_INDEPENDENT_CHANNELS
 
     def _convert_book_prices_to_orders(self, book_prices, book_side):
         """
