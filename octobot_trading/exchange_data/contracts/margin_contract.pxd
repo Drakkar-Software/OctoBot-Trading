@@ -25,4 +25,6 @@ cdef class MarginContract:
     cdef readonly object current_leverage
     cdef readonly object maximum_leverage
 
+    cdef readonly dict risk_limit
+
     cpdef bint is_isolated(self)

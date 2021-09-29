@@ -27,6 +27,8 @@ class MarginContract:
         self.maximum_leverage = constants.ONE
         self.current_leverage = constants.ONE
 
+        self.risk_limit = {}
+
     def is_isolated(self):
         """
         Margin in isolated margin mode is independent for each trading pair
