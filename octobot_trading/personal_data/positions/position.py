@@ -167,9 +167,11 @@ class Position(util.Initializable):
         return changed
 
     async def update(self, update_size=None, mark_price=None):
+        # check if the update is relevant
+        if self.is_idle() and not update_size:
+            return
         self._update_size_and_mark_price(update_size=update_size, mark_price=mark_price)
-        if self._check_for_liquidation():
-            self.quantity = 0  # TODO trigger liquidation process
+        await self._check_for_liquidation()
 
     def _update_size_and_mark_price(self, update_size=None, mark_price=None):
         """
@@ -358,7 +360,7 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value: self.margin_type,
         }
 
-    def _check_for_liquidation(self):
+    async def _check_for_liquidation(self):
         """
         _check_for_liquidation will defines rules for a simulated position to be liquidated
         :return: True if the position is being liquidated else False
@@ -366,12 +368,11 @@ class Position(util.Initializable):
         if self.is_short():
             if self.mark_price >= self.liquidation_price:
                 self.status = enums.PositionStatus.LIQUIDATING
-                return True
+                await positions_states.create_position_state(self)
         if self.is_long():
             if self.mark_price <= self.liquidation_price:
                 self.status = enums.PositionStatus.LIQUIDATING
-                return True
-        return False
+                await positions_states.create_position_state(self)
 
     def _update_side(self):
         """
