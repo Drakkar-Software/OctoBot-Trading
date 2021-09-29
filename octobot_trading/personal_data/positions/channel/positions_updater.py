@@ -147,7 +147,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
             await self._push_open_positions(open_positions)
 
     async def _push_open_positions(self, open_positions):
-        await self.push(positions=open_positions, is_liquidated=False)
+        await self.push(positions=open_positions)
 
         if self._should_push_mark_price():
             for position in open_positions:
