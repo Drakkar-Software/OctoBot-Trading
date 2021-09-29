@@ -113,6 +113,6 @@ class ExchangeSymbolData:
 
         symbol_klines.kline_update(kline)
 
-    async def handle_funding_update(self, funding_rate, next_funding_time, timestamp):
+    async def handle_funding_update(self, funding_rate, predicted_funding_rate, next_funding_time, timestamp):
         if self.funding_manager:
-            self.funding_manager.funding_update(funding_rate, next_funding_time, timestamp)
+            self.funding_manager.funding_update(funding_rate, predicted_funding_rate, next_funding_time, timestamp)

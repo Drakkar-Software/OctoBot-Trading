@@ -129,6 +129,7 @@ class ExchangeConstantsFundingColumns(enum.Enum):
     LAST_FUNDING_TIME = "last_funding_time"
     FUNDING_RATE = "funding_rate"
     NEXT_FUNDING_TIME = "next_funding_time"
+    PREDICTED_FUNDING_RATE = "predicted_funding_rate"
 
 
 class ExchangeConstantsMarkPriceColumns(enum.Enum):
