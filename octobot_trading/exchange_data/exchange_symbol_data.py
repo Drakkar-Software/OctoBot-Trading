@@ -39,7 +39,8 @@ class ExchangeSymbolData:
         self.prices_manager = prices_manager.PricesManager(self.exchange_manager)
         self.recent_trades_manager = recent_trades_manager.RecentTradesManager()
         self.ticker_manager = ticker_manager.TickerManager()
-        self.funding_manager = funding_manager.FundingManager() if self.exchange_manager.is_margin else None
+        self.funding_manager = funding_manager.FundingManager() \
+            if self.exchange_manager.is_margin or self.exchange_manager.is_future else None
 
         self.symbol_candles = {}
         self.symbol_klines = {}
