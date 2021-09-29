@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.logging as logging
+
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position_state as position_state
 
@@ -44,6 +46,8 @@ class LiquidatePositionState(position_state.PositionState):
 
     async def terminate(self):
         """
-        Handle position to trade conversion
+        Handle position liquidation process
         """
-        # TODO
+        self.position.quantity = 0
+        logging.get_logger(self.position.get_logger_name()).warning(f"{self.position.position_id} has been liquidated")
+        # TODO trigger liquidation process
