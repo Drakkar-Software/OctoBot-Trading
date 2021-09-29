@@ -19,11 +19,13 @@ cimport octobot_trading.util as util
 cdef class FundingManager(util.Initializable):
     cdef object logger
 
-    cdef public double funding_rate
+    cdef public object funding_rate
+    cdef public object predicted_funding_rate
+
     cdef public double next_updated
     cdef public double last_updated
 
     cpdef void reset_funding(self)
 
-    cpdef funding_update(self, double funding_rate, double next_funding_time, double timestamp)
+    cpdef funding_update(self, object funding_rate, object predicted_funding_rate, double next_funding_time, double timestamp)
 

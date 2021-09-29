@@ -13,9 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import math
-
 import octobot_commons.logging as logging
+import octobot_trading.constants as constants
 import octobot_trading.util as util
 
 
@@ -23,8 +22,9 @@ class FundingManager(util.Initializable):
     def __init__(self):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
-        self.funding_rate = math.nan
-        self.next_updated = 0
+        self.funding_rate = constants.ZERO
+        self.predicted_funding_rate = constants.ZERO
+        self.next_update = 0
         self.last_updated = 0
         self.reset_funding()
 
@@ -32,12 +32,14 @@ class FundingManager(util.Initializable):
         self.reset_funding()
 
     def reset_funding(self):
-        self.funding_rate = math.nan
-        self.next_updated = 0
+        self.funding_rate = constants.ZERO
+        self.predicted_funding_rate = constants.ZERO
+        self.next_update = 0
         self.last_updated = 0
 
-    def funding_update(self, funding_rate, next_funding_time, timestamp):
+    def funding_update(self, funding_rate, predicted_funding_rate, next_funding_time, timestamp):
         if funding_rate and next_funding_time:
             self.funding_rate = funding_rate
-            self.next_updated = next_funding_time
+            self.predicted_funding_rate = predicted_funding_rate
+            self.next_update = next_funding_time
             self.last_updated = timestamp
