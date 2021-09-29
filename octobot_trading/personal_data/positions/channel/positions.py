@@ -22,10 +22,10 @@ import octobot_trading.enums as enums
 
 
 class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
-    async def push(self, positions, is_liquidated=False):
-        await self.perform(positions, is_liquidated=is_liquidated)
+    async def push(self, positions):
+        await self.perform(positions)
 
-    async def perform(self, positions, is_liquidated=False):
+    async def perform(self, positions):
         try:
             for position in positions:
                 if not position:
@@ -46,14 +46,13 @@ class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
                                         get_pair_cryptocurrency(symbol),
                                         symbol=symbol,
                                         position=position,
-                                        is_updated=changed,
-                                        is_liquidated=is_liquidated)
+                                        is_updated=changed)
         except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, cryptocurrency, symbol, position, is_updated=False, is_liquidated=False):
+    async def send(self, cryptocurrency, symbol, position, is_updated=False):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
@@ -61,8 +60,7 @@ class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
                 "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "position": position,
-                "is_updated": is_updated,
-                "is_liquidated": is_liquidated
+                "is_updated": is_updated
             })
 
 
