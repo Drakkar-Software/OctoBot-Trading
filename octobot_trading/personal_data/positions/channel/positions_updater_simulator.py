@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 
 import octobot_commons.logging as logging
 import octobot_trading.constants as constants
@@ -44,7 +45,6 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         try:
             symbol_position = self.channel.exchange_manager.exchange_personal_data.positions_manager \
                 .get_symbol_position(symbol=symbol)
-            symbol_position.mark_price = mark_price
-            await symbol_position.update_position_status(mark_price)
+            await symbol_position.update(mark_price=decimal.Decimal(str(mark_price)))
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle mark price : {e}")
