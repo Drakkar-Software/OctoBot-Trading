@@ -29,12 +29,12 @@ class IsolatedPosition(position_class.Position):
         try:
             if self.is_long():
                 self.liquidation_price = (self.entry_price * self.leverage) / \
-                                         (self.leverage + 1 - (self.get_maintenance_margin() * self.leverage))
+                                         (self.leverage + constants.ONE - (self.get_maintenance_margin() * self.leverage))
             elif self.is_short():
                 self.liquidation_price = (self.entry_price * self.leverage) / \
-                                         (self.leverage - 1 + (self.get_maintenance_margin() * self.leverage))
+                                         (self.leverage - constants.ONE + (self.get_maintenance_margin() * self.leverage))
             else:
                 self.liquidation_price = constants.ZERO
             self._update_fee_to_close()
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.liquidation_price = constants.ZERO
