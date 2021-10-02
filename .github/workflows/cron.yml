@@ -26,15 +26,9 @@ jobs:
       run: pytest -rw tests_additional/real_exchanges/test_${{ matrix.exchange }}.py
 
   notify:
-    name: Notify
-    runs-on: ubuntu-latest
+    if: ${{ failure() }}
     needs:
       - real-exchange-tests
-    if: ${{ failure() }}
-
-    steps:
-      - name: Notify discord
-        uses: sarisia/actions-status-discord@v1
-        with:
-          status: Failure
-          webhook: ${{ secrets.DISCORD_GITHUB_WEBHOOK }}
+    uses: Drakkar-Software/.github/.github/workflows/failure_notify_workflow.yml@master
+    secrets:
+      DISCORD_GITHUB_WEBHOOK: ${{ secrets.DISCORD_GITHUB_WEBHOOK }}
