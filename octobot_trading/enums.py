@@ -287,6 +287,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     UNREALISED_PNL = "unrealised_pnl"
     REALISED_PNL = "realised_pnl"
     QUANTITY = "quantity"
+    SIZE = "size"
     VALUE = "value"
     INITIAL_MARGIN = "initial_margin"
     MARGIN = "margin"
