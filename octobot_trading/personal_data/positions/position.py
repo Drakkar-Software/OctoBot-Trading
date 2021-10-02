@@ -38,12 +38,13 @@ class Position(util.Initializable):
         self.entry_price = constants.ZERO
         self.mark_price = constants.ZERO
         self.quantity = constants.ZERO
+        self.size = constants.ZERO
         self.value = constants.ZERO
         self.initial_margin = constants.ZERO
         self.margin = constants.ZERO
         self.liquidation_price = constants.ZERO
         self.fee_to_close = constants.ZERO
-        self.leverage = constants.ONE_HUNDRED
+        self.leverage = constants.ONE
         self.margin_type = None
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
@@ -93,7 +94,7 @@ class Position(util.Initializable):
 
     def _update(self, position_id, symbol, currency, market, timestamp,
                 entry_price, mark_price, liquidation_price,
-                quantity, value, margin,
+                quantity, size, value, margin,
                 unrealised_pnl, realised_pnl,
                 leverage, margin_type, status=None, side=None):
         changed: bool = False
@@ -116,6 +117,10 @@ class Position(util.Initializable):
 
         if self._should_change(self.quantity, quantity):
             self.quantity = quantity
+            changed = True
+
+        if self._should_change(self.size, size):
+            self.size = size
             changed = True
 
         if self._should_change(self.value, value):
@@ -162,28 +167,29 @@ class Position(util.Initializable):
             self.side = enums.PositionSide(side)
 
         self._update_side()
+        self._update_quantity_or_size_if_necessary()
         self._update_entry_price_if_necessary(mark_price)
         self._update_pnl()
         return changed
 
-    async def update(self, update_size=None, mark_price=None):
+    async def update(self, update_quantity=None, mark_price=None):
         # check if the update is relevant
-        if self.is_idle() and not update_size:
+        if self.is_idle() and not update_quantity:
             return
-        self._update_size_and_mark_price(update_size=update_size, mark_price=mark_price)
+        self._update_quantity_and_mark_price(update_quantity=update_quantity, mark_price=mark_price)
         await self._check_for_liquidation()
 
-    def _update_size_and_mark_price(self, update_size=None, mark_price=None):
+    def _update_quantity_and_mark_price(self, update_quantity=None, mark_price=None):
         """
         Updates position mark price and / or size
-        :param update_size: the update size
+        :param update_quantity: the update quantity
         :param mark_price: the update mark_price
         """
         if mark_price is not None:
             self._update_mark_price(mark_price)
         # TODO Check for liquidation before updating size ?
-        if update_size is not None:
-            self._update_size(update_size)
+        if update_quantity is not None:
+            self._update_quantity(update_quantity)
 
     def _update_mark_price(self, mark_price):
         """
@@ -202,17 +208,33 @@ class Position(util.Initializable):
         if self.is_idle() and self.entry_price == constants.ZERO:
             self.entry_price = mark_price
 
-    def _update_size(self, update_size):
+    def _update_quantity(self, update_quantity):
         """
-        Updates position size and triggers size related attributes update
-        :param update_size: the update size
+        Updates position size and triggers quantity related attributes update
+        :param update_quantity: the update quantity
         """
-        self.quantity += update_size
+        self.quantity += update_quantity
+        self._update_size()
         self._update_side()
         self._update_initial_margin()
         self._update_fee_to_close()
         self.update_liquidation_price()
         self._update_pnl()
+
+    def _update_quantity_or_size_if_necessary(self):
+        """
+        Set quantity from size if quantity is not set and size is set or update size
+        """
+        if self.quantity == constants.ZERO and self.size != constants.ZERO:
+            self.quantity = self.size / self.leverage
+        elif self.size == constants.ZERO and self.quantity != constants.ZERO:
+            self._update_size()
+
+    def _update_size(self):
+        """
+        Update position size from position quantity
+        """
+        self.size = self.quantity * self.leverage
 
     def _update_pnl(self):
         """
@@ -319,6 +341,8 @@ class Position(util.Initializable):
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, constants.ZERO))),
             "quantity": decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO))),
+            "size": decimal.Decimal(
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO))),
             "value": decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.VALUE.value, constants.ZERO))),
             "margin": decimal.Decimal(
@@ -344,6 +368,7 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.TIMESTAMP.value: self.timestamp,
             enums.ExchangeConstantsPositionColumns.SIDE.value: self.side.value,
             enums.ExchangeConstantsPositionColumns.QUANTITY.value: self.quantity,
+            enums.ExchangeConstantsPositionColumns.SIZE.value: self.size,
             enums.ExchangeConstantsPositionColumns.VALUE.value: self.value,
             enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: self.initial_margin,
             enums.ExchangeConstantsPositionColumns.MARGIN.value: self.margin,

@@ -41,6 +41,7 @@ cdef class Position(util.Initializable):
     cdef public object mark_price
     cdef public object liquidation_price
     cdef public object quantity
+    cdef public object size
     cdef public object value
     cdef public object margin
     cdef public object initial_margin
@@ -63,6 +64,7 @@ cdef class Position(util.Initializable):
                       object mark_price,
                       object liquidation_price,
                       object quantity,
+                      object size,
                       object value,
                       object margin,
                       object unrealised_pnl,
@@ -77,7 +79,9 @@ cdef class Position(util.Initializable):
     cdef void _update_size_and_mark_price(self, object update_size=*, object mark_price=*)
     cdef void _update_mark_price(self, object mark_price)
     cdef void _update_entry_price_if_necessary(self, object mark_price)
-    cdef void _update_size(self, object update_size)
+    cdef void _update_quantity_or_size_if_necessary(self)
+    cdef void _update_quantity(self, object update_size)
+    cdef void _update_size(self)
     cdef void _update_pnl(self)
     cdef void _update_fee_to_close(self)
     cdef void _update_initial_margin(self)

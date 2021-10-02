@@ -235,7 +235,7 @@ class ExchangePersonalData(util.Initializable):
                 return False
 
             position_instance = self.positions_manager.get_symbol_position(symbol)
-            await position_instance.update(update_size=order.filled_quantity if order.is_long() else -order.filled_quantity)
+            await position_instance.update(update_quantity=order.filled_quantity if order.is_long() else -order.filled_quantity)
 
             if should_notify:
                 await exchange_channel.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,
