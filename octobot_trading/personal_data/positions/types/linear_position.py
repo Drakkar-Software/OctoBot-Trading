@@ -20,6 +20,12 @@ import octobot_trading.personal_data.positions.position as position_class
 
 
 class LinearPosition(position_class.Position):
+    def update_value(self):
+        """
+        Notional value = CONTRACT_QUANTITY * MARK_PRICE
+        """
+        self.value = self.quantity * self.mark_price
+
     def update_pnl(self):
         """
         LONG_PNL = CONTRACT_QUANTITY x [MARK_PRICE - ENTRY_PRICE]
