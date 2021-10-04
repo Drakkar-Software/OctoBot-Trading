@@ -197,6 +197,7 @@ class Position(util.Initializable):
         self.mark_price = mark_price
         self._update_entry_price_if_necessary(mark_price)
         if not self.is_idle():
+            self.update_value()
             self.update_pnl()
 
     def _update_entry_price_if_necessary(self, mark_price):
@@ -218,6 +219,7 @@ class Position(util.Initializable):
         self.update_initial_margin()
         self.update_fee_to_close()
         self.update_liquidation_price()
+        self.update_value()
         self.update_pnl()
 
     def _update_quantity_or_size_if_necessary(self):
@@ -234,6 +236,9 @@ class Position(util.Initializable):
         Update position size from position quantity
         """
         self.size = self.quantity * self.leverage
+
+    def update_value(self):
+        raise NotImplementedError("update_value not implemented")
 
     def update_pnl(self):
         raise NotImplementedError("update_pnl not implemented")
