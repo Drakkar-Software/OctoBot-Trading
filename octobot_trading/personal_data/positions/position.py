@@ -44,7 +44,7 @@ class Position(util.Initializable):
         self.margin = constants.ZERO
         self.liquidation_price = constants.ZERO
         self.fee_to_close = constants.ZERO
-        self.leverage = constants.ONE
+        self.leverage = decimal.Decimal(5)
         self.margin_type = None
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
@@ -169,15 +169,13 @@ class Position(util.Initializable):
         self._update_side()
         self._update_quantity_or_size_if_necessary()
         self._update_entry_price_if_necessary(mark_price)
-        self._update_pnl()
+        self.update_pnl()
         return changed
 
     async def update(self, update_quantity=None, mark_price=None):
-        # check if the update is relevant
-        if self.is_idle() and not update_quantity:
-            return
         self._update_quantity_and_mark_price(update_quantity=update_quantity, mark_price=mark_price)
-        await self._check_for_liquidation()
+        if not self.is_idle():
+            await self._check_for_liquidation()
 
     def _update_quantity_and_mark_price(self, update_quantity=None, mark_price=None):
         """
@@ -198,14 +196,15 @@ class Position(util.Initializable):
         """
         self.mark_price = mark_price
         self._update_entry_price_if_necessary(mark_price)
-        self._update_pnl()
+        if not self.is_idle():
+            self.update_pnl()
 
     def _update_entry_price_if_necessary(self, mark_price):
         """
         Update the position entry price when entry price is 0 or when the position is new
         :param mark_price: the position mark_price
         """
-        if self.is_idle() and self.entry_price == constants.ZERO:
+        if self.entry_price == constants.ZERO:
             self.entry_price = mark_price
 
     def _update_quantity(self, update_quantity):
@@ -216,10 +215,10 @@ class Position(util.Initializable):
         self.quantity += update_quantity
         self._update_size()
         self._update_side()
-        self._update_initial_margin()
-        self._update_fee_to_close()
+        self.update_initial_margin()
+        self.update_fee_to_close()
         self.update_liquidation_price()
-        self._update_pnl()
+        self.update_pnl()
 
     def _update_quantity_or_size_if_necessary(self):
         """
@@ -236,54 +235,91 @@ class Position(util.Initializable):
         """
         self.size = self.quantity * self.leverage
 
-    def _update_pnl(self):
+    def update_pnl(self):
+        raise NotImplementedError("update_pnl not implemented")
+
+    def update_initial_margin(self):
+        raise NotImplementedError("update_initial_margin not implemented")
+
+    def get_maintenance_margin_rate(self):
         """
-        LONG_PNL = CONTRACT_QUANTITY x [(CONTRACT_SIZE / ENTRY_PRICE) - (CONTRACT_SIZE / MARK_PRICE)]
-        SHORT_PNL = CONTRACT_QUANTITY x [(CONTRACT_SIZE / MARK_PRICE) - (CONTRACT_SIZE / ENTRY_PRICE)]
+        :return: Position symbol funding rate
+        """
+        return self.exchange_manager.exchange_symbols_data.\
+            get_exchange_symbol_data(self.symbol).funding_manager.funding_rate
+
+    def get_initial_margin_rate(self):
+        """
+        :return: Initial Margin Rate = 1 / Leverage
         """
         try:
-            contract_quantity = constants.ONE  # TODO should we use Contract.contract_size ?
-            if self.is_long():
-                self.unrealised_pnl = self.quantity * ((contract_quantity / self.entry_price) -
-                                                       (contract_quantity / self.mark_price))
-            elif self.is_short():
-                self.unrealised_pnl = self.quantity * ((contract_quantity / self.mark_price) -
-                                                       (contract_quantity / self.entry_price))
-            else:
-                self.unrealised_pnl = constants.ZERO
+            return constants.ONE / self.leverage
         except decimal.DivisionByZero:
-            self.unrealised_pnl = constants.ZERO
+            return constants.ZERO
+
+    def calculate_maintenance_margin(self):
+        raise NotImplementedError("calculate_maintenance_margin not implemented")
 
     def update_liquidation_price(self):
         """
         Updates position liquidation price
         Should call _update_fee_to_close() at the end of the implementation
         """
-        raise NotImplementedError("update_liquidation_price not implemented")
+        if True:  # TODO
+            self.update_isolated_liquidation_price()
+        else:
+            self.update_cross_liquidation_price()
 
-    def _update_fee_to_close(self):
-        """
-        Updates position fee to close = ( Position quantity / Liquidation Price ) x exchange maker fee
-        Maker fee = rate / 100 because rate in used in %
-        """
-        symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
-        rate = decimal.Decimal(
-            f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value]}") / constants.ONE_HUNDRED
-        try:
-            self.fee_to_close = (self.quantity / self.liquidation_price) * rate
-            self._update_margin()
-        except decimal.DivisionByZero:
-            self.fee_to_close = constants.ZERO
+    def update_cross_liquidation_price(self):
+        raise NotImplementedError("update_cross_liquidation_price not implemented")
 
-    def _update_initial_margin(self):
+    def update_isolated_liquidation_price(self):
+        raise NotImplementedError("update_isolated_liquidation_price not implemented")
+
+    def get_bankruptcy_price(self, with_mark_price=False):
         """
-        Updates position initial margin = Position quantity / (entry price x leverage)
+        The bankruptcy price refers to the price at which the initial margin of all positions is lost.
+        :param with_mark_price: if price should be mark price instead of entry price
+        :return: the bankruptcy price
+        """
+        raise NotImplementedError("get_bankruptcy_price not implemented")
+
+    def get_maker_fee(self):
+        """
+        :return: Position maker fee
         """
         try:
-            self.initial_margin = self.quantity / (self.entry_price * self.leverage)
-            self._update_margin()
+            symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
+            return decimal.Decimal(
+                f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value]}") / constants.ONE_HUNDRED
         except decimal.DivisionByZero:
-            self.initial_margin = constants.ZERO
+            return constants.ZERO
+
+    def get_taker_fee(self):
+        """
+        :return: Position taker fee
+        """
+        try:
+            symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
+            return decimal.Decimal(
+                f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value]}") / constants.ONE_HUNDRED
+        except decimal.DivisionByZero:
+            return constants.ZERO
+
+    def get_two_way_taker_fee(self):
+        """
+        :return: 2-way taker fee = fee to open + fee to close
+        """
+        return self.get_fee_to_open() + self.fee_to_close
+
+    def get_order_cost(self):
+        raise NotImplementedError("get_order_cost not implemented")
+
+    def get_fee_to_open(self):
+        raise NotImplementedError("get_fee_to_open not implemented")
+
+    def update_fee_to_close(self):
+        raise NotImplementedError("update_fee_to_close not implemented")
 
     def _update_margin(self):
         """
@@ -308,20 +344,6 @@ class Position(util.Initializable):
         :return: Unrealized P&L% = [ Position's unrealized P&L / Position Margin ] x 100%
         """
         return (self.unrealised_pnl / self.margin) * 100
-
-    def _calculate_maintenance_margin(self):
-        """
-        :return: Maintenance margin = (Position quantity / entry price) * Maintenance margin rate
-        """
-        try:
-            funding_rate = self.exchange_manager.exchange_symbols_data. \
-                get_exchange_symbol_data(self.symbol).funding_manager.funding_rate
-            return (self.quantity / self.entry_price) * funding_rate
-        except decimal.DivisionByZero:
-            return constants.ZERO
-
-    def get_maintenance_margin(self):
-        return self._calculate_maintenance_margin()
 
     async def recreate(self):
         self.exchange_manager.exchange_personal_data.positions_manager.recreate_position(self)
@@ -391,11 +413,11 @@ class Position(util.Initializable):
         :return: True if the position is being liquidated else False
         """
         if self.is_short():
-            if self.mark_price >= self.liquidation_price:
+            if self.mark_price >= self.liquidation_price > constants.ZERO:
                 self.status = enums.PositionStatus.LIQUIDATING
                 await positions_states.create_position_state(self)
         if self.is_long():
-            if self.mark_price <= self.liquidation_price:
+            if self.mark_price <= self.liquidation_price > constants.ZERO:
                 self.status = enums.PositionStatus.LIQUIDATING
                 await positions_states.create_position_state(self)
 
