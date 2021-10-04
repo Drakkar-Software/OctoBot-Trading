@@ -27,8 +27,8 @@ from octobot_trading.personal_data.positions.position cimport (
 
 from octobot_trading.personal_data.positions cimport types
 from octobot_trading.personal_data.positions.types cimport (
-    CrossPosition,
-    IsolatedPosition,
+    LinearPosition,
+    InversePosition,
 )
 
 from octobot_trading.personal_data.positions cimport states
@@ -69,8 +69,8 @@ __all__ = [
     "PositionsUpdaterSimulator",
     "Position",
     "parse_position_type",
-    "CrossPosition",
-    "IsolatedPosition",
+    "LinearPosition",
+    "InversePosition",
     "PositionsUpdater",
     "PositionsManager",
     "create_position_instance_from_raw",

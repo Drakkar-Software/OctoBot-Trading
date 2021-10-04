@@ -48,12 +48,12 @@ async def test_create_position_instance_from_raw(trader_simulator):
     assert position.market == "USDT"
     assert position.currency == "BTC"
     assert position.status == enums.PositionStatus.ADL
-    assert isinstance(position, personal_data.IsolatedPosition)
+    assert isinstance(position, personal_data.InversePosition)
 
     assert cross_position_open.status == enums.PositionStatus.OPEN
     assert cross_position_open.leverage == position_leverage
     assert cross_position_open.quantity == position_quantity
-    assert isinstance(cross_position_open, personal_data.CrossPosition)
+    assert isinstance(cross_position_open, personal_data.LinearPosition)
 
 
 async def test_create_symbol_position(trader_simulator):
