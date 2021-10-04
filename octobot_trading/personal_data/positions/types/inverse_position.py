@@ -20,6 +20,15 @@ import octobot_trading.personal_data.positions.position as position_class
 
 
 class InversePosition(position_class.Position):
+    def update_value(self):
+        """
+        Notional value = CONTRACT_QUANTITY / MARK_PRICE
+        """
+        try:
+            self.value = self.quantity / self.mark_price
+        except decimal.DivisionByZero:
+            self.value = constants.ZERO
+
     def update_pnl(self):
         """
         LONG_PNL = CONTRACT_QUANTITY x [(1 / ENTRY_PRICE) - (1 / MARK_PRICE)]
