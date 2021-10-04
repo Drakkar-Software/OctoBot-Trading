@@ -109,8 +109,8 @@ from octobot_trading.personal_data.positions import (
     PositionsUpdaterSimulator,
     Position,
     parse_position_type,
-    CrossPosition,
-    IsolatedPosition,
+    LinearPosition,
+    InversePosition,
     PositionsUpdater,
     PositionsManager,
     FutureContract,
@@ -166,8 +166,8 @@ TraderOrderTypeClasses = {
 }
 
 TraderPositionTypeClasses = {
-    octobot_trading.enums.TraderPositionType.CROSS: CrossPosition,
-    octobot_trading.enums.TraderPositionType.ISOLATED: IsolatedPosition,
+    octobot_trading.enums.TraderPositionType.CROSS: LinearPosition,
+    octobot_trading.enums.TraderPositionType.ISOLATED: InversePosition,
 }
 
 __all__ = [
@@ -252,8 +252,8 @@ __all__ = [
     "PositionsUpdaterSimulator",
     "Position",
     "parse_position_type",
-    "CrossPosition",
-    "IsolatedPosition",
+    "LinearPosition",
+    "InversePosition",
     "PositionState",
     "LiquidatePositionState",
     "OpenPositionState",

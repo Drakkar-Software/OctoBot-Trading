@@ -27,8 +27,8 @@ from octobot_trading.personal_data.positions.position import (
 
 from octobot_trading.personal_data.positions import types
 from octobot_trading.personal_data.positions.types import (
-    CrossPosition,
-    IsolatedPosition,
+    LinearPosition,
+    InversePosition,
 )
 
 from octobot_trading.personal_data.positions import states
@@ -75,8 +75,8 @@ __all__ = [
     "PositionsUpdaterSimulator",
     "Position",
     "parse_position_type",
-    "CrossPosition",
-    "IsolatedPosition",
+    "LinearPosition",
+    "InversePosition",
     "PositionsUpdater",
     "PositionsManager",
     "FutureContract",

@@ -16,5 +16,5 @@
 #  License along with this library.
 cimport octobot_trading.personal_data.positions.position as position_class
 
-cdef class IsolatedPosition(position_class.Position):
+cdef class LinearPosition(position_class.Position):
     pass
