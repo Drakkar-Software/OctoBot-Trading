@@ -85,8 +85,7 @@ cdef class Position(util.Initializable):
     cdef void _update_margin(self)
     cdef void _update_side(self)
 
-    cpdef dict to_dict(self)
-
+    cpdef void update_value(self)
     cpdef void update_pnl(self)
     cpdef void update_initial_margin(self)
     cpdef object get_maintenance_margin_rate(self)
@@ -110,6 +109,7 @@ cdef class Position(util.Initializable):
     cpdef bint is_idle(self)
     cpdef object get_unrealised_pnl_percent(self)
     cpdef str to_string(self)
+    cpdef dict to_dict(self)
     cpdef void clear(self)
 
     cpdef str get_logger_name(self)
