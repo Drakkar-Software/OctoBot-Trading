@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -13,8 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.personal_data.positions.position as position_class
+cimport octobot_trading.personal_data.positions.position as position_class
 
-
-class CrossPosition(position_class.Position):
+cdef class InversePosition(position_class.Position):
     pass
