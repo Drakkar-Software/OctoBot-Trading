@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-cpdef object create_position_instance_from_raw(object trader, dict raw_position)
+cpdef object create_position_instance_from_raw(object trader, str symbol, dict raw_position)
 
 cpdef object create_position_from_type(object trader, object position_type)
 

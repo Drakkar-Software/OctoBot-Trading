@@ -451,15 +451,3 @@ class Position(util.Initializable):
         self.state.clear()
         self.trader = None
         self.exchange_manager = None
-
-
-def parse_position_type(raw_position):
-    """
-    Parse the raw position type to match a enums.TraderPositionType value
-    :param raw_position: the raw position dict
-    :return: the enums.TraderPositionType value
-    """
-    try:
-        return enums.TraderPositionType(raw_position[enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value])
-    except (KeyError, ValueError):
-        return enums.TraderPositionType.ISOLATED

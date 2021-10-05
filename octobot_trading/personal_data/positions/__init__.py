@@ -22,7 +22,6 @@ from octobot_trading.personal_data.positions.position_state import (
 from octobot_trading.personal_data.positions import position
 from octobot_trading.personal_data.positions.position import (
     Position,
-    parse_position_type,
 )
 
 from octobot_trading.personal_data.positions import types
@@ -69,7 +68,6 @@ __all__ = [
     "PositionsChannel",
     "PositionsUpdaterSimulator",
     "Position",
-    "parse_position_type",
     "LinearPosition",
     "InversePosition",
     "PositionsUpdater",

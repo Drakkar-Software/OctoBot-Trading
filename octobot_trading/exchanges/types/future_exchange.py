@@ -45,6 +45,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         self.pair_contracts[pair] = contracts.FutureContract(pair)
         self.pair_contracts[pair].current_leverage = await self.get_symbol_leverage(pair)
         self.pair_contracts[pair].margin_type = await self.get_margin_type(pair)
+        self.pair_contracts[pair].contract_type = await self.get_contract_type(pair)
 
     def get_pair_future_contract(self, pair):
         """
@@ -137,6 +138,13 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :return: the margin type for the requested symbol. Can be MarginType.ISOLATED or MarginType.CROSS
         """
         raise NotImplementedError("get_margin_type is not implemented")
+
+    async def get_contract_type(self, symbol: str):
+        """
+        :param symbol: the symbol
+        :return: the contract type for the requested symbol. Can be FutureContractType INVERSE_PERPETUAL or PERPETUAL
+        """
+        raise NotImplementedError("get_contract_type is not implemented")
 
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         """
