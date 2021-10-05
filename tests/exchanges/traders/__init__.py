@@ -61,13 +61,13 @@ async def margin_trader_simulator(margin_simulated_exchange_manager):
     return await create_trader_from_exchange_manager(margin_simulated_exchange_manager, simulated=True)
 
 DEFAULT_FUTURE_SYMBOL = "BTC/USDT"
+DEFAULT_FUTURE_SYMBOL_CONTRACT = contracts.FutureContract(DEFAULT_FUTURE_SYMBOL)
 
 @pytest.fixture
 async def future_trader_simulator(future_simulated_exchange_manager):
-    default_future_symbol_contract = contracts.FutureContract(DEFAULT_FUTURE_SYMBOL)
-    default_future_symbol_contract.current_leverage = constants.ONE
-    default_future_symbol_contract.margin_type = enums.MarginType.ISOLATED
-    default_future_symbol_contract.contract_type = enums.FutureContractType.PERPETUAL
+    DEFAULT_FUTURE_SYMBOL_CONTRACT.current_leverage = constants.ONE
+    DEFAULT_FUTURE_SYMBOL_CONTRACT.margin_type = enums.MarginType.ISOLATED
+    DEFAULT_FUTURE_SYMBOL_CONTRACT.contract_type = enums.FutureContractType.PERPETUAL
     future_simulated_exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL,
-                                                                        default_future_symbol_contract)
+                                                                        DEFAULT_FUTURE_SYMBOL_CONTRACT)
     return await create_trader_from_exchange_manager(future_simulated_exchange_manager, simulated=True)

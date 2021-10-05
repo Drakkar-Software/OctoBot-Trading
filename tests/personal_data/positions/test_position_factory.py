@@ -34,7 +34,7 @@ async def test_create_position_instance_from_raw(future_trader_simulator):
         enums.ExchangeConstantsPositionColumns.STATUS.value: enums.PositionStatus.ADL.value
     }
     position = personal_data.create_position_instance_from_raw(trader_inst, raw_position)
-    position_leverage = decimal_random_int(max_value=200)
+    position_leverage = decimal_random_int(min_value=2, max_value=200)
     position_quantity = decimal_random_quantity(max_value=1000)
     linear_position_open = personal_data.create_position_instance_from_raw(trader_inst, {
         enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL,
