@@ -45,6 +45,10 @@ def random_int(min_value: int = 0, max_value: int = None) -> int:
     return randrange(min_value, max_value if max_value is not None else MAX_INT)
 
 
+def decimal_random_int(min_value: int = 0, max_value: int = None) -> decimal.Decimal:
+    return decimal.Decimal(str(random_int(min_value=min_value, max_value=max_value)))
+
+
 def random_prices(min_value: float = 0, count: int = 2) -> list:
     return [random_price(min_value=min_value) for _ in range(count)]
 
