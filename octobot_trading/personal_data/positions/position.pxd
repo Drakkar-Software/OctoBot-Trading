@@ -33,6 +33,7 @@ cdef class Position(util.Initializable):
     cdef public object status # PositionStatus
     cdef public object margin_type # MarginType
     cdef public object side # PositionSide
+    cdef public object symbol_contract # FutureContract
 
     cdef public positions_states.PositionState state
 
