@@ -24,21 +24,21 @@ def create_position_instance_from_raw(trader, raw_position):
     :param raw_position: the raw position dictionary
     :return: the created position
     """
-    position_contract_type = trader.exchange_manager.exchange.get_pair_future_contract(
+    position_symbol_contract = trader.exchange_manager.exchange.get_pair_future_contract(
         pair=raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value))
-    position = create_position_from_type(trader, position_contract_type.contract_type)
+    position = create_position_from_type(trader, position_symbol_contract)
     position.update_from_raw(raw_position)
     return position
 
 
-def create_position_from_type(trader, position_contract_type):
+def create_position_from_type(trader, symbol_contract):
     """
     Creates a position instance from a position type
     :param trader: the trader instance
-    :param position_contract_type: the position contract type, a enums.FutureContractType value
+    :param symbol_contract: the position symbol contract
     :return: the created position
     """
-    return personal_data.TraderPositionTypeClasses[position_contract_type](trader)
+    return personal_data.TraderPositionTypeClasses[symbol_contract.contract_type](trader, symbol_contract)
 
 
 def create_symbol_position(trader, symbol):
