@@ -14,9 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import os
-from shutil import copyfile
-
 import pytest
+
 import octobot_commons.constants as commons_constants
 from octobot_backtesting.backtesting import Backtesting
 from octobot_backtesting.constants import CONFIG_BACKTESTING
@@ -24,8 +23,7 @@ import octobot_backtesting.time as backtesting_time
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.enums import TimeFrames
 
-from octobot_commons.tests.test_config import load_test_config, TEST_CONFIG_FOLDER
-from octobot_tentacles_manager.constants import USER_REFERENCE_TENTACLE_CONFIG_PATH
+from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.api.exchange import create_exchange_builder, cancel_ccxt_throttle_task
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
@@ -38,25 +36,84 @@ DEFAULT_EXCHANGE_NAME = "binance"
 
 
 @pytest.fixture
-async def exchange_manager(request):
-    config = None
-    exchange_name = DEFAULT_EXCHANGE_NAME
-    is_spot = True
-    is_margin = False
-    is_future = False
-    if hasattr(request, "param"):
-        config, exchange_name, is_spot, is_margin, is_future = request.param
-
-    exchange_manager_instance = ExchangeManager(config if config is not None else load_test_config(), exchange_name)
-    exchange_manager_instance.is_spot_only = is_spot
-    exchange_manager_instance.is_margin = is_margin
-    exchange_manager_instance.is_future = is_future
+async def exchange_manager():
+    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
+    exchange_manager_instance.is_spot_only = True
+    exchange_manager_instance.is_simulated = False
     await exchange_manager_instance.initialize()
     yield exchange_manager_instance
     cancel_ccxt_throttle_task()
     await exchange_manager_instance.stop()
     # let updaters gracefully shutdown
     await wait_asyncio_next_cycle()
+
+
+@pytest.fixture
+async def simulated_exchange_manager():
+    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
+    exchange_manager_instance.is_spot_only = True
+    exchange_manager_instance.is_simulated = True
+    await exchange_manager_instance.initialize()
+    yield exchange_manager_instance
+    cancel_ccxt_throttle_task()
+    await exchange_manager_instance.stop()
+    # let updaters gracefully shutdown
+    await wait_asyncio_next_cycle()
+
+
+@pytest.fixture
+async def margin_exchange_manager():
+    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
+    exchange_manager_instance.is_spot_only = False
+    exchange_manager_instance.is_margin = True
+    await exchange_manager_instance.initialize()
+    yield exchange_manager_instance
+    cancel_ccxt_throttle_task()
+    await exchange_manager_instance.stop()
+    # let updaters gracefully shutdown
+    await wait_asyncio_next_cycle()
+
+
+@pytest.fixture
+async def margin_simulated_exchange_manager():
+    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
+    exchange_manager_instance.is_spot_only = False
+    exchange_manager_instance.is_simulated = True
+    exchange_manager_instance.is_margin = True
+    await exchange_manager_instance.initialize()
+    yield exchange_manager_instance
+    cancel_ccxt_throttle_task()
+    await exchange_manager_instance.stop()
+    # let updaters gracefully shutdown
+    await wait_asyncio_next_cycle()
+
+
+@pytest.fixture
+async def future_exchange_manager():
+    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
+    exchange_manager_instance.is_spot_only = False
+    exchange_manager_instance.is_future = True
+    await exchange_manager_instance.initialize()
+    yield exchange_manager_instance
+    cancel_ccxt_throttle_task()
+    await exchange_manager_instance.stop()
+    # let updaters gracefully shutdown
+    await wait_asyncio_next_cycle()
+
+
+@pytest.fixture
+async def future_simulated_exchange_manager():
+    exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
+    exchange_manager_instance.is_spot_only = False
+    exchange_manager_instance.is_simulated = True
+    exchange_manager_instance.is_future = True
+    await exchange_manager_instance.initialize()
+    yield exchange_manager_instance
+    cancel_ccxt_throttle_task()
+    await exchange_manager_instance.stop()
+    # let updaters gracefully shutdown
+    await wait_asyncio_next_cycle()
+
 
 @pytest.fixture
 async def exchange_builder(request):
@@ -85,29 +142,6 @@ async def backtesting_config():
     config[CONFIG_BACKTESTING] = {}
     config[CONFIG_BACKTESTING][commons_constants.CONFIG_ENABLED_OPTION] = True
     return config
-
-
-@pytest.fixture
-async def simulated_exchange_manager(request):
-    config = load_test_config()
-    exchange_name = DEFAULT_EXCHANGE_NAME
-    is_spot = True
-    is_margin = False
-    is_future = False
-    if hasattr(request, "param"):
-        config, exchange_name, is_spot, is_margin, is_future = request.param
-
-    exchange_manager_instance = ExchangeManager(config, exchange_name)
-    exchange_manager_instance.is_simulated = True
-    exchange_manager_instance.is_spot_only = is_spot
-    exchange_manager_instance.is_margin = is_margin
-    exchange_manager_instance.is_future = is_future
-    await exchange_manager_instance.initialize()
-    yield exchange_manager_instance
-    cancel_ccxt_throttle_task()
-    await exchange_manager_instance.stop()
-    # let updaters gracefully shutdown
-    await wait_asyncio_next_cycle()
 
 
 @pytest.fixture
