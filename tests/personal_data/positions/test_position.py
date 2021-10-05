@@ -19,8 +19,7 @@ import octobot_trading.personal_data as personal_data
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
-from tests.exchanges.traders import future_trader_simulator
-from tests.exchanges.traders import future_trader
+from tests.exchanges.traders import future_trader_simulator, DEFAULT_FUTURE_SYMBOL_CONTRACT
 from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
 
 # All test coroutines will be treated as marked.
@@ -30,7 +29,7 @@ pytestmark = pytest.mark.asyncio
 async def test_update_entry_price(future_trader_simulator):
     config, exchange_manager_inst, trader_inst = future_trader_simulator
 
-    position_inst = personal_data.Position(trader_inst)
+    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
 
     assert position_inst.entry_price == constants.ZERO
     assert position_inst.mark_price == constants.ZERO
@@ -44,7 +43,7 @@ async def test_update_entry_price(future_trader_simulator):
 async def test_update_update_quantity(future_trader_simulator):
     config, exchange_manager_inst, trader_inst = future_trader_simulator
 
-    position_inst = personal_data.LinearPosition(trader_inst)
+    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
 
     assert position_inst.quantity == constants.ZERO
 
