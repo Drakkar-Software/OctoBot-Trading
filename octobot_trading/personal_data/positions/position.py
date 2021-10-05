@@ -24,7 +24,7 @@ import octobot_trading.constants as constants
 
 
 class Position(util.Initializable):
-    def __init__(self, trader):
+    def __init__(self, trader, symbol_contract):
         super().__init__()
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
@@ -35,6 +35,7 @@ class Position(util.Initializable):
         self.timestamp = 0
         self.symbol = None
         self.currency, self.market = None, None
+        self.symbol_contract = symbol_contract
         self.entry_price = constants.ZERO
         self.mark_price = constants.ZERO
         self.quantity = constants.ZERO
@@ -270,7 +271,7 @@ class Position(util.Initializable):
         Updates position liquidation price
         Should call _update_fee_to_close() at the end of the implementation
         """
-        if True:  # TODO
+        if self.symbol_contract.is_isolated():
             self.update_isolated_liquidation_price()
         else:
             self.update_cross_liquidation_price()
@@ -380,7 +381,7 @@ class Position(util.Initializable):
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, constants.ZERO))),
             "realised_pnl": decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO))),
-            "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, 0),
+            "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, constants.ONE),
             "margin_type": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value,
                                             enums.TraderPositionType.ISOLATED),
             "status": position_util.parse_position_status(raw_position),
