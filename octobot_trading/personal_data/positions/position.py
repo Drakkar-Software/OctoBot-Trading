@@ -84,9 +84,6 @@ class Position(util.Initializable):
         """
         await positions_states.create_position_state(self, **kwargs)
 
-    def is_open(self):
-        return self.state is None or self.state.is_open()
-
     async def on_open(self, force_open=False, is_from_exchange_data=False):
         self.state = positions_states.OpenPositionState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_open)
@@ -339,8 +336,14 @@ class Position(util.Initializable):
         """
         self.margin = self.initial_margin + self.fee_to_close
 
+    def is_open(self):
+        return self.state is None or self.state.is_open()
+
     def is_liquidated(self):
-        return self.status is enums.PositionStatus.LIQUIDATING
+        return self.state is not None and self.state.is_liquidated()
+
+    def is_refreshing(self):
+        return self.state is not None and self.state.is_refreshing()
 
     def is_long(self):
         return self.side is enums.PositionSide.LONG

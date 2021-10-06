@@ -28,6 +28,12 @@ class PositionState(state_class.State):
         # related position
         self.position = position
 
+    def is_liquidated(self) -> bool:
+        """
+        :return: True if the instance is considered as liquidated
+        """
+        return False
+
     def log_event_message(self, state_message, error=None):
         """
         Log a position state event
