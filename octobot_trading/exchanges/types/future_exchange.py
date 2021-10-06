@@ -79,7 +79,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_symbol_open_positions is not implemented")
 
-    async def get_open_positions(self, **kwargs: dict) -> dict:
+    async def get_open_positions(self, **kwargs: dict) -> list:
         """
         Get the current user open position list
         :return: the user open position list
