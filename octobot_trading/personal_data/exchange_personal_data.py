@@ -85,6 +85,21 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
+    async def handle_portfolio_update_from_position(self, position,
+                                                    require_exchange_update: bool = True,
+                                                    is_liquidated: bool = False,
+                                                    should_notify: bool = True) -> bool:
+        try:
+            changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order,
+                                                                                          require_exchange_update)
+            if should_notify:
+                await exchange_channel.get_chan(octobot_trading.constants.BALANCE_CHANNEL, self.exchange_manager.id). \
+                    get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
+            return changed
+        except AttributeError as e:
+            self.logger.exception(e, True, f"Failed to update balance : {e}")
+            return False
+
     async def handle_portfolio_profitability_update(self, balance, mark_price, symbol, should_notify: bool = True):
         try:
             portfolio_profitability = self.portfolio_manager.portfolio_profitability
@@ -235,7 +250,8 @@ class ExchangePersonalData(util.Initializable):
                 return False
 
             position_instance = self.positions_manager.get_symbol_position(symbol)
-            await position_instance.update(update_quantity=order.filled_quantity if order.is_long() else -order.filled_quantity)
+            await position_instance.update(
+                update_quantity=order.filled_quantity if order.is_long() else -order.filled_quantity)
 
             if should_notify:
                 await exchange_channel.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,
@@ -263,6 +279,20 @@ class ExchangePersonalData(util.Initializable):
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position instance : {e}")
             return False
+
+    async def handle_position_update_notification(self, position):
+        """
+        Notify Positions channel for Position update
+        :param position: the updated position
+        """
+        try:
+            await exchange_channel.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,
+                                            self.exchange_manager.id).get_internal_producer() \
+                .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(position.symbol),
+                      symbol=position.symbol,
+                      position=position)
+        except ValueError as e:
+            self.logger.error(f"Failed to send position update notification : {e}")
 
     def get_order_portfolio(self, order):
         return order.linked_portfolio if order.linked_portfolio is not None else self.portfolio_manager.portfolio
