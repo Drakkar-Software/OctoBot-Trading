@@ -18,3 +18,5 @@ cimport octobot_trading.personal_data.state as state_class
 
 cdef class PositionState(state_class.State):
     cdef public object position  # instance of Position
+
+    cpdef bint is_liquidated(self)
