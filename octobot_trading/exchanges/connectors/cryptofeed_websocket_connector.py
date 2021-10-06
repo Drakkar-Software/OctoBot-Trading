@@ -15,7 +15,6 @@
 #  License along with this library.
 import asyncio
 import logging
-import os
 import threading
 
 import cryptofeed
@@ -25,12 +24,11 @@ import cryptofeed.connection_handler
 import cryptofeed.defines as cryptofeed_constants
 import cryptofeed.exchanges as cryptofeed_exchanges
 import cryptofeed.types as cryptofeed_types
-
 import octobot_commons
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_commons.enums as commons_enums
-import octobot_commons.logging as commons_logging
 import octobot_commons.symbol_util as symbol_util
+import octobot_commons.logging as commons_logging
 import octobot_commons.time_frame_manager as time_frame_manager
 
 import octobot_trading.constants as trading_constants
@@ -43,7 +41,7 @@ from octobot_trading.enums import WebsocketFeeds as Feeds
 
 
 class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
-    CRYPTOFEED_LOGGERS = ["feedhandler"] + abstract_websocket_connector.AbstractWebsocketConnector.LOGGERS
+    CRYPTOFEED_LOGGERS = abstract_websocket_connector.AbstractWebsocketConnector.LOGGERS
     CRYPTOFEED_DEFAULT_MARKET_SEPARATOR = "-"
 
     INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
@@ -81,6 +79,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     PAIR_INDEPENDENT_CHANNELS = [
         cryptofeed_constants.BALANCES,
+        cryptofeed_constants.ORDER_INFO,
     ]
     CANDLE_CHANNELS = [
         cryptofeed_constants.CANDLES,
@@ -113,7 +112,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         # Manage cryptofeed loggers
         self.client_logger = logging.getLogger(f"WebSocketClient - {self.name}")
         self.client_logger.setLevel(logging.WARNING)
-        self._fix_logger()
 
         self.client = None
         self.client_config = None
@@ -297,12 +295,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         Creates cryptofeed config
         """
         self.client_config = cryptofeed_config.Config()
-        try:
-            # Disable cryptofeed log file
-            self.client_config.config['log']['filename'] = os.devnull
-            self.client_config.config['rest']['log']['filename'] = os.devnull
-        except KeyError:
-            pass
+        # Disable cryptofeed log file
+        self.client_config.config['log'] = {}
+        self.client_config.config['log']['disabled'] = True
         self.client_config.config[self.get_feed_name().lower()] = self._get_credentials_config()
 
     def _get_credentials_config(self):
