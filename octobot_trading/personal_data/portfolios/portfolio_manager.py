@@ -72,6 +72,21 @@ class PortfolioManager(util.Initializable):
             return await self._refresh_real_trader_portfolio()
         return False
 
+    async def handle_balance_update_from_position(self, position, require_exchange_update: bool) -> bool:
+        """
+        Handle a balance update from an order request
+        :param position: the position
+        :param require_exchange_update: when True, will sync with exchange portfolio, otherwise will predict the
+        portfolio changes using position data (as in trading simulator)
+        :return: True if the portfolio was updated
+        """
+        if self.trader.is_enabled:
+            if self.trader.simulate or not require_exchange_update:
+                return self._refresh_simulated_trader_portfolio_from_position(position)
+            # on real trading: reload portfolio to ensure portfolio sync
+            return await self._refresh_real_trader_portfolio()
+        return False
+
     async def handle_balance_updated(self):
         """
         Handle balance update notification
@@ -131,6 +146,21 @@ class PortfolioManager(util.Initializable):
                 self.portfolio.update_portfolio_from_filled_order(order)
             else:
                 self.portfolio.update_portfolio_available(order, is_new_order=False)
+            return True
+        except errors.PortfolioNegativeValueError as portfolio_negative_value_error:
+            self.logger.exception(f"Failed to update portfolio : {portfolio_negative_value_error}")
+        return False
+
+    def _refresh_simulated_trader_portfolio_from_position(self, position):
+        """
+        Handle a balance update from an position request when simulating
+        Catch a PortfolioNegativeValueError when calling portfolio update method and returns False if raised
+        :param position: the position that should update portfolio
+        :return: True if the portfolio was updated
+        """
+        try:
+            if position.is_liquidated():
+                self.portfolio.update_portfolio_from_liquidated_position(position)
             return True
         except errors.PortfolioNegativeValueError as portfolio_negative_value_error:
             self.logger.exception(f"Failed to update portfolio : {portfolio_negative_value_error}")

@@ -20,7 +20,7 @@ from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
 from octobot_trading.enums import TraderOrderType, FutureContractType
 from octobot_trading.personal_data import FuturePortfolio, BuyMarketOrder, SellMarketOrder
-from octobot_trading.personal_data.positions.contracts.future_contract import FutureContract
+from octobot_trading.exchange_data.contracts.future_contract import FutureContract
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting, \
     DEFAULT_EXCHANGE_NAME
@@ -83,19 +83,19 @@ async def test_update_portfolio_available_from_order_in_inverse_market(backtesti
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
                          indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_available_from_order_in_inverse_market_with_leverage(backtesting_trader):
+async def test_update_portfolio_available_from_order_in_inverse_market_with_sell_market(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
     # set future contract
     btcusd_future_contract = FutureContract("BTC/USDT")
-    btcusd_future_contract.current_leverage = 10
+    btcusd_future_contract.current_leverage = 1
     btcusd_future_contract.contract_type = FutureContractType.INVERSE_PERPETUAL
     exchange_manager.exchange.set_pair_future_contract("BTC/USDT", btcusd_future_contract)
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+    market_buy.update(order_type=TraderOrderType.SELL_MARKET,
                       symbol="BTC/USDT",
                       current_price=decimal.Decimal(str(1000)),
                       quantity=decimal.Decimal(str(10)),
@@ -103,7 +103,7 @@ async def test_update_portfolio_available_from_order_in_inverse_market_with_leve
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(9.999))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(9.99))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(1000))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == decimal.Decimal(str(1000))
@@ -111,13 +111,13 @@ async def test_update_portfolio_available_from_order_in_inverse_market_with_leve
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
                          indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_available_from_order_with_leverage(backtesting_trader):
+async def test_update_portfolio_available_from_order(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
     # set future contract
     btcusd_future_contract = FutureContract("BTC/USDT")
-    btcusd_future_contract.current_leverage = 2
+    btcusd_future_contract.current_leverage = 1
     btcusd_future_contract.contract_type = FutureContractType.PERPETUAL
     exchange_manager.exchange.set_pair_future_contract("BTC/USDT", btcusd_future_contract)
 
@@ -132,7 +132,7 @@ async def test_update_portfolio_available_from_order_with_leverage(backtesting_t
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(10))
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(995))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(990))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == decimal.Decimal(str(1000))
 
@@ -147,7 +147,7 @@ async def test_update_portfolio_available_from_order_with_leverage(backtesting_t
     # test sell order creation
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(10))
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(993.5))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == decimal.Decimal(str(987))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == decimal.Decimal(str(1000))
 

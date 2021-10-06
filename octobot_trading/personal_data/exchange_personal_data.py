@@ -87,11 +87,10 @@ class ExchangePersonalData(util.Initializable):
 
     async def handle_portfolio_update_from_position(self, position,
                                                     require_exchange_update: bool = True,
-                                                    is_liquidated: bool = False,
                                                     should_notify: bool = True) -> bool:
         try:
-            changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order,
-                                                                                          require_exchange_update)
+            changed: bool = await self.portfolio_manager.handle_balance_update_from_position(
+                position=position, require_exchange_update=require_exchange_update)
             if should_notify:
                 await exchange_channel.get_chan(octobot_trading.constants.BALANCE_CHANNEL, self.exchange_manager.id). \
                     get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
