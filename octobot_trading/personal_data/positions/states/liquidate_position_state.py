@@ -36,6 +36,9 @@ class LiquidatePositionState(position_state.PositionState):
     def is_closed(self) -> bool:
         return self.state is enums.PositionStates.LIQUIDATED
 
+    def is_liquidated(self) -> bool:
+        return True
+
     async def on_refresh_successful(self):
         """
         Verify the position is properly closed
@@ -52,8 +55,8 @@ class LiquidatePositionState(position_state.PositionState):
 
         # update portfolio with liquidated position
         async with self.position.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-            await self.position.exchange_manager.exchange_personal_data.handle_portfolio_update_from_position(
-                self.position, is_liquidated=True)
+            await self.position.exchange_manager.exchange_personal_data.\
+                handle_portfolio_update_from_position(self.position)
 
         # notify position liquidated
         await self.position.exchange_manager.exchange_personal_data.handle_position_update_notification(self.position)
