@@ -35,20 +35,26 @@ class Position(util.Initializable):
         self.timestamp = 0
         self.symbol = None
         self.currency, self.market = None, None
+        self.status = enums.PositionStatus.OPEN
+        self.side = enums.PositionSide.UNKNOWN
+
+        # Contract
         self.symbol_contract = symbol_contract
+        self.leverage = symbol_contract.current_leverage if symbol_contract.current_leverage else constants.ONE
+        self.margin_type = None
+
+        # Prices
         self.entry_price = constants.ZERO
         self.mark_price = constants.ZERO
+        self.liquidation_price = constants.ZERO
+        self.fee_to_close = constants.ZERO
+
+        # Size
         self.quantity = constants.ZERO
         self.size = constants.ZERO
         self.value = constants.ZERO
         self.initial_margin = constants.ZERO
         self.margin = constants.ZERO
-        self.liquidation_price = constants.ZERO
-        self.fee_to_close = constants.ZERO
-        self.leverage = decimal.Decimal(5)
-        self.margin_type = None
-        self.status = enums.PositionStatus.OPEN
-        self.side = enums.PositionSide.UNKNOWN
 
         # PNL
         self.unrealised_pnl = constants.ZERO
@@ -140,8 +146,8 @@ class Position(util.Initializable):
             self.realised_pnl = realised_pnl
             changed = True
 
-        if self._should_change(self.leverage, int(leverage)):
-            self.leverage = int(leverage)
+        if self._should_change(self.leverage, leverage):
+            self.leverage = leverage
             changed = True
 
         if self._should_change(self.margin_type, margin_type):
@@ -381,7 +387,7 @@ class Position(util.Initializable):
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, constants.ZERO))),
             "realised_pnl": decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO))),
-            "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, constants.ONE),
+            "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, None),
             "margin_type": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value,
                                             enums.TraderPositionType.ISOLATED),
             "status": position_util.parse_position_status(raw_position),
@@ -444,6 +450,26 @@ class Position(util.Initializable):
                 f"Quantity : {str(self.quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
                 f"id : {self.position_id}")
+
+    async def reset(self):
+        """
+        Reset position attributes
+        """
+        self.entry_price = constants.ZERO
+        self.mark_price = constants.ZERO
+        self.quantity = constants.ZERO
+        self.size = constants.ZERO
+        self.value = constants.ZERO
+        self.initial_margin = constants.ZERO
+        self.margin = constants.ZERO
+        self.liquidation_price = constants.ZERO
+        self.fee_to_close = constants.ZERO
+        self.status = enums.PositionStatus.OPEN
+        self.side = enums.PositionSide.UNKNOWN
+        self.unrealised_pnl = constants.ZERO
+        self.realised_pnl = constants.ZERO
+        self.creation_time = constants.ZERO
+        await self.on_open()
 
     def clear(self):
         """
