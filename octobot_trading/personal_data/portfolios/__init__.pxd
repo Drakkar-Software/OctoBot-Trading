@@ -17,6 +17,10 @@ from octobot_trading.personal_data.portfolios cimport portfolio
 from octobot_trading.personal_data.portfolios.portfolio cimport (
     Portfolio,
 )
+from octobot_trading.personal_data.portfolios cimport asset
+from octobot_trading.personal_data.portfolios.asset cimport (
+    Asset,
+)
 from octobot_trading.personal_data.portfolios cimport channel
 from octobot_trading.personal_data.portfolios.channel cimport (
     BalanceUpdater,
@@ -46,6 +50,11 @@ from octobot_trading.personal_data.portfolios.types cimport (
     MarginPortfolio,
     SpotPortfolio,
 )
+from octobot_trading.personal_data.portfolios.assets cimport (
+    FutureAsset,
+    MarginAsset,
+    SpotAsset,
+)
 from octobot_trading.personal_data.portfolios cimport portfolio_util
 from octobot_trading.personal_data.portfolios.portfolio_util import (
     parse_decimal_portfolio,
@@ -60,6 +69,7 @@ __all__ = [
     "BalanceUpdater",
     "BalanceProfitabilityUpdater",
     "Portfolio",
+    "Asset",
     "BalanceProducer",
     "BalanceChannel",
     "BalanceProfitabilityProducer",
@@ -69,6 +79,9 @@ __all__ = [
     "FuturePortfolio",
     "MarginPortfolio",
     "SpotPortfolio",
+    "FutureAsset",
+    "MarginAsset",
+    "SpotAsset",
     "parse_decimal_portfolio",
     "parse_decimal_config_portfolio",
     "portfolio_to_float",
