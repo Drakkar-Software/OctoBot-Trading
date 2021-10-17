@@ -30,6 +30,10 @@ from octobot_trading.personal_data.portfolios import portfolio
 from octobot_trading.personal_data.portfolios.portfolio import (
     Portfolio,
 )
+from octobot_trading.personal_data.portfolios import asset
+from octobot_trading.personal_data.portfolios.asset import (
+    Asset,
+)
 from octobot_trading.personal_data.portfolios import portfolio_factory
 from octobot_trading.personal_data.portfolios import portfolio_profitability
 from octobot_trading.personal_data.portfolios import sub_portfolio
@@ -37,7 +41,6 @@ from octobot_trading.personal_data.portfolios import portfolio_manager
 from octobot_trading.personal_data.portfolios import portfolio_value_holder
 from octobot_trading.personal_data.portfolios import types
 from octobot_trading.personal_data.portfolios import portfolio_util
-
 
 from octobot_trading.personal_data.portfolios.portfolio_factory import (
     create_portfolio_from_exchange_manager,
@@ -59,6 +62,11 @@ from octobot_trading.personal_data.portfolios.types import (
     MarginPortfolio,
     SpotPortfolio,
 )
+from octobot_trading.personal_data.portfolios.assets import (
+    FutureAsset,
+    MarginAsset,
+    SpotAsset,
+)
 from octobot_trading.personal_data.portfolios.portfolio_util import (
     parse_decimal_portfolio,
     parse_decimal_config_portfolio,
@@ -73,6 +81,7 @@ __all__ = [
     "BalanceProfitabilityUpdater",
     "PortfolioProfitability",
     "Portfolio",
+    "Asset",
     "BalanceProducer",
     "BalanceChannel",
     "BalanceProfitabilityProducer",
@@ -83,6 +92,9 @@ __all__ = [
     "FuturePortfolio",
     "MarginPortfolio",
     "SpotPortfolio",
+    "FutureAsset",
+    "MarginAsset",
+    "SpotAsset",
     "parse_decimal_portfolio",
     "parse_decimal_config_portfolio",
     "portfolio_to_float",
