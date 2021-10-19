@@ -18,5 +18,13 @@ import octobot_trading.constants as constants
 
 
 class MarginAsset(asset_class.Asset):
-    def __init__(self):
-        pass
+    def __init__(self, name, available, total):
+        super().__init__(name, available, total)
+        self.borrowed = constants.ZERO
+        self.interest = constants.ZERO
+        self.locked = constants.ZERO
+
+    def __eq__(self, other):
+        if isinstance(other, MarginAsset):
+            return self.available == other.available and self.total == other.total and self.borrowed == other.borrowed
+        return False

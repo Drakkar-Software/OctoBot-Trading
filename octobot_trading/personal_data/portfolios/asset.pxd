@@ -22,8 +22,9 @@ cdef class Asset:
     cdef public object total  # Decimal
 
     cpdef void balance_available(self)
-    cpdef void update(self, object available=*, object total=*)
-    cpdef void set(self, object available, object total)
+    cpdef bint update(self, object available=*, object total=*)
+    cpdef bint set(self, object available, object total)
     cpdef void reset(self)
+    cpdef dict to_dict(self)
 
     cdef object _ensure_update_validness(self, object origin_quantity, object update_quantity)
