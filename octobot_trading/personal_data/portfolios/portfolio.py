@@ -107,6 +107,16 @@ class Portfolio(util.Initializable):
         """
         return self.get_currency_from_given_portfolio(currency, portfolio_type)
 
+    def create_currency_asset(self, currency, available, total):
+        """
+        Create the currency asset instance
+        :param currency: the currency name
+        :param available: the available value
+        :param total: the total value
+        :return: the currency asset instance
+        """
+        raise NotImplementedError("create_currency_asset is not implemented")
+
     def update_portfolio_data_from_order(self, order, currency, market):
         """
         Call update_portfolio_data for order currency and market
