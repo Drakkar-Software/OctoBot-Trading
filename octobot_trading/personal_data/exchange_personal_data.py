@@ -222,9 +222,29 @@ class ExchangePersonalData(util.Initializable):
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
                           symbol=symbol,
                           position=position_instance.to_dict(),
-                          is_updated=changed,
-                          is_liquidated=position_instance.is_liquidated())
+                          is_updated=changed)
             return changed
+        except Exception as e:
+            self.logger.exception(e, True, f"Failed to update position : {e}")
+            return False
+
+    async def update_position_from_filled_order(self, symbol, order, should_notify: bool = True):
+        try:
+            # Don't update if order filled quantity is null
+            if order.filled_quantity == 0:
+                return False
+
+            position_instance = self.positions_manager.get_symbol_position(symbol)
+            await position_instance.update(update_size=order.filled_quantity if order.is_long() else -order.filled_quantity)
+
+            if should_notify:
+                await exchange_channel.get_chan(octobot_trading.constants.POSITIONS_CHANNEL,
+                                                self.exchange_manager.id).get_internal_producer() \
+                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
+                          symbol=symbol,
+                          position=position_instance.to_dict(),
+                          is_updated=True)
+            return True
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position : {e}")
             return False
@@ -238,8 +258,7 @@ class ExchangePersonalData(util.Initializable):
                     .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(position.symbol),
                           symbol=position.symbol,
                           position=position,
-                          is_updated=changed,
-                          is_liquidated=position.is_liquidated())
+                          is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position instance : {e}")

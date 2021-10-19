@@ -17,5 +17,4 @@ import octobot_trading.personal_data.positions.position as position_class
 
 
 class CrossPosition(position_class.Position):
-    async def update_position_status(self, force_refresh=False):
-        pass
+    pass

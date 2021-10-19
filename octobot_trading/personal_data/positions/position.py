@@ -39,9 +39,11 @@ class Position(util.Initializable):
         self.mark_price = constants.ZERO
         self.quantity = constants.ZERO
         self.value = constants.ZERO
+        self.initial_margin = constants.ZERO
         self.margin = constants.ZERO
         self.liquidation_price = constants.ZERO
-        self.leverage = 0
+        self.fee_to_close = constants.ZERO
+        self.leverage = constants.ONE_HUNDRED
         self.margin_type = None
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
@@ -73,14 +75,6 @@ class Position(util.Initializable):
         Initialize position status update tasks
         """
         await positions_states.create_position_state(self, **kwargs)
-        await self.update_position_status()
-
-    async def update_position_status(self, force_refresh=False):
-        """
-        update_position_status will define the rules for a simulated position to be liquidated
-        Should be called after updating position.mark_price
-        """
-        raise NotImplementedError("update_position_status not implemented")
 
     def is_open(self):
         return self.state is None or self.state.is_open()
@@ -122,7 +116,6 @@ class Position(util.Initializable):
 
         if self._should_change(self.quantity, quantity):
             self.quantity = quantity
-            self._switch_side_if_necessary()
             changed = True
 
         if self._should_change(self.value, value):
@@ -168,10 +161,111 @@ class Position(util.Initializable):
         if self._should_change(self.side.value, side):
             self.side = enums.PositionSide(side)
 
-        if self.side is enums.PositionSide.UNKNOWN and self.quantity:
-            self._switch_side_if_necessary()
-
+        self._update_side()
+        self._update_entry_price_if_necessary(mark_price)
+        self._update_pnl()
         return changed
+
+    async def update(self, update_size=None, mark_price=None):
+        self._update_size_and_mark_price(update_size=update_size, mark_price=mark_price)
+        if self._check_for_liquidation():
+            self.quantity = 0  # TODO trigger liquidation process
+
+    def _update_size_and_mark_price(self, update_size=None, mark_price=None):
+        """
+        Updates position mark price and / or size
+        :param update_size: the update size
+        :param mark_price: the update mark_price
+        """
+        if mark_price is not None:
+            self._update_mark_price(mark_price)
+        # TODO Check for liquidation before updating size ?
+        if update_size is not None:
+            self._update_size(update_size)
+
+    def _update_mark_price(self, mark_price):
+        """
+        Updates position mark_price and triggers size related attributes update
+        :param mark_price: the update mark_price
+        """
+        self.mark_price = mark_price
+        self._update_entry_price_if_necessary(mark_price)
+        self._update_pnl()
+
+    def _update_entry_price_if_necessary(self, mark_price):
+        """
+        Update the position entry price when entry price is 0 or when the position is new
+        :param mark_price: the position mark_price
+        """
+        if self.is_idle() and self.entry_price == constants.ZERO:
+            self.entry_price = mark_price
+
+    def _update_size(self, update_size):
+        """
+        Updates position size and triggers size related attributes update
+        :param update_size: the update size
+        """
+        self.quantity += update_size
+        self._update_side()
+        self._update_initial_margin()
+        self._update_fee_to_close()
+        self.update_liquidation_price()
+        self._update_pnl()
+
+    def _update_pnl(self):
+        """
+        LONG_PNL = CONTRACT_QUANTITY x [(CONTRACT_SIZE / ENTRY_PRICE) - (CONTRACT_SIZE / MARK_PRICE)]
+        SHORT_PNL = CONTRACT_QUANTITY x [(CONTRACT_SIZE / MARK_PRICE) - (CONTRACT_SIZE / ENTRY_PRICE)]
+        """
+        try:
+            contract_quantity = constants.ONE  # TODO should we use Contract.contract_size ?
+            if self.is_long():
+                self.unrealised_pnl = self.quantity * ((contract_quantity / self.entry_price) -
+                                                       (contract_quantity / self.mark_price))
+            elif self.is_short():
+                self.unrealised_pnl = self.quantity * ((contract_quantity / self.mark_price) -
+                                                       (contract_quantity / self.entry_price))
+            else:
+                self.unrealised_pnl = constants.ZERO
+        except decimal.DivisionByZero:
+            self.unrealised_pnl = constants.ZERO
+
+    def update_liquidation_price(self):
+        """
+        Updates position liquidation price
+        Should call _update_fee_to_close() at the end of the implementation
+        """
+        raise NotImplementedError("update_liquidation_price not implemented")
+
+    def _update_fee_to_close(self):
+        """
+        Updates position fee to close = ( Position quantity / Liquidation Price ) x exchange maker fee
+        Maker fee = rate / 100 because rate in used in %
+        """
+        symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
+        rate = decimal.Decimal(
+            f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value]}") / constants.ONE_HUNDRED
+        try:
+            self.fee_to_close = (self.quantity / self.liquidation_price) * rate
+            self._update_margin()
+        except decimal.DivisionByZero:
+            self.fee_to_close = constants.ZERO
+
+    def _update_initial_margin(self):
+        """
+        Updates position initial margin = Position quantity / (entry price x leverage)
+        """
+        try:
+            self.initial_margin = self.quantity / (self.entry_price * self.leverage)
+            self._update_margin()
+        except decimal.DivisionByZero:
+            self.initial_margin = constants.ZERO
+
+    def _update_margin(self):
+        """
+        Updates position margin = Initial margin + Fee to close
+        """
+        self.margin = self.initial_margin + self.fee_to_close
 
     def is_liquidated(self):
         return self.status is enums.PositionStatus.LIQUIDATING
@@ -182,11 +276,35 @@ class Position(util.Initializable):
     def is_short(self):
         return self.side is enums.PositionSide.SHORT
 
+    def is_idle(self):
+        return self.quantity == constants.ZERO
+
+    def get_unrealised_pnl_percent(self):
+        """
+        :return: Unrealized P&L% = [ Position's unrealized P&L / Position Margin ] x 100%
+        """
+        return (self.unrealised_pnl / self.margin) * 100
+
+    def _calculate_maintenance_margin(self):
+        """
+        :return: Maintenance margin = (Position quantity / entry price) * Maintenance margin rate
+        """
+        try:
+            funding_rate = self.exchange_manager.exchange_symbols_data. \
+                get_exchange_symbol_data(self.symbol).funding_manager.funding_rate
+            return (self.quantity / self.entry_price) * funding_rate
+        except decimal.DivisionByZero:
+            return constants.ZERO
+
+    def get_maintenance_margin(self):
+        return self._calculate_maintenance_margin()
+
     async def recreate(self):
         self.exchange_manager.exchange_personal_data.positions_manager.recreate_position(self)
 
-    async def update_from_filled_order(self, order):
-        self.quantity = order.filled_quantity if order.is_long() else -order.filled_quantity
+    async def update_size(self, size):
+        self.quantity = size
+        self._switch_side_if_necessary()
 
     def update_from_raw(self, raw_position):
         symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
@@ -195,16 +313,24 @@ class Position(util.Initializable):
             "symbol": symbol,
             "currency": currency,
             "market": market,
-            "entry_price": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value, 0.0))),
-            "mark_price": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, 0.0))),
-            "liquidation_price": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, 0.0))),
-            "quantity": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, 0.0))),
-            "value": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.VALUE.value, 0.0))),
-            "margin": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN.value, 0.0))),
+            "entry_price": decimal.Decimal(
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value, constants.ZERO))),
+            "mark_price": decimal.Decimal(
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, constants.ZERO))),
+            "liquidation_price": decimal.Decimal(
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, constants.ZERO))),
+            "quantity": decimal.Decimal(
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO))),
+            "value": decimal.Decimal(
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.VALUE.value, constants.ZERO))),
+            "margin": decimal.Decimal(
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN.value, constants.ZERO))),
             "position_id": str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
-            "timestamp": raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0.0),
-            "unrealised_pnl": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, 0.0))),
-            "realised_pnl": decimal.Decimal(str(raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, 0.0))),
+            "timestamp": raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
+            "unrealised_pnl": decimal.Decimal(
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, constants.ZERO))),
+            "realised_pnl": decimal.Decimal(
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO))),
             "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, 0),
             "margin_type": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value,
                                             enums.TraderPositionType.ISOLATED),
@@ -221,6 +347,7 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.SIDE.value: self.side.value,
             enums.ExchangeConstantsPositionColumns.QUANTITY.value: self.quantity,
             enums.ExchangeConstantsPositionColumns.VALUE.value: self.value,
+            enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: self.initial_margin,
             enums.ExchangeConstantsPositionColumns.MARGIN.value: self.margin,
             enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: self.entry_price,
             enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
@@ -246,14 +373,16 @@ class Position(util.Initializable):
                 return True
         return False
 
-    def _switch_side_if_necessary(self):
+    def _update_side(self):
         """
         check if self.side still represents the position side
         """
-        if self.quantity >= 0 and self.is_short():
+        if self.quantity >= 0 and (self.is_short() or self.side is enums.PositionSide.UNKNOWN):
             self.side = enums.PositionSide.LONG
-        else:
+        elif self.quantity < constants.ZERO:
             self.side = enums.PositionSide.SHORT
+        else:
+            self.side = enums.PositionSide.UNKNOWN
 
     def __str__(self):
         return self.to_string()
