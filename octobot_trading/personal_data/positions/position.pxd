@@ -110,7 +110,4 @@ cdef class Position(util.Initializable):
     cpdef str to_string(self)
     cpdef dict to_dict(self)
     cpdef void clear(self)
-
     cpdef str get_logger_name(self)
-
-cpdef object parse_position_type(dict raw_position)
