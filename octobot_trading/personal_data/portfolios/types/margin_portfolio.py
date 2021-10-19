@@ -16,6 +16,7 @@
 import octobot_commons.constants as common_constants
 
 import octobot_trading.constants as constants
+import octobot_trading.personal_data.portfolios.assets.margin_asset as margin_asset
 import octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
 
@@ -33,6 +34,9 @@ class MarginPortfolio(portfolio_class.Portfolio):
             total=currency_balance[constants.CONFIG_PORTFOLIO_TOTAL]
             if constants.CONFIG_PORTFOLIO_TOTAL in currency_balance else currency_balance[
                 common_constants.PORTFOLIO_TOTAL])
+
+    def create_currency_asset(self, currency, available, total):
+        return margin_asset.MarginAsset(name=currency, available=available, total=total)
 
     def _create_currency_portfolio(self, available, total, margin=0):
         return {
