@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.personal_data.portfolios.asset as asset_class
-import octobot_trading.constants as constants
 
 
 class SpotAsset(asset_class.Asset):
