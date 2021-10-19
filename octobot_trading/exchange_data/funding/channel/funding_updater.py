@@ -95,6 +95,7 @@ class FundingUpdater(funding_channel.FundingProducer):
                 await self._push_funding(
                     symbol=symbol,
                     funding_rate=funding[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
+                    predicted_funding_rate=funding[enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value],
                     next_funding_time=next_funding_time,
                     last_funding_time=funding[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
                 return next_funding_time
@@ -105,14 +106,18 @@ class FundingUpdater(funding_channel.FundingProducer):
             self.logger.error(f"Fail to update funding rate on {self.channel.exchange_manager.exchange.name} : {e}")
         return None
 
-    async def _push_funding(self, symbol, funding_rate, next_funding_time=None, last_funding_time=None) -> None:
+    async def _push_funding(self, symbol, funding_rate, predicted_funding_rate=None,
+                            next_funding_time=None, last_funding_time=None) -> None:
         """
         Push funding data to channel
         :param symbol: the funding symbol
         :param funding_rate: the funding rate
+        :param predicted_funding_rate: the next predicted funding rate
         :param next_funding_time: the next funding time
         :param last_funding_time: the last funding time
         """
+        if predicted_funding_rate is None:
+            predicted_funding_rate = constants.ZERO
         if last_funding_time is None:
             last_funding_time = self.channel.exchange_manager.exchange.get_exchange_current_time()
         if next_funding_time is None:
@@ -120,6 +125,7 @@ class FundingUpdater(funding_channel.FundingProducer):
         await self.push(
             symbol=symbol,
             funding_rate=funding_rate,
+            predicted_funding_rate=predicted_funding_rate,
             next_funding_time=next_funding_time,
             timestamp=last_funding_time,
         )
