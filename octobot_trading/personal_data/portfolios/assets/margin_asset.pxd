@@ -18,4 +18,6 @@ cimport octobot_trading.personal_data.portfolios.asset as asset_class
 
 
 cdef class MarginAsset(asset_class.Asset):
-    pass
+    cdef public object borrowed
+    cdef public object interest
+    cdef public object locked
