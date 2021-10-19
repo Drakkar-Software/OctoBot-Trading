@@ -22,7 +22,7 @@ cdef class FundingManager(util.Initializable):
     cdef public object funding_rate
     cdef public object predicted_funding_rate
 
-    cdef public double next_updated
+    cdef public double next_update
     cdef public double last_updated
 
     cpdef void reset_funding(self)
