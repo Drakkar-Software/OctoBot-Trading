@@ -13,11 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.personal_data.portfolios.assets.future_asset as future_asset
 import octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 import octobot_trading.constants as constants
 
 
 class FuturePortfolio(portfolio_class.Portfolio):
+    def create_currency_asset(self, currency, available, total):
+        return future_asset.FutureAsset(name=currency, available=available, total=total)
+
     def update_portfolio_data_from_order(self, order, currency, market):
         """
         Call update_portfolio_data for order currency and market
