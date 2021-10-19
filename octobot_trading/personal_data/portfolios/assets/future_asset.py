@@ -17,4 +17,10 @@ import octobot_trading.personal_data.portfolios.asset as asset_class
 
 
 class FutureAsset(asset_class.Asset):
-    pass
+    def __init__(self, name, available, total):
+        super().__init__(name, available, total)
+
+    def __eq__(self, other):
+        if isinstance(other, FutureAsset):
+            return self.available == other.available and self.total == other.total
+        return False

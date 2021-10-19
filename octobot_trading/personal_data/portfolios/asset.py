@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.constants as common_constants
+
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 
@@ -25,7 +27,12 @@ class Asset:
         self.total = total
 
     def __str__(self):
-        return f"{self.__class__.__name__}: {self.name} | Available: {self.available} | Total: {self.total}"
+        return f"{self.__class__.__name__}: {self.name} | " \
+               f"Available: {float(self.available)} | " \
+               f"Total: {float(self.total)}"
+
+    def __eq__(self, other):
+        return False
 
     def update(self, available=constants.ZERO, total=constants.ZERO):
         """
@@ -33,8 +40,11 @@ class Asset:
         :param available: the available delta
         :param total: the total delta
         """
+        if self.available == constants.ZERO and total == constants.ZERO:
+            return False
         self.available += self._ensure_update_validness(self.available, available)
         self.total += self._ensure_update_validness(self.total, total)
+        return True
 
     def set(self, available, total):
         """
@@ -42,8 +52,11 @@ class Asset:
         :param available: the available value
         :param total: the total value
         """
+        if available == self.available and total == self.total:
+            return False
         self.available = available
         self.total = total
+        return True
 
     def balance_available(self):
         """
@@ -56,6 +69,15 @@ class Asset:
         Reset asset portfolio to zero
         """
         self.set(available=constants.ZERO, total=constants.ZERO)
+
+    def to_dict(self):
+        """
+        :return: asset to dictionary
+        """
+        return {
+            common_constants.PORTFOLIO_AVAILABLE: self.available,
+            common_constants.PORTFOLIO_TOTAL: self.total
+        }
 
     def _ensure_update_validness(self, origin_quantity, update_quantity):
         """
