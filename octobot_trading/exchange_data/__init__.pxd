@@ -92,6 +92,7 @@ from octobot_trading.exchange_data.ticker cimport (
 
 from octobot_trading.exchange_data cimport contracts
 from octobot_trading.exchange_data.contracts cimport (
+    MarginContract,
     FutureContract,
 )
 
@@ -153,6 +154,7 @@ __all__ = [
     "MiniTickerProducer",
     "MiniTickerChannel",
     "TickerUpdaterSimulator",
+    "MarginContract",
     "FutureContract",
     "ExchangeSymbolsData",
     "ExchangeSymbolData",

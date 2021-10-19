@@ -53,6 +53,7 @@ packages_list = [
     "octobot_trading.exchange_data.ticker.channel.ticker",
     "octobot_trading.exchange_data.ticker.channel.ticker_updater",
     "octobot_trading.exchange_data.ticker.channel.ticker_updater_simulator",
+    "octobot_trading.exchange_data.contracts.margin_contract",
     "octobot_trading.exchange_data.contracts.future_contract",
     "octobot_trading.exchange_data.order_book.order_book_manager",
     "octobot_trading.exchange_data.order_book.channel.order_book",
