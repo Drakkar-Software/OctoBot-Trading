@@ -13,18 +13,19 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
-import octobot_trading.enums as enums
 
 
 class FutureExchangeSimulator(exchanges_types.FutureExchange):
-    DEFAULT_SYMBOL_LEVERAGE = 1
+    DEFAULT_SYMBOL_LEVERAGE = constants.ONE
     DEFAULT_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
+    DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.PERPETUAL
 
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
-
         self.exchange_importers = []
         self.backtesting = backtesting
         self.connector = exchange_connectors.ExchangeSimulator(config, exchange_manager, backtesting=backtesting)
@@ -95,12 +96,11 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     def get_current_future_candles(self):
         return self.connector.current_future_candles
 
-    """
-    Margin and leverage
-    """
-
     async def get_symbol_leverage(self, symbol: str):
         return self.DEFAULT_SYMBOL_LEVERAGE
 
     async def get_margin_type(self, symbol: str):
         return self.DEFAULT_SYMBOL_MARGIN_TYPE
+
+    async def get_contract_type(self, symbol: str):
+        return self.DEFAULT_SYMBOL_CONTRACT_TYPE
