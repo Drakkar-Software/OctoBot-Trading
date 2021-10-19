@@ -14,15 +14,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchange_data.contracts.margin_contract as margin_contract
 
 
-cdef class FutureContract(margin_contract.MarginContract):
-    cdef readonly object contract_type
+cdef class MarginContract:
+    cdef readonly str pair
 
-    cdef readonly double creation_date
-    cdef readonly double expiration_date
+    cdef readonly object margin_type
 
-    cdef readonly double minimum_tick_size
+    cdef readonly object contract_size
+    cdef readonly object current_leverage
+    cdef readonly object maximum_leverage
 
-    cpdef bint is_inverse_contract(self)
+    cdef readonly dict risk_limit
+
+    cpdef bint is_isolated(self)

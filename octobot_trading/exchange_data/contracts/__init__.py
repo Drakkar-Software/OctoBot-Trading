@@ -14,11 +14,17 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.personal_data.positions.contracts import future_contract
-from octobot_trading.personal_data.positions.contracts.future_contract import (
+from octobot_trading.exchange_data.contracts import margin_contract
+from octobot_trading.exchange_data.contracts.margin_contract import (
+    MarginContract,
+)
+
+from octobot_trading.exchange_data.contracts import future_contract
+from octobot_trading.exchange_data.contracts.future_contract import (
     FutureContract,
 )
 
 __all__ = [
+    "MarginContract",
     "FutureContract",
 ]
