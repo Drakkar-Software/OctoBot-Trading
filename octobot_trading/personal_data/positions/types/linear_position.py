@@ -110,4 +110,4 @@ class LinearPosition(position_class.Position):
         """
         :return: Fee to close = (Quantity * Bankruptcy Price derived from mark price) x Taker fee
         """
-        self.quantity * self.get_bankruptcy_price(with_mark_price=True) * self.get_taker_fee()
+        self.fee_to_close = self.quantity * self.get_bankruptcy_price(with_mark_price=True) * self.get_taker_fee()
