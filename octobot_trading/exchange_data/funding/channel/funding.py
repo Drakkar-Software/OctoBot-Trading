@@ -20,21 +20,23 @@ import octobot_trading.exchange_channel as exchanges_channel
 
 
 class FundingProducer(exchanges_channel.ExchangeChannelProducer):
-    async def push(self, symbol, funding_rate, next_funding_time, timestamp):
-        await self.perform(symbol, funding_rate, next_funding_time, timestamp)
+    async def push(self, symbol, funding_rate, predicted_funding_rate, next_funding_time, timestamp):
+        await self.perform(symbol, funding_rate, predicted_funding_rate, next_funding_time, timestamp)
 
-    async def perform(self, symbol, funding_rate, next_funding_time, timestamp):
+    async def perform(self, symbol, funding_rate, predicted_funding_rate, next_funding_time, timestamp):
         try:
             if self.channel.get_filtered_consumers(
                     symbol=constants.CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
                 await self.channel.exchange_manager.get_symbol_data(symbol) \
                     .handle_funding_update(funding_rate=funding_rate,
+                                           predicted_funding_rate=predicted_funding_rate,
                                            next_funding_time=next_funding_time,
                                            timestamp=timestamp)
                 await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
                                 get_pair_cryptocurrency(symbol),
                                 symbol=symbol,
                                 funding_rate=funding_rate,
+                                predicted_funding_rate=predicted_funding_rate,
                                 next_funding_time=next_funding_time,
                                 timestamp=timestamp)
         except asyncio.CancelledError:
@@ -42,7 +44,7 @@ class FundingProducer(exchanges_channel.ExchangeChannelProducer):
         except Exception as e:
             self.logger.exception(e, True, f"Exception when triggering update: {e}")
 
-    async def send(self, cryptocurrency, symbol, funding_rate, next_funding_time, timestamp):
+    async def send(self, cryptocurrency, symbol, funding_rate, predicted_funding_rate, next_funding_time, timestamp):
         for consumer in self.channel.get_filtered_consumers(symbol=symbol):
             await consumer.queue.put({
                 "exchange": self.channel.exchange_manager.exchange_name,
@@ -50,6 +52,7 @@ class FundingProducer(exchanges_channel.ExchangeChannelProducer):
                 "cryptocurrency": cryptocurrency,
                 "symbol": symbol,
                 "funding_rate": funding_rate,
+                "predicted_funding_rate": predicted_funding_rate,
                 "next_funding_time": next_funding_time,
                 "timestamp": timestamp
             })
