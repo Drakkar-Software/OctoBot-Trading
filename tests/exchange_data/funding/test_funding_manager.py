@@ -13,10 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
 import pytest
-from math import isnan
 
+import octobot_trading.constants as constants
 from octobot_trading.exchange_data.funding.funding_manager import FundingManager
 from tests.test_utils.random_numbers import random_timestamp, random_funding_rate
 from tests import event_loop
@@ -32,26 +31,31 @@ async def funding_manager():
 
 
 async def test_init(funding_manager):
-    assert funding_manager.next_updated == 0
+    assert funding_manager.next_update == 0
     assert funding_manager.last_updated == 0
-    assert isnan(funding_manager.funding_rate)
+    assert funding_manager.funding_rate == constants.ZERO
+    assert funding_manager.predicted_funding_rate == constants.ZERO
 
 
 async def test_reset_funding(funding_manager):
-    funding_manager.next_updated = random_timestamp()
+    funding_manager.next_update = random_timestamp()
     funding_manager.last_updated = random_timestamp()
     funding_manager.funding_rate = random_funding_rate()
+    funding_manager.predicted_funding_rate = random_funding_rate()
     funding_manager.reset_funding()
-    assert funding_manager.next_updated == 0
+    assert funding_manager.next_update == 0
     assert funding_manager.last_updated == 0
-    assert isnan(funding_manager.funding_rate)
+    assert funding_manager.funding_rate == constants.ZERO
+    assert funding_manager.predicted_funding_rate == constants.ZERO
 
 
 async def test_funding_update(funding_manager):
     last_updated = random_timestamp()
     next_updated = random_timestamp(last_updated)
     funding_rate = random_funding_rate()
-    funding_manager.funding_update(funding_rate, next_updated, last_updated)
-    assert funding_manager.next_updated == next_updated
+    predicted_funding_rate = random_funding_rate()
+    funding_manager.funding_update(funding_rate, predicted_funding_rate, next_updated, last_updated)
+    assert funding_manager.next_update == next_updated
     assert funding_manager.last_updated == last_updated
     assert funding_manager.funding_rate == funding_rate
+    assert funding_manager.predicted_funding_rate == predicted_funding_rate
