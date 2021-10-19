@@ -48,6 +48,7 @@ cdef class Portfolio(util.Initializable):
     # return object to ensure PortfolioNegativeValueError forwarding
     cpdef object update_portfolio_data_from_order(self, order_class.Order order, str currency, str market)
     cpdef object update_portfolio_available_from_order(self, order_class.Order order, bint increase_quantity=*)
+    cpdef object create_currency_asset(self, str currency, object available, object total)
 
     # private methods
     cdef void _reset_currency_portfolio(self, str currency)
