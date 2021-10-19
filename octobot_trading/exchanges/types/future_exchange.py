@@ -44,7 +44,8 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         self.logger.debug(f"Loading {pair} contract...")
         self.pair_contracts[pair] = contracts.FutureContract(pair)
         self.pair_contracts[pair].current_leverage = await self.get_symbol_leverage(pair)
-        self.pair_contracts[pair].margin_type = await self.get_margin_type_leverage(pair)
+        self.pair_contracts[pair].margin_type = await self.get_margin_type(pair)
+        self.pair_contracts[pair].contract_type = await self.get_contract_type(pair)
 
     def get_pair_future_contract(self, pair):
         """
@@ -125,8 +126,12 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     async def get_margin_type_leverage(self, symbol: str):
         raise NotImplementedError("get_margin_type_leverage is not implemented")
 
-    async def get_symbol_leverage_info(self, symbol: str, limit: int = 1) -> list:
-        raise NotImplementedError("get_symbol_leverage_info is not implemented")
+    async def get_contract_type(self, symbol: str):
+        """
+        :param symbol: the symbol
+        :return: the contract type for the requested symbol. Can be FutureContractType INVERSE_PERPETUAL or PERPETUAL
+        """
+        raise NotImplementedError("get_contract_type is not implemented")
 
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         """
