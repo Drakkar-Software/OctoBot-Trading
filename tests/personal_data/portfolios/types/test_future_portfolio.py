@@ -20,7 +20,7 @@ from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
 from octobot_trading.enums import TraderOrderType, FutureContractType
 from octobot_trading.personal_data import FuturePortfolio, BuyMarketOrder, SellMarketOrder
-from octobot_trading.personal_data.positions.contracts.future_contract import FutureContract
+from octobot_trading.exchange_data.contracts.future_contract import FutureContract
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting, \
     DEFAULT_EXCHANGE_NAME
