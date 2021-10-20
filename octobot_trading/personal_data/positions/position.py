@@ -363,10 +363,6 @@ class Position(util.Initializable):
     async def recreate(self):
         self.exchange_manager.exchange_personal_data.positions_manager.recreate_position(self)
 
-    async def update_size(self, size):
-        self.quantity = size
-        self._switch_side_if_necessary()
-
     def update_from_raw(self, raw_position):
         symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
         currency, market = self.exchange_manager.get_exchange_quote_and_base(symbol)
@@ -440,7 +436,7 @@ class Position(util.Initializable):
         """
         check if self.side still represents the position side
         """
-        if self.quantity >= 0 and (self.is_short() or self.side is enums.PositionSide.UNKNOWN):
+        if self.quantity >= constants.ZERO:
             self.side = enums.PositionSide.LONG
         elif self.quantity < constants.ZERO:
             self.side = enums.PositionSide.SHORT
