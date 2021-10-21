@@ -19,7 +19,7 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
 
 from tests import event_loop
-from tests.exchanges import exchange_manager
+from tests.exchanges import exchange_manager, simulated_exchange_manager
 from tests.exchanges.traders import trader_simulator
 from tests.exchanges.traders import trader
 from tests.test_utils.random_numbers import random_price
