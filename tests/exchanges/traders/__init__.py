@@ -67,7 +67,6 @@ DEFAULT_FUTURE_SYMBOL_CONTRACT = contracts.FutureContract(DEFAULT_FUTURE_SYMBOL)
 async def future_trader_simulator(future_simulated_exchange_manager):
     DEFAULT_FUTURE_SYMBOL_CONTRACT.current_leverage = constants.ONE
     DEFAULT_FUTURE_SYMBOL_CONTRACT.margin_type = enums.MarginType.ISOLATED
-    DEFAULT_FUTURE_SYMBOL_CONTRACT.contract_type = enums.FutureContractType.PERPETUAL
     future_simulated_exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL,
                                                                         DEFAULT_FUTURE_SYMBOL_CONTRACT)
     return await create_trader_from_exchange_manager(future_simulated_exchange_manager, simulated=True)
