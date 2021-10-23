@@ -19,10 +19,10 @@
 cdef class MarginContract:
     cdef readonly str pair
 
-    cdef readonly object margin_type
+    cdef public object margin_type
 
     cdef readonly object contract_size
-    cdef readonly object current_leverage
+    cdef public object current_leverage
     cdef readonly object maximum_leverage
 
     cdef readonly dict risk_limit
