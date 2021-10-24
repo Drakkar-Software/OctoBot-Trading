@@ -18,4 +18,11 @@ cimport octobot_trading.personal_data.portfolios.asset as asset_class
 
 
 cdef class FutureAsset(asset_class.Asset):
-    pass
+    cdef public object equity
+    cdef public object initial_margin
+    cdef public object margin_balance
+    cdef public object maintenance_margin
+    cdef public object position_initial_margin
+    cdef public object unrealised_pnl
+
+    cdef void _update_equity(self)
