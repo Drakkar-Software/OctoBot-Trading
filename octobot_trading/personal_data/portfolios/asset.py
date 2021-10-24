@@ -32,7 +32,7 @@ class Asset:
                f"Total: {float(self.total)}"
 
     def __eq__(self, other):
-        return False
+        raise NotImplementedError("__eq__ is not implemented")
 
     def update(self, available=constants.ZERO, total=constants.ZERO):
         """
@@ -40,10 +40,10 @@ class Asset:
         :param available: the available delta
         :param total: the total delta
         """
-        if self.available == constants.ZERO and total == constants.ZERO:
+        if available == constants.ZERO and total == constants.ZERO:
             return False
-        self.available += self._ensure_update_validness(self.available, available)
-        self.total += self._ensure_update_validness(self.total, total)
+        self.available += self._ensure_update_validity(self.available, available)
+        self.total += self._ensure_update_validity(self.total, total)
         return True
 
     def set(self, available, total):
@@ -58,7 +58,7 @@ class Asset:
         self.total = total
         return True
 
-    def balance_available(self):
+    def restore_available(self):
         """
         Balance available value with total
         """
@@ -79,7 +79,7 @@ class Asset:
             common_constants.PORTFOLIO_TOTAL: self.total
         }
 
-    def _ensure_update_validness(self, origin_quantity, update_quantity):
+    def _ensure_update_validity(self, origin_quantity, update_quantity):
         """
         Ensure that the portfolio final value is not negative.
         Raise a PortfolioNegativeValueError if the final value is negative

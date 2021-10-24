@@ -17,4 +17,7 @@ import octobot_trading.personal_data.portfolios.asset as asset_class
 
 
 class SpotAsset(asset_class.Asset):
-    pass
+    def __eq__(self, other):
+        if isinstance(other, SpotAsset):
+            return self.available == other.available and self.total == other.total
+        return False
