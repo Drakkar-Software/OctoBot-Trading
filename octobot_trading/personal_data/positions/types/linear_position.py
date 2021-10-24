@@ -38,7 +38,7 @@ class LinearPosition(position_class.Position):
                 self.unrealised_pnl = self.quantity * (self.entry_price - self.mark_price)
             else:
                 self.unrealised_pnl = constants.ZERO
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.unrealised_pnl = constants.ZERO
 
     def update_initial_margin(self):
@@ -48,7 +48,7 @@ class LinearPosition(position_class.Position):
         try:
             self.initial_margin = (self.quantity * self.entry_price) / self.leverage
             self._update_margin()
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.initial_margin = constants.ZERO
 
     def calculate_maintenance_margin(self):
@@ -88,10 +88,10 @@ class LinearPosition(position_class.Position):
         """
         if self.is_long():
             return self.mark_price \
-                if with_mark_price is None else self.entry_price * (constants.ONE - self.get_initial_margin_rate())
+                if with_mark_price else self.entry_price * (constants.ONE - self.get_initial_margin_rate())
         elif self.is_short():
             return self.mark_price \
-                if with_mark_price is None else self.entry_price * (constants.ONE + self.get_initial_margin_rate())
+                if with_mark_price else self.entry_price * (constants.ONE + self.get_initial_margin_rate())
         return constants.ZERO
 
     def get_fee_to_open(self):
