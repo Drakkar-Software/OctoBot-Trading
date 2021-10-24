@@ -23,7 +23,9 @@ ASSET_CURRENCY_NAME = "BTC"
 
 def test___eq__():
     asset = spot_asset.SpotAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO)
-    # TODO
+    assert asset == spot_asset.SpotAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO)
+    assert not asset == spot_asset.SpotAsset(ASSET_CURRENCY_NAME, constants.ONE_HUNDRED, constants.ZERO)
+    assert not asset == spot_asset.SpotAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ONE_HUNDRED)
 
 
 def test_update():
