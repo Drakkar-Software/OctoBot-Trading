@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import pytest
 
 import octobot_commons.constants as commons_constants
@@ -61,6 +63,7 @@ async def margin_trader_simulator(margin_simulated_exchange_manager):
     return await create_trader_from_exchange_manager(margin_simulated_exchange_manager, simulated=True)
 
 DEFAULT_FUTURE_SYMBOL = "BTC/USDT"
+DEFAULT_FUTURE_FUNDING_RATE = decimal.Decimal(0.01)
 DEFAULT_FUTURE_SYMBOL_CONTRACT = contracts.FutureContract(DEFAULT_FUTURE_SYMBOL)
 
 @pytest.fixture

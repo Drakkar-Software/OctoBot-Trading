@@ -26,7 +26,7 @@ class InversePosition(position_class.Position):
         """
         try:
             self.value = self.quantity / self.mark_price
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.value = constants.ZERO
 
     def update_pnl(self):
@@ -43,7 +43,7 @@ class InversePosition(position_class.Position):
                                                        (constants.ONE / self.entry_price))
             else:
                 self.unrealised_pnl = constants.ZERO
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.unrealised_pnl = constants.ZERO
 
     def update_initial_margin(self):
@@ -53,7 +53,7 @@ class InversePosition(position_class.Position):
         try:
             self.initial_margin = self.quantity / (self.entry_price * self.leverage)
             self._update_margin()
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.initial_margin = constants.ZERO
 
     def calculate_maintenance_margin(self):
@@ -62,7 +62,7 @@ class InversePosition(position_class.Position):
         """
         try:
             return (self.quantity / self.entry_price) * self.get_maintenance_margin_rate()
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
     def update_isolated_liquidation_price(self):
@@ -95,13 +95,13 @@ class InversePosition(position_class.Position):
         """
         try:
             if self.is_long():
-                return (self.mark_price if with_mark_price is None else self.entry_price * self.leverage) \
+                return (self.mark_price if with_mark_price else self.entry_price * self.leverage) \
                        / (self.leverage + constants.ONE)
             elif self.is_short():
-                return (self.mark_price if with_mark_price is None else self.entry_price * self.leverage) \
+                return (self.mark_price if with_mark_price else self.entry_price * self.leverage) \
                        / (self.leverage - constants.ONE)
             return constants.ZERO
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
     def get_order_cost(self):
@@ -116,7 +116,7 @@ class InversePosition(position_class.Position):
         """
         try:
             return (self.quantity / self.mark_price) * self.get_taker_fee()
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
     def update_fee_to_close(self):
@@ -126,5 +126,5 @@ class InversePosition(position_class.Position):
         try:
             self.fee_to_close = (self.quantity / self.get_bankruptcy_price(with_mark_price=True)) * self.get_taker_fee()
             self._update_margin()
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.fee_to_close = constants.ZERO
