@@ -33,36 +33,6 @@ def test___eq__():
         asset == assets.Asset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO)
 
 
-def test_update():
-    asset = assets.Asset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO)
-    assert not asset.update(constants.ZERO, constants.ZERO)
-    assert asset.update(constants.ZERO, decimal.Decimal(5))
-    assert asset.total == decimal.Decimal(5)
-
-
-def test_set():
-    asset = assets.Asset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO)
-    assert not asset.set(constants.ZERO, constants.ZERO)
-    assert asset.set(decimal.Decimal(5), decimal.Decimal(5))
-    assert not asset.set(decimal.Decimal(5), decimal.Decimal(5))
-    assert asset.available == decimal.Decimal(5)
-    assert asset.total == decimal.Decimal(5)
-
-
-def test_restore_available():
-    asset = assets.Asset(ASSET_CURRENCY_NAME, available=constants.ONE, total=constants.ONE_HUNDRED)
-    assert not asset.available == asset.total
-    asset.restore_available()
-    assert asset.available == asset.total == constants.ONE_HUNDRED
-
-
-def test_reset():
-    asset = assets.Asset(ASSET_CURRENCY_NAME, available=constants.ONE_HUNDRED, total=constants.ONE_HUNDRED)
-    assert asset.available == asset.total == constants.ONE_HUNDRED
-    asset.reset()
-    assert asset.available == asset.total == constants.ZERO
-
-
 def test_to_dict():
     asset = assets.Asset(ASSET_CURRENCY_NAME, available=constants.ONE_HUNDRED, total=constants.ONE)
     assert asset.to_dict() == {
