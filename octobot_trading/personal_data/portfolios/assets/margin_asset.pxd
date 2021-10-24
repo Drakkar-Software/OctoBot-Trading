@@ -21,3 +21,6 @@ cdef class MarginAsset(asset_class.Asset):
     cdef public object borrowed
     cdef public object interest
     cdef public object locked
+
+    cpdef bint update(self, object available=*, object total=*, object borrowed=*, object interest=*, object locked=*)
+    cpdef bint set(self, object available=*, object total=*, object borrowed=*, object interest=*, object locked=*)
