@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.constants as constants
 import octobot_trading.personal_data.portfolios.asset as asset_class
 
 
@@ -21,3 +22,35 @@ class SpotAsset(asset_class.Asset):
         if isinstance(other, SpotAsset):
             return self.available == other.available and self.total == other.total
         return False
+
+    def update(self, available=constants.ZERO, total=constants.ZERO):
+        """
+        Update asset portfolio
+        :param available: the available delta
+        :param total: the total delta
+        :return: True if updated
+        """
+        if available == constants.ZERO and total == constants.ZERO:
+            return False
+        self.available += self._ensure_update_validity(self.available, available)
+        self.total += self._ensure_update_validity(self.total, total)
+        return True
+
+    def set(self, available, total):
+        """
+        Set available and total values for portfolio asset
+        :param available: the available value
+        :param total: the total value
+        :return: True if updated
+        """
+        if available == self.available and total == self.total:
+            return False
+        self.available = available
+        self.total = total
+        return True
+
+    def reset(self):
+        """
+        Reset asset portfolio to zero
+        """
+        self.set(available=constants.ZERO, total=constants.ZERO)
