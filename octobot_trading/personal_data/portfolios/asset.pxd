@@ -22,8 +22,6 @@ cdef class Asset:
     cdef public object total  # Decimal
 
     cpdef void restore_available(self)
-    cpdef bint update(self, object kwargs)
-    cpdef bint set(self, object kwargs)
     cpdef void reset(self)
     cpdef dict to_dict(self)
 
