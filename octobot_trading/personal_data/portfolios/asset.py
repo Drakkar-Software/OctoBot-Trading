@@ -34,29 +34,19 @@ class Asset:
     def __eq__(self, other):
         raise NotImplementedError("__eq__ is not implemented")
 
-    def update(self, available=constants.ZERO, total=constants.ZERO):
+    def update(self, **kwargs):
         """
         Update asset portfolio
-        :param available: the available delta
-        :param total: the total delta
+        :return: True if updated
         """
-        if available == constants.ZERO and total == constants.ZERO:
-            return False
-        self.available += self._ensure_update_validity(self.available, available)
-        self.total += self._ensure_update_validity(self.total, total)
-        return True
+        raise NotImplementedError("update is not implemented")
 
-    def set(self, available, total):
+    def set(self, **kwargs):
         """
-        Set available and total values for portfolio asset
-        :param available: the available value
-        :param total: the total value
+        Set portfolio asset
+        :return: True if updated
         """
-        if available == self.available and total == self.total:
-            return False
-        self.available = available
-        self.total = total
-        return True
+        raise NotImplementedError("set is not implemented")
 
     def restore_available(self):
         """
@@ -68,7 +58,7 @@ class Asset:
         """
         Reset asset portfolio to zero
         """
-        self.set(available=constants.ZERO, total=constants.ZERO)
+        raise NotImplementedError("reset is not implemented")
 
     def to_dict(self):
         """
