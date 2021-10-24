@@ -23,7 +23,19 @@ ASSET_CURRENCY_NAME = "BTC"
 
 def test___eq__():
     asset = future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO)
-    # TODO
+    assert asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO)
+    assert not asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ONE_HUNDRED, constants.ZERO)
+    assert not asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ONE_HUNDRED)
+    assert not asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
+                                                 margin_balance=constants.ONE_HUNDRED)
+    assert asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
+                                             margin_balance=constants.ZERO)
+    assert not asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
+                                                 position_initial_margin=constants.ONE_HUNDRED)
+    assert not asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
+                                                 maintenance_margin=constants.ONE_HUNDRED)
+    assert not asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
+                                                 initial_margin=constants.ONE_HUNDRED)
 
 
 def test_update():
