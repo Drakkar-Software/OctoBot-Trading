@@ -25,4 +25,8 @@ cdef class FutureAsset(asset_class.Asset):
     cdef public object position_initial_margin
     cdef public object unrealised_pnl
 
+    cpdef bint update(self, object available=*, object total=*, object initial_margin=*, object margin_balance=*,
+                      object maintenance_margin=*, object position_initial_margin=*, object unrealised_pnl=*)
+    cpdef bint set(self, object available=*, object total=*, object initial_margin=*, object margin_balance=*,
+                   object maintenance_margin=*, object position_initial_margin=*, object unrealised_pnl=*)
     cdef void _update_equity(self)
