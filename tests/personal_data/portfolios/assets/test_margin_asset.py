@@ -24,7 +24,17 @@ ASSET_CURRENCY_NAME = "BTC"
 
 def test___eq__():
     asset = margin_asset.MarginAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO)
-    # TODO
+    assert asset == margin_asset.MarginAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO)
+    assert not asset == margin_asset.MarginAsset(ASSET_CURRENCY_NAME, constants.ONE_HUNDRED, constants.ZERO)
+    assert not asset == margin_asset.MarginAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ONE_HUNDRED)
+    assert not asset == margin_asset.MarginAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
+                                                 borrowed=constants.ONE_HUNDRED)
+    assert asset == margin_asset.MarginAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
+                                             borrowed=constants.ZERO)
+    assert not asset == margin_asset.MarginAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
+                                                 interest=constants.ONE_HUNDRED)
+    assert not asset == margin_asset.MarginAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
+                                                 locked=constants.ONE_HUNDRED)
 
 
 def test_update():
