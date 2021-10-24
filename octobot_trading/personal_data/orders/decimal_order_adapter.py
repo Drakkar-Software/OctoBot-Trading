@@ -40,7 +40,7 @@ def decimal_trunc_with_n_decimal_digits(value, digits):  # TODO migrate to commo
         # decimal.Decimal can add unnecessary complexity in numbers, only use it when necessary
         if len(str(value).split(".")[-1]) > digits:
             if digits > constants.ZERO:
-                return value.quantize(decimal.Decimal(f".{'0' * digits}"), rounding=decimal.ROUND_DOWN)
+                return value.quantize(decimal.Decimal(f".{'0' * int(digits)}"), rounding=decimal.ROUND_DOWN)
             else:
                 return value // constants.ONE
         return value
@@ -115,7 +115,7 @@ def decimal_split_orders(total_order_price, max_cost, valid_quantity, max_quanti
                                                              quantity, price, symbol_market)
 
 
-def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, fixed_symbol_data = False):
+def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, fixed_symbol_data=False):
     """
     Checks if order attributes are valid and try to fix it if not
     :param quantity:
