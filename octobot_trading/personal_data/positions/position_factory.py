@@ -25,7 +25,7 @@ def create_position_instance_from_raw(trader, raw_position):
     :return: the created position
     """
     position_symbol_contract = trader.exchange_manager.exchange.get_pair_future_contract(
-        pair=raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value))
+        raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value))
     position = create_position_from_type(trader, position_symbol_contract)
     position.update_from_raw(raw_position)
     return position
