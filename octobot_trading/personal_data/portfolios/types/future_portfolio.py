@@ -19,7 +19,7 @@ import octobot_trading.constants as constants
 
 
 class FuturePortfolio(portfolio_class.Portfolio):
-    def create_currency_asset(self, currency, available, total):
+    def create_currency_asset(self, currency, available=constants.ZERO, total=constants.ZERO):
         return future_asset.FutureAsset(name=currency, available=available, total=total)
 
     def update_portfolio_data_from_order(self, order):

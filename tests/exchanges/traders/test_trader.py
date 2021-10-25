@@ -30,11 +30,9 @@ from octobot_trading.personal_data.orders import Order
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, FeePropertyColumns
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance, create_order_instance_from_raw
-from octobot_trading.personal_data.orders import BuyLimitOrder
-from octobot_trading.personal_data.orders import BuyMarketOrder
-from octobot_trading.personal_data.orders import SellLimitOrder
+from octobot_trading.personal_data.orders import BuyLimitOrder, BuyMarketOrder, SellLimitOrder, StopLossOrder
 from octobot_trading.personal_data.orders.types.market.sell_market_order import SellMarketOrder
-from octobot_trading.personal_data.orders import StopLossOrder
+import octobot_trading.personal_data.portfolios.assets as portfolio_assets
 from octobot_trading.exchanges.traders.trader import Trader
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
@@ -222,8 +220,10 @@ class TestTrader:
         assert len(trades_manager.trades) == 3
         assert all(trade.status is OrderStatus.CANCELED
                    for trade in trades_manager.trades.values())
-
-        assert initial_portfolio == portfolio_manager.portfolio.portfolio
+        assert all(
+            portfolio_manager.portfolio.portfolio[currency] == initial_portfolio[currency]
+            for currency in portfolio_manager.portfolio.portfolio.keys()
+        )
 
         await self.stop(exchange_manager)
 
@@ -548,8 +548,8 @@ class TestTrader:
         assert not trades_manager.trades
 
         with pytest.raises(KeyError):
-            assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == 0
-        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == 0.5
+            assert portfolio_manager.portfolio.portfolio["BQX"].available == 0
+        assert portfolio_manager.portfolio.portfolio["BTC"].available == 0.5
 
         # Fill only 1st one
         limit_buy.filled_price = 4
@@ -569,9 +569,9 @@ class TestTrader:
 
         assert initial_portfolio != portfolio_manager.portfolio
         # (mocked) fees are taken into account
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == decimal.Decimal(str(2 - 0.1))
-        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == decimal.Decimal("0.5")
-        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == decimal.Decimal("2")
+        assert portfolio_manager.portfolio.portfolio["BQX"].available == decimal.Decimal(str(2 - 0.1))
+        assert portfolio_manager.portfolio.portfolio["BTC"].available == decimal.Decimal("0.5")
+        assert portfolio_manager.portfolio.portfolio["BTC"].total == decimal.Decimal("2")
 
         await self.stop(exchange_manager)
 
@@ -610,11 +610,11 @@ class TestTrader:
         assert all(trade.status is OrderStatus.FILLED for trade in trades_manager.trades.values())
 
         assert initial_portfolio != portfolio_manager.portfolio
-        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_AVAILABLE] == decimal.Decimal("9")
-        assert portfolio_manager.portfolio.portfolio["BTC"][commons_constants.PORTFOLIO_TOTAL] == decimal.Decimal("9")
+        assert portfolio_manager.portfolio.portfolio["BTC"].available == decimal.Decimal("9")
+        assert portfolio_manager.portfolio.portfolio["BTC"].total == decimal.Decimal("9")
         # 0.1 as fee
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_AVAILABLE] == decimal.Decimal("9.9")
-        assert portfolio_manager.portfolio.portfolio["BQX"][commons_constants.PORTFOLIO_TOTAL] == decimal.Decimal("9.9")
+        assert portfolio_manager.portfolio.portfolio["BQX"].available == decimal.Decimal("9.9")
+        assert portfolio_manager.portfolio.portfolio["BQX"].total == decimal.Decimal("9.9")
 
         await self.stop(exchange_manager)
 
@@ -678,14 +678,17 @@ class TestTrader:
         _, exchange_manager, trader_inst = await self.init_default()
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
-        portfolio_manager.portfolio.portfolio["ADA"] = {
-            commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("1500"),
-            commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("1500")
-        }
-        portfolio_manager.portfolio.portfolio["USDT"] = {
-            commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("1000"),
-            commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("1000")
-        }
+        portfolio_manager.portfolio.portfolio["ADA"] = portfolio_assets.SpotAsset(
+            name="ADA",
+            available=decimal.Decimal("1500"),
+            total=decimal.Decimal("1500")
+        )
+
+        portfolio_manager.portfolio.portfolio["USDT"] = portfolio_assets.SpotAsset(
+            name="USDT",
+            available=decimal.Decimal("1000"),
+            total=decimal.Decimal("1000")
+        )
 
         if not os.getenv('CYTHON_IGNORE'):
             with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
@@ -718,14 +721,17 @@ class TestTrader:
         _, exchange_manager, trader_inst = await self.init_default()
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
-        portfolio_manager.portfolio.portfolio["ADA"] = {
-            commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("1500"),
-            commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("1500")
-        }
-        portfolio_manager.portfolio.portfolio["USDT"] = {
-            commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("1000"),
-            commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("1000")
-        }
+        portfolio_manager.portfolio.portfolio["ADA"] = portfolio_assets.SpotAsset(
+            name="ADA",
+            available=decimal.Decimal("1500"),
+            total=decimal.Decimal("1500")
+        )
+
+        portfolio_manager.portfolio.portfolio["USDT"] = portfolio_assets.SpotAsset(
+            name="USDT",
+            available=decimal.Decimal("1000"),
+            total=decimal.Decimal("1000")
+        )
 
         if not os.getenv('CYTHON_IGNORE'):
             with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
@@ -757,10 +763,11 @@ class TestTrader:
                 orders = await trader_inst.sell_all(currencies_to_sell=["XBT"])
             assert len(orders) == 0
 
-            portfolio_manager.portfolio.portfolio["XRP"] = {
-                commons_constants.PORTFOLIO_AVAILABLE: constants.ZERO,
-                commons_constants.PORTFOLIO_TOTAL: constants.ZERO
-            }
+            portfolio_manager.portfolio.portfolio["XRP"] = portfolio_assets.SpotAsset(
+                name="XRP",
+                available=constants.ZERO,
+                total=constants.ZERO
+            )
 
         if not os.getenv('CYTHON_IGNORE'):
             # currency in portfolio but with 0 quantity
@@ -776,10 +783,11 @@ class TestTrader:
                 orders = await trader_inst.sell_all(currencies_to_sell=[""])
             assert len(orders) == 0
 
-            portfolio_manager.portfolio.portfolio["ICX"] = {
-                commons_constants.PORTFOLIO_AVAILABLE: decimal.Decimal("0.0000001"),
-                commons_constants.PORTFOLIO_TOTAL: decimal.Decimal("0.0000001")
-            }
+            portfolio_manager.portfolio.portfolio["ICX"] = portfolio_assets.SpotAsset(
+                name="ICX",
+                available=decimal.Decimal("0.0000001"),
+                total=decimal.Decimal("0.0000001")
+            )
 
         if not os.getenv('CYTHON_IGNORE'):
             # currency in portfolio but with close to 0 quantity
