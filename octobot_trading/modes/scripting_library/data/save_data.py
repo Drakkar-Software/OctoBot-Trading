@@ -1,0 +1,1 @@
+# idea: bea able to easily store data in the database like a cache for rsi for each used configuration that can be used multiple times

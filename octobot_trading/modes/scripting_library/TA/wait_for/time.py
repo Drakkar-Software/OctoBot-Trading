@@ -14,10 +14,20 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .alerts import *
-from .data import *
-from .orders import *
-from .TA import *
-from .UI import *
-from .accessors import *
-from .abstract_scripted_trading_mode import AbstractScriptedTradingMode, AbstractScriptedTradingModeProducer
+import asyncio
+import octobot_commons.enums as commons_enums
+
+
+async def wait_for_time(delay):
+    await asyncio.sleep(delay)
+
+
+async def wait_for_bars(
+        timeframe=None,
+        bars=None
+):
+    # see https://github.com/Drakkar-Software/OctoBot-Commons/blob/master/octobot_commons/enums.py#L19
+    time_frame = commons_enums.TimeFrames(timeframe)
+    minutes = commons_enums.TimeFramesMinutes[time_frame]
+    delay_seconds = minutes * 60 * bars
+    await asyncio.sleep(delay_seconds)
