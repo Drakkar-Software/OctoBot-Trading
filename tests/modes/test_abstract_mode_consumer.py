@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 import pytest
 
 import octobot_commons.constants as commons_constants
@@ -23,6 +24,7 @@ from octobot_trading.modes.channel.abstract_mode_consumer import AbstractTrading
 from octobot_trading.enums import EvaluatorStates
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.modes import AbstractTradingMode
+import octobot_trading.personal_data.portfolios.assets as portfolio_assets
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from tests import event_loop
 
@@ -134,14 +136,12 @@ async def test_get_holdings_ratio():
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair[symbol] = \
         1000
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.portfolio_current_value = 11
-    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio = {
-        "BTC": {
-            commons_constants.PORTFOLIO_TOTAL: 10
-        },
-        "USDT": {
-            commons_constants.PORTFOLIO_TOTAL: 1000
-        }
-    }
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio = {}
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["BTC"] = \
+        portfolio_assets.SpotAsset(name="BTC", available=decimal.Decimal("10"), total=decimal.Decimal("10"))
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["BTC"] = \
+        portfolio_assets.SpotAsset(name="USDT", available=decimal.Decimal("1000"), total=decimal.Decimal("1000"))
+
     ratio = await consumer.get_holdings_ratio("BTC")
     assert round(ratio, 8) == 0.90909091
     ratio = await consumer.get_holdings_ratio("USDT")
@@ -152,9 +152,7 @@ async def test_get_holdings_ratio():
     ratio = await consumer.get_holdings_ratio("BTC")
     assert round(ratio, 8) == 1
     # add ETH and try to get ratio without symbol price
-    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["ETH"] = {
-        commons_constants.PORTFOLIO_TOTAL: 10
-    }
+    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["ETH"].total = decimal.Decimal(10)
     # force not backtesting mode
     exchange_manager.is_backtesting = False
     # force add symbol in exchange symbols

@@ -58,15 +58,15 @@ class PortfolioValueHolder:
         currency, market = symbol_util.split_symbol(symbol)
         # update origin values if this price has relevant data regarding the origin portfolio (using both quote and base)
         origin_currencies_should_be_updated = (
-            (
-                currency not in set(self.origin_crypto_currencies_values.keys()) and
-                market == self.portfolio_manager.reference_market
-            )
-            or
-            (
-                market not in set(self.origin_crypto_currencies_values.keys()) and
-                currency == self.portfolio_manager.reference_market
-            )
+                (
+                        currency not in set(self.origin_crypto_currencies_values.keys()) and
+                        market == self.portfolio_manager.reference_market
+                )
+                or
+                (
+                        market not in set(self.origin_crypto_currencies_values.keys()) and
+                        currency == self.portfolio_manager.reference_market
+                )
         )
         if origin_currencies_should_be_updated:
             # will fail if symbol doesn't have a price in self.origin_crypto_currencies_values and therefore
@@ -102,8 +102,9 @@ class PortfolioValueHolder:
         :param currency: the currency
         :return: the holdings ratio
         """
-        return self._evaluate_value(currency, self.portfolio_manager.portfolio.get_currency_from_given_portfolio(
-            currency, common_constants.PORTFOLIO_TOTAL)) / self.portfolio_current_value \
+        return self._evaluate_value(currency,
+                                    self.portfolio_manager.portfolio.get_currency_portfolio(
+                                        currency).total) / self.portfolio_current_value \
             if self.portfolio_current_value else constants.ZERO
 
     async def handle_profitability_recalculation(self, force_recompute_origin_portfolio) -> None:

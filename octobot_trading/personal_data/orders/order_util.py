@@ -106,9 +106,9 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
     currency, market = symbol_util.split_symbol(symbol)
 
     current_symbol_holding = exchange_manager.exchange_personal_data.portfolio_manager.portfolio\
-        .get_currency_portfolio(currency)
+        .get_currency_portfolio(currency).available
     current_market_quantity = exchange_manager.exchange_personal_data.portfolio_manager.portfolio\
-        .get_currency_portfolio(market)
+        .get_currency_portfolio(market).available
 
     market_quantity = current_market_quantity / decimal_mark_price if decimal_mark_price else constants.ZERO
 
