@@ -168,9 +168,9 @@ TraderOrderTypeClasses = {
 }
 
 TraderPositionTypeClasses = {
-    octobot_trading.enums.FutureContractType.PERPETUAL: LinearPosition,
+    octobot_trading.enums.FutureContractType.LINEAR_PERPETUAL: LinearPosition,
     octobot_trading.enums.FutureContractType.INVERSE_PERPETUAL: InversePosition,
-    octobot_trading.enums.FutureContractType.EXPIRABLE: LinearPosition,
+    octobot_trading.enums.FutureContractType.LINEAR_EXPIRABLE: LinearPosition,
     octobot_trading.enums.FutureContractType.INVERSE_EXPIRABLE: InversePosition,
 }
 

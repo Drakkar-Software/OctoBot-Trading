@@ -22,9 +22,9 @@ import octobot_trading.exchanges.types as exchanges_types
 
 
 class FutureExchangeSimulator(exchanges_types.FutureExchange):
-    DEFAULT_SYMBOL_LEVERAGE = constants.ONE
+    DEFAULT_SYMBOL_LEVERAGE = constants.ONE_HUNDRED
     DEFAULT_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
-    DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.PERPETUAL
+    DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.LINEAR_PERPETUAL
     DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal(0.0001)
 
     def __init__(self, config, exchange_manager, backtesting):
