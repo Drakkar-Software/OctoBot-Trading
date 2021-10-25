@@ -15,13 +15,16 @@
 #  License along with this library.
 
 
-import octobot_trading.api as api
+#todo returns true until end
 
 
-# Use capital letters to avoid python native lib conflicts
-def Open(exchange_manager, symbol, time_frame):
-    return _get_candle_manager(exchange_manager, symbol, time_frame).get_symbol_close_candles()
+async def duration_in_mins(duration):
+   #todo
+    pass
 
 
-def _get_candle_manager(exchange_manager, symbol, time_frame):
-    return api.get_symbol_candles_manager(api.get_symbol_data(exchange_manager, symbol), time_frame)
+async def duration_in_bars(
+        timeframe=None,
+        bars=None
+):
+    pass

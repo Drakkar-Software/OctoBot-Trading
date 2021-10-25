@@ -19,7 +19,8 @@ import octobot_trading.api as api
 from octobot_trading.modes.scripting_library import current_price
 
 
-async def price_delay(
+async def wait_for_price(
+    context,
     pair=None,
     offset=None,
     offset_percent=None,
@@ -27,27 +28,26 @@ async def price_delay(
     offset_entry=None,
     offset_entry_with_fees=None,    #TODO
     offset_entry_percent=None,
-    order_tag=None,
-    exchange_manager=None
+    order_tag=None
 ):
-    price = await current_price(pair, exchange_manager)
+    price = await current_price(context.traded_pair or pair, context.exchange_manager)
     target_price = absolute
     if offset is not None:
         target_price = price + offset
     if offset_percent is not None:
         target_price = price * (1 + (offset_percent / 100))
     if offset_entry is not None:
-        order = get_order_from_tag(exchange_manager, order_tag) #TODO order tags
+        order = get_order_from_tag(context.exchange_manager, order_tag) #TODO order tags
         entry_price = order.filled_price
         target_price = entry_price + offset
     if offset_entry_percent is not None:
-        order = get_order_from_tag(exchange_manager, order_tag) #TODO order tags
+        order = get_order_from_tag(context.exchange_manager, order_tag) #TODO order tags
         entry_price = order.filled_price
         target_price = entry_price * (1 + (offset_percent / 100))
     if target_price is None:
         raise RuntimeError("No offset has been provided")
     trigger_above = target_price > price
-    price_hit_event = exchange_manager.exchange_symbols_data. \
+    price_hit_event = context.exchange_manager.exchange_symbols_data. \
         get_exchange_symbol_data(pair).price_events_manager. \
-        add_event(target_price, api.get_exchange_current_time(exchange_manager), trigger_above)
+        add_event(target_price, api.get_exchange_current_time(context.exchange_manager), trigger_above)
     await asyncio.wait_for(price_hit_event.wait(), timeout=None)

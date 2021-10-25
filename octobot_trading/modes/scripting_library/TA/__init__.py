@@ -14,10 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .alerts import *
-from .data import *
-from .orders import *
-from .TA import *
-from .UI import *
-from .accessors import *
-from .abstract_scripted_trading_mode import AbstractScriptedTradingMode, AbstractScriptedTradingModeProducer
+from .durations import *
+from .since import *
+from .trigger import *
+from .wait_for import *
+from octobot_trading.modes.scripting_library.TA.third_party_libs import *

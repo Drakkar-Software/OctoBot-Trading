@@ -14,10 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .alerts import *
-from .data import *
-from .orders import *
-from .TA import *
-from .UI import *
-from .accessors import *
-from .abstract_scripted_trading_mode import AbstractScriptedTradingMode, AbstractScriptedTradingModeProducer
+try:
+    import ta
+except ImportError:
+    pass
+try:
+    import tulipy as ti
+except ImportError:
+    pass
+try:
+    import backtrader.talib as bta
+except ImportError:
+    pass

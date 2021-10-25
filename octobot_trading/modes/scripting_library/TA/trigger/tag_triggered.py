@@ -14,13 +14,38 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import asyncio
-import octobot_trading.constants as trading_constants
+
+def tag_triggered(
+       tag=None
+):
+    pass
 
 
-async def current_price(pair, exchange_manager):
-    try:
-        return await exchange_manager.exchange_symbols_data.get_exchange_symbol_data(pair) \
-            .prices_manager.get_mark_price(timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
-    except asyncio.TimeoutError:
-        raise asyncio.TimeoutError("Mark price is not available")
+def tagged_order_exists(
+        tag=None
+):
+    pass
+
+
+def tagged_order_filled(
+        tag=None
+):
+    pass
+
+
+def tagged_order_canceled(
+        tag=None
+):
+    pass
+
+
+def tagged_order_unfilled(
+        tag=None
+):
+    pass
+
+
+def tagged_order_unfilled_amount(
+        tag=None
+):
+    pass

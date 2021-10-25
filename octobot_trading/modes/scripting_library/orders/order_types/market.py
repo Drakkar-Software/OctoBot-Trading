@@ -14,10 +14,25 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .alerts import *
-from .data import *
-from .orders import *
-from .TA import *
-from .UI import *
-from .accessors import *
-from .abstract_scripted_trading_mode import AbstractScriptedTradingMode, AbstractScriptedTradingModeProducer
+
+from .create_order import _create_order_instance
+
+
+async def market(
+    context,
+    side=None,
+    symbol=None,
+    order_type="market",
+    amount=None,
+    target_position=None,
+    tag=None
+):
+    await _create_order_instance(
+        context.trader,
+        side,
+        symbol or context.traded_pair,
+        amount,
+        target_position=target_position,
+        order_type_name=order_type,
+        tag=tag
+    )
