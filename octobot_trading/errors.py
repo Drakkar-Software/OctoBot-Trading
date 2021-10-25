@@ -72,3 +72,10 @@ class InvalidOrderState(Exception):
     Raised when an order state is handled on a previously cleared order
     (cleared orders should never be touched)
     """
+
+
+class InvalidLeverageValue(Exception):
+    """
+    Raised when a leverage is being updated with an invalid value
+    """
+
