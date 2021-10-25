@@ -19,14 +19,16 @@ import octobot_trading.errors as errors
 
 
 class MarginContract:
-    def __init__(self, pair):
+    def __init__(self, pair, margin_type,
+                 contract_size=constants.ONE,
+                 maximum_leverage=constants.ONE,
+                 current_leverage=constants.ONE):
         self.pair = pair
+        self.margin_type = margin_type
 
-        self.margin_type = None
-
-        self.contract_size = constants.ONE
-        self.maximum_leverage = constants.ONE
-        self.current_leverage = constants.ONE
+        self.contract_size = contract_size
+        self.maximum_leverage = maximum_leverage
+        self.current_leverage = current_leverage
 
         self.risk_limit = {}
 

@@ -17,12 +17,14 @@ import decimal
 
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
+import octobot_trading.exchange_data.contracts as contracts
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 
 
 class FutureExchangeSimulator(exchanges_types.FutureExchange):
-    DEFAULT_SYMBOL_LEVERAGE = constants.ONE_HUNDRED
+    DEFAULT_SYMBOL_LEVERAGE = constants.ONE
+    DEFAULT_SYMBOL_MAX_LEVERAGE = constants.ONE_HUNDRED
     DEFAULT_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
     DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.LINEAR_PERPETUAL
     DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal(0.0001)
@@ -98,6 +100,19 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
 
     def get_current_future_candles(self):
         return self.connector.current_future_candles
+
+    async def load_pair_future_contract(self, pair: str):
+        """
+        Create a new FutureContract for the pair
+        :param pair: the pair
+        """
+        self.logger.debug(f"Loading {pair} contract...")
+        self.pair_contracts[pair] = contracts.FutureContract(
+            pair=pair,
+            current_leverage=self.DEFAULT_SYMBOL_LEVERAGE,
+            maximum_leverage=self.DEFAULT_SYMBOL_MAX_LEVERAGE,
+            margin_type=self.DEFAULT_SYMBOL_MARGIN_TYPE,
+            contract_type=self.DEFAULT_SYMBOL_CONTRACT_TYPE)
 
     async def get_symbol_leverage(self, symbol: str):
         return self.DEFAULT_SYMBOL_LEVERAGE
