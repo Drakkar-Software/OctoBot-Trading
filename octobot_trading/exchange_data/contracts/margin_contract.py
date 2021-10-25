@@ -21,7 +21,7 @@ class MarginContract:
     def __init__(self, pair):
         self.pair = pair
 
-        self.margin_type = enums.MarginType.ISOLATED
+        self.margin_type = None
 
         self.contract_size = constants.ONE
         self.maximum_leverage = constants.ONE
