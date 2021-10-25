@@ -110,3 +110,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict):
         return self.DEFAULT_SYMBOL_FUNDING_RATE
+
+    async def set_symbol_leverage(self, symbol: str, leverage: int):
+        pair_contract = self.get_pair_future_contract(symbol)
+        pair_contract.set_current_leverage(leverage)
