@@ -46,10 +46,10 @@ class MarginPortfolio(portfolio_class.Portfolio):
         }
 
     def _reset_currency_portfolio(self, currency):
-        self._set_currency_portfolio(currency=currency, available=0, total=0, margin=0)
+        self._set_currency_portfolio(currency=currency, available=0, total=0)
 
-    def _set_currency_portfolio(self, currency, available, total, margin=0):
-        self.portfolio[currency] = self._create_currency_portfolio(available=available, total=total, margin=margin)
+    def _set_currency_portfolio(self, currency, available, total):
+        self.portfolio[currency] = self.create_currency_asset(currency, available=available, total=total)
 
     def _update_currency_portfolio(self, currency, available=0, total=0, margin=0):
         self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += \

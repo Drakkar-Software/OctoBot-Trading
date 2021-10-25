@@ -15,10 +15,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-""" Order class will represent an open order in the specified exchange
-In simulation it will also define rules to be filled / canceled
-It is also use to store creation & fill values of the order """
 cimport octobot_trading.personal_data.orders.order as order_class
 cimport octobot_trading.util as util
 
@@ -53,7 +49,6 @@ cdef class Portfolio(util.Initializable):
     # private methods
     cdef void _reset_currency_portfolio(self, str currency)
     cdef dict _parse_currency_balance(self, dict currency_balance)
-    cdef dict _create_currency_portfolio(self, object available, object total)
     cdef void _set_currency_portfolio(self, str currency, object available, object total)
     cdef void _reset_all_portfolio_available(self)
     # return object to ensure PortfolioNegativeValueError forwarding
@@ -62,5 +57,3 @@ cdef class Portfolio(util.Initializable):
     cdef object _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 
 cdef bint _should_update_available(order_class.Order order)
-
-cpdef object ensure_portfolio_update_validness(str currency, object origin_quantity, object update_quantity)
