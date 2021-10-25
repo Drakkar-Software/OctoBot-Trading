@@ -28,3 +28,4 @@ cdef class MarginContract:
     cdef readonly dict risk_limit
 
     cpdef bint is_isolated(self)
+    cpdef void set_current_leverage(self, object new_leverage)
