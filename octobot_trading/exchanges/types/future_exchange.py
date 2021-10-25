@@ -42,10 +42,11 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :param pair: the pair
         """
         self.logger.debug(f"Loading {pair} contract...")
-        self.pair_contracts[pair] = contracts.FutureContract(pair)
-        self.pair_contracts[pair].current_leverage = await self.get_symbol_leverage(pair)
-        self.pair_contracts[pair].margin_type = await self.get_margin_type(pair)
-        self.pair_contracts[pair].contract_type = await self.get_contract_type(pair)
+        self.pair_contracts[pair] = contracts.FutureContract(
+            pair=pair,
+            current_leverage=await self.get_symbol_leverage(pair),
+            margin_type=await self.get_margin_type(pair),
+            contract_type=await self.get_contract_type(pair))
 
     def get_pair_future_contract(self, pair):
         """

@@ -14,11 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
-
 import pytest
-from octobot_commons.constants import PORTFOLIO_AVAILABLE, PORTFOLIO_TOTAL
 
-from octobot_trading.enums import TraderOrderType, FutureContractType
+from octobot_trading.enums import TraderOrderType
+import octobot_trading.constants as constants
 from octobot_trading.personal_data import FuturePortfolio, BuyMarketOrder, SellMarketOrder
 from octobot_trading.exchange_data.contracts.future_contract import FutureContract
 
@@ -27,6 +26,15 @@ from tests.exchanges import backtesting_trader, backtesting_config, backtesting_
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
+
+DEFAULT_SYMBOL = "BTC/USDT"
+
+
+async def init_symbol_contract(exchange, symbol=DEFAULT_SYMBOL, leverage=constants.ONE):
+    # create BTC/USDT future contract
+    await exchange.load_pair_future_contract(symbol)
+    await exchange.set_symbol_leverage(symbol, leverage)
+    return exchange.get_pair_future_contract(symbol)
 
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
@@ -43,10 +51,7 @@ async def test_initial_portfolio(backtesting_trader):
 async def test_update_portfolio_available_from_order_in_inverse_market(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-
-    # set future contract
-    btcusd_future_contract = FutureContract("BTC/USDT")
-    exchange_manager.exchange.set_pair_future_contract("BTC/USDT", btcusd_future_contract)
+    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(5))
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
@@ -84,10 +89,7 @@ async def test_update_portfolio_available_from_order_in_inverse_market(backtesti
 async def test_update_portfolio_available_from_order_in_inverse_market_with_sell_market(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-
-    # set future contract
-    btcusd_future_contract = FutureContract("BTC/USDT")
-    exchange_manager.exchange.set_pair_future_contract("BTC/USDT", btcusd_future_contract)
+    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(2))
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
@@ -110,10 +112,7 @@ async def test_update_portfolio_available_from_order_in_inverse_market_with_sell
 async def test_update_portfolio_available_from_order(backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-
-    # set future contract
-    btcusd_future_contract = FutureContract("BTC/USDT")
-    exchange_manager.exchange.set_pair_future_contract("BTC/USDT", btcusd_future_contract)
+    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
