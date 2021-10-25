@@ -250,7 +250,7 @@ class Portfolio(util.Initializable):
         Reset all portfolio assets available value
         """
         for currency in self.portfolio:
-            self.portfolio[currency].balance_available()
+            self.portfolio[currency].restore_available()
 
     def _reset_currency_portfolio_available(self, currency_to_reset, reset_quantity):
         """
@@ -259,7 +259,7 @@ class Portfolio(util.Initializable):
         :param reset_quantity: the quantity to reset
         """
         if reset_quantity is None:
-            self.portfolio[currency_to_reset].balance_available()
+            self.portfolio[currency_to_reset].restore_available()
         else:
             self.portfolio[currency_to_reset].update(available=reset_quantity)
 
