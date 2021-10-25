@@ -15,6 +15,7 @@
 #  License along with this library.
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 
 
 class MarginContract:
@@ -36,3 +37,14 @@ class MarginContract:
         :return: True if the contract use isolation margin
         """
         return self.margin_type is enums.MarginType.ISOLATED
+
+    def set_current_leverage(self, new_leverage):
+        """
+        Set the contract current leverage value
+        :param new_leverage: the new leverage value
+        """
+        if new_leverage <= self.maximum_leverage:
+            self.current_leverage = new_leverage
+        else:
+            raise errors.InvalidLeverageValue(f"Trying to update leverage with {new_leverage} "
+                                              f"but maximal value is {self.maximum_leverage}")
