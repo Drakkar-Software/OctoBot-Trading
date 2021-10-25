@@ -377,9 +377,9 @@ class MarginType(enum.Enum):
 
 class FutureContractType(enum.Enum):
     INVERSE_PERPETUAL = "inverse_perpetual"
-    PERPETUAL = "perpetual"
+    LINEAR_PERPETUAL = "linear_perpetual"
     INVERSE_EXPIRABLE = "inverse_expirable"
-    EXPIRABLE = "expirable"
+    LINEAR_EXPIRABLE = "linear_expirable"
 
 
 class SubAccountColumns(enum.Enum):
