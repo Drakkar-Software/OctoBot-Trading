@@ -21,7 +21,7 @@ import octobot_trading.exchange_data.contracts.margin_contract as margin_contrac
 class FutureContract(margin_contract.MarginContract):
     def __init__(self, pair):
         super().__init__(pair)
-        self.contract_type = enums.FutureContractType.INVERSE_PERPETUAL
+        self.contract_type = None
 
         self.creation_date = 0
         self.expiration_date = 0
