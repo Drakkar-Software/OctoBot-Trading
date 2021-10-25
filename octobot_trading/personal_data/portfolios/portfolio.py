@@ -96,7 +96,7 @@ class Portfolio(util.Initializable):
         try:
             return self.portfolio[currency][portfolio_type]
         except KeyError:
-            self._reset_currency_portfolio(currency)
+            self.portfolio[currency].reset()
             return self.portfolio[currency][portfolio_type]
 
     def get_currency_portfolio(self, currency, portfolio_type=common_constants.PORTFOLIO_AVAILABLE):
@@ -168,7 +168,7 @@ class Portfolio(util.Initializable):
         """
         if not all(isinstance(i, decimal.Decimal) for i in amount_dict.values()):
             raise RuntimeError("Portfolio has to be initialized using decimal.Decimal")
-        return {currency: self._create_currency_portfolio(available=total, total=total)
+        return {currency: self.create_currency_asset(currency=currency, available=total, total=total)
                 for currency, total in amount_dict.items()}
 
     def __str__(self):
@@ -183,68 +183,27 @@ class Portfolio(util.Initializable):
         :param available: True if available part should be updated
         """
         if currency in self.portfolio:
-            self._update_currency_portfolio(currency,
-                                            available=value if available else constants.ZERO,
+            self.portfolio[currency].update(available=value if available else constants.ZERO,
                                             total=value if total else constants.ZERO)
         else:
-            self._set_currency_portfolio(currency=currency, available=value, total=value)
+            self.portfolio[currency].set(available=value, total=value)
 
-    def _parse_currency_balance(self, currency_balance):
+    def _parse_currency_balance(self, currency, currency_balance):
         """
         Parse the exchange balance from the default ccxt format
         Set 0 as currency value when the parsed value is None (concerning available and total values)
+        :param currency: the currency name
         :param currency_balance: the current currency balance
         :return: the updated currency portfolio
         """
-        return self._create_currency_portfolio(
+        return self.create_currency_asset(
+            currency=currency,
             available=currency_balance.get(constants.CONFIG_PORTFOLIO_FREE,
                                            currency_balance.get(common_constants.PORTFOLIO_AVAILABLE,
                                                                 constants.ZERO)) or constants.ZERO,
             total=currency_balance.get(constants.CONFIG_PORTFOLIO_TOTAL,
                                        currency_balance.get(common_constants.PORTFOLIO_TOTAL,
                                                             constants.ZERO)) or constants.ZERO)
-
-    def _create_currency_portfolio(self, available, total):
-        """
-        Create the currency portfolio dictionary
-        :param available: the available value
-        :param total: the total value
-        :return: the portfolio dictionary
-        """
-        return {
-            common_constants.PORTFOLIO_AVAILABLE: available,
-            common_constants.PORTFOLIO_TOTAL: total
-        }
-
-    def _reset_currency_portfolio(self, currency):
-        """
-        Reset the currency portfolio to 0
-        :param currency: the currency to reset
-        """
-        self._set_currency_portfolio(currency=currency, available=constants.ZERO, total=constants.ZERO)
-
-    def _set_currency_portfolio(self, currency, available, total):
-        """
-        Set the currency portfolio
-        :param currency: the currency to set
-        :param available: the available value
-        :param total: the total value
-        """
-        self.portfolio[currency] = self._create_currency_portfolio(available=available, total=total)
-
-    def _update_currency_portfolio(self, currency, available=constants.ZERO, total=constants.ZERO):
-        """
-        Update the currency portfolio
-        :param currency: the currency to update
-        :param available: the available delta
-        :param total: the total delta
-        """
-        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += ensure_portfolio_update_validness(
-            currency, self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE], available
-        )
-        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += ensure_portfolio_update_validness(
-            currency, self.portfolio[currency][common_constants.PORTFOLIO_TOTAL], total
-        )
 
     def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
         """
@@ -262,15 +221,10 @@ class Portfolio(util.Initializable):
 
     def _reset_all_portfolio_available(self):
         """
-        Reset all portfolio currencies to available
+        Reset all portfolio assets available value
         """
-        self.portfolio.update(
-            {
-                currency: self._create_currency_portfolio(
-                    available=self.portfolio[currency][common_constants.PORTFOLIO_TOTAL],
-                    total=self.portfolio[currency][common_constants.PORTFOLIO_TOTAL])
-                for currency in self.portfolio
-            })
+        for currency in self.portfolio:
+            self.portfolio[currency].balance_available()
 
     def _reset_currency_portfolio_available(self, currency_to_reset, reset_quantity):
         """
@@ -282,18 +236,8 @@ class Portfolio(util.Initializable):
             self._set_currency_portfolio(currency=currency_to_reset,
                                          available=self.portfolio[currency_to_reset][common_constants.PORTFOLIO_TOTAL],
                                          total=self.portfolio[currency_to_reset][common_constants.PORTFOLIO_TOTAL])
-
-    def log_portfolio_update_from_order(self, order):
-        """
-        Log a portfolio update from an order
-        :param order: the order that updated the portfolio
-        """
-        if order.side == enums.TradeOrderSide.BUY:
-            currency_portfolio_num = order.filled_quantity - order.get_total_fees(order.currency)
-            market_portfolio_num = -order.filled_quantity * order.filled_price
         else:
-            currency_portfolio_num = -order.filled_quantity
-            market_portfolio_num = order.filled_quantity * order.filled_price - order.get_total_fees(order.market)
+            self._update_currency_portfolio(currency=currency_to_reset, available=reset_quantity)
 
         self.logger.debug(f"Portfolio updated from order | {order.currency} {currency_portfolio_num} | {order.market} "
                           f"{market_portfolio_num} | {constants.CURRENT_PORTFOLIO_STRING} {self.portfolio}")
@@ -306,18 +250,3 @@ def _should_update_available(order):
     :return: True if the order should update available portfolio
     """
     return not order.is_self_managed()
-
-
-def ensure_portfolio_update_validness(currency, origin_quantity, update_quantity):
-    """
-    Ensure that the portfolio final value is not negative.
-    Raise a PortfolioNegativeValueError if the final value is negative
-    :param currency: the currency to update
-    :param origin_quantity: the original currency value
-    :param update_quantity: the update value
-    :return: the updated quantity
-    """
-    if origin_quantity + update_quantity < constants.ZERO:
-        raise errors.PortfolioNegativeValueError(f"Trying to update {currency} with {update_quantity} "
-                                                 f"but quantity was {origin_quantity}")
-    return update_quantity
