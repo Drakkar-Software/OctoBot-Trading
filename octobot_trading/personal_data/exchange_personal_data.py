@@ -87,7 +87,6 @@ class ExchangePersonalData(util.Initializable):
 
     async def handle_portfolio_update_from_position(self, position,
                                                     require_exchange_update: bool = True,
-                                                    is_liquidated: bool = False,
                                                     should_notify: bool = True) -> bool:
         try:
             changed: bool = await self.portfolio_manager.handle_balance_update_from_position(
