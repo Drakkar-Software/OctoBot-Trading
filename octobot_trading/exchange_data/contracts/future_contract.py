@@ -14,19 +14,21 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 
 import octobot_trading.exchange_data.contracts.margin_contract as margin_contract
 
 
 class FutureContract(margin_contract.MarginContract):
-    def __init__(self, pair):
-        super().__init__(pair)
-        self.contract_type = None
-
-        self.creation_date = 0
-        self.expiration_date = 0
-
-        self.minimum_tick_size = 0.5
+    def __init__(self, pair, margin_type, contract_type,
+                 contract_size=constants.ONE,
+                 maximum_leverage=constants.ONE,
+                 current_leverage=constants.ONE,
+                 minimum_tick_size=0.5):
+        super().__init__(pair, margin_type=margin_type, contract_size=contract_size,
+                         maximum_leverage=maximum_leverage, current_leverage=current_leverage)
+        self.contract_type = contract_type
+        self.minimum_tick_size = minimum_tick_size
 
     def is_inverse_contract(self):
         """
