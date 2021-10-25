@@ -19,8 +19,8 @@ cimport octobot_trading.personal_data.positions.position_state as positions_stat
 cimport octobot_trading.util as util
 
 cdef class Position(util.Initializable):
-    cdef object trader
-    cdef object exchange_manager
+    cdef public object trader
+    cdef public object exchange_manager
 
     cdef public bint simulated
 
