@@ -90,11 +90,11 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
 
         # short cases => sell => need this currency
         if state == enums.EvaluatorStates.VERY_SHORT.value or state == enums.EvaluatorStates.SHORT.value:
-            return portfolio.get_currency_portfolio(currency) > symbol_min_amount
+            return portfolio.get_currency_portfolio(currency).available > symbol_min_amount
 
         # long cases => buy => need money(aka other currency in the pair) to buy this currency
         elif state == enums.EvaluatorStates.LONG.value or state == enums.EvaluatorStates.VERY_LONG.value:
-            return portfolio.get_currency_portfolio(market) > order_min_amount
+            return portfolio.get_currency_portfolio(market).available > order_min_amount
 
         # other cases like neutral state or unfulfilled previous conditions
         return False
