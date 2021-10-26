@@ -41,3 +41,18 @@ class Context:
         self.logger = logger
 
         self.running = False
+
+    @staticmethod
+    def minimal(exchange_manager):
+        return Context(
+            None,
+            exchange_manager,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )

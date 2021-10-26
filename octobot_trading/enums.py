@@ -387,3 +387,22 @@ class SubAccountColumns(enum.Enum):
 class ExchangeWrapperLibs(enum.Enum):
     ASYNC_CCXT = "async_ccxt"
     CCXT = "ccxt"
+
+
+class PlotAttributes(enum.Enum):
+    KIND = "kind"
+    X = "x"
+    Y = "y"
+    OPEN = "open"
+    HIGH = "high"
+    LOW = "low"
+    CLOSE = "close"
+    VOLUME = "volume"
+    TITLE = "title"
+    SUB_ELEMENTS = "sub_elements"
+    ELEMENTS = "elements"
+    NAME = "name"
+    DATA = "data"
+    X_TYPE = "x_type"
+    Y_TYPE = "y_type"
+    MODE = "mode"
