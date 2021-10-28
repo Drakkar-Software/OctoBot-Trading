@@ -14,31 +14,4 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-from .create_order import _create_order_instance
-
-
-async def trailling_market(
-    context,
-    side=None,
-    symbol=None,
-    amount=None,
-    target_position=None,
-    min_offset=None,
-    max_offset=None,
-    slippage_limit=None,
-    postonly=None,
-    reduceonly=None,
-    tag=None
-) -> list:
-    return await _create_order_instance(
-        context.trader,
-        side,
-        symbol or context.traded_pair,
-        amount,
-        target_position=target_position,
-        order_type_name="trailling_stop",
-        min_offset=min_offset,
-        max_offset=max_offset,
-        tag=tag,
-    )
+from .reader import *

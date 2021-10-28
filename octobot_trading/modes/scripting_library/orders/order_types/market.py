@@ -26,8 +26,8 @@ async def market(
     amount=None,
     target_position=None,
     tag=None
-):
-    await _create_order_instance(
+) -> list:
+    return await _create_order_instance(
         context.trader,
         side,
         symbol or context.traded_pair,
