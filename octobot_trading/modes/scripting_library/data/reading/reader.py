@@ -13,32 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.databases as databases
 
 
-from .create_order import _create_order_instance
+class DBReader:
+    def __init__(self, file_path: str, database_adaptor=databases.TinyDBAdaptor):
+        self._database = databases.DocumentDatabase(database_adaptor(file_path))
 
+    def select(self, table_name: str, query: str) -> list:
+        return self._database.select(table_name, query)
 
-async def trailling_market(
-    context,
-    side=None,
-    symbol=None,
-    amount=None,
-    target_position=None,
-    min_offset=None,
-    max_offset=None,
-    slippage_limit=None,
-    postonly=None,
-    reduceonly=None,
-    tag=None
-) -> list:
-    return await _create_order_instance(
-        context.trader,
-        side,
-        symbol or context.traded_pair,
-        amount,
-        target_position=target_position,
-        order_type_name="trailling_stop",
-        min_offset=min_offset,
-        max_offset=max_offset,
-        tag=tag,
-    )
+    def count(self, table_name: str, query) -> int:
+        return self._database.count(table_name, query)
+
+    def search(self):
+        return self._database.query_factory()

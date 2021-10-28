@@ -17,6 +17,9 @@ cryptography # Never specify a version (managed by https://github.com/Drakkar-So
 websockets==10.0
 cryptofeed==2.0.1
 
+# Scripting requirements
+tinydb==4.5.2
+
 # other requirements
 sortedcontainers==2.4.0
 yarl==1.6.3
