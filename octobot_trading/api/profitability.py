@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_trading.util as util
 
 
@@ -31,6 +33,11 @@ def get_origin_portfolio_value(exchange_manager) -> float:
 
 def get_current_portfolio_value(exchange_manager) -> float:
     return exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.portfolio_current_value
+
+
+def get_current_crypto_currency_value(exchange_manager, currency) -> decimal.Decimal:
+    return exchange_manager.exchange_personal_data.portfolio_manager. \
+        portfolio_value_holder.current_crypto_currencies_values[currency]
 
 
 def get_current_holdings_values(exchange_manager) -> dict:
