@@ -50,3 +50,10 @@ class MarginContract:
         else:
             raise errors.InvalidLeverageValue(f"Trying to update leverage with {new_leverage} "
                                               f"but maximal value is {self.maximum_leverage}")
+
+    def set_margin_type(self, is_isolated):
+        """
+        Set the contract margin type
+        :param is_isolated: the new leverage value
+        """
+        self.margin_type = enums.MarginType.ISOLATED if is_isolated else enums.MarginType.CROSS
