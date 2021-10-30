@@ -372,10 +372,10 @@ class PortfolioValueHolder:
         :param raise_error: When True, forward exceptions
         :return: the currency value
         """
-        if currency in portfolio and portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL] != constants.ZERO:
+        if currency in portfolio and portfolio[currency].total != constants.ZERO:
             if currencies_values and currency in currencies_values:
-                return currencies_values[currency] * portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL]
-            return self._evaluate_value(currency, portfolio[currency][constants.CONFIG_PORTFOLIO_TOTAL], raise_error)
+                return currencies_values[currency] * portfolio[currency].total
+            return self._evaluate_value(currency, portfolio[currency].total, raise_error)
         return constants.ZERO
 
     def _should_currency_be_considered(self, currency, portfolio, ignore_missing_currency_data):
@@ -388,5 +388,5 @@ class PortfolioValueHolder:
         :return: True if enough data is available to evaluate currency value
         """
         return (currency not in self.missing_currency_data_in_exchange or ignore_missing_currency_data) and \
-               (portfolio[currency][common_constants.PORTFOLIO_TOTAL] > constants.ZERO or currency in
+               (portfolio[currency].total > constants.ZERO or currency in
                 self.portfolio_manager.portfolio_profitability.valuated_currencies)

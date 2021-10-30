@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import octobot_trading.personal_data.portfolios.asset as asset
 
 
 def parse_decimal_portfolio(portfolio):
@@ -38,10 +39,9 @@ def parse_decimal_config_portfolio(portfolio):
 def portfolio_to_float(portfolio):
     float_portfolio = {}
     for symbol, symbol_balance in portfolio.items():
-        if isinstance(symbol_balance, dict):
-            float_portfolio[symbol] = {}
-            portfolio_to_fill = float_portfolio[symbol]
-            for balance_type, balance_val in symbol_balance.items():
-                if isinstance(balance_val, (int, float, decimal.Decimal)):
-                    portfolio_to_fill[balance_type] = float(balance_val)
+        if isinstance(symbol_balance, asset.Asset):
+            float_portfolio[symbol] = {
+                "available": float(symbol_balance.available),
+                "total": float(symbol_balance.total)
+            }
     return float_portfolio

@@ -21,21 +21,18 @@ import octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
 
 class MarginPortfolio(portfolio_class.Portfolio):
-    # parse the exchange balance
-    def _parse_currency_balance(self, currency_balance):
-        return self._create_currency_portfolio(
-            available=currency_balance[constants.CONFIG_PORTFOLIO_FREE]
-            if constants.CONFIG_PORTFOLIO_FREE in currency_balance else currency_balance[
-                common_constants.PORTFOLIO_AVAILABLE],
-            margin=currency_balance[constants.CONFIG_PORTFOLIO_MARGIN]
-            if constants.CONFIG_PORTFOLIO_MARGIN in currency_balance else (
-                currency_balance[common_constants.MARGIN_PORTFOLIO]
-                if common_constants.MARGIN_PORTFOLIO in currency_balance else 0),
-            total=currency_balance[constants.CONFIG_PORTFOLIO_TOTAL]
-            if constants.CONFIG_PORTFOLIO_TOTAL in currency_balance else currency_balance[
-                common_constants.PORTFOLIO_TOTAL])
-
-    def create_currency_asset(self, currency, available, total):
+    def __init__(self, exchange_name):
+        super().__init__(exchange_name)
+        """
+      "marginLevel": "11.64405625",
+      "totalAssetOfBtc": "6.82728457",
+      "totalLiabilityOfBtc": "0.58633215",
+      "totalNetAssetOfBtc": "6.24095242",
+        """
+        """
+            "debtRatio": "0.33"
+        """
+    def create_currency_asset(self, currency, available=constants.ZERO, total=constants.ZERO):
         return margin_asset.MarginAsset(name=currency, available=available, total=total)
 
     def _create_currency_portfolio(self, available, total, margin=0):
