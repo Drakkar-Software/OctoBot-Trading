@@ -94,6 +94,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
         """
         :param position: the liquidated position
         """
+        new_quantity = -position.quantity
         self._update_portfolio_data(position.currency
                                     if position.symbol_contract.is_inverse_contract() else position.market,
                                     -position.quantity
