@@ -71,9 +71,8 @@ class FuturePortfolio(portfolio_class.Portfolio):
         currency, market = order.get_currency_and_market()
         pair_future_contract = order.exchange_manager.exchange.get_pair_future_contract(order.symbol)
 
-        # calculates the real order quantity depending on the current contract leverage
-        real_order_quantity = ((order_quantity - (order.get_total_fees(currency) if subtract_fees else constants.ZERO))
-                               / pair_future_contract.current_leverage)
+        # calculates the real order quantity
+        real_order_quantity = (order_quantity - (order.get_total_fees(currency) if subtract_fees else constants.ZERO))
 
         # When inverse contract, decrease a currency market equivalent quantity from currency balance
         if pair_future_contract.is_inverse_contract():
@@ -90,6 +89,17 @@ class FuturePortfolio(portfolio_class.Portfolio):
                                         -real_order_quantity * (-constants.ONE if inverse_calculation else constants.ONE),
                                         total=update_total,
                                         available=update_available)
+
+    def update_portfolio_from_liquidated_position(self, position):
+        """
+        :param position: the liquidated position
+        """
+        self._update_portfolio_data(position.currency
+                                    if position.symbol_contract.is_inverse_contract() else position.market,
+                                    -position.quantity
+                                    if position.is_long() else position.quantity,
+                                    total=True,
+                                    available=True)
 
     def log_portfolio_update_from_order(self, order, currency, market):
         """
