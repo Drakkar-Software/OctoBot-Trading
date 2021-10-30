@@ -22,10 +22,11 @@ cdef class MarginContract:
     cdef public object margin_type
 
     cdef readonly object contract_size
-    cdef public object current_leverage
+    cdef readonly object current_leverage
     cdef readonly object maximum_leverage
 
     cdef readonly dict risk_limit
 
     cpdef bint is_isolated(self)
     cpdef void set_current_leverage(self, object new_leverage)
+    cpdef void set_margin_type(self, bint is_isolated)

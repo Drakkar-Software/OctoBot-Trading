@@ -129,3 +129,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         pair_contract = self.get_pair_future_contract(symbol)
         pair_contract.set_current_leverage(leverage)
+
+    async def set_symbol_margin_type(self, symbol: str, isolated: bool):
+        pair_contract = self.get_pair_future_contract(symbol)
+        pair_contract.set_margin_type(isolated)
