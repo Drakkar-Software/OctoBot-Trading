@@ -18,7 +18,6 @@ import os
 import pytest
 
 import octobot_trading.constants as constants
-from tests.personal_data.portfolios import update_portfolio_balance
 from tests.test_utils.random_numbers import decimal_random_quantity, random_price
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
@@ -34,7 +33,7 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
     portfolio_value_holder = portfolio_manager.portfolio_value_holder
 
     assert portfolio_value_holder.get_current_crypto_currencies_values() == {'BTC': constants.ONE, 'USDT': constants.ZERO}
-    update_portfolio_balance({
+    portfolio_manager.portfolio.update_portfolio_from_balance({
         'BTC': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
         'ETH': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
         'XRP': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
@@ -113,7 +112,7 @@ async def test_get_current_holdings_values(backtesting_trader):
     portfolio_value_holder = portfolio_manager.portfolio_value_holder
 
     exchange_manager.client_symbols.append("ETH/BTC")
-    update_portfolio_balance({
+    portfolio_manager.portfolio.update_portfolio_from_balance({
         'BTC': {'available': decimal.Decimal("10"), 'total': decimal.Decimal("10")},
         'ETH': {'available': decimal.Decimal("100"), 'total': decimal.Decimal("100")},
         'XRP': {'available': decimal.Decimal("10000"), 'total': decimal.Decimal("10000")},

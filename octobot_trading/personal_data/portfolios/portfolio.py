@@ -75,40 +75,33 @@ class Portfolio(util.Initializable):
         :param force_replace: force to update portfolio. Should be False when using deltas
         :return: True if the portfolio has been updated
         """
-        if balance == self.portfolio:
-            # when the portfolio shouldn't be updated
-            return False
-        new_balance = {currency: self._parse_currency_balance(balance[currency]) for currency in balance}
         if force_replace:
-            self.portfolio = new_balance
-        else:
-            self.portfolio.update(new_balance)
-        self.logger.debug(f"Portfolio updated | {constants.CURRENT_PORTFOLIO_STRING} {self}")
-        return True
+            self.portfolio = {
+                currency: self._parse_raw_currency_asset(currency=currency, raw_currency_balance=balance[currency])
+                for currency in balance}
+            self.logger.debug(f"Portfolio updated | {constants.CURRENT_PORTFOLIO_STRING} {self}")
+            return True
+        if any(
+            self._update_raw_currency_asset(currency=currency, raw_currency_balance=balance[currency])
+            for currency in balance
+        ):
+            self.logger.debug(f"Portfolio partially updated | {constants.CURRENT_PORTFOLIO_STRING} {self}")
+            return True
+        return False
 
-    def get_currency_from_given_portfolio(self, currency, portfolio_type=common_constants.PORTFOLIO_AVAILABLE):
+    def get_currency_portfolio(self, currency):
         """
-        Get the currency quantity from the portfolio type
-        :param currency: the currency to get quantity
-        :param portfolio_type: the portfolio type
-        :return: the currency quantity for the portfolio type
+        Get specified currency asset from portfolio
+        :param currency: the currency to get
+        :return: the currency portfolio asset instance
         """
         try:
-            return self.portfolio[currency][portfolio_type]
+            return self.portfolio[currency]
         except KeyError:
-            self.portfolio[currency].reset()
-            return self.portfolio[currency][portfolio_type]
+            self.portfolio[currency] = self.create_currency_asset(currency)
+            return self.portfolio[currency]
 
-    def get_currency_portfolio(self, currency, portfolio_type=common_constants.PORTFOLIO_AVAILABLE):
-        """
-        Get specified currency quantity in the portfolio
-        :param currency: the currency to get
-        :param portfolio_type: the portfolio type to get
-        :return: the currency portfolio type value
-        """
-        return self.get_currency_from_given_portfolio(currency, portfolio_type)
-
-    def create_currency_asset(self, currency, available, total):
+    def create_currency_asset(self, currency, available=constants.ZERO, total=constants.ZERO):
         """
         Create the currency asset instance
         :param currency: the currency name
@@ -168,42 +161,65 @@ class Portfolio(util.Initializable):
         """
         if not all(isinstance(i, decimal.Decimal) for i in amount_dict.values()):
             raise RuntimeError("Portfolio has to be initialized using decimal.Decimal")
-        return {currency: self.create_currency_asset(currency=currency, available=total, total=total)
+        return {currency: self.create_currency_asset(currency=currency, available=total, total=total).to_dict()
                 for currency, total in amount_dict.items()}
 
     def __str__(self):
         return f"{personal_data.portfolio_to_float(self.portfolio)}"
 
-    def _update_portfolio_data(self, currency, value, total=True, available=False):
+    def _update_portfolio_data(self, currency,
+                               total_value=constants.ZERO, available_value=constants.ZERO, replace_value=False):
         """
         Set new currency quantity in the portfolio
         :param currency: the currency to update
-        :param value: the update value
-        :param total: True if total part should be updated
-        :param available: True if available part should be updated
+        :param total_value: the total update value
+        :param available_value: the available update value
+        :param replace_value: when True replace the current value instead of updating it
+        :return: True if updated
         """
-        if currency in self.portfolio:
-            self.portfolio[currency].update(available=value if available else constants.ZERO,
-                                            total=value if total else constants.ZERO)
-        else:
-            self.portfolio[currency].set(available=value, total=value)
+        try:
+            if replace_value:
+                return self.portfolio[currency].set(available=available_value, total=total_value)
+            return self.portfolio[currency].update(available=available_value, total=total_value)
+        except KeyError:
+            self.portfolio[currency] = self.create_currency_asset(currency=currency,
+                                                                  available=available_value, total=total_value)
+            return True
 
-    def _parse_currency_balance(self, currency, currency_balance):
+    def _parse_raw_currency_asset(self, currency, raw_currency_balance):
         """
-        Parse the exchange balance from the default ccxt format
-        Set 0 as currency value when the parsed value is None (concerning available and total values)
+        Parse the exchange currency balance as asset
         :param currency: the currency name
-        :param currency_balance: the current currency balance
-        :return: the updated currency portfolio
+        :param raw_currency_balance: the raw current currency balance
+        :return: the currency asset instance
         """
-        return self.create_currency_asset(
-            currency=currency,
-            available=currency_balance.get(constants.CONFIG_PORTFOLIO_FREE,
-                                           currency_balance.get(common_constants.PORTFOLIO_AVAILABLE,
-                                                                constants.ZERO)) or constants.ZERO,
-            total=currency_balance.get(constants.CONFIG_PORTFOLIO_TOTAL,
-                                       currency_balance.get(common_constants.PORTFOLIO_TOTAL,
-                                                            constants.ZERO)) or constants.ZERO)
+        available, total = self._parse_raw_currency_balance(raw_currency_balance)
+        return self.create_currency_asset(currency=currency, available=available, total=total)
+
+    def _update_raw_currency_asset(self, currency, raw_currency_balance):
+        """
+        Update the exchange currency asset
+        :param currency: the currency name
+        :param raw_currency_balance: the raw current currency balance
+        :return: True if updated
+        """
+        available, total = self._parse_raw_currency_balance(raw_currency_balance)
+        return self._update_portfolio_data(currency=currency, total_value=total,
+                                           available_value=available, replace_value=True)
+
+    def _parse_raw_currency_balance(self, raw_currency_balance):
+        """
+        Parse the exchange balance
+        Set 0 as currency value when the parsed value is None (concerning available and total values)
+        :param raw_currency_balance: the current currency balance
+        :return: the currency available and total as tuple
+        """
+        return (raw_currency_balance.get(constants.CONFIG_PORTFOLIO_FREE,
+                                         raw_currency_balance.get(common_constants.PORTFOLIO_AVAILABLE,
+                                                                  constants.ZERO)) or constants.ZERO,
+                raw_currency_balance.get(constants.CONFIG_PORTFOLIO_TOTAL,
+                                         raw_currency_balance.get(common_constants.PORTFOLIO_TOTAL,
+                                                                  constants.ZERO)) or constants.ZERO)
 
     def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
         """

@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import pytest
 from octobot_commons.constants import PORTFOLIO_TOTAL, PORTFOLIO_AVAILABLE
 
@@ -53,17 +55,17 @@ async def test_update_portfolio_available_from_order(backtesting_trader):
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 300
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('300')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
 
     # test buy order canceled --> return to init state and the update_portfolio will sync TOTAL with AVAILABLE
     portfolio_manager.portfolio.update_portfolio_available(market_buy, False)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
 
     # Test sell order
     limit_sell = SellLimitOrder(trader)
@@ -75,14 +77,14 @@ async def test_update_portfolio_available_from_order(backtesting_trader):
 
     # test sell order creation
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 2
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('2')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
 
     # test sell order canceled --> return to init state and the update_portfolio will sync TOTAL with AVAILABLE
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, False)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_AVAILABLE) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_AVAILABLE) == 1000
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC", PORTFOLIO_TOTAL) == 10
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT", PORTFOLIO_TOTAL) == 1000
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')

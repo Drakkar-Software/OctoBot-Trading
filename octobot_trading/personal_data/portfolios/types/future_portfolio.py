@@ -31,9 +31,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
                                                  order_quantity=order.filled_quantity,
                                                  order_price=order.filled_price,
                                                  subtract_fees=True,
-                                                 inverse_calculation=False,
-                                                 update_available=True,
-                                                 update_total=False)
+                                                 inverse_calculation=False)
 
     def update_portfolio_available_from_order(self, order, increase_quantity=True):
         """
@@ -45,17 +43,13 @@ class FuturePortfolio(portfolio_class.Portfolio):
                                                  order_quantity=order.origin_quantity,
                                                  order_price=order.origin_price,
                                                  subtract_fees=False,
-                                                 inverse_calculation=not increase_quantity,
-                                                 update_available=True,
-                                                 update_total=False)
+                                                 inverse_calculation=not increase_quantity)
 
     def _update_portfolio_from_future_order(self, order,
                                             order_quantity,
                                             order_price,
                                             subtract_fees=False,
-                                            inverse_calculation=False,
-                                            update_available=False,
-                                            update_total=False):
+                                            inverse_calculation=False):
         """
         Update future portfolio from an order
         :param order: the order
@@ -63,8 +57,6 @@ class FuturePortfolio(portfolio_class.Portfolio):
         :param order_price: the order price to use for calculation
         :param subtract_fees: when True, subtract fees to order quantity
         :param inverse_calculation: when True, inverse calculation (for example when a cancel occurred)
-        :param update_available: when True, update the available quantity of the portfolio
-        :param update_total: when True, update the total quantity of the portfolio
         """
         pair_future_contract = order.exchange_manager.exchange.get_pair_future_contract(order.symbol)
 
@@ -75,18 +67,14 @@ class FuturePortfolio(portfolio_class.Portfolio):
         # When inverse contract, decrease a currency market equivalent quantity from currency balance
         if pair_future_contract.is_inverse_contract():
             # decrease currency market equivalent quantity from currency available balance
-            self._update_portfolio_data(order.currency,
-                                        -(real_order_quantity / order_price) * (-constants.ONE if inverse_calculation else constants.ONE),
-                                        total=update_total,
-                                        available=update_available)
+            self._update_portfolio_data(currency, available_value=(
+                    -(real_order_quantity / order_price) * (-constants.ONE if inverse_calculation else constants.ONE)))
 
         # When non-inverse contract, decrease directly market quantity
         else:
             # decrease market quantity from market available balance
-            self._update_portfolio_data(order.market,
-                                        -real_order_quantity * (-constants.ONE if inverse_calculation else constants.ONE),
-                                        total=update_total,
-                                        available=update_available)
+            self._update_portfolio_data(market, available_value=(
+                    -real_order_quantity * (-constants.ONE if inverse_calculation else constants.ONE)))
 
     def update_portfolio_from_liquidated_position(self, position):
         """
