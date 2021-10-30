@@ -29,8 +29,7 @@ cdef class Portfolio(util.Initializable):
     cdef bint _is_simulated
 
     # public methods
-    cpdef object get_currency_portfolio(self, str currency, str portfolio_type=*)
-    cpdef object get_currency_from_given_portfolio(self, str currency, str portfolio_type=*)
+    cpdef object get_currency_portfolio(self, str currency)
     cpdef void reset_portfolio_available(self, str reset_currency=*, object reset_quantity=*)
     cpdef void reset(self)
     # return object to ensure PortfolioNegativeValueError forwarding
@@ -44,15 +43,17 @@ cdef class Portfolio(util.Initializable):
     # return object to ensure PortfolioNegativeValueError forwarding
     cpdef object update_portfolio_data_from_order(self, order_class.Order order)
     cpdef object update_portfolio_available_from_order(self, order_class.Order order, bint increase_quantity=*)
-    cpdef object create_currency_asset(self, str currency, object available, object total)
+    cpdef object create_currency_asset(self, str currency, object available=*, object total=*)
 
     # private methods
     cdef void _reset_currency_portfolio(self, str currency)
-    cdef dict _parse_currency_balance(self, dict currency_balance)
+    cdef object _parse_raw_currency_asset(self, str currency, dict raw_currency_balance)
+    cdef bint _update_raw_currency_asset(self, str currency, dict raw_currency_balance)
+    cdef tuple _parse_raw_currency_balance(self, dict raw_currency_balance)
     cdef void _set_currency_portfolio(self, str currency, object available, object total)
     cdef void _reset_all_portfolio_available(self)
     # return object to ensure PortfolioNegativeValueError forwarding
-    cdef object _update_portfolio_data(self, str currency, object value, bint total=*, bint available=*)
+    cdef object _update_portfolio_data(self, str currency, object total_value=*, object available_value=*, bint replace_value=*)
     cdef object _update_currency_portfolio(self, str currency, object available=*, object total=*)
     cdef object _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 

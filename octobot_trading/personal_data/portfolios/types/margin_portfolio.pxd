@@ -18,7 +18,6 @@ cimport octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
 cdef class MarginPortfolio(portfolio_class.Portfolio):
     cdef void _reset_currency_portfolio(self, str currency)
-    cdef dict _parse_currency_balance(self, dict currency_balance)
     cdef dict _create_currency_portfolio(self, object available, object total, object margin=*)
     cdef void _set_currency_portfolio(self, str currency, object available, object total, object margin=*)
 

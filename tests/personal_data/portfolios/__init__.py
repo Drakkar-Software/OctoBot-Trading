@@ -13,7 +13,3 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-def update_portfolio_balance(new_balance, exchange_manager):
-    exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio = new_balance
-    return new_balance
