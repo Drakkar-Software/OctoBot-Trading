@@ -87,8 +87,14 @@ class Order(util.Initializable):
         self.state = None
 
         # future trading attributes
-        # when True : reduce position quantity only without opening a new position if order.quantity > position.quantity
+        # when True: reduce position quantity only without opening a new position if order.quantity > position.quantity
         self.reduce_only = False
+
+        # when True: close the current associated position
+        self.close_position = False
+
+        # the associated position side (should be BOTH for One-way Mode ; LONG or SHORT for Hedge Mode)
+        self.position_side = None
 
     @classmethod
     def get_name(cls):
@@ -102,8 +108,8 @@ class Order(util.Initializable):
     def update(self, symbol, order_id="", status=enums.OrderStatus.OPEN,
                current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
-               fee=None, total_cost=constants.ZERO,
-               timestamp=None, linked_to=None, linked_portfolio=None, order_type=None, reduce_only=False) -> bool:
+               fee=None, total_cost=constants.ZERO, timestamp=None, linked_to=None, linked_portfolio=None,
+               order_type=None, reduce_only=False, close_position=False, position_side=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -197,6 +203,9 @@ class Order(util.Initializable):
         if not self.reduce_only:
             self.reduce_only = reduce_only
 
+        if not self.close_position:
+            self.close_position = close_position
+
         return changed
 
     async def initialize_impl(self, **kwargs):
@@ -215,9 +224,6 @@ class Order(util.Initializable):
 
     def add_linked_order(self, order):
         self.linked_orders.append(order)
-
-    def get_currency_and_market(self) -> (str, str):
-        return self.currency, self.market
 
     def get_total_fees(self, currency):
         return order_util.get_fees_for_currency(self.fee, currency)

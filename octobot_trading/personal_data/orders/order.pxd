@@ -41,6 +41,7 @@ cdef class Order(util.Initializable):
     cdef public bint is_from_this_octobot
     cdef public bint simulated
     cdef public bint reduce_only
+    cdef public bint close_position
 
     cdef public str symbol
     cdef public str currency
@@ -58,6 +59,7 @@ cdef class Order(util.Initializable):
     cdef public object total_cost
     cdef public object created_last_price
     cdef public object order_profitability
+    cdef public object position_side
 
     cdef public double timestamp
     cdef public double creation_time
@@ -88,14 +90,15 @@ cdef class Order(util.Initializable):
             object linked_to=*,
             object linked_portfolio=*,
             object order_type=*,
-            bint reduce_only=*)
+            bint reduce_only=*,
+            bint close_position=*,
+            object position_side=*)
 
     cdef void _update_type_from_raw(self, dict raw_order)
     cdef void _update_taker_maker(self)
 
     cpdef str to_string(self)
     cpdef add_linked_order(self, Order order)
-    cpdef tuple get_currency_and_market(self)
     cpdef object get_total_fees(self, str currency)
     cpdef bint is_open(self)
     cpdef bint is_filled(self)
