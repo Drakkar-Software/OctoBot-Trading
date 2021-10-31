@@ -92,7 +92,6 @@ async def test_update(trader):
     assert order_inst.created_last_price == 10000
     assert order_inst.origin_quantity == 1
     assert order_inst.creation_time != 0
-    assert order_inst.get_currency_and_market() == ('BTC', 'USDT')
     assert order_inst.side is None
     assert order_inst.status == enums.OrderStatus.OPEN
     assert order_inst.filled_quantity != order_inst.origin_quantity

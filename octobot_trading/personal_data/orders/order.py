@@ -228,9 +228,6 @@ class Order(util.Initializable):
     def add_linked_order(self, order):
         self.linked_orders.append(order)
 
-    def get_currency_and_market(self) -> (str, str):
-        return self.currency, self.market
-
     def get_total_fees(self, currency):
         return order_util.get_fees_for_currency(self.fee, currency)
 
