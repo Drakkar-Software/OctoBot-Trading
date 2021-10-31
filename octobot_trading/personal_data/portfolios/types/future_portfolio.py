@@ -102,7 +102,6 @@ class FuturePortfolio(portfolio_class.Portfolio):
                                     total=True,
                                     available=True)
 
-    def log_portfolio_update_from_order(self, order, currency, market):
         """
         TODO
         :param order: the order to log
