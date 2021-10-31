@@ -24,6 +24,7 @@ class TradeOrderSide(enum.Enum):
 class PositionSide(enum.Enum):
     LONG = "long"
     SHORT = "short"
+    BOTH = "both"  # for one-way mode
     UNKNOWN = "unknown"
 
 
@@ -127,6 +128,30 @@ class PositionMode(enum.Enum):
 class ExchangeConstantsCCXTColumns(enum.Enum):
     TIMESTAMP = "timestamp"
     DATETIME = "datetime"
+
+
+class ExchangePositionCCXTColumns(enum.Enum):
+    CONTRACTS = "contracts"
+    CONTRACT_SIZE = "contractSize"
+    MARGIN_TYPE = "leverage"
+    LEVERAGE = "marginType"
+    SYMBOL = "symbol"
+    COLLATERAL = "collateral"
+    INITIAL_MARGIN = "initialMargin"
+    INITIAL_MARGIN_PERCENTAGE = "initialMarginPercentage"
+    MAINTENANCE_MARGIN = "maintenanceMargin"
+    MAINTENANCE_MARGIN_PERCENTAGE = "maintenanceMarginPercentage"
+    NOTIONAL = "notional"
+    MARGIN_RATIO = "marginRatio"
+    UNREALISED_PNL = "unrealizedPnl"
+    REALISED_PNL = "realizedPnl"
+    LIQUIDATION_PRICE = "liquidationPrice"
+    MARK_PRICE = "markPrice"
+    ENTRY_PRICE = "entryPrice"
+    TIMESTAMP = "timestamp"
+    DATETIME = "datetime"
+    PERCENTAGE = "percentage"
+    SIDE = "side"
 
 
 class ExchangeConstantsFundingColumns(enum.Enum):
@@ -293,9 +318,9 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     REALISED_PNL = "realised_pnl"
     QUANTITY = "quantity"
     SIZE = "size"
-    VALUE = "value"
+    NOTIONAL = "notional"
     INITIAL_MARGIN = "initial_margin"
-    MARGIN = "margin"
+    COLLATERAL = "collateral"
     LEVERAGE = "leverage"
     MARGIN_TYPE = "margin_type"
     STATUS = "status"
