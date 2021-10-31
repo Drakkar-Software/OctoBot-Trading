@@ -119,6 +119,11 @@ class TraderPositionType(enum.Enum):
     ISOLATED = "isolated"
 
 
+class PositionMode(enum.Enum):
+    HEDGE = "hedge_mode"
+    ONE_WAY = "one_way_mode"
+
+
 class ExchangeConstantsCCXTColumns(enum.Enum):
     TIMESTAMP = "timestamp"
     DATETIME = "datetime"

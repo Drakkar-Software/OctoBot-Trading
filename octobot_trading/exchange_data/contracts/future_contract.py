@@ -24,11 +24,13 @@ class FutureContract(margin_contract.MarginContract):
                  contract_size=constants.ONE,
                  maximum_leverage=constants.ONE,
                  current_leverage=constants.ONE,
+                 position_mode=enums.PositionMode.ONE_WAY,
                  minimum_tick_size=0.5):
         super().__init__(pair, margin_type=margin_type, contract_size=contract_size,
                          maximum_leverage=maximum_leverage, current_leverage=current_leverage)
         self.contract_type = contract_type
         self.minimum_tick_size = minimum_tick_size
+        self.position_mode = position_mode
 
     def is_inverse_contract(self):
         """
@@ -38,3 +40,10 @@ class FutureContract(margin_contract.MarginContract):
         """
         return self.contract_type in [enums.FutureContractType.INVERSE_EXPIRABLE,
                                       enums.FutureContractType.INVERSE_PERPETUAL]
+
+    def set_position_mode(self, is_one_way):
+        """
+        Set the contract position mode
+        :param is_one_way: the new position mode value
+        """
+        self.position_mode = enums.PositionMode.ONE_WAY if is_one_way else enums.PositionMode.HEDGE
