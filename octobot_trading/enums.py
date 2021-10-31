@@ -444,3 +444,8 @@ class PlotAttributes(enum.Enum):
     X_TYPE = "x_type"
     Y_TYPE = "y_type"
     MODE = "mode"
+
+
+class PlotCharts(enum.Enum):
+    MAIN_CHART = "main-chart"
+    SUB_CHART = "sub-chart"

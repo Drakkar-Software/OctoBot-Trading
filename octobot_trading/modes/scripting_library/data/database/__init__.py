@@ -15,15 +15,6 @@
 #  License along with this library.
 
 
-def log_orders(writer, orders):
-    order_data = [
-        {
-            "time": order.creation_time,
-            "type": order.order_type.name if order.order_type is not None else 'Unknown',
-            "volume": float(order.origin_quantity),
-            "price": float(order.origin_price),
-            "state": order.state.state.value if order.state is not None else 'Unknown',
-        }
-        for order in orders
-    ]
-    writer.log_many("orders", order_data)
+from .base_database import BaseDatabase
+from .reading import *
+from .writing import *

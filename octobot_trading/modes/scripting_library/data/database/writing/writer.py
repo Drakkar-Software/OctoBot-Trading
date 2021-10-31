@@ -13,15 +13,27 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.databases as databases
+import numpy
+import octobot_trading.modes.scripting_library.data.database as database
 
 
-class DBWriter:
-    def __init__(self, file_path: str, database_adaptor=databases.TinyDBAdaptor):
-        self._database = databases.DocumentDatabase(database_adaptor(file_path))
+class DBWriter(database.BaseDatabase):
 
     def log(self, table_name: str, row: dict):
         self._database.insert(table_name, row)
 
+    def update(self, table_name: str, row: dict, query):
+        self._database.update(table_name, row, query)
+
     def log_many(self, table_name: str, rows: list):
         self._database.insert_many(table_name, rows)
+
+    @staticmethod
+    def get_value_from_array(array, index, multiplier=1):
+        if array is None:
+            return None
+        return array[index] * multiplier
+
+    @staticmethod
+    def get_serializable_value(value):
+        return value.item() if isinstance(value, numpy.generic) else value

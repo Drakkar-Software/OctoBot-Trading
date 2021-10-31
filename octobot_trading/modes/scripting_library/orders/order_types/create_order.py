@@ -18,6 +18,7 @@
 import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
+import octobot_trading.modes.scripting_library.data as library_data
 from .. import position_size
 
 
@@ -41,7 +42,9 @@ async def _create_order_instance(
 
     reduce_only=False,    #Todo
     post_only=False,    #Todo
-    tag=None    #Todo
+    tag=None,    #Todo
+
+    context=None
 ):
     # 1. create order instance
     current_symbol_holding, current_market_holding, market_quantity, current_price, symbol_market = \
@@ -132,6 +135,8 @@ async def _create_order_instance(
         # 2. submit it to trader
         created_order = await trader.create_order(created_order)
         orders.append(created_order)
+    if context is not None:
+        library_data.store_orders(context, orders)
     return orders
 
 
