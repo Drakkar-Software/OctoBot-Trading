@@ -19,7 +19,9 @@ cimport octobot_trading.exchange_data.contracts.margin_contract as margin_contra
 
 cdef class FutureContract(margin_contract.MarginContract):
     cdef readonly object contract_type
+    cdef readonly object position_mode
 
     cdef readonly double minimum_tick_size
 
     cpdef bint is_inverse_contract(self)
+    cpdef void set_position_mode(self, bint is_one_way)
