@@ -1072,7 +1072,7 @@ async def test_default_impl(backtesting_trader):
     # should not raise NotImplemented
     portfolio_manager.portfolio.update_portfolio_data_from_order(order, "BTC", "USD")
     portfolio_manager.portfolio.update_portfolio_available_from_order(order)
-    portfolio_manager.portfolio.log_portfolio_update_from_order(order, "BTC", "USD")
+    portfolio_manager.portfolio.log_portfolio_update_from_order(order)
 
 
 async def test_parse_currency_balance(backtesting_trader):

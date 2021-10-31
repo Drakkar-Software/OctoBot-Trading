@@ -20,7 +20,7 @@ import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_trading.constants as constants
-import octobot_trading.errors as errors
+import octobot_trading.enums as enums
 import octobot_trading.util as util
 import octobot_trading.personal_data as personal_data
 
@@ -134,15 +134,6 @@ class Portfolio(util.Initializable):
         """
         raise NotImplementedError("update_portfolio_available_from_order is not implemented")
 
-    def log_portfolio_update_from_order(self, order, currency, market):
-        """
-        Log a portfolio update from an order
-        :param order: the order that updated the portfolio
-        :param currency: the order currency
-        :param market: the order market
-        """
-        raise NotImplementedError("log_portfolio_update_from_order is not implemented")
-
     def update_portfolio_from_filled_order(self, order):
         """
         update_portfolio performs the update of the total / available quantity of a currency
@@ -156,7 +147,7 @@ class Portfolio(util.Initializable):
 
         currency, market = order.get_currency_and_market()
         self.update_portfolio_data_from_order(order, currency, market)
-        self.log_portfolio_update_from_order(order, currency, market)
+        self.log_portfolio_update_from_order(order)
 
     def update_portfolio_available(self, order, is_new_order=False):
         """
@@ -293,8 +284,21 @@ class Portfolio(util.Initializable):
             self._set_currency_portfolio(currency=currency_to_reset,
                                          available=self.portfolio[currency_to_reset][common_constants.PORTFOLIO_TOTAL],
                                          total=self.portfolio[currency_to_reset][common_constants.PORTFOLIO_TOTAL])
+
+    def log_portfolio_update_from_order(self, order):
+        """
+        Log a portfolio update from an order
+        :param order: the order that updated the portfolio
+        """
+        if order.side == enums.TradeOrderSide.BUY:
+            currency_portfolio_num = order.filled_quantity - order.get_total_fees(order.currency)
+            market_portfolio_num = -order.filled_quantity * order.filled_price
         else:
-            self._update_currency_portfolio(currency=currency_to_reset, available=reset_quantity)
+            currency_portfolio_num = -order.filled_quantity
+            market_portfolio_num = order.filled_quantity * order.filled_price - order.get_total_fees(order.market)
+
+        self.logger.debug(f"Portfolio updated from order | {order.currency} {currency_portfolio_num} | {order.market} "
+                          f"{market_portfolio_num} | {constants.CURRENT_PORTFOLIO_STRING} {self.portfolio}")
 
 
 def _should_update_available(order):
