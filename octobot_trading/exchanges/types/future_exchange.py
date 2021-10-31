@@ -147,6 +147,13 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_contract_type is not implemented")
 
+    async def get_position_mode(self, symbol: str):
+        """
+        :param symbol: the symbol
+        :return: the position mode for the requested symbol. Can be PositionMode HEDGE or ONE_WAY
+        """
+        raise NotImplementedError("get_position_mode is not implemented")
+
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         """
         Set the symbol leverage
@@ -164,6 +171,15 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :return: the update result
         """
         raise NotImplementedError("set_symbol_margin_type is not implemented")
+
+    async def set_symbol_position_mode(self, symbol: str, one_way: bool):
+        """
+        Set the symbol margin type
+        :param symbol: the symbol
+        :param one_way: when False, position mode is hedge, else it's one_way
+        :return: the update result
+        """
+        raise NotImplementedError("set_symbol_position_mode is not implemented")
 
     """
     Parsers

@@ -27,6 +27,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     DEFAULT_SYMBOL_MAX_LEVERAGE = constants.ONE_HUNDRED
     DEFAULT_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
     DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.LINEAR_PERPETUAL
+    DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
     DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal(0.0001)
 
     def __init__(self, config, exchange_manager, backtesting):
@@ -112,7 +113,8 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
             current_leverage=self.DEFAULT_SYMBOL_LEVERAGE,
             maximum_leverage=self.DEFAULT_SYMBOL_MAX_LEVERAGE,
             margin_type=self.DEFAULT_SYMBOL_MARGIN_TYPE,
-            contract_type=self.DEFAULT_SYMBOL_CONTRACT_TYPE)
+            contract_type=self.DEFAULT_SYMBOL_CONTRACT_TYPE,
+            position_mode=self.DEFAULT_SYMBOL_POSITION_MODE)
 
     async def get_symbol_leverage(self, symbol: str):
         return self.DEFAULT_SYMBOL_LEVERAGE
@@ -126,6 +128,9 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     async def get_funding_rate(self, symbol: str, **kwargs: dict):
         return self.DEFAULT_SYMBOL_FUNDING_RATE
 
+    async def get_position_mode(self, symbol: str, **kwargs: dict):
+        return self.DEFAULT_SYMBOL_POSITION_MODE
+
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         pair_contract = self.get_pair_future_contract(symbol)
         pair_contract.set_current_leverage(leverage)
@@ -133,3 +138,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):
         pair_contract = self.get_pair_future_contract(symbol)
         pair_contract.set_margin_type(isolated)
+
+    async def set_symbol_position_mode(self, symbol: str, one_way: bool):
+        pair_contract = self.get_pair_future_contract(symbol)
+        pair_contract.set_position_mode(one_way)
