@@ -13,8 +13,19 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.databases as databases
 
-from .exchange_public_data import *
-from octobot_trading.modes.scripting_library.data.database.writing import *
-from octobot_trading.modes.scripting_library.data.database.reading import *
 
+class BaseDatabase:
+    def __init__(self, file_path: str, database_adaptor=databases.TinyDBAdaptor):
+        self._database = databases.DocumentDatabase(database_adaptor(file_path))
+        self.are_data_initialized = False
+
+    def search(self):
+        return self._database.query_factory()
+
+    def count(self, table_name: str, query) -> int:
+        return self._database.count(table_name, query)
+
+    def close(self):
+        self._database.close()

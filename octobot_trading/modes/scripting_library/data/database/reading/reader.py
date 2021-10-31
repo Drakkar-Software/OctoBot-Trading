@@ -13,18 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.databases as databases
+import octobot_trading.modes.scripting_library.data.database as database
 
 
-class DBReader:
-    def __init__(self, file_path: str, database_adaptor=databases.TinyDBAdaptor):
-        self._database = databases.DocumentDatabase(database_adaptor(file_path))
-
+class DBReader(database.BaseDatabase):
     def select(self, table_name: str, query: str) -> list:
         return self._database.select(table_name, query)
 
-    def count(self, table_name: str, query) -> int:
-        return self._database.count(table_name, query)
+    def tables(self) -> list:
+        return self._database.tables()
 
-    def search(self):
-        return self._database.query_factory()
+    def all(self, table_name: str) -> list:
+        return self._database.select(table_name, None)

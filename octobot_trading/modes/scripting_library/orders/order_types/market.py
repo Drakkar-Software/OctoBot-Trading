@@ -34,5 +34,6 @@ async def market(
         amount,
         target_position=target_position,
         order_type_name=order_type,
-        tag=tag
+        tag=tag,
+        context=context,
     )

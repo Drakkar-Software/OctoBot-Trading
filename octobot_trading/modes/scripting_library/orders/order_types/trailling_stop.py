@@ -41,4 +41,5 @@ async def trailling_market(
         min_offset=min_offset,
         max_offset=max_offset,
         tag=tag,
+        context=context,
     )

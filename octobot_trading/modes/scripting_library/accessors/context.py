@@ -28,6 +28,7 @@ class Context:
         signal_symbol,
         time_frame,
         logger,
+        writer,
     ):
         current_trading_mode_producer = current_trading_mode_producer
         self.exchange_manager = exchange_manager
@@ -39,14 +40,14 @@ class Context:
         self.signal_symbol = signal_symbol
         self.time_frame = time_frame
         self.logger = logger
-
-        self.running = False
+        self.writer = writer
 
     @staticmethod
-    def minimal(exchange_manager):
+    def minimal(exchange_manager, plot_only=True):
         return Context(
             None,
             exchange_manager,
+            None,
             None,
             None,
             None,

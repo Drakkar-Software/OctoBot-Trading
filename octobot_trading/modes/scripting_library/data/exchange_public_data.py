@@ -28,6 +28,10 @@ async def current_price(pair, exchange_manager):
         raise asyncio.TimeoutError("Mark price is not available")
 
 
+def current_time(context) -> float:
+    return api.get_exchange_current_time(context.exchange_manager)
+
+
 # Use capital letters to avoid python native lib conflicts
 def Open(context, symbol, time_frame):
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_open_candles()
