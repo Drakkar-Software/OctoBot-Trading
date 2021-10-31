@@ -55,7 +55,8 @@ class Trade:
         self.exchange_trade_type = None
 
     def update_from_order(self, order, creation_time=0, canceled_time=0, executed_time=0):
-        self.currency, self.market = order.get_currency_and_market()
+        self.currency = order.currency
+        self.market = order.market
         self.taker_or_maker = order.taker_or_maker
         self.executed_quantity = order.filled_quantity
         self.executed_price = order.filled_price
