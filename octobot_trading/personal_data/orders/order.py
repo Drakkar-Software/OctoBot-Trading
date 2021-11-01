@@ -246,6 +246,13 @@ class Order(util.Initializable):
     def is_refreshing(self):
         return self.state is not None and self.state.is_refreshing()
 
+    def get_position_side(self, future_contract):
+        if self.position_side is not None:
+            return self.position_side
+        if future_contract.is_one_way_position_mode():
+            return enums.PositionSide.BOTH
+        raise errors.InvalidPositionSide(f"Can't determine order position side while using hedge position mode")
+
     @contextlib.contextmanager
     def order_state_creation(self):
         try:
