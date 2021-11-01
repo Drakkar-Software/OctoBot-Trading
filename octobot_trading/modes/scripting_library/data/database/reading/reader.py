@@ -17,11 +17,11 @@ import octobot_trading.modes.scripting_library.data.database as database
 
 
 class DBReader(database.BaseDatabase):
-    def select(self, table_name: str, query: str) -> list:
-        return self._database.select(table_name, query)
+    async def select(self, table_name: str, query: str) -> list:
+        return await self._database.select(table_name, query)
 
-    def tables(self) -> list:
-        return self._database.tables()
+    async def tables(self) -> list:
+        return await self._database.tables()
 
-    def all(self, table_name: str) -> list:
-        return self._database.select(table_name, None)
+    async def all(self, table_name: str) -> list:
+        return await self._database.select(table_name, None)

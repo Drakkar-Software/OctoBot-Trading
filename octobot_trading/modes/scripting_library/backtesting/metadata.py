@@ -14,5 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .reader import *
-from .metadata_reader import *
+
+def set_script_name(ctx, name):
+    ctx.current_trading_mode_producer.trading_mode.script_name = name
+
+
+def get_backtesting_db(ctx, run_id):
+    return ctx.trading_mode_class.get_db_name(prefix=run_id, backtesting=True)
