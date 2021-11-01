@@ -21,6 +21,7 @@ import octobot_commons.logging as logging
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 import octobot_trading.util as util
 import octobot_trading.personal_data as personal_data
 
@@ -117,12 +118,10 @@ class Portfolio(util.Initializable):
         """
         raise NotImplementedError("create_currency_asset is not implemented")
 
-    def update_portfolio_data_from_order(self, order, currency, market):
+    def update_portfolio_data_from_order(self, order):
         """
         Call update_portfolio_data for order currency and market
         :param order: the order that updated the portfolio
-        :param currency: the order currency
-        :param market: the order market
         """
         raise NotImplementedError("update_portfolio_data_from_order is not implemented")
 
@@ -145,8 +144,7 @@ class Portfolio(util.Initializable):
         if not _should_update_available(order):
             self.update_portfolio_available_from_order(order)
 
-        currency, market = order.get_currency_and_market()
-        self.update_portfolio_data_from_order(order, currency, market)
+        self.update_portfolio_data_from_order(order)
         self.log_portfolio_update_from_order(order)
 
     def update_portfolio_available(self, order, is_new_order=False):
