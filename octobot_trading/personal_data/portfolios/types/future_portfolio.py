@@ -67,13 +67,13 @@ class FuturePortfolio(portfolio_class.Portfolio):
         # When inverse contract, decrease a currency market equivalent quantity from currency balance
         if pair_future_contract.is_inverse_contract():
             # decrease currency market equivalent quantity from currency available balance
-            self._update_portfolio_data(currency, available_value=(
+            self._update_portfolio_data(order.currency, available_value=(
                     -(real_order_quantity / order_price) * (-constants.ONE if inverse_calculation else constants.ONE)))
 
         # When non-inverse contract, decrease directly market quantity
         else:
             # decrease market quantity from market available balance
-            self._update_portfolio_data(market, available_value=(
+            self._update_portfolio_data(order.market, available_value=(
                     -real_order_quantity * (-constants.ONE if inverse_calculation else constants.ONE)))
 
     def update_portfolio_from_liquidated_position(self, position):
