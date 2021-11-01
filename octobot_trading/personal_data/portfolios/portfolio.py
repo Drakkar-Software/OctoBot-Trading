@@ -81,8 +81,8 @@ class Portfolio(util.Initializable):
             self.logger.debug(f"Portfolio updated | {constants.CURRENT_PORTFOLIO_STRING} {self}")
             return True
         if any(
-            self._update_raw_currency_asset(currency=currency, raw_currency_balance=balance[currency])
-            for currency in balance
+                self._update_raw_currency_asset(currency=currency, raw_currency_balance=balance[currency])
+                for currency in balance
         ):
             self.logger.debug(f"Portfolio partially updated | {constants.CURRENT_PORTFOLIO_STRING} {self}")
             return True
@@ -192,7 +192,7 @@ class Portfolio(util.Initializable):
         :param raw_currency_balance: the raw current currency balance
         :return: the currency asset instance
         """
-        available, total = self._parse_raw_currency_balance(raw_currency_balance)
+        available, total = _parse_raw_currency_balance(raw_currency_balance)
         return self.create_currency_asset(currency=currency, available=available, total=total)
 
     def _update_raw_currency_asset(self, currency, raw_currency_balance):
@@ -202,23 +202,9 @@ class Portfolio(util.Initializable):
         :param raw_currency_balance: the raw current currency balance
         :return: True if updated
         """
-        available, total = self._parse_raw_currency_balance(raw_currency_balance)
+        available, total = _parse_raw_currency_balance(raw_currency_balance)
         return self._update_portfolio_data(currency=currency, total_value=total,
                                            available_value=available, replace_value=True)
-
-    def _parse_raw_currency_balance(self, raw_currency_balance):
-        """
-        Parse the exchange balance
-        Set 0 as currency value when the parsed value is None (concerning available and total values)
-        :param raw_currency_balance: the current currency balance
-        :return: the currency available and total as tuple
-        """
-        return (raw_currency_balance.get(constants.CONFIG_PORTFOLIO_FREE,
-                                         raw_currency_balance.get(common_constants.PORTFOLIO_AVAILABLE,
-                                                                  constants.ZERO)) or constants.ZERO,
-                raw_currency_balance.get(constants.CONFIG_PORTFOLIO_TOTAL,
-                                         raw_currency_balance.get(common_constants.PORTFOLIO_TOTAL,
-                                                                  constants.ZERO)) or constants.ZERO)
 
     def reset_portfolio_available(self, reset_currency=None, reset_quantity=None):
         """
@@ -275,3 +261,18 @@ def _should_update_available(order):
     :return: True if the order should update available portfolio
     """
     return not order.is_self_managed()
+
+
+def _parse_raw_currency_balance(raw_currency_balance):
+    """
+    Parse the exchange balance
+    Set 0 as currency value when the parsed value is None (concerning available and total values)
+    :param raw_currency_balance: the current currency balance
+    :return: the currency available and total as tuple
+    """
+    return (raw_currency_balance.get(constants.CONFIG_PORTFOLIO_FREE,
+                                     raw_currency_balance.get(common_constants.PORTFOLIO_AVAILABLE,
+                                                              constants.ZERO)) or constants.ZERO,
+            raw_currency_balance.get(constants.CONFIG_PORTFOLIO_TOTAL,
+                                     raw_currency_balance.get(common_constants.PORTFOLIO_TOTAL,
+                                                              constants.ZERO)) or constants.ZERO)
