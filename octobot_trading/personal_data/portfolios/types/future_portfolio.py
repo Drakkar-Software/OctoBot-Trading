@@ -83,7 +83,5 @@ class FuturePortfolio(portfolio_class.Portfolio):
         new_quantity = -position.quantity
         self._update_portfolio_data(position.currency
                                     if position.symbol_contract.is_inverse_contract() else position.market,
-                                    -position.quantity
-                                    if position.is_long() else position.quantity,
-                                    total=True,
-                                    available=True)
+                                    total_value=new_quantity,
+                                    available_value=new_quantity)
