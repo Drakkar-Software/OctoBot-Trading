@@ -189,8 +189,6 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
             position_dict.update({
                 trading_enums.ExchangeConstantsPositionColumns.SYMBOL.value:
                     position_dict.get(position_dict[trading_enums.ExchangePositionCCXTColumns.SYMBOL.value]),
-                trading_enums.ExchangeConstantsPositionColumns.ID.value:
-                    position_dict.get(position_dict[trading_enums.ExchangePositionCCXTColumns.SYMBOL.value]),
                 trading_enums.ExchangeConstantsPositionColumns.TIMESTAMP.value:
                     position_dict.get(trading_enums.ExchangePositionCCXTColumns.TIMESTAMP.value,
                                       self.connector.get_exchange_current_time()),

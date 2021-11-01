@@ -50,7 +50,6 @@ class FuturePortfolio(portfolio_class.Portfolio):
                                             # restore available + total update
                                             available_value=decimal.Decimal(2) * total_update_quantity,
                                             total_value=total_update_quantity)
-                import ccxt.async_support.binance
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from filled order : {order} ({e})")
 

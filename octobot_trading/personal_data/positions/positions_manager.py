@@ -23,6 +23,8 @@ import octobot_trading.util as util
 
 
 class PositionsManager(util.Initializable):
+    POSITION_ID_SEPARATOR = "_"
+
     def __init__(self, trader):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
@@ -36,24 +38,23 @@ class PositionsManager(util.Initializable):
     def get_symbol_position(self, symbol):
         return self._select_positions(symbol=symbol)
 
-    def get_position_by_id(self, position_id):
-        return self.positions.get(position_id, None)
-
     def get_symbol_leverage(self, symbol):
         return self._select_positions(symbol=symbol).leverage
 
     def get_symbol_margin_type(self, symbol):
         return self._select_positions(symbol=symbol).margin_type
 
-    async def upsert_position(self, position_id, raw_position) -> bool:
+    async def upsert_position(self, symbol: str, side, raw_position: dict) -> bool:
         """
         Create or update a position from a raw dictionary
-        :param position_id: the position id
+        :param symbol: the position symbol
+        :param side: the position side
         :param raw_position: the position raw dictionary
         :return: True when the creation or the update succeeded
         """
+        position_id = self._generate_position_id(symbol=symbol, side=side)
         if position_id not in self.positions:
-            new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position)
+            new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position=raw_position)
             return await self._finalize_position_creation(new_position, is_from_exchange_data=True)
 
         return self.positions[position_id].update_from_raw(raw_position)
@@ -64,8 +65,9 @@ class PositionsManager(util.Initializable):
         :param position: the position instance to recreate
         :return: True when the recreation succeeded
         """
-        new_position = position_factory.create_position_instance_from_raw(self.trader, position.to_dict())
+        new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position=position.to_dict())
         position.clear()
+        position.position_id = self._generate_position_id(symbol=position.symbol, side=position.side)
         return await self._finalize_position_creation(new_position)
 
     def upsert_position_instance(self, position) -> bool:
@@ -89,6 +91,18 @@ class PositionsManager(util.Initializable):
         self._reset_positions()
 
     # private
+    def _generate_position_id(self, symbol, side):
+        """
+        Generate a position ID for one way and hedge position modes
+        :param symbol: the position symbol
+        :param side: the position side
+        :return: the computed position id
+        """
+        symbol_contract = self.trader.exchange_manager.exchange.get_pair_future_contract(symbol)
+        if symbol_contract.is_one_way_position_mode():
+            return symbol
+        return f"{symbol}{self.POSITION_ID_SEPARATOR}{side.value}"
+
     async def _finalize_position_creation(self, new_position, is_from_exchange_data=False) -> bool:
         """
         Ends a position creation process
