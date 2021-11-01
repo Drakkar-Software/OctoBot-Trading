@@ -30,19 +30,19 @@ class SpotPortfolio(portfolio_class.Portfolio):
         """
         # update currency
         if order.side == enums.TradeOrderSide.BUY:
-            new_quantity = order.filled_quantity - order.get_total_fees(currency)
-            self._update_portfolio_data(currency, total_value=new_quantity, available_value=new_quantity)
+            new_quantity = order.filled_quantity - order.get_total_fees(order.currency)
+            self._update_portfolio_data(order.currency, total_value=new_quantity, available_value=new_quantity)
         else:
             new_quantity = -order.filled_quantity
-            self._update_portfolio_data(currency, total_value=new_quantity)
+            self._update_portfolio_data(order.currency, total_value=new_quantity)
 
         # update market
         if order.side == enums.TradeOrderSide.BUY:
             new_quantity = -(order.filled_quantity * order.filled_price)
-            self._update_portfolio_data(market, total_value=new_quantity)
+            self._update_portfolio_data(order.market, total_value=new_quantity)
         else:
-            new_quantity = (order.filled_quantity * order.filled_price) - order.get_total_fees(market)
-            self._update_portfolio_data(market, total_value=new_quantity, available_value=new_quantity)
+            new_quantity = (order.filled_quantity * order.filled_price) - order.get_total_fees(order.market)
+            self._update_portfolio_data(order.market, total_value=new_quantity, available_value=new_quantity)
 
     def update_portfolio_available_from_order(self, order, increase_quantity=True):
         """
@@ -53,9 +53,9 @@ class SpotPortfolio(portfolio_class.Portfolio):
         # when buy order
         if order.side == enums.TradeOrderSide.BUY:
             new_quantity = - order.origin_quantity * order.origin_price * (constants.ONE if increase_quantity else -constants.ONE)
-            self._update_portfolio_data(market, available_value=new_quantity)
+            self._update_portfolio_data(order.market, available_value=new_quantity)
 
         # when sell order
         else:
             new_quantity = - order.origin_quantity * (constants.ONE if increase_quantity else -constants.ONE)
-            self._update_portfolio_data(currency, available_value=new_quantity)
+            self._update_portfolio_data(order.currency, available_value=new_quantity)
