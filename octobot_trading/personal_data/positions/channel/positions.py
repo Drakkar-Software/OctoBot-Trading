@@ -33,11 +33,10 @@ class PositionsProducer(exchanges_channel.ExchangeChannelProducer):
                 symbol: str = position[enums.ExchangeConstantsPositionColumns.SYMBOL.value]
                 if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
                         self.channel.get_filtered_consumers(symbol=symbol):
-                    position_id: str = position[enums.ExchangeConstantsPositionColumns.ID.value]
-
+                    side: object = position[enums.ExchangeConstantsPositionColumns.SIDE.value]
                     changed = await self.channel.exchange_manager.exchange_personal_data. \
                         handle_position_update(symbol=symbol,
-                                               position_id=position_id,
+                                               side=side,
                                                position=position,
                                                should_notify=False)
 
