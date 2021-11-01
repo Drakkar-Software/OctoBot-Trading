@@ -980,6 +980,9 @@ async def test_update_portfolio_data(backtesting_trader):
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
 
     if not os.getenv('CYTHON_IGNORE'):
+        # doesn't raise
+        portfolio_manager.portfolio._update_portfolio_data("BTC", -1)
+
         with pytest.raises(errors.PortfolioNegativeValueError):
             portfolio_manager.portfolio._update_portfolio_data("USDT", decimal.Decimal(-2000))
         with pytest.raises(errors.PortfolioNegativeValueError):

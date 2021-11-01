@@ -251,10 +251,7 @@ class Portfolio(util.Initializable):
         if reset_quantity is None:
             self.portfolio[currency_to_reset].restore_available()
         else:
-            self._update_currency_portfolio(currency=currency_to_reset, available=reset_quantity)
-
-        self.logger.debug(f"Portfolio updated from order | {order.currency} {currency_portfolio_num} | {order.market} "
-                          f"{market_portfolio_num} | {constants.CURRENT_PORTFOLIO_STRING} {self.portfolio}")
+            self.portfolio[currency_to_reset].update(available=reset_quantity)
 
 
 def _should_update_available(order):
