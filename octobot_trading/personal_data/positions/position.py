@@ -370,26 +370,17 @@ class Position(util.Initializable):
             symbol=symbol,
             currency=currency,
             market=market,
-            entry_price=decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value, constants.ZERO))),
-            mark_price=decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, constants.ZERO))),
-            liquidation_price=decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, constants.ZERO))),
-            quantity=decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO))),
-            size=decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO))),
-            value=decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO))),
-            margin=decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.COLLATERAL.value, constants.ZERO))),
+            entry_price=raw_position.get(enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value, constants.ZERO),
+            mark_price=raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, constants.ZERO),
+            liquidation_price=raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, constants.ZERO),
+            quantity=raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO),
+            size=raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO),
+            value=raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO),
+            margin=raw_position.get(enums.ExchangeConstantsPositionColumns.COLLATERAL.value, constants.ZERO),
             position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
-            unrealised_pnl=decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, constants.ZERO))),
-            realised_pnl=decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO))),
+            unrealised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, constants.ZERO),
+            realised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO),
             leverage=raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, None),
             margin_type=raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value,
                                          enums.TraderPositionType.ISOLATED),
