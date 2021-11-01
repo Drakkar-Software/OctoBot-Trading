@@ -27,7 +27,6 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
     USER_COMMAND_RELOAD_SCRIPT = "reload_script"
     USER_COMMAND_RELOAD_SCRIPT_IS_LIVE = "is_live"
 
-
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.producer = AbstractScriptedTradingModeProducer
@@ -57,7 +56,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         return [user_commands_consumer]
 
     async def _user_commands_callback(self, bot_id, subject, action, data) -> None:
-        self.logger.info(f"Received {action} command.")
+        self.logger.debug(f"Received {action} command.")
         if action == AbstractScriptedTradingMode.USER_COMMAND_RELOAD_SCRIPT:
             live_script = data[AbstractScriptedTradingMode.USER_COMMAND_RELOAD_SCRIPT_IS_LIVE]
             await self.reload_script(live=live_script)
@@ -82,11 +81,23 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         else:
             self._backtesting_script = script
 
+    def _get_storage_db_name(self):
+        index = 1
+        name_candidate = self.get_db_name(f"{self.bot_id}_{index}")
+        while index < 1000:
+            if os.path.isfile(name_candidate):
+                index += 1
+                name_candidate = self.get_db_name(f"{self.bot_id}_{index}")
+            else:
+                return name_candidate
+        raise RuntimeError("Impossible to find a new database name")
+
     async def start_over_database(self):
         # todo dont move like this but add a check to ensure multiple subsequent moves dont happen when multiple symbols
         for producer in self.producers:
             producer.writer.close()
-            os.rename(self.get_db_name(self.bot_id), self.get_db_name(f"{self.bot_id}_1"))
+            name_candidate = self._get_storage_db_name()
+            os.rename(self.get_db_name(self.bot_id), name_candidate)
             producer.writer = scripting_library.DBWriter(self.get_db_name(self.bot_id))
             await producer.set_final_eval(*producer.last_call)
 
