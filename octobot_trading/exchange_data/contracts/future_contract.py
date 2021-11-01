@@ -41,6 +41,12 @@ class FutureContract(margin_contract.MarginContract):
         return self.contract_type in [enums.FutureContractType.INVERSE_EXPIRABLE,
                                       enums.FutureContractType.INVERSE_PERPETUAL]
 
+    def is_one_way_position_mode(self):
+        """
+        :return: True if the contract position_mode is equals to PositionMode's ONE_WAY
+        """
+        return self.position_mode is enums.PositionMode.ONE_WAY
+
     def set_position_mode(self, is_one_way):
         """
         Set the contract position mode

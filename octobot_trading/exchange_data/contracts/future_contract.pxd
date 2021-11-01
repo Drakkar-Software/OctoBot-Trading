@@ -24,4 +24,5 @@ cdef class FutureContract(margin_contract.MarginContract):
     cdef readonly double minimum_tick_size
 
     cpdef bint is_inverse_contract(self)
+    cpdef bint is_one_way_position_mode(self)
     cpdef void set_position_mode(self, bint is_one_way)
