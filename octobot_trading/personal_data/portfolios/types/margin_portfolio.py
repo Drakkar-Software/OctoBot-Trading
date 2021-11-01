@@ -49,14 +49,8 @@ class MarginPortfolio(portfolio_class.Portfolio):
         self.portfolio[currency] = self.create_currency_asset(currency, available=available, total=total)
 
     def _update_currency_portfolio(self, currency, available=0, total=0, margin=0):
-        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE] += \
-            portfolio_class.ensure_portfolio_update_validness(
-            currency, self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE], available
-        )
-        self.portfolio[currency][common_constants.MARGIN_PORTFOLIO] += \
-            portfolio_class.ensure_portfolio_update_validness(
-                currency, self.portfolio[currency][common_constants.MARGIN_PORTFOLIO], margin
-            )
-        self.portfolio[currency][common_constants.PORTFOLIO_TOTAL] += portfolio_class.ensure_portfolio_update_validness(
-            currency, self.portfolio[currency][common_constants.PORTFOLIO_TOTAL], total
+        self.portfolio[currency][common_constants.PORTFOLIO_AVAILABLE].update(
+            available=available,
+            margin=margin,
+            total=total,
         )
