@@ -464,6 +464,9 @@ class Position(util.Initializable):
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
                 f"id : {self.position_id}")
 
+    async def close(self):
+        await self.reset()
+
     async def reset(self):
         """
         Reset position attributes
