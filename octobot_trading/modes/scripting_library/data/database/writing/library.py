@@ -21,16 +21,20 @@ import octobot_trading.enums as trading_enums
 
 def store_orders(ctx, orders,
                  chart=trading_enums.PlotCharts.MAIN_CHART.value,
-                 x_multiplier=1000):
+                 x_multiplier=1000,
+                 kind="markers",
+                 mode="lines"):
     order_data = [
         {
             "x": order.creation_time * x_multiplier,
             "pair": order.symbol,
             "type": order.order_type.name if order.order_type is not None else 'Unknown',
             "volume": float(order.origin_quantity),
-            "price": float(order.origin_price),
+            "y": float(order.created_last_price),
             "state": order.state.state.value if order.state is not None else 'Unknown',
             "chart": chart,
+            "kind": kind,
+            "mode": mode,
         }
         for order in orders
     ]
@@ -112,23 +116,6 @@ def plot(ctx, title, x=None,
         )
 
 
-def store_message(ctx, message, title="messages", y_value=None,
-                  chart=trading_enums.PlotCharts.SUB_CHART.value, pair=None,
-                  kind="markers", mode="lines", x_multiplier=1000):
-    ctx.writer.log(
-        title,
-        {
-            "x": exchange_public_data.current_time(ctx) * x_multiplier,
-            "y": exchange_public_data.Close(ctx, pair or ctx.traded_pair, ctx.time_frame),
-            "value": message,
-            "pair": pair or ctx.traded_pair,
-            "kind": kind,
-            "mode": mode,
-            "chart": chart,
-        }
-    )
-
-
 def plot_shape(ctx, title, value, y_value,
                chart=trading_enums.PlotCharts.SUB_CHART.value, pair=None,
                kind="markers", mode="lines", x_multiplier=1000):
@@ -144,4 +131,3 @@ def plot_shape(ctx, title, value, y_value,
             "chart": chart,
         }
     )
-
