@@ -87,20 +87,22 @@ class FillOrderState(order_state.OrderState):
             except KeyError:
                 self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
-            # update portfolio with filled order
+            # update portfolio with filled order and position if any
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
-                await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order)
+                if self.order.exchange_manager.is_future:
+                    await self.order.exchange_manager.exchange_personal_data.update_position_from_filled_order(
+                        self.order.symbol, self.order)
+                elif self.order.exchange_manager.is_margin:
+                    pass  # TODO : nothing for now
+                await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(
+                    self.order)
 
             # notify order filled
-            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(self.order, False)
+            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(
+                self.order, False)
 
             # call order on_filled callback
             await self.order.on_filled()
-
-            # update position if any
-            if self.order.exchange_manager.is_future:
-                await self.order.exchange_manager.exchange_personal_data.update_position_from_filled_order(
-                    self.order.symbol, self.order)
 
             # set close state
             await self.order.on_close(force_close=True)  # TODO force ?
