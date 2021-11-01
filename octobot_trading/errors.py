@@ -79,3 +79,8 @@ class InvalidLeverageValue(Exception):
     Raised when a leverage is being updated with an invalid value
     """
 
+
+class InvalidPositionSide(Exception):
+    """
+    Raised when an order with an invalid position side is triggering a position update
+    """
