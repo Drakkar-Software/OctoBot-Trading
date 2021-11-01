@@ -254,7 +254,7 @@ class Position(util.Initializable):
         """
         :return: Position symbol funding rate
         """
-        return self.exchange_manager.exchange_symbols_data.\
+        return self.exchange_manager.exchange_symbols_data. \
             get_exchange_symbol_data(self.symbol).funding_manager.funding_rate
 
     def get_initial_margin_rate(self):
@@ -366,36 +366,36 @@ class Position(util.Initializable):
     def update_from_raw(self, raw_position):
         symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
         currency, market = self.exchange_manager.get_exchange_quote_and_base(symbol)
-        return self._update(**{
-            "symbol": symbol,
-            "currency": currency,
-            "market": market,
-            "entry_price": decimal.Decimal(
+        return self._update(
+            symbol=symbol,
+            currency=currency,
+            market=market,
+            entry_price=decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value, constants.ZERO))),
-            "mark_price": decimal.Decimal(
+            mark_price=decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, constants.ZERO))),
-            "liquidation_price": decimal.Decimal(
+            liquidation_price=decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, constants.ZERO))),
-            "quantity": decimal.Decimal(
+            quantity=decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO))),
-            "size": decimal.Decimal(
+            size=decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO))),
-            "value": decimal.Decimal(
+            value=decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO))),
-            "margin": decimal.Decimal(
+            margin=decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.COLLATERAL.value, constants.ZERO))),
-            "position_id": str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
-            "timestamp": raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
-            "unrealised_pnl": decimal.Decimal(
+            position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
+            timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
+            unrealised_pnl=decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, constants.ZERO))),
-            "realised_pnl": decimal.Decimal(
+            realised_pnl=decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO))),
-            "leverage": raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, None),
-            "margin_type": raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value,
-                                            enums.TraderPositionType.ISOLATED),
-            "status": position_util.parse_position_status(raw_position),
-            "side": raw_position.get(enums.ExchangeConstantsPositionColumns.SIDE.value, None)
-        })
+            leverage=raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, None),
+            margin_type=raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value,
+                                         enums.TraderPositionType.ISOLATED),
+            status=position_util.parse_position_status(raw_position),
+            side=raw_position.get(enums.ExchangeConstantsPositionColumns.SIDE.value, None)
+        )
 
     def to_dict(self):
         return {
