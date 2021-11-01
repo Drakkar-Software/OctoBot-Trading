@@ -29,8 +29,9 @@ class Context:
         time_frame,
         logger,
         writer,
+        trading_mode_class,
     ):
-        current_trading_mode_producer = current_trading_mode_producer
+        self.current_trading_mode_producer = current_trading_mode_producer
         self.exchange_manager = exchange_manager
         self.trader = trader
         self.exchange_name = exchange_name
@@ -41,12 +42,12 @@ class Context:
         self.time_frame = time_frame
         self.logger = logger
         self.writer = writer
+        self.trading_mode_class = trading_mode_class
 
     @staticmethod
-    def minimal(exchange_manager, plot_only=True):
+    def minimal(trading_mode_class, logger):
         return Context(
             None,
-            exchange_manager,
             None,
             None,
             None,
@@ -55,5 +56,7 @@ class Context:
             None,
             None,
             None,
+            logger,
             None,
+            trading_mode_class,
         )

@@ -17,13 +17,14 @@ import numpy
 
 import octobot_trading.modes.scripting_library.data.exchange_public_data as exchange_public_data
 import octobot_trading.enums as trading_enums
+import octobot_trading.api as trading_api
 
 
-def store_orders(ctx, orders,
-                 chart=trading_enums.PlotCharts.MAIN_CHART.value,
-                 x_multiplier=1000,
-                 kind="markers",
-                 mode="lines"):
+async def store_orders(ctx, orders,
+                       chart=trading_enums.PlotCharts.MAIN_CHART.value,
+                       x_multiplier=1000,
+                       kind="markers",
+                       mode="lines"):
     order_data = [
         {
             "x": order.creation_time * x_multiplier,
@@ -34,14 +35,15 @@ def store_orders(ctx, orders,
             "state": order.state.state.value if order.state is not None else 'Unknown',
             "chart": chart,
             "kind": kind,
+            "side": order.side.value,
             "mode": mode,
         }
         for order in orders
     ]
-    ctx.writer.log_many("orders", order_data)
+    await ctx.writer.log_many(trading_enums.DBTables.ORDERS.value, order_data)
 
 
-def plot(ctx, title, x=None,
+async def plot(ctx, title, x=None,
          y=None, z=None, open=None, high=None, low=None, close=None, volume=None,
          pair=None, kind="scatter", mode="lines", init_only=True,
          condition=None, x_function=exchange_public_data.Time,
@@ -57,8 +59,8 @@ def plot(ctx, title, x=None,
                 candidate_x.append(x_data[index])
         x = numpy.array(candidate_x)
         y = numpy.array(candidate_y)
-    indicator_query = ctx.writer.search()
-    if init_only and not ctx.writer.are_data_initialized and ctx.writer.count(
+    indicator_query = await ctx.writer.search()
+    if init_only and not ctx.writer.are_data_initialized and await ctx.writer.count(
             title,
             # needs parentheses to evaluate the right side of the equality first
             (indicator_query.pair == (pair or ctx.traded_pair))
@@ -75,7 +77,7 @@ def plot(ctx, title, x=None,
         if adapted_x is None:
             raise RuntimeError("No confirmed adapted_x")
         adapted_x = adapted_x * x_multiplier
-        ctx.writer.log_many(
+        await ctx.writer.log_many(
             title,
             [
                 {
@@ -97,7 +99,7 @@ def plot(ctx, title, x=None,
 
         )
     else:
-        ctx.writer.log(
+        await ctx.writer.log(
             title,
             {
                 "pair": pair or ctx.traded_pair,
@@ -116,10 +118,10 @@ def plot(ctx, title, x=None,
         )
 
 
-def plot_shape(ctx, title, value, y_value,
+async def plot_shape(ctx, title, value, y_value,
                chart=trading_enums.PlotCharts.SUB_CHART.value, pair=None,
                kind="markers", mode="lines", x_multiplier=1000):
-    ctx.writer.log(
+    await ctx.writer.log(
         title,
         {
             "x": exchange_public_data.current_time(ctx) * x_multiplier,
@@ -130,4 +132,18 @@ def plot_shape(ctx, title, value, y_value,
             "mode": mode,
             "chart": chart,
         }
+    )
+
+
+async def save_metadata(writer, metadata):
+    await writer.log(
+        trading_enums.DBTables.METADATA.value,
+        metadata
+    )
+
+
+async def save_portfolio(writer, context):
+    await writer.log(
+        trading_enums.DBTables.PORTFOLIO.value,
+        trading_api.get_portfolio(context.exchange_manager, as_decimal=False)
     )

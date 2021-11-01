@@ -114,3 +114,8 @@ CANCEL_ORDER_STATUS_SCOPE = [enums.OrderStatus.PENDING_CANCEL,
                              enums.OrderStatus.CANCELED,
                              enums.OrderStatus.EXPIRED,
                              enums.OrderStatus.REJECTED]
+
+# Scripted trading
+BACKTESTING = "backtesting"
+DB_FILE_NAME = "P&L"
+METADATA_DB_FILE_NAME = "metadata"

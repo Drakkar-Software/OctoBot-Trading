@@ -83,12 +83,12 @@ async def _create_order_instance(
 
     # order types
     #normal order
-    side = None
     if order_type_name == "market":
         order_type = trading_enums.TraderOrderType.SELL_MARKET if side == "sell" else trading_enums.TraderOrderType.BUY_MARKET
 
     if order_type_name == "limit":
         order_type = trading_enums.TraderOrderType.SELL_LIMIT if side == "sell" else trading_enums.TraderOrderType.BUY_LIMIT
+    side = None
     if offset is not None and min_offset:
     # conditional orders
         # should be a real SL on the exchange short and long
@@ -126,9 +126,9 @@ async def _create_order_instance(
             trader=trader,
             order_type=order_type,
             symbol=symbol,
-            current_price=current_price,
+            current_price=order_price,
             quantity=order_quantity,
-            price=price,
+            price=order_price if price is None else price,
             side=side)
         if min_offset is not None:
             await created_order.set_trailing_percent(min_offset)
@@ -136,7 +136,7 @@ async def _create_order_instance(
         created_order = await trader.create_order(created_order)
         orders.append(created_order)
     if context is not None:
-        library_data.store_orders(context, orders)
+        await library_data.store_orders(context, orders)
     return orders
 
 

@@ -406,8 +406,20 @@ class PlotAttributes(enum.Enum):
     X_TYPE = "x_type"
     Y_TYPE = "y_type"
     MODE = "mode"
+    SIDE = "side"
 
 
 class PlotCharts(enum.Enum):
     MAIN_CHART = "main-chart"
     SUB_CHART = "sub-chart"
+
+
+class DBTables(enum.Enum):
+    METADATA = "metadata"
+    PORTFOLIO = "portfolio"
+    ORDERS = "orders"
+    CANDLES = "candles"
+
+
+class DBRows(enum.Enum):
+    REFERENCE_MARKET = "ref_market"

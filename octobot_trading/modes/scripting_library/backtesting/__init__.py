@@ -14,5 +14,5 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .reader import *
-from .metadata_reader import *
+from .metadata import *
+from .run_data import *

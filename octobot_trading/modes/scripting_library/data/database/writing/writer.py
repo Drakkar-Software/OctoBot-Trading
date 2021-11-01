@@ -19,14 +19,14 @@ import octobot_trading.modes.scripting_library.data.database as database
 
 class DBWriter(database.BaseDatabase):
 
-    def log(self, table_name: str, row: dict):
-        self._database.insert(table_name, row)
+    async def log(self, table_name: str, row: dict):
+        await self._database.insert(table_name, row)
 
-    def update(self, table_name: str, row: dict, query):
-        self._database.update(table_name, row, query)
+    async def update(self, table_name: str, row: dict, query):
+        await self._database.update(table_name, row, query)
 
-    def log_many(self, table_name: str, rows: list):
-        self._database.insert_many(table_name, rows)
+    async def log_many(self, table_name: str, rows: list):
+        await self._database.insert_many(table_name, rows)
 
     @staticmethod
     def get_value_from_array(array, index, multiplier=1):

@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
+
 import octobot_commons.databases as databases
 
 
@@ -21,11 +23,25 @@ class BaseDatabase:
         self._database = databases.DocumentDatabase(database_adaptor(file_path))
         self.are_data_initialized = False
 
-    def search(self):
-        return self._database.query_factory()
+    def get_db_path(self):
+        return self._database.get_db_path()
 
-    def count(self, table_name: str, query) -> int:
-        return self._database.count(table_name, query)
+    async def search(self):
+        return await self._database.query_factory()
 
-    def close(self):
-        self._database.close()
+    async def count(self, table_name: str, query) -> int:
+        return await self._database.count(table_name, query)
+
+    async def close(self):
+        await self._database.close()
+
+    @classmethod
+    @contextlib.asynccontextmanager
+    async def database(cls, *args, **kwargs):
+        database = None
+        try:
+            database = cls(*args, **kwargs)
+            yield database
+        finally:
+            if database is not None:
+                await database.close()

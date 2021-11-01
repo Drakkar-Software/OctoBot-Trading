@@ -26,68 +26,71 @@ class PlottedElements:
         self.elements = []
 
     async def fill_from_database(self, database_name):
-        reader = scripting_data.DBReader(database_name)
-        graphs_by_parts = {}
-        for table_name in reader.tables():
-            graph_data = reader.all(table_name)
-            chart = graph_data[0]["chart"]
-            if chart in graphs_by_parts:
-                graphs_by_parts[chart][table_name] = graph_data
-            else:
-                graphs_by_parts[chart] = {table_name: graph_data}
-
-        for part, datasets in graphs_by_parts.items():
-            with self.part(part) as part:
-                for title, dataset in datasets.items():
-                    x = []
-                    y = []
-                    open = []
-                    high = []
-                    low = []
-                    close = []
-                    volume = []
-                    if dataset[0].get("x", None) is None:
-                        x = None
-                    if dataset[0].get("y", None) is None:
-                        y = None
-                    if dataset[0].get("open", None) is None:
-                        open = None
-                    if dataset[0].get("high", None) is None:
-                        high = None
-                    if dataset[0].get("low", None) is None:
-                        low = None
-                    if dataset[0].get("close", None) is None:
-                        close = None
-                    if dataset[0].get("volume", None) is None:
-                        volume = None
-                    for data in dataset:
-                        if x is not None:
-                            x.append(data["x"])
-                        if y is not None:
-                            y.append(data["y"])
-                        if open is not None:
-                            open.append(data["open"])
-                        if high is not None:
-                            high.append(data["high"])
-                        if low is not None:
-                            low.append(data["low"])
-                        if close is not None:
-                            close.append(data["close"])
-                        if volume is not None:
-                            volume.append(data["volume"])
-                    part.plot(
-                        kind=data.get("kind", None),
-                        x=x,
-                        y=y,
-                        open=open,
-                        high=high,
-                        low=low,
-                        close=close,
-                        volume=volume,
-                        title=title,
-                        x_type="date",
-                        y_type=None,
-                        mode=data.get("mode", None))
+        async with scripting_data.DBReader.database(database_name) as reader:
+            graphs_by_parts = {}
+            for table_name in await reader.tables():
+                graph_data = await reader.all(table_name)
+                try:
+                    chart = graph_data[0]["chart"]
+                    if chart in graphs_by_parts:
+                        graphs_by_parts[chart][table_name] = graph_data
+                    else:
+                        graphs_by_parts[chart] = {table_name: graph_data}
+                except KeyError:
+                    # some table have no chart
+                    pass
+            for part, datasets in graphs_by_parts.items():
+                with self.part(part) as part:
+                    for title, dataset in datasets.items():
+                        x = []
+                        y = []
+                        open = []
+                        high = []
+                        low = []
+                        close = []
+                        volume = []
+                        if dataset[0].get("x", None) is None:
+                            x = None
+                        if dataset[0].get("y", None) is None:
+                            y = None
+                        if dataset[0].get("open", None) is None:
+                            open = None
+                        if dataset[0].get("high", None) is None:
+                            high = None
+                        if dataset[0].get("low", None) is None:
+                            low = None
+                        if dataset[0].get("close", None) is None:
+                            close = None
+                        if dataset[0].get("volume", None) is None:
+                            volume = None
+                        for data in dataset:
+                            if x is not None:
+                                x.append(data["x"])
+                            if y is not None:
+                                y.append(data["y"])
+                            if open is not None:
+                                open.append(data["open"])
+                            if high is not None:
+                                high.append(data["high"])
+                            if low is not None:
+                                low.append(data["low"])
+                            if close is not None:
+                                close.append(data["close"])
+                            if volume is not None:
+                                volume.append(data["volume"])
+                        part.plot(
+                            kind=data.get("kind", None),
+                            x=x,
+                            y=y,
+                            open=open,
+                            high=high,
+                            low=low,
+                            close=close,
+                            volume=volume,
+                            title=title,
+                            x_type="date",
+                            y_type=None,
+                            mode=data.get("mode", None))
 
     @contextlib.contextmanager
     def part(self, name):
