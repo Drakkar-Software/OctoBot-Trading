@@ -38,6 +38,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     """
     CCXT library wrapper
     """
+    CCXT_ISOLATED = "ISOLATED"
+    CCXT_CROSSED = "CROSSED"
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
@@ -355,6 +357,22 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         except Exception as e:
             self.logger.exception(e, True, f"Order {order_id} failed to cancel | {e} ({e.__class__.__name__})")
         return cancel_resp is not None
+
+    async def get_open_positions(self, **kwargs: dict) -> list:
+        return await self.client.fetch_positions()
+
+    async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
+        return await self.client.fetch_funding_rate(symbol=symbol)
+
+    async def get_funding_rate_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
+        return await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit)
+
+    async def set_symbol_leverage(self, symbol: str, leverage: int):
+        return await self.client.set_leverage(leverage=leverage, symbol=symbol)
+
+    async def set_symbol_margin_type(self, symbol: str, isolated: bool):
+        return await self.client.set_margin_mode(symbol=symbol,
+                                                 marginType=self.CCXT_ISOLATED if isolated else self.CCXT_CROSSED)
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         fees = self.client.calculate_fee(symbol=symbol,
