@@ -381,9 +381,9 @@ class Position(util.Initializable):
             "size": decimal.Decimal(
                 str(raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO))),
             "value": decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.VALUE.value, constants.ZERO))),
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO))),
             "margin": decimal.Decimal(
-                str(raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN.value, constants.ZERO))),
+                str(raw_position.get(enums.ExchangeConstantsPositionColumns.COLLATERAL.value, constants.ZERO))),
             "position_id": str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
             "timestamp": raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
             "unrealised_pnl": decimal.Decimal(
@@ -406,9 +406,9 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.SIDE.value: self.side.value,
             enums.ExchangeConstantsPositionColumns.QUANTITY.value: self.quantity,
             enums.ExchangeConstantsPositionColumns.SIZE.value: self.size,
-            enums.ExchangeConstantsPositionColumns.VALUE.value: self.value,
+            enums.ExchangeConstantsPositionColumns.NOTIONAL.value: self.value,
             enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value: self.initial_margin,
-            enums.ExchangeConstantsPositionColumns.MARGIN.value: self.margin,
+            enums.ExchangeConstantsPositionColumns.COLLATERAL.value: self.margin,
             enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: self.entry_price,
             enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
             enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
