@@ -142,14 +142,14 @@ async def test_get_holdings_ratio():
             commons_constants.PORTFOLIO_TOTAL: 1000
         }
     }
-    ratio = await consumer.get_holdings_ratio("BTC")
+    ratio = consumer.get_holdings_ratio("BTC")
     assert round(ratio, 8) == 0.90909091
-    ratio = await consumer.get_holdings_ratio("USDT")
+    ratio = consumer.get_holdings_ratio("USDT")
     assert round(ratio, 8) == 0.09090909
 
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio.pop("USDT")
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.portfolio_current_value = 10
-    ratio = await consumer.get_holdings_ratio("BTC")
+    ratio = consumer.get_holdings_ratio("BTC")
     assert round(ratio, 8) == 1
     # add ETH and try to get ratio without symbol price
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["ETH"] = {
@@ -160,13 +160,13 @@ async def test_get_holdings_ratio():
     # force add symbol in exchange symbols
     exchange_manager.client_symbols.append("ETH/BTC")
     with pytest.raises(KeyError):
-        ratio = await consumer.get_holdings_ratio("ETH")
+        ratio = consumer.get_holdings_ratio("ETH")
     # let channel register proceed
     await wait_asyncio_next_cycle()
     assert round(ratio, 8) == 1
-    ratio = await consumer.get_holdings_ratio("USDT")
+    ratio = consumer.get_holdings_ratio("USDT")
     assert round(ratio, 8) == 0
-    ratio = await consumer.get_holdings_ratio("XYZ")
+    ratio = consumer.get_holdings_ratio("XYZ")
     assert round(ratio, 8) == 0
 
 
