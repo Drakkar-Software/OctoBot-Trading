@@ -36,10 +36,10 @@ cdef class Portfolio(util.Initializable):
     cpdef object update_portfolio_from_balance(self, dict balance, bint force_replace=*)
     cpdef object update_portfolio_available(self, order_class.Order order, bint is_new_order=*)
     cpdef object update_portfolio_from_filled_order(self, order_class.Order order)
+    cpdef void log_portfolio_update_from_order(self, order_class.Order order)
     # cpdef dict get_portfolio_from_amount_dict(self, dict amount_dict) can't be cythonized for now
 
     # abstract methods
-    cpdef void log_portfolio_update_from_order(self, order_class.Order order)
     # return object to ensure PortfolioNegativeValueError forwarding
     cpdef object update_portfolio_data_from_order(self, order_class.Order order)
     cpdef object update_portfolio_available_from_order(self, order_class.Order order, bint increase_quantity=*)
