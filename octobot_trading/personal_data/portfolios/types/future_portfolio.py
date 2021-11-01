@@ -91,6 +91,17 @@ class FuturePortfolio(portfolio_class.Portfolio):
                                         total=update_total,
                                         available=update_available)
 
+    def update_portfolio_from_liquidated_position(self, position):
+        """
+        :param position: the liquidated position
+        """
+        self._update_portfolio_data(position.currency
+                                    if position.symbol_contract.is_inverse_contract() else position.market,
+                                    -position.quantity
+                                    if position.is_long() else position.quantity,
+                                    total=True,
+                                    available=True)
+
     def log_portfolio_update_from_order(self, order, currency, market):
         """
         TODO
