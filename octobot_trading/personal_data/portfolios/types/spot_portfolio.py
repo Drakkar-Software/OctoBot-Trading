@@ -31,31 +31,32 @@ class SpotPortfolio(portfolio_class.Portfolio):
         # update currency
         if order.side == enums.TradeOrderSide.BUY:
             new_quantity = order.filled_quantity - order.get_total_fees(order.currency)
-            self._update_portfolio_data(order.currency, total_value=new_quantity, available_value=new_quantity)
+            new_quantity = order.filled_quantity - order.get_total_fees(order.currency)
+            self._update_portfolio_data(order.currency, new_quantity, True, True)
         else:
             new_quantity = -order.filled_quantity
-            self._update_portfolio_data(order.currency, total_value=new_quantity)
+            self._update_portfolio_data(order.currency, new_quantity, True, False)
 
         # update market
         if order.side == enums.TradeOrderSide.BUY:
             new_quantity = -(order.filled_quantity * order.filled_price)
-            self._update_portfolio_data(order.market, total_value=new_quantity)
+            self._update_portfolio_data(order.market, new_quantity, True, False)
         else:
             new_quantity = (order.filled_quantity * order.filled_price) - order.get_total_fees(order.market)
-            self._update_portfolio_data(order.market, total_value=new_quantity, available_value=new_quantity)
+            self._update_portfolio_data(order.market, new_quantity, True, True)
 
-    def update_portfolio_available_from_order(self, order, is_new_order=True):
+    def update_portfolio_available_from_order(self, order, increase_quantity=True):
         """
         Realise portfolio availability update
         :param order: the order that triggers the portfolio update
-        :param is_new_order: True when the order is being created
+        :param increase_quantity: True when the order is being created
         """
         # when buy order
         if order.side == enums.TradeOrderSide.BUY:
-            new_quantity = - order.origin_quantity * order.origin_price * (constants.ONE if is_new_order else -constants.ONE)
-            self._update_portfolio_data(order.market, available_value=new_quantity)
+            new_quantity = - order.origin_quantity * order.origin_price * (constants.ONE if increase_quantity else -constants.ONE)
+            self._update_portfolio_data(order.market, new_quantity, False, True)
 
         # when sell order
         else:
-            new_quantity = - order.origin_quantity * (constants.ONE if is_new_order else -constants.ONE)
-            self._update_portfolio_data(order.currency, available_value=new_quantity)
+            new_quantity = - order.origin_quantity * (constants.ONE if increase_quantity else -constants.ONE)
+            self._update_portfolio_data(order.currency, new_quantity, False, True)

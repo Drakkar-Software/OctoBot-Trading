@@ -22,12 +22,10 @@ class FuturePortfolio(portfolio_class.Portfolio):
     def create_currency_asset(self, currency, available, total):
         return future_asset.FutureAsset(name=currency, available=available, total=total)
 
-    def update_portfolio_data_from_order(self, order, currency, market):
+    def update_portfolio_data_from_order(self, order):
         """
         Call update_portfolio_data for order currency and market
         :param order: the order that updated the portfolio
-        :param currency: the order currency
-        :param market: the order market
         """
         self._update_portfolio_from_future_order(order,
                                                  order_quantity=order.filled_quantity,
@@ -68,17 +66,16 @@ class FuturePortfolio(portfolio_class.Portfolio):
         :param update_available: when True, update the available quantity of the portfolio
         :param update_total: when True, update the total quantity of the portfolio
         """
-        currency, market = order.get_currency_and_market()
         pair_future_contract = order.exchange_manager.exchange.get_pair_future_contract(order.symbol)
 
         # calculates the real order quantity depending on the current contract leverage
-        real_order_quantity = ((order_quantity - (order.get_total_fees(currency) if subtract_fees else constants.ZERO))
+        real_order_quantity = ((order_quantity - (order.get_total_fees(order.currency) if subtract_fees else constants.ZERO))
                                / pair_future_contract.current_leverage)
 
         # When inverse contract, decrease a currency market equivalent quantity from currency balance
         if pair_future_contract.is_inverse_contract():
             # decrease currency market equivalent quantity from currency available balance
-            self._update_portfolio_data(currency,
+            self._update_portfolio_data(order.currency,
                                         -(real_order_quantity / order_price) * (-constants.ONE if inverse_calculation else constants.ONE),
                                         total=update_total,
                                         available=update_available)
@@ -86,7 +83,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
         # When non-inverse contract, decrease directly market quantity
         else:
             # decrease market quantity from market available balance
-            self._update_portfolio_data(market,
+            self._update_portfolio_data(order.market,
                                         -real_order_quantity * (-constants.ONE if inverse_calculation else constants.ONE),
                                         total=update_total,
                                         available=update_available)
@@ -101,14 +98,3 @@ class FuturePortfolio(portfolio_class.Portfolio):
                                     if position.is_long() else position.quantity,
                                     total=True,
                                     available=True)
-
-        """
-        TODO
-        :param order: the order to log
-        :param currency: the order currency
-        :param market: the order market
-        """
-        self.logger.debug(f"Portfolio updated from order "
-                          f"| {currency} TODO "
-                          f"| {market} TODO "
-                          f"| {constants.CURRENT_PORTFOLIO_STRING} {self.portfolio}")

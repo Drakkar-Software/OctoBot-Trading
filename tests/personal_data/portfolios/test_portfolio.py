@@ -1035,7 +1035,7 @@ async def test_reset_portfolio_available(backtesting_trader):
 
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
                                                               commons_constants.PORTFOLIO_AVAILABLE) == decimal.Decimal(
-        '6')
+        '4')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
                                                               commons_constants.PORTFOLIO_TOTAL) == decimal.Decimal(
         '10')
@@ -1051,7 +1051,7 @@ async def test_reset_portfolio_available(backtesting_trader):
 
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
                                                               commons_constants.PORTFOLIO_AVAILABLE) == decimal.Decimal(
-        '6')
+        '4')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC",
                                                               commons_constants.PORTFOLIO_TOTAL) == decimal.Decimal(
         '10')
@@ -1070,7 +1070,7 @@ async def test_default_impl(backtesting_trader):
     order = BuyMarketOrder(trader)
 
     # should not raise NotImplemented
-    portfolio_manager.portfolio.update_portfolio_data_from_order(order, "BTC", "USD")
+    portfolio_manager.portfolio.update_portfolio_data_from_order(order)
     portfolio_manager.portfolio.update_portfolio_available_from_order(order)
     portfolio_manager.portfolio.log_portfolio_update_from_order(order)
 
