@@ -42,7 +42,7 @@ cdef class Portfolio(util.Initializable):
     # abstract methods
     # return object to ensure PortfolioNegativeValueError forwarding
     cpdef object update_portfolio_data_from_order(self, order_class.Order order)
-    cpdef object update_portfolio_available_from_order(self, order_class.Order order, bint increase_quantity=*)
+    cpdef object update_portfolio_available_from_order(self, order_class.Order order, bint is_new_order=*)
     cpdef object create_currency_asset(self, str currency, object available=*, object total=*)
 
     # private methods

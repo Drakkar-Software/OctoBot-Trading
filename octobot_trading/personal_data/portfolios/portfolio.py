@@ -117,11 +117,11 @@ class Portfolio(util.Initializable):
         """
         raise NotImplementedError("update_portfolio_data_from_order is not implemented")
 
-    def update_portfolio_available_from_order(self, order, increase_quantity=True):
+    def update_portfolio_available_from_order(self, order, is_new_order=True):
         """
         Realize portfolio availability update
         :param order: the order that triggers the portfolio update
-        :param increase_quantity: True when increasing quantity
+        :param is_new_order: True when the order is being created
         """
         raise NotImplementedError("update_portfolio_available_from_order is not implemented")
 
