@@ -31,6 +31,24 @@ from tests.test_utils.random_numbers import decimal_random_price, decimal_random
 pytestmark = pytest.mark.asyncio
 
 
+async def test_get_symbol_position(future_trader_simulator):
+    config, exchange_manager, trader = future_trader_simulator
+    positions_manager = exchange_manager.exchange_personal_data.positions_manager
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+
+    symbol_contract.set_position_mode(is_one_way=True)
+    p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.LONG)
+    assert p1
+    p1bis = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.SHORT)
+    assert p1 is p1bis
+    symbol_contract.set_position_mode(is_one_way=False)
+    p2 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.LONG)
+    assert p2
+    p2bis = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.SHORT)
+    assert p2 is not p2bis
+
+
 async def test__generate_position_id(future_trader_simulator):
     config, exchange_manager, trader = future_trader_simulator
     positions_manager = exchange_manager.exchange_personal_data.positions_manager
