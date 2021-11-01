@@ -44,18 +44,18 @@ class SpotPortfolio(portfolio_class.Portfolio):
             new_quantity = (order.filled_quantity * order.filled_price) - order.get_total_fees(order.market)
             self._update_portfolio_data(order.market, total_value=new_quantity, available_value=new_quantity)
 
-    def update_portfolio_available_from_order(self, order, increase_quantity=True):
+    def update_portfolio_available_from_order(self, order, is_new_order=True):
         """
         Realise portfolio availability update
         :param order: the order that triggers the portfolio update
-        :param increase_quantity: True when the order is being created
+        :param is_new_order: True when the order is being created
         """
         # when buy order
         if order.side == enums.TradeOrderSide.BUY:
-            new_quantity = - order.origin_quantity * order.origin_price * (constants.ONE if increase_quantity else -constants.ONE)
+            new_quantity = - order.origin_quantity * order.origin_price * (constants.ONE if is_new_order else -constants.ONE)
             self._update_portfolio_data(order.market, available_value=new_quantity)
 
         # when sell order
         else:
-            new_quantity = - order.origin_quantity * (constants.ONE if increase_quantity else -constants.ONE)
+            new_quantity = - order.origin_quantity * (constants.ONE if is_new_order else -constants.ONE)
             self._update_portfolio_data(order.currency, available_value=new_quantity)
