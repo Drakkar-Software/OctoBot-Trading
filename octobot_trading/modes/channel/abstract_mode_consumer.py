@@ -99,7 +99,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         # other cases like neutral state or unfulfilled previous conditions
         return False
 
-    async def get_holdings_ratio(self, currency):
+    def get_holdings_ratio(self, currency):
         return self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder \
             .get_currency_holding_ratio(currency)
 
