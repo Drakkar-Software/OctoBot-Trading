@@ -85,10 +85,20 @@ class Position(util.Initializable):
         await positions_states.create_position_state(self, **kwargs)
 
     async def on_open(self, force_open=False, is_from_exchange_data=False):
+        """
+        Triggers a new position open state
+        :param force_open: if the new state should be forced
+        :param is_from_exchange_data: if it's call from exchange data
+        """
         self.state = positions_states.OpenPositionState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_open)
 
     async def on_liquidate(self, force_liquidate=False, is_from_exchange_data=False):
+        """
+        Triggers a new position liquidation state
+        :param force_liquidate: if the new state should be forced
+        :param is_from_exchange_data: if it's call from exchange data
+        """
         self.state = positions_states.LiquidatePositionState(self, is_from_exchange_data=is_from_exchange_data)
         await self.state.initialize(forced=force_liquidate)
 
@@ -177,6 +187,11 @@ class Position(util.Initializable):
         return changed
 
     async def update(self, update_quantity=None, mark_price=None):
+        """
+        Update position quantity and / or mark price
+        :param update_quantity: the quantity update value
+        :param mark_price: the mark price update value
+        """
         self._update_quantity_and_mark_price(update_quantity=update_quantity, mark_price=mark_price)
         if not self.is_idle():
             await self._check_for_liquidation()
@@ -361,6 +376,9 @@ class Position(util.Initializable):
         return (self.unrealised_pnl / self.margin) * 100
 
     async def recreate(self):
+        """
+        Recreate itself using its PositionManager instance
+        """
         self.exchange_manager.exchange_personal_data.positions_manager.recreate_position(self)
 
     def update_from_raw(self, raw_position):
@@ -425,14 +443,16 @@ class Position(util.Initializable):
 
     def _update_side(self):
         """
-        check if self.side still represents the position side
+        Checks if self.side still represents the position side
+        Only relevant when account is using one way position mode
         """
-        if self.quantity >= constants.ZERO:
-            self.side = enums.PositionSide.LONG
-        elif self.quantity < constants.ZERO:
-            self.side = enums.PositionSide.SHORT
-        else:
-            self.side = enums.PositionSide.UNKNOWN
+        if self.symbol_contract.is_one_way_position_mode():
+            if self.quantity >= constants.ZERO:
+                self.side = enums.PositionSide.LONG
+            elif self.quantity < constants.ZERO:
+                self.side = enums.PositionSide.SHORT
+            else:
+                self.side = enums.PositionSide.UNKNOWN
 
     def __str__(self):
         return self.to_string()
