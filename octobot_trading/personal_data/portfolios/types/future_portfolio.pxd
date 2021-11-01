@@ -17,6 +17,8 @@
 cimport octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
 cdef class FuturePortfolio(portfolio_class.Portfolio):
+    cpdef void update_portfolio_from_liquidated_position(self, object position)
+
     cdef void _update_portfolio_from_future_order(self,
                                               object order,
                                               object order_quantity,
