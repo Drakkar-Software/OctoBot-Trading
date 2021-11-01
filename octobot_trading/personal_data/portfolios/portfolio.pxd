@@ -49,7 +49,6 @@ cdef class Portfolio(util.Initializable):
     cdef void _reset_currency_portfolio(self, str currency)
     cdef object _parse_raw_currency_asset(self, str currency, dict raw_currency_balance)
     cdef bint _update_raw_currency_asset(self, str currency, dict raw_currency_balance)
-    cdef tuple _parse_raw_currency_balance(self, dict raw_currency_balance)
     cdef void _set_currency_portfolio(self, str currency, object available, object total)
     cdef void _reset_all_portfolio_available(self)
     # return object to ensure PortfolioNegativeValueError forwarding
@@ -58,3 +57,4 @@ cdef class Portfolio(util.Initializable):
     cdef object _reset_currency_portfolio_available(self, str currency_to_reset, object reset_quantity)
 
 cdef bint _should_update_available(order_class.Order order)
+cdef tuple _parse_raw_currency_balance(dict raw_currency_balance)
