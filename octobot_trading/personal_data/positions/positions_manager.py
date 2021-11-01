@@ -35,14 +35,8 @@ class PositionsManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_positions()
 
-    def get_symbol_position(self, symbol):
-        return self._select_positions(symbol=symbol)
-
-    def get_symbol_leverage(self, symbol):
-        return self._select_positions(symbol=symbol).leverage
-
-    def get_symbol_margin_type(self, symbol):
-        return self._select_positions(symbol=symbol).margin_type
+    def get_symbol_position(self, symbol, side):
+        return self._get_or_create_position(symbol=symbol, side=side)
 
     async def upsert_position(self, symbol: str, side, raw_position: dict) -> bool:
         """
@@ -123,18 +117,19 @@ class PositionsManager(util.Initializable):
         asyncio.create_task(self._finalize_position_creation(new_position))
         return new_position
 
-    def _select_positions(self, symbol=None):
+    def _get_or_create_position(self, symbol=None, side=None):
         """
-        Filter positions by symbol
-        :param symbol: the symbol to match, all symbol are considered when symbol is None
-        :return: positions matching the symbol selector
+        Get or create position by symbol and side
+        :param symbol: the expected position symbol
+        :param side: the expected position side
+        :return: the matching position
         """
-        if symbol is None:
-            return self.positions
-        for position in self.positions.values():
-            if position.symbol == symbol:
-                return position
-        return self._create_symbol_position(symbol)
+        expected_position_id = self._generate_position_id(symbol=symbol, side=side)
+        try:
+            return self.positions[expected_position_id]
+        except KeyError:
+            self.positions[expected_position_id] = self._create_symbol_position(symbol)
+        return self.positions[expected_position_id]
 
     def _reset_positions(self):
         """
