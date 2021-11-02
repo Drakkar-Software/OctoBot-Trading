@@ -296,7 +296,7 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=enums.TraderOrderType.SELL_MARKET,
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
                       current_price=decimal.Decimal(str(120)),
                       quantity=decimal.Decimal(str(25)),
@@ -311,11 +311,11 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1250.0')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1250.0')
 
-    portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('950')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1250')
 
     # Close short position with loss
-    portfolio_manager.portfolio.update_portfolio_data_from_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1500.0')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1500.0')
+    portfolio_manager.portfolio.update_portfolio_data_from_order(market_buy)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1550.0')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1550.0')
