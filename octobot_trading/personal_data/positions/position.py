@@ -456,10 +456,10 @@ class Position(util.Initializable):
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
                 f"id : {self.position_id}")
 
-    async def close(self):
-        await self.reset()
+    def close(self):
+        self.reset()
 
-    async def reset(self):
+    def reset(self):
         """
         Reset position attributes
         """
@@ -477,7 +477,7 @@ class Position(util.Initializable):
         self.unrealised_pnl = constants.ZERO
         self.realised_pnl = constants.ZERO
         self.creation_time = constants.ZERO
-        await self.on_open()
+        asyncio.create_task(self.on_open())
 
     def clear(self):
         """
