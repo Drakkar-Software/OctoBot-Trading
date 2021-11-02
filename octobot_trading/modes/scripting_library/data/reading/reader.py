@@ -13,7 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.modes.scripting_library.data as database
 
 
-from .writer import *
-from .library import *
+class DBReader(database.BaseDatabase):
+    async def select(self, table_name: str, query: str) -> list:
+        return await self._database.select(table_name, query)
+
+    async def tables(self) -> list:
+        return await self._database.tables()
+
+    async def all(self, table_name: str) -> list:
+        return await self._database.select(table_name, None)

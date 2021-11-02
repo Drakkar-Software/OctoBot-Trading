@@ -15,7 +15,7 @@
 #  License along with this library.
 import numpy
 
-import octobot_trading.modes.scripting_library.data.exchange_public_data as exchange_public_data
+import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.enums as trading_enums
 import octobot_trading.api as trading_api
 
@@ -44,11 +44,11 @@ async def store_orders(ctx, orders,
 
 
 async def plot(ctx, title, x=None,
-         y=None, z=None, open=None, high=None, low=None, close=None, volume=None,
-         pair=None, kind="scatter", mode="lines", init_only=True,
-         condition=None, x_function=exchange_public_data.Time,
-         x_multiplier=1000,
-         chart=trading_enums.PlotCharts.SUB_CHART.value):
+               y=None, z=None, open=None, high=None, low=None, close=None, volume=None,
+               pair=None, kind="scatter", mode="lines", init_only=True,
+               condition=None, x_function=exchange_public_data.Time,
+               x_multiplier=1000,
+               chart=trading_enums.PlotCharts.SUB_CHART.value):
     if condition is not None:
         candidate_y = []
         candidate_x = []

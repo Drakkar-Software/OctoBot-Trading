@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import numpy
-import octobot_trading.modes.scripting_library.data.database as database
+import octobot_trading.modes.scripting_library.data as database
 
 
 class DBWriter(database.BaseDatabase):

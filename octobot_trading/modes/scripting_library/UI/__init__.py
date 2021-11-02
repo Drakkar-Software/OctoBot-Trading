@@ -15,4 +15,4 @@
 #  License along with this library.
 
 
-from .plotted_elements import PlottedElements
+from .plots import *
