@@ -18,16 +18,20 @@ import os
 
 import pytest
 
-from octobot_trading.enums import TraderOrderType
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
+import octobot_trading.enums as enums
+import octobot_trading.exchange_data.contracts as contracts
 from octobot_trading.personal_data import FuturePortfolio, BuyMarketOrder, SellMarketOrder, SellLimitOrder, \
-    StopLossOrder, BuyLimitOrder
+    StopLossOrder
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting, \
     DEFAULT_EXCHANGE_NAME
 
 # All test coroutines will be treated as marked.
+from tests.exchanges.traders import DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE, \
+    DEFAULT_FUTURE_SYMBOL_LEVERAGE
+
 pytestmark = pytest.mark.asyncio
 
 DEFAULT_SYMBOL = "BTC/USDT"
@@ -61,7 +65,7 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_linear
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
                       current_price=decimal.Decimal(str(1000)),
                       quantity=decimal.Decimal(str(2.5)),  # real quantity = 2.5 / 5 = 0.5 BTC at 1000$
@@ -75,7 +79,7 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_linear
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
                       current_price=decimal.Decimal(str(74)),
                       quantity=decimal.Decimal(str(5)),  # real quantity = 5 / 5 = 1 BTC at 74$
@@ -83,10 +87,63 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_linear
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(10)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(1000)
     # 500 - 1 BTC * 74$ = 426
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(426))
+
+    # test cancel buy order
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, False)
+    # 426 + 1 BTC * 74$ = 500
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(500))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(10)
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
+
+
+@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
+                         indirect=["backtesting_exchange_manager"])
+async def test_update_portfolio_available_from_order_with_market_buy_long_inverse_contract(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    symbol_contract = contracts.FutureContract(
+        pair=DEFAULT_FUTURE_SYMBOL,
+        margin_type=DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE,
+        contract_type=enums.FutureContractType.INVERSE_PERPETUAL,
+        current_leverage=DEFAULT_FUTURE_SYMBOL_LEVERAGE)
+    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+
+    # Test buy order
+    market_buy = BuyMarketOrder(trader)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol="BTC/USDT",
+                      current_price=decimal.Decimal(str(1000)),
+                      quantity=decimal.Decimal(str(1000)),  # real quantity = 1000 / 1000 = 1 BTC at 1000$
+                      price=decimal.Decimal(str(1000)))
+
+    # test buy order creation
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(9))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
+
+    # Test buy order
+    market_buy = BuyMarketOrder(trader)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol="BTC/USDT",
+                      current_price=decimal.Decimal(str(74)),
+                      quantity=decimal.Decimal(str(74/3)),  # real quantity = 0.3 BTC at 74$
+                      price=decimal.Decimal(str(74)))
+
+    # test buy order creation
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(10)
+    # 9 - (74 / 3) / 74 = 8.666666666666666648648648649
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('8.666666666666666648648648649')
+
+    # test cancel buy order
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, False)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(9)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(1000))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
 
 
@@ -99,7 +156,7 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
                       current_price=decimal.Decimal(str(1000)),
                       quantity=decimal.Decimal(str(3)),  # real quantity = 3 / 5 = 0.6
@@ -113,7 +170,7 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
                       current_price=decimal.Decimal(str(7.5)),
                       quantity=decimal.Decimal(str(30)),
@@ -127,7 +184,7 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
 
     # Test reducing LONG position with a sell market order
     market_sell = SellMarketOrder(trader)
-    market_sell.update(order_type=TraderOrderType.SELL_MARKET,
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol="BTC/USDT",
                        current_price=decimal.Decimal(str(54)),
                        quantity=decimal.Decimal(str(20)),
@@ -144,14 +201,15 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
                          indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio_linear_contract(backtesting_trader):
+async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio_linear_contract(
+        backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(5))
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol="BTC/USDT",
                       current_price=decimal.Decimal(str(1000)),
                       quantity=decimal.Decimal(str(100000000)),
@@ -165,14 +223,15 @@ async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
                          indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders_linear_contract(backtesting_trader):
+async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders_linear_contract(
+        backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(5))
 
     # Test sell order
     market_sell = SellMarketOrder(trader)
-    market_sell.update(order_type=TraderOrderType.SELL_MARKET,
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol="BTC/USDT",
                        current_price=decimal.Decimal(str(80)),
                        quantity=decimal.Decimal(str(12)),
@@ -180,7 +239,7 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
 
     # Test sell order
     limit_sell = SellLimitOrder(trader)
-    limit_sell.update(order_type=TraderOrderType.SELL_LIMIT,
+    limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
                       symbol="BTC/USDT",
                       current_price=decimal.Decimal(str(10)),
                       quantity=decimal.Decimal(str(46.5)),
@@ -188,7 +247,7 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
 
     # Test stop loss order
     stop_loss = StopLossOrder(trader)
-    stop_loss.update(order_type=TraderOrderType.STOP_LOSS,
+    stop_loss.update(order_type=enums.TraderOrderType.STOP_LOSS,
                      symbol="BTC/USDT",
                      current_price=decimal.Decimal(str(80)),
                      quantity=decimal.Decimal(str(46.5)),
@@ -221,14 +280,15 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
                          indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_linear_contract(backtesting_trader):
+async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_linear_contract(
+        backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
 
     # Test sell order
     market_sell = SellMarketOrder(trader)
-    market_sell.update(order_type=TraderOrderType.SELL_MARKET,
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol="BTC/USDT",
                        current_price=decimal.Decimal(str(100)),
                        quantity=decimal.Decimal(str(25)),
@@ -236,7 +296,7 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
-    market_buy.update(order_type=TraderOrderType.SELL_MARKET,
+    market_buy.update(order_type=enums.TraderOrderType.SELL_MARKET,
                       symbol="BTC/USDT",
                       current_price=decimal.Decimal(str(120)),
                       quantity=decimal.Decimal(str(25)),

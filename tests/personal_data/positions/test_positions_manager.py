@@ -19,7 +19,6 @@ import pytest
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.positions_manager as positions_mgr
-from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
 from tests.exchanges.traders import future_trader_simulator, DEFAULT_FUTURE_SYMBOL_CONTRACT, DEFAULT_FUTURE_SYMBOL
 from tests import event_loop
