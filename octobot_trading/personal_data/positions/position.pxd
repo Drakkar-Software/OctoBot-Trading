@@ -75,7 +75,6 @@ cdef class Position(util.Initializable):
                       object status=*,
                       object side=*)
     cdef bint _should_change(self, object original_value, object new_value)
-    cdef void _update_quantity_and_mark_price(self, object update_quantity=*, object mark_price=*)
     cdef void _update_mark_price(self, object mark_price)
     cdef void _update_entry_price_if_necessary(self, object mark_price)
     cdef void _update_quantity_or_size_if_necessary(self)
@@ -83,7 +82,9 @@ cdef class Position(util.Initializable):
     cdef void _update_size(self)
     cdef void _update_margin(self)
     cdef void _update_side(self)
+    cdef void _check_for_liquidation(self)
 
+    cpdef void update(self, object update_quantity=*, object mark_price=*)
     cpdef void update_value(self)
     cpdef void update_pnl(self)
     cpdef void update_initial_margin(self)
