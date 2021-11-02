@@ -65,8 +65,7 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = self.portfolio_manager.handle_balance_update(balance, is_diff_update=is_diff_update)
             if should_notify:
-                await exchange_channel.get_chan(constants.BALANCE_CHANNEL,
-                                                self.exchange_manager.id).get_internal_producer().send(balance)
+                await self.handle_portfolio_update_notification(balance)
             return changed
         except AttributeError as e:
             self.logger.exception(e, True, f"Failed to update balance : {e}")
@@ -79,8 +78,7 @@ class ExchangePersonalData(util.Initializable):
             changed: bool = await self.portfolio_manager.handle_balance_update_from_order(order,
                                                                                           require_exchange_update)
             if should_notify:
-                await exchange_channel.get_chan(constants.BALANCE_CHANNEL, self.exchange_manager.id). \
-                    get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
+                await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
             return changed
         except AttributeError as e:
             self.logger.exception(e, True, f"Failed to update balance : {e}")
@@ -93,12 +91,22 @@ class ExchangePersonalData(util.Initializable):
             changed: bool = await self.portfolio_manager.handle_balance_update_from_position(
                 position=position, require_exchange_update=require_exchange_update)
             if should_notify:
-                await exchange_channel.get_chan(constants.BALANCE_CHANNEL, self.exchange_manager.id). \
-                    get_internal_producer().send(self.portfolio_manager.portfolio.portfolio)
+                await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
             return changed
         except AttributeError as e:
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
+
+    async def handle_portfolio_update_notification(self, balance):
+        """
+        Notify Balance channel from portfolio update
+        :param balance: the updated balance
+        """
+        try:
+            await exchange_channel.get_chan(constants.BALANCE_CHANNEL, self.exchange_manager.id). \
+                get_internal_producer().send(balance)
+        except ValueError as e:
+            self.logger.error(f"Failed to send balance update notification : {e}")
 
     async def handle_portfolio_profitability_update(self, balance, mark_price, symbol, should_notify: bool = True):
         try:
@@ -200,12 +208,7 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = self.trades_manager.upsert_trade(trade_id, trade)
             if should_notify:
-                await exchange_channel.get_chan(constants.TRADES_CHANNEL,
-                                                self.exchange_manager.id).get_internal_producer() \
-                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
-                          symbol=symbol,
-                          trade=trade.to_dict(),
-                          old_trade=False)
+                await self.handle_trade_update_notification(trade, is_old_trade=False)
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update trade : {e}")
@@ -215,28 +218,34 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = self.trades_manager.upsert_trade_instance(trade)
             if should_notify:
-                await exchange_channel.get_chan(constants.TRADES_CHANNEL,
-                                                self.exchange_manager.id).get_internal_producer() \
-                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(trade.symbol),
-                          symbol=trade.symbol,
-                          trade=trade.to_dict(),
-                          old_trade=False)
+                await self.handle_trade_update_notification(trade, is_old_trade=False)
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update trade instance : {e}")
             return False
+
+    async def handle_trade_update_notification(self, trade, is_old_trade=False):
+        """
+        Notify Trade channel from Trade update
+        :param trade: the updated trade
+        :param is_old_trade: if the trade has already been loaded
+        """
+        try:
+            await exchange_channel.get_chan(constants.TRADES_CHANNEL,
+                                            self.exchange_manager.id).get_internal_producer() \
+                .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(trade.symbol),
+                      symbol=trade.symbol,
+                      trade=trade.to_dict(),
+                      old_trade=is_old_trade)
+        except ValueError as e:
+            self.logger.error(f"Failed to send trade update notification : {e}")
 
     async def handle_position_update(self, symbol, side, position, should_notify: bool = True):
         try:
             changed: bool = await self.positions_manager.upsert_position(symbol, side, position)
             if should_notify:
                 position_instance = self.positions_manager.get_symbol_position(symbol=symbol, side=side)
-                await exchange_channel.get_chan(constants.POSITIONS_CHANNEL,
-                                                self.exchange_manager.id).get_internal_producer() \
-                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
-                          symbol=symbol,
-                          position=position_instance.to_dict(),
-                          is_updated=changed)
+                await self.handle_position_update_notification(position_instance, is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position : {e}")
@@ -267,12 +276,7 @@ class ExchangePersonalData(util.Initializable):
             order.filled_quantity = update_quantity.copy_abs()
 
             if should_notify:
-                await exchange_channel.get_chan(constants.POSITIONS_CHANNEL,
-                                                self.exchange_manager.id).get_internal_producer() \
-                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(symbol),
-                          symbol=symbol,
-                          position=position_instance.to_dict(),
-                          is_updated=True)
+                await self.handle_position_update_notification(position_instance, is_updated=True)
             return True
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position : {e}")
@@ -282,28 +286,25 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = self.positions_manager.upsert_position_instance(position)
             if should_notify:
-                await exchange_channel.get_chan(constants.POSITIONS_CHANNEL,
-                                                self.exchange_manager.id).get_internal_producer() \
-                    .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(position.symbol),
-                          symbol=position.symbol,
-                          position=position,
-                          is_updated=changed)
+                await self.handle_position_update_notification(position, is_updated=changed)
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position instance : {e}")
             return False
 
-    async def handle_position_update_notification(self, position):
+    async def handle_position_update_notification(self, position, is_updated=True):
         """
         Notify Positions channel for Position update
         :param position: the updated position
+        :param is_updated: if the position has been updated
         """
         try:
             await exchange_channel.get_chan(constants.POSITIONS_CHANNEL,
                                             self.exchange_manager.id).get_internal_producer() \
                 .send(cryptocurrency=self.exchange_manager.exchange.get_pair_cryptocurrency(position.symbol),
                       symbol=position.symbol,
-                      position=position)
+                      position=position,
+                      is_updated=is_updated)
         except ValueError as e:
             self.logger.error(f"Failed to send position update notification : {e}")
 
