@@ -48,6 +48,28 @@ async def test_get_symbol_position(future_trader_simulator):
     assert p2 is not p2bis
 
 
+async def test_get_symbol_positions(future_trader_simulator):
+    config, exchange_manager, trader = future_trader_simulator
+    positions_manager = exchange_manager.exchange_personal_data.positions_manager
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+
+    symbol_contract.set_position_mode(is_one_way=False)
+    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 0
+    p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.LONG)
+    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
+    p2 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.SHORT)
+    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 2
+    assert positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL) == [p2, p1]
+    symbol_contract.set_position_mode(is_one_way=True)
+    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 0
+    p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=None)
+    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
+    assert positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL) == [p1]
+    p2 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=None)
+    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
+
+
 async def test__generate_position_id(future_trader_simulator):
     config, exchange_manager, trader = future_trader_simulator
     positions_manager = exchange_manager.exchange_personal_data.positions_manager
