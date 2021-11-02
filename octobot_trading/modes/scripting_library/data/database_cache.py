@@ -13,8 +13,28 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.enums as trading_enums
 
-from .base_database import BaseDatabase
-from octobot_trading.modes.scripting_library.data.writing import *
-from octobot_trading.modes.scripting_library.data.reading import *
-from .database_cache import DatabaseCache
+
+class DatabaseCache:
+
+    def __init__(self):
+        self.cache = {}
+
+    def register(self, table, row):
+        try:
+            self.cache[table].append(row)
+        except KeyError:
+            self.cache[table] = [row]
+
+    def has(self, table):
+        return table in self.cache
+
+    def contains_x(self, table, x_val):
+        try:
+            for element in self.cache[table]:
+                if element["x"] == x_val:
+                    return True
+        except KeyError:
+            pass
+        return False

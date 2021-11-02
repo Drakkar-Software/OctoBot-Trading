@@ -20,12 +20,15 @@ import octobot_trading.modes.scripting_library.data as database
 class DBWriter(database.BaseDatabase):
 
     async def log(self, table_name: str, row: dict):
+        self.cache.register(table_name, row)
         await self._database.insert(table_name, row)
 
     async def update(self, table_name: str, row: dict, query):
         await self._database.update(table_name, row, query)
 
     async def log_many(self, table_name: str, rows: list):
+        for row in rows:
+            self.cache.register(table_name, row)
         await self._database.insert_many(table_name, rows)
 
     @staticmethod

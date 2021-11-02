@@ -16,12 +16,14 @@
 import contextlib
 
 import octobot_commons.databases as databases
+import octobot_trading.modes.scripting_library.data as data
 
 
 class BaseDatabase:
     def __init__(self, file_path: str, database_adaptor=databases.TinyDBAdaptor):
         self._database = databases.DocumentDatabase(database_adaptor(file_path))
         self.are_data_initialized = False
+        self.cache = data.DatabaseCache()
 
     def get_db_path(self):
         return self._database.get_db_path()
@@ -34,6 +36,9 @@ class BaseDatabase:
 
     async def close(self):
         await self._database.close()
+
+    def contains_x(self, table, x_val):
+        return self.cache.contains_x(table, x_val)
 
     @classmethod
     @contextlib.asynccontextmanager
