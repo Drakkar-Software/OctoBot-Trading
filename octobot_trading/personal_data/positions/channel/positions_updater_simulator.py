@@ -43,8 +43,8 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         MarkPrice channel consumer callback
         """
         try:
-            symbol_position = self.channel.exchange_manager.exchange_personal_data.positions_manager \
-                .get_symbol_position(symbol=symbol)
-            await symbol_position.update(mark_price=decimal.Decimal(str(mark_price)))
+            for symbol_position in self.channel.exchange_manager.exchange_personal_data.positions_manager.\
+                    get_symbol_positions(symbol=symbol):
+                await symbol_position.update(mark_price=decimal.Decimal(str(mark_price)))
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle mark price : {e}")

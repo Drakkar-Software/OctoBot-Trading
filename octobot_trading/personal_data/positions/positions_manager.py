@@ -20,6 +20,7 @@ import octobot_commons.logging as logging
 
 import octobot_trading.personal_data.positions.position_factory as position_factory
 import octobot_trading.util as util
+import octobot_trading.enums as enums
 
 
 class PositionsManager(util.Initializable):
@@ -36,7 +37,21 @@ class PositionsManager(util.Initializable):
         self._reset_positions()
 
     def get_symbol_position(self, symbol, side):
+        """
+        Returns or create the symbol position instance
+        :param symbol: the position symbol
+        :param side: the position side
+        :return: the existing position or the newly created position
+        """
         return self._get_or_create_position(symbol=symbol, side=side)
+
+    def get_symbol_positions(self, symbol=None):
+        """
+        Returns symbol positions if exist
+        :param symbol: the position symbol
+        :return: the symbol positions
+        """
+        return self._get_symbol_positions(symbol)
 
     async def upsert_position(self, symbol: str, side, raw_position: dict) -> bool:
         """
@@ -85,14 +100,16 @@ class PositionsManager(util.Initializable):
         self._reset_positions()
 
     # private
-    def _generate_position_id(self, symbol, side):
+    def _generate_position_id(self, symbol, side, contract=None):
         """
         Generate a position ID for one way and hedge position modes
         :param symbol: the position symbol
         :param side: the position side
+        :param contract: the symbol contract (optional)
         :return: the computed position id
         """
-        symbol_contract = self.trader.exchange_manager.exchange.get_pair_future_contract(symbol)
+        symbol_contract = self.trader.exchange_manager.exchange.get_pair_future_contract(symbol) \
+            if contract is None else contract
         if symbol_contract.is_one_way_position_mode():
             return symbol
         return f"{symbol}{self.POSITION_ID_SEPARATOR}{side.value}"
@@ -130,6 +147,24 @@ class PositionsManager(util.Initializable):
         except KeyError:
             self.positions[expected_position_id] = self._create_symbol_position(symbol)
         return self.positions[expected_position_id]
+
+    def _get_symbol_positions(self, symbol):
+        """
+        Get symbol positions in each side
+        :param symbol: the position symbol
+        :return: existing symbol positions list
+        """
+        positions = []
+        symbol_contract = self.trader.exchange_manager.exchange.get_pair_future_contract(symbol)
+        sides = [enums.PositionSide.BOTH] if symbol_contract.is_one_way_position_mode() \
+            else [enums.PositionSide.SHORT, enums.PositionSide.LONG]
+        for side in sides:
+            position_id = self._generate_position_id(symbol=symbol, side=side, contract=symbol_contract)
+            try:
+                positions.append(self.positions[position_id])
+            except KeyError:
+                pass
+        return positions
 
     def _reset_positions(self):
         """
