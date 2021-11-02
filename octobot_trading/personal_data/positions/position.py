@@ -186,27 +186,19 @@ class Position(util.Initializable):
         self.update_pnl()
         return changed
 
-    async def update(self, update_quantity=None, mark_price=None):
+    def update(self, update_quantity=None, mark_price=None):
         """
-        Update position quantity and / or mark price
+        Updates position quantity and / or mark price
         :param update_quantity: the quantity update value
         :param mark_price: the mark price update value
-        """
-        self._update_quantity_and_mark_price(update_quantity=update_quantity, mark_price=mark_price)
-        if not self.is_idle():
-            await self._check_for_liquidation()
-
-    def _update_quantity_and_mark_price(self, update_quantity=None, mark_price=None):
-        """
-        Updates position mark price and / or size
-        :param update_quantity: the update quantity
-        :param mark_price: the update mark_price
         """
         if mark_price is not None:
             self._update_mark_price(mark_price)
         # TODO Check for liquidation before updating size ?
         if update_quantity is not None:
             self._update_quantity(update_quantity)
+        if not self.is_idle():
+            self._check_for_liquidation()
 
     def _update_mark_price(self, mark_price):
         """
@@ -427,7 +419,7 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value: self.margin_type,
         }
 
-    async def _check_for_liquidation(self):
+    def _check_for_liquidation(self):
         """
         _check_for_liquidation will defines rules for a simulated position to be liquidated
         :return: True if the position is being liquidated else False
@@ -435,11 +427,11 @@ class Position(util.Initializable):
         if self.is_short():
             if self.mark_price >= self.liquidation_price > constants.ZERO:
                 self.status = enums.PositionStatus.LIQUIDATING
-                await positions_states.create_position_state(self)
+                asyncio.create_task(positions_states.create_position_state(self))
         if self.is_long():
             if self.mark_price <= self.liquidation_price > constants.ZERO:
                 self.status = enums.PositionStatus.LIQUIDATING
-                await positions_states.create_position_state(self)
+                asyncio.create_task(positions_states.create_position_state(self))
 
     def _update_side(self):
         """
