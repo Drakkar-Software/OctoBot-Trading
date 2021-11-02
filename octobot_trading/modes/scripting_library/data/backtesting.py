@@ -1,1 +1,0 @@
-# idea: be able to access backtesting data easily

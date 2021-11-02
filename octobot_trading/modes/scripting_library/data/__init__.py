@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .exchange_public_data import *
-from octobot_trading.modes.scripting_library.data.database.writing import *
-from octobot_trading.modes.scripting_library.data.database.reading import *
+from .base_database import BaseDatabase
+from octobot_trading.modes.scripting_library.data.writing import *
+from octobot_trading.modes.scripting_library.data.reading import *
 

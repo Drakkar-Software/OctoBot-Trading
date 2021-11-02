@@ -13,8 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.enums as trading_enums
+import octobot_trading.modes.scripting_library.data.reading.reader as reader
 
 
-from .base_database import BaseDatabase
-from .reading import *
-from .writing import *
+class MetadataReader(reader.DBReader):
+    async def read(self) -> list:
+        return await self.all(trading_enums.DBTables.METADATA.value)
