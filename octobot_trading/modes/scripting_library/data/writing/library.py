@@ -98,7 +98,7 @@ async def plot(ctx, title, x=None,
             ]
 
         )
-    else:
+    elif not ctx.writer.contains_x(title, ctx.writer.get_value_from_array(x, -1) * x_multiplier):
         await ctx.writer.log(
             title,
             {

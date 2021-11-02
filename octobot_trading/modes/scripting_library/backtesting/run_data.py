@@ -63,7 +63,7 @@ async def plot_historical_portfolio_value(reader, plotted_element):
             print(candle)
             value_data[index] = \
                 value_data[index] + \
-                moving_portfolio_data[symbol] * candle[trading_enums.PlotAttributes.CLOSE.value]
+                moving_portfolio_data[symbol] * candle[trading_enums.PlotAttributes.CLOSE.value] + moving_portfolio_data[ref_market]
             for trade in trades_data[pair]:
                 if trade[trading_enums.PlotAttributes.X.value] == candle[trading_enums.PlotAttributes.X.value]:
                     if trade[trading_enums.PlotAttributes.SIDE.value] == "sell":
@@ -74,6 +74,8 @@ async def plot_historical_portfolio_value(reader, plotted_element):
                         moving_portfolio_data[symbol] += trade[trading_enums.PlotAttributes.VOLUME.value]
                         moving_portfolio_data[ref_market] -= trade[trading_enums.PlotAttributes.VOLUME.value] * \
                                                              trade[trading_enums.PlotAttributes.Y.value]
+                    if moving_portfolio_data[symbol] < 0 or moving_portfolio_data[ref_market] < 0:
+                        raise RuntimeError("negative portfolio")
 
     plotted_element.plot(
         kind="scatter",
