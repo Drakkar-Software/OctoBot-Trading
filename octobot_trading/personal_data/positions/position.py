@@ -186,17 +186,17 @@ class Position(util.Initializable):
         self.update_pnl()
         return changed
 
-    def update(self, update_quantity=None, mark_price=None):
+    def update(self, update_size=None, mark_price=None):
         """
-        Updates position quantity and / or mark price
-        :param update_quantity: the quantity update value
+        Updates position size and / or mark price
+        :param update_size: the size update value
         :param mark_price: the mark price update value
         """
         if mark_price is not None:
             self._update_mark_price(mark_price)
         # TODO Check for liquidation before updating size ?
-        if update_quantity is not None:
-            self._update_quantity(update_quantity)
+        if update_size is not None:
+            self._update_size(update_size)
         if not self.is_idle():
             self._check_for_liquidation()
 
@@ -219,13 +219,13 @@ class Position(util.Initializable):
         if self.entry_price == constants.ZERO:
             self.entry_price = mark_price
 
-    def _update_quantity(self, update_quantity):
+    def _update_size(self, update_size):
         """
-        Updates position size and triggers quantity related attributes update
-        :param update_quantity: the update quantity
+        Updates position size and triggers size related attributes update
+        :param update_size: the size quantity
         """
-        self.quantity += update_quantity
-        self._update_size()
+        self.size += update_size
+        self._update_quantity()
         self._update_side()
         self.update_initial_margin()
         self.update_fee_to_close()
@@ -238,15 +238,15 @@ class Position(util.Initializable):
         Set quantity from size if quantity is not set and size is set or update size
         """
         if self.quantity == constants.ZERO and self.size != constants.ZERO:
-            self.quantity = self.size / self.leverage
+            self._update_quantity()
         elif self.size == constants.ZERO and self.quantity != constants.ZERO:
-            self._update_size()
+            self.size = self.quantity * self.leverage
 
-    def _update_size(self):
+    def _update_quantity(self):
         """
-        Update position size from position quantity
+        Update position quantity from position quantity
         """
-        self.size = self.quantity * self.leverage
+        self.quantity = self.size / self.leverage
 
     def update_value(self):
         raise NotImplementedError("update_value not implemented")
