@@ -89,11 +89,6 @@ class FillOrderState(order_state.OrderState):
 
             # update portfolio with filled order and position if any
             async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
-                if self.order.exchange_manager.is_future:
-                    await self.order.exchange_manager.exchange_personal_data.update_position_from_filled_order(
-                        self.order.symbol, self.order)
-                elif self.order.exchange_manager.is_margin:
-                    pass  # TODO : nothing for now
                 await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(
                     self.order)
 
