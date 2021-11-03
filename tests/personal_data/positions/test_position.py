@@ -48,5 +48,5 @@ async def test_update_update_quantity(future_trader_simulator):
     assert position_inst.quantity == constants.ZERO
 
     quantity = decimal_random_quantity(1)
-    position_inst.update(update_quantity=quantity)
+    position_inst.update(update_size=quantity)
     assert position_inst.quantity == quantity
