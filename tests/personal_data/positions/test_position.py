@@ -35,7 +35,7 @@ async def test_update_entry_price(future_trader_simulator):
     assert position_inst.mark_price == constants.ZERO
 
     mark_price = decimal_random_price(1)
-    await position_inst.update(mark_price=mark_price)
+    position_inst.update(mark_price=mark_price)
     assert position_inst.entry_price == mark_price
     assert position_inst.mark_price == mark_price
 
@@ -48,5 +48,5 @@ async def test_update_update_quantity(future_trader_simulator):
     assert position_inst.quantity == constants.ZERO
 
     quantity = decimal_random_quantity(1)
-    await position_inst.update(update_quantity=quantity)
+    position_inst.update(update_quantity=quantity)
     assert position_inst.quantity == quantity

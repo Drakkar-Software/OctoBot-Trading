@@ -13,12 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 import os
 
 import pytest
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.positions_manager as positions_mgr
+from octobot_trading.personal_data import SellMarketOrder
 from tests.exchanges import future_simulated_exchange_manager
 from tests.exchanges.traders import future_trader_simulator, DEFAULT_FUTURE_SYMBOL_CONTRACT, DEFAULT_FUTURE_SYMBOL
 from tests import event_loop
@@ -68,6 +70,21 @@ async def test_get_symbol_positions(future_trader_simulator):
     assert positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL) == [p1]
     p2 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=None)
     assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
+
+
+async def test_get_order_position(future_trader_simulator):
+    config, exchange_manager, trader = future_trader_simulator
+    positions_manager = exchange_manager.exchange_personal_data.positions_manager
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+
+    p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.SHORT)
+    market_sell = SellMarketOrder(trader)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       position_side=enums.PositionSide.SHORT)
+    p1bis = positions_manager.get_order_position(market_sell, contract=symbol_contract)
+    assert p1 is p1bis
 
 
 async def test__generate_position_id(future_trader_simulator):
