@@ -36,14 +36,28 @@ class PositionsManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_positions()
 
-    def get_symbol_position(self, symbol, side):
+    def get_symbol_position(self, symbol, side, contract=None):
         """
         Returns or create the symbol position instance
         :param symbol: the position symbol
         :param side: the position side
+        :param contract: the symbol contract (optional)
         :return: the existing position or the newly created position
         """
-        return self._get_or_create_position(symbol=symbol, side=side)
+        return self._get_or_create_position(symbol=symbol, side=side, contract=contract)
+
+    def get_order_position(self, order, contract=None):
+        """
+        Returns the position that matches the order
+        :param order: the order
+        :param contract: the symbol contract (optional)
+        :return: the existing position or the newly created position that matches the order
+        """
+        future_contract = contract if contract is not None \
+            else self.trader.exchange_manager.exchange.get_pair_future_contract(order.symbol)
+        return self.get_symbol_position(symbol=order.symbol,
+                                        side=order.get_position_side(future_contract),
+                                        contract=future_contract)
 
     def get_symbol_positions(self, symbol=None):
         """
@@ -134,14 +148,15 @@ class PositionsManager(util.Initializable):
         asyncio.create_task(self._finalize_position_creation(new_position))
         return new_position
 
-    def _get_or_create_position(self, symbol=None, side=None):
+    def _get_or_create_position(self, symbol=None, side=None, contract=None):
         """
         Get or create position by symbol and side
         :param symbol: the expected position symbol
         :param side: the expected position side
+        :param contract: the symbol contract (optional)
         :return: the matching position
         """
-        expected_position_id = self._generate_position_id(symbol=symbol, side=side)
+        expected_position_id = self._generate_position_id(symbol=symbol, side=side, contract=contract)
         try:
             return self.positions[expected_position_id]
         except KeyError:
