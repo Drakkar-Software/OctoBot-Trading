@@ -406,7 +406,12 @@ class PlotAttributes(enum.Enum):
     X_TYPE = "x_type"
     Y_TYPE = "y_type"
     MODE = "mode"
+    OWN_XAXIS = "own_xaxis"
+    OWN_YAXIS = "own_yaxis"
     SIDE = "side"
+    VALUE = "value"
+    SCHEMA = "schema"
+    TYPE = "type"
 
 
 class PlotCharts(enum.Enum):
@@ -414,11 +419,20 @@ class PlotCharts(enum.Enum):
     SUB_CHART = "sub-chart"
 
 
+class DisplayedElementTypes(enum.Enum):
+    CHART = "chart"
+    INPUT = "input"
+
+
 class DBTables(enum.Enum):
     METADATA = "metadata"
+    INPUTS = "inputs"
     PORTFOLIO = "portfolio"
     ORDERS = "orders"
     CANDLES = "candles"
+    PAIR = "pair"
+    FEES_AMOUNT = "fees_amount"
+    FEES_CURRENCY = "fees_currency"
 
 
 class DBRows(enum.Enum):

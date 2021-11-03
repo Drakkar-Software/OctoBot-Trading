@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.modes.scripting_library.data as data
 
 
 def set_script_name(ctx, name):
@@ -21,3 +22,10 @@ def set_script_name(ctx, name):
 
 def get_backtesting_db(ctx, run_id):
     return ctx.trading_mode_class.get_db_name(prefix=run_id, backtesting=True)
+
+
+async def read_metadata(ctx=None, trading_mode=None, backtesting=True):
+    trading_mode = trading_mode or ctx.trading_mode_class
+    data_file = trading_mode.get_db_name(metadata_db=True, backtesting=backtesting)
+    async with data.MetadataReader.database(data_file) as reader:
+        return await reader.read()
