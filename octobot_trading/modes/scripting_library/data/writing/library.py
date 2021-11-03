@@ -13,11 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import numpy
 
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.enums as trading_enums
 import octobot_trading.api as trading_api
+import octobot_commons.symbol_util as symbol_util
 
 
 async def store_orders(ctx, orders,
@@ -37,6 +40,8 @@ async def store_orders(ctx, orders,
             "kind": kind,
             "side": order.side.value,
             "mode": mode,
+            "fees_amount": float(order.origin_quantity * decimal.Decimal("0.1")),  # TODO
+            "fees_currency": symbol_util.split_symbol(order.symbol)[1],  # TODO
         }
         for order in orders
     ]
