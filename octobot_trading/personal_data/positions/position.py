@@ -361,6 +361,9 @@ class Position(util.Initializable):
     def is_idle(self):
         return self.quantity == constants.ZERO
 
+    def get_quantity_to_close(self):
+        return self.size if self.is_short() else -self.size
+
     def get_unrealised_pnl_percent(self):
         """
         :return: Unrealized P&L% = [ Position's unrealized P&L / Position Margin ] x 100%
