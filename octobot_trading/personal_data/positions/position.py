@@ -224,7 +224,7 @@ class Position(util.Initializable):
         Updates position size and triggers size related attributes update
         :param update_size: the size quantity
         """
-        self.size += update_size
+        self._check_and_update_size(update_size)
         self._update_quantity()
         self._update_side()
         self.update_initial_margin()
@@ -232,6 +232,20 @@ class Position(util.Initializable):
         self.update_liquidation_price()
         self.update_value()
         self.update_pnl()
+
+    def _check_and_update_size(self, size_update):
+        """
+        Updates the position size with a valid size according to the contract position mode if not close the position
+        This check is not mandatory when using one way position mode because it can't produce invalid size with
+        :param size_update: the size update
+        """
+        if not self.symbol_contract.is_one_way_position_mode() and \
+                ((self.is_long() and self.size + size_update < constants.ZERO) or
+                 (self.is_short() and self.size + size_update > constants.ZERO)):
+            self.size = constants.ZERO
+            self.close()
+        else:
+            self.size += size_update
 
     def _update_quantity_or_size_if_necessary(self):
         """
@@ -441,7 +455,7 @@ class Position(util.Initializable):
         Checks if self.side still represents the position side
         Only relevant when account is using one way position mode
         """
-        if self.symbol_contract.is_one_way_position_mode():
+        if self.symbol_contract.is_one_way_position_mode() or self.side is enums.PositionSide.UNKNOWN:
             if self.quantity >= constants.ZERO:
                 self.side = enums.PositionSide.LONG
             elif self.quantity < constants.ZERO:

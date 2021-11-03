@@ -80,6 +80,7 @@ cdef class Position(util.Initializable):
     cdef void _update_quantity_or_size_if_necessary(self)
     cdef void _update_quantity(self)
     cdef void _update_size(self, object update_size)
+    cdef void _check_and_update_size(self, object size_update)
     cdef void _update_margin(self)
     cdef void _update_side(self)
     cdef void _check_for_liquidation(self)
