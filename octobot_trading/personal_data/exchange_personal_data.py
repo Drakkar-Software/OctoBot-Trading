@@ -19,7 +19,6 @@ import octobot_commons.logging as logging
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
-import octobot_trading.enums as enums
 import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 import octobot_trading.personal_data.positions.positions_manager as positions_manager
 import octobot_trading.personal_data.orders.orders_manager as orders_manager
@@ -79,6 +78,13 @@ class ExchangePersonalData(util.Initializable):
                                                                                           require_exchange_update)
             if should_notify:
                 await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
+
+                if self.exchange_manager.is_future:
+                    await self.handle_position_instance_update(
+                        order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(order),
+                        should_notify=True)
+                elif self.exchange_manager.is_margin:
+                    pass  # TODO : nothing for now
             return changed
         except AttributeError as e:
             self.logger.exception(e, True, f"Failed to update balance : {e}")
@@ -247,37 +253,6 @@ class ExchangePersonalData(util.Initializable):
                 position_instance = self.positions_manager.get_symbol_position(symbol=symbol, side=side)
                 await self.handle_position_update_notification(position_instance, is_updated=changed)
             return changed
-        except Exception as e:
-            self.logger.exception(e, True, f"Failed to update position : {e}")
-            return False
-
-    async def update_position_from_filled_order(self, symbol, order, should_notify: bool = True):
-        try:
-            # Don't update if order filled quantity is null
-            if order.filled_quantity == 0:
-                return False
-
-            update_quantity = constants.ZERO
-            symbol_future_contract = self.exchange_manager.exchange.get_pair_future_contract(symbol)
-            order_position_side = order.get_position_side(symbol_future_contract)
-            position_instance = self.positions_manager.get_symbol_position(symbol=symbol, side=order_position_side)
-            quantity_to_close = position_instance.quantity \
-                if position_instance.side is enums.PositionSide.SHORT else -position_instance.quantity
-
-            if order.close_position:
-                update_quantity = quantity_to_close
-                await position_instance.close()
-            else:
-                update_quantity = order.filled_quantity if order.is_long() else -order.filled_quantity
-                if order.reduce_only:
-                    update_quantity = min(update_quantity, quantity_to_close) \
-                        if order.is_long() else max(update_quantity, quantity_to_close)
-                await position_instance.update(update_quantity=update_quantity)
-            order.filled_quantity = update_quantity.copy_abs()
-
-            if should_notify:
-                await self.handle_position_update_notification(position_instance, is_updated=True)
-            return True
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update position : {e}")
             return False
