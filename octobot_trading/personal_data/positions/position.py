@@ -376,7 +376,24 @@ class Position(util.Initializable):
         return self.quantity == constants.ZERO
 
     def get_quantity_to_close(self):
+        """
+        :return: the order quantity to close the position
+        """
         return self.size if self.is_short() else -self.size
+
+    def get_update_quantity_from_order(self, order):
+        """
+        Calculate filled order portfolio update quantity
+        :param order: the filled order instance
+        :return: the portfolio update quantity
+        """
+        size_to_close = self.get_quantity_to_close()
+        if order.close_position:
+            return size_to_close
+        update_size = order.filled_quantity if order.is_long() else -order.filled_quantity
+        if order.reduce_only:
+            update_size = max(update_size, size_to_close) if self.is_long() else min(update_size, size_to_close)
+        return update_size
 
     def get_unrealised_pnl_percent(self):
         """
