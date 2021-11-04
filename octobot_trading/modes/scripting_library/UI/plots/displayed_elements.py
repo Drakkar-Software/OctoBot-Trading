@@ -100,19 +100,32 @@ class DisplayedElements:
                         y_type=None,
                         mode=data.get("mode", None))
 
+    def _base_schema(self):
+        return  {
+            "type": "object",
+            "title": "Inputs",
+            "properties": {},
+        }
+
     def _display_inputs(self, inputs):
         with self.part("inputs") as part:
-            main_schema = {
-                "type": "object",
-                "title": "Inputs",
-                "properties": {},
-            }
+            config_by_tentacles = {}
+            config_schema_by_tentacles = {}
             for user_input_element in inputs:
-                self._generate_schema(main_schema, user_input_element)
-            part.user_inputs(
-                "Inputs",
-                main_schema,
-            )
+                tentacle = user_input_element["tentacle"]
+                if tentacle not in config_schema_by_tentacles:
+                    config_schema_by_tentacles[tentacle] = self._base_schema()
+                    config_by_tentacles[tentacle] = {}
+                config_by_tentacles[tentacle][user_input_element["name"].replace(" ", "-")] = \
+                    user_input_element["value"]
+                self._generate_schema(config_schema_by_tentacles[tentacle], user_input_element)
+            for tentacle, schema in config_schema_by_tentacles.items():
+                part.user_inputs(
+                    "Inputs",
+                    config_by_tentacles[tentacle],
+                    schema,
+                    tentacle,
+                )
 
     @staticmethod
     def _generate_schema(main_schema, user_input_element):
@@ -191,7 +204,9 @@ class DisplayedElements:
     def user_inputs(
         self,
         name,
+        config_values,
         schema,
+        tentacle,
     ):
         element = Element(
             None,
@@ -199,6 +214,8 @@ class DisplayedElements:
             None,
             title=name,
             schema=schema,
+            config_values=config_values,
+            tentacle=tentacle,
             type=trading_enums.DisplayedElementTypes.INPUT.value
         )
         self.elements.append(element)
@@ -236,7 +253,9 @@ class Element:
         own_xaxis=False,
         own_yaxis=False,
         value=None,
+        config_values=None,
         schema=None,
+        tentacle=None,
         type=trading_enums.DisplayedElementTypes.CHART.value,
     ):
         self.kind = kind
@@ -254,7 +273,9 @@ class Element:
         self.own_xaxis = own_xaxis
         self.own_yaxis = own_yaxis
         self.value = value
+        self.config_values = config_values
         self.schema = schema
+        self.tentacle = tentacle
         self.type = type
 
     def to_json(self):
@@ -274,7 +295,9 @@ class Element:
             trading_enums.PlotAttributes.OWN_XAXIS.value: self.own_xaxis,
             trading_enums.PlotAttributes.OWN_YAXIS.value: self.own_yaxis,
             trading_enums.PlotAttributes.VALUE.value: self.value,
+            trading_enums.PlotAttributes.CONFIG.value: self.config_values,
             trading_enums.PlotAttributes.SCHEMA.value: self.schema,
+            trading_enums.PlotAttributes.TENTACLE.value: self.tentacle,
             trading_enums.PlotAttributes.TYPE.value: self.type,
         }
 
