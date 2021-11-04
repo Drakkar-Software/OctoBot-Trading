@@ -448,7 +448,9 @@ class PlotAttributes(enum.Enum):
     OWN_YAXIS = "own_yaxis"
     SIDE = "side"
     VALUE = "value"
+    CONFIG = "config"
     SCHEMA = "schema"
+    TENTACLE = "tentacle"
     TYPE = "type"
 
 

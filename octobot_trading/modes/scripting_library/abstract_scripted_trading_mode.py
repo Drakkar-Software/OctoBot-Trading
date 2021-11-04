@@ -46,6 +46,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         self._backtesting_script = None
         self.timestamp = time.time()    # todo ensure multiple pairs conflicts
         self.script_name = None
+        self.load_config()
 
     def get_current_state(self) -> (str, float):
         return super().get_current_state()[0] if self.producers[0].state is None else self.producers[0].state.name, \
@@ -134,6 +135,8 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         module = self.__class__.TRADING_SCRIPT_MODULE if live else self.__class__.BACKTESTING_SCRIPT_MODULE
         importlib.reload(module)
         self.register_script_module(module, live=live)
+        # reload config
+        self.load_config()
         if live:
             # todo cancel and restart live tasks
             await self.start_over_database(not live)

@@ -25,13 +25,13 @@ async def user_input(
     max_val=None,
     options=None,
 ):
+    value = ctx.current_trading_mode_producer.trading_mode.trading_config.get(name, None) \
+        if ctx.current_trading_mode_producer.trading_mode.trading_config else None
     input_query = await ctx.writer.search()
     if not ctx.writer.are_data_initialized and await ctx.writer.count(
             enums.DBTables.INPUTS.value,
             (input_query.name == name)
             & (input_query.input_type == input_type)) == 0:
-        value = ctx.current_trading_mode_producer.trading_mode.trading_config.get("name", None) \
-            if ctx.current_trading_mode_producer.trading_mode.trading_config else None
         await ctx.writer.log(
             enums.DBTables.INPUTS.value,
             {
@@ -42,5 +42,7 @@ async def user_input(
                 "min_val": min_val,
                 "max_val": max_val,
                 "options": options,
+                "tentacle": ctx.trading_mode_class.get_name(),
             }
         )
+    return value
