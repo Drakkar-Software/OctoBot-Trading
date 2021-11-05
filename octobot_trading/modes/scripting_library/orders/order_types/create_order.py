@@ -57,6 +57,11 @@ async def _create_order_instance(
     # size based on amount
     if side is not None:
 
+        if side == trading_enums.TradeOrderSide.SELL.value and current_symbol_holding == 0:
+            return []
+        if side == trading_enums.TradeOrderSide.BUY.value and current_market_holding == 0:
+            return []
+
         if amount is not None:
             order_quantity = position_size.amount(amount, side, current_symbol_holding, market_quantity)
 
