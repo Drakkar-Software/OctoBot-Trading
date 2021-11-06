@@ -86,6 +86,7 @@ cdef class Position(util.Initializable):
     cdef void _check_for_liquidation(self)
 
     cpdef void update(self, object update_size=*, object mark_price=*)
+    cpdef object update_size_from_order(self, object order)
     cpdef void update_value(self)
     cpdef void update_pnl(self)
     cpdef void update_initial_margin(self)
@@ -110,7 +111,6 @@ cdef class Position(util.Initializable):
     cpdef bint is_short(self)
     cpdef bint is_idle(self)
     cpdef object get_quantity_to_close(self)
-    cpdef object get_update_quantity_from_order(self, object order)
     cpdef object get_unrealised_pnl_percent(self)
     cpdef str to_string(self)
     cpdef dict to_dict(self)

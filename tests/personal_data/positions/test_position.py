@@ -126,72 +126,204 @@ async def test_get_quantity_to_close(future_trader_simulator):
     position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
     quantity = -decimal_random_quantity(1)
     position_inst.update(update_size=quantity)
-    assert position_inst.get_quantity_to_close() == quantity
+    assert position_inst.get_quantity_to_close() == -quantity
 
 
-async def test_get_update_quantity_from_order_with_long_position(future_trader_simulator):
+async def test_update_size_from_order_with_long_one_way_position(future_trader_simulator):
     config, exchange_manager_inst, trader_inst = future_trader_simulator
 
-    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=constants.ONE_HUNDRED)
 
     limit_sell = SellLimitOrder(trader_inst)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=10,
                       quantity=decimal.Decimal(2),
                       price=20)
-    assert position_inst.get_update_quantity_from_order(limit_sell) == -decimal.Decimal(2)
+    assert position_inst.update_size_from_order(limit_sell) == decimal.Decimal(-2)
+
+
+async def test_update_size_from_order_with_long_close_position_one_way_position(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=constants.ONE_HUNDRED)
 
     limit_sell = SellLimitOrder(trader_inst)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=10,
                       quantity=decimal.Decimal(2),
                       price=20)
     limit_sell.close_position = True
-    assert position_inst.get_update_quantity_from_order(limit_sell) == -constants.ONE_HUNDRED
+    assert position_inst.update_size_from_order(limit_sell) == -constants.ONE_HUNDRED
+
+
+async def test_update_size_from_order_with_long_reduce_only_one_way_position(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=constants.ONE_HUNDRED)
 
     limit_sell = SellLimitOrder(trader_inst)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=10,
                       quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
                       price=20)
     limit_sell.reduce_only = True
-    # == size_to_close
-    assert position_inst.get_update_quantity_from_order(limit_sell) == -constants.ONE_HUNDRED
+    assert position_inst.update_size_from_order(limit_sell) == -constants.ONE_HUNDRED
+
+    # reduce only with closed position
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=constants.ZERO)
+    limit_sell = SellLimitOrder(trader_inst)
+    limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=10,
+                      quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
+                      price=20)
+    limit_sell.reduce_only = True
+    assert position_inst.update_size_from_order(limit_sell) == constants.ZERO
 
 
-async def test_get_update_quantity_from_order_with_short_position(future_trader_simulator):
+async def test_update_size_from_order_with_long_oversold_one_way_position(future_trader_simulator):
     config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=constants.ONE_HUNDRED)
 
-    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    limit_sell = SellLimitOrder(trader_inst)
+    limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=10,
+                      quantity=constants.ONE_HUNDRED ** decimal.Decimal(5),
+                      price=20)
+    assert position_inst.update_size_from_order(limit_sell) == -constants.ONE_HUNDRED ** decimal.Decimal(5)
+    assert position_inst.size == decimal.Decimal("-9999999900")
+    assert not position_inst.is_long()
+
+
+async def test_update_size_from_order_with_short_one_way_position(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=-constants.ONE_HUNDRED)
 
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
-                     symbol="BTC/USDT",
+                     symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=10,
                      quantity=decimal.Decimal(2),
                      price=20)
-    assert position_inst.get_update_quantity_from_order(buy_limit) == decimal.Decimal(2)
+    assert position_inst.update_size_from_order(buy_limit) == decimal.Decimal(2)
+
+
+async def test_update_size_from_order_with_short_close_position_one_way_position(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=-constants.ONE_HUNDRED)
 
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
-                     symbol="BTC/USDT",
+                     symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=10,
                      quantity=decimal.Decimal(2),
                      price=20)
     buy_limit.close_position = True
-    assert position_inst.get_update_quantity_from_order(buy_limit) == constants.ONE_HUNDRED
+    assert position_inst.update_size_from_order(buy_limit) == constants.ONE_HUNDRED
+
+
+async def test_update_size_from_order_with_short_reduce_only_one_way_position(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=-constants.ONE_HUNDRED)
 
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
-                     symbol="BTC/USDT",
+                     symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=10,
                      quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
                      price=20)
     buy_limit.reduce_only = True
-    # == size_to_close
-    assert position_inst.get_update_quantity_from_order(buy_limit) == constants.ONE_HUNDRED
+    assert position_inst.update_size_from_order(buy_limit) == constants.ONE_HUNDRED
+
+    # reduce only with closed position
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=constants.ZERO)
+    buy_limit = BuyLimitOrder(trader_inst)
+    buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                     symbol=DEFAULT_FUTURE_SYMBOL,
+                     current_price=10,
+                     quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
+                     price=20)
+    buy_limit.reduce_only = True
+    assert position_inst.update_size_from_order(buy_limit) == constants.ZERO
+
+
+async def test_update_size_from_order_with_short_overbought_one_way_position(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=-constants.ONE_HUNDRED)
+
+    buy_limit = BuyLimitOrder(trader_inst)
+    buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                     symbol=DEFAULT_FUTURE_SYMBOL,
+                     current_price=10,
+                     quantity=constants.ONE_HUNDRED ** decimal.Decimal(5),
+                     price=20)
+    assert position_inst.update_size_from_order(buy_limit) == constants.ONE_HUNDRED ** decimal.Decimal(5)
+    assert position_inst.size == decimal.Decimal("9999999900")
+    assert not position_inst.is_short()
+
+
+async def test_update_size_from_order_with_long_oversold_hedge_position(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=constants.ONE_HUNDRED)
+
+    limit_sell = SellLimitOrder(trader_inst)
+    limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=10,
+                      quantity=constants.ONE_HUNDRED ** decimal.Decimal(5),
+                      price=20)
+    # cannot switch side
+    assert position_inst.update_size_from_order(limit_sell) == -constants.ONE_HUNDRED
+    assert position_inst.size == constants.ZERO
+    assert position_inst.is_idle()
+
+
+async def test_update_size_from_order_with_short_overbought_hedge_position(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=-constants.ONE_HUNDRED)
+
+    buy_limit = BuyLimitOrder(trader_inst)
+    buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                     symbol=DEFAULT_FUTURE_SYMBOL,
+                     current_price=10,
+                     quantity=constants.ONE_HUNDRED ** decimal.Decimal(5),
+                     price=20)
+    # cannot switch side
+    assert position_inst.update_size_from_order(buy_limit) == constants.ONE_HUNDRED
+    assert position_inst.size == constants.ZERO
+    assert position_inst.is_idle()
+
