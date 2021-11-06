@@ -20,4 +20,4 @@ cdef class LimitOrder(order_class.Order):
     cdef object limit_price_hit_event # object is asyncio.Event
     cdef object wait_for_hit_event_task # object is asyncio.Task
 
-    cpdef bint trigger_above
+    cdef bint trigger_above

@@ -148,7 +148,7 @@ class PositionsManager(util.Initializable):
         asyncio.create_task(self._finalize_position_creation(new_position))
         return new_position
 
-    def _get_or_create_position(self, symbol=None, side=None, contract=None):
+    def _get_or_create_position(self, symbol, side, contract=None):
         """
         Get or create position by symbol and side
         :param symbol: the expected position symbol

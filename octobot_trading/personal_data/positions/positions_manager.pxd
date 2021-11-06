@@ -35,6 +35,6 @@ cdef class PositionsManager(util.Initializable):
 
     cpdef positions_personal_data.Position get_symbol_position(self, str symbol, object side, object contract=*)
     cpdef positions_personal_data.Position get_order_position(self, object order, object contract=*)
-    cpdef list get_symbol_positions(self, str symbol=*, object contract=*)
+    cpdef list get_symbol_positions(self, str symbol=*)
     cpdef bint upsert_position_instance(self, positions_personal_data.Position position)
     cpdef void clear(self)
