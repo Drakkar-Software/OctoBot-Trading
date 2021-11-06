@@ -35,7 +35,7 @@ class FutureAsset(asset_class.Asset):
         # total initial margin required with current mark price
         self.initial_margin = initial_margin
 
-        # Margin balance = positionMargin + orderMargin + frozenFunds + availableBalance - unrealisedPNL
+        # Margin balance
         self.margin_balance = margin_balance
 
         # maintenance margin required
