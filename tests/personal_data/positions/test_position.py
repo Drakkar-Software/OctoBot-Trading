@@ -123,6 +123,11 @@ async def test__is_update_increasing_size(future_trader_simulator):
     symbol_contract.set_position_mode(is_one_way=False)
 
     if not os.getenv('CYTHON_IGNORE'):
+        # Closed
+        position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+        assert position_inst._is_update_increasing_size(decimal.Decimal(-5))
+        assert position_inst._is_update_increasing_size(decimal.Decimal(5))
+
         # LONG
         position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
         position_inst.update(update_size=decimal.Decimal(100))
@@ -210,7 +215,7 @@ async def test_update_size_from_order_with_long_reduce_only_one_way_position(fut
                       quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
                       price=20)
     limit_sell.reduce_only = True
-    assert position_inst.update_size_from_order(limit_sell) == (constants.ZERO, False)
+    assert position_inst.update_size_from_order(limit_sell) == (constants.ZERO, True)
 
 
 async def test_update_size_from_order_with_long_oversold_one_way_position(future_trader_simulator):
@@ -290,7 +295,7 @@ async def test_update_size_from_order_with_short_reduce_only_one_way_position(fu
                      quantity=constants.ONE_HUNDRED * constants.ONE_HUNDRED,
                      price=20)
     buy_limit.reduce_only = True
-    assert position_inst.update_size_from_order(buy_limit) == (constants.ZERO, False)
+    assert position_inst.update_size_from_order(buy_limit) == (constants.ZERO, True)
 
 
 async def test_update_size_from_order_with_short_overbought_one_way_position(future_trader_simulator):
