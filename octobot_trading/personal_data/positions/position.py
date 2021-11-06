@@ -251,6 +251,8 @@ class Position(util.Initializable):
         :param size_update: the size update
         :return: True if this update will increase position size
         """
+        if self.is_idle():
+            return True
         if self.is_long():
             return size_update > 0
         return size_update < 0
