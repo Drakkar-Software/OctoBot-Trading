@@ -223,12 +223,12 @@ class Position(util.Initializable):
         """
         Update position size from filled order portfolio
         :param order: the filled order instance
-        :return: the updated quantity
+        :return: the updated quantity, True if the order increased position size
         """
         size_to_close = self.get_quantity_to_close()
         if order.close_position:
             self.close()
-            return size_to_close
+            return size_to_close, False
         order_quantity = order.filled_quantity if order.is_long() else -order.filled_quantity
         if order.reduce_only or not self.symbol_contract.is_one_way_position_mode():
             if self.is_long() and order.is_short():
@@ -242,8 +242,18 @@ class Position(util.Initializable):
                 size_update = constants.ZERO
         else:
             size_update = order_quantity
+        is_increasing_position_size = self._is_update_increasing_size(size_update=size_update)
         self.update(update_size=size_update)
-        return size_update
+        return size_update, is_increasing_position_size
+
+    def _is_update_increasing_size(self, size_update):
+        """
+        :param size_update: the size update
+        :return: True if this update will increase position size
+        """
+        if self.is_long():
+            return size_update > 0
+        return size_update < 0
 
     def _update_size(self, update_size):
         """
