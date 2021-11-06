@@ -29,27 +29,34 @@ class FuturePortfolio(portfolio_class.Portfolio):
         Call update_portfolio_data for order currency and market
         :param order: the order that updated the portfolio
         """
+        # Don't update if order filled quantity is null
+        if order.filled_quantity == 0:
+            return False
+
         pair_future_contract = order.exchange_manager.exchange.get_pair_future_contract(order.symbol)
+        position_instance = order.exchange_manager.exchange_personal_data.positions_manager.\
+            get_order_position(order, contract=pair_future_contract)
+
         try:
-            real_filled_order_quantity = (order.origin_quantity - order.get_total_fees(order.currency)) / \
-                                  pair_future_contract.current_leverage
+            update_size, have_increased_position_size = position_instance.update_size_from_order(order=order)
+            real_order_quantity = decimal.Decimal(update_size / pair_future_contract.current_leverage).copy_abs()
 
             # When inverse contract, decrease a currency market equivalent quantity from currency balance
             if pair_future_contract.is_inverse_contract():
-                total_update_quantity = real_filled_order_quantity / order.filled_price
+                total_update_quantity = real_order_quantity / order.filled_price
                 self._update_portfolio_data(order.currency,
-                                            # restore available + total update
-                                            available_value=decimal.Decimal(2) * total_update_quantity,
-                                            total_value=total_update_quantity)
+                                            available_value=-total_update_quantity
+                                            if have_increased_position_size else total_update_quantity,
+                                            total_value=-order.get_total_fees(order.currency))
 
             # When non-inverse contract, decrease directly market quantity
             else:
                 # decrease market quantity from market available balance
-                total_update_quantity = real_filled_order_quantity * order.origin_price
+                total_update_quantity = real_order_quantity * order.filled_price
                 self._update_portfolio_data(order.market,
-                                            # restore available + total update
-                                            available_value=decimal.Decimal(2) * total_update_quantity,
-                                            total_value=total_update_quantity)
+                                            available_value=-total_update_quantity
+                                            if have_increased_position_size else total_update_quantity,
+                                            total_value=-order.get_total_fees(order.currency))
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from filled order : {order} ({e})")
 
@@ -66,12 +73,16 @@ class FuturePortfolio(portfolio_class.Portfolio):
 
             # When inverse contract, decrease a currency market equivalent quantity from currency balance
             if pair_future_contract.is_inverse_contract():
-                self._update_portfolio_data(order.currency, available_value=real_order_quantity / order.origin_price)
+                self._update_portfolio_data(order.currency,
+                                            available_value=real_order_quantity / order.origin_price,
+                                            total_value=constants.ZERO)
 
             # When non-inverse contract, decrease directly market quantity
             else:
                 # decrease market quantity from market available balance
-                self._update_portfolio_data(order.market, available_value=real_order_quantity * order.origin_price)
+                self._update_portfolio_data(order.market,
+                                            available_value=real_order_quantity * order.origin_price,
+                                            total_value=constants.ZERO)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update available from order : {order} ({e})")
 
@@ -81,7 +92,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
         :param position: the liquidated position
         """
         try:
-            new_quantity = -position.quantity / position.symbol_contract.current_leverage
+            new_quantity = -position.quantity
             self._update_portfolio_data(position.currency
                                         if position.symbol_contract.is_inverse_contract() else position.market,
                                         total_value=new_quantity,
