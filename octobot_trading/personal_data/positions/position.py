@@ -219,6 +219,32 @@ class Position(util.Initializable):
         if self.entry_price == constants.ZERO:
             self.entry_price = mark_price
 
+    def update_size_from_order(self, order):
+        """
+        Update position size from filled order portfolio
+        :param order: the filled order instance
+        :return: the updated quantity
+        """
+        size_to_close = self.get_quantity_to_close()
+        if order.close_position:
+            self.close()
+            return size_to_close
+        order_quantity = order.filled_quantity if order.is_long() else -order.filled_quantity
+        if order.reduce_only or not self.symbol_contract.is_one_way_position_mode():
+            if self.is_long() and order.is_short():
+                size_update = max(order_quantity, size_to_close)
+            elif self.is_short() and order.is_long():
+                size_update = min(order_quantity, size_to_close)
+            elif not order.reduce_only:
+                size_update = order_quantity
+            else:
+                # Can't reduce position
+                size_update = constants.ZERO
+        else:
+            size_update = order_quantity
+        self.update(update_size=size_update)
+        return size_update
+
     def _update_size(self, update_size):
         """
         Updates position size and triggers size related attributes update
@@ -381,21 +407,7 @@ class Position(util.Initializable):
         """
         :return: the order quantity to close the position
         """
-        return self.size if self.is_short() else -self.size
-
-    def get_update_quantity_from_order(self, order):
-        """
-        Calculate filled order portfolio update quantity
-        :param order: the filled order instance
-        :return: the portfolio update quantity
-        """
-        size_to_close = self.get_quantity_to_close()
-        if order.close_position:
-            return size_to_close
-        update_size = order.filled_quantity if order.is_long() else -order.filled_quantity
-        if order.reduce_only:
-            update_size = max(update_size, size_to_close) if self.is_long() else min(update_size, size_to_close)
-        return update_size
+        return -self.size
 
     def get_unrealised_pnl_percent(self):
         """
