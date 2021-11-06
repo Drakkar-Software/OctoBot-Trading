@@ -53,7 +53,7 @@ async def test_update_pnl(future_trader_simulator):
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == constants.ZERO
     position_inst.update(update_size=constants.ONE_HUNDRED,
-                               mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
+                         mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == constants.ONE
 
@@ -64,7 +64,7 @@ async def test_update_pnl(future_trader_simulator):
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == constants.ZERO
     position_inst.update(update_size=-constants.ONE_HUNDRED,
-                               mark_price=constants.ONE_HUNDRED / decimal.Decimal(10))
+                         mark_price=constants.ONE_HUNDRED / decimal.Decimal(10))
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == decimal.Decimal("-18.00")
 
@@ -82,7 +82,7 @@ async def test_update_initial_margin(future_trader_simulator):
     position_inst.leverage = constants.ONE_HUNDRED
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_initial_margin()
-    assert position_inst.initial_margin == decimal.Decimal("0.02")
+    assert position_inst.initial_margin == decimal.Decimal("0.0002")
 
 
 async def test_calculate_maintenance_margin(future_trader_simulator):
@@ -114,7 +114,7 @@ async def test_update_isolated_liquidation_price(future_trader_simulator):
     assert position_inst.liquidation_price == decimal.Decimal("50.25125628140703518113600205")
     position_inst.leverage = constants.ONE_HUNDRED
     position_inst.update(update_size=constants.ONE_HUNDRED,
-                               mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
+                         mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
     position_inst.update_isolated_liquidation_price()
     assert position_inst.liquidation_price == decimal.Decimal("100.0000000000000000208166817")
 
@@ -127,7 +127,7 @@ async def test_update_isolated_liquidation_price(future_trader_simulator):
     assert position_inst.liquidation_price == decimal.Decimal("9999.999999999999791833182880")
     position_inst.leverage = constants.ONE_HUNDRED
     position_inst.update(update_size=-constants.ONE_HUNDRED,
-                               mark_price=constants.ONE_HUNDRED / decimal.Decimal(10))
+                         mark_price=constants.ONE_HUNDRED / decimal.Decimal(10))
     position_inst.update_isolated_liquidation_price()
     assert position_inst.liquidation_price == decimal.Decimal("99.99999999999999997918331830")
 
@@ -145,7 +145,7 @@ async def test_get_bankruptcy_price(future_trader_simulator):
     assert position_inst.get_bankruptcy_price() == decimal.Decimal("99.00990099009900990099009901")
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("0.9900990099009900990099009901")
     position_inst.update(update_size=constants.ONE_HUNDRED,
-                               mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
+                         mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == decimal.Decimal("99.00990099009900990099009901")
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("1.980198019801980198019801980")
 
@@ -158,8 +158,8 @@ async def test_get_bankruptcy_price(future_trader_simulator):
     position_inst.leverage = constants.ONE_HUNDRED
     assert position_inst.get_bankruptcy_price() == decimal.Decimal("101.0101010101010101010101010")
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("1.010101010101010101010101010")
-    position_inst.update(update_size=-constants.ONE_HUNDRED,
-                               mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
+    position_inst.update(update_size=constants.ONE_HUNDRED,
+                         mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == constants.ZERO
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == constants.ZERO
 
