@@ -101,20 +101,28 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
             .prices_manager.get_mark_price(timeout=timeout)
     except asyncio.TimeoutError:
         raise asyncio.TimeoutError("Mark price is not available")
-    decimal_mark_price = decimal.Decimal(str(mark_price))
-
-    currency, market = symbol_util.split_symbol(symbol)
-
-    current_symbol_holding = exchange_manager.exchange_personal_data.portfolio_manager.portfolio\
-        .get_currency_portfolio(currency).available
-    current_market_quantity = exchange_manager.exchange_personal_data.portfolio_manager.portfolio\
-        .get_currency_portfolio(market).available
-
-    market_quantity = current_market_quantity / decimal_mark_price if decimal_mark_price else constants.ZERO
-
+    mark_price = decimal.Decimal(str(mark_price))
     symbol_market = exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
-    return current_symbol_holding, current_market_quantity, market_quantity, decimal_mark_price, symbol_market
+    currency, market = symbol_util.split_symbol(symbol)
+    currency_available = exchange_manager.exchange_personal_data.portfolio_manager.portfolio \
+        .get_currency_portfolio(currency).available
+    market_available = exchange_manager.exchange_personal_data.portfolio_manager.portfolio \
+        .get_currency_portfolio(market).available
+
+    if exchange_manager.is_future:
+        pair_future_contract = exchange_manager.exchange.get_pair_future_contract(symbol)
+        if pair_future_contract.is_inverse_contract():
+            currency_available *= pair_future_contract.current_leverage
+            market_quantity = market_available = currency_available
+        else:
+            market_available *= pair_future_contract.current_leverage / mark_price
+            market_quantity = currency_available = market_available
+    elif exchange_manager.is_margin:
+        market_quantity = constants.ZERO  # TODO
+    else:
+        market_quantity = market_available / mark_price if mark_price else constants.ZERO
+    return currency_available, market_available, market_quantity, mark_price, symbol_market
 
 
 def total_fees_from_order_dict(order_dict, currency):
