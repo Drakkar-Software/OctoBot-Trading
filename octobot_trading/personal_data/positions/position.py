@@ -324,7 +324,7 @@ class Position(util.Initializable):
         """
         try:
             return constants.ONE / self.leverage
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
     def calculate_maintenance_margin(self):
@@ -362,7 +362,7 @@ class Position(util.Initializable):
             symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
             return decimal.Decimal(
                 f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value]}") / constants.ONE_HUNDRED
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
     def get_taker_fee(self):
@@ -373,7 +373,7 @@ class Position(util.Initializable):
             symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
             return decimal.Decimal(
                 f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value]}") / constants.ONE_HUNDRED
-        except decimal.DivisionByZero:
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
     def get_two_way_taker_fee(self):
@@ -425,7 +425,10 @@ class Position(util.Initializable):
         """
         :return: Unrealized P&L% = [ Position's unrealized P&L / Position Margin ] x 100%
         """
-        return (self.unrealised_pnl / self.margin) * 100
+        try:
+            return (self.unrealised_pnl / self.margin) * 100
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            return constants.ZERO
 
     async def recreate(self):
         """
@@ -514,7 +517,8 @@ class Position(util.Initializable):
                 f"MarkPrice : {str(self.mark_price)} | "
                 f"Quantity : {str(self.quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
-                f"id : {self.position_id}")
+                f"Unrealized PNL : {self.unrealised_pnl} ({round(self.get_unrealised_pnl_percent(), 3)} %) | "
+                f"Liquidation price : {self.liquidation_price}")
 
     def close(self):
         self.reset()
