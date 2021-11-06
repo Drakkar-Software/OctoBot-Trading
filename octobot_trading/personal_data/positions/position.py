@@ -246,6 +246,8 @@ class Position(util.Initializable):
             self.close()
         else:
             self.size += size_update
+            if self.size == constants.ZERO:
+                self.close()
 
     def _update_quantity_or_size_if_necessary(self):
         """
