@@ -53,9 +53,13 @@ class SpotPortfolio(portfolio_class.Portfolio):
         # when buy order
         if order.side == enums.TradeOrderSide.BUY:
             new_quantity = - order.origin_quantity * order.origin_price * (constants.ONE if is_new_order else -constants.ONE)
-            self._update_portfolio_data(order.market, available_value=new_quantity)
+            self._update_portfolio_data(order.market,
+                                        available_value=new_quantity,
+                                        total_value=constants.ZERO)
 
         # when sell order
         else:
             new_quantity = - order.origin_quantity * (constants.ONE if is_new_order else -constants.ONE)
-            self._update_portfolio_data(order.currency, available_value=new_quantity)
+            self._update_portfolio_data(order.currency,
+                                        available_value=new_quantity,
+                                        total_value=constants.ZERO)
