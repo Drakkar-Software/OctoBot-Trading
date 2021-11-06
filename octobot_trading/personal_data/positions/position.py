@@ -426,7 +426,7 @@ class Position(util.Initializable):
         :return: Unrealized P&L% = [ Position's unrealized P&L / Position Margin ] x 100%
         """
         try:
-            return (self.unrealised_pnl / self.margin) * 100
+            return (self.unrealised_pnl / self.margin) * constants.ONE_HUNDRED
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
