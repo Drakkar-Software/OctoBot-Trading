@@ -86,9 +86,12 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         return False
 
     @classmethod
-    def get_db_folder(cls, backtesting=False):
+    def get_db_folder(cls, backtesting=False, optimizer_id=None):
         root = os.path.join(commons_constants.USER_FOLDER, cls.__name__)
-        return os.path.join(root, trading_constants.BACKTESTING) if backtesting else root
+        if optimizer_id is None:
+            return os.path.join(root, trading_constants.BACKTESTING) if backtesting else root
+        else:
+            return os.path.join(root, commons_constants.OPTIMIZER_RUNS_FOLDER, str(optimizer_id))
 
     @classmethod
     def init_db_folder(cls):
@@ -106,12 +109,12 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         return cls.BACKTESTING_FILE_BY_BOT_ID[bot_id]
 
     @classmethod
-    def get_db_name(cls, prefix=0, suffix=0, backtesting=False, metadata_db=False, bot_id=None):
+    def get_db_name(cls, prefix=0, suffix=0, backtesting=False, metadata_db=False, bot_id=None, optimizer_id=None):
         if prefix == 0 and bot_id is not None:
             prefix = cls.get_prefix(bot_id)
         suffix_data = f"_{suffix}" if suffix != 0 else ""
         prefix_data = f"{prefix}_" if prefix != 0 else ""
-        return os.path.join(cls.get_db_folder(backtesting=backtesting),
+        return os.path.join(cls.get_db_folder(backtesting=backtesting, optimizer_id=optimizer_id),
                             f"{'' if metadata_db else prefix_data}"
                             f"{trading_constants.METADATA_DB_FILE_NAME if metadata_db else trading_constants.DB_FILE_NAME}"
                             f"{suffix_data}.json")
@@ -141,22 +144,23 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             # todo cancel and restart live tasks
             await self.start_over_database(not live)
 
-    def get_storage_db_name(self, with_suffix=False, backtesting=False):
+    def get_storage_db_name(self, with_suffix=False, backtesting=False, optimizer_id=None):
         if not with_suffix:
             try:
                 # try getting an existing db
                 self.get_db_name(prefix=self.BACKTESTING_FILE_BY_BOT_ID[self.bot_id],
-                                 backtesting=backtesting)
+                                 backtesting=backtesting, optimizer_id=optimizer_id)
             except KeyError:
                 pass
         index = 1
-        name_candidate = self.get_db_name(suffix=index, backtesting=backtesting) if with_suffix \
-            else self.get_db_name(prefix=index, backtesting=backtesting)
+        name_candidate = self.get_db_name(suffix=index, backtesting=backtesting, optimizer_id=optimizer_id) \
+            if with_suffix else self.get_db_name(prefix=index, backtesting=backtesting, optimizer_id=optimizer_id)
         while index < 1000:
             if os.path.isfile(name_candidate):
                 index += 1
-                name_candidate = self.get_db_name(suffix=index, backtesting=backtesting) if with_suffix \
-                    else self.get_db_name(prefix=index, backtesting=backtesting)
+                name_candidate = self.get_db_name(suffix=index, backtesting=backtesting, optimizer_id=optimizer_id) \
+                    if with_suffix \
+                    else self.get_db_name(prefix=index, backtesting=backtesting, optimizer_id=optimizer_id)
             else:
                 if with_suffix is False:
                     self.register_prefix_for_bot(self.bot_id, index)
@@ -176,14 +180,18 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
     async def get_metadata_writer(self):
         writer = None
         try:
+            optimizer_id = self.get_optimizer_id()
             writer = scripting_library.DBWriter(
-                self.get_db_name(backtesting=self.exchange_manager.backtesting, metadata_db=True)
+                self.get_db_name(backtesting=self.exchange_manager.backtesting, metadata_db=True,
+                                 optimizer_id=optimizer_id)
             )
             yield writer
         finally:
             if writer is not None:
                 await writer.close()
 
+    def get_optimizer_id(self):
+        return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
 
 class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProducer):
 
@@ -200,7 +208,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         super().__init__(channel, config, trading_mode, exchange_manager)
         self.trading_mode.init_db_folder()
         self.writer = scripting_library.DBWriter(
-            self.trading_mode.get_storage_db_name(with_suffix=False, backtesting=self.exchange_manager.backtesting)
+            self.trading_mode.get_storage_db_name(with_suffix=False, backtesting=self.exchange_manager.backtesting,
+                                                  optimizer_id=self.trading_mode.get_optimizer_id())
         )
         self.script_factory = self.trading_mode.get_script
         self.last_call = None
