@@ -37,22 +37,25 @@ async def get_starting_portfolio(reader) -> dict:
 
 
 async def _load_historical_values(reader, with_candles=True, with_trades=True, with_portfolio=True):
-    starting_portfolio = await get_starting_portfolio(reader)
     price_data = {}
     trades_data = {}
     moving_portfolio_data = {}
-    metadata = await get_metadata(reader)
-    ref_market = metadata[trading_enums.DBRows.REFERENCE_MARKET.value]
-    # init data
-    for symbol, values in starting_portfolio.items():
-        if symbol != ref_market:
-            pair = symbol_util.merge_currencies(symbol, ref_market)
-            if with_candles and pair not in price_data:
-                price_data[pair] = await get_candles(reader, pair)
-            if with_trades and pair not in trades_data:
-                trades_data[pair] = await get_trades(reader, pair)
-        if with_portfolio:
-            moving_portfolio_data[symbol] = values[octobot_commons.constants.PORTFOLIO_TOTAL]
+    try:
+        starting_portfolio = await get_starting_portfolio(reader)
+        metadata = await get_metadata(reader)
+        ref_market = metadata[trading_enums.DBRows.REFERENCE_MARKET.value]
+        # init data
+        for symbol, values in starting_portfolio.items():
+            if symbol != ref_market:
+                pair = symbol_util.merge_currencies(symbol, ref_market)
+                if with_candles and pair not in price_data:
+                    price_data[pair] = await get_candles(reader, pair)
+                if with_trades and pair not in trades_data:
+                    trades_data[pair] = await get_trades(reader, pair)
+            if with_portfolio:
+                moving_portfolio_data[symbol] = values[octobot_commons.constants.PORTFOLIO_TOTAL]
+    except IndexError:
+        pass
     return price_data, trades_data, moving_portfolio_data
 
 
@@ -99,6 +102,8 @@ async def plot_historical_pnl_value(reader, plotted_element, x_as_trade_count=Tr
     #   futures: when position going to 0 (from long/short) => trade is closed
     #   spot: when position lowered => trade is closed
     price_data, trades_data, moving_portfolio_data = await _load_historical_values(reader)
+    if not price_data:
+        return
     x_data = [0 if x_as_trade_count else next(iter(price_data.values()))[0][trading_enums.PlotAttributes.X.value]]
     pnl_data = [0]
     for pair, candles in price_data.items():
