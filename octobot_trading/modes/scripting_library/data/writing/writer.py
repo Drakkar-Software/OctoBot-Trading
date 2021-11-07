@@ -26,6 +26,9 @@ class DBWriter(database.BaseDatabase):
     async def update(self, table_name: str, row: dict, query):
         await self._database.update(table_name, row, query)
 
+    async def delete(self, table_name: str, query):
+        await self._database.delete(table_name, query)
+
     async def log_many(self, table_name: str, rows: list):
         for row in rows:
             self.cache.register(table_name, row)

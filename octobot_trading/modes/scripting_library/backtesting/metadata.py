@@ -20,12 +20,16 @@ def set_script_name(ctx, name):
     ctx.current_trading_mode_producer.trading_mode.script_name = name
 
 
-def get_backtesting_db(ctx, run_id):
-    return ctx.trading_mode_class.get_db_name(prefix=run_id, backtesting=True)
+def get_backtesting_db(ctx, run_id, optimizer_id=None):
+    return ctx.trading_mode_class.get_db_name(
+        prefix=run_id,
+        backtesting=True,
+        optimizer_id=optimizer_id,
+    )
 
 
-async def read_metadata(ctx=None, trading_mode=None, backtesting=True):
+async def read_metadata(ctx=None, trading_mode=None, backtesting=True, optimizer_id=None):
     trading_mode = trading_mode or ctx.trading_mode_class
-    data_file = trading_mode.get_db_name(metadata_db=True, backtesting=backtesting)
+    data_file = trading_mode.get_db_name(metadata_db=True, backtesting=backtesting, optimizer_id=optimizer_id)
     async with data.MetadataReader.database(data_file) as reader:
         return await reader.read()
