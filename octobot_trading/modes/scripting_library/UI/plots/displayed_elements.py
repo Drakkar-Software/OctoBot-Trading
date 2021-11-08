@@ -21,9 +21,22 @@ import octobot_trading.modes.scripting_library.data as scripting_data
 
 
 class DisplayedElements:
-    def __init__(self):
+    TABLE_KEY_TO_COLUMN = {
+        "x": "Time",
+        "y": "Value",
+        "z": "Value",
+        "open": "Open",
+        "high": "High",
+        "low": "Low",
+        "close": "Close",
+        "volume": "Volume",
+        "pair": "Pair",
+    }
+
+    def __init__(self, element_type=trading_enums.DisplayedElementTypes.CHART.value):
         self.nested_elements = {}
         self.elements = []
+        self.type: str = element_type
 
     async def fill_from_database(self, database_name):
         async with scripting_data.DBReader.database(database_name) as reader:
@@ -48,7 +61,7 @@ class DisplayedElements:
 
     def _plot_graphs(self, graphs_by_parts):
         for part, datasets in graphs_by_parts.items():
-            with self.part(part) as part:
+            with self.part(part, element_type=trading_enums.DisplayedElementTypes.CHART.value) as part:
                 for title, dataset in datasets.items():
                     x = []
                     y = []
@@ -101,14 +114,14 @@ class DisplayedElements:
                         mode=data.get("mode", None))
 
     def _base_schema(self):
-        return  {
+        return {
             "type": "object",
             "title": "Inputs",
             "properties": {},
         }
 
     def _display_inputs(self, inputs):
-        with self.part("inputs") as part:
+        with self.part("inputs", element_type=trading_enums.DisplayedElementTypes.INPUT.value) as part:
             config_by_tentacles = {}
             config_schema_by_tentacles = {}
             for user_input_element in inputs:
@@ -160,8 +173,8 @@ class DisplayedElements:
         main_schema["properties"][title.replace(" ", "_")] = properties
 
     @contextlib.contextmanager
-    def part(self, name):
-        element = DisplayedElements()
+    def part(self, name, element_type=trading_enums.DisplayedElementTypes.CHART.value):
+        element = DisplayedElements(element_type=element_type)
         self.nested_elements[name] = element
         yield element
 
@@ -220,9 +233,29 @@ class DisplayedElements:
         )
         self.elements.append(element)
 
+    def table(
+        self,
+        name,
+        columns,
+        rows,
+        searches
+    ):
+        element = Element(
+            None,
+            None,
+            None,
+            title=name,
+            columns=columns,
+            rows=rows,
+            searches=searches,
+            type=trading_enums.DisplayedElementTypes.TABLE.value
+        )
+        self.elements.append(element)
+
     def to_json(self, name="root"):
         return {
             trading_enums.PlotAttributes.NAME.value: name,
+            trading_enums.PlotAttributes.TYPE.value: self.type,
             trading_enums.PlotAttributes.DATA.value: {
                 trading_enums.PlotAttributes.SUB_ELEMENTS.value: [
                     element.to_json(key) for key, element in self.nested_elements.items()
@@ -256,6 +289,9 @@ class Element:
         config_values=None,
         schema=None,
         tentacle=None,
+        columns=None,
+        rows=None,
+        searches=None,
         type=trading_enums.DisplayedElementTypes.CHART.value,
     ):
         self.kind = kind
@@ -276,6 +312,9 @@ class Element:
         self.config_values = config_values
         self.schema = schema
         self.tentacle = tentacle
+        self.columns = columns
+        self.rows = rows
+        self.searches = searches
         self.type = type
 
     def to_json(self):
@@ -298,6 +337,9 @@ class Element:
             trading_enums.PlotAttributes.CONFIG.value: self.config_values,
             trading_enums.PlotAttributes.SCHEMA.value: self.schema,
             trading_enums.PlotAttributes.TENTACLE.value: self.tentacle,
+            trading_enums.PlotAttributes.COLUMNS.value: self.columns,
+            trading_enums.PlotAttributes.ROWS.value: self.rows,
+            trading_enums.PlotAttributes.SEARCHES.value: self.searches,
             trading_enums.PlotAttributes.TYPE.value: self.type,
         }
 

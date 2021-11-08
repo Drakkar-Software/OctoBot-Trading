@@ -451,6 +451,9 @@ class PlotAttributes(enum.Enum):
     CONFIG = "config"
     SCHEMA = "schema"
     TENTACLE = "tentacle"
+    COLUMNS = "columns"
+    ROWS = "rows"
+    SEARCHES = "searches"
     TYPE = "type"
 
 
@@ -462,6 +465,7 @@ class PlotCharts(enum.Enum):
 class DisplayedElementTypes(enum.Enum):
     CHART = "chart"
     INPUT = "input"
+    TABLE = "table"
 
 
 class DBTables(enum.Enum):
@@ -469,6 +473,7 @@ class DBTables(enum.Enum):
     INPUTS = "inputs"
     PORTFOLIO = "portfolio"
     ORDERS = "orders"
+    TRADES = "orders"   # TODO
     CANDLES = "candles"
     PAIR = "pair"
     FEES_AMOUNT = "fees_amount"

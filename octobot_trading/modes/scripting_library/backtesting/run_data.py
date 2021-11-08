@@ -25,7 +25,7 @@ async def get_candles(reader, pair):
 
 
 async def get_trades(reader, pair):
-    return await reader.select(trading_enums.DBTables.ORDERS.value, (await reader.search()).pair == pair)
+    return await reader.select(trading_enums.DBTables.TRADES.value, (await reader.search()).pair == pair)
 
 
 async def get_metadata(reader):
@@ -166,3 +166,98 @@ async def plot_historical_pnl_value(reader, plotted_element, x_as_trade_count=Tr
         title="P&L",
         own_yaxis=own_yaxis)
 
+
+async def plot_trades(reader, plotted_element):
+    data = await reader.all(trading_enums.DBTables.TRADES.value)
+    if not data:
+        raise RuntimeError(f"Nothing to create a table from when reading {trading_enums.DBTables.TRADES.value}")
+    column_render = _get_default_column_render()
+    types = _get_default_types()
+    key_to_label = {
+        **plotted_element.TABLE_KEY_TO_COLUMN,
+        **{
+            "y": "Price",
+        }
+    }
+    columns = _get_default_columns(plotted_element, data, column_render, key_to_label)
+    columns.append({
+        "field": "total",
+        "label": "Total",
+        "render": None
+    })
+    columns.append({
+        "field": "fees",
+        "label": "Fees",
+        "render": None
+    })
+    for datum in data:
+        datum["total"] = datum["y"] * datum["volume"]
+        datum["fees"] = f'{datum["fees_amount"]} {datum["fees_currency"]}'
+    rows = _get_default_rows(data, columns)
+    searches = _get_default_searches(columns, types)
+    plotted_element.table(
+        trading_enums.DBTables.TRADES.value,
+        columns=columns,
+        rows=rows,
+        searches=searches)
+
+
+async def plot_table(reader, plotted_element, data_source, columns=None, rows=None,
+                     searches=None, column_render=None, types=None):
+    data = await reader.all(data_source)
+    if not data:
+        raise RuntimeError(f"Nothing to create a table from when reading {data_source}")
+    column_render = column_render or _get_default_column_render()
+    types = types or _get_default_types()
+    columns = columns or _get_default_columns(plotted_element, data, column_render)
+    rows = rows or _get_default_rows(data, columns)
+    searches = searches or _get_default_searches(columns, types)
+    plotted_element.table(
+        data_source,
+        columns=columns,
+        rows=rows,
+        searches=searches)
+
+
+def _get_default_column_render():
+    return {
+        "Time": "datetime"
+    }
+
+
+def _get_default_types():
+    return {
+        "Time": "datetime"
+    }
+
+
+def _get_default_columns(plotted_element, data, column_render, key_to_label=None):
+    key_to_label = key_to_label or plotted_element.TABLE_KEY_TO_COLUMN
+    return [
+        {
+            "field": row_key,
+            "label": key_to_label[row_key],
+            "render": column_render.get(key_to_label[row_key], None)
+        }
+        for row_key, row_value in data[0].items()
+        if row_key in plotted_element.TABLE_KEY_TO_COLUMN and row_value is not None
+    ]
+
+
+def _get_default_rows(data, columns):
+    column_fields = set(col["field"] for col in columns)
+    return [
+        {key: val for key, val in row.items() if key in column_fields}
+        for row in data
+    ]
+
+
+def _get_default_searches(columns, types):
+    return [
+        {
+            "field": col["field"],
+            "label": col["label"],
+            "type": types.get(col["label"])
+        }
+        for col in columns
+    ]
