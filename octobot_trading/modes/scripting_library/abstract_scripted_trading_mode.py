@@ -193,13 +193,27 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
     def get_optimizer_id(self):
         return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
 
+
 class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProducer):
 
     def script_factory(self):
         raise NotImplementedError("script_factory is not set")
 
-    async def get_backtesting_metadata(self):
-        raise NotImplementedError("get_backtesting_metadata is not set")
+    async def get_backtesting_metadata(self) -> dict:
+        """
+        Override this method to get add addition metadata
+        :return: the metadata dict related to this backtesting run
+        """
+        profitability, profitability_percent, _, _, _ = trading_api.get_profitability_stats(self.exchange_manager)
+        return {
+            "id": self.trading_mode.get_prefix(self.trading_mode.bot_id),
+            "p&l": float(profitability),
+            "p&l%": float(profitability_percent),
+            "trades": len(trading_api.get_trade_history(self.exchange_manager)),
+            "timestamp": self.trading_mode.timestamp,
+            "name": self.trading_mode.script_name,
+            "user_inputs": self.trading_mode.trading_config
+        }
 
     async def get_live_metadata(self):
         return {trading_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config)}
