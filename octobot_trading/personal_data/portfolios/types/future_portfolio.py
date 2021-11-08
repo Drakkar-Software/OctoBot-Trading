@@ -99,3 +99,24 @@ class FuturePortfolio(portfolio_class.Portfolio):
                                         available_value=liquidated_quantity)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from liquidated position : {position} ({e})")
+
+    def update_portfolio_from_funding(self, position, funding_rate):
+        """
+        Update portfolio from funding
+        :param position: the position
+        :param funding_rate: the funding rate
+        """
+        try:
+            funding_fee = position.value * funding_rate
+            # When inverse contract, decrease a currency market equivalent quantity from currency balance
+            if position.symbol_contract.is_inverse_contract():
+                self._update_portfolio_data(position.currency,
+                                            available_value=-funding_fee,
+                                            total_value=-funding_fee)
+            # When non-inverse contract, decrease directly market quantity
+            else:
+                self._update_portfolio_data(position.market,
+                                            available_value=-funding_fee,
+                                            total_value=-funding_fee)
+        except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
+            self.logger.error(f"Failed to update from funding : {position} ({e})")
