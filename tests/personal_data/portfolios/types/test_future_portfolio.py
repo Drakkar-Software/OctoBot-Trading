@@ -23,14 +23,14 @@ import octobot_trading.errors as errors
 import octobot_trading.enums as enums
 import octobot_trading.exchange_data.contracts as contracts
 from octobot_trading.personal_data import FuturePortfolio, BuyMarketOrder, SellMarketOrder, SellLimitOrder, \
-    StopLossOrder
+    StopLossOrder, LinearPosition, InversePosition
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting, \
     DEFAULT_EXCHANGE_NAME
 
 # All test coroutines will be treated as marked.
 from tests.exchanges.traders import DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE, \
-    DEFAULT_FUTURE_SYMBOL_LEVERAGE
+    DEFAULT_FUTURE_SYMBOL_LEVERAGE, DEFAULT_FUTURE_SYMBOL_CONTRACT
 from tests.test_utils.order_util import fill_market_order
 
 pytestmark = pytest.mark.asyncio
@@ -317,3 +317,87 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
     await fill_market_order(market_buy)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('500.0')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('2000.0')
+
+
+@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
+                         indirect=["backtesting_exchange_manager"])
+async def test_update_portfolio_from_funding_with_long_position(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+
+    position_inst = InversePosition(trader, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
+    position_inst.update_from_raw(
+        {
+            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
+    # long position holders have to pay the short position holders
+    portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
+                                                              funding_rate=decimal.Decimal(0.0001))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
+        '9.999989999999999999999520783')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
+        '9.999989999999999999999520783')
+
+    position_inst = InversePosition(trader, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
+    position_inst.update_from_raw(
+        {
+            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
+    # short position holders have to pay the long position holders
+    portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
+                                                              funding_rate=decimal.Decimal(-0.0002))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
+        '10.00001000000000000000047922')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
+        '10.00002000000000000000095843')
+
+
+@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
+                         indirect=["backtesting_exchange_manager"])
+async def test_update_portfolio_from_funding_with_short_position(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+
+    position_inst = InversePosition(trader, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update(update_size=decimal.Decimal(-10), mark_price=decimal.Decimal(100))
+    position_inst.update_from_raw(
+        {
+            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
+    # long position holders have to pay the short position holders
+    portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
+                                                              funding_rate=decimal.Decimal(0.0003))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
+        '10.00002999999999999999737189')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
+        '10.00002999999999999999737189')
+
+    position_inst = InversePosition(trader, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update(update_size=decimal.Decimal(-10), mark_price=decimal.Decimal(100))
+    position_inst.update_from_raw(
+        {
+            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
+    # short position holders have to pay the long position holders
+    portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
+                                                              funding_rate=decimal.Decimal(-0.0004))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
+        '9.999989999999999999995455021')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
+        '9.999959999999999999998083131')
