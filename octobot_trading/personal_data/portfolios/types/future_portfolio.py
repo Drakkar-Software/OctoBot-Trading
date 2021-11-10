@@ -91,11 +91,15 @@ class FuturePortfolio(portfolio_class.Portfolio):
         :param position: the liquidated position
         """
         try:
-            liquidated_quantity = -position.get_quantity_to_close() / position.symbol_contract.current_leverage
-            self._update_portfolio_data(position.currency
-                                        if position.symbol_contract.is_inverse_contract() else position.market,
-                                        total_value=constants.ZERO,
-                                        available_value=liquidated_quantity)
+            liquidated_quantity = position.get_quantity_to_close() / position.symbol_contract.current_leverage
+            if position.symbol_contract.is_inverse_contract():
+                self._update_portfolio_data(position.currency,
+                                            available_value=-liquidated_quantity / position.mark_price,
+                                            total_value=constants.ZERO)
+            else:
+                self._update_portfolio_data(position.market,
+                                            available_value=-liquidated_quantity * position.mark_price,
+                                            total_value=constants.ZERO)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from liquidated position : {position} ({e})")
 

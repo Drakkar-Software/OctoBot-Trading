@@ -43,17 +43,17 @@ def test_update():
                                      available=constants.ZERO, total=constants.ZERO, order_margin=constants.ZERO,
                                      initial_margin=constants.ZERO, wallet_balance=constants.ZERO,
                                      maintenance_margin=constants.ZERO, position_margin=constants.ZERO)
-    assert not asset.update(available=constants.ZERO, total=constants.ZERO, wallet_balance=constants.ZERO)
+    assert not asset.update(available=constants.ZERO, total=constants.ZERO, unrealized_pnl=constants.ZERO)
     assert asset.total == constants.ZERO
-    assert asset.update(available=constants.ZERO, total=decimal.Decimal(5), wallet_balance=constants.ZERO)
+    assert asset.update(available=constants.ZERO, total=decimal.Decimal(5), unrealized_pnl=constants.ZERO)
     assert asset.total == decimal.Decimal(5)
-    assert asset.update(available=constants.ZERO, total=decimal.Decimal(6), wallet_balance=decimal.Decimal(10))
-    assert asset.total == decimal.Decimal(11)
-    assert asset.wallet_balance == decimal.Decimal(10)
-    assert asset.update(available=constants.ZERO, total=constants.ZERO, wallet_balance=decimal.Decimal(10),
+    assert asset.update(available=constants.ZERO, total=decimal.Decimal(6), unrealized_pnl=decimal.Decimal(10))
+    assert asset.total == decimal.Decimal(21)
+    assert asset.wallet_balance == decimal.Decimal(11)
+    assert asset.update(available=constants.ZERO, total=decimal.Decimal(1), unrealized_pnl=decimal.Decimal(10),
                         maintenance_margin=decimal.Decimal(3))
-    assert asset.wallet_balance == decimal.Decimal(20)
-    assert asset.total == decimal.Decimal(31)
+    assert asset.wallet_balance == decimal.Decimal(12)
+    assert asset.total == decimal.Decimal(32)
     assert asset.maintenance_margin == decimal.Decimal(3)
     assert asset.available == constants.ZERO
 
@@ -63,12 +63,12 @@ def test_set():
                                      available=constants.ZERO, total=constants.ZERO, order_margin=constants.ZERO,
                                      initial_margin=constants.ZERO, wallet_balance=constants.ZERO,
                                      maintenance_margin=constants.ZERO, position_margin=constants.ZERO)
-    assert not asset.set(available=constants.ZERO, total=constants.ZERO, wallet_balance=constants.ZERO)
-    assert asset.set(available=decimal.Decimal(5), total=decimal.Decimal(5), wallet_balance=decimal.Decimal(2))
-    assert not asset.set(available=decimal.Decimal(5), total=decimal.Decimal(5), wallet_balance=decimal.Decimal(2))
+    assert not asset.set(available=constants.ZERO, total=constants.ZERO, margin_balance=constants.ZERO)
+    assert asset.set(available=decimal.Decimal(5), total=decimal.Decimal(5), margin_balance=decimal.Decimal(2))
+    assert not asset.set(available=decimal.Decimal(5), total=decimal.Decimal(5), margin_balance=decimal.Decimal(2))
     assert asset.available == decimal.Decimal(5)
-    assert asset.total == decimal.Decimal(5)
-    assert asset.wallet_balance == decimal.Decimal(2)
+    assert asset.total == decimal.Decimal(2)
+    assert asset.wallet_balance == decimal.Decimal(5)
 
 
 def test_restore_available():
