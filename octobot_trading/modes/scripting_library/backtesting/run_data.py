@@ -39,7 +39,8 @@ async def get_candles(reader, pair, time_frame, metadata):
                                                 to_use_candles_source[trading_enums.DBRows.EXCHANGE.value],
                                                 pair,
                                                 commons_enums.TimeFrames(time_frame),
-                                                inferior_timestamp=metadata[trading_enums.DBRows.START_TIME.value])
+                                                inferior_timestamp=metadata[trading_enums.DBRows.START_TIME.value],
+                                                superior_timestamp=metadata[trading_enums.DBRows.END_TIME.value])
 
 
 async def get_trades(reader, pair):

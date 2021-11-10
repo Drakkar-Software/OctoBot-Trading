@@ -488,3 +488,4 @@ class DBRows(enum.Enum):
     TIME_FRAME = "time_frame"
     VALUE = "value"
     START_TIME = "start_time"
+    END_TIME = "end_time"

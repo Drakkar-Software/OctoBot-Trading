@@ -218,12 +218,16 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         }
 
     async def get_live_metadata(self):
-        start_time = backtesting_api.get_backtesting_current_time(self.exchange_manager.exchange.backtesting) \
+        start_time = backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting) \
             if trading_api.get_is_backtesting(self.exchange_manager) \
             else trading_api.get_exchange_current_time(self.exchange_manager)
+        end_time = backtesting_api.get_backtesting_ending_time(self.exchange_manager.exchange.backtesting) \
+            if trading_api.get_is_backtesting(self.exchange_manager) \
+            else -1
         return {
             trading_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config),
             trading_enums.DBRows.START_TIME.value: start_time,
+            trading_enums.DBRows.END_TIME.value: end_time,
         }
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
