@@ -19,8 +19,10 @@ import numpy
 
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.enums as trading_enums
+import octobot_trading.constants as trading_constants
 import octobot_trading.api as trading_api
 import octobot_commons.symbol_util as symbol_util
+import octobot_commons.enums as commons_enums
 
 
 async def store_orders(ctx, orders,
@@ -46,6 +48,22 @@ async def store_orders(ctx, orders,
         for order in orders
     ]
     await ctx.writer.log_many(trading_enums.DBTables.ORDERS.value, order_data)
+
+
+async def plot_candles(ctx, pair, time_frame, chart=trading_enums.PlotCharts.MAIN_CHART.value):
+    table = trading_enums.DBTables.CANDLES_SOURCE.value
+    candles_identifier = {
+        "pair": pair,
+        "time_frame": time_frame,
+        "exchange": ctx.exchange_name
+    }
+    if not (ctx.writer.are_data_initialized or
+            ctx.writer.contains_values(table, candles_identifier)):
+        candles_identifier["value"] =  \
+            trading_api.get_backtesting_data_file(ctx.exchange_manager, pair, commons_enums.TimeFrames(time_frame)) \
+            if trading_api.get_is_backtesting(ctx.exchange_manager) else trading_constants.LOCAL_BOT_DATA
+        candles_identifier["chart"] = chart
+        await ctx.writer.log(table, candles_identifier)
 
 
 async def plot(ctx, title, x=None,

@@ -30,6 +30,20 @@ class DatabaseCache:
     def has(self, table):
         return table in self.cache
 
+    def contains_values(self, table, val_by_keys):
+        try:
+            for element in self.cache[table]:
+                try:
+                    for key, val in val_by_keys.items():
+                        if element[key] != val:
+                            break
+                    return True
+                except KeyError:
+                    pass
+        except KeyError:
+            pass
+        return False
+
     def contains_x(self, table, x_val):
         try:
             for element in self.cache[table]:

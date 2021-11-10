@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import numpy
 import octobot_trading.modes.scripting_library.data as database
 
 
@@ -39,7 +38,3 @@ class DBWriter(database.BaseDatabase):
         if array is None:
             return None
         return array[index] * multiplier
-
-    @staticmethod
-    def get_serializable_value(value):
-        return value.item() if isinstance(value, numpy.generic) else value

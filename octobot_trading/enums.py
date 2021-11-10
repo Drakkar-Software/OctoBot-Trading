@@ -475,6 +475,7 @@ class DBTables(enum.Enum):
     ORDERS = "orders"
     TRADES = "orders"   # TODO
     CANDLES = "candles"
+    CANDLES_SOURCE = "candles_source"
     PAIR = "pair"
     FEES_AMOUNT = "fees_amount"
     FEES_CURRENCY = "fees_currency"
@@ -482,3 +483,8 @@ class DBTables(enum.Enum):
 
 class DBRows(enum.Enum):
     REFERENCE_MARKET = "ref_market"
+    EXCHANGE = "exchange"
+    PAIR = "pair"
+    TIME_FRAME = "time_frame"
+    VALUE = "value"
+    START_TIME = "start_time"

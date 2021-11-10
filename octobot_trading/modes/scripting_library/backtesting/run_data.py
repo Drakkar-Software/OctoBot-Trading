@@ -13,15 +13,33 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import copy
-
 import octobot_trading.enums as trading_enums
+import octobot_backtesting.api as backtesting_api
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.constants
+import octobot_commons.enums as commons_enums
+import octobot_commons.logging
 
 
-async def get_candles(reader, pair):
-    return await reader.select(trading_enums.DBTables.CANDLES.value, ((await reader.search()).pair == pair))
+def get_logger():
+    return octobot_commons.logging.get_logger("BacktestingRunData")
+
+
+async def get_candles(reader, pair, time_frame, metadata):
+    candles_sources = await reader.select(trading_enums.DBTables.CANDLES_SOURCE.value,
+                                         ((await reader.search()).pair == pair))
+    to_use_candles_source = candles_sources[0]
+    if time_frame is not None:
+        for candles_source in candles_sources:
+            if candles_source[trading_enums.DBRows.TIME_FRAME.value] == time_frame:
+                to_use_candles_source = candles_source
+    else:
+        time_frame = to_use_candles_source[trading_enums.DBRows.TIME_FRAME.value]
+    return await backtesting_api.get_all_ohlcvs(to_use_candles_source[trading_enums.DBRows.VALUE.value],
+                                                to_use_candles_source[trading_enums.DBRows.EXCHANGE.value],
+                                                pair,
+                                                commons_enums.TimeFrames(time_frame),
+                                                inferior_timestamp=metadata[trading_enums.DBRows.START_TIME.value])
 
 
 async def get_trades(reader, pair):
@@ -36,7 +54,7 @@ async def get_starting_portfolio(reader) -> dict:
     return (await reader.all(trading_enums.DBTables.PORTFOLIO.value))[0]
 
 
-async def _load_historical_values(reader, with_candles=True, with_trades=True, with_portfolio=True):
+async def _load_historical_values(reader, with_candles=True, with_trades=True, with_portfolio=True, time_frame=None):
     price_data = {}
     trades_data = {}
     moving_portfolio_data = {}
@@ -49,7 +67,12 @@ async def _load_historical_values(reader, with_candles=True, with_trades=True, w
             if symbol != ref_market:
                 pair = symbol_util.merge_currencies(symbol, ref_market)
                 if with_candles and pair not in price_data:
-                    price_data[pair] = await get_candles(reader, pair)
+                    # convert candles timestamp in millis
+                    raw_candles = await get_candles(reader, pair, time_frame, metadata)
+                    for candle in raw_candles:
+                        candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] = \
+                            candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000
+                    price_data[pair] = raw_candles
                 if with_trades and pair not in trades_data:
                     trades_data[pair] = await get_trades(reader, pair)
             if with_portfolio:
@@ -66,15 +89,15 @@ async def plot_historical_portfolio_value(reader, plotted_element, own_yaxis=Fal
     for pair, candles in price_data.items():
         symbol, ref_market = symbol_util.split_symbol(pair)
         if candles and not time_data:
-            time_data = [candle[trading_enums.PlotAttributes.X.value] for candle in candles]
+            time_data = [candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] for candle in candles]
             value_data = [0] * len(candles)
         for index, candle in enumerate(candles):
             # TODO: handle multiple pairs with shared symbols
             value_data[index] = \
                 value_data[index] + \
-                moving_portfolio_data[symbol] * candle[trading_enums.PlotAttributes.CLOSE.value] + moving_portfolio_data[ref_market]
+                moving_portfolio_data[symbol] * candle[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value] + moving_portfolio_data[ref_market]
             for trade in trades_data[pair]:
-                if trade[trading_enums.PlotAttributes.X.value] == candle[trading_enums.PlotAttributes.X.value]:
+                if trade[trading_enums.PlotAttributes.X.value] == candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]:
                     if trade[trading_enums.PlotAttributes.SIDE.value] == "sell":
                         moving_portfolio_data[symbol] -= trade[trading_enums.PlotAttributes.VOLUME.value]
                         moving_portfolio_data[ref_market] += trade[trading_enums.PlotAttributes.VOLUME.value] * \
@@ -104,9 +127,9 @@ async def plot_historical_pnl_value(reader, plotted_element, x_as_trade_count=Tr
     price_data, trades_data, moving_portfolio_data = await _load_historical_values(reader)
     if not price_data:
         return
-    x_data = [0 if x_as_trade_count else next(iter(price_data.values()))[0][trading_enums.PlotAttributes.X.value]]
+    x_data = [0 if x_as_trade_count else next(iter(price_data.values()))[0][commons_enums.PriceIndexes.IND_PRICE_TIME.value]]
     pnl_data = [0]
-    for pair, candles in price_data.items():
+    for pair in price_data.keys():
         symbol, ref_market = symbol_util.split_symbol(pair)
         buy_order_volume_by_price = {}
         long_position_size = 0
@@ -170,7 +193,8 @@ async def plot_historical_pnl_value(reader, plotted_element, x_as_trade_count=Tr
 async def plot_trades(reader, plotted_element):
     data = await reader.all(trading_enums.DBTables.TRADES.value)
     if not data:
-        raise RuntimeError(f"Nothing to create a table from when reading {trading_enums.DBTables.TRADES.value}")
+        get_logger().debug(f"Nothing to create a table from when reading {trading_enums.DBTables.TRADES.value}")
+        return
     column_render = _get_default_column_render()
     types = _get_default_types()
     key_to_label = {
@@ -206,7 +230,8 @@ async def plot_table(reader, plotted_element, data_source, columns=None, rows=No
                      searches=None, column_render=None, types=None):
     data = await reader.all(data_source)
     if not data:
-        raise RuntimeError(f"Nothing to create a table from when reading {data_source}")
+        get_logger().debug(f"Nothing to create a table from when reading {data_source}")
+        return
     column_render = column_render or _get_default_column_render()
     types = types or _get_default_types()
     columns = columns or _get_default_columns(plotted_element, data, column_render)

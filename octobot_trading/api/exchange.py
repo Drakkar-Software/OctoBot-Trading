@@ -166,6 +166,18 @@ def get_is_backtesting(exchange_manager) -> bool:
     return exchange_manager.is_backtesting
 
 
+def get_backtesting_data_files(exchange_manager) -> list:
+    if not get_is_backtesting(exchange_manager):
+        raise RuntimeError("Require a backtesting exchange manager")
+    return exchange_manager.exchange.get_backtesting_data_files()
+
+
+def get_backtesting_data_file(exchange_manager, symbol, time_frame) -> list:
+    if not get_is_backtesting(exchange_manager):
+        raise RuntimeError("Require a backtesting exchange manager")
+    return exchange_manager.exchange.get_backtesting_data_file(symbol, time_frame)
+
+
 def get_has_websocket(exchange_manager) -> bool:
     return exchange_manager.has_websocket
 

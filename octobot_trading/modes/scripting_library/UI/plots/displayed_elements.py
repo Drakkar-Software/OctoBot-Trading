@@ -16,8 +16,14 @@
 
 
 import contextlib
+
+import octobot_commons.enums
 import octobot_trading.enums as trading_enums
+import octobot_commons.enums as commons_enums
+import octobot_trading.constants as trading_constants
 import octobot_trading.modes.scripting_library.data as scripting_data
+import octobot_backtesting.api as backtesting_api
+import octobot_trading.api as trading_api
 
 
 class DisplayedElements:
@@ -38,14 +44,17 @@ class DisplayedElements:
         self.elements = []
         self.type: str = element_type
 
-    async def fill_from_database(self, database_name):
+    async def fill_from_database(self, database_name, exchange_id):
         async with scripting_data.DBReader.database(database_name) as reader:
             graphs_by_parts = {}
             inputs = []
+            candles = []
             for table_name in await reader.tables():
                 display_data = await reader.all(table_name)
                 if table_name == trading_enums.DBTables.INPUTS.value:
                     inputs += display_data
+                if table_name == trading_enums.DBTables.CANDLES_SOURCE.value:
+                    candles += display_data
                 else:
                     try:
                         chart = display_data[0]["chart"]
@@ -56,8 +65,9 @@ class DisplayedElements:
                     except KeyError:
                         # some table have no chart
                         pass
-                self._plot_graphs(graphs_by_parts)
-                self._display_inputs(inputs)
+            await self._add_candles(graphs_by_parts, candles, exchange_id)
+            self._plot_graphs(graphs_by_parts)
+            self._display_inputs(inputs)
 
     def _plot_graphs(self, graphs_by_parts):
         for part, datasets in graphs_by_parts.items():
@@ -171,6 +181,62 @@ class DisplayedElements:
                 properties["enum"] = options
             properties["type"] = schema_type
         main_schema["properties"][title.replace(" ", "_")] = properties
+
+    async def _add_candles(self, graphs_by_parts, candles_list, exchange_id):
+        for candles_metadata in candles_list:
+            try:
+                chart = candles_metadata["chart"]
+                candles = await self._get_candles_to_display(candles_metadata, exchange_id)
+                try:
+                    graphs_by_parts[chart][trading_enums.DBTables.CANDLES.value] = candles    # TODO multi candles sets
+                except KeyError:
+                    graphs_by_parts[chart] = {trading_enums.DBTables.CANDLES.value: candles}    # TODO multi candles sets
+            except KeyError:
+                # some table have no chart
+                pass
+
+    async def _get_candles_to_display(self, candles_metadata, exchange_id):
+        if candles_metadata[trading_enums.DBRows.VALUE.value] == trading_constants.LOCAL_BOT_DATA:
+            exchange_manager = trading_api.get_exchange_manager_from_exchange_id(exchange_id)
+            array_candles = trading_api.get_symbol_historical_candles(
+                trading_api.get_symbol_data(
+                    exchange_manager,
+                    candles_metadata[trading_enums.DBRows.PAIR.value]
+                ),
+                candles_metadata[trading_enums.DBRows.TIME_FRAME.value]
+            )
+            return [
+                {
+                    "x": time * 1000,
+                    "open": array_candles[commons_enums.PriceIndexes.IND_PRICE_OPEN.value][index],
+                    "high": array_candles[commons_enums.PriceIndexes.IND_PRICE_HIGH.value][index],
+                    "low": array_candles[commons_enums.PriceIndexes.IND_PRICE_LOW.value][index],
+                    "close": array_candles[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value][index],
+                    "volume": array_candles[commons_enums.PriceIndexes.IND_PRICE_VOL.value][index],
+                    "kind": "candlestick",
+                    "mode": "lines",
+                }
+                for index, time in enumerate(array_candles[commons_enums.PriceIndexes.IND_PRICE_TIME.value])
+            ]
+        time_frame = octobot_commons.enums.TimeFrames(candles_metadata[trading_enums.DBRows.TIME_FRAME.value])
+        db_candles = await backtesting_api.get_all_ohlcvs(candles_metadata[trading_enums.DBRows.VALUE.value],
+                                                          candles_metadata[trading_enums.DBRows.EXCHANGE.value],
+                                                          candles_metadata[trading_enums.DBRows.PAIR.value],
+                                                          time_frame)
+        return [
+            {
+                "x": db_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000,
+                "open": db_candle[commons_enums.PriceIndexes.IND_PRICE_OPEN.value],
+                "high": db_candle[commons_enums.PriceIndexes.IND_PRICE_HIGH.value],
+                "low": db_candle[commons_enums.PriceIndexes.IND_PRICE_LOW.value],
+                "close": db_candle[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value],
+                "volume": db_candle[commons_enums.PriceIndexes.IND_PRICE_VOL.value],
+                "kind": "candlestick",
+                "mode": "lines",
+            }
+            for index, db_candle in enumerate(db_candles)
+        ]
+
 
     @contextlib.contextmanager
     def part(self, name, element_type=trading_enums.DisplayedElementTypes.CHART.value):

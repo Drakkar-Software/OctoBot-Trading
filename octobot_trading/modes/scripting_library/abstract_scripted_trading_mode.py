@@ -29,6 +29,7 @@ import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.modes.scripting_library as scripting_library
 import octobot_commons.constants as commons_constants
+import octobot_backtesting.api as backtesting_api
 
 
 class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
@@ -212,11 +213,18 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             "trades": len(trading_api.get_trade_history(self.exchange_manager)),
             "timestamp": self.trading_mode.timestamp,
             "name": self.trading_mode.script_name,
-            "user_inputs": self.trading_mode.trading_config
+            "user_inputs": self.trading_mode.trading_config,
+            "backtesting_files": trading_api.get_backtesting_data_files(self.exchange_manager)
         }
 
     async def get_live_metadata(self):
-        return {trading_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config)}
+        start_time = backtesting_api.get_backtesting_current_time(self.exchange_manager.exchange.backtesting) \
+            if trading_api.get_is_backtesting(self.exchange_manager) \
+            else trading_api.get_exchange_current_time(self.exchange_manager)
+        return {
+            trading_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config),
+            trading_enums.DBRows.START_TIME.value: start_time,
+        }
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel, config, trading_mode, exchange_manager)
