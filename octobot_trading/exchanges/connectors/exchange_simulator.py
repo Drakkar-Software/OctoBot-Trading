@@ -111,7 +111,7 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
         return []
 
     def get_backtesting_data_files(self):
-        [backtesting_api.get_data_file_path(importer) for importer in self.exchange_importers]
+        return [backtesting_api.get_data_file_path(importer) for importer in self.exchange_importers]
 
     def get_backtesting_data_file(self, symbol, time_frame):
         for importer in self.exchange_importers:
