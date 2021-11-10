@@ -34,7 +34,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
             return False
 
         pair_future_contract = order.exchange_manager.exchange.get_pair_future_contract(order.symbol)
-        position_instance = order.exchange_manager.exchange_personal_data.positions_manager.\
+        position_instance = order.exchange_manager.exchange_personal_data.positions_manager. \
             get_order_position(order, contract=pair_future_contract)
 
         try:
@@ -45,7 +45,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
             if pair_future_contract.is_inverse_contract():
                 total_update_quantity = real_order_quantity / order.filled_price
                 self._update_portfolio_data(order.currency,
-                                            available_value=-total_update_quantity
+                                            available_value=constants.ZERO
                                             if have_increased_position_size else total_update_quantity,
                                             total_value=-order.get_total_fees(order.currency))
 
@@ -54,7 +54,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
                 # decrease market quantity from market available balance
                 total_update_quantity = real_order_quantity * order.filled_price
                 self._update_portfolio_data(order.market,
-                                            available_value=-total_update_quantity
+                                            available_value=constants.ZERO
                                             if have_increased_position_size else total_update_quantity,
                                             total_value=-order.get_total_fees(order.currency))
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
@@ -76,7 +76,6 @@ class FuturePortfolio(portfolio_class.Portfolio):
                 self._update_portfolio_data(order.currency,
                                             available_value=real_order_quantity / order.origin_price,
                                             total_value=constants.ZERO)
-
             # When non-inverse contract, decrease directly market quantity
             else:
                 # decrease market quantity from market available balance
