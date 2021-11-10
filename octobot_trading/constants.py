@@ -119,3 +119,4 @@ CANCEL_ORDER_STATUS_SCOPE = [enums.OrderStatus.PENDING_CANCEL,
 BACKTESTING = "backtesting"
 DB_FILE_NAME = "P&L"
 METADATA_DB_FILE_NAME = "metadata"
+LOCAL_BOT_DATA = "local_bot_data"

@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import contextlib
+import numpy
 
 import octobot_commons.databases as databases
 import octobot_trading.modes.scripting_library.data as data
@@ -37,8 +38,11 @@ class BaseDatabase:
     async def close(self):
         await self._database.close()
 
-    def contains_x(self, table, x_val):
+    def contains_x(self, table: str, x_val):
         return self.cache.contains_x(table, x_val)
+
+    def contains_values(self, table: str, val_by_keys: dict):
+        return self.cache.contains_values(table, val_by_keys)
 
     @classmethod
     @contextlib.asynccontextmanager
@@ -50,3 +54,7 @@ class BaseDatabase:
         finally:
             if database is not None:
                 await database.close()
+
+    @staticmethod
+    def get_serializable_value(value):
+        return value.item() if isinstance(value, numpy.generic) else value
