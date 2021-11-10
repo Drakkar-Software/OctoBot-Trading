@@ -24,22 +24,22 @@ class FutureAsset(asset_class.Asset):
                  maintenance_margin=constants.ZERO,
                  position_margin=constants.ZERO,
                  order_margin=constants.ZERO,
-                 unrealised_pnl=constants.ZERO):
+                 unrealized_pnl=constants.ZERO):
         """
         Future Asset
         :param name: the asset name
         :param available: the margin available (wallet balance - used margin)
-        :param total: the margin balance (wallet balance + unrealised PNL)
+        :param total: the margin balance (wallet balance + unrealized PNL)
         :param initial_margin: the total initial margin required with current mark price
         :param wallet_balance: the wallet balance
         :param maintenance_margin: the maintenance margin required
         :param position_margin: margin required for positions with current mark price
         :param order_margin: margin required for open orders with current mark price
-        :param unrealised_pnl: the unrealised profit and loss
+        :param unrealized_pnl: the unrealized profit and loss
         """
         super().__init__(name, available, total)
-        # Unrealised profit and loss
-        self.unrealised_pnl = unrealised_pnl
+        # Unrealized profit and loss
+        self.unrealized_pnl = unrealized_pnl
 
         # total initial margin required with current mark price
         self.initial_margin = initial_margin
@@ -61,7 +61,7 @@ class FutureAsset(asset_class.Asset):
                                    f"Initial Margin: {float(self.initial_margin)} | " \
                                    f"Wallet Balance: {float(self.wallet_balance)} | " \
                                    f"Maintenance Margin: {float(self.maintenance_margin)} | " \
-                                   f"Unrealized PNL: {float(self.unrealised_pnl)} | " \
+                                   f"Unrealized PNL: {float(self.unrealized_pnl)} | " \
                                    f"Order Margin: {float(self.order_margin)} | " \
                                    f"Position Margin: {float(self.position_margin)}"
 
@@ -73,73 +73,81 @@ class FutureAsset(asset_class.Asset):
                    self.position_margin == other.position_margin and self.order_margin == other.order_margin
         return False
 
-    def update(self, available=constants.ZERO, total=constants.ZERO,
-               initial_margin=constants.ZERO, wallet_balance=constants.ZERO, maintenance_margin=constants.ZERO,
-               position_margin=constants.ZERO, order_margin=constants.ZERO, unrealised_pnl=constants.ZERO):
+    def update(self, available=constants.ZERO, initial_margin=constants.ZERO, total=constants.ZERO,
+               maintenance_margin=constants.ZERO, position_margin=constants.ZERO,
+               order_margin=constants.ZERO, unrealized_pnl=constants.ZERO):
         """
         Update asset portfolio
         :param available: the available margin balance delta
-        :param total: the margin balance delta
+        :param total: the wallet balance delta
         :param initial_margin: the initial margin delta
-        :param wallet_balance: the wallet balance delta
         :param maintenance_margin: the maintenance margin delta
         :param position_margin: the position margin delta
         :param order_margin: the order margin delta
-        :param unrealised_pnl: the unrealised pnl delta
+        :param unrealized_pnl: the unrealized pnl delta
         :return: True if updated
         """
-        if available == constants.ZERO and total == constants.ZERO and wallet_balance == constants.ZERO:
+        if available == constants.ZERO and total == constants.ZERO:
             return False
         self.available += self._ensure_update_validity(self.available, available)
         self.initial_margin += self._ensure_update_validity(self.initial_margin, initial_margin)
         self.position_margin += self._ensure_update_validity(self.position_margin, position_margin)
         self.order_margin += self._ensure_update_validity(self.order_margin, order_margin)
         self.maintenance_margin += self._ensure_update_validity(self.maintenance_margin, maintenance_margin)
-        self.unrealised_pnl += self._ensure_update_validity(self.unrealised_pnl, unrealised_pnl)
-        self.wallet_balance += self._ensure_update_validity(self.wallet_balance, wallet_balance)
-        self.total += self._ensure_update_validity(self.total, total) \
-            if total != constants.ZERO else self.wallet_balance + self.unrealised_pnl
+        self.unrealized_pnl += self._ensure_update_validity(self.unrealized_pnl, unrealized_pnl)
+        self.wallet_balance += self._ensure_update_validity(self.wallet_balance, total)
+        self._update_total()
         return True
 
-    def set(self, available=constants.ZERO, total=constants.ZERO,
-            initial_margin=constants.ZERO, wallet_balance=constants.ZERO, maintenance_margin=constants.ZERO,
-            position_margin=constants.ZERO, order_margin=constants.ZERO, unrealised_pnl=constants.ZERO):
+    def set(self, available=constants.ZERO, total=constants.ZERO, margin_balance=None,
+            initial_margin=constants.ZERO, maintenance_margin=constants.ZERO,
+            position_margin=constants.ZERO, order_margin=constants.ZERO, unrealized_pnl=constants.ZERO):
         """
         Set available, total, initial_margin, wallet_balance, position_margin and maintenance_margin
         values for portfolio asset
         :param available: the available margin balance value
-        :param total: the margin balance value
+        :param total: the wallet balance value
+        :param margin_balance: the margin balance value
         :param initial_margin: the initial margin value
-        :param wallet_balance: the wallet balance value
         :param maintenance_margin: the maintenance margin value
         :param position_margin: the position margin value
         :param order_margin: the order margin value
-        :param unrealised_pnl: the unrealised pnl value
+        :param unrealized_pnl: the unrealized pnl value
         :return: True if updated
         """
-        if available == self.available and total == self.total and wallet_balance == self.wallet_balance:
+        if available == self.available and total == self.wallet_balance:
             return False
         self.available = available
         self.initial_margin = initial_margin
         self.position_margin = position_margin
         self.order_margin = order_margin
         self.maintenance_margin = maintenance_margin
-        self.unrealised_pnl = unrealised_pnl
-        self.wallet_balance = wallet_balance
-        self.total = total if total != constants.ZERO else self.wallet_balance + self.unrealised_pnl
+        self.unrealized_pnl = unrealized_pnl
+        self.wallet_balance = total
+        if margin_balance is not None:
+            self.total = margin_balance
+        else:
+            self._update_total()
         return True
 
-    def _update_equity(self):
+    def set_unrealized_pnl(self, unrealized_pnl):
         """
-        Update equity value
-        Account equity = margin Balance + Unrealised PNL
+        Sets the unrealized pnl value and updates the total (margin balance) value
+        :param unrealized_pnl: the new unrealized pnl value
         """
-        self.equity = self.margin_balance + self.unrealised_pnl
+        self.unrealized_pnl = unrealized_pnl
+        self._update_total()
 
     def reset(self):
         """
         Reset asset portfolio to zero
         """
         self.set(available=constants.ZERO, total=constants.ZERO,
-                 initial_margin=constants.ZERO, wallet_balance=constants.ZERO, unrealised_pnl=constants.ZERO,
+                 initial_margin=constants.ZERO, margin_balance=constants.ZERO, unrealized_pnl=constants.ZERO,
                  maintenance_margin=constants.ZERO, order_margin=constants.ZERO, position_margin=constants.ZERO)
+
+    def _update_total(self):
+        """
+        Update total (margin balance) value with wallet balance + unrealized pnl
+        """
+        self.total = self.wallet_balance + self.unrealized_pnl
