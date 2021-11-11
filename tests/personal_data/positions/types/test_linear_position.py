@@ -67,7 +67,33 @@ async def test_update_pnl(future_trader_simulator):
     position_inst.update(update_size=-constants.ONE_HUNDRED,
                          mark_price=constants.ONE_HUNDRED / decimal.Decimal(10))
     position_inst.update_pnl()
-    assert position_inst.unrealised_pnl == decimal.Decimal("-18000")
+    assert position_inst.unrealised_pnl == decimal.Decimal("18000")
+
+
+async def test_update_pnl_with_loss(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+
+    # long test
+    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.entry_price = constants.ONE_HUNDRED
+    position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+    position_inst.update_pnl()
+    assert position_inst.unrealised_pnl == constants.ZERO
+    position_inst.update(update_size=constants.ONE_HUNDRED,
+                         mark_price=constants.ONE_HUNDRED / decimal.Decimal(2.535485))
+    position_inst.update_pnl()
+    assert position_inst.unrealised_pnl == decimal.Decimal("-12111.96280001656484319345490")
+
+    # short test
+    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.entry_price = constants.ONE_HUNDRED
+    position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+    position_inst.update_pnl()
+    assert position_inst.unrealised_pnl == constants.ZERO
+    position_inst.update(update_size=-constants.ONE_HUNDRED,
+                         mark_price=constants.ONE_HUNDRED * decimal.Decimal(1.0954))
+    position_inst.update_pnl()
+    assert position_inst.unrealised_pnl == decimal.Decimal("-1907.999999999998586019955840")
 
 
 async def test_update_initial_margin(future_trader_simulator):

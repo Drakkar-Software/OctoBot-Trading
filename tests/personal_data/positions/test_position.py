@@ -17,6 +17,8 @@ import decimal
 import os
 
 import pytest
+from mock import mock
+
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
@@ -296,6 +298,26 @@ async def test_update_size_from_order_with_short_reduce_only_one_way_position(fu
                      price=20)
     buy_limit.reduce_only = True
     assert position_inst.update_size_from_order(buy_limit) == (constants.ZERO, True)
+
+
+async def test_update_size_from_order_realized_pnl_position(future_trader_simulator):
+    config, exchange_manager_inst, trader_inst = future_trader_simulator
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update(update_size=-constants.ONE_HUNDRED)
+
+    buy_limit = BuyLimitOrder(trader_inst)
+    buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                     symbol=DEFAULT_FUTURE_SYMBOL,
+                     current_price=15,
+                     quantity=constants.ONE,
+                     price=21)
+
+    with mock.patch.object(buy_limit, "get_total_fees", mock.Mock(return_value=5)):
+        assert position_inst.update_size_from_order(buy_limit) == (constants.ONE, False)
+    assert position_inst.size == decimal.Decimal("-99")
+    assert position_inst.realised_pnl == decimal.Decimal("-5")
 
 
 async def test_update_size_from_order_with_short_overbought_one_way_position(future_trader_simulator):
