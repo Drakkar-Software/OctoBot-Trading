@@ -226,25 +226,51 @@ class Position(util.Initializable):
         :return: the updated quantity, True if the order increased position size
         """
         size_to_close = self.get_quantity_to_close()
+
+        # Remove / add order fees from realized pnl
+        self._update_realized_pnl_from_order(order)
+
+        # Close position if order is closing position
         if order.close_position:
             self.close()
             return size_to_close, False
+
+        # Calculates position quantity update from order
+        size_update = self._calculates_size_update_from_filled_order(order, size_to_close)
+        is_increasing_position_size = self._is_update_increasing_size(size_update=size_update)
+
+        self.update(update_size=size_update)
+        return size_update, is_increasing_position_size
+
+    def _update_realized_pnl_from_order(self, order):
+        """
+        Updates the position realized pnl from order
+        Removes order's fees from realized pnl
+        :param order: the realized pnl update
+        """
+        if self.symbol_contract.is_inverse_contract():
+            self.realised_pnl -= order.get_total_fees(order.currency)
+        else:
+            self.realised_pnl -= order.get_total_fees(order.market)
+
+    def _calculates_size_update_from_filled_order(self, order, size_to_close):
+        """
+        Calculates position size update from an order filled quantity
+        :param order: the filled order
+        :param size_to_close: the size to close the position
+        :return: the position size update
+        """
         order_quantity = order.filled_quantity if order.is_long() else -order.filled_quantity
         if order.reduce_only or not self.symbol_contract.is_one_way_position_mode():
             if self.is_long() and order.is_short():
-                size_update = max(order_quantity, size_to_close)
-            elif self.is_short() and order.is_long():
-                size_update = min(order_quantity, size_to_close)
-            elif not order.reduce_only:
-                size_update = order_quantity
-            else:
-                # Can't reduce position
-                size_update = constants.ZERO
-        else:
-            size_update = order_quantity
-        is_increasing_position_size = self._is_update_increasing_size(size_update=size_update)
-        self.update(update_size=size_update)
-        return size_update, is_increasing_position_size
+                return max(order_quantity, size_to_close)
+            if self.is_short() and order.is_long():
+                return min(order_quantity, size_to_close)
+            if not order.reduce_only:
+                return order_quantity
+            # Can't reduce position
+            return constants.ZERO
+        return order_quantity
 
     def _is_update_increasing_size(self, size_update):
         """
@@ -518,7 +544,8 @@ class Position(util.Initializable):
                 f"Quantity : {str(self.quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
                 f"Unrealized PNL : {self.unrealised_pnl} ({round(self.get_unrealised_pnl_percent(), 3)} %) | "
-                f"Liquidation price : {self.liquidation_price}")
+                f"Liquidation price : {self.liquidation_price} | "
+                f"Realized PNL : {self.realised_pnl}")
 
     def close(self):
         self.reset()
