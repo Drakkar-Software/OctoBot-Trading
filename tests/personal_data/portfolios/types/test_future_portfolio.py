@@ -17,8 +17,8 @@ import decimal
 import os
 
 import pytest
+from mock import mock
 
-import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
@@ -435,3 +435,30 @@ async def test_update_portfolio_from_funding_with_short_position(backtesting_tra
         '9.999989999999999999995455021')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
         '9.999989999999999999995455021')
+
+
+@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
+                         indirect=["backtesting_exchange_manager"])
+async def test_update_portfolio_data_with_fees(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+
+    # Test sell order
+    market_sell = SellMarketOrder(trader)
+    sell_order_price = decimal.Decimal(10)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=sell_order_price,
+                       quantity=decimal.Decimal(25),
+                       price=sell_order_price)
+
+    with mock.patch.object(market_sell, "get_total_fees", mock.Mock(return_value=5)):
+        portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
+        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('975.0')
+        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+
+        # fill order with fees
+        await fill_market_order(market_sell)
+        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('970.0')
+        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('995')

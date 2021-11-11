@@ -44,19 +44,23 @@ class FuturePortfolio(portfolio_class.Portfolio):
             # When inverse contract, decrease a currency market equivalent quantity from currency balance
             if pair_future_contract.is_inverse_contract():
                 total_update_quantity = real_order_quantity / order.filled_price
-                self._update_portfolio_data(order.currency,
-                                            available_value=constants.ZERO
-                                            if have_increased_position_size else total_update_quantity,
-                                            total_value=-order.get_total_fees(order.currency))
+                fees_update_quantity = -order.get_total_fees(order.currency)
+                self._update_portfolio_data(
+                    order.currency,
+                    available_value=fees_update_quantity + (
+                        constants.ZERO if have_increased_position_size else total_update_quantity),
+                    total_value=fees_update_quantity)
 
             # When non-inverse contract, decrease directly market quantity
             else:
                 # decrease market quantity from market available balance
                 total_update_quantity = real_order_quantity * order.filled_price
-                self._update_portfolio_data(order.market,
-                                            available_value=constants.ZERO
-                                            if have_increased_position_size else total_update_quantity,
-                                            total_value=-order.get_total_fees(order.market))
+                fees_update_quantity = -order.get_total_fees(order.market)
+                self._update_portfolio_data(
+                    order.market,
+                    available_value=fees_update_quantity + (
+                        constants.ZERO if have_increased_position_size else total_update_quantity),
+                    total_value=fees_update_quantity)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from filled order : {order} ({e})")
 
