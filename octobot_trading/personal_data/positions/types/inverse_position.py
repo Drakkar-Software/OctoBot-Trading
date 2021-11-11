@@ -39,8 +39,8 @@ class InversePosition(position_class.Position):
                 self.unrealised_pnl = self.quantity * ((constants.ONE / self.entry_price) -
                                                        (constants.ONE / self.mark_price))
             elif self.is_short():
-                self.unrealised_pnl = self.quantity * ((constants.ONE / self.mark_price) -
-                                                       (constants.ONE / self.entry_price))
+                self.unrealised_pnl = -self.quantity * ((constants.ONE / self.mark_price) -
+                                                        (constants.ONE / self.entry_price))
             else:
                 self.unrealised_pnl = constants.ZERO
         except (decimal.DivisionByZero, decimal.InvalidOperation):

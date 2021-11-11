@@ -56,7 +56,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
                 self._update_portfolio_data(order.market,
                                             available_value=constants.ZERO
                                             if have_increased_position_size else total_update_quantity,
-                                            total_value=-order.get_total_fees(order.currency))
+                                            total_value=-order.get_total_fees(order.market))
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from filled order : {order} ({e})")
 
@@ -106,7 +106,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
     def update_portfolio_from_funding(self, position, funding_rate):
         """
         Update portfolio from funding
-        :param position: the position
+        :param position: the perpetual position
         :param funding_rate: the funding rate
         """
         try:
