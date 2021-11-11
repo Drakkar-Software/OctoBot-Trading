@@ -94,7 +94,7 @@ class FutureAsset(asset_class.Asset):
         self.position_margin += self._ensure_update_validity(self.position_margin, position_margin)
         self.order_margin += self._ensure_update_validity(self.order_margin, order_margin)
         self.maintenance_margin += self._ensure_update_validity(self.maintenance_margin, maintenance_margin)
-        self.unrealized_pnl += self._ensure_update_validity(self.unrealized_pnl, unrealized_pnl)
+        self.unrealized_pnl += unrealized_pnl
         self.wallet_balance += self._ensure_update_validity(self.wallet_balance, total)
         self._update_total()
         return True
