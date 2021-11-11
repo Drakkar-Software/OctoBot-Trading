@@ -45,8 +45,8 @@ def Low(context, symbol, time_frame):
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_low_candles()
 
 # Use capital letters to avoid python native lib conflicts
-def Close(context, symbol, time_frame):
-    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_close_candles()
+def Close(context, symbol, time_frame, limit=-1):
+    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_close_candles(limit)
 
 # Use capital letters to avoid python native lib conflicts
 def Time(context, symbol, time_frame):

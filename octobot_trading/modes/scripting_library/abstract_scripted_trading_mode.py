@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 import os
 import time
 import contextlib
@@ -74,8 +75,9 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
     async def _user_commands_callback(self, bot_id, subject, action, data) -> None:
         self.logger.debug(f"Received {action} command.")
         if action == AbstractScriptedTradingMode.USER_COMMAND_RELOAD_SCRIPT:
-            live_script = data[AbstractScriptedTradingMode.USER_COMMAND_RELOAD_SCRIPT_IS_LIVE]
-            await self.reload_script(live=live_script)
+            # live_script = data[AbstractScriptedTradingMode.USER_COMMAND_RELOAD_SCRIPT_IS_LIVE]
+            await self.reload_script(live=True)
+            await self.reload_script(live=False)
 
     @classmethod
     async def get_backtesting_plot(cls, run_id):
@@ -278,6 +280,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         Stop trading mode channels subscriptions
         """
         if not self.are_metadata_saved and self.exchange_manager.backtesting:     # todo ensure multiple pairs conflicts
+            await self.writer.close()
             async with self.trading_mode.get_metadata_writer() as writer:
                 await scripting_library.save_metadata(writer, await self.get_backtesting_metadata())
                 self.are_metadata_saved = True
