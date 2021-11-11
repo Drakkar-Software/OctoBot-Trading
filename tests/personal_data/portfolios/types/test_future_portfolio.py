@@ -18,6 +18,7 @@ import os
 
 import pytest
 
+import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
@@ -35,7 +36,7 @@ from tests.test_utils.order_util import fill_market_order
 
 pytestmark = pytest.mark.asyncio
 
-DEFAULT_SYMBOL = "BTC/USDT"
+DEFAULT_SYMBOL = DEFAULT_FUTURE_SYMBOL
 
 
 async def init_symbol_contract(exchange, symbol=DEFAULT_SYMBOL,
@@ -46,6 +47,12 @@ async def init_symbol_contract(exchange, symbol=DEFAULT_SYMBOL,
     await exchange.set_symbol_leverage(symbol, leverage)
     await exchange.set_symbol_margin_type(symbol, margin_type_isolated)
     return exchange.get_pair_future_contract(symbol)
+
+
+async def _update_position_mark_price(exchange_manager, mark_price, symbol=DEFAULT_FUTURE_SYMBOL, side=None):
+    symbol_position = exchange_manager.exchange_personal_data.positions_manager.\
+        get_symbol_position(symbol=symbol, side=side)
+    symbol_position.update(mark_price=mark_price)
 
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
@@ -67,7 +74,7 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_linear
     # Test buy order
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(1000)),
                       quantity=decimal.Decimal(str(2.5)),  # real quantity = 2.5 / 5 = 0.5 BTC at 1000$
                       price=decimal.Decimal(str(1000)))
@@ -81,7 +88,7 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_linear
     # Test buy order
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(74)),
                       quantity=decimal.Decimal(str(5)),  # real quantity = 5 / 5 = 1 BTC at 74$
                       price=decimal.Decimal(str(74)))
@@ -116,7 +123,7 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_invers
     # Test buy order
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(1000)),
                       quantity=decimal.Decimal(str(1000)),  # real quantity = 1000 / 1000 = 1 BTC at 1000$
                       price=decimal.Decimal(str(1000)))
@@ -129,7 +136,7 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_invers
     # Test buy order
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(74)),
                       quantity=decimal.Decimal(str(74 / 3)),  # real quantity = 0.3 BTC at 74$
                       price=decimal.Decimal(str(74)))
@@ -159,7 +166,7 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     # Test buy order
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(1000)),
                       quantity=decimal.Decimal(str(3)),  # real quantity = 3 / 5 = 0.6
                       price=decimal.Decimal(str(1000)))
@@ -173,7 +180,7 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     # Test buy order
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(7.5)),
                       quantity=decimal.Decimal(str(30)),
                       price=decimal.Decimal(str(7.5)))
@@ -187,7 +194,7 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     # Test reducing LONG position with a sell market order
     market_sell = SellMarketOrder(trader)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
-                       symbol="BTC/USDT",
+                       symbol=DEFAULT_FUTURE_SYMBOL,
                        current_price=decimal.Decimal(str(54)),
                        quantity=decimal.Decimal(str(20)),
                        price=decimal.Decimal(str(54)))
@@ -211,7 +218,7 @@ async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio
     # Test buy order
     market_buy = BuyMarketOrder(trader)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(1000)),
                       quantity=decimal.Decimal(str(100000000)),
                       price=decimal.Decimal(str(1000)))
@@ -232,7 +239,7 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
     # Test sell order
     market_sell = SellMarketOrder(trader)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
-                       symbol="BTC/USDT",
+                       symbol=DEFAULT_FUTURE_SYMBOL,
                        current_price=decimal.Decimal(str(80)),
                        quantity=decimal.Decimal(str(12)),
                        price=decimal.Decimal(str(80)))
@@ -240,7 +247,7 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
     # Test sell order
     limit_sell = SellLimitOrder(trader)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
-                      symbol="BTC/USDT",
+                      symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(10)),
                       quantity=decimal.Decimal(str(46.5)),
                       price=decimal.Decimal(str(10)))
@@ -248,7 +255,7 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
     # Test stop loss order
     stop_loss = StopLossOrder(trader)
     stop_loss.update(order_type=enums.TraderOrderType.STOP_LOSS,
-                     symbol="BTC/USDT",
+                     symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=decimal.Decimal(str(80)),
                      quantity=decimal.Decimal(str(46.5)),
                      price=decimal.Decimal(str(80)))
@@ -287,23 +294,28 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
 
     # Test sell order
     market_sell = SellMarketOrder(trader)
+    sell_order_price = decimal.Decimal(10)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
-                       symbol="BTC/USDT",
-                       current_price=decimal.Decimal(str(10)),
-                       quantity=decimal.Decimal(str(25)),
-                       price=decimal.Decimal(str(10)))
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=sell_order_price,
+                       quantity=decimal.Decimal(25),
+                       price=sell_order_price)
 
     # Test buy order
     market_buy = BuyMarketOrder(trader)
+    buy_order_price = decimal.Decimal(13)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
-                      symbol="BTC/USDT",
-                      current_price=decimal.Decimal(str(100)),
-                      quantity=decimal.Decimal(str(25)),
-                      price=decimal.Decimal(str(100)))
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=buy_order_price,
+                      quantity=decimal.Decimal(10),
+                      price=buy_order_price)
 
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('975.0')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+
+    # update position mark price
+    await _update_position_mark_price(exchange_manager, sell_order_price, DEFAULT_FUTURE_SYMBOL)
 
     # Open short position
     await fill_market_order(market_sell)
@@ -312,13 +324,16 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
 
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
     # => 975 - 250 = 725
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('725')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('962')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+
+    # update position mark price
+    await _update_position_mark_price(exchange_manager, buy_order_price, DEFAULT_FUTURE_SYMBOL)
 
     # Close short position with loss
     await fill_market_order(market_buy)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('975.0')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('955.5')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('995.5')
 
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],

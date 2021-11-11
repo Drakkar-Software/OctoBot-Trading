@@ -35,7 +35,7 @@ class LinearPosition(position_class.Position):
             if self.is_long():
                 self.unrealised_pnl = self.quantity * (self.mark_price - self.entry_price)
             elif self.is_short():
-                self.unrealised_pnl = self.quantity * (self.entry_price - self.mark_price)
+                self.unrealised_pnl = -self.quantity * (self.entry_price - self.mark_price)
             else:
                 self.unrealised_pnl = constants.ZERO
         except (decimal.DivisionByZero, decimal.InvalidOperation):
