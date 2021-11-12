@@ -49,8 +49,8 @@ def Close(context, symbol, time_frame, limit=-1):
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_close_candles(limit)
 
 # Use capital letters to avoid python native lib conflicts
-def Time(context, symbol, time_frame):
-    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_time_candles()
+def Time(context, symbol, time_frame, limit=-1):
+    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_time_candles(limit)
 
 def hl2(exchange_manager, symbol, time_frame):
     return # todo merge open high low into one array -

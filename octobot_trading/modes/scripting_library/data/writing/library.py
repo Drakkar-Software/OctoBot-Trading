@@ -75,10 +75,11 @@ async def plot(ctx, title, x=None,
     if condition is not None:
         candidate_y = []
         candidate_x = []
-        x_data = x_function(ctx, ctx.traded_pair, ctx.time_frame)
+        x_data = x_function(ctx, ctx.traded_pair, ctx.time_frame)[-len(condition):]
+        y_data = y[-len(condition):]
         for index, value in enumerate(condition):
             if value:
-                candidate_y.append(y[index])
+                candidate_y.append(y_data[index])
                 candidate_x.append(x_data[index])
         x = numpy.array(candidate_x)
         y = numpy.array(candidate_y)
