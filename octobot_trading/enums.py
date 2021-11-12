@@ -451,3 +451,28 @@ class DBRows(enum.Enum):
     VALUE = "value"
     START_TIME = "start_time"
     END_TIME = "end_time"
+
+
+class PlotDefaultValues(enum.Enum):
+    KIND = "scatter"
+    MODE = "lines"
+
+
+class PlotDBKeys(enum.Enum):
+    PAIR = "p"
+    X = "x"
+    Y = "y"
+    Z = "z"
+    OPEN = "o"
+    HIGH = "h"
+    LOW = "l"
+    CLOSE = "c"
+    VOLUME = "v"
+    KIND = "k"
+    MODE = "m"
+    CHART = "ch"
+    TYPE = "t"
+    STATE = "s"
+    SIDE = "si"
+    FEES_AMOUNT = "fa"
+    FEES_CURRENCY = "fc"

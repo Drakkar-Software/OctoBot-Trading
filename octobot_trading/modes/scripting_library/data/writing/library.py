@@ -32,18 +32,18 @@ async def store_orders(ctx, orders,
                        mode="lines"):
     order_data = [
         {
-            "x": order.creation_time * x_multiplier,
-            "pair": order.symbol,
-            "type": order.order_type.name if order.order_type is not None else 'Unknown',
-            "volume": float(order.origin_quantity),
-            "y": float(order.created_last_price),
-            "state": order.state.state.value if order.state is not None else 'Unknown',
-            "chart": chart,
-            "kind": kind,
-            "side": order.side.value,
-            "mode": mode,
-            "fees_amount": float(order.origin_quantity * decimal.Decimal("0.1")),  # TODO
-            "fees_currency": symbol_util.split_symbol(order.symbol)[1],  # TODO
+            trading_enums.PlotDBKeys.X.value: order.creation_time * x_multiplier,
+            trading_enums.PlotDBKeys.PAIR.value: order.symbol,
+            trading_enums.PlotDBKeys.TYPE.value: order.order_type.name if order.order_type is not None else 'Unknown',
+            trading_enums.PlotDBKeys.VOLUME.value: float(order.origin_quantity),
+            trading_enums.PlotDBKeys.Y.value: float(order.created_last_price),
+            trading_enums.PlotDBKeys.STATE.value: order.state.state.value if order.state is not None else 'Unknown',
+            trading_enums.PlotDBKeys.CHART.value: chart,
+            trading_enums.PlotDBKeys.KIND.value: kind,
+            trading_enums.PlotDBKeys.SIDE.value: order.side.value,
+            trading_enums.PlotDBKeys.MODE.value: mode,
+            trading_enums.PlotDBKeys.FEES_AMOUNT.value: float(order.origin_quantity * decimal.Decimal("0.1")),  # TODO
+            trading_enums.PlotDBKeys.FEES_CURRENCY.value: symbol_util.split_symbol(order.symbol)[1],  # TODO
         }
         for order in orders
     ]
@@ -68,7 +68,8 @@ async def plot_candles(ctx, pair, time_frame, chart=trading_enums.PlotCharts.MAI
 
 async def plot(ctx, title, x=None,
                y=None, z=None, open=None, high=None, low=None, close=None, volume=None,
-               pair=None, kind="scatter", mode="lines", init_only=True,
+               pair=None, kind=trading_enums.PlotDefaultValues.KIND.value,
+               mode=trading_enums.PlotDefaultValues.MODE.value, init_only=True,
                condition=None, x_function=exchange_public_data.Time,
                x_multiplier=1000,
                chart=trading_enums.PlotCharts.SUB_CHART.value):
@@ -103,20 +104,8 @@ async def plot(ctx, title, x=None,
         await ctx.writer.log_many(
             title,
             [
-                {
-                    "pair": pair or ctx.traded_pair,
-                    "x": value,
-                    "y": ctx.writer.get_value_from_array(y, index),
-                    "z": ctx.writer.get_value_from_array(z, index),
-                    "open": ctx.writer.get_value_from_array(open, index),
-                    "high": ctx.writer.get_value_from_array(high, index),
-                    "low": ctx.writer.get_value_from_array(low, index),
-                    "close": ctx.writer.get_value_from_array(close, index),
-                    "volume": ctx.writer.get_value_from_array(volume, index),
-                    "kind": kind,
-                    "mode": mode,
-                    "chart": chart,
-                }
+                _get_plotting_data(ctx, pair or ctx.traded_pair, value, y, z, open, high, low, close, volume, index,
+                                   kind, mode, x_multiplier, chart)
                 for index, value in enumerate(adapted_x)
             ]
 
@@ -124,21 +113,40 @@ async def plot(ctx, title, x=None,
     elif not ctx.writer.contains_x(title, ctx.writer.get_value_from_array(x, -1) * x_multiplier):
         await ctx.writer.log(
             title,
-            {
-                "pair": pair or ctx.traded_pair,
-                "x": ctx.writer.get_value_from_array(x, -1) * x_multiplier,
-                "y": ctx.writer.get_value_from_array(y, -1),
-                "z": ctx.writer.get_value_from_array(z, -1),
-                "open": ctx.writer.get_value_from_array(open, -1),
-                "high": ctx.writer.get_value_from_array(high, -1),
-                "low": ctx.writer.get_value_from_array(low, -1),
-                "close": ctx.writer.get_value_from_array(close, -1),
-                "volume": ctx.writer.get_value_from_array(volume, -1),
-                "kind": kind,
-                "mode": mode,
-                "chart": chart,
-            }
+            _get_plotting_data(ctx, pair, x, y, z, open, high, low, close, volume, -1, kind, mode, x_multiplier, chart)
         )
+
+
+def _get_plotting_data(ctx, pair, x, y, z, open, high, low, close, volume, index,
+                       kind=trading_enums.PlotDefaultValues.KIND.value,
+                       mode=trading_enums.PlotDefaultValues.MODE.value,
+                       x_multiplier=1000, chart=trading_enums.PlotCharts.SUB_CHART.value):
+    data = {}
+    if pair := pair or ctx.traded_pair:
+        data[trading_enums.PlotDBKeys.PAIR.value] = pair
+    if x is not None and len(x):
+        data[trading_enums.PlotDBKeys.X.value] = ctx.writer.get_value_from_array(x, index) * x_multiplier
+    if y is not None and len(y):
+        data[trading_enums.PlotDBKeys.Y.value] = ctx.writer.get_value_from_array(y, index)
+    if z is not None and len(z):
+        data[trading_enums.PlotDBKeys.Z.value] = ctx.writer.get_value_from_array(z, index),
+    if open is not None and len(open):
+        data[trading_enums.PlotDBKeys.OPEN.value] = ctx.writer.get_value_from_array(open, index)
+    if high is not None and len(high):
+        data[trading_enums.PlotDBKeys.HIGH.value] = ctx.writer.get_value_from_array(high, index)
+    if low is not None and len(low):
+        data[trading_enums.PlotDBKeys.LOW.value] = ctx.writer.get_value_from_array(low, index)
+    if close is not None and len(close):
+        data[trading_enums.PlotDBKeys.CLOSE.value] = ctx.writer.get_value_from_array(close, index)
+    if volume is not None and len(volume):
+        data[trading_enums.PlotDBKeys.VOLUME.value] = ctx.writer.get_value_from_array(volume, index)
+    if kind != trading_enums.PlotDefaultValues.KIND.value:
+        data[trading_enums.PlotDBKeys.KIND.value] = kind
+    if mode != trading_enums.PlotDefaultValues.MODE.value:
+        data[trading_enums.PlotDBKeys.MODE.value] = mode
+    if chart != trading_enums.PlotCharts.SUB_CHART.value:
+        data[trading_enums.PlotDBKeys.CHART.value] = chart
+    return data
 
 
 async def plot_shape(ctx, title, value, y_value,
