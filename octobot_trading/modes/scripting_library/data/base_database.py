@@ -36,6 +36,7 @@ class BaseDatabase:
         return await self._database.count(table_name, query)
 
     async def close(self):
+        await self.flush_cache()
         await self._database.close()
 
     def contains_x(self, table: str, x_val):
@@ -43,6 +44,9 @@ class BaseDatabase:
 
     def contains_values(self, table: str, val_by_keys: dict):
         return self.cache.contains_values(table, val_by_keys)
+
+    async def flush_cache(self):
+        pass
 
     @classmethod
     @contextlib.asynccontextmanager

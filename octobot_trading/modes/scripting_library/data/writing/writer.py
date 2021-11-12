@@ -18,9 +18,10 @@ import octobot_trading.modes.scripting_library.data as database
 
 class DBWriter(database.BaseDatabase):
 
-    async def log(self, table_name: str, row: dict):
+    async def log(self, table_name: str, row: dict, cache_only=False):
         self.cache.register(table_name, row)
-        await self._database.insert(table_name, row)
+        if not cache_only:
+            await self._database.insert(table_name, row)
 
     async def update(self, table_name: str, row: dict, query):
         await self._database.update(table_name, row, query)
@@ -28,10 +29,16 @@ class DBWriter(database.BaseDatabase):
     async def delete(self, table_name: str, query):
         await self._database.delete(table_name, query)
 
-    async def log_many(self, table_name: str, rows: list):
+    async def log_many(self, table_name: str, rows: list, cache_only=False):
         for row in rows:
             self.cache.register(table_name, row)
-        await self._database.insert_many(table_name, rows)
+        if not cache_only:
+            await self._database.insert_many(table_name, rows)
+
+    async def flush_cache(self):
+        for table, rows in self.cache.cache.items():
+            await self._database.insert_many(table, rows)
+        self.cache = {}
 
     @staticmethod
     def get_value_from_array(array, index, multiplier=1):
