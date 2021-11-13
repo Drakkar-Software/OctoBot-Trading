@@ -18,16 +18,17 @@ cimport octobot_trading.personal_data.portfolios.asset as asset_class
 
 
 cdef class FutureAsset(asset_class.Asset):
+    cdef public object unrealized_pnl
     cdef public object initial_margin
     cdef public object wallet_balance
-    cdef public object maintenance_margin
-    cdef public object position_initial_margin
-    cdef public object unrealized_pnl
+    cdef public object position_margin
+    cdef public object order_margin
 
-    cpdef bint update(self, object available=*, object initial_margin=*, object total=*, object order_margin=*,
-                      object maintenance_margin=*, object position_margin=*, object unrealized_pnl=*)
-    cpdef bint set(self, object available=*, object total=*, object margin_balance=*, object maintenance_margin=*,
-                   object initial_margin=*, object position_margin=*, object order_margin=*, object unrealized_pnl=*)
+    cpdef bint update(self,object initial_margin=*, object total=*, object order_margin=*,
+                      object position_margin=*, object unrealized_pnl=*)
+    cpdef bint set(self, object total=*, object margin_balance=*, object initial_margin=*, object position_margin=*,
+                   object order_margin=*, object unrealized_pnl=*, object available_balance=*)
     cpdef void set_unrealized_pnl(self, object unrealized_pnl)
 
     cdef void _update_total(self)
+    cdef void _update_available(self)
