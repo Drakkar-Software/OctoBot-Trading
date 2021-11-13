@@ -435,7 +435,8 @@ async def test_update_portfolio_from_liquidated_position_with_short_position_inv
 
 @pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
                          indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_from_liquidated_position_with_orders_on_short_position_linear_contract(backtesting_trader):
+async def test_update_portfolio_from_liquidated_position_with_orders_on_short_position_linear_contract(
+        backtesting_trader):
     config, exchange_manager, trader = backtesting_trader
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     symbol_contract = contracts.FutureContract(
@@ -690,3 +691,34 @@ async def test_update_portfolio_reduce_size_with_market_buy_short_linear_contrac
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
 
+
+@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
+                         indirect=["backtesting_exchange_manager"])
+async def test_update_portfolio_from_pnl_with_long_inverse_contract(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+
+    position_inst = LinearPosition(trader, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update(update_size=decimal.Decimal(-70), mark_price=decimal.Decimal(10))
+    position_inst.update_from_raw(
+        {
+            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
+
+    position_inst.unrealised_pnl = decimal.Decimal(0.1)
+    portfolio_manager.portfolio.update_portfolio_from_pnl(position_inst)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
+        str('10.10000000000000000555111512'))
+
+    position_inst.unrealised_pnl = decimal.Decimal(-0.3)
+    portfolio_manager.portfolio.update_portfolio_from_pnl(position_inst)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(10))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
+        str('9.700000000000000011102230246'))
