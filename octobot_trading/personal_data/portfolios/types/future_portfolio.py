@@ -125,6 +125,16 @@ class FuturePortfolio(portfolio_class.Portfolio):
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from funding : {position} ({e})")
 
+    def update_portfolio_from_pnl(self, position):
+        """
+        Updates the portfolio from a Position PNL update
+        :param position: position: the position instance with the new PNL
+        """
+        if position.symbol_contract.is_isolated():
+            self.get_currency_portfolio(
+                currency=position.currency if position.symbol_contract.is_inverse_contract() else position.market). \
+                set_unrealized_pnl(position.unrealised_pnl)
+
     def _update_future_portfolio_data(self, currency,
                                       wallet_value=constants.ZERO,
                                       position_margin_value=constants.ZERO,
