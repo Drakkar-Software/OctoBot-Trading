@@ -21,13 +21,14 @@ import octobot_backtesting.errors as errors
 
 import octobot_trading.exchange_data.funding.channel.funding_updater as funding_updater
 import octobot_trading.util as util
+import octobot_trading.exchanges as exchanges
 
 
 class FundingUpdaterSimulator(funding_updater.FundingUpdater):
     """
     The Funding Update Simulator simulates the exchange funding rate and send it to the Funding Channel
     """
-    STATIC_FUNDING_RATE = decimal.Decimal("0.00005")
+    STATIC_FUNDING_RATE = exchanges.FutureExchangeSimulator.DEFAULT_SYMBOL_FUNDING_RATE
 
     def __init__(self, channel, importer):
         super().__init__(channel)
