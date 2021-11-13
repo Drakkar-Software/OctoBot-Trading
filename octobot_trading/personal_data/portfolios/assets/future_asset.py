@@ -21,7 +21,6 @@ class FutureAsset(asset_class.Asset):
     def __init__(self, name, available, total,
                  initial_margin=constants.ZERO,
                  wallet_balance=constants.ZERO,
-                 maintenance_margin=constants.ZERO,
                  position_margin=constants.ZERO,
                  order_margin=constants.ZERO,
                  unrealized_pnl=constants.ZERO):
@@ -32,7 +31,6 @@ class FutureAsset(asset_class.Asset):
         :param total: the margin balance (wallet balance + unrealized PNL)
         :param initial_margin: the total initial margin required with current mark price
         :param wallet_balance: the wallet balance
-        :param maintenance_margin: the maintenance margin required
         :param position_margin: margin required for positions with current mark price
         :param order_margin: margin required for open orders with current mark price
         :param unrealized_pnl: the unrealized profit and loss
@@ -47,9 +45,6 @@ class FutureAsset(asset_class.Asset):
         # The Wallet balance. When using Cross Margin, the number minus the unclosed loss is the real wallet balance.
         self.wallet_balance = wallet_balance if wallet_balance != constants.ZERO else total
 
-        # maintenance margin required
-        self.maintenance_margin = maintenance_margin
-
         # margin required for positions with current mark price
         self.position_margin = position_margin
 
@@ -60,7 +55,6 @@ class FutureAsset(asset_class.Asset):
         return super().__str__() + " | " \
                                    f"Initial Margin: {float(self.initial_margin)} | " \
                                    f"Wallet Balance: {float(self.wallet_balance)} | " \
-                                   f"Maintenance Margin: {float(self.maintenance_margin)} | " \
                                    f"Unrealized PNL: {float(self.unrealized_pnl)} | " \
                                    f"Order Margin: {float(self.order_margin)} | " \
                                    f"Position Margin: {float(self.position_margin)}"
@@ -68,39 +62,36 @@ class FutureAsset(asset_class.Asset):
     def __eq__(self, other):
         if isinstance(other, FutureAsset):
             return self.available == other.available and self.total == other.total and \
-                   self.maintenance_margin == other.maintenance_margin and self.initial_margin == other.initial_margin \
-                   and self.wallet_balance == other.wallet_balance and \
+                   self.initial_margin == other.initial_margin and self.wallet_balance == other.wallet_balance and \
                    self.position_margin == other.position_margin and self.order_margin == other.order_margin
         return False
 
     def update(self, available=constants.ZERO, initial_margin=constants.ZERO, total=constants.ZERO,
-               maintenance_margin=constants.ZERO, position_margin=constants.ZERO,
+               unrealized_pnl=constants.ZERO, initial_margin=constants.ZERO):
                order_margin=constants.ZERO, unrealized_pnl=constants.ZERO):
         """
         Update asset portfolio
         :param available: the available margin balance delta
         :param total: the wallet balance delta
         :param initial_margin: the initial margin delta
-        :param maintenance_margin: the maintenance margin delta
         :param position_margin: the position margin delta
-        :param order_margin: the order margin delta
+        :param available: the order margin delta
         :param unrealized_pnl: the unrealized pnl delta
         :return: True if updated
         """
-        if available == constants.ZERO and total == constants.ZERO:
+        if available == constants.ZERO and position_margin == constants.ZERO \
+                and total == constants.ZERO and unrealized_pnl == constants.ZERO:
             return False
         self.available += self._ensure_update_validity(self.available, available)
         self.initial_margin += self._ensure_update_validity(self.initial_margin, initial_margin)
         self.position_margin += self._ensure_update_validity(self.position_margin, position_margin)
         self.order_margin += self._ensure_update_validity(self.order_margin, order_margin)
-        self.maintenance_margin += self._ensure_update_validity(self.maintenance_margin, maintenance_margin)
         self.unrealized_pnl += unrealized_pnl
         self.wallet_balance += self._ensure_update_validity(self.wallet_balance, total)
         self._update_total()
         return True
 
     def set(self, available=constants.ZERO, total=constants.ZERO, margin_balance=None,
-            initial_margin=constants.ZERO, maintenance_margin=constants.ZERO,
             position_margin=constants.ZERO, order_margin=constants.ZERO, unrealized_pnl=constants.ZERO):
         """
         Set available, total, initial_margin, wallet_balance, position_margin and maintenance_margin
@@ -108,8 +99,8 @@ class FutureAsset(asset_class.Asset):
         :param available: the available margin balance value
         :param total: the wallet balance value
         :param margin_balance: the margin balance value
+        :param available: the available margin balance value
         :param initial_margin: the initial margin value
-        :param maintenance_margin: the maintenance margin value
         :param position_margin: the position margin value
         :param order_margin: the order margin value
         :param unrealized_pnl: the unrealized pnl value
@@ -121,7 +112,6 @@ class FutureAsset(asset_class.Asset):
         self.initial_margin = initial_margin
         self.position_margin = position_margin
         self.order_margin = order_margin
-        self.maintenance_margin = maintenance_margin
         self.unrealized_pnl = unrealized_pnl
         self.wallet_balance = total
         if margin_balance is not None:
@@ -142,12 +132,13 @@ class FutureAsset(asset_class.Asset):
         """
         Reset asset portfolio to zero
         """
-        self.set(available=constants.ZERO, total=constants.ZERO,
-                 initial_margin=constants.ZERO, margin_balance=constants.ZERO, unrealized_pnl=constants.ZERO,
-                 maintenance_margin=constants.ZERO, order_margin=constants.ZERO, position_margin=constants.ZERO)
+        self.set(total=constants.ZERO, initial_margin=constants.ZERO, margin_balance=constants.ZERO,
+                 unrealized_pnl=constants.ZERO, order_margin=constants.ZERO, position_margin=constants.ZERO)
 
     def _update_total(self):
         """
         Update total (margin balance) value with wallet balance + unrealized pnl
         """
-        self.total = self.wallet_balance + self.unrealized_pnl
+        self.total = self._ensure_update_validity(
+            update_quantity=self.wallet_balance + self.unrealized_pnl)
+
