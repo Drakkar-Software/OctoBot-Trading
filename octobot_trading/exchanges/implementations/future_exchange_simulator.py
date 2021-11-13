@@ -28,7 +28,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     DEFAULT_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
     DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.LINEAR_PERPETUAL
     DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
-    DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal(0.0001)
+    DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal("0.00005")
 
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
