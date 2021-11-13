@@ -332,6 +332,9 @@ class Position(util.Initializable):
         raise NotImplementedError("update_value not implemented")
 
     def update_pnl(self):
+        """
+        Should call on_pnl_update() when succeed
+        """
         raise NotImplementedError("update_pnl not implemented")
 
     def update_initial_margin(self):
@@ -455,6 +458,12 @@ class Position(util.Initializable):
             return (self.unrealised_pnl / self.margin) * constants.ONE_HUNDRED
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
+
+    def on_pnl_update(self):
+        """
+        Triggers external calls when position pnl has been updated
+        """
+        self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_from_pnl(self)
 
     async def recreate(self):
         """
