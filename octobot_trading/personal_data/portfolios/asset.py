@@ -69,7 +69,7 @@ class Asset:
             common_constants.PORTFOLIO_TOTAL: self.total
         }
 
-    def _ensure_update_validity(self, origin_quantity=constants.ZERO, update_quantity=constants.ZERO):
+    def _ensure_update_validity(self, origin_quantity, update_quantity):
         """
         Ensure that the portfolio final value is not negative.
         Raise a PortfolioNegativeValueError if the final value is negative
