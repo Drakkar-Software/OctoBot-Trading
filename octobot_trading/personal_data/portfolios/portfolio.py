@@ -166,8 +166,8 @@ class Portfolio(util.Initializable):
     def __str__(self):
         return f"{personal_data.portfolio_to_float(self.portfolio)}"
 
-    def _update_portfolio_data(self, currency,
-                               total_value=constants.ZERO, available_value=constants.ZERO, replace_value=False):
+    def _update_portfolio_data(self, currency, total_value=constants.ZERO, available_value=constants.ZERO,
+                               replace_value=False):
         """
         Set new currency quantity in the portfolio
         :param currency: the currency to update
