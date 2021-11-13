@@ -20,6 +20,8 @@ import octobot_commons.constants as commons_constants
 from octobot_backtesting.backtesting import Backtesting
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
+
+from octobot_trading.constants import ZERO, ONE
 from octobot_trading.modes.channel.abstract_mode_consumer import AbstractTradingModeConsumer
 from octobot_trading.enums import EvaluatorStates
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
@@ -143,14 +145,14 @@ async def test_get_holdings_ratio():
         portfolio_assets.SpotAsset(name="USDT", available=decimal.Decimal("1000"), total=decimal.Decimal("1000"))
 
     ratio = await consumer.get_holdings_ratio("BTC")
-    assert round(ratio, 8) == 0.90909091
-    ratio = consumer.get_holdings_ratio("USDT")
-    assert round(ratio, 8) == 0.09090909
+    assert round(ratio, 8) == decimal.Decimal('90.90909091')
+    ratio = await consumer.get_holdings_ratio("USDT")
+    assert round(ratio, 8) == decimal.Decimal('0.09090909')
 
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio.pop("USDT")
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.portfolio_current_value = 10
-    ratio = consumer.get_holdings_ratio("BTC")
-    assert round(ratio, 8) == 1
+    ratio = await consumer.get_holdings_ratio("BTC")
+    assert round(ratio, 8) == ONE
     # add ETH and try to get ratio without symbol price
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["ETH"].total = decimal.Decimal(10)
     # force not backtesting mode
@@ -161,11 +163,11 @@ async def test_get_holdings_ratio():
         ratio = consumer.get_holdings_ratio("ETH")
     # let channel register proceed
     await wait_asyncio_next_cycle()
-    assert round(ratio, 8) == 1
-    ratio = consumer.get_holdings_ratio("USDT")
-    assert round(ratio, 8) == 0
-    ratio = consumer.get_holdings_ratio("XYZ")
-    assert round(ratio, 8) == 0
+    assert round(ratio, 8) == ONE
+    ratio = await consumer.get_holdings_ratio("USDT")
+    assert round(ratio, 8) == ZERO
+    ratio = await consumer.get_holdings_ratio("XYZ")
+    assert round(ratio, 8) == ZERO
 
 
 async def test_get_number_of_traded_assets():
