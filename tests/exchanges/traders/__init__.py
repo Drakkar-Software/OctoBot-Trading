@@ -72,6 +72,11 @@ DEFAULT_FUTURE_SYMBOL_CONTRACT = contracts.FutureContract(
     margin_type=DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE,
     contract_type=DEFAULT_FUTURE_SYMBOL_CONTRACT_TYPE,
     current_leverage=DEFAULT_FUTURE_SYMBOL_LEVERAGE)
+DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT = contracts.FutureContract(
+    pair=DEFAULT_FUTURE_SYMBOL,
+    margin_type=DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE,
+    contract_type=enums.FutureContractType.LINEAR_PERPETUAL,
+    current_leverage=DEFAULT_FUTURE_SYMBOL_LEVERAGE)
 
 @pytest.fixture
 async def future_trader_simulator(future_simulated_exchange_manager):

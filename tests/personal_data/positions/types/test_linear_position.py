@@ -19,11 +19,12 @@ import decimal
 import pytest
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
+import octobot_trading.enums as enums
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
 from tests.exchanges.traders import future_trader_simulator, DEFAULT_FUTURE_SYMBOL_CONTRACT, \
-    DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE
+    DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
 from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
 
 # All test coroutines will be treated as marked.
@@ -74,22 +75,28 @@ async def test_update_pnl_with_loss(future_trader_simulator):
     config, exchange_manager_inst, trader_inst = future_trader_simulator
 
     # long test
-    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == constants.ZERO
+    exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
+        "USDT").wallet_balance = decimal.Decimal(100000)  # TO prevent portfolio negative error
     position_inst.update(update_size=constants.ONE_HUNDRED,
                          mark_price=constants.ONE_HUNDRED / decimal.Decimal(2.535485))
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == decimal.Decimal("-12111.96280001656484319345490")
 
     # short test
-    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == constants.ZERO
+    exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
+        "USDT").wallet_balance = decimal.Decimal(100000)  # TO prevent portfolio negative error
     position_inst.update(update_size=-constants.ONE_HUNDRED,
                          mark_price=constants.ONE_HUNDRED * decimal.Decimal(1.0954))
     position_inst.update_pnl()
@@ -164,6 +171,7 @@ async def test_get_bankruptcy_price(future_trader_simulator):
 
     # long test
     position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == constants.ZERO
@@ -177,7 +185,8 @@ async def test_get_bankruptcy_price(future_trader_simulator):
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("200")
 
     # short test
-    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == decimal.Decimal("200")
@@ -185,6 +194,8 @@ async def test_get_bankruptcy_price(future_trader_simulator):
     position_inst.leverage = constants.ONE_HUNDRED
     assert position_inst.get_bankruptcy_price() == decimal.Decimal('101.00')
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal('100')
+    exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
+        "USDT").wallet_balance = decimal.Decimal(10000)  # TO prevent portfolio negative error
     position_inst.update(update_size=constants.ONE_HUNDRED,
                          mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == constants.ZERO
