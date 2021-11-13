@@ -24,10 +24,10 @@ cdef class FutureAsset(asset_class.Asset):
     cdef public object position_margin
     cdef public object order_margin
 
-    cpdef bint update(self,object initial_margin=*, object total=*, object order_margin=*,
-                      object position_margin=*, object unrealized_pnl=*)
+    cpdef bint update(self,object initial_margin=*, object total=*, object available=*, object position_margin=*,
+                      object unrealized_pnl=*)
     cpdef bint set(self, object total=*, object margin_balance=*, object initial_margin=*, object position_margin=*,
-                   object order_margin=*, object unrealized_pnl=*, object available_balance=*)
+                   object order_margin=*, object unrealized_pnl=*, object available=*)
     cpdef void set_unrealized_pnl(self, object unrealized_pnl)
 
     cdef void _update_total(self)
