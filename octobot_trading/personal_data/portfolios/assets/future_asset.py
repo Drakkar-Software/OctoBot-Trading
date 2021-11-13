@@ -140,12 +140,11 @@ class FutureAsset(asset_class.Asset):
         """
         Update total (margin balance) value with wallet balance + unrealized pnl
         """
-        self.total = self._ensure_update_validity(
-            update_quantity=self.wallet_balance + self.unrealized_pnl)
+        self.total = self._ensure_update_validity(constants.ZERO, self.wallet_balance + self.unrealized_pnl)
 
     def _update_available(self):
         """
         Update available (margin available) value with wallet balance - used margin
         """
-        self.available = self._ensure_update_validity(
-            update_quantity=self.wallet_balance - self.position_margin - self.order_margin)
+        self.available = self._ensure_update_validity(constants.ZERO,
+                                                      self.wallet_balance - self.position_margin - self.order_margin)

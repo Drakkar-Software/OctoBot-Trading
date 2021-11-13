@@ -78,11 +78,15 @@ class FuturePortfolio(portfolio_class.Portfolio):
             # When inverse contract, decrease a currency market equivalent quantity from currency balance
             if pair_future_contract.is_inverse_contract():
                 self._update_future_portfolio_data(order.currency,
+                                                   wallet_value=constants.ZERO,
+                                                   position_margin_value=constants.ZERO,
                                                    order_margin_value=real_order_quantity / order.origin_price)
             # When non-inverse contract, decrease directly market quantity
             else:
                 # decrease market quantity from market available balance
                 self._update_future_portfolio_data(order.market,
+                                                   wallet_value=constants.ZERO,
+                                                   position_margin_value=constants.ZERO,
                                                    order_margin_value=real_order_quantity * order.origin_price)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update available from order : {order} ({e})")

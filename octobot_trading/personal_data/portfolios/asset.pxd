@@ -25,5 +25,5 @@ cdef class Asset:
     cpdef void reset(self)
     cpdef dict to_dict(self)
 
-    cpdef object _ensure_update_validity(self, object origin_quantity=*, object update_quantity=*)
+    cpdef object _ensure_update_validity(self, object origin_quantity, object update_quantity)
     cpdef object _ensure_not_negative(self, object new_value, object replacement_value=*)
