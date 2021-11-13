@@ -69,7 +69,7 @@ class Asset:
             common_constants.PORTFOLIO_TOTAL: self.total
         }
 
-    def _ensure_update_validity(self, origin_quantity, update_quantity):
+    def _ensure_update_validity(self, origin_quantity=constants.ZERO, update_quantity=constants.ZERO):
         """
         Ensure that the portfolio final value is not negative.
         Raise a PortfolioNegativeValueError if the final value is negative
@@ -81,3 +81,15 @@ class Asset:
             raise errors.PortfolioNegativeValueError(f"Trying to update {self.name} with {update_quantity} "
                                                      f"but quantity was {origin_quantity}")
         return update_quantity
+
+    def _ensure_not_negative(self, new_value, replacement_value=constants.ZERO):
+        """
+        Ensure that the new asset value is not negative
+        When new value is negative return replacement_value
+        :param new_value: the value to check
+        :param replacement_value: the replacement value when new value is negative
+        :return: the new value if not negative else the replacement value
+        """
+        if new_value > constants.ZERO:
+            return new_value
+        return replacement_value
