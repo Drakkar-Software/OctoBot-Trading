@@ -52,3 +52,11 @@ def test__ensure_update_validity():
         asset._ensure_update_validity(constants.ONE, -constants.ONE)
         with pytest.raises(errors.PortfolioNegativeValueError):
             asset._ensure_update_validity(-constants.ONE, constants.ZERO)
+
+def test__ensure_not_negative():
+    asset = assets.Asset(ASSET_CURRENCY_NAME, available=constants.ONE_HUNDRED, total=decimal.Decimal(2))
+    if not os.getenv('CYTHON_IGNORE'):
+        assert asset._ensure_not_negative(decimal.Decimal(1)) == decimal.Decimal(1)
+        assert asset._ensure_not_negative(constants.ZERO) == constants.ZERO
+        assert asset._ensure_not_negative(decimal.Decimal(-1)) == constants.ZERO
+
