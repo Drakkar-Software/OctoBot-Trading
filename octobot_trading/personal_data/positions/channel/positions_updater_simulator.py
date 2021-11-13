@@ -36,6 +36,8 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.channel.exchange_manager.exchange.name}]")
         await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.handle_mark_price)
+        await exchanges_channel.get_chan(constants.FUNDING_CHANNEL, self.channel.exchange_manager.id) \
+            .new_consumer(self.handle_funding_rate)
         self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
 
     async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
@@ -43,8 +45,30 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         MarkPrice channel consumer callback
         """
         try:
-            for symbol_position in self.channel.exchange_manager.exchange_personal_data.positions_manager.\
+            for symbol_position in self.channel.exchange_manager.exchange_personal_data.positions_manager. \
                     get_symbol_positions(symbol=symbol):
                 symbol_position.update(mark_price=decimal.Decimal(str(mark_price)))
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle mark price : {e}")
+
+    async def handle_funding_rate(self, exchange: str,
+                                  exchange_id: str,
+                                  cryptocurrency: str,
+                                  symbol: str,
+                                  funding_rate,
+                                  predicted_funding_rate,
+                                  next_funding_time,
+                                  timestamp):
+        """
+        Funding channel consumer callback
+        """
+        try:
+            for symbol_position in self.channel.exchange_manager.exchange_personal_data.positions_manager. \
+                    get_symbol_positions(symbol=symbol):
+                if not symbol_position.is_idle() and symbol_position.symbol_contract.is_perpetual_contract():
+                    async with self.channel.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+                        await self.channel.exchange_manager.exchange_personal_data.handle_portfolio_update_from_funding(
+                            position=symbol_position, funding_rate=funding_rate
+                        )
+        except Exception as e:
+            self.logger.exception(e, True, f"Fail to handle funding rate : {e}")

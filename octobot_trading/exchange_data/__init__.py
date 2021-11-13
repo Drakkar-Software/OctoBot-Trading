@@ -123,7 +123,7 @@ SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE = {
     trading_constants.TICKER_CHANNEL: [backtesting_enums.ExchangeDataTables.TICKER,
                                        backtesting_enums.ExchangeDataTables.OHLCV],
     trading_constants.KLINE_CHANNEL: [backtesting_enums.ExchangeDataTables.KLINE],
-    trading_constants.FUNDING_CHANNEL: [backtesting_enums.ExchangeDataTables.FUNDING]
+    # trading_constants.FUNDING_CHANNEL: [backtesting_enums.ExchangeDataTables.FUNDING] only hard coded value for now
 }
 
 # Required data to run real data updater (requires each per list)
