@@ -43,6 +43,7 @@ class InversePosition(position_class.Position):
                                                         (constants.ONE / self.entry_price))
             else:
                 self.unrealised_pnl = constants.ZERO
+            self.on_pnl_update()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.unrealised_pnl = constants.ZERO
 

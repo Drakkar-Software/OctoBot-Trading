@@ -115,6 +115,7 @@ cdef class Position(util.Initializable):
     cpdef bint is_idle(self)
     cpdef object get_quantity_to_close(self)
     cpdef object get_unrealised_pnl_percent(self)
+    cpdef void on_pnl_update(self)
     cpdef str to_string(self)
     cpdef dict to_dict(self)
     cpdef void clear(self)
