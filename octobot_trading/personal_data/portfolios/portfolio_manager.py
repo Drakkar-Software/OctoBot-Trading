@@ -87,6 +87,23 @@ class PortfolioManager(util.Initializable):
             return await self._refresh_real_trader_portfolio()
         return False
 
+    async def handle_balance_update_from_funding(self, position, funding_rate, require_exchange_update: bool) -> bool:
+        """
+        Handle a balance update from a funding update
+        :param position: the position
+        :param funding_rate: the funding rate
+        :param require_exchange_update: when True, will sync with exchange portfolio, otherwise will predict the
+        portfolio changes using position data (as in trading simulator)
+        :return: True if the portfolio was updated
+        """
+        if self.trader.is_enabled:
+            if self.trader.simulate or not require_exchange_update:
+                self.portfolio.update_portfolio_from_funding(position, funding_rate)
+                return True
+            # on real trading: reload portfolio to ensure portfolio sync
+            return await self._refresh_real_trader_portfolio()
+        return False
+
     async def handle_balance_updated(self):
         """
         Handle balance update notification
