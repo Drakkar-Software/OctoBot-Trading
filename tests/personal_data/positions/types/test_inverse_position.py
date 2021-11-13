@@ -18,6 +18,7 @@ import decimal
 import pytest
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
+import octobot_trading.enums as enums
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
@@ -74,6 +75,7 @@ async def test_update_pnl_with_loss(future_trader_simulator):
 
     # long test
     position_inst = personal_data.InversePosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_pnl()
@@ -85,6 +87,7 @@ async def test_update_pnl_with_loss(future_trader_simulator):
 
     # short test
     position_inst = personal_data.InversePosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_pnl()
@@ -163,6 +166,7 @@ async def test_get_bankruptcy_price(future_trader_simulator):
 
     # long test
     position_inst = personal_data.InversePosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == decimal.Decimal(50)
@@ -177,6 +181,7 @@ async def test_get_bankruptcy_price(future_trader_simulator):
 
     # short test
     position_inst = personal_data.InversePosition(trader_inst, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == constants.ZERO
