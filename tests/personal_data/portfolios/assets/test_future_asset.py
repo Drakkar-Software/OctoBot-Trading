@@ -33,7 +33,7 @@ def test___eq__():
     assert not asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
                                                  position_margin=constants.ONE_HUNDRED)
     assert not asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
-                                                 maintenance_margin=constants.ONE_HUNDRED)
+                                                 order_margin=constants.ONE_HUNDRED)
     assert not asset == future_asset.FutureAsset(ASSET_CURRENCY_NAME, constants.ZERO, constants.ZERO,
                                                  initial_margin=constants.ONE_HUNDRED)
 
@@ -42,7 +42,7 @@ def test_update():
     asset = future_asset.FutureAsset(ASSET_CURRENCY_NAME,
                                      available=constants.ZERO, total=constants.ZERO, order_margin=constants.ZERO,
                                      initial_margin=constants.ZERO, wallet_balance=constants.ZERO,
-                                     maintenance_margin=constants.ZERO, position_margin=constants.ZERO)
+                                     position_margin=constants.ZERO)
     assert not asset.update(available=constants.ZERO, total=constants.ZERO, unrealized_pnl=constants.ZERO)
     assert asset.total == constants.ZERO
     assert asset.update(available=constants.ZERO, total=decimal.Decimal(5), unrealized_pnl=constants.ZERO)
@@ -51,18 +51,18 @@ def test_update():
     assert asset.total == decimal.Decimal(21)
     assert asset.wallet_balance == decimal.Decimal(11)
     assert asset.update(available=constants.ZERO, total=decimal.Decimal(1), unrealized_pnl=decimal.Decimal(10),
-                        maintenance_margin=decimal.Decimal(3))
+                        initial_margin=decimal.Decimal(3))
     assert asset.wallet_balance == decimal.Decimal(12)
     assert asset.total == decimal.Decimal(32)
-    assert asset.maintenance_margin == decimal.Decimal(3)
-    assert asset.available == constants.ZERO
+    assert asset.initial_margin == decimal.Decimal(3)
+    assert asset.available == decimal.Decimal(12)
 
 
 def test_set():
     asset = future_asset.FutureAsset(ASSET_CURRENCY_NAME,
                                      available=constants.ZERO, total=constants.ZERO, order_margin=constants.ZERO,
                                      initial_margin=constants.ZERO, wallet_balance=constants.ZERO,
-                                     maintenance_margin=constants.ZERO, position_margin=constants.ZERO)
+                                     position_margin=constants.ZERO)
     assert not asset.set(available=constants.ZERO, total=constants.ZERO, margin_balance=constants.ZERO)
     assert asset.set(available=decimal.Decimal(5), total=decimal.Decimal(5), margin_balance=decimal.Decimal(2))
     assert not asset.set(available=decimal.Decimal(5), total=decimal.Decimal(5), margin_balance=decimal.Decimal(2))
@@ -82,10 +82,9 @@ def test_reset():
     asset = future_asset.FutureAsset(ASSET_CURRENCY_NAME,
                                      available=constants.ONE_HUNDRED, total=constants.ONE_HUNDRED,
                                      initial_margin=constants.ONE_HUNDRED, wallet_balance=constants.ONE_HUNDRED,
-                                     maintenance_margin=constants.ONE_HUNDRED, order_margin=constants.ONE_HUNDRED,
-                                     position_margin=constants.ONE_HUNDRED)
+                                     order_margin=constants.ONE_HUNDRED, position_margin=constants.ONE_HUNDRED)
     assert asset.available == asset.total == asset.initial_margin == asset.wallet_balance == \
-           asset.maintenance_margin == asset.position_margin == asset.order_margin == constants.ONE_HUNDRED
+           asset.position_margin == asset.order_margin == constants.ONE_HUNDRED
     asset.reset()
     assert asset.available == asset.total == asset.initial_margin == asset.wallet_balance == \
-           asset.maintenance_margin == asset.position_margin == asset.order_margin == constants.ZERO
+           asset.position_margin == asset.order_margin == constants.ZERO
