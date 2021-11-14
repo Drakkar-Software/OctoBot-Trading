@@ -19,15 +19,12 @@ import octobot_backtesting.errors as errors
 
 import octobot_trading.exchange_data.funding.channel.funding_updater as funding_updater
 import octobot_trading.util as util
-import octobot_trading.exchanges as exchanges
 
 
 class FundingUpdaterSimulator(funding_updater.FundingUpdater):
     """
     The Funding Update Simulator simulates the exchange funding rate and send it to the Funding Channel
     """
-    STATIC_FUNDING_RATE = exchanges.FutureExchangeSimulator.DEFAULT_SYMBOL_FUNDING_RATE
-
     def __init__(self, channel, importer):
         super().__init__(channel)
         self.exchange_data_importer = importer
@@ -46,10 +43,11 @@ class FundingUpdaterSimulator(funding_updater.FundingUpdater):
                     or self.last_pushed_timestamp == 0:
                 self.last_pushed_timestamp = current_time
                 for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+                    funding_rate = await self.channel.exchange_manager.exchange.get_funding_rate(symbol=pair)
                     await self._push_funding(
                         symbol=pair,
-                        funding_rate=self.STATIC_FUNDING_RATE,
-                        predicted_funding_rate=self.STATIC_FUNDING_RATE)
+                        funding_rate=funding_rate,
+                        predicted_funding_rate=funding_rate)
         except errors.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
