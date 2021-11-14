@@ -220,9 +220,3 @@ def cancel_ccxt_throttle_task():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise
         if str(task._coro).startswith("<coroutine object Throttler.looper at"):
             task.cancel()
-
-
-def set_exchange_builder_details(exchange_builder, config, backtesting) -> None:
-    octobot_channel_consumer.set_exchange_type_details(exchange_builder=exchange_builder,
-                                                       config=config,
-                                                       backtesting=backtesting)
