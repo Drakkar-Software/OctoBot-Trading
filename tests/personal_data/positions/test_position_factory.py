@@ -19,8 +19,8 @@ import octobot_trading.personal_data as personal_data
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
-from tests.exchanges.traders import future_trader, future_trader_simulator_with_default_linear, \
-    DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT
+from tests.exchanges.traders import future_trader, future_trader_simulator_with_default_linear, DEFAULT_FUTURE_SYMBOL, \
+    DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE, DEFAULT_FUTURE_SYMBOL_LEVERAGE, get_default_future_inverse_contract
 from tests.test_utils.random_numbers import decimal_random_int, decimal_random_quantity
 
 # All test coroutines will be treated as marked.
@@ -28,7 +28,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_create_position_instance_from_raw(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
     raw_position = {
         enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL,
@@ -38,7 +38,7 @@ async def test_create_position_instance_from_raw(future_trader_simulator_with_de
     position_leverage = decimal_random_int(min_value=2, max_value=200)
     position_quantity = decimal_random_quantity(max_value=1000)
     exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL,
-                                                            DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT)
+                                                            get_default_future_inverse_contract())
     inverse_position_open = personal_data.create_position_instance_from_raw(trader_inst, {
         enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL,
         enums.ExchangeConstantsPositionColumns.LEVERAGE.value: position_leverage,
@@ -57,6 +57,6 @@ async def test_create_position_instance_from_raw(future_trader_simulator_with_de
 
 
 async def test_create_symbol_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position = personal_data.create_symbol_position(trader_inst, DEFAULT_FUTURE_SYMBOL)
     assert position.symbol == DEFAULT_FUTURE_SYMBOL

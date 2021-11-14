@@ -26,8 +26,7 @@ from octobot_trading.personal_data import SellLimitOrder, BuyLimitOrder
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
-from tests.exchanges.traders import future_trader_simulator_with_default_linear, \
-    DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT, DEFAULT_FUTURE_SYMBOL
+from tests.exchanges.traders import future_trader_simulator_with_default_linear, DEFAULT_FUTURE_SYMBOL
 from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
 
 # All test coroutines will be treated as marked.
@@ -35,9 +34,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_update_entry_price(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
 
     assert position_inst.entry_price == constants.ZERO
     assert position_inst.mark_price == constants.ZERO
@@ -49,9 +48,9 @@ async def test_update_entry_price(future_trader_simulator_with_default_linear):
 
 
 async def test_update_update_quantity(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
 
     assert position_inst.quantity == constants.ZERO
 
@@ -61,9 +60,9 @@ async def test_update_update_quantity(future_trader_simulator_with_default_linea
 
 
 async def test__check_and_update_size_with_one_way_position_mode(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    symbol_contract = default_contract
     exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
     symbol_contract.set_position_mode(is_one_way=True)
 
@@ -90,9 +89,9 @@ async def test__check_and_update_size_with_one_way_position_mode(future_trader_s
 
 
 async def test__check_and_update_size_with_hedge_position_mode(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    symbol_contract = default_contract
     exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
     symbol_contract.set_position_mode(is_one_way=False)
 
@@ -119,9 +118,9 @@ async def test__check_and_update_size_with_hedge_position_mode(future_trader_sim
 
 
 async def test__is_update_increasing_size(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    symbol_contract = default_contract
     exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
     symbol_contract.set_position_mode(is_one_way=False)
 
@@ -145,23 +144,23 @@ async def test__is_update_increasing_size(future_trader_simulator_with_default_l
 
 
 async def test_get_quantity_to_close(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     quantity = decimal_random_quantity(1)
     position_inst.update(update_size=quantity)
     assert position_inst.get_quantity_to_close() == -quantity
 
-    position_inst = personal_data.LinearPosition(trader_inst, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     quantity = -decimal_random_quantity(1)
     position_inst.update(update_size=quantity)
     assert position_inst.get_quantity_to_close() == -quantity
 
 
 async def test_update_size_from_order_with_long_one_way_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=constants.ONE_HUNDRED)
@@ -176,8 +175,8 @@ async def test_update_size_from_order_with_long_one_way_position(future_trader_s
 
 
 async def test_update_size_from_order_with_long_close_position_one_way_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=constants.ONE_HUNDRED)
@@ -193,8 +192,8 @@ async def test_update_size_from_order_with_long_close_position_one_way_position(
 
 
 async def test_update_size_from_order_with_long_reduce_only_one_way_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=constants.ONE_HUNDRED)
@@ -222,8 +221,8 @@ async def test_update_size_from_order_with_long_reduce_only_one_way_position(fut
 
 
 async def test_update_size_from_order_with_long_oversold_one_way_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=constants.ONE_HUNDRED)
@@ -240,8 +239,8 @@ async def test_update_size_from_order_with_long_oversold_one_way_position(future
 
 
 async def test_update_size_from_order_with_short_one_way_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=-constants.ONE_HUNDRED)
@@ -256,8 +255,8 @@ async def test_update_size_from_order_with_short_one_way_position(future_trader_
 
 
 async def test_update_size_from_order_with_short_close_position_one_way_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=-constants.ONE_HUNDRED)
@@ -273,8 +272,8 @@ async def test_update_size_from_order_with_short_close_position_one_way_position
 
 
 async def test_update_size_from_order_with_short_reduce_only_one_way_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=-constants.ONE_HUNDRED)
@@ -302,8 +301,8 @@ async def test_update_size_from_order_with_short_reduce_only_one_way_position(fu
 
 
 async def test_update_size_from_order_realized_pnl_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=-constants.ONE_HUNDRED)
@@ -322,8 +321,8 @@ async def test_update_size_from_order_realized_pnl_position(future_trader_simula
 
 
 async def test_update_size_from_order_with_short_overbought_one_way_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=-constants.ONE_HUNDRED)
@@ -340,8 +339,8 @@ async def test_update_size_from_order_with_short_overbought_one_way_position(fut
 
 
 async def test_update_size_from_order_with_long_oversold_hedge_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=False)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=constants.ONE_HUNDRED)
@@ -359,8 +358,8 @@ async def test_update_size_from_order_with_long_oversold_hedge_position(future_t
 
 
 async def test_update_size_from_order_with_short_overbought_hedge_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst = future_trader_simulator_with_default_linear
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=False)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.update(update_size=-constants.ONE_HUNDRED)
