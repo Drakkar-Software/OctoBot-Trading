@@ -29,4 +29,4 @@ cdef class MarginContract:
 
     cpdef bint is_isolated(self)
     cpdef void set_current_leverage(self, object new_leverage)
-    cpdef void set_margin_type(self, bint is_isolated)
+    cpdef void set_margin_type(self, bint is_isolated=*, bint is_cross=*)
