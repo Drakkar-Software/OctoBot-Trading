@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -10,20 +9,7 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General License for more details.
+#  Lesser General Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchange_data.contracts.margin_contract as margin_contract
-
-
-cdef class FutureContract(margin_contract.MarginContract):
-    cdef readonly object contract_type
-    cdef readonly object position_mode
-
-    cdef readonly double minimum_tick_size
-
-    cpdef bint is_inverse_contract(self)
-    cpdef bint is_perpetual_contract(self)
-    cpdef bint is_one_way_position_mode(self)
-    cpdef void set_position_mode(self, bint is_one_way=*, bint is_hedge=*)
