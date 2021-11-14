@@ -22,4 +22,7 @@ cimport octobot_trading.exchange_data.funding.channel.funding_updater as funding
 cdef class FundingUpdaterSimulator(funding_updater.FundingUpdater):
     cdef public consumer.Consumer time_consumer
 
+    cdef double initial_timestamp
+    cdef double last_pushed_timestamp
+
     cdef importers.ExchangeDataImporter exchange_data_importer

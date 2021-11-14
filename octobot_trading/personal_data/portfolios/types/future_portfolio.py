@@ -38,7 +38,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
             get_order_position(order, contract=pair_future_contract)
 
         try:
-            update_size, have_increased_position_size = position_instance.update_size_from_order(order=order)
+            update_size, have_increased_position_size = position_instance.update_size_from_order(order)
             real_order_quantity = decimal.Decimal(update_size / pair_future_contract.current_leverage).copy_abs()
 
             # When inverse contract, decrease a currency market equivalent quantity from currency balance

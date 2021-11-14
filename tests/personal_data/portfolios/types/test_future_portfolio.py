@@ -572,15 +572,16 @@ async def test_update_portfolio_data_with_fees(future_trader_simulator_with_defa
                        quantity=decimal.Decimal(25),
                        price=sell_order_price)
 
-    with mock.patch.object(market_sell, "get_total_fees", mock.Mock(return_value=5)):
-        portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
-        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('975.0')
-        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    if not os.getenv('CYTHON_IGNORE'):
+        with mock.patch.object(market_sell, "get_total_fees", mock.Mock(return_value=5)):
+            portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('975.0')
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
 
-        # fill order with fees
-        await fill_market_order(market_sell)
-        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('970.0')
-        assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('995')
+            # fill order with fees
+            await fill_market_order(market_sell)
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('970.0')
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('995')
 
 
 async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contract(

@@ -133,7 +133,8 @@ class FutureAsset(asset_class.Asset):
         """
         Reset asset portfolio to zero
         """
-        self.set(total=constants.ZERO, initial_margin=constants.ZERO, margin_balance=constants.ZERO,
+        self.set(total=constants.ZERO, available=constants.ZERO,
+                 initial_margin=constants.ZERO, margin_balance=constants.ZERO,
                  unrealized_pnl=constants.ZERO, order_margin=constants.ZERO, position_margin=constants.ZERO)
 
     def _update_total(self):
