@@ -314,10 +314,11 @@ async def test_update_size_from_order_realized_pnl_position(future_trader_simula
                      quantity=constants.ONE,
                      price=21)
 
-    with mock.patch.object(buy_limit, "get_total_fees", mock.Mock(return_value=5)):
-        assert position_inst.update_size_from_order(buy_limit) == (constants.ONE, False)
-    assert position_inst.size == decimal.Decimal("-99")
-    assert position_inst.realised_pnl == decimal.Decimal("-5")
+    if not os.getenv('CYTHON_IGNORE'):
+        with mock.patch.object(buy_limit, "get_total_fees", mock.Mock(return_value=5)):
+            assert position_inst.update_size_from_order(buy_limit) == (constants.ONE, False)
+        assert position_inst.size == decimal.Decimal("-99")
+        assert position_inst.realised_pnl == decimal.Decimal("-5")
 
 
 async def test_update_size_from_order_with_short_overbought_one_way_position(future_trader_simulator_with_default_linear):

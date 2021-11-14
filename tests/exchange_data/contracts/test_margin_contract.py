@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import os
 
 import pytest
 
@@ -50,8 +51,10 @@ async def test_set_current_leverage():
     assert contract.current_leverage == decimal.Decimal(10)
     contract.set_current_leverage(decimal.Decimal(50))
     assert contract.current_leverage == decimal.Decimal(50)
-    with pytest.raises(errors.InvalidLeverageValue):
-        contract.set_current_leverage(decimal.Decimal(200))
+
+    if not os.getenv('CYTHON_IGNORE'):
+        with pytest.raises(errors.InvalidLeverageValue):
+            contract.set_current_leverage(decimal.Decimal(200))
 
 
 async def test_set_margin_type():

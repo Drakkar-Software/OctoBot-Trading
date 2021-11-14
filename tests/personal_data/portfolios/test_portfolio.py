@@ -988,13 +988,14 @@ async def test_update_portfolio_data(backtesting_trader):
         with pytest.raises(errors.PortfolioNegativeValueError):
             portfolio_manager.portfolio._update_portfolio_data("BTC", decimal.Decimal(-20))
 
-    with pytest.raises(errors.PortfolioNegativeValueError):
-        # Test buy order
-        btc_limit_buy2 = BuyLimitOrder(trader)
-        btc_limit_buy2.update(order_type=TraderOrderType.BUY_LIMIT,
-                              symbol="BTC/USDT",
-                              current_price=decimal.Decimal("10"),
-                              quantity=decimal.Decimal("5000000000"),
-                              price=decimal.Decimal("10"))
+    if not os.getenv('CYTHON_IGNORE'):
+        with pytest.raises(errors.PortfolioNegativeValueError):
+            # Test buy order
+            btc_limit_buy2 = BuyLimitOrder(trader)
+            btc_limit_buy2.update(order_type=TraderOrderType.BUY_LIMIT,
+                                  symbol="BTC/USDT",
+                                  current_price=decimal.Decimal("10"),
+                                  quantity=decimal.Decimal("5000000000"),
+                                  price=decimal.Decimal("10"))
 
-        portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy2, True)
+            portfolio_manager.portfolio.update_portfolio_available(btc_limit_buy2, True)
