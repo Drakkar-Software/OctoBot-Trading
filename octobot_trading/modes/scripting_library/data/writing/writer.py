@@ -33,6 +33,9 @@ class DBWriter(database.BaseDatabase):
             self.cache.register(table_name, row)
         await self._database.insert_many(table_name, rows)
 
+    async def flush(self):
+        await self._database.flush()
+
     @staticmethod
     def get_value_from_array(array, index, multiplier=1):
         if array is None:

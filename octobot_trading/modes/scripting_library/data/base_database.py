@@ -21,8 +21,8 @@ import octobot_trading.modes.scripting_library.data as data
 
 
 class BaseDatabase:
-    def __init__(self, file_path: str, database_adaptor=databases.TinyDBAdaptor):
-        self._database = databases.DocumentDatabase(database_adaptor(file_path))
+    def __init__(self, file_path: str, database_adaptor=databases.TinyDBAdaptor, **kwargs):
+        self._database = databases.DocumentDatabase(database_adaptor(file_path, **kwargs))
         self.are_data_initialized = False
         self.cache = data.DatabaseCache()
 

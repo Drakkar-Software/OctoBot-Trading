@@ -272,6 +272,9 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                 await scripting_library.save_portfolio(self.writer, context)
             await self.script_factory(live=True)(context)
         finally:
+            if not self.exchange_manager.backtesting:
+                # only update db after each run in live mode
+                await self.writer.flush()
             self.writer.are_data_initialized = True
             self.contexts.remove(context)
 
