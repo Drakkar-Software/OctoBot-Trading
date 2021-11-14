@@ -137,8 +137,8 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):
         pair_contract = self.get_pair_future_contract(symbol)
-        pair_contract.set_margin_type(isolated)
+        pair_contract.set_margin_type(is_isolated=isolated)
 
     async def set_symbol_position_mode(self, symbol: str, one_way: bool):
         pair_contract = self.get_pair_future_contract(symbol)
-        pair_contract.set_position_mode(one_way)
+        pair_contract.set_position_mode(is_one_way=one_way)
