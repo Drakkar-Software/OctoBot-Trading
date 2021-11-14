@@ -62,15 +62,16 @@ async def trader_simulator(simulated_exchange_manager):
 async def margin_trader_simulator(margin_simulated_exchange_manager):
     return await create_trader_from_exchange_manager(margin_simulated_exchange_manager, simulated=True)
 
+
 DEFAULT_FUTURE_SYMBOL = "BTC/USDT"
 DEFAULT_FUTURE_FUNDING_RATE = decimal.Decimal(0.01)
 DEFAULT_FUTURE_SYMBOL_LEVERAGE = constants.ONE
 DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
 DEFAULT_FUTURE_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.INVERSE_PERPETUAL
-DEFAULT_FUTURE_SYMBOL_CONTRACT = contracts.FutureContract(
+DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT = contracts.FutureContract(
     pair=DEFAULT_FUTURE_SYMBOL,
     margin_type=DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE,
-    contract_type=DEFAULT_FUTURE_SYMBOL_CONTRACT_TYPE,
+    contract_type=enums.FutureContractType.INVERSE_PERPETUAL,
     current_leverage=DEFAULT_FUTURE_SYMBOL_LEVERAGE)
 DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT = contracts.FutureContract(
     pair=DEFAULT_FUTURE_SYMBOL,
@@ -78,8 +79,16 @@ DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT = contracts.FutureContract(
     contract_type=enums.FutureContractType.LINEAR_PERPETUAL,
     current_leverage=DEFAULT_FUTURE_SYMBOL_LEVERAGE)
 
+
 @pytest.fixture
-async def future_trader_simulator(future_simulated_exchange_manager):
+async def future_trader_simulator_with_default_inverse(future_simulated_exchange_manager):
     future_simulated_exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL,
-                                                                        DEFAULT_FUTURE_SYMBOL_CONTRACT)
+                                                                        DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT)
+    return await create_trader_from_exchange_manager(future_simulated_exchange_manager, simulated=True)
+
+
+@pytest.fixture
+async def future_trader_simulator_with_default_linear(future_simulated_exchange_manager):
+    future_simulated_exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL,
+                                                                        DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
     return await create_trader_from_exchange_manager(future_simulated_exchange_manager, simulated=True)
