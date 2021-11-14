@@ -63,7 +63,6 @@ class LinearPosition(position_class.Position):
         Updates isolated position liquidation price
         LONG LIQUIDATION PRICE = ENTRY_PRICE * (1 - Initial Margin Rate + MAINTENANCE_MARGIN_RATE)
         SHORT LIQUIDATION PRICE = ENTRY_PRICE * (1 + Initial Margin Rate - MAINTENANCE_MARGIN_RATE)
-        TODO : support extra margin ->
         - Long : - Extra Margin Added/ Contract Size
         - Short : + Extra Margin Added/ Contract Size
         """

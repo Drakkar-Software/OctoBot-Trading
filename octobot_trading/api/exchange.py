@@ -21,7 +21,6 @@ import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data as exchange_data
-import octobot_trading.octobot_channel_consumer as octobot_channel_consumer
 
 
 def create_exchange_builder(config, exchange_name: str) -> exchanges.ExchangeBuilder:

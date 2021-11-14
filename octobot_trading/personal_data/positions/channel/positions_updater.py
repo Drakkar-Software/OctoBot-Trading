@@ -115,7 +115,6 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 await self.fetch_open_position_per_symbol()
             else:
                 await self.fetch_open_positions()
-            # TODO handle_post_open_position_update
         except Exception as e:
             self.logger.error(f"Fail to update open positions : {e}")
 
