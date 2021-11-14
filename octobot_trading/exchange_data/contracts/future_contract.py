@@ -55,9 +55,10 @@ class FutureContract(margin_contract.MarginContract):
         """
         return self.position_mode is enums.PositionMode.ONE_WAY
 
-    def set_position_mode(self, is_one_way):
+    def set_position_mode(self, is_one_way=True, is_hedge=False):
         """
         Set the contract position mode
-        :param is_one_way: the new position mode value
+        :param is_one_way: should be True if the position mode is one way
+        :param is_hedge: should be True if the position mode is hedge
         """
-        self.position_mode = enums.PositionMode.ONE_WAY if is_one_way else enums.PositionMode.HEDGE
+        self.position_mode = enums.PositionMode.ONE_WAY if is_one_way and not is_hedge else enums.PositionMode.HEDGE
