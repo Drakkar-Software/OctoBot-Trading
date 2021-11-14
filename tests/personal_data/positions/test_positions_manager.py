@@ -22,7 +22,8 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.positions_manager as positions_mgr
 from octobot_trading.personal_data import SellMarketOrder
 from tests.exchanges import future_simulated_exchange_manager
-from tests.exchanges.traders import future_trader_simulator, DEFAULT_FUTURE_SYMBOL_CONTRACT, DEFAULT_FUTURE_SYMBOL
+from tests.exchanges.traders import future_trader_simulator_with_default_linear, \
+    DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT, DEFAULT_FUTURE_SYMBOL
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
@@ -32,11 +33,12 @@ from tests.test_utils.random_numbers import decimal_random_price, decimal_random
 pytestmark = pytest.mark.asyncio
 
 
-async def test_get_symbol_position(future_trader_simulator):
-    config, exchange_manager, trader = future_trader_simulator
+async def test_get_symbol_position(future_trader_simulator_with_default_linear):
+    config, exchange_manager, trader = future_trader_simulator_with_default_linear
     positions_manager = exchange_manager.exchange_personal_data.positions_manager
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
-    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, 
+                                                              DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
 
     symbol_contract.set_position_mode(is_one_way=True)
     p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.LONG)
@@ -50,11 +52,12 @@ async def test_get_symbol_position(future_trader_simulator):
     assert p2 is not p2bis
 
 
-async def test_get_symbol_positions(future_trader_simulator):
-    config, exchange_manager, trader = future_trader_simulator
+async def test_get_symbol_positions(future_trader_simulator_with_default_linear):
+    config, exchange_manager, trader = future_trader_simulator_with_default_linear
     positions_manager = exchange_manager.exchange_personal_data.positions_manager
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
-    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, 
+                                                              DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
 
     symbol_contract.set_position_mode(is_one_way=False)
     assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 0
@@ -72,11 +75,12 @@ async def test_get_symbol_positions(future_trader_simulator):
     assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
 
 
-async def test_get_order_position(future_trader_simulator):
-    config, exchange_manager, trader = future_trader_simulator
+async def test_get_order_position(future_trader_simulator_with_default_linear):
+    config, exchange_manager, trader = future_trader_simulator_with_default_linear
     positions_manager = exchange_manager.exchange_personal_data.positions_manager
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
-    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, 
+                                                              DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
 
     p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.SHORT)
     market_sell = SellMarketOrder(trader)
@@ -87,11 +91,12 @@ async def test_get_order_position(future_trader_simulator):
     assert p1 is p1bis
 
 
-async def test__generate_position_id(future_trader_simulator):
-    config, exchange_manager, trader = future_trader_simulator
+async def test__generate_position_id(future_trader_simulator_with_default_linear):
+    config, exchange_manager, trader = future_trader_simulator_with_default_linear
     positions_manager = exchange_manager.exchange_personal_data.positions_manager
-    symbol_contract = DEFAULT_FUTURE_SYMBOL_CONTRACT
-    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_CONTRACT)
+    symbol_contract = DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT
+    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, 
+                                                              DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
 
     if not os.getenv('CYTHON_IGNORE'):
         symbol_contract.set_position_mode(is_one_way=True)
