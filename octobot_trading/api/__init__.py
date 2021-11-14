@@ -91,7 +91,6 @@ from octobot_trading.api.exchange import (
     get_currently_handled_pair_with_time_frame,
     is_overloaded,
     cancel_ccxt_throttle_task,
-    set_exchange_builder_details,
     stop_exchange,
 )
 from octobot_trading.api.modes import (
@@ -207,7 +206,6 @@ __all__ = [
     "get_currently_handled_pair_with_time_frame",
     "is_overloaded",
     "cancel_ccxt_throttle_task",
-    "set_exchange_builder_details",
     "stop_exchange",
     "get_trading_modes",
     "get_trading_mode_symbol",
