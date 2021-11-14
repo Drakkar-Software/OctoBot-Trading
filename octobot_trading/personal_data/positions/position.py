@@ -194,7 +194,6 @@ class Position(util.Initializable):
         """
         if mark_price is not None:
             self._update_mark_price(mark_price)
-        # TODO Check for liquidation before updating size ?
         if update_size is not None:
             self._update_size(update_size)
         if not self.is_idle():

@@ -14,8 +14,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import decimal
-
 import octobot_backtesting.api as api
 import octobot_backtesting.errors as errors
 
