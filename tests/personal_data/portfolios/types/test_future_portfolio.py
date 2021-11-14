@@ -26,53 +26,37 @@ import octobot_trading.exchange_data.contracts as contracts
 from octobot_trading.personal_data import FuturePortfolio, BuyMarketOrder, SellMarketOrder, SellLimitOrder, \
     StopLossOrder, LinearPosition, InversePosition
 
-from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting, \
-    DEFAULT_EXCHANGE_NAME
-
-# All test coroutines will be treated as marked.
-from tests.exchanges.traders import DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE, \
-    DEFAULT_FUTURE_SYMBOL_LEVERAGE, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT, DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT
+from tests import event_loop
+from tests.exchanges import future_simulated_exchange_manager
+from tests.exchanges.traders import future_trader, future_trader_simulator_with_default_linear, DEFAULT_FUTURE_SYMBOL, \
+    DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE, DEFAULT_FUTURE_SYMBOL_LEVERAGE, future_trader_simulator_with_default_inverse
 from tests.test_utils.order_util import fill_market_order
 
+# All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
-DEFAULT_SYMBOL = DEFAULT_FUTURE_SYMBOL
 
-
-async def init_symbol_contract(exchange, symbol=DEFAULT_SYMBOL,
-                               leverage=constants.ONE,
-                               margin_type_isolated=True):
-    # create BTC/USDT future contract
-    await exchange.load_pair_future_contract(symbol)
-    await exchange.set_symbol_leverage(symbol, leverage)
-    await exchange.set_symbol_margin_type(symbol, margin_type_isolated)
-    return exchange.get_pair_future_contract(symbol)
-
-
-async def _update_position_mark_price(exchange_manager, mark_price, symbol=DEFAULT_FUTURE_SYMBOL, side=None):
-    symbol_position = exchange_manager.exchange_personal_data.positions_manager. \
+async def _update_position_mark_price(exchange_manager_inst, mark_price, symbol=DEFAULT_FUTURE_SYMBOL, side=None):
+    symbol_position = exchange_manager_inst.exchange_personal_data.positions_manager. \
         get_symbol_position(symbol=symbol, side=side)
     symbol_position.update(mark_price=mark_price)
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_initial_portfolio(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+async def test_initial_portfolio(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
 
     assert isinstance(portfolio_manager.portfolio, FuturePortfolio)
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_future_portfolio_from_order(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(2))
+async def test_update_future_portfolio_from_order(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(2))
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(100)),
@@ -99,15 +83,14 @@ async def test_update_future_portfolio_from_order(backtesting_trader):
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_available_from_order_with_market_buy_long_linear_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(5))
+async def test_update_portfolio_available_from_order_with_market_buy_long_linear_contract(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(5))
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(1000)),
@@ -123,7 +106,7 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_linear
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(74)),
@@ -147,20 +130,19 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_linear
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_available_from_order_with_market_buy_long_inverse_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+async def test_update_portfolio_available_from_order_with_market_buy_long_inverse_contract(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
     symbol_contract = contracts.FutureContract(
         pair=DEFAULT_FUTURE_SYMBOL,
         margin_type=DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE,
         contract_type=enums.FutureContractType.INVERSE_PERPETUAL,
         current_leverage=DEFAULT_FUTURE_SYMBOL_LEVERAGE)
-    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    trader_inst.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(1000)),
@@ -173,7 +155,7 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_invers
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(74)),
@@ -195,15 +177,14 @@ async def test_update_portfolio_available_from_order_with_market_buy_long_invers
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_data_from_order_with_market_buy_long_linear_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(5))
+async def test_update_portfolio_data_from_order_with_market_buy_long_linear_contract(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(5))
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(1000)),
@@ -217,7 +198,7 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000.0))
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(7.5)),
@@ -231,7 +212,7 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000.0))
 
     # Test reducing LONG position with a sell market order
-    market_sell = SellMarketOrder(trader)
+    market_sell = SellMarketOrder(trader_inst)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        current_price=decimal.Decimal(str(54)),
@@ -242,20 +223,19 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
     await fill_market_order(market_sell)
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(10)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(355))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(354.568))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(10)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(999.568))
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio_linear_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(5))
+async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio_linear_contract(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(5))
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(1000)),
@@ -268,15 +248,14 @@ async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio
             portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders_linear_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(5))
+async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders_linear_contract(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(5))
 
     # Test sell order
-    market_sell = SellMarketOrder(trader)
+    market_sell = SellMarketOrder(trader_inst)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        current_price=decimal.Decimal(str(80)),
@@ -284,7 +263,7 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
                        price=decimal.Decimal(str(80)))
 
     # Test sell order
-    limit_sell = SellLimitOrder(trader)
+    limit_sell = SellLimitOrder(trader_inst)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(str(10)),
@@ -292,7 +271,7 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
                       price=decimal.Decimal(str(10)))
 
     # Test stop loss order
-    stop_loss = StopLossOrder(trader)
+    stop_loss = StopLossOrder(trader_inst)
     stop_loss.update(order_type=enums.TraderOrderType.STOP_LOSS,
                      symbol=DEFAULT_FUTURE_SYMBOL,
                      current_price=decimal.Decimal(str(80)),
@@ -312,27 +291,26 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
 
     await fill_market_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('715.0')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000.0')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('714.616')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.616')
 
     # cancel other orders
     portfolio_manager.portfolio.update_portfolio_available(stop_loss, False)
     portfolio_manager.portfolio.update_portfolio_available(limit_sell, False)
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('808.0')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('807.616')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000.0')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.616')
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_linear_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_linear_contract(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(10))
 
     # Test sell order
-    market_sell = SellMarketOrder(trader)
+    market_sell = SellMarketOrder(trader_inst)
     sell_order_price = decimal.Decimal(10)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,
@@ -341,7 +319,7 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
                        price=sell_order_price)
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     buy_order_price = decimal.Decimal(13)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
@@ -354,35 +332,34 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
 
     # update position mark price
-    await _update_position_mark_price(exchange_manager, sell_order_price, DEFAULT_FUTURE_SYMBOL)
+    await _update_position_mark_price(exchange_manager_inst, sell_order_price, DEFAULT_FUTURE_SYMBOL)
 
     # Open short position
     await fill_market_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('975.0')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('974.9')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.9')
 
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
     # => 975 - 250 = 725
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('962')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('961.9')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.9')
 
     # update position mark price
-    await _update_position_mark_price(exchange_manager, buy_order_price, DEFAULT_FUTURE_SYMBOL)
+    await _update_position_mark_price(exchange_manager_inst, buy_order_price, DEFAULT_FUTURE_SYMBOL)
 
     # Close short position with loss
     await fill_market_order(market_buy)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('975.0')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('976.0')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('974.9')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('975.9')
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_from_liquidated_position_with_long_position_linear_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+async def test_update_portfolio_from_liquidated_position_with_long_position_inverse_contract(
+        future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(10))
 
-    position_inst = LinearPosition(trader, DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT)
+    position_inst = LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
@@ -397,23 +374,18 @@ async def test_update_portfolio_from_liquidated_position_with_long_position_line
     portfolio_manager.portfolio.update_portfolio_from_liquidated_position(position_inst)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('9.9')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('9.9')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('9.99')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('9.99')
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_from_liquidated_position_with_short_position_inverse_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    symbol_contract = contracts.FutureContract(
-        pair=DEFAULT_FUTURE_SYMBOL,
-        margin_type=DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE,
-        contract_type=enums.FutureContractType.INVERSE_PERPETUAL,
-        current_leverage=decimal.Decimal(50))
-    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+async def test_update_portfolio_from_liquidated_position_with_short_position_inverse_contract(
+        future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(50))
+    trader_inst.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, default_contract)
 
-    position_inst = LinearPosition(trader, symbol_contract)
+    position_inst = InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
@@ -438,20 +410,14 @@ async def test_update_portfolio_from_liquidated_position_with_short_position_inv
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").wallet_balance == decimal.Decimal('9998')
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
 async def test_update_portfolio_from_liquidated_position_with_orders_on_short_position_linear_contract(
-        backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    symbol_contract = contracts.FutureContract(
-        pair=DEFAULT_FUTURE_SYMBOL,
-        margin_type=DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE,
-        contract_type=enums.FutureContractType.LINEAR_PERPETUAL,
-        current_leverage=decimal.Decimal(50))
-    trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(50))
+    trader_inst.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, default_contract)
 
-    position_inst = LinearPosition(trader, symbol_contract)
+    position_inst = LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
@@ -460,7 +426,7 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
     position_inst.update(update_size=decimal.Decimal(-100), mark_price=decimal.Decimal(100))
 
     # Test sell order
-    market_sell = SellMarketOrder(trader)
+    market_sell = SellMarketOrder(trader_inst)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        current_price=decimal.Decimal(99),
@@ -475,13 +441,13 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
     await fill_market_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('990.1')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('989.902')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.802')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(90),
@@ -489,14 +455,14 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
                       price=decimal.Decimal(90))
 
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('972.1')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('971.902')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.802')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
     await fill_market_order(market_buy)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('990.1')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('989.902')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.802')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
@@ -510,14 +476,13 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_from_funding_with_long_position(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+async def test_update_portfolio_from_funding_with_long_position(
+        future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(10))
 
-    position_inst = InversePosition(trader, DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT)
+    position_inst = InversePosition(trader_inst, default_contract)
     position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
     position_inst.update_from_raw(
         {
@@ -530,11 +495,11 @@ async def test_update_portfolio_from_funding_with_long_position(backtesting_trad
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
-        '9.999989999999999999999520783')
+        '9.999998999999999999999952078')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
-        '9.999989999999999999999520783')
+        '9.999998999999999999999952078')
 
-    position_inst = InversePosition(trader, DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT)
+    position_inst = InversePosition(trader_inst, default_contract)
     position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
     position_inst.update_from_raw(
         {
@@ -547,19 +512,18 @@ async def test_update_portfolio_from_funding_with_long_position(backtesting_trad
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
-        '10.00001000000000000000047922')
+        '10.00000100000000000000004792')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
-        '10.00001000000000000000047922')
+        '10.00000100000000000000004792')
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_from_funding_with_short_position(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+async def test_update_portfolio_from_funding_with_short_position(
+        future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(10))
 
-    position_inst = InversePosition(trader, DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT)
+    position_inst = InversePosition(trader_inst, default_contract)
     position_inst.update(update_size=decimal.Decimal(-10), mark_price=decimal.Decimal(100))
     position_inst.update_from_raw(
         {
@@ -572,11 +536,11 @@ async def test_update_portfolio_from_funding_with_short_position(backtesting_tra
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
-        '10.00002999999999999999737189')
+        '10.00000299999999999999973719')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
-        '10.00002999999999999999737189')
+        '10.00000299999999999999973719')
 
-    position_inst = InversePosition(trader, DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT)
+    position_inst = InversePosition(trader_inst, default_contract)
     position_inst.update(update_size=decimal.Decimal(-10), mark_price=decimal.Decimal(100))
     position_inst.update_from_raw(
         {
@@ -589,20 +553,18 @@ async def test_update_portfolio_from_funding_with_short_position(backtesting_tra
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
-        '9.999989999999999999995455021')
+        '9.999998999999999999999545503')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
-        '9.999989999999999999995455021')
+        '9.999998999999999999999545503')
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_data_with_fees(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+async def test_update_portfolio_data_with_fees(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(10))
 
     # Test sell order
-    market_sell = SellMarketOrder(trader)
+    market_sell = SellMarketOrder(trader_inst)
     sell_order_price = decimal.Decimal(10)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,
@@ -621,14 +583,13 @@ async def test_update_portfolio_data_with_fees(backtesting_trader):
         assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('995')
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contract(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(10))
 
-    position_inst = LinearPosition(trader, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
+    position_inst = LinearPosition(trader_inst, default_contract)
     position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
     position_inst.update_from_raw(
         {
@@ -637,7 +598,7 @@ async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contrac
     )
 
     # Test sell order
-    market_sell = SellMarketOrder(trader)
+    market_sell = SellMarketOrder(trader_inst)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        current_price=decimal.Decimal(101),
@@ -653,20 +614,19 @@ async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contrac
 
     # fill order
     await fill_market_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(1000)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(747.5))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal("998.99")
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str("746.49"))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_reduce_size_with_market_buy_short_linear_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+async def test_update_portfolio_reduce_size_with_market_buy_short_linear_contract(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(10))
 
-    position_inst = LinearPosition(trader, DEFAULT_FUTURE_SYMBOL_LINEAR_CONTRACT)
+    position_inst = LinearPosition(trader_inst, default_contract)
     position_inst.update(update_size=decimal.Decimal(-70), mark_price=decimal.Decimal(10))
     position_inst.update_from_raw(
         {
@@ -675,7 +635,7 @@ async def test_update_portfolio_reduce_size_with_market_buy_short_linear_contrac
     )
 
     # Test buy order
-    market_buy = BuyMarketOrder(trader)
+    market_buy = BuyMarketOrder(trader_inst)
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=decimal.Decimal(9),
@@ -697,14 +657,12 @@ async def test_update_portfolio_reduce_size_with_market_buy_short_linear_contrac
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
 
 
-@pytest.mark.parametrize("backtesting_exchange_manager", [(None, DEFAULT_EXCHANGE_NAME, False, False, True)],
-                         indirect=["backtesting_exchange_manager"])
-async def test_update_portfolio_from_pnl_with_long_inverse_contract(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-    await init_symbol_contract(exchange_manager.exchange, leverage=decimal.Decimal(10))
+async def test_update_portfolio_from_pnl_with_long_inverse_contract(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(10))
 
-    position_inst = LinearPosition(trader, DEFAULT_FUTURE_SYMBOL_INVERSE_CONTRACT)
+    position_inst = InversePosition(trader_inst, default_contract)
     position_inst.update(update_size=decimal.Decimal(-70), mark_price=decimal.Decimal(10))
     position_inst.update_from_raw(
         {
