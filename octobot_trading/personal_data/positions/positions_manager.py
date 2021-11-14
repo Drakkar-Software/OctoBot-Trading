@@ -102,7 +102,6 @@ class PositionsManager(util.Initializable):
         if position.position_id not in self.positions:
             self.positions[position.position_id] = position
             return True
-        # TODO
         return False
 
     def clear(self):
