@@ -548,12 +548,15 @@ class Position(util.Initializable):
 
     def to_string(self):
         return (f"{self.symbol} | "
-                f"MarkPrice : {str(self.mark_price)} | "
-                f"Quantity : {str(self.quantity)} | "
-                f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
-                f"Unrealized PNL : {self.unrealised_pnl} ({round(self.get_unrealised_pnl_percent(), 3)} %) | "
-                f"Liquidation price : {self.liquidation_price} | "
-                f"Realized PNL : {self.realised_pnl}")
+                f"Size : {round(self.size, 10).normalize()} "
+                f"({self.side.value} x{self.symbol_contract.current_leverage}) | "
+                f"MarkPrice : {round(self.mark_price, 10).normalize()} | "
+                f"Unrealized PNL : {round(self.unrealised_pnl, 14).normalize()} "
+                f"({round(self.get_unrealised_pnl_percent(), 3)} %) | "
+                f"Liquidation price : {round(self.liquidation_price, 10).normalize()} | "
+                f"Realized PNL : {round(self.realised_pnl, 14).normalize()} | "
+                f"State : {self.state.state.value if self.state is not None else 'Unknown'} "
+                f"({self.symbol_contract.position_mode.value})")
 
     def close(self):
         self.reset()
