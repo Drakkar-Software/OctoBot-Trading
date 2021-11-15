@@ -73,6 +73,8 @@ class DisplayedElements:
         for part, datasets in graphs_by_parts.items():
             with self.part(part, element_type=trading_enums.DisplayedElementTypes.CHART.value) as part:
                 for title, dataset in datasets.items():
+                    if not dataset:
+                        continue
                     x = []
                     y = []
                     open = []

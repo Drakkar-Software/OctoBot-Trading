@@ -126,7 +126,7 @@ async def plot_historical_pnl_value(reader, plotted_element, x_as_trade_count=Tr
     #   futures: when position going to 0 (from long/short) => trade is closed
     #   spot: when position lowered => trade is closed
     price_data, trades_data, moving_portfolio_data = await _load_historical_values(reader)
-    if not price_data:
+    if not (price_data and next(iter(price_data.values()))):
         return
     x_data = [0 if x_as_trade_count else next(iter(price_data.values()))[0][commons_enums.PriceIndexes.IND_PRICE_TIME.value]]
     pnl_data = [0]
