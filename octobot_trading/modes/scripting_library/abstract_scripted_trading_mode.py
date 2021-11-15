@@ -180,18 +180,12 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             await producer.set_final_eval(*producer.last_call)
 
     @contextlib.asynccontextmanager
-    async def get_metadata_writer(self):
-        writer = None
-        try:
-            optimizer_id = self.get_optimizer_id()
-            writer = scripting_library.DBWriter(
-                self.get_db_name(backtesting=self.exchange_manager.backtesting, metadata_db=True,
-                                 optimizer_id=optimizer_id)
-            )
+    async def get_metadata_writer(self, with_lock):
+        file_path = self.get_db_name(backtesting=self.exchange_manager.backtesting,
+                                     metadata_db=True,
+                                     optimizer_id=self.get_optimizer_id())
+        async with scripting_library.DBWriter.database(file_path, with_lock=with_lock) as writer:
             yield writer
-        finally:
-            if writer is not None:
-                await writer.close()
 
     def get_optimizer_id(self):
         return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
@@ -284,7 +278,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         """
         if not self.are_metadata_saved and self.exchange_manager.backtesting:     # todo ensure multiple pairs conflicts
             await self.writer.close()
-            async with self.trading_mode.get_metadata_writer() as writer:
+            async with self.trading_mode.get_metadata_writer(with_lock=True) as writer:
                 await scripting_library.save_metadata(writer, await self.get_backtesting_metadata())
                 self.are_metadata_saved = True
         await super().stop()

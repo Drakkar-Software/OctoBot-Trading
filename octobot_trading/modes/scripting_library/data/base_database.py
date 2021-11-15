@@ -21,8 +21,10 @@ import octobot_trading.modes.scripting_library.data as data
 
 
 class BaseDatabase:
-    def __init__(self, file_path: str, database_adaptor=databases.TinyDBAdaptor, **kwargs):
-        self._database = databases.DocumentDatabase(database_adaptor(file_path, **kwargs))
+    def __init__(self, file_path: str, database_adaptor=databases.TinyDBAdaptor, cache_size=None, **kwargs):
+        if database_adaptor is not None:
+            self._database = databases.DocumentDatabase(database_adaptor(file_path, cache_size=cache_size, **kwargs))
+            self._database.initialize()
         self.are_data_initialized = False
         self.cache = data.DatabaseCache()
 
@@ -46,10 +48,20 @@ class BaseDatabase:
 
     @classmethod
     @contextlib.asynccontextmanager
-    async def database(cls, *args, **kwargs):
+    async def database(cls, *args, with_lock=False, cache_size=None, **kwargs):
+        if with_lock:
+            adaptor = kwargs.pop("database_adaptor", databases.TinyDBAdaptor)
+            if adaptor is None:
+                raise RuntimeError("database_adaptor parameter required")
+            adaptor_instance = adaptor(*args, cache_size=cache_size, **kwargs)
+            database = cls(*args, database_adaptor=None, cache_size=cache_size, **kwargs)
+            async with databases.DocumentDatabase.locked_database(adaptor_instance) as db:
+                database._database = db
+                yield database
+            return
         database = None
         try:
-            database = cls(*args, **kwargs)
+            database = cls(*args, cache_size=cache_size, **kwargs)
             yield database
         finally:
             if database is not None:
