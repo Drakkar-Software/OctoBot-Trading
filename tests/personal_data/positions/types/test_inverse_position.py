@@ -235,3 +235,59 @@ async def test_update_fee_to_close(future_trader_simulator_with_default_inverse)
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_fee_to_close()
     assert position_inst.fee_to_close == decimal.Decimal("0.002")
+
+async def test_update_average_entry_price_increased_long(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    position_inst = personal_data.InversePosition(trader_inst, default_contract)
+
+    position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(10))
+    position_inst.entry_price = decimal.Decimal(10)
+    position_inst.update_average_entry_price(decimal.Decimal(10), decimal.Decimal(20))
+    assert position_inst.entry_price == decimal.Decimal("13.33333333333333333333333333")
+    position_inst.update_average_entry_price(decimal.Decimal(100), decimal.Decimal(20))
+    assert position_inst.entry_price == decimal.Decimal("19.13043478260869565217391304")
+    position_inst.update_average_entry_price(decimal.Decimal(2), decimal.Decimal(500))
+    assert position_inst.entry_price == decimal.Decimal("22.78218847083189506385916465")
+
+
+async def test_update_average_entry_price_increased_short(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    position_inst = personal_data.InversePosition(trader_inst, default_contract)
+
+    position_inst.update(update_size=-decimal.Decimal(10), mark_price=decimal.Decimal(10))
+    position_inst.entry_price = decimal.Decimal(10)
+    position_inst.update_average_entry_price(-decimal.Decimal(10), decimal.Decimal(5))
+    assert position_inst.entry_price == decimal.Decimal("6.666666666666666666666666667")
+    position_inst.update_average_entry_price(-decimal.Decimal(100), decimal.Decimal(2))
+    assert position_inst.entry_price == decimal.Decimal("2.135922330097087378640776699")
+    position_inst.update_average_entry_price(-decimal.Decimal(2), decimal.Decimal(0.1))
+    assert position_inst.entry_price == decimal.Decimal("0.4861878453038674251843327502")
+
+
+async def test_update_average_entry_price_decreased_long(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    position_inst = personal_data.InversePosition(trader_inst, default_contract)
+
+    position_inst.update(update_size=decimal.Decimal(100), mark_price=decimal.Decimal(10))
+    position_inst.entry_price = decimal.Decimal(10)
+    position_inst.update_average_entry_price(-decimal.Decimal(10), decimal.Decimal(20))
+    assert position_inst.entry_price == decimal.Decimal("9.473684210526315789473684211")
+    position_inst.update_average_entry_price(-decimal.Decimal(25), decimal.Decimal(1.5))
+    assert position_inst.entry_price == constants.ZERO
+    position_inst.update_average_entry_price(-decimal.Decimal(2), decimal.Decimal(7000))
+    assert position_inst.entry_price == constants.ZERO
+
+
+async def test_update_average_entry_price_decreased_short(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    position_inst = personal_data.InversePosition(trader_inst, default_contract)
+
+    position_inst.update(update_size=-decimal.Decimal(100), mark_price=decimal.Decimal(10))
+    position_inst.entry_price = decimal.Decimal(10)
+    position_inst.update_average_entry_price(decimal.Decimal(10), decimal.Decimal(20))
+    assert position_inst.entry_price == decimal.Decimal("9.473684210526315789473684211")
+    position_inst.update_average_entry_price(decimal.Decimal(30), decimal.Decimal('35.678'))
+    assert position_inst.entry_price == decimal.Decimal("7.205574131005542714808248993")
+    position_inst.update_average_entry_price(decimal.Decimal(2), decimal.Decimal("0.0000000025428"))
+    assert position_inst.entry_price == constants.ZERO
+
