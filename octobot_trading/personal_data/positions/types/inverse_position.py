@@ -129,3 +129,19 @@ class InversePosition(position_class.Position):
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.fee_to_close = constants.ZERO
+
+    def update_average_entry_price(self, update_size, update_price):
+        """
+        Average entry price = total quantity of contracts / total contract value in currency
+        Total contract value in currency = [(Current position quantity / Current position entry price) + (Update quantity / Update price)]
+        """
+        try:
+            total_contract_value = self.size / self.entry_price + update_size / update_price
+            self.entry_price = (self.size + update_size) / total_contract_value \
+                if total_contract_value != constants.ZERO else constants.ONE
+            if self.entry_price < constants.ZERO:
+                self.entry_price = constants.ZERO
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            """
+            Nothing to do
+            """
