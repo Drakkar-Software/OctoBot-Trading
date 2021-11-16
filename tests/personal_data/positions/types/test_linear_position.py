@@ -117,7 +117,7 @@ async def test_update_initial_margin(future_trader_simulator_with_default_linear
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_initial_margin()
     assert position_inst.initial_margin == decimal.Decimal("10000")
-    position_inst.leverage = constants.ONE_HUNDRED
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_initial_margin()
     assert position_inst.initial_margin == decimal.Decimal("2")
@@ -149,7 +149,7 @@ async def test_update_isolated_liquidation_price_with_long(future_trader_simulat
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_isolated_liquidation_price()
     assert position_inst.liquidation_price == decimal.Decimal("10000.00000000000020816681712")
-    position_inst.leverage = constants.ONE_HUNDRED
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
     position_inst.update(update_size=-constants.ONE_HUNDRED,
                          mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
     position_inst.update_isolated_liquidation_price()
@@ -168,7 +168,7 @@ async def test_update_isolated_liquidation_price_with_short(
     position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_isolated_liquidation_price()
     assert position_inst.liquidation_price == decimal.Decimal("10200.00000000000020816681712")
-    position_inst.leverage = constants.ONE_HUNDRED
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
     position_inst.update(update_size=-constants.ONE_HUNDRED,
                          mark_price=constants.ONE_HUNDRED / decimal.Decimal(10))
     position_inst.update_isolated_liquidation_price()
@@ -184,7 +184,7 @@ async def test_get_bankruptcy_price_with_long(future_trader_simulator_with_defau
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == constants.ZERO
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == constants.ONE_HUNDRED
-    position_inst.leverage = constants.ONE_HUNDRED
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == decimal.Decimal("99.00")
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("100")
     position_inst.update(update_size=constants.ONE_HUNDRED,
@@ -202,7 +202,7 @@ async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_defa
     position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == decimal.Decimal("200")
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("100")
-    position_inst.leverage = constants.ONE_HUNDRED
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == decimal.Decimal('101.00')
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal('100')
     exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
