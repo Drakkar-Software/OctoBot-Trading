@@ -489,7 +489,3 @@ class DBRows(enum.Enum):
     VALUE = "value"
     START_TIME = "start_time"
     END_TIME = "end_time"
-
-
-class MultiprocessingLocks(enum.Enum):
-    DBLock = "db_lock"
