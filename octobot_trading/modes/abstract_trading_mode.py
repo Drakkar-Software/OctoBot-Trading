@@ -233,3 +233,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         if constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT in config:
             min_strategies_count = config[constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT]
         return min_strategies_count
+
+    @classmethod
+    def get_required_candles_count(cls, tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration):
+        return tentacles_manager_api.get_tentacle_config(tentacles_setup_config, cls).get(
+            common_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT,
+            -1
+        )

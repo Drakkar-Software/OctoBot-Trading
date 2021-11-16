@@ -55,6 +55,9 @@ class ExchangeConfig(util.Initializable):
         # list of time frames to be used for real-time purposes (short time frames)
         self.real_time_time_frames = []
 
+        # number of required historical candles
+        self.required_historical_candles_count = []
+
     async def initialize_impl(self):
         pass
 
@@ -63,6 +66,9 @@ class ExchangeConfig(util.Initializable):
 
     def set_config_time_frame(self):  # TODO
         self._set_config_time_frame()
+
+    def set_historical_settings(self):
+        self.required_historical_candles_count = self.config.get(constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT, -1)
 
     def get_shortest_time_frame(self):
         return self.traded_time_frames[-1]

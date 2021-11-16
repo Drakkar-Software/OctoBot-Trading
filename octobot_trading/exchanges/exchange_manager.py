@@ -120,6 +120,7 @@ class ExchangeManager(util.Initializable):
         self._load_config_symbols_and_time_frames()
         self.exchange_config.set_config_time_frame()
         self.exchange_config.set_config_traded_pairs()
+        self.exchange_config.set_historical_settings()
 
     def need_user_stream(self):
         return self.config[common_constants.CONFIG_TRADER][common_constants.CONFIG_ENABLED_OPTION]

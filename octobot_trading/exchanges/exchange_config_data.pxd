@@ -28,11 +28,13 @@ cdef class ExchangeConfig(util.Initializable):
     cdef public list available_required_time_frames
     cdef public list traded_time_frames
     cdef public list real_time_time_frames
+    cdef public int required_historical_candles_count
 
     cdef public object exchange_manager
 
     cpdef void set_config_time_frame(self)
     cpdef void set_config_traded_pairs(self)
+    cpdef void set_historical_settings(self)
     cpdef object get_shortest_time_frame(self)
 
     @staticmethod

@@ -84,11 +84,23 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             self.logger.debug("Candle history initial fetch completed")
             self.is_initialized = True
 
+    def _get_historical_candles_count(self):
+        if self.channel.exchange_manager.exchange_config.required_historical_candles_count > 0:
+            if self.channel.exchange_manager.exchange_name in constants.FULL_CANDLE_HISTORY_EXCHANGES:
+                return self.channel.exchange_manager.exchange_config.required_historical_candles_count
+            else:
+                self.logger.warning(f"Can't initialize the required "
+                                    f"{self.channel.exchange_manager.exchange_config.required_historical_candles_count}"
+                                    f" historical candles: {self.channel.exchange_manager.exchange_name} is not "
+                                    f"supporting candles history.")
+        return self.OHLCV_OLD_LIMIT
+
     async def _get_init_candles(self, time_frame, pair):
-        if self.OHLCV_OLD_LIMIT > self.DEFAULT_OHLCV_OLD_LIMIT:
+        historical_candles_count_limit = self._get_historical_candles_count()
+        if historical_candles_count_limit > self.DEFAULT_OHLCV_OLD_LIMIT:
             tf_seconds = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
             end_time = time.time() * 1000
-            start_time = end_time - self.OHLCV_OLD_LIMIT * tf_seconds * 1000
+            start_time = end_time - historical_candles_count_limit * tf_seconds * 1000
             candles = []
             async for new_candles in backtesting_api.historical_ohlcv_collector(self.channel.exchange_manager, pair,
                                                                                 time_frame, start_time, end_time):
