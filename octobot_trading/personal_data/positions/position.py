@@ -218,9 +218,9 @@ class Position(util.Initializable):
         if self.entry_price == constants.ZERO:
             self.entry_price = mark_price
 
-    def update_size_from_order(self, order):
+    def update_from_order(self, order):
         """
-        Update position size from filled order portfolio
+        Update position size and entry price from filled order portfolio
         :param order: the filled order instance
         :return: the updated quantity, True if the order increased position size
         """
@@ -237,6 +237,9 @@ class Position(util.Initializable):
         # Calculates position quantity update from order
         size_update = self._calculates_size_update_from_filled_order(order, size_to_close)
         is_increasing_position_size = self._is_update_increasing_size(size_update=size_update)
+
+        # Updates position average entry price from order
+        self.update_average_entry_price(size_update, order.filled_price)
 
         self.update(update_size=size_update)
         return size_update, is_increasing_position_size
@@ -338,6 +341,9 @@ class Position(util.Initializable):
 
     def update_initial_margin(self):
         raise NotImplementedError("update_initial_margin not implemented")
+
+    def update_average_entry_price(self, update_size, update_price):
+        raise NotImplementedError("get_average_entry_price not implemented")
 
     def get_maintenance_margin_rate(self):
         """
@@ -550,7 +556,8 @@ class Position(util.Initializable):
         return (f"{self.symbol} | "
                 f"Size : {round(self.size, 10).normalize()} "
                 f"({self.side.value} x{self.symbol_contract.current_leverage}) | "
-                f"MarkPrice : {round(self.mark_price, 10).normalize()} | "
+                f"Mark price : {round(self.mark_price, 10).normalize()} | "
+                f"Entry price : {round(self.entry_price, 10).normalize()} | "
                 f"Unrealized PNL : {round(self.unrealised_pnl, 14).normalize()} "
                 f"({round(self.get_unrealised_pnl_percent(), 3)} %) | "
                 f"Liquidation price : {round(self.liquidation_price, 10).normalize()} | "

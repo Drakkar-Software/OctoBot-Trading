@@ -89,10 +89,11 @@ cdef class Position(util.Initializable):
     cdef void _check_for_liquidation(self)
 
     cpdef void update(self, object update_size=*, object mark_price=*)
-    cpdef tuple update_size_from_order(self, object order)
+    cpdef tuple update_from_order(self, object order)
     cpdef void update_value(self)
     cpdef void update_pnl(self)
     cpdef void update_initial_margin(self)
+    cpdef void update_average_entry_price(self, update_size, update_price)
     cpdef object get_maintenance_margin_rate(self)
     cpdef object get_initial_margin_rate(self)
     cpdef object calculate_maintenance_margin(self)
