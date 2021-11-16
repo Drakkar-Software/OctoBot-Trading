@@ -37,7 +37,6 @@ cdef class Position(util.Initializable):
 
     cdef public positions_states.PositionState state
 
-    cdef public object leverage
     cdef public object entry_price
     cdef public object mark_price
     cdef public object liquidation_price
@@ -70,8 +69,6 @@ cdef class Position(util.Initializable):
                       object margin,
                       object unrealised_pnl,
                       object realised_pnl,
-                      object leverage,
-                      object margin_type,
                       object status=*,
                       object side=*)
     cdef bint _should_change(self, object original_value, object new_value)
@@ -93,7 +90,7 @@ cdef class Position(util.Initializable):
     cpdef void update_value(self)
     cpdef void update_pnl(self)
     cpdef void update_initial_margin(self)
-    cpdef void update_average_entry_price(self, update_size, update_price)
+    cpdef void update_average_entry_price(self, object update_size, object update_price)
     cpdef object get_maintenance_margin_rate(self)
     cpdef object get_initial_margin_rate(self)
     cpdef object calculate_maintenance_margin(self)
