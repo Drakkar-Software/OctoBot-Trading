@@ -240,7 +240,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
         context = scripting_library.Context(
-            self,
+            self.trading_mode,
             self.exchange_manager,
             self.exchange_manager.trader,
             self.exchange_name,

@@ -97,6 +97,7 @@ from octobot_trading.api.exchange import (
 )
 from octobot_trading.api.modes import (
     get_trading_modes,
+    get_trading_mode_writer,
     get_trading_mode_symbol,
     get_trading_mode_current_state,
     get_activated_trading_mode,
@@ -104,6 +105,7 @@ from octobot_trading.api.modes import (
     create_trading_mode,
 )
 from octobot_trading.api.trader import (
+    get_trader,
     has_trader,
     is_trader_enabled_in_config_from_exchange_manager,
     is_trader_existing_and_enabled,
@@ -215,11 +217,13 @@ __all__ = [
     "cancel_ccxt_throttle_task",
     "stop_exchange",
     "get_trading_modes",
+    "get_trading_mode_writer",
     "get_trading_mode_symbol",
     "get_trading_mode_current_state",
     "get_activated_trading_mode",
     "create_trading_modes",
     "create_trading_mode",
+    "get_trader",
     "has_trader",
     "is_trader_enabled_in_config_from_exchange_manager",
     "is_trader_existing_and_enabled",

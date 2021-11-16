@@ -18,7 +18,7 @@
 class Context:
     def __init__(
         self,
-        current_trading_mode_producer,
+        trading_mode,
         exchange_manager,
         trader,
         exchange_name,
@@ -31,7 +31,7 @@ class Context:
         writer,
         trading_mode_class,
     ):
-        self.current_trading_mode_producer = current_trading_mode_producer
+        self.trading_mode = trading_mode
         self.exchange_manager = exchange_manager
         self.trader = trader
         self.exchange_name = exchange_name

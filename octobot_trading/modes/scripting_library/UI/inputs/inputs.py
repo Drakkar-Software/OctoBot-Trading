@@ -25,8 +25,8 @@ async def user_input(
     max_val=None,
     options=None,
 ):
-    value = ctx.current_trading_mode_producer.trading_mode.trading_config.get(name.replace(" ", "_"), def_val) \
-        if ctx.current_trading_mode_producer.trading_mode.trading_config else None
+    value = ctx.trading_mode.trading_config.get(name.replace(" ", "_"), def_val) \
+        if ctx.trading_mode.trading_config else None
     input_query = await ctx.writer.search()
     if not ctx.writer.are_data_initialized and await ctx.writer.count(
             enums.DBTables.INPUTS.value,
