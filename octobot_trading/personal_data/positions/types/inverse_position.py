@@ -52,7 +52,7 @@ class InversePosition(position_class.Position):
         Updates position initial margin = Position quantity / (entry price x leverage)
         """
         try:
-            self.initial_margin = self.quantity / (self.entry_price * self.leverage)
+            self.initial_margin = self.quantity / (self.entry_price * self.symbol_contract.current_leverage)
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.initial_margin = constants.ZERO
@@ -74,13 +74,13 @@ class InversePosition(position_class.Position):
         """
         try:
             if self.is_long():
-                self.liquidation_price = (self.entry_price * self.leverage) / \
-                                         (self.leverage + constants.ONE - (
-                                                 self.get_maintenance_margin_rate() * self.leverage))
+                self.liquidation_price = (self.entry_price * self.symbol_contract.current_leverage) / \
+                                         (self.symbol_contract.current_leverage + constants.ONE -
+                                          (self.get_maintenance_margin_rate() * self.symbol_contract.current_leverage))
             elif self.is_short():
-                self.liquidation_price = (self.entry_price * self.leverage) / \
-                                         (self.leverage - constants.ONE + (
-                                                 self.get_maintenance_margin_rate() * self.leverage))
+                self.liquidation_price = (self.entry_price * self.symbol_contract.current_leverage) / \
+                                         (self.symbol_contract.current_leverage - constants.ONE +
+                                          (self.get_maintenance_margin_rate() * self.symbol_contract.current_leverage))
             else:
                 self.liquidation_price = constants.ZERO
             self.update_fee_to_close()
@@ -96,11 +96,13 @@ class InversePosition(position_class.Position):
         """
         try:
             if self.is_long():
-                return (self.mark_price if with_mark_price else self.entry_price * self.leverage) \
-                       / (self.leverage + constants.ONE)
+                return (self.mark_price
+                        if with_mark_price else self.entry_price * self.symbol_contract.current_leverage) \
+                       / (self.symbol_contract.current_leverage + constants.ONE)
             elif self.is_short():
-                return (self.mark_price if with_mark_price else self.entry_price * self.leverage) \
-                       / (self.leverage - constants.ONE)
+                return (self.mark_price
+                        if with_mark_price else self.entry_price * self.symbol_contract.current_leverage) \
+                       / (self.symbol_contract.current_leverage - constants.ONE)
             return constants.ZERO
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
@@ -133,7 +135,8 @@ class InversePosition(position_class.Position):
     def update_average_entry_price(self, update_size, update_price):
         """
         Average entry price = total quantity of contracts / total contract value in currency
-        Total contract value in currency = [(Current position quantity / Current position entry price) + (Update quantity / Update price)]
+        Total contract value in currency = [(Current position quantity / Current position entry price)
+                                            + (Update quantity / Update price)]
         """
         try:
             total_contract_value = self.size / self.entry_price + update_size / update_price

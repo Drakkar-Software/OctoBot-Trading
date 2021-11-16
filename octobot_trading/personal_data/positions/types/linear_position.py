@@ -47,7 +47,7 @@ class LinearPosition(position_class.Position):
         Updates position initial margin = (Position quantity x entry price) / leverage
         """
         try:
-            self.initial_margin = (self.quantity * self.entry_price) / self.leverage
+            self.initial_margin = (self.quantity * self.entry_price) / self.symbol_contract.current_leverage
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.initial_margin = constants.ZERO
@@ -115,7 +115,8 @@ class LinearPosition(position_class.Position):
     def update_average_entry_price(self, update_size, update_price):
         """
         Average entry price = total contract value in market / total quantity of contracts
-        Total contract value in market = [(Current position quantity * Current position entry price) + (Update quantity * Update price)]
+        Total contract value in market = [(Current position quantity * Current position entry price)
+                                          + (Update quantity * Update price)]
         """
         total_contract_value = self.size + update_size
         self.entry_price = ((self.size * self.entry_price + update_size * update_price) /

@@ -40,8 +40,6 @@ class Position(util.Initializable):
 
         # Contract
         self.symbol_contract = symbol_contract
-        self.leverage = symbol_contract.current_leverage if symbol_contract.current_leverage else constants.ONE
-        self.margin_type = None
 
         # Prices
         self.entry_price = constants.ZERO
@@ -110,7 +108,7 @@ class Position(util.Initializable):
                 entry_price, mark_price, liquidation_price,
                 quantity, size, value, margin,
                 unrealised_pnl, realised_pnl,
-                leverage, margin_type, status=None, side=None):
+                status=None, side=None):
         changed: bool = False
 
         if self._should_change(self.position_id, position_id):
@@ -152,18 +150,6 @@ class Position(util.Initializable):
         if self._should_change(self.realised_pnl, realised_pnl):
             self.realised_pnl = realised_pnl
             changed = True
-
-        if self._should_change(self.leverage, leverage):
-            self.leverage = leverage
-            changed = True
-
-        if self._should_change(self.margin_type, margin_type):
-            if self.margin_type is not None:
-                # The margin type changed, we have to recreate the position
-                self.margin_type = margin_type
-                asyncio.create_task(self.recreate())
-
-            self.margin_type = margin_type
 
         if self._should_change(self.entry_price, entry_price):
             self.entry_price = entry_price
@@ -322,13 +308,13 @@ class Position(util.Initializable):
         if self.quantity == constants.ZERO and self.size != constants.ZERO:
             self._update_quantity()
         elif self.size == constants.ZERO and self.quantity != constants.ZERO:
-            self.size = self.quantity * self.leverage
+            self.size = self.quantity * self.symbol_contract.current_leverage
 
     def _update_quantity(self):
         """
         Update position quantity from position quantity
         """
-        self.quantity = self.size / self.leverage
+        self.quantity = self.size / self.symbol_contract.current_leverage
 
     def update_value(self):
         raise NotImplementedError("update_value not implemented")
@@ -357,7 +343,7 @@ class Position(util.Initializable):
         :return: Initial Margin Rate = 1 / Leverage
         """
         try:
-            return constants.ONE / self.leverage
+            return constants.ONE / self.symbol_contract.current_leverage
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
@@ -494,9 +480,6 @@ class Position(util.Initializable):
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
             unrealised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, constants.ZERO),
             realised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO),
-            leverage=raw_position.get(enums.ExchangeConstantsPositionColumns.LEVERAGE.value, None),
-            margin_type=raw_position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value,
-                                         enums.TraderPositionType.ISOLATED),
             status=position_util.parse_position_status(raw_position),
             side=raw_position.get(enums.ExchangeConstantsPositionColumns.SIDE.value, None)
         )
@@ -518,8 +501,6 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
             enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value: self.unrealised_pnl,
             enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
-            enums.ExchangeConstantsPositionColumns.LEVERAGE.value: self.leverage,
-            enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value: self.margin_type,
         }
 
     def _check_for_liquidation(self):
