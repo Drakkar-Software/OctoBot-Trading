@@ -243,3 +243,59 @@ async def test_update_fee_to_close(future_trader_simulator_with_default_linear):
     position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_fee_to_close()
     assert position_inst.fee_to_close == decimal.Decimal("10")
+
+
+async def test_update_average_entry_price_increased_long(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+
+    position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(10))
+    position_inst.entry_price = decimal.Decimal(10)
+    position_inst.update_average_entry_price(decimal.Decimal(10), decimal.Decimal(20))
+    assert position_inst.entry_price == decimal.Decimal(15)
+    position_inst.update_average_entry_price(decimal.Decimal(100), decimal.Decimal(20))
+    assert position_inst.entry_price == decimal.Decimal("19.54545454545454545454545455")
+    position_inst.update_average_entry_price(decimal.Decimal(2), decimal.Decimal(500))
+    assert position_inst.entry_price == decimal.Decimal("99.62121212121212121212121217")
+
+
+async def test_update_average_entry_price_increased_short(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+
+    position_inst.update(update_size=-decimal.Decimal(10), mark_price=decimal.Decimal(10))
+    position_inst.entry_price = decimal.Decimal(10)
+    position_inst.update_average_entry_price(-decimal.Decimal(10), decimal.Decimal(5))
+    assert position_inst.entry_price == decimal.Decimal(7.5)
+    position_inst.update_average_entry_price(-decimal.Decimal(100), decimal.Decimal(2))
+    assert position_inst.entry_price == decimal.Decimal(2.5)
+    position_inst.update_average_entry_price(-decimal.Decimal(2), decimal.Decimal(0.1))
+    assert position_inst.entry_price == decimal.Decimal("2.100000000000000000925185854")
+
+
+async def test_update_average_entry_price_decreased_long(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+
+    position_inst.update(update_size=decimal.Decimal(100), mark_price=decimal.Decimal(10))
+    position_inst.entry_price = decimal.Decimal(10)
+    position_inst.update_average_entry_price(-decimal.Decimal(10), decimal.Decimal(20))
+    assert position_inst.entry_price == decimal.Decimal("8.888888888888888888888888889")
+    position_inst.update_average_entry_price(-decimal.Decimal(50), decimal.Decimal(1.5))
+    assert position_inst.entry_price == decimal.Decimal("16.27777777777777777777777778")
+    position_inst.update_average_entry_price(-decimal.Decimal(2), decimal.Decimal(7000))
+    assert position_inst.entry_price == constants.ZERO
+
+
+async def test_update_average_entry_price_decreased_short(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+
+    position_inst.update(update_size=-decimal.Decimal(100), mark_price=decimal.Decimal(10))
+    position_inst.entry_price = decimal.Decimal(10)
+    position_inst.update_average_entry_price(decimal.Decimal(10), decimal.Decimal(20))
+    assert position_inst.entry_price == decimal.Decimal("8.888888888888888888888888889")
+    position_inst.update_average_entry_price(decimal.Decimal(100), decimal.Decimal('35.678'))
+    assert position_inst.entry_price == decimal.Decimal("2678.911111111111111111111111")
+    position_inst.update_average_entry_price(decimal.Decimal(2), decimal.Decimal("0.0000000025428"))
+    assert position_inst.entry_price == decimal.Decimal("2733.582766439857403174603174")

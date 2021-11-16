@@ -111,3 +111,14 @@ class LinearPosition(position_class.Position):
         :return: Fee to close = (Quantity * Bankruptcy Price derived from mark price) x Taker fee
         """
         self.fee_to_close = self.quantity * self.get_bankruptcy_price(with_mark_price=True) * self.get_taker_fee()
+
+    def update_average_entry_price(self, update_size, update_price):
+        """
+        Average entry price = total contract value in market / total quantity of contracts
+        Total contract value in market = [(Current position quantity * Current position entry price) + (Update quantity * Update price)]
+        """
+        total_contract_value = self.size + update_size
+        self.entry_price = ((self.size * self.entry_price + update_size * update_price) /
+                            (total_contract_value if total_contract_value != constants.ZERO else constants.ONE))
+        if self.entry_price < constants.ZERO:
+            self.entry_price = constants.ZERO
