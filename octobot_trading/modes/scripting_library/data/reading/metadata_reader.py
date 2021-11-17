@@ -14,9 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as trading_enums
-import octobot_trading.modes.scripting_library.data.reading.reader as reader
+import octobot_commons.databases as databases
 
 
-class MetadataReader(reader.DBReader):
+class MetadataReader(databases.DBReader):
     async def read(self) -> list:
         return await self.all(trading_enums.DBTables.METADATA.value)

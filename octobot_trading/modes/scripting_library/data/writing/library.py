@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import os
 
 import numpy
 
@@ -71,7 +72,8 @@ async def plot(ctx, title, x=None,
                pair=None, kind="scatter", mode="lines", init_only=True,
                condition=None, x_function=exchange_public_data.Time,
                x_multiplier=1000,
-               chart=trading_enums.PlotCharts.SUB_CHART.value):
+               chart=trading_enums.PlotCharts.SUB_CHART.value,
+               cache_value=None):
     if condition is not None:
         candidate_y = []
         candidate_x = []
@@ -90,38 +92,54 @@ async def plot(ctx, title, x=None,
             (indicator_query.pair == (pair or ctx.traded_pair))
             & (indicator_query.kind == kind)
             & (indicator_query.mode == mode)) == 0:
-        adapted_x = None
-        if x is not None:
-            min_available_data = len(x)
-            if y is not None:
-                min_available_data = len(y)
-            if z is not None:
-                min_available_data = min(min_available_data, len(z))
-            adapted_x = x[-min_available_data:] if min_available_data != len(x) else x
-        if adapted_x is None:
-            raise RuntimeError("No confirmed adapted_x")
-        adapted_x = adapted_x * x_multiplier
-        await ctx.writer.log_many(
-            title,
-            [
-                {
-                    "pair": pair or ctx.traded_pair,
-                    "x": value,
-                    "y": ctx.writer.get_value_from_array(y, index),
-                    "z": ctx.writer.get_value_from_array(z, index),
-                    "open": ctx.writer.get_value_from_array(open, index),
-                    "high": ctx.writer.get_value_from_array(high, index),
-                    "low": ctx.writer.get_value_from_array(low, index),
-                    "close": ctx.writer.get_value_from_array(close, index),
-                    "volume": ctx.writer.get_value_from_array(volume, index),
-                    "kind": kind,
-                    "mode": mode,
-                    "chart": chart,
-                }
-                for index, value in enumerate(adapted_x)
-            ]
+        if cache_value is not None:
+            cache_dir, cache_path = ctx.trading_mode.get_cache_path(ctx)
+            table = trading_enums.DBTables.CACHE_SOURCE.value
+            cache_identifier = {
+                "title": title,
+                "pair": pair or ctx.traded_pair,
+                "time_frame": ctx.time_frame,
+                "exchange": ctx.exchange_name,
+                "value": os.path.join(cache_dir, cache_path),
+                "cache_value": cache_value,
+                "kind": kind,
+                "mode": mode,
+                "chart": chart
+            }
+            await ctx.writer.log(table, cache_identifier)
+        else:
+            adapted_x = None
+            if x is not None:
+                min_available_data = len(x)
+                if y is not None:
+                    min_available_data = len(y)
+                if z is not None:
+                    min_available_data = min(min_available_data, len(z))
+                adapted_x = x[-min_available_data:] if min_available_data != len(x) else x
+            if adapted_x is None:
+                raise RuntimeError("No confirmed adapted_x")
+            adapted_x = adapted_x * x_multiplier
+            await ctx.writer.log_many(
+                title,
+                [
+                    {
+                        "pair": pair or ctx.traded_pair,
+                        "x": value,
+                        "y": ctx.writer.get_value_from_array(y, index),
+                        "z": ctx.writer.get_value_from_array(z, index),
+                        "open": ctx.writer.get_value_from_array(open, index),
+                        "high": ctx.writer.get_value_from_array(high, index),
+                        "low": ctx.writer.get_value_from_array(low, index),
+                        "close": ctx.writer.get_value_from_array(close, index),
+                        "volume": ctx.writer.get_value_from_array(volume, index),
+                        "kind": kind,
+                        "mode": mode,
+                        "chart": chart,
+                    }
+                    for index, value in enumerate(adapted_x)
+                ]
 
-        )
+            )
     elif not ctx.writer.contains_x(title, ctx.writer.get_value_from_array(x, -1) * x_multiplier):
         await ctx.writer.log(
             title,

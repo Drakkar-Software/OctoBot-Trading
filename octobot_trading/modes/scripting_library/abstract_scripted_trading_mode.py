@@ -20,6 +20,7 @@ import importlib
 
 
 import octobot_commons.logging as logging
+import octobot_commons.databases as databases
 import octobot_trading.exchange_channel as exchanges_channel
 import async_channel.channels as channels
 import octobot_services.channel as services_channels
@@ -175,7 +176,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             await producer.writer.close()
             name_candidate = self.get_storage_db_name(backtesting=backtesting, with_suffix=True)
             os.rename(producer.writer.get_db_path(), name_candidate)
-            producer.writer = scripting_library.DBWriter(producer.writer.get_db_path())
+            producer.writer = databases.DBWriter(producer.writer.get_db_path())
             await producer.set_final_eval(*producer.last_call)
 
     @contextlib.asynccontextmanager
@@ -183,7 +184,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         file_path = self.get_db_name(backtesting=self.exchange_manager.backtesting,
                                      metadata_db=True,
                                      optimizer_id=self.get_optimizer_id())
-        async with scripting_library.DBWriter.database(file_path, with_lock=with_lock) as writer:
+        async with databases.DBWriter.database(file_path, with_lock=with_lock) as writer:
             yield writer
 
     def get_optimizer_id(self):
@@ -228,7 +229,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel, config, trading_mode, exchange_manager)
         self.trading_mode.init_db_folder()
-        self.writer = scripting_library.DBWriter(
+        self.writer = databases.DBWriter(
             self.trading_mode.get_storage_db_name(with_suffix=False, backtesting=self.exchange_manager.backtesting,
                                                   optimizer_id=self.trading_mode.get_optimizer_id())
         )

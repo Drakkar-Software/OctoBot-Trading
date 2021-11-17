@@ -20,8 +20,8 @@ import contextlib
 import octobot_commons.enums
 import octobot_trading.enums as trading_enums
 import octobot_commons.enums as commons_enums
+import octobot_commons.databases as databases
 import octobot_trading.constants as trading_constants
-import octobot_trading.modes.scripting_library.data as scripting_data
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.api as trading_api
 
@@ -45,7 +45,7 @@ class DisplayedElements:
         self.type: str = element_type
 
     async def fill_from_database(self, database_name, exchange_id):
-        async with scripting_data.DBReader.database(database_name) as reader:
+        async with databases.DBReader.database(database_name) as reader:
             graphs_by_parts = {}
             inputs = []
             candles = []

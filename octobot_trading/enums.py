@@ -476,6 +476,7 @@ class DBTables(enum.Enum):
     TRADES = "orders"   # TODO
     CANDLES = "candles"
     CANDLES_SOURCE = "candles_source"
+    CACHE_SOURCE = "cache_source"
     PAIR = "pair"
     FEES_AMOUNT = "fees_amount"
     FEES_CURRENCY = "fees_currency"
