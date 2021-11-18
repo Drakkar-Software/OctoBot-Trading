@@ -73,18 +73,26 @@ async def plot(ctx, title, x=None,
                condition=None, x_function=exchange_public_data.Time,
                x_multiplier=1000,
                chart=trading_enums.PlotCharts.SUB_CHART.value,
-               cache_value=None):
+               cache_value=None, own_yaxis=False):
     if condition is not None:
-        candidate_y = []
-        candidate_x = []
-        x_data = x_function(ctx, ctx.traded_pair, ctx.time_frame)[-len(condition):]
-        y_data = y[-len(condition):]
-        for index, value in enumerate(condition):
-            if value:
-                candidate_y.append(y_data[index])
-                candidate_x.append(x_data[index])
-        x = numpy.array(candidate_x)
-        y = numpy.array(candidate_y)
+        if isinstance(ctx.writer.get_serializable_value(condition), bool):
+            if condition:
+                x = numpy.array((x_function(ctx, ctx.traded_pair, ctx.time_frame)[-1], ))
+                y = numpy.array((y[-1], ))
+            else:
+                x = []
+                y = []
+        else:
+            candidate_y = []
+            candidate_x = []
+            x_data = x_function(ctx, ctx.traded_pair, ctx.time_frame)[-len(condition):]
+            y_data = y[-len(condition):]
+            for index, value in enumerate(condition):
+                if value:
+                    candidate_y.append(y_data[index])
+                    candidate_x.append(x_data[index])
+            x = numpy.array(candidate_x)
+            y = numpy.array(candidate_y)
     indicator_query = await ctx.writer.search()
     if init_only and not ctx.writer.are_data_initialized and await ctx.writer.count(
             title,
@@ -93,7 +101,7 @@ async def plot(ctx, title, x=None,
             & (indicator_query.kind == kind)
             & (indicator_query.mode == mode)) == 0:
         if cache_value is not None:
-            cache_dir, cache_path = ctx.trading_mode.get_cache_path(ctx)
+            cache_dir, cache_path = ctx.get_cache_path()
             table = trading_enums.DBTables.CACHE_SOURCE.value
             cache_identifier = {
                 "title": title,
@@ -104,7 +112,8 @@ async def plot(ctx, title, x=None,
                 "cache_value": cache_value,
                 "kind": kind,
                 "mode": mode,
-                "chart": chart
+                "chart": chart,
+                "own_yaxis": own_yaxis,
             }
             await ctx.writer.log(table, cache_identifier)
         else:
@@ -135,12 +144,14 @@ async def plot(ctx, title, x=None,
                         "kind": kind,
                         "mode": mode,
                         "chart": chart,
+                        "own_yaxis": own_yaxis,
                     }
                     for index, value in enumerate(adapted_x)
                 ]
 
             )
-    elif not ctx.writer.contains_x(title, ctx.writer.get_value_from_array(x, -1) * x_multiplier):
+    elif cache_value is None and x is not None and len(x) \
+            and not ctx.writer.contains_x(title, ctx.writer.get_value_from_array(x, -1) * x_multiplier):
         await ctx.writer.log(
             title,
             {
@@ -156,13 +167,14 @@ async def plot(ctx, title, x=None,
                 "kind": kind,
                 "mode": mode,
                 "chart": chart,
+                "own_yaxis": own_yaxis,
             }
         )
 
 
 async def plot_shape(ctx, title, value, y_value,
-               chart=trading_enums.PlotCharts.SUB_CHART.value, pair=None,
-               kind="markers", mode="lines", x_multiplier=1000):
+                     chart=trading_enums.PlotCharts.SUB_CHART.value, pair=None,
+                     kind="markers", mode="lines", x_multiplier=1000):
     await ctx.writer.log(
         title,
         {

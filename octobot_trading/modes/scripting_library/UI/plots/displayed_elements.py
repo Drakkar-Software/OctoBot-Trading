@@ -21,6 +21,7 @@ import octobot_commons.enums
 import octobot_trading.enums as trading_enums
 import octobot_commons.enums as commons_enums
 import octobot_commons.databases as databases
+import octobot_commons.logging as logging
 import octobot_trading.constants as trading_constants
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.api as trading_api
@@ -43,18 +44,22 @@ class DisplayedElements:
         self.nested_elements = {}
         self.elements = []
         self.type: str = element_type
+        self.logger = logging.get_logger(self.__class__.__name__)
 
     async def fill_from_database(self, database_name, exchange_id):
         async with databases.DBReader.database(database_name) as reader:
             graphs_by_parts = {}
             inputs = []
             candles = []
+            cached_values = []
             for table_name in await reader.tables():
                 display_data = await reader.all(table_name)
                 if table_name == trading_enums.DBTables.INPUTS.value:
                     inputs += display_data
                 if table_name == trading_enums.DBTables.CANDLES_SOURCE.value:
                     candles += display_data
+                if table_name == trading_enums.DBTables.CACHE_SOURCE.value:
+                    cached_values += display_data
                 else:
                     try:
                         chart = display_data[0]["chart"]
@@ -62,10 +67,11 @@ class DisplayedElements:
                             graphs_by_parts[chart][table_name] = display_data
                         else:
                             graphs_by_parts[chart] = {table_name: display_data}
-                    except KeyError:
+                    except (IndexError, KeyError):
                         # some table have no chart
                         pass
             await self._add_candles(graphs_by_parts, candles, exchange_id)
+            await self._add_cached_values(graphs_by_parts, cached_values)
             self._plot_graphs(graphs_by_parts)
             self._display_inputs(inputs)
 
@@ -96,6 +102,7 @@ class DisplayedElements:
                         close = None
                     if dataset[0].get("volume", None) is None:
                         volume = None
+                    own_yaxis = dataset[0].get("own_yaxis", False)
                     for data in dataset:
                         if x is not None:
                             x.append(data["x"])
@@ -123,7 +130,8 @@ class DisplayedElements:
                         title=title,
                         x_type="date",
                         y_type=None,
-                        mode=data.get("mode", None))
+                        mode=data.get("mode", None),
+                        own_yaxis=own_yaxis)
 
     def _base_schema(self):
         return {
@@ -183,6 +191,40 @@ class DisplayedElements:
                 properties["enum"] = options
             properties["type"] = schema_type
         main_schema["properties"][title.replace(" ", "_")] = properties
+
+    async def _add_cached_values(self, graphs_by_parts, cached_values):
+        for cached_value_metadata in cached_values:
+            try:
+                chart = cached_value_metadata["chart"]
+                values = await self._get_cached_values_to_display(cached_value_metadata)
+                try:
+                    graphs_by_parts[chart][cached_value_metadata[trading_enums.PlotAttributes.TITLE.value]] = values    # TODO multi candles sets
+                except KeyError:
+                    graphs_by_parts[chart] = {trading_enums.PlotAttributes.TITLE.value: values}    # TODO multi candles sets
+            except KeyError:
+                # some table have no chart
+                pass
+
+    async def _get_cached_values_to_display(self, cached_value_metadata):
+        cache_file = cached_value_metadata[trading_enums.PlotAttributes.VALUE.value]
+        cache_displayed_value = cached_value_metadata["cache_value"]
+        kind = cached_value_metadata["kind"]
+        mode = cached_value_metadata["mode"]
+        own_yaxis = cached_value_metadata["own_yaxis"]
+        cache_database = databases.CacheDatabase(cache_file)
+        cache_type = (await cache_database.get_metadata())[commons_enums.CacheDatabaseColumns.TYPE.value]
+        if cache_type == databases.CacheTimestampDatabase.__name__:
+            return [
+                {
+                    "x": values[commons_enums.CacheDatabaseColumns.TIMESTAMP.value] * 1000,
+                    "y": values[cache_displayed_value],
+                    "kind": kind,
+                    "mode": mode,
+                    "own_yaxis": own_yaxis,
+                }
+                for values in await cache_database.get_cache()
+            ]
+        self.logger.error(f"Unhandled cache type to display: {cache_type}")
 
     async def _add_candles(self, graphs_by_parts, candles_list, exchange_id):
         for candles_metadata in candles_list:

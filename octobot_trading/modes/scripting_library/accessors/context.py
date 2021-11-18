@@ -13,12 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import os
+import json
+import inspect
+import hashlib
+
+import octobot_commons.constants as common_constants
+import octobot_commons.symbol_util as symbol_util
+import octobot_commons.databases as databases
+import octobot_tentacles_manager.api as tentacles_manager_api
 
 
 class Context:
     def __init__(
         self,
-        trading_mode,
+        tentacle,
         exchange_manager,
         trader,
         exchange_name,
@@ -31,7 +40,7 @@ class Context:
         writer,
         trading_mode_class,
     ):
-        self.trading_mode = trading_mode
+        self.tentacle = tentacle
         self.exchange_manager = exchange_manager
         self.trader = trader
         self.exchange_name = exchange_name
@@ -60,3 +69,51 @@ class Context:
             None,
             trading_mode_class,
         )
+
+    def get_cache(self):
+        try:
+            return self.tentacle.caches[self.traded_pair][self.time_frame]
+        except KeyError:
+            if self.traded_pair not in self.tentacle.caches:
+                self.tentacle.caches[self.traded_pair] = {}
+            cache_dir, cache_path = self.get_cache_path()
+            if not os.path.exists(cache_dir):
+                os.makedirs(cache_dir)
+            cache = self._get_cache_database(os.path.join(cache_dir, cache_path))
+            self.tentacle.caches[self.traded_pair][self.time_frame] = cache
+            return cache
+
+    def has_cache(self, pair, time_frame):
+        return pair in self.tentacle.caches and time_frame in self.tentacle[pair]
+
+    def get_cache_path(self):
+        return os.path.join(common_constants.USER_FOLDER, common_constants.CACHE_FOLDER, self.tentacle.get_name(),
+                            self.exchange_name, symbol_util.merge_symbol(self.traded_pair), self.time_frame,
+                            self._code_hash(), self._config_hash()), common_constants.CACHE_FILE
+
+    def _code_hash(self) -> str:
+        return hashlib.sha256(
+            inspect.getsource(self.tentacle.__class__).replace(" ", "").replace("\n", "").encode()
+        ).hexdigest()[:common_constants.CACHE_HASH_SIZE]
+
+    def _config_hash(self) -> str:
+        return hashlib.sha256(
+            json.dumps(tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config,
+                                                                 self.tentacle.__class__)).encode()
+        ).hexdigest()[:common_constants.CACHE_HASH_SIZE]
+
+    def _get_cache_database(self, file_path):
+        """
+        Override to use another cache database or adaptor
+        :return: the cache database class
+        """
+        import octobot_trading.api as exchange_api
+        exchange_manager = exchange_api.get_exchange_manager_from_exchange_name_and_id(
+            self.exchange_name,
+            exchange_api.get_exchange_id_from_matrix_id(self.exchange_name, self.matrix_id)
+        )
+        # no cache if live trading to ensure cache is always writen
+        cache_size = None if exchange_api.get_is_backtesting(exchange_manager) else 1
+        return databases.CacheTimestampDatabase(file_path,
+                                                database_adaptor=databases.TinyDBAdaptor,
+                                                cache_size=cache_size)

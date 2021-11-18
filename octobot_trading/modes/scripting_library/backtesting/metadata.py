@@ -17,7 +17,7 @@ import octobot_trading.modes.scripting_library.data as data
 
 
 def set_script_name(ctx, name):
-    ctx.trading_mode.script_name = name
+    ctx.tentacle.script_name = name
 
 
 def get_backtesting_db(ctx, run_id, optimizer_id=None):

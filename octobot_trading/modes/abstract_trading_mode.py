@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import abc
+import asyncio
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
@@ -67,6 +68,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # producers is the list of consumers created by this trading mode
         self.consumers = []
+
+        # Local evaluator caches, to be initialized if necessary
+        self.caches = {}
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -138,6 +142,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         for consumer in self.consumers:
             await consumer.stop()
         self.exchange_manager = None
+        await asyncio.gather(
+            *(
+                cache.close()
+                for caches_by_tf in self.caches.values()
+                for cache in caches_by_tf.values()
+            )
+        )
 
     async def create_producers(self) -> list:
         """
