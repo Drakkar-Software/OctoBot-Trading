@@ -104,7 +104,7 @@ async def test__check_and_update_size_with_hedge_position_mode(future_trader_sim
         position_inst._check_and_update_size(decimal.Decimal("-66.481231232156215215874878"))
         assert position_inst.size == decimal.Decimal("28.518768767843784784125122")
         position_inst._check_and_update_size(decimal.Decimal(-450))
-        assert position_inst.size == constants.ZERO  # position should is closed
+        assert position_inst.size == constants.ZERO  # position should be closed
 
         # SHORT
         position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
@@ -114,7 +114,7 @@ async def test__check_and_update_size_with_hedge_position_mode(future_trader_sim
         position_inst._check_and_update_size(decimal.Decimal(10))
         assert position_inst.size == decimal.Decimal(-10)
         position_inst._check_and_update_size(decimal.Decimal(50))
-        assert position_inst.size == constants.ZERO  # position should is closed
+        assert position_inst.size == constants.ZERO  # position should be closed
 
 
 async def test__is_update_increasing_size(future_trader_simulator_with_default_linear):
