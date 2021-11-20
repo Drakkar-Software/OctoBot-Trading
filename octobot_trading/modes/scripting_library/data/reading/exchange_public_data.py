@@ -33,16 +33,16 @@ def current_time(context) -> float:
 
 
 # Use capital letters to avoid python native lib conflicts
-def Open(context, symbol, time_frame):
-    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_open_candles()
+def Open(context, symbol, time_frame, limit=-1):
+    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_open_candles(limit)
 
 # Use capital letters to avoid python native lib conflicts
-def High(context, symbol, time_frame):
-    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_high_candles()
+def High(context, symbol, time_frame, limit=-1):
+    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_high_candles(limit)
 
 # Use capital letters to avoid python native lib conflicts
-def Low(context, symbol, time_frame):
-    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_low_candles()
+def Low(context, symbol, time_frame, limit=-1):
+    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_low_candles(limit)
 
 # Use capital letters to avoid python native lib conflicts
 def Close(context, symbol, time_frame, limit=-1):

@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as enums
+import octobot_trading.modes as modes
 
 
 async def user_input(
@@ -25,13 +26,14 @@ async def user_input(
     max_val=None,
     options=None,
 ):
-    value = ctx.tentacle.trading_config.get(name.replace(" ", "_"), def_val) \
-        if ctx.tentacle.trading_config else None
+    config = ctx.tentacle.trading_config if hasattr(ctx.tentacle, "trading_config") else ctx.tentacle.specific_config
+    value = config.get(name.replace(" ", "_"), def_val) if config else def_val
     input_query = await ctx.writer.search()
     if not ctx.writer.are_data_initialized and await ctx.writer.count(
             enums.DBTables.INPUTS.value,
             (input_query.name == name)
             & (input_query.input_type == input_type)) == 0:
+        tentacle_type = "trading_mode" if isinstance(ctx.tentacle, modes.AbstractTradingMode) else "evaluator"
         await ctx.writer.log(
             enums.DBTables.INPUTS.value,
             {
@@ -42,7 +44,8 @@ async def user_input(
                 "min_val": min_val,
                 "max_val": max_val,
                 "options": options,
-                "tentacle": ctx.trading_mode_class.get_name(),
+                "tentacle_type": tentacle_type,
+                "tentacle": ctx.tentacle.get_name(),
             }
         )
-    return value or def_val
+    return value

@@ -21,9 +21,9 @@ import importlib
 
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
+import octobot_commons.enums as commons_enums
 import octobot_trading.exchange_channel as exchanges_channel
 import async_channel.channels as channels
-import octobot_services.channel as services_channels
 import octobot_trading.api as trading_api
 import octobot_trading.modes as trading_modes
 import octobot_trading.constants as trading_constants
@@ -34,8 +34,6 @@ import octobot_backtesting.api as backtesting_api
 
 
 class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
-    USER_COMMAND_RELOAD_SCRIPT = "reload_script"
-    USER_COMMAND_RELOAD_SCRIPT_IS_LIVE = "is_live"
     TRADING_SCRIPT_MODULE = None
     BACKTESTING_SCRIPT_MODULE = None
 
@@ -63,19 +61,21 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
 
     async def create_consumers(self) -> list:
         try:
+            import octobot_services.channel as services_channels
             user_commands_consumer = \
                 await channels.get_chan(services_channels.UserCommandsChannel.get_name()).new_consumer(
                     self._user_commands_callback,
                     {"bot_id": self.bot_id, "subject": self.get_name()}
                 )
+        except ImportError:
+            self.logger.warning("Can't connect to services channels")
         except KeyError:
             return []
         return [user_commands_consumer]
 
     async def _user_commands_callback(self, bot_id, subject, action, data) -> None:
         self.logger.debug(f"Received {action} command.")
-        if action == AbstractScriptedTradingMode.USER_COMMAND_RELOAD_SCRIPT:
-            # live_script = data[AbstractScriptedTradingMode.USER_COMMAND_RELOAD_SCRIPT_IS_LIVE]
+        if action == commons_enums.UserCommands.RELOAD_SCRIPT.value:
             await self.reload_script(live=True)
             await self.reload_script(live=False)
 
@@ -193,9 +193,6 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
 
 class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProducer):
 
-    def script_factory(self):
-        raise NotImplementedError("script_factory is not set")
-
     async def get_backtesting_metadata(self) -> dict:
         """
         Override this method to get add addition metadata
@@ -252,7 +249,10 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             time_frame,
             self.logger,
             self.writer,
-            self.trading_mode.__class__
+            self.trading_mode.__class__,
+            None,    # trigger_timestamp todo
+            None,
+            None,
         )
         self.contexts.append(context)
         self.last_call = (matrix_id, cryptocurrency, symbol, time_frame)
@@ -269,6 +269,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             if not self.exchange_manager.backtesting:
                 # only update db after each run in live mode
                 await self.writer.flush()
+                await context.get_cache().flush()
             self.writer.are_data_initialized = True
             self.contexts.remove(context)
 

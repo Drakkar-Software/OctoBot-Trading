@@ -451,6 +451,7 @@ class PlotAttributes(enum.Enum):
     CONFIG = "config"
     SCHEMA = "schema"
     TENTACLE = "tentacle"
+    TENTACLE_TYPE = "tentacle_type"
     COLUMNS = "columns"
     ROWS = "rows"
     SEARCHES = "searches"

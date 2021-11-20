@@ -74,7 +74,7 @@ async def plot(ctx, title, x=None,
                x_multiplier=1000,
                chart=trading_enums.PlotCharts.SUB_CHART.value,
                cache_value=None, own_yaxis=False):
-    if condition is not None:
+    if condition is not None and cache_value is None:
         if isinstance(ctx.writer.get_serializable_value(condition), bool):
             if condition:
                 x = numpy.array((x_function(ctx, ctx.traded_pair, ctx.time_frame)[-1], ))
@@ -114,6 +114,7 @@ async def plot(ctx, title, x=None,
                 "mode": mode,
                 "chart": chart,
                 "own_yaxis": own_yaxis,
+                "condition": condition,
             }
             await ctx.writer.log(table, cache_identifier)
         else:

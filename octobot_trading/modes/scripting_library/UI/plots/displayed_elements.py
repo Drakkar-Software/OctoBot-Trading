@@ -20,6 +20,7 @@ import contextlib
 import octobot_commons.enums
 import octobot_trading.enums as trading_enums
 import octobot_commons.enums as commons_enums
+import octobot_commons.constants as commons_constants
 import octobot_commons.databases as databases
 import octobot_commons.logging as logging
 import octobot_trading.constants as trading_constants
@@ -46,7 +47,7 @@ class DisplayedElements:
         self.type: str = element_type
         self.logger = logging.get_logger(self.__class__.__name__)
 
-    async def fill_from_database(self, database_name, exchange_id):
+    async def fill_from_database(self, database_name, exchange_id, with_inputs=True):
         async with databases.DBReader.database(database_name) as reader:
             graphs_by_parts = {}
             inputs = []
@@ -73,7 +74,8 @@ class DisplayedElements:
             await self._add_candles(graphs_by_parts, candles, exchange_id)
             await self._add_cached_values(graphs_by_parts, cached_values)
             self._plot_graphs(graphs_by_parts)
-            self._display_inputs(inputs)
+            if with_inputs:
+                self._display_inputs(inputs)
 
     def _plot_graphs(self, graphs_by_parts):
         for part, datasets in graphs_by_parts.items():
@@ -133,10 +135,10 @@ class DisplayedElements:
                         mode=data.get("mode", None),
                         own_yaxis=own_yaxis)
 
-    def _base_schema(self):
+    def _base_schema(self, tentacle):
         return {
             "type": "object",
-            "title": "Inputs",
+            "title": f"{tentacle} inputs",
             "properties": {},
         }
 
@@ -144,20 +146,26 @@ class DisplayedElements:
         with self.part("inputs", element_type=trading_enums.DisplayedElementTypes.INPUT.value) as part:
             config_by_tentacles = {}
             config_schema_by_tentacles = {}
+            tentacle_type_by_tentacles = {}
             for user_input_element in inputs:
-                tentacle = user_input_element["tentacle"]
-                if tentacle not in config_schema_by_tentacles:
-                    config_schema_by_tentacles[tentacle] = self._base_schema()
-                    config_by_tentacles[tentacle] = {}
-                config_by_tentacles[tentacle][user_input_element["name"].replace(" ", "-")] = \
-                    user_input_element["value"]
-                self._generate_schema(config_schema_by_tentacles[tentacle], user_input_element)
+                try:
+                    tentacle = user_input_element["tentacle"]
+                    tentacle_type_by_tentacles[tentacle] = user_input_element["tentacle_type"]
+                    if tentacle not in config_schema_by_tentacles:
+                        config_schema_by_tentacles[tentacle] = self._base_schema(tentacle)
+                        config_by_tentacles[tentacle] = {}
+                    config_by_tentacles[tentacle][user_input_element["name"].replace(" ", "_")] = \
+                        user_input_element["value"]
+                    self._generate_schema(config_schema_by_tentacles[tentacle], user_input_element)
+                except KeyError as e:
+                    self.logger.error(f"Error when loading user inputs for {tentacle}: missing {e}")
             for tentacle, schema in config_schema_by_tentacles.items():
                 part.user_inputs(
                     "Inputs",
                     config_by_tentacles[tentacle],
                     schema,
                     tentacle,
+                    tentacle_type_by_tentacles[tentacle],
                 )
 
     @staticmethod
@@ -196,7 +204,7 @@ class DisplayedElements:
         for cached_value_metadata in cached_values:
             try:
                 chart = cached_value_metadata["chart"]
-                values = await self._get_cached_values_to_display(cached_value_metadata)
+                values = sorted(await self._get_cached_values_to_display(cached_value_metadata), key=lambda x: x["x"])
                 try:
                     graphs_by_parts[chart][cached_value_metadata[trading_enums.PlotAttributes.TITLE.value]] = values    # TODO multi candles sets
                 except KeyError:
@@ -207,24 +215,54 @@ class DisplayedElements:
 
     async def _get_cached_values_to_display(self, cached_value_metadata):
         cache_file = cached_value_metadata[trading_enums.PlotAttributes.VALUE.value]
-        cache_displayed_value = cached_value_metadata["cache_value"]
+        cache_displayed_value = plotted_displayed_value = cached_value_metadata["cache_value"]
         kind = cached_value_metadata["kind"]
         mode = cached_value_metadata["mode"]
         own_yaxis = cached_value_metadata["own_yaxis"]
+        condition = cached_value_metadata.get("condition", None)
         cache_database = databases.CacheDatabase(cache_file)
-        cache_type = (await cache_database.get_metadata())[commons_enums.CacheDatabaseColumns.TYPE.value]
-        if cache_type == databases.CacheTimestampDatabase.__name__:
-            return [
-                {
-                    "x": values[commons_enums.CacheDatabaseColumns.TIMESTAMP.value] * 1000,
-                    "y": values[cache_displayed_value],
-                    "kind": kind,
-                    "mode": mode,
-                    "own_yaxis": own_yaxis,
-                }
-                for values in await cache_database.get_cache()
-            ]
-        self.logger.error(f"Unhandled cache type to display: {cache_type}")
+        try:
+            cache_type = (await cache_database.get_metadata())[commons_enums.CacheDatabaseColumns.TYPE.value]
+            if cache_type == databases.CacheTimestampDatabase.__name__:
+                cache = await cache_database.get_cache()
+                for cache_val in cache:
+                    try:
+                        if isinstance(cache_val[cache_displayed_value], bool):
+                            plotted_displayed_value = self._get_cache_displayed_value(cache_val, cache_displayed_value)
+                            if plotted_displayed_value is None:
+                                self.logger.error(f"Impossible to plot {cache_displayed_value}: unset y axis value")
+                                return []
+                        else:
+                            break
+                    except KeyError:
+                        pass
+                    except Exception as e:
+                        print(e)
+                plotted_values = []
+                for values in cache:
+                    try:
+                        if condition is None or condition == values[cache_displayed_value]:
+                            plotted_values.append({
+                                "x": values[commons_enums.CacheDatabaseColumns.TIMESTAMP.value] * 1000,
+                                "y": values[plotted_displayed_value],
+                                "kind": kind,
+                                "mode": mode,
+                                "own_yaxis": own_yaxis,
+                            })
+                    except KeyError:
+                        pass
+                return plotted_values
+            self.logger.error(f"Unhandled cache type to display: {cache_type}")
+        except TypeError:
+            self.logger.error(f"Missing cache type in {cache_file} metadata file")
+
+    @staticmethod
+    def _get_cache_displayed_value(cache_val, base_displayed_value):
+        for key in cache_val.keys():
+            separator_split_key = key.split(commons_constants.CACHE_RELATED_DATA_SEPARATOR)
+            if base_displayed_value == separator_split_key[0] and len(separator_split_key) == 2:
+                return key
+        return None
 
     async def _add_candles(self, graphs_by_parts, candles_list, exchange_id):
         for candles_metadata in candles_list:
@@ -330,6 +368,7 @@ class DisplayedElements:
         config_values,
         schema,
         tentacle,
+        tentacle_type,
     ):
         element = Element(
             None,
@@ -339,6 +378,7 @@ class DisplayedElements:
             schema=schema,
             config_values=config_values,
             tentacle=tentacle,
+            tentacle_type=tentacle_type,
             type=trading_enums.DisplayedElementTypes.INPUT.value
         )
         self.elements.append(element)
@@ -399,6 +439,7 @@ class Element:
         config_values=None,
         schema=None,
         tentacle=None,
+        tentacle_type=None,
         columns=None,
         rows=None,
         searches=None,
@@ -422,6 +463,7 @@ class Element:
         self.config_values = config_values
         self.schema = schema
         self.tentacle = tentacle
+        self.tentacle_type = tentacle_type
         self.columns = columns
         self.rows = rows
         self.searches = searches
@@ -447,6 +489,7 @@ class Element:
             trading_enums.PlotAttributes.CONFIG.value: self.config_values,
             trading_enums.PlotAttributes.SCHEMA.value: self.schema,
             trading_enums.PlotAttributes.TENTACLE.value: self.tentacle,
+            trading_enums.PlotAttributes.TENTACLE_TYPE.value: self.tentacle_type,
             trading_enums.PlotAttributes.COLUMNS.value: self.columns,
             trading_enums.PlotAttributes.ROWS.value: self.rows,
             trading_enums.PlotAttributes.SEARCHES.value: self.searches,
