@@ -102,7 +102,7 @@ class Context:
             return cache
 
     def has_cache(self, pair, time_frame):
-        return pair in self.tentacle.caches and time_frame in self.tentacle[pair]
+        return pair in self.tentacle.caches and time_frame in self.tentacle.caches[pair]
 
     def get_cache_path(self):
         return os.path.join(common_constants.USER_FOLDER, common_constants.CACHE_FOLDER, self.tentacle.get_name(),

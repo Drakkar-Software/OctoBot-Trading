@@ -22,6 +22,7 @@ import octobot_commons.logging as logging
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.modes.channel as modes_channel
+import octobot_trading.errors as errors
 
 
 class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
@@ -167,8 +168,10 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                                       cryptocurrency=cryptocurrency,
                                       symbol=symbol,
                                       time_frame=time_frame)
+        except errors.UnreachableExchange as e:
+            self.logger.warning(f"Error when calling trading mode: {e}")
         except Exception as e:
-            self.logger.exception(e, True, f"Error when finalizing: {e}")
+            self.logger.exception(e, True, f"Error when calling trading mode: {e}")
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame) -> None:
         """

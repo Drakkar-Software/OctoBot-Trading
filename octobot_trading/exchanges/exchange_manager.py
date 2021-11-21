@@ -18,6 +18,7 @@ import uuid
 import octobot_commons.configuration as configuration
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
+import octobot_commons.timestamp_util as timestamp_util
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.exchanges as exchanges
@@ -26,6 +27,7 @@ import octobot_trading.exchange_data as exchange_data
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
+import octobot_trading.errors as errors
 
 
 class ExchangeManager(util.Initializable):
@@ -196,6 +198,13 @@ class ExchangeManager(util.Initializable):
 
     def get_currently_handled_pair_with_time_frame(self):
         return len(self.exchange_config.traded_symbol_pairs) * len(self.exchange_config.traded_time_frames)
+
+    def ensure_reachability(self):
+        if not self.exchange.is_unreachable:
+            current_time = self.exchange.get_exchange_current_time()
+            raise errors.UnreachableExchange(f"{self.exchange_name} can't be reached or is offline on the "
+                                             f"{timestamp_util.convert_timestamp_to_datetime(current_time)} "
+                                             f"(timestamp: {current_time})")
 
     def get_is_overloaded(self):
         if self.has_websocket:

@@ -64,6 +64,9 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                                         if self.future_candle_time_frame is time_frame else 0)
                     )
                     if ohlcv_data:
+                        # There should always be at least 2 candles in read data, otherwise this means that the exchange
+                        # was down for some time. Consider it unreachable
+                        self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) > 1
                         current_candle_index = 0
                         if self.future_candle_time_frame is time_frame:
                             if ohlcv_data[0][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
@@ -90,6 +93,9 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                             pair,
                                             [self.last_candles_by_pair_by_time_frame[pair][time_frame.value][-1]],
                                             partial=True)
+                    else:
+                        self.channel.exchange_manager.exchange.is_unreachable = True
+
         except errors.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()

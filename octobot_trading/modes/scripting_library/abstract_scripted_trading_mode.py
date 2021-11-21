@@ -22,14 +22,15 @@ import importlib
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.enums as commons_enums
-import octobot_trading.exchange_channel as exchanges_channel
+import octobot_commons.constants as commons_constants
 import async_channel.channels as channels
+import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.api as trading_api
 import octobot_trading.modes as trading_modes
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.modes.scripting_library as scripting_library
-import octobot_commons.constants as commons_constants
+import octobot_trading.errors as errors
 import octobot_backtesting.api as backtesting_api
 
 
@@ -265,11 +266,16 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                 await scripting_library.save_metadata(self.writer, await self.get_live_metadata())
                 await scripting_library.save_portfolio(self.writer, context)
             await self.script_factory(live=True)(context)
+        except errors.UnreachableExchange:
+            raise
+        except Exception as e:
+            self.logger.exception(e, True, f"Error when running script: {e}")
         finally:
             if not self.exchange_manager.backtesting:
                 # only update db after each run in live mode
                 await self.writer.flush()
-                await context.get_cache().flush()
+                if context.has_cache(context.traded_pair, context.time_frame):
+                    await context.get_cache().flush()
             self.writer.are_data_initialized = True
             self.contexts.remove(context)
 

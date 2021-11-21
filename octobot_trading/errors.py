@@ -96,3 +96,9 @@ class TooManyOpenPositionError(Exception):
     """
     Raised when changing future contract attributes without closing positions first
     """
+
+
+class UnreachableExchange(Exception):
+    """
+    Raised when an exchange cant be reached (likely when it's offline)
+    """
