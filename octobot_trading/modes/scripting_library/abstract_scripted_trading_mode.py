@@ -231,7 +231,6 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             self.trading_mode.get_storage_db_name(with_suffix=False, backtesting=self.exchange_manager.backtesting,
                                                   optimizer_id=self.trading_mode.get_optimizer_id())
         )
-        self.script_factory = self.trading_mode.get_script
         self.last_call = None
         self.traded_pair = trading_mode.symbol
         self.contexts = []
@@ -265,7 +264,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             if not self.writer.are_data_initialized:
                 await scripting_library.save_metadata(self.writer, await self.get_live_metadata())
                 await scripting_library.save_portfolio(self.writer, context)
-            await self.script_factory(live=True)(context)
+            await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise
         except Exception as e:

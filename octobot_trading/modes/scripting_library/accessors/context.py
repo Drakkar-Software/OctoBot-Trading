@@ -132,8 +132,9 @@ class Context:
                 await cache.flush()
 
     def _code_hash(self) -> str:
+        code_location = self.tentacle.get_script() if hasattr(self.tentacle, "get_script") else self.tentacle.__class__
         return hashlib.sha256(
-            inspect.getsource(self.tentacle.__class__).replace(" ", "").replace("\n", "").encode()
+            inspect.getsource(code_location).replace(" ", "").replace("\n", "").encode()
         ).hexdigest()[:common_constants.CACHE_HASH_SIZE]
 
     def _config_hash(self) -> str:
