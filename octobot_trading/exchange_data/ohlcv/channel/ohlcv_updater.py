@@ -100,7 +100,8 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         if historical_candles_count_limit > self.DEFAULT_OHLCV_OLD_LIMIT:
             tf_seconds = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
             end_time = time.time() * 1000
-            start_time = end_time - historical_candles_count_limit * tf_seconds * 1000
+            # add 1 to historical_candles_count_limit to fetch the required count (otherwise one is missing)
+            start_time = end_time - (historical_candles_count_limit + 1) * tf_seconds * 1000
             candles = []
             async for new_candles in backtesting_api.historical_ohlcv_collector(self.channel.exchange_manager, pair,
                                                                                 time_frame, start_time, end_time):
