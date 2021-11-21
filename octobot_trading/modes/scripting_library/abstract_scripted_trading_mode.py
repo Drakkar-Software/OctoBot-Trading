@@ -270,7 +270,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         except Exception as e:
             self.logger.exception(e, True, f"Error when running script: {e}")
         finally:
-            if not self.exchange_manager.backtesting:
+            if not self.exchange_manager.is_backtesting:
                 # only update db after each run in live mode
                 await self.writer.flush()
                 if context.has_cache(context.traded_pair, context.time_frame):
@@ -282,7 +282,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         """
         Stop trading mode channels subscriptions
         """
-        if not self.are_metadata_saved and self.exchange_manager.backtesting:     # todo ensure multiple pairs conflicts
+        if not self.are_metadata_saved and self.exchange_manager.is_backtesting:     # todo ensure multiple pairs conflicts
             await self.writer.close()
             async with self.trading_mode.get_metadata_writer(with_lock=True) as writer:
                 await scripting_library.save_metadata(writer, await self.get_backtesting_metadata())
