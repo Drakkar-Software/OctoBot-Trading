@@ -31,6 +31,16 @@ def get_symbol_historical_candles(symbol_data, time_frame, limit=-1) -> object:
     return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_prices(limit)
 
 
+def are_symbol_candles_initialized(exchange_manager, symbol, time_frame) -> bool:
+    try:
+        return get_symbol_candles_manager(
+            get_symbol_data(exchange_manager, symbol, allow_creation=False),
+            time_frame
+        ).candles_initialized
+    except KeyError:
+        return False
+
+
 def get_candle_as_list(candles_arrays, candle_index=0) -> list:
     return exchange_data.get_candle_as_list(candles_arrays, candle_index)
 

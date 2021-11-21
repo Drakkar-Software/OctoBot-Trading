@@ -168,13 +168,13 @@ class DisplayedElements:
                     tentacle_type_by_tentacles[tentacle],
                 )
 
-    @staticmethod
-    def _generate_schema(main_schema, user_input_element):
+    def _generate_schema(self, main_schema, user_input_element):
         input_type_to_schema_type = {
             "int": "number",
             "float": "number",
             "boolean": "boolean",
             "options": "string",
+            "multiple-options": "array",
         }
         properties = {}
         if title := user_input_element.get("name"):
@@ -186,18 +186,33 @@ class DisplayedElements:
         if max_val := user_input_element.get("max_val"):
             properties["maximum"] = max_val
         if input_type := user_input_element.get("input_type"):
-            schema_type = input_type_to_schema_type[input_type]
-            if schema_type == "boolean":
-                properties["format"] = "checkbox"
-            if schema_type == "number":
-                if input_type == "float":
-                    properties["multipleOf"] = 0.00000001
-            if schema_type == "string":
-                options = user_input_element.get("options", [])
-                properties["format"] = "select"
-                properties["default"] = def_val if def_val else options[0] if options else None,
-                properties["enum"] = options
-            properties["type"] = schema_type
+            try:
+                schema_type = input_type_to_schema_type[input_type]
+                if schema_type == "boolean":
+                    properties["format"] = "checkbox"
+                if schema_type == "number":
+                    if input_type == "float":
+                        properties["multipleOf"] = 0.00000001
+                if schema_type in ("string", "array"):
+                    options = user_input_element.get("options", [])
+                    default_value = def_val if def_val else options[0] if options else None
+                    if schema_type == "string":
+                        properties["default"] = default_value,
+                        properties["format"] = "select"
+                        properties["enum"] = options
+                    elif schema_type == "array":
+                        properties["format"] = "select2"
+                        properties["minItems"] = 1
+                        properties["uniqueItems"] = True
+                        properties["items"] = {
+                            "title": title,
+                            "type": "string",
+                            "default": default_value,
+                            "enum": options
+                        }
+                properties["type"] = schema_type
+            except KeyError as e:
+                self.logger.error(f"Unknown input type: {e}")
         main_schema["properties"][title.replace(" ", "_")] = properties
 
     async def _add_cached_values(self, graphs_by_parts, cached_values):
@@ -255,6 +270,7 @@ class DisplayedElements:
             self.logger.error(f"Unhandled cache type to display: {cache_type}")
         except TypeError:
             self.logger.error(f"Missing cache type in {cache_file} metadata file")
+        return []
 
     @staticmethod
     def _get_cache_displayed_value(cache_val, base_displayed_value):
