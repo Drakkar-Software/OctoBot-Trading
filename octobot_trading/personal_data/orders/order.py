@@ -333,17 +333,17 @@ class Order(util.Initializable):
             except KeyError:
                 logging.get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
-        filled_price = decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0)))
+        price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0
+        filled_price = decimal.Decimal(str(price))
         # set average price with real average price if available, use filled_price otherwise
         average_price = decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value, 0.0)
                                             or filled_price))
 
         return self.update(
             symbol=str(raw_order.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value, None)),
-            current_price=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0)
-                                              or 0.0)),
+            current_price=decimal.Decimal(str(price)),
             quantity=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value, 0.0) or 0.0)),
-            price=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0.0)),
+            price=decimal.Decimal(str(price)),
             status=order_util.parse_order_status(raw_order),
             order_id=str(raw_order.get(enums.ExchangeConstantsOrderColumns.ID.value, None)),
             quantity_filled=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value, 0.0)

@@ -21,7 +21,8 @@ import pytest
 
 from tests import event_loop
 from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.enums import TraderOrderType, OrderStatus
+from octobot_trading.enums import TraderOrderType, OrderStatus, FeePropertyColumns
+from octobot_trading.constants import ZERO
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance_from_raw
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
@@ -93,6 +94,11 @@ class TestTradeFactory:
         assert trade.executed_price == decimal.Decimal(str(0.06917684))
         assert trade.executed_time == 1502962946216
         assert trade.status == OrderStatus.FILLED
+        assert trade.fee == {
+            FeePropertyColumns.COST.value: decimal.Decimal("0.0015"),
+            FeePropertyColumns.CURRENCY.value: "ETH",
+            FeePropertyColumns.RATE.value: 0.002
+        }
         assert trade.is_closing_order is True
 
         await self.stop(exchange_manager)
@@ -100,6 +106,7 @@ class TestTradeFactory:
     async def test_create_trade_from_order(self):
         _, exchange_manager, trader = await self.init_default()
 
+        # limit order
         raw_order = json.loads(
             """
             {
@@ -148,6 +155,46 @@ class TestTradeFactory:
         exec_time = time.time()
         trade = create_trade_from_order(order, executed_time=exec_time)
         assert trade.executed_time == exec_time
+
+        # market order
+        raw_order = {
+            'id': '362550114',
+            'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
+            'timestamp': 1637579281.377,
+            'datetime': '2021-11-22T11:08:01.377Z',
+            'lastTradeTimestamp': None,
+            'symbol': 'WIN/USDT',
+            'type': 'market',
+            'timeInForce': 'GTC',
+            'postOnly': False,
+            'side': 'sell',
+            'price': None,
+            'stopPrice': None,
+            'amount': 44964.0,
+            'cost': None,
+            'average': None,
+            'filled': 44964.0,
+            'remaining': 0.0,
+            'status': 'closed',
+            'fee': {'cost': 0.03764836, 'currency': 'USDT'},
+            'trades': [],
+            'fees': []
+        }
+        order = create_order_instance_from_raw(trader, raw_order)
+        trade = create_trade_from_order(order, close_status=OrderStatus.FILLED)
+
+        assert trade.trade_id == '362550114'
+        assert trade.origin_order_id == '362550114'
+        assert trade.trade_type == TraderOrderType.SELL_MARKET
+        assert trade.symbol == 'WIN/USDT'
+        assert trade.total_cost == ZERO
+        assert trade.executed_quantity == decimal.Decimal("44964.0")
+        assert trade.origin_quantity == decimal.Decimal("44964.0")
+        assert trade.origin_price == ZERO
+        assert trade.executed_price == ZERO
+        assert trade.status == OrderStatus.FILLED
+        assert trade.executed_time == 1637579281.377
+        assert trade.is_closing_order is True
 
         await self.stop(exchange_manager)
 

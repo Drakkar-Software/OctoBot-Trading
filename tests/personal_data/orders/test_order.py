@@ -14,8 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+import decimal
+
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
 
 from tests import event_loop
@@ -155,3 +158,98 @@ def test_parse_order_type():
     typed_raw_order[enums.ExchangeConstantsOrderColumns.TYPE.value] = enums.TradeOrderType.LIMIT
     assert personal_data.parse_order_type(typed_raw_order) == \
            (enums.TradeOrderSide.SELL, enums.TraderOrderType.SELL_LIMIT)
+
+
+def test_update_from_raw(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    order_inst = personal_data.Order(trader_inst)
+    # Binance example market order
+    raw_order = {
+        'id': '362550114',
+        'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
+        'timestamp': 1637579281.377,
+        'datetime': '2021-11-22T11:08:01.377Z',
+        'lastTradeTimestamp': None,
+        'symbol': 'WIN/USDT',
+        'type': 'market',
+        'timeInForce': 'GTC',
+        'postOnly': False,
+        'side': 'sell',
+        'price': None,
+        'stopPrice': None,
+        'amount': 44964.0,
+        'cost': None,
+        'average': None,
+        'filled': 44964.0,
+        'remaining': 0.0,
+        'status': 'closed',
+        'fee': {'cost': 0.03764836, 'currency': 'USDT'},
+        'trades': [],
+        'fees': []
+    }
+    assert order_inst.update_from_raw(raw_order) is True
+    assert order_inst.order_type is enums.TraderOrderType.SELL_MARKET
+    assert order_inst.order_id == "362550114"
+    assert order_inst.side is enums.TradeOrderSide.SELL
+    assert order_inst.status is enums.OrderStatus.CLOSED
+    assert order_inst.symbol == "WIN/USDT"
+    assert order_inst.currency == "WIN"
+    assert order_inst.market == "USDT"
+    assert order_inst.taker_or_maker is enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
+    assert order_inst.origin_price == constants.ZERO
+    assert order_inst.origin_stop_price == constants.ZERO
+    assert order_inst.origin_quantity == decimal.Decimal("44964.0")
+    assert order_inst.filled_quantity == decimal.Decimal("44964.0")
+    assert order_inst.filled_price == constants.ZERO
+    assert order_inst.total_cost == constants.ZERO
+    assert order_inst.created_last_price == constants.ZERO
+    assert order_inst.timestamp == 1637579281.377
+    assert order_inst.canceled_time == 0
+    assert order_inst.executed_time == 1637579281.377
+    assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
+
+    order_inst = personal_data.Order(trader_inst)
+    # Binance example limit order
+    raw_order = {
+        'id': '362550114',
+        'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
+        'timestamp': 1637579281.377,
+        'datetime': '2021-11-22T11:08:01.377Z',
+        'lastTradeTimestamp': None,
+        'symbol': 'WIN/USDT',
+        'type': 'limit',
+        'timeInForce': 'GTC',
+        'postOnly': False,
+        'side': 'buy',
+        'price': 12.664,
+        'stopPrice': None,
+        'amount': 44964.0,
+        'cost': 123.6667,
+        'average': 13,
+        'filled': 44964.0,
+        'remaining': 0.0,
+        'status': 'closed',
+        'fee': {'cost': 0.03764836, 'currency': 'USDT'},
+        'trades': [],
+        'fees': []
+    }
+    assert order_inst.update_from_raw(raw_order) is True
+    assert order_inst.order_type is enums.TraderOrderType.BUY_LIMIT
+    assert order_inst.order_id == "362550114"
+    assert order_inst.side is enums.TradeOrderSide.BUY
+    assert order_inst.status is enums.OrderStatus.CLOSED
+    assert order_inst.symbol == "WIN/USDT"
+    assert order_inst.currency == "WIN"
+    assert order_inst.market == "USDT"
+    assert order_inst.taker_or_maker is enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
+    assert order_inst.origin_price == decimal.Decimal("12.664")
+    assert order_inst.origin_stop_price == constants.ZERO
+    assert order_inst.origin_quantity == decimal.Decimal("44964.0")
+    assert order_inst.filled_quantity == decimal.Decimal("44964.0")
+    assert order_inst.filled_price == decimal.Decimal("13")
+    assert order_inst.total_cost == decimal.Decimal("123.6667")
+    assert order_inst.created_last_price == decimal.Decimal("12.664")
+    assert order_inst.timestamp == 1637579281.377
+    assert order_inst.canceled_time == 0
+    assert order_inst.executed_time == 1637579281.377
+    assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
