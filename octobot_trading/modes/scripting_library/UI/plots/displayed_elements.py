@@ -90,6 +90,7 @@ class DisplayedElements:
                     low = []
                     close = []
                     volume = []
+                    color = dataset[0].get("color", None)
                     if dataset[0].get("x", None) is None:
                         x = None
                     if dataset[0].get("y", None) is None:
@@ -133,7 +134,8 @@ class DisplayedElements:
                         x_type="date",
                         y_type=None,
                         mode=data.get("mode", None),
-                        own_yaxis=own_yaxis)
+                        own_yaxis=own_yaxis,
+                        color=color)
 
     def _base_schema(self, tentacle):
         return {
@@ -358,6 +360,7 @@ class DisplayedElements:
         mode="lines",
         own_xaxis=False,
         own_yaxis=False,
+        color=None,
     ):
         element = Element(
             kind,
@@ -374,7 +377,8 @@ class DisplayedElements:
             mode=mode,
             own_xaxis=own_xaxis,
             own_yaxis=own_yaxis,
-            type=trading_enums.DisplayedElementTypes.CHART.value
+            type=trading_enums.DisplayedElementTypes.CHART.value,
+            color=color
         )
         self.elements.append(element)
 
@@ -460,6 +464,7 @@ class Element:
         rows=None,
         searches=None,
         type=trading_enums.DisplayedElementTypes.CHART.value,
+        color=None,
     ):
         self.kind = kind
         self.x = x
@@ -484,6 +489,7 @@ class Element:
         self.rows = rows
         self.searches = searches
         self.type = type
+        self.color = color
 
     def to_json(self):
         return {
@@ -510,6 +516,7 @@ class Element:
             trading_enums.PlotAttributes.ROWS.value: self.rows,
             trading_enums.PlotAttributes.SEARCHES.value: self.searches,
             trading_enums.PlotAttributes.TYPE.value: self.type,
+            trading_enums.PlotAttributes.COLOR.value: self.color,
         }
 
     @staticmethod

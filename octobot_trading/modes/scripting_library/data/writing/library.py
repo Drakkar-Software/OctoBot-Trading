@@ -43,6 +43,7 @@ async def store_orders(ctx, orders,
             "kind": kind,
             "side": order.side.value,
             "mode": mode,
+            "color": "red" if order.side is trading_enums.TradeOrderSide.SELL else "blue",
             "fees_amount": float(order.origin_quantity * decimal.Decimal("0.1")),  # TODO
             "fees_currency": symbol_util.split_symbol(order.symbol)[1],  # TODO
         }
@@ -73,7 +74,7 @@ async def plot(ctx, title, x=None,
                condition=None, x_function=exchange_public_data.Time,
                x_multiplier=1000,
                chart=trading_enums.PlotCharts.SUB_CHART.value,
-               cache_value=None, own_yaxis=False):
+               cache_value=None, own_yaxis=False, color=None):
     if condition is not None and cache_value is None:
         if isinstance(ctx.writer.get_serializable_value(condition), bool):
             if condition:
@@ -115,6 +116,7 @@ async def plot(ctx, title, x=None,
                 "chart": chart,
                 "own_yaxis": own_yaxis,
                 "condition": condition,
+                "color": color,
             }
             await ctx.writer.log(table, cache_identifier)
         else:
@@ -146,6 +148,7 @@ async def plot(ctx, title, x=None,
                         "mode": mode,
                         "chart": chart,
                         "own_yaxis": own_yaxis,
+                        "color": color,
                     }
                     for index, value in enumerate(adapted_x)
                 ]
@@ -169,6 +172,7 @@ async def plot(ctx, title, x=None,
                 "mode": mode,
                 "chart": chart,
                 "own_yaxis": own_yaxis,
+                "color": color,
             }
         )
 

@@ -456,6 +456,7 @@ class PlotAttributes(enum.Enum):
     ROWS = "rows"
     SEARCHES = "searches"
     TYPE = "type"
+    COLOR = "color"
 
 
 class PlotCharts(enum.Enum):
