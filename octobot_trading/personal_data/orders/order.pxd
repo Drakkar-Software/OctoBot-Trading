@@ -36,7 +36,6 @@ cdef class Order(util.Initializable):
     cdef public portfolios.Portfolio linked_portfolio
     cdef public orders_states.OrderState state
 
-    cdef public bint is_simulated
     cdef public bint is_synchronized_with_exchange
     cdef public bint is_from_this_octobot
     cdef public bint simulated
@@ -52,7 +51,6 @@ cdef class Order(util.Initializable):
     cdef public object origin_price
     cdef public object origin_stop_price
     cdef public object origin_quantity
-    cdef public object market_total_fees
     cdef public object filled_quantity
     cdef public object filled_price
     cdef public object total_cost
