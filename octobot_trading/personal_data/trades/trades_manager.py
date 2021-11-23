@@ -70,7 +70,7 @@ class TradesManager(util.Initializable):
                     total_fees[fee_currency] += fee_cost
                 else:
                     total_fees[fee_currency] = fee_cost
-            else:
+            elif trade.status is not enums.OrderStatus.CANCELED:
                 self.logger.warning(f"Trade without any registered fee: {trade.to_dict()}")
         return total_fees
 
