@@ -41,7 +41,10 @@ class Context:
         signal_symbol,
         time_frame,
         logger,
-        writer,
+        run_data_writer,
+        orders_writer,
+        trades_writer,
+        symbol_writer,
         trading_mode_class,
         trigger_cache_timestamp,
         trigger_source,
@@ -57,7 +60,10 @@ class Context:
         self.signal_symbol = signal_symbol
         self.time_frame = time_frame
         self.logger = logger
-        self.writer = writer
+        self.run_data_writer = run_data_writer
+        self.orders_writer = orders_writer
+        self.trades_writer = trades_writer
+        self.symbol_writer = symbol_writer
         self.trading_mode_class = trading_mode_class
         self.trigger_cache_timestamp = trigger_cache_timestamp
         self.trigger_source = trigger_source
@@ -81,6 +87,9 @@ class Context:
             None,
             None,
             logger,
+            None,
+            None,
+            None,
             None,
             trading_mode_class,
             None,

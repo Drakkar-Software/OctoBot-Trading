@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.databases as databases
 import octobot_trading.modes.scripting_library.data as data
 
 
@@ -21,6 +22,8 @@ def set_script_name(ctx, name):
 
 
 def get_backtesting_db(ctx, run_id, optimizer_id=None):
+    db_manager = databases.DatabaseManager(ctx.trading_mode_class, backtesting_id=run_id, optimizer_id=optimizer_id)
+    # TODO figure out which tb
     return ctx.trading_mode_class.get_db_name(
         prefix=run_id,
         backtesting=True,

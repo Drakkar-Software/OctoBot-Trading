@@ -20,10 +20,10 @@ import numpy
 
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.enums as trading_enums
-import octobot_trading.constants as trading_constants
 import octobot_trading.api as trading_api
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.enums as commons_enums
+import octobot_commons.constants as commons_constants
 
 
 async def store_orders(ctx, orders,
@@ -49,7 +49,7 @@ async def store_orders(ctx, orders,
         }
         for order in orders
     ]
-    await ctx.writer.log_many(trading_enums.DBTables.ORDERS.value, order_data)
+    await ctx.orders_writer.log_many(trading_enums.DBTables.ORDERS.value, order_data)
 
 
 async def plot_candles(ctx, pair, time_frame, chart=trading_enums.PlotCharts.MAIN_CHART.value):
@@ -59,13 +59,13 @@ async def plot_candles(ctx, pair, time_frame, chart=trading_enums.PlotCharts.MAI
         "time_frame": time_frame,
         "exchange": ctx.exchange_name
     }
-    if not (ctx.writer.are_data_initialized or
-            ctx.writer.contains_values(table, candles_identifier)):
+    if not (ctx.run_data_writer.are_data_initialized or
+            ctx.symbol_writer.contains_values(table, candles_identifier)):
         candles_identifier["value"] =  \
             trading_api.get_backtesting_data_file(ctx.exchange_manager, pair, commons_enums.TimeFrames(time_frame)) \
-            if trading_api.get_is_backtesting(ctx.exchange_manager) else trading_constants.LOCAL_BOT_DATA
+            if trading_api.get_is_backtesting(ctx.exchange_manager) else commons_constants.LOCAL_BOT_DATA
         candles_identifier["chart"] = chart
-        await ctx.writer.log(table, candles_identifier)
+        await ctx.symbol_writer.log(table, candles_identifier)
 
 
 async def plot(ctx, title, x=None,
@@ -76,7 +76,7 @@ async def plot(ctx, title, x=None,
                chart=trading_enums.PlotCharts.SUB_CHART.value,
                cache_value=None, own_yaxis=False, color=None):
     if condition is not None and cache_value is None:
-        if isinstance(ctx.writer.get_serializable_value(condition), bool):
+        if isinstance(ctx.symbol_writer.get_serializable_value(condition), bool):
             if condition:
                 x = numpy.array((x_function(ctx, ctx.traded_pair, ctx.time_frame)[-1], ))
                 y = numpy.array((y[-1], ))
@@ -94,8 +94,8 @@ async def plot(ctx, title, x=None,
                     candidate_x.append(x_data[index])
             x = numpy.array(candidate_x)
             y = numpy.array(candidate_y)
-    indicator_query = await ctx.writer.search()
-    if init_only and not ctx.writer.are_data_initialized and await ctx.writer.count(
+    indicator_query = await ctx.symbol_writer.search()
+    if init_only and not ctx.run_data_writer.are_data_initialized and await ctx.symbol_writer.count(
             title,
             # needs parentheses to evaluate the right side of the equality first
             (indicator_query.pair == (pair or ctx.traded_pair))
@@ -118,7 +118,7 @@ async def plot(ctx, title, x=None,
                 "condition": condition,
                 "color": color,
             }
-            await ctx.writer.log(table, cache_identifier)
+            await ctx.symbol_writer.log(table, cache_identifier)
         else:
             adapted_x = None
             if x is not None:
@@ -131,19 +131,19 @@ async def plot(ctx, title, x=None,
             if adapted_x is None:
                 raise RuntimeError("No confirmed adapted_x")
             adapted_x = adapted_x * x_multiplier
-            await ctx.writer.log_many(
+            await ctx.symbol_writer.log_many(
                 title,
                 [
                     {
                         "pair": pair or ctx.traded_pair,
                         "x": value,
-                        "y": ctx.writer.get_value_from_array(y, index),
-                        "z": ctx.writer.get_value_from_array(z, index),
-                        "open": ctx.writer.get_value_from_array(open, index),
-                        "high": ctx.writer.get_value_from_array(high, index),
-                        "low": ctx.writer.get_value_from_array(low, index),
-                        "close": ctx.writer.get_value_from_array(close, index),
-                        "volume": ctx.writer.get_value_from_array(volume, index),
+                        "y": ctx.symbol_writer.get_value_from_array(y, index),
+                        "z": ctx.symbol_writer.get_value_from_array(z, index),
+                        "open": ctx.symbol_writer.get_value_from_array(open, index),
+                        "high": ctx.symbol_writer.get_value_from_array(high, index),
+                        "low": ctx.symbol_writer.get_value_from_array(low, index),
+                        "close": ctx.symbol_writer.get_value_from_array(close, index),
+                        "volume": ctx.symbol_writer.get_value_from_array(volume, index),
                         "kind": kind,
                         "mode": mode,
                         "chart": chart,
@@ -155,19 +155,19 @@ async def plot(ctx, title, x=None,
 
             )
     elif cache_value is None and x is not None and len(x) \
-            and not ctx.writer.contains_x(title, ctx.writer.get_value_from_array(x, -1) * x_multiplier):
-        await ctx.writer.log(
+            and not ctx.symbol_writer.contains_x(title, ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier):
+        await ctx.symbol_writer.log(
             title,
             {
                 "pair": pair or ctx.traded_pair,
-                "x": ctx.writer.get_value_from_array(x, -1) * x_multiplier,
-                "y": ctx.writer.get_value_from_array(y, -1),
-                "z": ctx.writer.get_value_from_array(z, -1),
-                "open": ctx.writer.get_value_from_array(open, -1),
-                "high": ctx.writer.get_value_from_array(high, -1),
-                "low": ctx.writer.get_value_from_array(low, -1),
-                "close": ctx.writer.get_value_from_array(close, -1),
-                "volume": ctx.writer.get_value_from_array(volume, -1),
+                "x": ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier,
+                "y": ctx.symbol_writer.get_value_from_array(y, -1),
+                "z": ctx.symbol_writer.get_value_from_array(z, -1),
+                "open": ctx.symbol_writer.get_value_from_array(open, -1),
+                "high": ctx.symbol_writer.get_value_from_array(high, -1),
+                "low": ctx.symbol_writer.get_value_from_array(low, -1),
+                "close": ctx.symbol_writer.get_value_from_array(close, -1),
+                "volume": ctx.symbol_writer.get_value_from_array(volume, -1),
                 "kind": kind,
                 "mode": mode,
                 "chart": chart,
@@ -180,12 +180,12 @@ async def plot(ctx, title, x=None,
 async def plot_shape(ctx, title, value, y_value,
                      chart=trading_enums.PlotCharts.SUB_CHART.value, pair=None,
                      kind="markers", mode="lines", x_multiplier=1000):
-    await ctx.writer.log(
+    await ctx.symbol_writer.log(
         title,
         {
             "x": exchange_public_data.current_time(ctx) * x_multiplier,
             "y": y_value,
-            "value": ctx.writer.get_serializable_value(value),
+            "value": ctx.symbol_writer.get_serializable_value(value),
             "pair": pair or ctx.traded_pair,
             "kind": kind,
             "mode": mode,

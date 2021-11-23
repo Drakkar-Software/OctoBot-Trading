@@ -17,6 +17,7 @@ import os
 import time
 import contextlib
 import importlib
+import asyncio
 
 
 import octobot_commons.logging as logging
@@ -38,7 +39,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
     TRADING_SCRIPT_MODULE = None
     BACKTESTING_SCRIPT_MODULE = None
 
-    BACKTESTING_FILE_BY_BOT_ID = {}
+    BACKTESTING_ID_BY_BOT_ID = {}
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
@@ -97,25 +98,17 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         else:
             return os.path.join(root, commons_constants.OPTIMIZER_RUNS_FOLDER, str(optimizer_id))
 
-    @classmethod
-    def init_db_folder(cls):
-        if not os.path.exists(cls.get_db_folder()):
-            os.makedirs(cls.get_db_folder())
-        if not os.path.exists(cls.get_db_folder(backtesting=True)):
-            os.makedirs(cls.get_db_folder(backtesting=True))
-
-    @classmethod
-    def register_prefix_for_bot(cls, bot_id, prefix):
-        cls.BACKTESTING_FILE_BY_BOT_ID[bot_id] = prefix
-
-    @classmethod
-    def get_prefix(cls, bot_id):
-        return cls.BACKTESTING_FILE_BY_BOT_ID[bot_id]
+    # @classmethod
+    # def init_db_folder(cls):
+    #     if not os.path.exists(cls.get_db_folder()):
+    #         os.makedirs(cls.get_db_folder())
+    #     if not os.path.exists(cls.get_db_folder(backtesting=True)):
+    #         os.makedirs(cls.get_db_folder(backtesting=True))
 
     @classmethod
     def get_db_name(cls, prefix=0, suffix=0, backtesting=False, metadata_db=False, bot_id=None, optimizer_id=None):
         if prefix == 0 and bot_id is not None:
-            prefix = cls.get_prefix(bot_id)
+            prefix = cls.get_backtesting_id(bot_id)
         suffix_data = f"_{suffix}" if suffix != 0 else ""
         prefix_data = f"{prefix}_" if prefix != 0 else ""
         return os.path.join(cls.get_db_folder(backtesting=backtesting, optimizer_id=optimizer_id),
@@ -148,48 +141,35 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             # todo cancel and restart live tasks
             await self.start_over_database(not live)
 
-    def get_storage_db_name(self, with_suffix=False, backtesting=False, optimizer_id=None):
-        if not with_suffix:
-            try:
-                # try getting an existing db
-                self.get_db_name(prefix=self.BACKTESTING_FILE_BY_BOT_ID[self.bot_id],
-                                 backtesting=backtesting, optimizer_id=optimizer_id)
-            except KeyError:
-                pass
-        index = 1
-        name_candidate = self.get_db_name(suffix=index, backtesting=backtesting, optimizer_id=optimizer_id) \
-            if with_suffix else self.get_db_name(prefix=index, backtesting=backtesting, optimizer_id=optimizer_id)
-        while index < 1000:
-            if os.path.isfile(name_candidate):
-                index += 1
-                name_candidate = self.get_db_name(suffix=index, backtesting=backtesting, optimizer_id=optimizer_id) \
-                    if with_suffix \
-                    else self.get_db_name(prefix=index, backtesting=backtesting, optimizer_id=optimizer_id)
-            else:
-                if with_suffix is False:
-                    self.register_prefix_for_bot(self.bot_id, index)
-                return name_candidate
-        raise RuntimeError("Impossible to find a new database name")
-
     async def start_over_database(self, backtesting):
         # todo dont move like this but add a check to ensure multiple subsequent moves dont happen when multiple symbols
         for producer in self.producers:
-            await producer.writer.close()
-            name_candidate = self.get_storage_db_name(backtesting=backtesting, with_suffix=True)
-            os.rename(producer.writer.get_db_path(), name_candidate)
-            producer.writer = databases.DBWriter(producer.writer.get_db_path())
+            await scripting_library.clear_user_inputs(producer.run_data_writer)
             await producer.set_final_eval(*producer.last_call)
-
-    @contextlib.asynccontextmanager
-    async def get_metadata_writer(self, with_lock):
-        file_path = self.get_db_name(backtesting=self.exchange_manager.backtesting,
-                                     metadata_db=True,
-                                     optimizer_id=self.get_optimizer_id())
-        async with databases.DBWriter.database(file_path, with_lock=with_lock) as writer:
-            yield writer
 
     def get_optimizer_id(self):
         return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
+
+    @classmethod
+    def register_backtesting_id_for_bot(cls, bot_id, prefix):
+        cls.BACKTESTING_ID_BY_BOT_ID[bot_id] = prefix
+
+    @classmethod
+    async def get_backtesting_id(cls, bot_id, config=None):
+        try:
+            return cls.BACKTESTING_ID_BY_BOT_ID[bot_id]
+        except KeyError:
+            try:
+                return config.get(commons_constants.CONFIG_BACKTESTING_ID, await cls._generate_new_backtesting_id())
+            except AttributeError:
+                raise RuntimeError("config is required when a backtesting_id is not registered with a bot id")
+
+    @classmethod
+    async def _generate_new_backtesting_id(cls):
+        db_manager = databases.DatabaseManager(cls)
+        db_manager.backtesting_id = await db_manager.generate_new_backtesting_id()
+        # initialize to lock the backtesting id
+        await db_manager.initialize()
 
 
 class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProducer):
@@ -201,7 +181,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         """
         profitability, profitability_percent, _, _, _ = trading_api.get_profitability_stats(self.exchange_manager)
         return {
-            "id": self.trading_mode.get_prefix(self.trading_mode.bot_id),
+            "id": await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id),
             "p&l": float(profitability),
             "p&l%": float(profitability_percent),
             "trades": len(trading_api.get_trade_history(self.exchange_manager)),
@@ -226,15 +206,23 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel, config, trading_mode, exchange_manager)
-        self.trading_mode.init_db_folder()
-        self.writer = databases.DBWriter(
-            self.trading_mode.get_storage_db_name(with_suffix=False, backtesting=self.exchange_manager.backtesting,
-                                                  optimizer_id=self.trading_mode.get_optimizer_id())
-        )
         self.last_call = None
         self.traded_pair = trading_mode.symbol
         self.contexts = []
         self.are_metadata_saved = False
+
+    async def start(self) -> None:
+        await super().start()
+        backtesting_id = await self.trading_mode.get_backtesting_id() if self.exchange_manager.is_backtesting else None
+        self.database_manager = databases.DatabaseManager(self.trading_mode.__class__,
+                                                          backtesting_id=backtesting_id,
+                                                          optimizer_id=self.trading_mode.get_optimizer_id())
+        await self.database_manager.initialize(self.exchange_name)
+        self.run_data_writer = databases.DBWriter(self.database_manager.get_run_data_db_identifier())
+        self.orders_writer = databases.DBWriter(self.database_manager.get_orders_db_identifier())
+        self.trades_writer = databases.DBWriter(self.database_manager.get_trades_db_identifier())
+        self.symbol_writer = databases.DBWriter(self.database_manager.get_symbol_db_identifier(self.exchange_name,
+                                                                                               self.traded_pair))
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
         context = scripting_library.Context(
@@ -248,7 +236,10 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             symbol,
             time_frame,
             self.logger,
-            self.writer,
+            self.run_data_writer,
+            self.orders_writer,
+            self.trades_writer,
+            self.symbol_writer,
             self.trading_mode.__class__,
             None,    # trigger_timestamp todo
             None,
@@ -261,9 +252,9 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         context.symbol = symbol
         context.time_frame = time_frame
         try:
-            if not self.writer.are_data_initialized:
-                await scripting_library.save_metadata(self.writer, await self.get_live_metadata())
-                await scripting_library.save_portfolio(self.writer, context)
+            if not self.run_data_writer.are_data_initialized:
+                await scripting_library.save_metadata(self.run_data_writer, await self.get_live_metadata())
+                await scripting_library.save_portfolio(self.run_data_writer, context)
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise
@@ -272,19 +263,25 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         finally:
             if not self.exchange_manager.is_backtesting:
                 # only update db after each run in live mode
-                await self.writer.flush()
+                await asyncio.gather(*(writer.flush() for writer in self.writers()))
                 if context.has_cache(context.traded_pair, context.time_frame):
                     await context.get_cache().flush()
-            self.writer.are_data_initialized = True
+            self.run_data_writer.are_data_initialized = True
             self.contexts.remove(context)
+
+    @contextlib.asynccontextmanager
+    async def get_metadata_writer(self, with_lock):
+        async with databases.DBWriter.database(self.database_manager.get_backtesting_metadata_identifier(),
+                                               with_lock=with_lock) as writer:
+            yield writer
 
     async def stop(self) -> None:
         """
         Stop trading mode channels subscriptions
         """
-        if not self.are_metadata_saved and self.exchange_manager.is_backtesting:     # todo ensure multiple pairs conflicts
-            await self.writer.close()
-            async with self.trading_mode.get_metadata_writer(with_lock=True) as writer:
+        if not self.are_metadata_saved and self.exchange_manager.is_backtesting:
+            await asyncio.gather(*(writer.close() for writer in self.writers()))
+            async with self.get_metadata_writer(with_lock=True) as writer:
                 await scripting_library.save_metadata(writer, await self.get_backtesting_metadata())
                 self.are_metadata_saved = True
         await super().stop()

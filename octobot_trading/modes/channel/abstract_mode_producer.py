@@ -55,6 +55,9 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         # Define trading modes default consumer priority level
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
+        self.database_manager = None
+        self.run_data_writer = self.orders_writer = self.trades_writer = self.symbol_writer = None
+
     def is_cryptocurrency_wildcard(self):
         """
         Should be True only if self.trading_mode.get_is_cryptocurrency_wildcard() is already True
@@ -208,3 +211,6 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         if self.exchange_manager.trader.is_enabled:
             return await self.exchange_manager.trader.cancel_open_orders(symbol, cancel_loaded_orders)
         return True
+
+    def writers(self):
+        return self.run_data_writer, self.orders_writer, self.trades_writer, self.symbol_writer
