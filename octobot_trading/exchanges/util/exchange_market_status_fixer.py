@@ -21,6 +21,8 @@ from octobot_trading.enums import ExchangeConstantsMarketStatusInfoColumns as Ec
 
 
 def is_ms_valid(value, zero_valid=False):
+    if isinstance(value, str):
+        value = float(value)
     return value is not None and value is not math.nan and (value >= 0 if zero_valid else value > 0)
 
 
