@@ -29,7 +29,7 @@ pytestmark = pytest.mark.asyncio
 
 class TestWavesExchangeRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "wavesexchange"
-    SYMBOL = "BTC/USDT"
+    SYMBOL = "BTC/USDN"
     SYMBOL_2 = "ETH/BTC"
 
     async def test_time_frames(self):
