@@ -25,9 +25,11 @@ def get_logger():
     return octobot_commons.logging.get_logger("BacktestingRunData")
 
 
-async def get_candles(reader, pair, time_frame, metadata):
-    candles_sources = await reader.select(trading_enums.DBTables.CANDLES_SOURCE.value,
-                                         ((await reader.search()).pair == pair))
+async def get_candles(meta_database, exchange, pair, time_frame, metadata):
+    candles_sources = await meta_database.get_symbol_db(exchange, pair).select(
+        trading_enums.DBTables.CANDLES_SOURCE.value,
+        ((await meta_database.get_symbol_db(exchange, pair).search()).pair == pair)
+    )
     to_use_candles_source = candles_sources[0]
     if time_frame is not None:
         for candles_source in candles_sources:
@@ -43,25 +45,29 @@ async def get_candles(reader, pair, time_frame, metadata):
                                                 superior_timestamp=metadata[trading_enums.DBRows.END_TIME.value])
 
 
-async def get_trades(reader, pair):
-    return await reader.select(trading_enums.DBTables.TRADES.value, (await reader.search()).pair == pair)
+async def get_trades(meta_database, pair):
+    return await meta_database.get_orders_db().select(trading_enums.DBTables.TRADES.value,
+                                                      (await meta_database.get_orders_db().search()).pair == pair)  # TODO use trades db
 
 
-async def get_metadata(reader):
-    return (await reader.all(trading_enums.DBTables.METADATA.value))[0]
+async def get_metadata(meta_database):
+    return (await meta_database.get_run_db().all(trading_enums.DBTables.METADATA.value))[0]
 
 
-async def get_starting_portfolio(reader) -> dict:
-    return (await reader.all(trading_enums.DBTables.PORTFOLIO.value))[0]
+async def get_starting_portfolio(meta_database) -> dict:
+    return (await meta_database.get_run_db().all(trading_enums.DBTables.PORTFOLIO.value))[0]
 
 
-async def _load_historical_values(reader, with_candles=True, with_trades=True, with_portfolio=True, time_frame=None):
+async def _load_historical_values(meta_database, exchange, with_candles=True, with_trades=True, with_portfolio=True, time_frame=None):
     price_data = {}
     trades_data = {}
     moving_portfolio_data = {}
     try:
-        starting_portfolio = await get_starting_portfolio(reader)
-        metadata = await get_metadata(reader)
+        starting_portfolio = await get_starting_portfolio(meta_database)
+        metadata = await get_metadata(meta_database)
+
+        exchange = exchange or meta_database.database_manager.context.exchange_name \
+                   or metadata[trading_enums.DBRows.EXCHANGES.value][0]    # TODO handle multi exchanges
         ref_market = metadata[trading_enums.DBRows.REFERENCE_MARKET.value]
         # init data
         for symbol, values in starting_portfolio.items():
@@ -69,13 +75,13 @@ async def _load_historical_values(reader, with_candles=True, with_trades=True, w
                 pair = symbol_util.merge_currencies(symbol, ref_market)
                 if with_candles and pair not in price_data:
                     # convert candles timestamp in millis
-                    raw_candles = await get_candles(reader, pair, time_frame, metadata)
+                    raw_candles = await get_candles(meta_database, exchange, pair, time_frame, metadata)
                     for candle in raw_candles:
                         candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] = \
                             candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000
                     price_data[pair] = raw_candles
                 if with_trades and pair not in trades_data:
-                    trades_data[pair] = await get_trades(reader, pair)
+                    trades_data[pair] = await get_trades(meta_database, pair)
             if with_portfolio:
                 moving_portfolio_data[symbol] = values[octobot_commons.constants.PORTFOLIO_TOTAL]
     except IndexError:
@@ -83,8 +89,8 @@ async def _load_historical_values(reader, with_candles=True, with_trades=True, w
     return price_data, trades_data, moving_portfolio_data
 
 
-async def plot_historical_portfolio_value(reader, plotted_element, own_yaxis=False):
-    price_data, trades_data, moving_portfolio_data = await _load_historical_values(reader)
+async def plot_historical_portfolio_value(meta_database, plotted_element, exchange=None, own_yaxis=False):
+    price_data, trades_data, moving_portfolio_data = await _load_historical_values(meta_database, exchange)
     time_data = []
     value_data = []
     for pair, candles in price_data.items():
@@ -118,14 +124,14 @@ async def plot_historical_portfolio_value(reader, plotted_element, own_yaxis=Fal
         own_yaxis=own_yaxis)
 
 
-async def plot_historical_pnl_value(reader, plotted_element, x_as_trade_count=True, own_yaxis=False):
+async def plot_historical_pnl_value(meta_database, plotted_element, exchange=None, x_as_trade_count=True, own_yaxis=False):
     # PNL:
     # 1. open position: consider position opening fee from PNL
     # 2. close position: consider closed amount + closing fee into PNL
     # what is a trade ?
     #   futures: when position going to 0 (from long/short) => trade is closed
     #   spot: when position lowered => trade is closed
-    price_data, trades_data, moving_portfolio_data = await _load_historical_values(reader)
+    price_data, trades_data, moving_portfolio_data = await _load_historical_values(meta_database, exchange)
     if not (price_data and next(iter(price_data.values()))):
         return
     x_data = [0 if x_as_trade_count else next(iter(price_data.values()))[0][commons_enums.PriceIndexes.IND_PRICE_TIME.value]]
@@ -191,8 +197,8 @@ async def plot_historical_pnl_value(reader, plotted_element, x_as_trade_count=Tr
         own_yaxis=own_yaxis)
 
 
-async def plot_trades(reader, plotted_element):
-    data = await reader.all(trading_enums.DBTables.TRADES.value)
+async def plot_trades(meta_database, plotted_element):
+    data = await meta_database.get_orders_db().all(trading_enums.DBTables.TRADES.value)  # TODO use get_trades_db
     if not data:
         get_logger().debug(f"Nothing to create a table from when reading {trading_enums.DBTables.TRADES.value}")
         return
@@ -227,9 +233,16 @@ async def plot_trades(reader, plotted_element):
         searches=searches)
 
 
-async def plot_table(reader, plotted_element, data_source, columns=None, rows=None,
+async def plot_table(meta_database, plotted_element, data_source, columns=None, rows=None,
                      searches=None, column_render=None, types=None):
-    data = await reader.all(data_source)
+    if data_source == trading_enums.DBTables.TRADES.value:
+        data = await meta_database.get_orders_db().all(trading_enums.DBTables.TRADES.value)  # TODO use get_trades_db
+    elif data_source == trading_enums.DBTables.ORDERS.value:
+        data = await meta_database.get_orders_db().all(trading_enums.DBTables.ORDERS.value)
+    else:
+        exchange = meta_database.database_manager.context.exchange_name
+        symbol = meta_database.database_manager.context.traded_pair
+        data = await meta_database.get_symbol_db(exchange, symbol).all(data_source)
     if not data:
         get_logger().debug(f"Nothing to create a table from when reading {data_source}")
         return

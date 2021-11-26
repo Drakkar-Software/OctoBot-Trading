@@ -21,18 +21,8 @@ def set_script_name(ctx, name):
     ctx.tentacle.script_name = name
 
 
-def get_backtesting_db(ctx, run_id, optimizer_id=None):
-    db_manager = databases.DatabaseManager(ctx.trading_mode_class, backtesting_id=run_id, optimizer_id=optimizer_id)
-    # TODO figure out which tb
-    return ctx.trading_mode_class.get_db_name(
-        prefix=run_id,
-        backtesting=True,
-        optimizer_id=optimizer_id,
-    )
-
-
-async def read_metadata(ctx=None, trading_mode=None, backtesting=True, optimizer_id=None):
+async def read_metadata(ctx=None, trading_mode=None, optimizer_id=None):
     trading_mode = trading_mode or ctx.trading_mode_class
-    data_file = trading_mode.get_db_name(metadata_db=True, backtesting=backtesting, optimizer_id=optimizer_id)
-    async with data.MetadataReader.database(data_file) as reader:
+    database_manager = databases.DatabaseManager(trading_mode, backtesting_id="1", optimizer_id=optimizer_id)
+    async with data.MetadataReader.database(database_manager.get_backtesting_metadata_identifier()) as reader:
         return await reader.read()

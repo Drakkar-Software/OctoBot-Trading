@@ -47,32 +47,38 @@ class DisplayedElements:
         self.type: str = element_type
         self.logger = logging.get_logger(self.__class__.__name__)
 
-    async def fill_from_database(self, database_name, exchange_id, with_inputs=True):
-        async with databases.DBReader.database(database_name) as reader:
+    async def fill_from_database(self, database_manager, exchange_name, symbol, time_frame, exchange_id, with_inputs=True):
+
+        async with databases.MetaDatabase.database(database_manager) as meta_db:
             graphs_by_parts = {}
             inputs = []
             candles = []
             cached_values = []
-            for table_name in await reader.tables():
-                display_data = await reader.all(table_name)
-                if table_name == trading_enums.DBTables.INPUTS.value:
-                    inputs += display_data
-                if table_name == trading_enums.DBTables.CANDLES_SOURCE.value:
-                    candles += display_data
-                if table_name == trading_enums.DBTables.CACHE_SOURCE.value:
-                    cached_values += display_data
-                else:
-                    try:
-                        chart = display_data[0]["chart"]
-                        if chart in graphs_by_parts:
-                            graphs_by_parts[chart][table_name] = display_data
-                        else:
-                            graphs_by_parts[chart] = {table_name: display_data}
-                    except (IndexError, KeyError):
-                        # some table have no chart
-                        pass
+            dbs = [meta_db.get_run_db(), meta_db.get_orders_db(), meta_db.get_trades_db()]
+            if exchange_name:
+                dbs.append(meta_db.get_symbol_db(exchange_name, symbol))
+            for db in dbs:
+                for table_name in await db.tables():
+                    display_data = await db.all(table_name)
+                    if table_name == trading_enums.DBTables.INPUTS.value:
+                        inputs += display_data
+                    if table_name == trading_enums.DBTables.CANDLES_SOURCE.value:
+                        candles += display_data
+                    if table_name == trading_enums.DBTables.CACHE_SOURCE.value:
+                        cached_values += display_data
+                    else:
+                        try:
+                            #TODO time_frame filter
+                            chart = display_data[0]["chart"]
+                            if chart in graphs_by_parts:
+                                graphs_by_parts[chart][table_name] = display_data
+                            else:
+                                graphs_by_parts[chart] = {table_name: display_data}
+                        except (IndexError, KeyError):
+                            # some table have no chart
+                            pass
             await self._add_candles(graphs_by_parts, candles, exchange_id)
-            await self._add_cached_values(graphs_by_parts, cached_values)
+            await self._add_cached_values(graphs_by_parts, cached_values, symbol, time_frame)
             self._plot_graphs(graphs_by_parts)
             if with_inputs:
                 self._display_inputs(inputs)
@@ -217,18 +223,20 @@ class DisplayedElements:
                 self.logger.error(f"Unknown input type: {e}")
         main_schema["properties"][title.replace(" ", "_")] = properties
 
-    async def _add_cached_values(self, graphs_by_parts, cached_values):
+    async def _add_cached_values(self, graphs_by_parts, cached_values, symbol, time_frame):
         for cached_value_metadata in cached_values:
-            try:
-                chart = cached_value_metadata["chart"]
-                values = sorted(await self._get_cached_values_to_display(cached_value_metadata), key=lambda x: x["x"])
+            if cached_value_metadata.get(trading_enums.DBRows.PAIR.value, None) == symbol and \
+               cached_value_metadata.get(trading_enums.DBRows.TIME_FRAME.value, None) == time_frame:
                 try:
-                    graphs_by_parts[chart][cached_value_metadata[trading_enums.PlotAttributes.TITLE.value]] = values    # TODO multi candles sets
+                    chart = cached_value_metadata["chart"]
+                    values = sorted(await self._get_cached_values_to_display(cached_value_metadata), key=lambda x: x["x"])
+                    try:
+                        graphs_by_parts[chart][cached_value_metadata[trading_enums.PlotAttributes.TITLE.value]] = values
+                    except KeyError:
+                        graphs_by_parts[chart] = {trading_enums.PlotAttributes.TITLE.value: values}
                 except KeyError:
-                    graphs_by_parts[chart] = {trading_enums.PlotAttributes.TITLE.value: values}    # TODO multi candles sets
-            except KeyError:
-                # some table have no chart
-                pass
+                    # some table have no chart
+                    pass
 
     async def _get_cached_values_to_display(self, cached_value_metadata):
         cache_file = cached_value_metadata[trading_enums.PlotAttributes.VALUE.value]
@@ -296,7 +304,7 @@ class DisplayedElements:
                 pass
 
     async def _get_candles_to_display(self, candles_metadata, exchange_id):
-        if candles_metadata[trading_enums.DBRows.VALUE.value] == trading_constants.LOCAL_BOT_DATA:
+        if candles_metadata[trading_enums.DBRows.VALUE.value] == commons_constants.LOCAL_BOT_DATA:
             exchange_manager = trading_api.get_exchange_manager_from_exchange_id(exchange_id)
             array_candles = trading_api.get_symbol_historical_candles(
                 trading_api.get_symbol_data(

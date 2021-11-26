@@ -18,12 +18,14 @@ import os
 import json
 import inspect
 import hashlib
+import contextlib
 
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.errors as common_errors
 import octobot_commons.databases as databases
+import octobot_commons.databases.adaptors as adaptors
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_trading.api as exchange_api
 
@@ -49,6 +51,8 @@ class Context:
         trigger_cache_timestamp,
         trigger_source,
         trigger_value,
+        backtesting_id,
+        optimizer_id,
     ):
         self.tentacle = tentacle
         self.exchange_manager = exchange_manager
@@ -73,15 +77,17 @@ class Context:
         # no cache if live trading to ensure cache is always writen
         self._flush_cache_when_necessary = not exchange_api.get_is_backtesting(exchange_manager) \
             if exchange_manager else False
+        self.backtesting_id = backtesting_id
+        self.optimizer_id = optimizer_id
 
     @staticmethod
-    def minimal(trading_mode_class, logger):
+    def minimal(trading_mode_class, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):
         return Context(
             None,
             None,
             None,
-            None,
-            None,
+            exchange_name,
+            traded_pair,
             None,
             None,
             None,
@@ -94,7 +100,9 @@ class Context:
             trading_mode_class,
             None,
             None,
-            None
+            None,
+            backtesting_id,
+            optimizer_id,
         )
 
     def get_cache(self):
@@ -158,3 +166,13 @@ class Context:
         :return: the cache database class
         """
         return databases.CacheTimestampDatabase(file_path, database_adaptor=databases.TinyDBAdaptor)
+
+    @contextlib.asynccontextmanager
+    async def run_data(self, with_lock=False, cache_size=None, database_adaptor=adaptors.TinyDBAdaptor):
+        database_manager = databases.DatabaseManager(self.trading_mode_class, database_adaptor=database_adaptor,
+                                                     backtesting_id=self.backtesting_id,
+                                                     optimizer_id=self.optimizer_id,
+                                                     context=self)
+        async with databases.MetaDatabase.database(database_manager, with_lock=with_lock,
+                                                   cache_size=cache_size) as meta_db:
+            yield meta_db

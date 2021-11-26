@@ -487,6 +487,7 @@ class DBTables(enum.Enum):
 class DBRows(enum.Enum):
     REFERENCE_MARKET = "ref_market"
     EXCHANGE = "exchange"
+    EXCHANGES = "exchanges"
     PAIR = "pair"
     TIME_FRAME = "time_frame"
     VALUE = "value"

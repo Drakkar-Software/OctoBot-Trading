@@ -82,9 +82,10 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             await self.reload_script(live=False)
 
     @classmethod
-    async def get_backtesting_plot(cls, run_id):
-        ctx = scripting_library.Context.minimal(cls, logging.get_logger(cls.get_name()))
-        return await cls.get_script_from_module(cls.BACKTESTING_SCRIPT_MODULE)(ctx, run_id)
+    async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id):
+        ctx = scripting_library.Context.minimal(cls, logging.get_logger(cls.get_name()), exchange, symbol,
+                                                backtesting_id, optimizer_id)
+        return await cls.get_script_from_module(cls.BACKTESTING_SCRIPT_MODULE)(ctx)
 
     @classmethod
     def get_is_symbol_wildcard(cls) -> bool:
@@ -94,7 +95,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
     def get_db_folder(cls, backtesting=False, optimizer_id=None):
         root = os.path.join(commons_constants.USER_FOLDER, cls.__name__)
         if optimizer_id is None:
-            return os.path.join(root, trading_constants.BACKTESTING) if backtesting else root
+            return os.path.join(root, commons_constants.BACKTESTING) if backtesting else root
         else:
             return os.path.join(root, commons_constants.OPTIMIZER_RUNS_FOLDER, str(optimizer_id))
 
@@ -160,7 +161,10 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             return cls.BACKTESTING_ID_BY_BOT_ID[bot_id]
         except KeyError:
             try:
-                return config.get(commons_constants.CONFIG_BACKTESTING_ID, await cls._generate_new_backtesting_id())
+                backtesting_id = config.get(commons_constants.CONFIG_BACKTESTING_ID) \
+                                 or await cls._generate_new_backtesting_id()
+                cls.BACKTESTING_ID_BY_BOT_ID[bot_id] = backtesting_id
+                return backtesting_id
             except AttributeError:
                 raise RuntimeError("config is required when a backtesting_id is not registered with a bot id")
 
@@ -170,6 +174,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         db_manager.backtesting_id = await db_manager.generate_new_backtesting_id()
         # initialize to lock the backtesting id
         await db_manager.initialize()
+        return db_manager.backtesting_id
 
 
 class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProducer):
@@ -202,6 +207,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             trading_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config),
             trading_enums.DBRows.START_TIME.value: start_time,
             trading_enums.DBRows.END_TIME.value: end_time,
+            trading_enums.DBRows.EXCHANGES.value: [self.exchange_name],  # TODO multi exchange
         }
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
@@ -213,7 +219,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
 
     async def start(self) -> None:
         await super().start()
-        backtesting_id = await self.trading_mode.get_backtesting_id() if self.exchange_manager.is_backtesting else None
+        backtesting_id = await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id, self.trading_mode.config) \
+            if self.exchange_manager.is_backtesting else None
         self.database_manager = databases.DatabaseManager(self.trading_mode.__class__,
                                                           backtesting_id=backtesting_id,
                                                           optimizer_id=self.trading_mode.get_optimizer_id())
@@ -242,6 +249,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             self.symbol_writer,
             self.trading_mode.__class__,
             None,    # trigger_timestamp todo
+            None,
+            None,
             None,
             None,
         )
