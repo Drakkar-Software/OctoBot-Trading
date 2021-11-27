@@ -40,6 +40,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
     BACKTESTING_SCRIPT_MODULE = None
 
     BACKTESTING_ID_BY_BOT_ID = {}
+    INITIALIZED_DB_BY_BOT_ID = {}
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
@@ -143,9 +144,10 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             await self.start_over_database(not live)
 
     async def start_over_database(self, backtesting):
-        # todo dont move like this but add a check to ensure multiple subsequent moves dont happen when multiple symbols
         for producer in self.producers:
             await scripting_library.clear_user_inputs(producer.run_data_writer)
+            producer.run_data_writer.are_data_initialized = False
+            self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
             await producer.set_final_eval(*producer.last_call)
 
     def get_optimizer_id(self):
@@ -261,9 +263,12 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         context.symbol = symbol
         context.time_frame = time_frame
         try:
-            if not self.run_data_writer.are_data_initialized:
+            if not self.run_data_writer.are_data_initialized and not \
+                    self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
+                await scripting_library.clear_run_data(self.run_data_writer)
                 await scripting_library.save_metadata(self.run_data_writer, await self.get_live_metadata())
                 await scripting_library.save_portfolio(self.run_data_writer, context)
+                self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise

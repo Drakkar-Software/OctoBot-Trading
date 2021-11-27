@@ -34,6 +34,7 @@ async def store_orders(ctx, orders,
     order_data = [
         {
             "x": order.creation_time * x_multiplier,
+            "id": order.order_id,
             "pair": order.symbol,
             "type": order.order_type.name if order.order_type is not None else 'Unknown',
             "volume": float(order.origin_quantity),
@@ -54,23 +55,23 @@ async def store_orders(ctx, orders,
 
 async def plot_candles(ctx, pair, time_frame, chart=trading_enums.PlotCharts.MAIN_CHART.value):
     table = trading_enums.DBTables.CANDLES_SOURCE.value
-    candles_identifier = {
-        "pair": pair,
+    candles_data = {
         "time_frame": time_frame,
-        "exchange": ctx.exchange_name
+        "value": trading_api.get_backtesting_data_file(ctx.exchange_manager, pair, commons_enums.TimeFrames(time_frame)) \
+            if trading_api.get_is_backtesting(ctx.exchange_manager) else commons_constants.LOCAL_BOT_DATA,
+        "chart": chart
     }
-    if not (ctx.run_data_writer.are_data_initialized or
-            ctx.symbol_writer.contains_values(table, candles_identifier)):
-        candles_identifier["value"] =  \
-            trading_api.get_backtesting_data_file(ctx.exchange_manager, pair, commons_enums.TimeFrames(time_frame)) \
-            if trading_api.get_is_backtesting(ctx.exchange_manager) else commons_constants.LOCAL_BOT_DATA
-        candles_identifier["chart"] = chart
-        await ctx.symbol_writer.log(table, candles_identifier)
+    search_query = await ctx.symbol_writer.search()
+    if (not ctx.run_data_writer.are_data_initialized and
+        await ctx.symbol_writer.count(
+            table,
+            ((search_query.time_frame == time_frame) & (search_query.value == candles_data["value"]))) == 0):
+        await ctx.symbol_writer.log(table, candles_data)
 
 
 async def plot(ctx, title, x=None,
                y=None, z=None, open=None, high=None, low=None, close=None, volume=None,
-               pair=None, kind="scatter", mode="lines", init_only=True,
+               kind="scatter", mode="lines", init_only=True,
                condition=None, x_function=exchange_public_data.Time,
                x_multiplier=1000,
                chart=trading_enums.PlotCharts.SUB_CHART.value,
@@ -95,20 +96,24 @@ async def plot(ctx, title, x=None,
             x = numpy.array(candidate_x)
             y = numpy.array(candidate_y)
     indicator_query = await ctx.symbol_writer.search()
+    # needs parentheses to evaluate the right side of the equality first
+    count_query = ((indicator_query.kind == kind)
+                    & (indicator_query.mode == mode)
+                    & (indicator_query.time_frame == ctx.time_frame))
+    if cache_value is not None:
+        count_query = ((indicator_query.kind == kind)
+                        & (indicator_query.mode == mode)
+                        & (indicator_query.time_frame == ctx.time_frame)
+                        & (indicator_query.title == title))
     if init_only and not ctx.run_data_writer.are_data_initialized and await ctx.symbol_writer.count(
-            title,
-            # needs parentheses to evaluate the right side of the equality first
-            (indicator_query.pair == (pair or ctx.traded_pair))
-            & (indicator_query.kind == kind)
-            & (indicator_query.mode == mode)) == 0:
+            trading_enums.DBTables.CACHE_SOURCE.value if cache_value is not None else title,
+            count_query) == 0:
         if cache_value is not None:
             cache_dir, cache_path = ctx.get_cache_path()
             table = trading_enums.DBTables.CACHE_SOURCE.value
             cache_identifier = {
                 "title": title,
-                "pair": pair or ctx.traded_pair,
                 "time_frame": ctx.time_frame,
-                "exchange": ctx.exchange_name,
                 "value": os.path.join(cache_dir, cache_path),
                 "cache_value": cache_value,
                 "kind": kind,
@@ -131,11 +136,31 @@ async def plot(ctx, title, x=None,
             if adapted_x is None:
                 raise RuntimeError("No confirmed adapted_x")
             adapted_x = adapted_x * x_multiplier
+            # TODO multiple updates on init
+            # update = [
+            #         ({
+            #             "x": value,
+            #             "y": ctx.symbol_writer.get_value_from_array(y, index),
+            #             "z": ctx.symbol_writer.get_value_from_array(z, index),
+            #             "open": ctx.symbol_writer.get_value_from_array(open, index),
+            #             "high": ctx.symbol_writer.get_value_from_array(high, index),
+            #             "low": ctx.symbol_writer.get_value_from_array(low, index),
+            #             "close": ctx.symbol_writer.get_value_from_array(close, index),
+            #             "volume": ctx.symbol_writer.get_value_from_array(volume, index),
+            #             "time_frame": ctx.time_frame,
+            #             "kind": kind,
+            #             "mode": mode,
+            #             "chart": chart,
+            #             "own_yaxis": own_yaxis,
+            #             "color": color,
+            #         }, (await ctx.symbol_writer.search()).x == value)
+            #         for index, value in enumerate(adapted_x)
+            #     ]
+            # await ctx.symbol_writer.update_many(title, update)
             await ctx.symbol_writer.log_many(
                 title,
                 [
                     {
-                        "pair": pair or ctx.traded_pair,
                         "x": value,
                         "y": ctx.symbol_writer.get_value_from_array(y, index),
                         "z": ctx.symbol_writer.get_value_from_array(z, index),
@@ -157,12 +182,12 @@ async def plot(ctx, title, x=None,
             )
     elif cache_value is None and x is not None and len(x) \
             and not ctx.symbol_writer.contains_x(title, ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier):
-        await ctx.symbol_writer.log(
+        x_value = ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier
+        await ctx.symbol_writer.update(
             title,
             {
-                "pair": pair or ctx.traded_pair,
                 "time_frame": ctx.time_frame,
-                "x": ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier,
+                "x": x_value,
                 "y": ctx.symbol_writer.get_value_from_array(y, -1),
                 "z": ctx.symbol_writer.get_value_from_array(z, -1),
                 "open": ctx.symbol_writer.get_value_from_array(open, -1),
@@ -175,24 +200,42 @@ async def plot(ctx, title, x=None,
                 "chart": chart,
                 "own_yaxis": own_yaxis,
                 "color": color,
-            }
+            },
+            (await ctx.symbol_writer.search()).x == x_value
         )
 
 
 async def plot_shape(ctx, title, value, y_value,
-                     chart=trading_enums.PlotCharts.SUB_CHART.value, pair=None,
+                     chart=trading_enums.PlotCharts.SUB_CHART.value,
                      kind="markers", mode="lines", x_multiplier=1000):
-    await ctx.symbol_writer.log(
-        title,
-        {
-            "x": exchange_public_data.current_time(ctx) * x_multiplier,
-            "y": y_value,
-            "value": ctx.symbol_writer.get_serializable_value(value),
-            "pair": pair or ctx.traded_pair,
-            "kind": kind,
-            "mode": mode,
-            "chart": chart,
-        }
+    count_query = await ctx.symbol_writer.search()
+    count_query = ((count_query.x == ctx.x)
+                    & (count_query.mode == mode)
+                    & (count_query.time_frame == ctx.time_frame)
+                    & (count_query.kind == kind))
+    if ctx.symbol_writer.count(title, count_query) == 0:
+        await ctx.symbol_writer.log(
+            title,
+            {
+                "time_frame": ctx.time_frame,
+                "x": exchange_public_data.current_time(ctx) * x_multiplier,
+                "y": y_value,
+                "value": ctx.symbol_writer.get_serializable_value(value),
+                "kind": kind,
+                "mode": mode,
+                "chart": chart,
+            }
+        )
+
+
+async def clear_run_data(writer):
+    await writer.delete(
+        trading_enums.DBTables.METADATA.value,
+        None,
+    )
+    await writer.delete(
+        trading_enums.DBTables.PORTFOLIO.value,
+        None,
     )
 
 

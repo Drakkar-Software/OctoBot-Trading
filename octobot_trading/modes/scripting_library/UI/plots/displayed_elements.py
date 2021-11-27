@@ -68,17 +68,20 @@ class DisplayedElements:
                         cached_values += display_data
                     else:
                         try:
-                            #TODO time_frame filter
+                            filtered_data = [display_element
+                                             for display_element in display_data
+                                             if display_element.get("pair", symbol) == symbol
+                                             and display_element.get("time_frame", time_frame) == time_frame]
                             chart = display_data[0]["chart"]
                             if chart in graphs_by_parts:
-                                graphs_by_parts[chart][table_name] = display_data
+                                graphs_by_parts[chart][table_name] = filtered_data
                             else:
-                                graphs_by_parts[chart] = {table_name: display_data}
+                                graphs_by_parts[chart] = {table_name: filtered_data}
                         except (IndexError, KeyError):
                             # some table have no chart
                             pass
-            await self._add_candles(graphs_by_parts, candles, exchange_id)
-            await self._add_cached_values(graphs_by_parts, cached_values, symbol, time_frame)
+            await self._add_candles(graphs_by_parts, candles, exchange_name, exchange_id, symbol, time_frame)
+            await self._add_cached_values(graphs_by_parts, cached_values, time_frame)
             self._plot_graphs(graphs_by_parts)
             if with_inputs:
                 self._display_inputs(inputs)
@@ -223,10 +226,9 @@ class DisplayedElements:
                 self.logger.error(f"Unknown input type: {e}")
         main_schema["properties"][title.replace(" ", "_")] = properties
 
-    async def _add_cached_values(self, graphs_by_parts, cached_values, symbol, time_frame):
+    async def _add_cached_values(self, graphs_by_parts, cached_values, time_frame):
         for cached_value_metadata in cached_values:
-            if cached_value_metadata.get(trading_enums.DBRows.PAIR.value, None) == symbol and \
-               cached_value_metadata.get(trading_enums.DBRows.TIME_FRAME.value, None) == time_frame:
+            if cached_value_metadata.get(trading_enums.DBRows.TIME_FRAME.value, None) == time_frame:
                 try:
                     chart = cached_value_metadata["chart"]
                     values = sorted(await self._get_cached_values_to_display(cached_value_metadata), key=lambda x: x["x"])
@@ -290,28 +292,26 @@ class DisplayedElements:
                 return key
         return None
 
-    async def _add_candles(self, graphs_by_parts, candles_list, exchange_id):
+    async def _add_candles(self, graphs_by_parts, candles_list, exchange_name, exchange_id, symbol, time_frame):
         for candles_metadata in candles_list:
-            try:
-                chart = candles_metadata["chart"]
-                candles = await self._get_candles_to_display(candles_metadata, exchange_id)
+            if candles_metadata.get("time_frame") == time_frame:
                 try:
-                    graphs_by_parts[chart][trading_enums.DBTables.CANDLES.value] = candles    # TODO multi candles sets
+                    chart = candles_metadata["chart"]
+                    candles = await self._get_candles_to_display(candles_metadata, exchange_name,
+                                                                 exchange_id, symbol, time_frame)
+                    try:
+                        graphs_by_parts[chart][trading_enums.DBTables.CANDLES.value] = candles
+                    except KeyError:
+                        graphs_by_parts[chart] = {trading_enums.DBTables.CANDLES.value: candles}
                 except KeyError:
-                    graphs_by_parts[chart] = {trading_enums.DBTables.CANDLES.value: candles}    # TODO multi candles sets
-            except KeyError:
-                # some table have no chart
-                pass
+                    # some table have no chart
+                    pass
 
-    async def _get_candles_to_display(self, candles_metadata, exchange_id):
+    async def _get_candles_to_display(self, candles_metadata, exchange_name, exchange_id, symbol, time_frame):
         if candles_metadata[trading_enums.DBRows.VALUE.value] == commons_constants.LOCAL_BOT_DATA:
             exchange_manager = trading_api.get_exchange_manager_from_exchange_id(exchange_id)
             array_candles = trading_api.get_symbol_historical_candles(
-                trading_api.get_symbol_data(
-                    exchange_manager,
-                    candles_metadata[trading_enums.DBRows.PAIR.value]
-                ),
-                candles_metadata[trading_enums.DBRows.TIME_FRAME.value]
+                trading_api.get_symbol_data(exchange_manager, symbol), time_frame
             )
             return [
                 {
@@ -326,11 +326,10 @@ class DisplayedElements:
                 }
                 for index, time in enumerate(array_candles[commons_enums.PriceIndexes.IND_PRICE_TIME.value])
             ]
-        time_frame = octobot_commons.enums.TimeFrames(candles_metadata[trading_enums.DBRows.TIME_FRAME.value])
         db_candles = await backtesting_api.get_all_ohlcvs(candles_metadata[trading_enums.DBRows.VALUE.value],
-                                                          candles_metadata[trading_enums.DBRows.EXCHANGE.value],
-                                                          candles_metadata[trading_enums.DBRows.PAIR.value],
-                                                          time_frame)
+                                                          exchange_name,
+                                                          symbol,
+                                                          octobot_commons.enums.TimeFrames(time_frame))
         return [
             {
                 "x": db_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000,
