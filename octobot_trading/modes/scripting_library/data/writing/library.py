@@ -54,7 +54,9 @@ async def store_orders(ctx, orders,
     await ctx.orders_writer.log_many(trading_enums.DBTables.ORDERS.value, order_data)
 
 
-async def plot_candles(ctx, symbol, time_frame, chart=trading_enums.PlotCharts.MAIN_CHART.value):
+async def plot_candles(ctx, symbol=None, time_frame=None, chart=trading_enums.PlotCharts.MAIN_CHART.value):
+    symbol = symbol or ctx.symbol
+    time_frame = time_frame or ctx.time_frame
     table = trading_enums.DBTables.CANDLES_SOURCE.value
     candles_data = {
         "time_frame": time_frame,

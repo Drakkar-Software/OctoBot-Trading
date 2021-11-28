@@ -72,14 +72,14 @@ def hl2(context, symbol=None, time_frame=None, limit=-1):
     except ImportError:
         raise RuntimeError("CandlesUtil tentacle is required to use HL2")
 
-def ohl3(context, symbol=None, time_frame=None, limit=-1):
+def hlc3(context, symbol=None, time_frame=None, limit=-1):
     try:
         from tentacles.Evaluator.Util.candles_util import CandlesUtil
         symbol = symbol or context.symbol
         time_frame = time_frame or context.time_frame
-        return CandlesUtil.HLC3(Open(context, symbol, time_frame, limit),
-                                High(context, symbol, time_frame, limit),
-                                Low(context, symbol, time_frame, limit))
+        return CandlesUtil.HLC3(High(context, symbol, time_frame, limit),
+                                Low(context, symbol, time_frame, limit),
+                                Close(context, symbol, time_frame, limit))
     except ImportError:
         raise RuntimeError("CandlesUtil tentacle is required to use HLC3")
 
