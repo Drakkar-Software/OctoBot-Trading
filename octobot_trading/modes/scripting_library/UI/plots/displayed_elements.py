@@ -235,7 +235,13 @@ class DisplayedElements:
                     try:
                         graphs_by_parts[chart][cached_value_metadata[trading_enums.PlotAttributes.TITLE.value]] = values
                     except KeyError:
-                        graphs_by_parts[chart] = {trading_enums.PlotAttributes.TITLE.value: values}
+                        if chart not in graphs_by_parts:
+                            graphs_by_parts[chart] = {}
+                        try:
+                            graphs_by_parts[chart] = \
+                                {cached_value_metadata[trading_enums.PlotAttributes.TITLE.value]: values}
+                        except KeyError:
+                            graphs_by_parts[chart] = {trading_enums.PlotAttributes.TITLE.value: values}
                 except KeyError:
                     # some table have no chart
                     pass

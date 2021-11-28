@@ -69,8 +69,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         # producers is the list of consumers created by this trading mode
         self.consumers = []
 
-        # Local evaluator caches, to be initialized if necessary
+        # Local caches, to be initialized if necessary
         self.caches = {}
+
+        # Other caches, these are managed by other tentacles,
+        # they are referenced here for performances only
+        self.remote_caches = {}
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses

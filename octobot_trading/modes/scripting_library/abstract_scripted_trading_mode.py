@@ -41,13 +41,15 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
 
     BACKTESTING_ID_BY_BOT_ID = {}
     INITIALIZED_DB_BY_BOT_ID = {}
+    SAVED_RUN_METADATA_DB_BY_BOT_ID = {}
+    WRITER_IDENTIFIER_BY_BOT_ID = {}
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.producer = AbstractScriptedTradingModeProducer
         self._live_script = None
         self._backtesting_script = None
-        self.timestamp = time.time()    # todo ensure multiple pairs conflicts
+        self.timestamp = time.time()
         self.script_name = None
         self.load_config()
 
@@ -178,6 +180,23 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         await db_manager.initialize()
         return db_manager.backtesting_id
 
+    def get_writer(self, writer_identifier):
+        try:
+            return self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id][writer_identifier]
+        except KeyError:
+            if self.bot_id not in self.__class__.WRITER_IDENTIFIER_BY_BOT_ID:
+                self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id] = {}
+            writer = databases.DBWriter(writer_identifier)
+            self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id][writer_identifier] = writer
+            return writer
+
+    async def close_writer(self, writer_identifier):
+        try:
+            await self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id][writer_identifier].close()
+            self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id].pop(writer_identifier)
+        except KeyError:
+            pass
+
 
 class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProducer):
 
@@ -187,10 +206,17 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         :return: the metadata dict related to this backtesting run
         """
         profitability, profitability_percent, _, _, _ = trading_api.get_profitability_stats(self.exchange_manager)
+        time_frames = [tf.value
+                       for tf in trading_api.get_exchange_available_required_time_frames(self.exchange_name,
+                                                                                         self.exchange_manager.id)]
         return {
             "id": await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id),
             "p&l": float(profitability),
             "p&l%": float(profitability_percent),
+            "symbols": trading_api.get_trading_pairs(self.exchange_manager),
+            "time_frames": time_frames,
+            "start_time": backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting),
+            "end_time": backtesting_api.get_backtesting_ending_time(self.exchange_manager.exchange.backtesting),
             "trades": len(trading_api.get_trade_history(self.exchange_manager)),
             "timestamp": self.trading_mode.timestamp,
             "name": self.trading_mode.script_name,
@@ -227,11 +253,13 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                                                           backtesting_id=backtesting_id,
                                                           optimizer_id=self.trading_mode.get_optimizer_id())
         await self.database_manager.initialize(self.exchange_name)
-        self.run_data_writer = databases.DBWriter(self.database_manager.get_run_data_db_identifier())
-        self.orders_writer = databases.DBWriter(self.database_manager.get_orders_db_identifier())
-        self.trades_writer = databases.DBWriter(self.database_manager.get_trades_db_identifier())
-        self.symbol_writer = databases.DBWriter(self.database_manager.get_symbol_db_identifier(self.exchange_name,
-                                                                                               self.traded_pair))
+        self.run_data_writer = self.trading_mode.get_writer(self.database_manager.get_run_data_db_identifier())
+        self.orders_writer = self.trading_mode.get_writer(self.database_manager.get_orders_db_identifier())
+        self.trades_writer = self.trading_mode.get_writer(self.database_manager.get_trades_db_identifier())
+        self.symbol_writer = self.trading_mode.get_writer(self.database_manager.get_symbol_db_identifier(
+            self.exchange_name,
+            self.traded_pair
+        ))
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
         context = scripting_library.Context(
@@ -284,6 +312,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                 if context.has_cache(context.symbol, context.time_frame):
                     await context.get_cache().flush()
             self.run_data_writer.are_data_initialized = initialized
+            self.symbol_writer.are_data_initialized = initialized
             self.contexts.remove(context)
 
     @contextlib.asynccontextmanager
@@ -296,9 +325,15 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         """
         Stop trading mode channels subscriptions
         """
-        if not self.are_metadata_saved and self.exchange_manager.is_backtesting:
-            await asyncio.gather(*(writer.close() for writer in self.writers()))
-            async with self.get_metadata_writer(with_lock=True) as writer:
-                await scripting_library.save_metadata(writer, await self.get_backtesting_metadata())
-                self.are_metadata_saved = True
+        if not self.are_metadata_saved and self.exchange_manager is not None and self.exchange_manager.is_backtesting:
+            await asyncio.gather(*(self.trading_mode.close_writer(writer.get_db_path()) for writer in self.writers()))
+            if not self.trading_mode.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
+                try:
+                    self.trading_mode.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
+                    async with self.get_metadata_writer(with_lock=True) as writer:
+                        await scripting_library.save_metadata(writer, await self.get_backtesting_metadata())
+                        self.are_metadata_saved = True
+                except Exception:
+                    self.trading_mode.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.trading_mode.bot_id] = False
+                    raise
         await super().stop()

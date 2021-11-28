@@ -62,7 +62,7 @@ async def plot_candles(ctx, symbol, time_frame, chart=trading_enums.PlotCharts.M
         "chart": chart
     }
     search_query = await ctx.symbol_writer.search()
-    if (not ctx.run_data_writer.are_data_initialized and
+    if (not ctx.symbol_writer.are_data_initialized and
         await ctx.symbol_writer.count(
             table,
             ((search_query.time_frame == time_frame) & (search_query.value == candles_data["value"]))) == 0):
@@ -103,14 +103,13 @@ async def plot(ctx, title, x=None,
                     & (indicator_query.time_frame == ctx.time_frame))
     cache_full_path = None
     if cache_value is not None:
-        cache_dir, cache_path = ctx.get_cache_path()
-        cache_full_path = os.path.join(cache_dir, cache_path)
+        cache_full_path = ctx.get_cache_path(ctx.tentacle)
         count_query = ((indicator_query.kind == kind)
-                        & (indicator_query.mode == mode)
-                        & (indicator_query.time_frame == ctx.time_frame)
-                        & (indicator_query.title == title)
-                        & (indicator_query.value == cache_full_path))
-    if init_only and not ctx.run_data_writer.are_data_initialized and await ctx.symbol_writer.count(
+                       & (indicator_query.mode == mode)
+                       & (indicator_query.time_frame == ctx.time_frame)
+                       & (indicator_query.title == title)
+                       & (indicator_query.value == cache_full_path))
+    if init_only and not ctx.symbol_writer.are_data_initialized and await ctx.symbol_writer.count(
             trading_enums.DBTables.CACHE_SOURCE.value if cache_value is not None else title,
             count_query) == 0:
         if cache_value is not None:
@@ -129,12 +128,10 @@ async def plot(ctx, title, x=None,
             }
             update_query = await ctx.symbol_writer.search()
             update_query = ((update_query.kind == kind)
-                           & (update_query.mode == mode)
-                           & (update_query.time_frame == ctx.time_frame)
-                           & (update_query.title == title))
-            print(f"set: {cache_identifier} on {update_query} file: {ctx.symbol_writer}")
-            updated = await ctx.symbol_writer.upsert(table, cache_identifier, update_query)
-            print(updated)
+                            & (update_query.mode == mode)
+                            & (update_query.time_frame == ctx.time_frame)
+                            & (update_query.title == title))
+            await ctx.symbol_writer.upsert(table, cache_identifier, update_query)
         else:
             adapted_x = None
             if x is not None:
