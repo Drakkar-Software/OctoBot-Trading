@@ -38,7 +38,7 @@ class DisplayedElements:
         "low": "Low",
         "close": "Close",
         "volume": "Volume",
-        "pair": "Pair",
+        "symbol": "Symbol",
     }
 
     def __init__(self, element_type=trading_enums.DisplayedElementTypes.CHART.value):
@@ -70,7 +70,7 @@ class DisplayedElements:
                         try:
                             filtered_data = [display_element
                                              for display_element in display_data
-                                             if display_element.get("pair", symbol) == symbol
+                                             if display_element.get("symbol", symbol) == symbol
                                              and display_element.get("time_frame", time_frame) == time_frame]
                             chart = display_data[0]["chart"]
                             if chart in graphs_by_parts:

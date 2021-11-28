@@ -101,21 +101,24 @@ async def plot(ctx, title, x=None,
     count_query = ((indicator_query.kind == kind)
                     & (indicator_query.mode == mode)
                     & (indicator_query.time_frame == ctx.time_frame))
+    cache_full_path = None
     if cache_value is not None:
+        cache_dir, cache_path = ctx.get_cache_path()
+        cache_full_path = os.path.join(cache_dir, cache_path)
         count_query = ((indicator_query.kind == kind)
                         & (indicator_query.mode == mode)
                         & (indicator_query.time_frame == ctx.time_frame)
-                        & (indicator_query.title == title))
+                        & (indicator_query.title == title)
+                        & (indicator_query.value == cache_full_path))
     if init_only and not ctx.run_data_writer.are_data_initialized and await ctx.symbol_writer.count(
             trading_enums.DBTables.CACHE_SOURCE.value if cache_value is not None else title,
             count_query) == 0:
         if cache_value is not None:
-            cache_dir, cache_path = ctx.get_cache_path()
             table = trading_enums.DBTables.CACHE_SOURCE.value
             cache_identifier = {
                 "title": title,
                 "time_frame": ctx.time_frame,
-                "value": os.path.join(cache_dir, cache_path),
+                "value": cache_full_path,
                 "cache_value": cache_value,
                 "kind": kind,
                 "mode": mode,
@@ -124,7 +127,14 @@ async def plot(ctx, title, x=None,
                 "condition": condition,
                 "color": color,
             }
-            await ctx.symbol_writer.log(table, cache_identifier)
+            update_query = await ctx.symbol_writer.search()
+            update_query = ((update_query.kind == kind)
+                           & (update_query.mode == mode)
+                           & (update_query.time_frame == ctx.time_frame)
+                           & (update_query.title == title))
+            print(f"set: {cache_identifier} on {update_query} file: {ctx.symbol_writer}")
+            updated = await ctx.symbol_writer.upsert(table, cache_identifier, update_query)
+            print(updated)
         else:
             adapted_x = None
             if x is not None:
