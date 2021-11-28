@@ -20,7 +20,7 @@ from ..position_size.target_position import *
 from ..offsets import *
 
 
-async def scaled(
+async def scaled_limit(
         context,
         side=None,
         symbol=None,
@@ -28,7 +28,7 @@ async def scaled(
         scale_from=None,
         scale_to=None,
         order_count=10,
-        easing="linear",
+        distribution="linear",
 
         amount=None,
         target_position=None,
@@ -50,7 +50,7 @@ async def scaled(
     scale_from_price = get_offset(scale_from)
     scale_to_price = get_offset(scale_to)
     order_price_array = []
-    if easing == "linear":
+    if distribution == "linear":
         if side == "buy":
             price_difference = scale_to_price - scale_from_price
             step_size = price_difference / order_count
