@@ -262,6 +262,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         context.cryptocurrency = cryptocurrency
         context.symbol = symbol
         context.time_frame = time_frame
+        initialized = True
         try:
             if not self.run_data_writer.are_data_initialized and not \
                     self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
@@ -272,15 +273,17 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise
+        except errors.MissingCandlesError:
+            initialized = False
         except Exception as e:
             self.logger.exception(e, True, f"Error when running script: {e}")
         finally:
             if not self.exchange_manager.is_backtesting:
                 # only update db after each run in live mode
                 await asyncio.gather(*(writer.flush() for writer in self.writers()))
-                if context.has_cache(context.traded_pair, context.time_frame):
+                if context.has_cache(context.symbol, context.time_frame):
                     await context.get_cache().flush()
-            self.run_data_writer.are_data_initialized = True
+            self.run_data_writer.are_data_initialized = initialized
             self.contexts.remove(context)
 
     @contextlib.asynccontextmanager

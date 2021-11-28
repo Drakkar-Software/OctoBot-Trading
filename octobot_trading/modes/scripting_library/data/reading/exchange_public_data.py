@@ -20,9 +20,10 @@ import asyncio
 import octobot_trading.constants as trading_constants
 
 
-async def current_price(pair, exchange_manager):
+async def current_price(ctx, symbol=None):
+    symbol = symbol or ctx.symbol
     try:
-        return await exchange_manager.exchange_symbols_data.get_exchange_symbol_data(pair) \
+        return await ctx.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol) \
             .prices_manager.get_mark_price(timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
     except asyncio.TimeoutError:
         raise asyncio.TimeoutError("Mark price is not available")
@@ -33,55 +34,90 @@ def current_time(context) -> float:
 
 
 # Use capital letters to avoid python native lib conflicts
-def Open(context, symbol, time_frame, limit=-1):
+def Open(context, symbol=None, time_frame=None, limit=-1):
+    symbol = symbol or context.symbol
+    time_frame = time_frame or context.time_frame
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_open_candles(limit)
 
 # Use capital letters to avoid python native lib conflicts
-def High(context, symbol, time_frame, limit=-1):
+def High(context, symbol=None, time_frame=None, limit=-1):
+    symbol = symbol or context.symbol
+    time_frame = time_frame or context.time_frame
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_high_candles(limit)
 
 # Use capital letters to avoid python native lib conflicts
-def Low(context, symbol, time_frame, limit=-1):
+def Low(context, symbol=None, time_frame=None, limit=-1):
+    symbol = symbol or context.symbol
+    time_frame = time_frame or context.time_frame
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_low_candles(limit)
 
 # Use capital letters to avoid python native lib conflicts
-def Close(context, symbol, time_frame, limit=-1):
+def Close(context, symbol=None, time_frame=None, limit=-1):
+    symbol = symbol or context.symbol
+    time_frame = time_frame or context.time_frame
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_close_candles(limit)
 
 # Use capital letters to avoid python native lib conflicts
-def Time(context, symbol, time_frame, limit=-1):
+def Time(context, symbol=None, time_frame=None, limit=-1):
+    symbol = symbol or context.symbol
+    time_frame = time_frame or context.time_frame
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_time_candles(limit)
 
-def hl2(exchange_manager, symbol, time_frame):
-    return # todo merge open high low into one array -
+def hl2(context, symbol=None, time_frame=None, limit=-1):
+    try:
+        from tentacles.Evaluator.Util.candles_util import CandlesUtil
+        symbol = symbol or context.symbol
+        time_frame = time_frame or context.time_frame
+        return CandlesUtil.HL2(High(context, symbol, time_frame, limit), Low(context, symbol, time_frame, limit))
+    except ImportError:
+        raise RuntimeError("CandlesUtil tentacle is required to use HL2")
 
-def ohl3(exchange_manager, symbol, time_frame):
-    return # todo merge open high low into one array
+def ohl3(context, symbol=None, time_frame=None, limit=-1):
+    try:
+        from tentacles.Evaluator.Util.candles_util import CandlesUtil
+        symbol = symbol or context.symbol
+        time_frame = time_frame or context.time_frame
+        return CandlesUtil.HLC3(Open(context, symbol, time_frame, limit),
+                                High(context, symbol, time_frame, limit),
+                                Low(context, symbol, time_frame, limit))
+    except ImportError:
+        raise RuntimeError("CandlesUtil tentacle is required to use HLC3")
 
-def ohlc4(exchange_manager, symbol, time_frame):
-    return # todo merge open high low into one array
+def ohlc4(context, symbol=None, time_frame=None, limit=-1):
+    try:
+        from tentacles.Evaluator.Util.candles_util import CandlesUtil
+        symbol = symbol or context.symbol
+        time_frame = time_frame or context.time_frame
+        return CandlesUtil.OHLC4(Open(context, symbol, time_frame, limit),
+                                 High(context, symbol, time_frame, limit),
+                                 Low(context, symbol, time_frame, limit),
+                                 Close(context, symbol, time_frame, limit))
+    except ImportError:
+        raise RuntimeError("CandlesUtil tentacle is required to use OHLC4")
 
 # Use capital letters to avoid python native lib conflicts
-def Volume(context, symbol, time_frame):
+def Volume(context, symbol=None, time_frame=None):
+    symbol = symbol or context.symbol
+    time_frame = time_frame or context.time_frame
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_volume_candles()
 
-def buy_volume():
-        var=0 #todo
-
-def sell_volume():
-    var = 0 # todo
-
-def orderbook():
-    var = 0 # todo
-
-def openinterest():
-    var = 00 # todo
-
-def long_short_ratio():
-    var = 0 # todo
-
-def tick_data():
-    var = 0 # todo
+# def buy_volume():
+#         var=0 #todo
+#
+# def sell_volume():
+#     var = 0 # todo
+#
+# def orderbook():
+#     var = 0 # todo
+#
+# def openinterest():
+#     var = 00 # todo
+#
+# def long_short_ratio():
+#     var = 0 # todo
+#
+# def tick_data():
+#     var = 0 # todo
 
 def _get_candle_manager(exchange_manager, symbol, time_frame):
     return api.get_symbol_candles_manager(api.get_symbol_data(exchange_manager, symbol), time_frame)

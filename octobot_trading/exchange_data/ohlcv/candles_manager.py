@@ -70,6 +70,9 @@ class CandlesManager(util.Initializable):
         self.volume_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
 
     # getters
+    def get_symbol_candles_count(self):
+        return self.time_candles_index
+
     def get_symbol_close_candles(self, limit=-1):
         return self._extract_limited_data(self.close_candles, limit, max_limit=self.close_candles_index)
 

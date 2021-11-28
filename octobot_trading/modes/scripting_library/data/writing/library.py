@@ -35,7 +35,7 @@ async def store_orders(ctx, orders,
         {
             "x": order.creation_time * x_multiplier,
             "id": order.order_id,
-            "pair": order.symbol,
+            "symbol": order.symbol,
             "type": order.order_type.name if order.order_type is not None else 'Unknown',
             "volume": float(order.origin_quantity),
             "y": float(order.created_last_price),
@@ -53,11 +53,11 @@ async def store_orders(ctx, orders,
     await ctx.orders_writer.log_many(trading_enums.DBTables.ORDERS.value, order_data)
 
 
-async def plot_candles(ctx, pair, time_frame, chart=trading_enums.PlotCharts.MAIN_CHART.value):
+async def plot_candles(ctx, symbol, time_frame, chart=trading_enums.PlotCharts.MAIN_CHART.value):
     table = trading_enums.DBTables.CANDLES_SOURCE.value
     candles_data = {
         "time_frame": time_frame,
-        "value": trading_api.get_backtesting_data_file(ctx.exchange_manager, pair, commons_enums.TimeFrames(time_frame)) \
+        "value": trading_api.get_backtesting_data_file(ctx.exchange_manager, symbol, commons_enums.TimeFrames(time_frame)) \
             if trading_api.get_is_backtesting(ctx.exchange_manager) else commons_constants.LOCAL_BOT_DATA,
         "chart": chart
     }
@@ -73,13 +73,14 @@ async def plot(ctx, title, x=None,
                y=None, z=None, open=None, high=None, low=None, close=None, volume=None,
                kind="scatter", mode="lines", init_only=True,
                condition=None, x_function=exchange_public_data.Time,
-               x_multiplier=1000,
+               x_multiplier=1000, time_frame=None,
                chart=trading_enums.PlotCharts.SUB_CHART.value,
                cache_value=None, own_yaxis=False, color=None):
+    time_frame = time_frame or ctx.time_frame
     if condition is not None and cache_value is None:
         if isinstance(ctx.symbol_writer.get_serializable_value(condition), bool):
             if condition:
-                x = numpy.array((x_function(ctx, ctx.traded_pair, ctx.time_frame)[-1], ))
+                x = numpy.array((x_function(ctx, ctx.symbol, time_frame)[-1],))
                 y = numpy.array((y[-1], ))
             else:
                 x = []
@@ -87,7 +88,7 @@ async def plot(ctx, title, x=None,
         else:
             candidate_y = []
             candidate_x = []
-            x_data = x_function(ctx, ctx.traded_pair, ctx.time_frame)[-len(condition):]
+            x_data = x_function(ctx, ctx.symbol, time_frame)[-len(condition):]
             y_data = y[-len(condition):]
             for index, value in enumerate(condition):
                 if value:
@@ -183,7 +184,7 @@ async def plot(ctx, title, x=None,
     elif cache_value is None and x is not None and len(x) \
             and not ctx.symbol_writer.contains_x(title, ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier):
         x_value = ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier
-        await ctx.symbol_writer.update(
+        await ctx.symbol_writer.upsert(
             title,
             {
                 "time_frame": ctx.time_frame,

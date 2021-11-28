@@ -23,9 +23,9 @@ def is_evaluation_higher_than(
         evaluator_class=None,
         value=None,
         time_frames=None,
-        pairs=None,
+        symbols=None,
 ):
-    for pair in pairs or [context.traded_pair]:
+    for symbol in symbols or [context.symbol]:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
                         context.matrix_id,
@@ -33,11 +33,11 @@ def is_evaluation_higher_than(
                                                   exchange_name=context.exchange_name,
                                                   tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
                                                   tentacle_name=evaluator_class.get_name()),
-                        symbol=pair,
+                        symbol=symbol,
                         time_frame=time_frame):
-                if evaluated_ta_node.node_value <= value:
-                    return False
-    return True
+                if evaluated_ta_node.node_value >= value:
+                    return True
+    return False
 
 
 def is_evaluation_lower_than(
@@ -45,10 +45,9 @@ def is_evaluation_lower_than(
         evaluator_class=None,
         value=None,
         time_frames=None,
-        pairs=None,
-        currencies=None,
+        symbols=None,
 ):
-    for pair in pairs:
+    for symbol in symbols:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
                         context.matrix_id,
@@ -56,22 +55,21 @@ def is_evaluation_lower_than(
                                                   exchange_name=context.exchange_name,
                                                   tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
                                                   tentacle_name=evaluator_class.get_name()),
-                        symbol=pair,
+                        symbol=symbol,
                         time_frame=time_frame):
-                if evaluated_ta_node.node_value >= value:
-                    return False
-    return True
+                if evaluated_ta_node.node_value <= value:
+                    return True
+    return False
 
 
 def evaluator_buy(
         evaluator_class=None,
         time_frames=None,
-        pairs=None,
-        currencies=None,
+        symbols=None,
         exchange_name=None,
         matrix_id=None
 ):
-    for pair in pairs:
+    for symbol in symbols:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
                         matrix_id,
@@ -79,22 +77,21 @@ def evaluator_buy(
                                                   exchange_name=exchange_name,
                                                   tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
                                                   tentacle_name=evaluator_class.get_name()),
-                        symbol=pair,
+                        symbol=symbol,
                         time_frame=time_frame):
-                if evaluated_ta_node.node_value != -1:
-                    return False
-    return True
+                if evaluated_ta_node.node_value == -1:
+                    return True
+    return False
 
 
 def evaluator_sell(
         evaluator_class=None,
         time_frames=None,
-        pairs=None,
-        currencies=None,
+        symbols=None,
         exchange_name=None,
         matrix_id=None
 ):
-    for pair in pairs:
+    for symbol in symbols:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
                         matrix_id,
@@ -102,22 +99,22 @@ def evaluator_sell(
                                                   exchange_name=exchange_name,
                                                   tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
                                                   tentacle_name=evaluator_class.get_name()),
-                        symbol=pair,
+                        symbol=symbol,
                         time_frame=time_frame):
-                if evaluated_ta_node.node_value != 1:
-                    return False
-    return True
+                if evaluated_ta_node.node_value == 1:
+                    return True
+    return False
 
 
 def evaluator_buy_or_sell(
         evaluator_class=None,
         time_frames=None,
-        pairs=None,
+        symbols=None,
         currencies=None,
         exchange_name=None,
         matrix_id=None
 ):
-    for pair in pairs:
+    for symbol in symbols:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
                         matrix_id,
@@ -125,7 +122,7 @@ def evaluator_buy_or_sell(
                                                   exchange_name=exchange_name,
                                                   tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
                                                   tentacle_name=evaluator_class.get_name()),
-                        symbol=pair,
+                        symbol=symbol,
                         time_frame=time_frame):
                 if evaluated_ta_node.node_value == 1 or evaluated_ta_node.node_value == -1:
                     return True

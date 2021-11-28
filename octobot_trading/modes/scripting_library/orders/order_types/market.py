@@ -19,21 +19,28 @@ from .create_order import _create_order_instance
 
 
 async def market(
-    context,
-    side=None,
-    symbol=None,
-    order_type="market",
-    amount=None,
-    target_position=None,
-    tag=None
-) -> list:
-    return await _create_order_instance(
-        context.trader,
-        side,
-        symbol or context.traded_pair,
-        amount,
-        target_position=target_position,
-        order_type_name=order_type,
+        context,
+        side=None,
+        symbol=None,
+
+        amount=None,
+        target_position=None,
+
+        reduce_only=False,
+        tag=None,
+):
+    await _create_order_instance(
+        trader=context.trader,
+        side=side,
+        symbol=symbol or context.symbol,
+
+        order_amount=amount,
+        order_target_position=target_position,
+
+        order_type_name="market",
+
+        reduce_only=reduce_only,
         tag=tag,
-        context=context,
+
+        context=context
     )

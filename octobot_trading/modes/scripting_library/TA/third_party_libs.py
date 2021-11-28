@@ -23,6 +23,10 @@ try:
 except ImportError:
     pass
 try:
-    import backtrader.talib as bta
+    import backtrader.indicators as bta
+except ImportError:
+    pass
+try:
+    import finta as fta
 except ImportError:
     pass

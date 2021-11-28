@@ -15,4 +15,5 @@
 #  License along with this library.
 
 
-from .context import Context
+from .context_management import Context
+from .trading_mode_management import set_minimum_candles

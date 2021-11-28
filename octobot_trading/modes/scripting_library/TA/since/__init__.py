@@ -14,6 +14,5 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-from .wait_for_price import *
-from .wait_for_time import *
+from .bars_since import *
+from .time_since import *

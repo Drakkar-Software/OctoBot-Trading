@@ -17,6 +17,7 @@ import octobot_trading.enums as trading_enums
 import octobot_backtesting.api as backtesting_api
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.constants
+import octobot_commons.databases as databases
 import octobot_commons.enums as commons_enums
 import octobot_commons.logging
 
@@ -25,10 +26,9 @@ def get_logger():
     return octobot_commons.logging.get_logger("BacktestingRunData")
 
 
-async def get_candles(meta_database, exchange, pair, time_frame, metadata):
-    candles_sources = await meta_database.get_symbol_db(exchange, pair).select(
-        trading_enums.DBTables.CANDLES_SOURCE.value,
-        ((await meta_database.get_symbol_db(exchange, pair).search()).pair == pair)
+async def get_candles(meta_database, exchange, symbol, time_frame, metadata):
+    candles_sources = await meta_database.get_symbol_db(exchange, symbol).all(
+        trading_enums.DBTables.CANDLES_SOURCE.value
     )
     to_use_candles_source = candles_sources[0]
     if time_frame is not None:
@@ -38,16 +38,16 @@ async def get_candles(meta_database, exchange, pair, time_frame, metadata):
     else:
         time_frame = to_use_candles_source[trading_enums.DBRows.TIME_FRAME.value]
     return await backtesting_api.get_all_ohlcvs(to_use_candles_source[trading_enums.DBRows.VALUE.value],
-                                                to_use_candles_source[trading_enums.DBRows.EXCHANGE.value],
-                                                pair,
+                                                exchange,
+                                                symbol,
                                                 commons_enums.TimeFrames(time_frame),
                                                 inferior_timestamp=metadata[trading_enums.DBRows.START_TIME.value],
                                                 superior_timestamp=metadata[trading_enums.DBRows.END_TIME.value])
 
 
-async def get_trades(meta_database, pair):
+async def get_trades(meta_database, symbol):
     return await meta_database.get_orders_db().select(trading_enums.DBTables.TRADES.value,
-                                                      (await meta_database.get_orders_db().search()).pair == pair)  # TODO use trades db
+                                                      (await meta_database.get_orders_db().search()).symbol == symbol)  # TODO use trades db
 
 
 async def get_metadata(meta_database):
@@ -141,7 +141,7 @@ async def plot_historical_pnl_value(meta_database, plotted_element, exchange=Non
         buy_order_volume_by_price = {}
         long_position_size = 0
         for trade in sorted(trades_data[pair], key=lambda x: x[trading_enums.PlotAttributes.X.value]):
-            if trade[trading_enums.DBTables.PAIR.value] == pair:
+            if trade[trading_enums.DBTables.SYMBOL.value] == pair:
                 trade_volume = trade[trading_enums.PlotAttributes.VOLUME.value]
                 if trade[trading_enums.PlotAttributes.SIDE.value] == trading_enums.TradeOrderSide.BUY.value:
                     if trade[trading_enums.PlotAttributes.Y.value] in buy_order_volume_by_price:
@@ -234,15 +234,31 @@ async def plot_trades(meta_database, plotted_element):
 
 
 async def plot_table(meta_database, plotted_element, data_source, columns=None, rows=None,
-                     searches=None, column_render=None, types=None):
+                     searches=None, column_render=None, types=None, cache_value=None):
+    data = []
     if data_source == trading_enums.DBTables.TRADES.value:
         data = await meta_database.get_orders_db().all(trading_enums.DBTables.TRADES.value)  # TODO use get_trades_db
     elif data_source == trading_enums.DBTables.ORDERS.value:
         data = await meta_database.get_orders_db().all(trading_enums.DBTables.ORDERS.value)
     else:
         exchange = meta_database.database_manager.context.exchange_name
-        symbol = meta_database.database_manager.context.traded_pair
-        data = await meta_database.get_symbol_db(exchange, symbol).all(data_source)
+        symbol = meta_database.database_manager.context.symbol
+        symbol_db = meta_database.get_symbol_db(exchange, symbol)
+        if cache_value is None:
+            data = await symbol_db.all(data_source)
+        else:
+            query = (await symbol_db.search()).title == data_source
+            cache_data = await symbol_db.select(trading_enums.DBTables.CACHE_SOURCE.value, query)
+            if cache_data:
+                cache_database = databases.CacheDatabase(cache_data[0][trading_enums.PlotAttributes.VALUE.value])
+                cache = await cache_database.get_cache()
+                data = [
+                    {
+                        "x": cache_element[commons_enums.CacheDatabaseColumns.TIMESTAMP.value] * 1000,
+                        "y": cache_element[cache_value]
+                    }
+                    for cache_element in cache
+                ]
     if not data:
         get_logger().debug(f"Nothing to create a table from when reading {data_source}")
         return

@@ -15,5 +15,17 @@
 #  License along with this library.
 
 
-from .wait_for_price import *
-from .wait_for_time import *
+def crossing_up(price, value):
+    # true if price just risen over value
+    return price[-1] > value[-1] and price[-2] < value[-2]
+
+
+def crossing_down(price, value):
+    # true if price just fell under value
+    return price[-1] < value[-1] and price[-2] > value[-2]
+
+
+def crossing(price, value):
+    # true if price just went below or over value
+    return (price[-1] < value[-1] and price[-2] > value[-2]) or (price[-1] > value[-1] and price[-2] < value[-2])
+

@@ -37,11 +37,11 @@ async def wait_for_price(
     if offset_percent is not None:
         target_price = price * (1 + (offset_percent / 100))
     if offset_entry is not None:
-        order = get_order_from_tag(context.exchange_manager, order_tag) #TODO order tags
+        order = None# get_order_from_tag(context.exchange_manager, order_tag) #TODO order tags
         entry_price = order.filled_price
         target_price = entry_price + offset
     if offset_entry_percent is not None:
-        order = get_order_from_tag(context.exchange_manager, order_tag) #TODO order tags
+        order = None #get_order_from_tag(context.exchange_manager, order_tag) #TODO order tags
         entry_price = order.filled_price
         target_price = entry_price * (1 + (offset_percent / 100))
     if target_price is None:

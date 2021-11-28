@@ -13,7 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.api as trading_api
+import octobot_trading.errors as errors
 
 
-from .wait_for_price import *
-from .wait_for_time import *
+def set_minimum_candles(context, candles_count):
+    available_candles = trading_api.get_symbol_candles_count(
+        trading_api.get_symbol_data(context.exchange_manager, context.symbol, allow_creation=False),
+        context.time_frame
+    )
+    if available_candles <= candles_count:
+        raise errors.MissingCandlesError(f"Missing candles: available: {available_candles}, required: {candles_count}")

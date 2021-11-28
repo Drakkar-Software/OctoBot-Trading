@@ -14,6 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import tulipy as ti
+from octobot_trading.modes.scripting_library.orders.offsets import get_offset
 
-from .wait_for_price import *
-from .wait_for_time import *
+
+def moving_up(price, moving, bars):
+    if (price[-1] - ti.min(price, bars)) > get_offset(moving):
+        return True
+
+
+def moving_down(price, moving, bars):
+    if (ti.max(price, bars) - price[-1]) > get_offset(moving):
+        return True

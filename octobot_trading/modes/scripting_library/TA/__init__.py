@@ -18,4 +18,5 @@ from .durations import *
 from .since import *
 from .trigger import *
 from .wait_for import *
-from octobot_trading.modes.scripting_library.TA.third_party_libs import *
+from .third_party_libs import *
+from .value_when import *

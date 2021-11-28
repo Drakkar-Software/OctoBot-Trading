@@ -15,37 +15,37 @@
 #  License along with this library.
 
 import decimal
-import octobot_commons.symbol_util as symbol_util
-import octobot_commons.constants as common_constants
 import re
 
+from octobot_trading.modes.scripting_library.data.reading.exchange_private_data.account_balance import *
+from octobot_trading.modes.scripting_library.data.reading.exchange_private_data.open_positions import *
+from octobot_trading.modes.scripting_library.orders.position_size.cut_position_size import *
 
-def amount(input_amount, side, current_symbol_holding, market_quantity):
+
+async def get_amount(input_amount=None,
+                     context=None,
+                     side="buy"
+                     ):
     amount_type = re.sub(r"\d|\.", "", input_amount)
     amount_value = decimal.Decimal(input_amount.replace(amount_type, ""))
-    if amount_value is None:
-        raise RuntimeError("Provide at least side with amount or target_position.")
-    if amount_type == "":
-        return input_amount
-    if amount_type == "%":
-        if side == "sell":
-            return current_symbol_holding * amount_value / 100
-        return market_quantity * amount_value / 100
-    if amount_type == "%a":
-        # todo later: handle symbol etc
-        currency, market = symbol_util.split_symbol(symbol)
-        currency_to_use = currency if side == "sell" else market
-        total_amount = trader.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
-            currency_to_use,
-            common_constants.PORTFOLIO_TOTAL
-        )
-        if side == "sell":
-            return total_amount * amount / 100
-        return total_amount / price * amount / 100
 
-    if amount_type == "%p":
-        current_position_size = None  # todo
-        return input_amount * current_position_size / 100
+    if amount_value <= 0:
+        raise RuntimeError("amount cant be zero or negative")
+
+    if amount_type == "":
+        return cut_position_size(context, amount_value, side)
+
+    elif amount_type == "%":
+        amount_value = await total_account_balance(context, side) * amount_value / 100
+        return await cut_position_size(context, amount_value, side)
+
+    elif amount_type == "%a":
+        amount_value = await available_account_balance(context, side) * amount_value / 100
+        return await cut_position_size(context, amount_value, side)
+
+    elif amount_type == "%p":
+        amount_value = await open_position_size(context, side) * amount_value / 100
+        return await cut_position_size(context, amount_value, side)
 
     else:
         raise RuntimeError("make sure to use a supported syntax for amount")

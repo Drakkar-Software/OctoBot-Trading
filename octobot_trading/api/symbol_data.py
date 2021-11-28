@@ -53,6 +53,10 @@ def get_symbol_klines(symbol_data, time_frame) -> list:
     return symbol_data.symbol_klines[octobot_commons.enums.TimeFrames(time_frame)].kline
 
 
+def get_symbol_candles_count(symbol_data, time_frame) -> int:
+    return get_symbol_candles_manager(symbol_data, time_frame).get_symbol_candles_count()
+
+
 def get_symbol_close_candles(symbol_data, time_frame, limit=-1, include_in_construction=False):
     return exchange_data.get_symbol_close_candles(symbol_data, time_frame, limit, include_in_construction)
 

@@ -52,4 +52,4 @@ async def user_input(
 
 
 async def clear_user_inputs(writer):
-    writer.delete(enums.DBTables.INPUTS.value, None)
+    await writer.delete(enums.DBTables.INPUTS.value, None)

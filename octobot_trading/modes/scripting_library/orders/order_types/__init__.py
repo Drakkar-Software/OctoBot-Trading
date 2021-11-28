@@ -17,7 +17,7 @@
 
 from .limit import *
 from .market import *
-from .stoploss import *
-from .trailling_market import *
-from .trailling_market import *
-from .trailling_stop import *
+from .stop_loss import *
+from .trailing_market import *
+from .trailing_limit import *
+from .trailing_stop_loss import *

@@ -58,7 +58,7 @@ class Context:
         self.exchange_manager = exchange_manager
         self.trader = trader
         self.exchange_name = exchange_name
-        self.traded_pair = traded_pair
+        self.symbol = traded_pair
         self.matrix_id = matrix_id
         self.cryptocurrency = cryptocurrency
         self.signal_symbol = signal_symbol
@@ -72,8 +72,8 @@ class Context:
         self.trigger_cache_timestamp = trigger_cache_timestamp
         self.trigger_source = trigger_source
         self.trigger_value = trigger_value
-        self._sanitized_traded_pair = symbol_util.merge_symbol(self.traded_pair) \
-            if self.traded_pair else self.traded_pair
+        self._sanitized_traded_pair = symbol_util.merge_symbol(self.symbol) \
+            if self.symbol else self.symbol
         # no cache if live trading to ensure cache is always writen
         self._flush_cache_when_necessary = not exchange_api.get_is_backtesting(exchange_manager) \
             if exchange_manager else False
@@ -107,15 +107,15 @@ class Context:
 
     def get_cache(self):
         try:
-            return self.tentacle.caches[self.traded_pair][self.time_frame]
+            return self.tentacle.caches[self.symbol][self.time_frame]
         except KeyError:
-            if self.traded_pair not in self.tentacle.caches:
-                self.tentacle.caches[self.traded_pair] = {}
+            if self.symbol not in self.tentacle.caches:
+                self.tentacle.caches[self.symbol] = {}
             cache_dir, cache_path = self.get_cache_path()
             if not os.path.exists(cache_dir):
                 os.makedirs(cache_dir)
             cache = self._get_cache_database(os.path.join(cache_dir, cache_path))
-            self.tentacle.caches[self.traded_pair][self.time_frame] = cache
+            self.tentacle.caches[self.symbol][self.time_frame] = cache
             return cache
 
     def has_cache(self, pair, time_frame):

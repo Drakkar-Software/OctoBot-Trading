@@ -14,9 +14,26 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-from .offsets import *
-from .order_types import *
-from .position_size import *
 from .order_tags import *
-from .cancel_orders import *
+
+
+async def cancel_orders(ctx, which="all") -> bool:
+    order_ids = None
+    orders_canceled = False
+    if which == "all":
+        order_ids = ctx
+    elif which == "sell":
+        order_ids = ctx
+    elif which == "buy":
+        order_ids = ctx
+    else:  # tagged order
+        order_ids = get_tagged_orders(ctx, which)
+    for order_id in order_ids:
+        if await ctx.exchange_manager.trader.cancel_order(
+                ctx.exchange_manager.exchange_personal_data.orders_manager.get_order(
+                    order_id
+                )
+        ):
+            ctx.logger.info(f"Order canceled on {ctx.exchange_manager.exchange_name} for {ctx.symbol}")
+            orders_canceled = True
+    return orders_canceled

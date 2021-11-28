@@ -15,5 +15,34 @@
 #  License along with this library.
 
 
-from .wait_for_price import *
-from .wait_for_time import *
+from .create_order import _create_order_instance
+
+
+async def stop_loss(
+        context,
+        side=None,
+        symbol=None,
+
+        offset=None,
+
+        amount=None,
+        target_position=None,
+
+        tag=None,
+
+):
+    await _create_order_instance(
+        trader=context.trader,
+        side=side,
+        symbol=symbol or context.symbol,
+
+        order_amount=amount,
+        order_target_position=target_position,
+
+        order_type_name="stop_loss",
+        order_offset=offset,
+
+        tag=tag,
+
+        context=context
+    )

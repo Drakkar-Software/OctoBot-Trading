@@ -17,8 +17,7 @@
 
 from .create_order import _create_order_instance
 
-
-async def limit(
+async def trailing_limit(
         context,
         side=None,
         symbol=None,
@@ -27,6 +26,8 @@ async def limit(
         target_position=None,
 
         offset=None,
+        min_offset=None,
+        max_offset=None,
 
         slippage_limit=None,
         time_limit=None,
@@ -43,7 +44,10 @@ async def limit(
         order_amount=amount,
         order_target_position=target_position,
 
-        order_type_name="limit",
+        order_type_name="trailing_limit",
+
+        order_min_offset=min_offset,
+        order_max_offset=max_offset,
         order_offset=offset,
 
         slippage_limit=slippage_limit,
@@ -54,4 +58,3 @@ async def limit(
 
         context=context
     )
-

@@ -17,3 +17,6 @@
 
 from .eval_triggered import *
 from .tag_triggered import *
+from .crossing import *
+from .channel import *
+from .moving import *

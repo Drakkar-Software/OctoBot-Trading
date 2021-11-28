@@ -14,6 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-from .wait_for_price import *
-from .wait_for_time import *
+# todo get access to cache instead of loop
+# todo should work with evaluators and any other true/false in current candle
+def value_when(condition, price_data, n):
+    true_count = 0
+    for i in range(1, len(price_data)):
+        if condition[-i]:
+            true_count += 1
+        if true_count == n:
+            return price_data[-i]
+    return None

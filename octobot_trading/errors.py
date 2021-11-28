@@ -102,3 +102,9 @@ class UnreachableExchange(Exception):
     """
     Raised when an exchange cant be reached (likely when it's offline)
     """
+
+
+class MissingCandlesError(Exception):
+    """
+    Raised when there is not enough available candles
+    """
