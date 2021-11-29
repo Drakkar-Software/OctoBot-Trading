@@ -89,6 +89,18 @@ async def _load_historical_values(meta_database, exchange, with_candles=True, wi
     return price_data, trades_data, moving_portfolio_data
 
 
+async def backtesting_data(meta_database, data_label):
+    for reader in meta_database.all_basic_db():
+        for table in await reader.tables():
+            if table == data_label:
+                return await reader.all(table)
+            for row in await reader.all(table):
+                for key, value in row.items():
+                    if key == data_label:
+                        return value
+    return None
+
+
 async def plot_historical_portfolio_value(meta_database, plotted_element, exchange=None, own_yaxis=False):
     price_data, trades_data, moving_portfolio_data = await _load_historical_values(meta_database, exchange)
     time_data = []
@@ -231,6 +243,14 @@ async def plot_trades(meta_database, plotted_element):
         columns=columns,
         rows=rows,
         searches=searches)
+
+
+async def display(plotted_element, label, value):
+    plotted_element.value(label, value)
+
+
+async def display_html(plotted_element, html):
+    plotted_element.html_value(html)
 
 
 async def plot_table(meta_database, plotted_element, data_source, columns=None, rows=None,

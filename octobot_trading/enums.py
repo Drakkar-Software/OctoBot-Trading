@@ -457,6 +457,7 @@ class PlotAttributes(enum.Enum):
     SEARCHES = "searches"
     TYPE = "type"
     COLOR = "color"
+    HTML = "html"
 
 
 class PlotCharts(enum.Enum):
@@ -468,6 +469,7 @@ class DisplayedElementTypes(enum.Enum):
     CHART = "chart"
     INPUT = "input"
     TABLE = "table"
+    VALUE = "value"
 
 
 class DBTables(enum.Enum):

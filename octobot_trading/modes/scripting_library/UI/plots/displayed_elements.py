@@ -435,6 +435,27 @@ class DisplayedElements:
         )
         self.elements.append(element)
 
+    def value(self, label, value):
+        element = Element(
+            None,
+            None,
+            None,
+            title=label,
+            value=str(value),
+            type=trading_enums.DisplayedElementTypes.VALUE.value
+        )
+        self.elements.append(element)
+
+    def html_value(self, html):
+        element = Element(
+            None,
+            None,
+            None,
+            html=html,
+            type=trading_enums.DisplayedElementTypes.VALUE.value
+        )
+        self.elements.append(element)
+
     def to_json(self, name="root"):
         return {
             trading_enums.PlotAttributes.NAME.value: name,
@@ -478,6 +499,7 @@ class Element:
         searches=None,
         type=trading_enums.DisplayedElementTypes.CHART.value,
         color=None,
+        html=None,
     ):
         self.kind = kind
         self.x = x
@@ -503,6 +525,7 @@ class Element:
         self.searches = searches
         self.type = type
         self.color = color
+        self.html = html
 
     def to_json(self):
         return {
@@ -530,6 +553,7 @@ class Element:
             trading_enums.PlotAttributes.SEARCHES.value: self.searches,
             trading_enums.PlotAttributes.TYPE.value: self.type,
             trading_enums.PlotAttributes.COLOR.value: self.color,
+            trading_enums.PlotAttributes.HTML.value: self.html,
         }
 
     @staticmethod
