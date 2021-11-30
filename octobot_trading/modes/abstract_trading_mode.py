@@ -146,6 +146,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         for consumer in self.consumers:
             await consumer.stop()
         self.exchange_manager = None
+        await self.close_caches()
+
+    async def close_caches(self):
+        self.remote_caches = {}
         await asyncio.gather(
             *(
                 cache.close()
@@ -153,6 +157,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 for cache in caches_by_tf.values()
             )
         )
+        self.caches = {}
 
     async def create_producers(self) -> list:
         """

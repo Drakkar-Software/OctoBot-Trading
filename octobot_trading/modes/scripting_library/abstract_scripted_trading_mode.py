@@ -150,6 +150,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             await scripting_library.clear_user_inputs(producer.run_data_writer)
             producer.run_data_writer.are_data_initialized = False
             self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
+            await self.close_caches()
             await producer.set_final_eval(*producer.last_call)
 
     def get_optimizer_id(self):

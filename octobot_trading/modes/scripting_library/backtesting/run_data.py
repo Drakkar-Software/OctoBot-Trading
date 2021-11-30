@@ -19,6 +19,7 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_commons.constants
 import octobot_commons.databases as databases
 import octobot_commons.enums as commons_enums
+import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.logging
 
 
@@ -26,18 +27,8 @@ def get_logger():
     return octobot_commons.logging.get_logger("BacktestingRunData")
 
 
-async def get_candles(meta_database, exchange, symbol, time_frame, metadata):
-    candles_sources = await meta_database.get_symbol_db(exchange, symbol).all(
-        trading_enums.DBTables.CANDLES_SOURCE.value
-    )
-    to_use_candles_source = candles_sources[0]
-    if time_frame is not None:
-        for candles_source in candles_sources:
-            if candles_source[trading_enums.DBRows.TIME_FRAME.value] == time_frame:
-                to_use_candles_source = candles_source
-    else:
-        time_frame = to_use_candles_source[trading_enums.DBRows.TIME_FRAME.value]
-    return await backtesting_api.get_all_ohlcvs(to_use_candles_source[trading_enums.DBRows.VALUE.value],
+async def get_candles(candles_sources, exchange, symbol, time_frame, metadata):
+    return await backtesting_api.get_all_ohlcvs(candles_sources[0][trading_enums.DBRows.VALUE.value],
                                                 exchange,
                                                 symbol,
                                                 commons_enums.TimeFrames(time_frame),
@@ -65,17 +56,24 @@ async def _load_historical_values(meta_database, exchange, with_candles=True, wi
     try:
         starting_portfolio = await get_starting_portfolio(meta_database)
         metadata = await get_metadata(meta_database)
+        run_global_metadata = await meta_database.get_backtesting_metadata_from_run()
 
         exchange = exchange or meta_database.database_manager.context.exchange_name \
                    or metadata[trading_enums.DBRows.EXCHANGES.value][0]    # TODO handle multi exchanges
         ref_market = metadata[trading_enums.DBRows.REFERENCE_MARKET.value]
         # init data
-        for symbol, values in starting_portfolio.items():
+        for pair in run_global_metadata[trading_enums.DBRows.SYMBOLS.value]:
+            symbol, _ = symbol_util.split_symbol(pair)
             if symbol != ref_market:
-                pair = symbol_util.merge_currencies(symbol, ref_market)
+                candles_sources = await meta_database.get_symbol_db(exchange, pair).all(
+                    trading_enums.DBTables.CANDLES_SOURCE.value
+                )
+                if time_frame is None:
+                    time_frames = [source[trading_enums.DBRows.TIME_FRAME.value] for source in candles_sources]
+                    time_frame = time_frame_manager.find_min_time_frame(time_frames) if time_frames else time_frame
                 if with_candles and pair not in price_data:
                     # convert candles timestamp in millis
-                    raw_candles = await get_candles(meta_database, exchange, pair, time_frame, metadata)
+                    raw_candles = await get_candles(candles_sources, exchange, pair, time_frame, metadata)
                     for candle in raw_candles:
                         candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] = \
                             candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] * 1000
@@ -83,7 +81,14 @@ async def _load_historical_values(meta_database, exchange, with_candles=True, wi
                 if with_trades and pair not in trades_data:
                     trades_data[pair] = await get_trades(meta_database, pair)
             if with_portfolio:
-                moving_portfolio_data[symbol] = values[octobot_commons.constants.PORTFOLIO_TOTAL]
+                try:
+                    moving_portfolio_data[symbol] = starting_portfolio[symbol][octobot_commons.constants.PORTFOLIO_TOTAL]
+                except KeyError:
+                    moving_portfolio_data[symbol] = 0
+                try:
+                    moving_portfolio_data[ref_market] = starting_portfolio[ref_market][octobot_commons.constants.PORTFOLIO_TOTAL]
+                except KeyError:
+                    moving_portfolio_data[ref_market] = 0
     except IndexError:
         pass
     return price_data, trades_data, moving_portfolio_data
@@ -105,28 +110,41 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
     price_data, trades_data, moving_portfolio_data = await _load_historical_values(meta_database, exchange)
     time_data = []
     value_data = []
-    for pair, candles in price_data.items():
+    pairs = list(trades_data)
+    if pairs:
+        pair = pairs[0]
         symbol, ref_market = symbol_util.split_symbol(pair)
-        if candles and not time_data:
-            time_data = [candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] for candle in candles]
-            value_data = [0] * len(candles)
-        for index, candle in enumerate(candles):
-            # TODO: handle multiple pairs with shared symbols
-            value_data[index] = \
-                value_data[index] + \
-                moving_portfolio_data[symbol] * candle[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value] + moving_portfolio_data[ref_market]
-            for trade in trades_data[pair]:
-                if trade[trading_enums.PlotAttributes.X.value] == candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]:
-                    if trade[trading_enums.PlotAttributes.SIDE.value] == "sell":
-                        moving_portfolio_data[symbol] -= trade[trading_enums.PlotAttributes.VOLUME.value]
-                        moving_portfolio_data[ref_market] += trade[trading_enums.PlotAttributes.VOLUME.value] * \
-                                                             trade[trading_enums.PlotAttributes.Y.value]
-                    else:
-                        moving_portfolio_data[symbol] += trade[trading_enums.PlotAttributes.VOLUME.value]
-                        moving_portfolio_data[ref_market] -= trade[trading_enums.PlotAttributes.VOLUME.value] * \
-                                                             trade[trading_enums.PlotAttributes.Y.value]
-                    if moving_portfolio_data[symbol] < 0 or moving_portfolio_data[ref_market] < 0:
-                        raise RuntimeError("negative portfolio")
+        candles = price_data[pair]
+        time_data = [candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] for candle in candles]
+        value_data = [0] * len(candles)
+        candles = price_data[pair]
+        for index, ref_candle in enumerate(candles):
+            handled_currencies = []
+            for pair in pairs:
+                other_candle = price_data[pair][index]
+                # part 1: compute portfolio total value
+                if other_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] == \
+                   ref_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]:
+                    symbol, ref_market = symbol_util.split_symbol(pair)
+                    if symbol not in handled_currencies:
+                        value_data[index] = \
+                            value_data[index] + \
+                            moving_portfolio_data[symbol] * other_candle[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value]
+                        handled_currencies.append(symbol)
+                    if ref_market not in handled_currencies:
+                        value_data[index] = value_data[index] + moving_portfolio_data[ref_market]
+                        handled_currencies.append(ref_market)
+                # part 2: compute portfolio total value after trade update when any
+                for trade in trades_data[pair]:
+                    if trade[trading_enums.PlotAttributes.X.value] == ref_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]:
+                        if trade[trading_enums.PlotAttributes.SIDE.value] == "sell":
+                            moving_portfolio_data[symbol] -= trade[trading_enums.PlotAttributes.VOLUME.value]
+                            moving_portfolio_data[ref_market] += trade[trading_enums.PlotAttributes.VOLUME.value] * \
+                                                                 trade[trading_enums.PlotAttributes.Y.value]
+                        else:
+                            moving_portfolio_data[symbol] += trade[trading_enums.PlotAttributes.VOLUME.value]
+                            moving_portfolio_data[ref_market] -= trade[trading_enums.PlotAttributes.VOLUME.value] * \
+                                                                 trade[trading_enums.PlotAttributes.Y.value]
 
     plotted_element.plot(
         kind="scatter",
@@ -137,6 +155,7 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
 
 
 async def plot_historical_pnl_value(meta_database, plotted_element, exchange=None, x_as_trade_count=True, own_yaxis=False):
+    # TODO multiple symbols
     # PNL:
     # 1. open position: consider position opening fee from PNL
     # 2. close position: consider closed amount + closing fee into PNL
