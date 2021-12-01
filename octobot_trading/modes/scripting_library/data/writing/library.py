@@ -63,7 +63,7 @@ async def plot_candles(ctx, symbol, time_frame, chart=trading_enums.PlotCharts.M
         "chart": chart
     }
     search_query = await ctx.symbol_writer.search()
-    if (not ctx.symbol_writer.are_data_initialized and
+    if (not ctx.symbol_writer.are_data_initialized_by_key.get(time_frame) and
         await ctx.symbol_writer.count(
             table,
             ((search_query.time_frame == time_frame) & (search_query.value == candles_data["value"]))) == 0):
@@ -110,7 +110,8 @@ async def plot(ctx, title, x=None,
                        & (indicator_query.time_frame == ctx.time_frame)
                        & (indicator_query.title == title)
                        & (indicator_query.value == cache_full_path))
-    if init_only and not ctx.symbol_writer.are_data_initialized and await ctx.symbol_writer.count(
+    if init_only and not ctx.symbol_writer.are_data_initialized_by_key.get(time_frame, False) \
+            and await ctx.symbol_writer.count(
             trading_enums.DBTables.CACHE_SOURCE.value if cache_value is not None else title,
             count_query) == 0:
         if cache_value is not None:

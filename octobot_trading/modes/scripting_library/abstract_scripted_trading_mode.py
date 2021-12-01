@@ -314,6 +314,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                     await context.get_cache().flush()
             self.run_data_writer.are_data_initialized = initialized
             self.symbol_writer.are_data_initialized = initialized
+            self.symbol_writer.are_data_initialized_by_key[time_frame] = initialized
             self.contexts.remove(context)
 
     @contextlib.asynccontextmanager
