@@ -33,6 +33,7 @@ import octobot_trading.enums as trading_enums
 import octobot_trading.modes.scripting_library as scripting_library
 import octobot_trading.errors as errors
 import octobot_backtesting.api as backtesting_api
+import octobot_tentacles_manager.api as tentacles_manager_api
 
 
 class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
@@ -52,6 +53,8 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         self.timestamp = time.time()
         self.script_name = None
         self.load_config()
+        # add config folder to importable files to import the user script
+        tentacles_manager_api.import_user_tentacles_config_folder(self.exchange_manager.tentacles_setup_config)
 
     def get_current_state(self) -> (str, float):
         return super().get_current_state()[0] if self.producers[0].state is None else self.producers[0].state.name, \
