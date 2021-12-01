@@ -18,7 +18,7 @@
 def entering_channel_up(price, val1, val2, delay=0):
     condition = False
     delay = delay + 1
-    for i in range(0, delay):
+    for i in range(1, delay):
         if val1 < val2:
             condition = price[-i] > val1[-i] and price[-i + 1] < val1[-i + 1]
             if not condition:
@@ -33,7 +33,7 @@ def entering_channel_up(price, val1, val2, delay=0):
 def entering_channel_down(price, val1, val2, delay=0):
     condition = False
     delay = delay + 1
-    for i in range(0, delay):
+    for i in range(1, delay):
         if val1 > val2:
             condition = price[-i] < val1[-i] and price[-i + 1] > val1[-i + 1]
             if not condition:
@@ -56,7 +56,7 @@ def entering_channel(price, val1, val2, delay=0):
 def inside_channel(price, val1, val2, delay=0):
     condition = False
     delay = delay + 1
-    for i in range(0, delay):
+    for i in range(1, delay):
         if val1 < val2:
             condition = val1[-i] < price[-i] < val2[-i]
             if not condition:

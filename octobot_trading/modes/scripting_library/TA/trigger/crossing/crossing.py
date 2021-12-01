@@ -15,17 +15,34 @@
 #  License along with this library.
 
 
-def crossing_up(price, value):
-    # true if price just risen over value
-    return price[-1] > value[-1] and price[-2] < value[-2]
+def crossing_up(price, value, delay=0):
+    # true if price just risen over value and stayed there for delay time
+    condition = False
+    delay = delay + 1
+    for i in range(1, delay):
+        condition = price[-i] > value[-i] and price[-i+1] < value[-i+1]
+        if not condition:
+            return False
+    return condition
 
 
-def crossing_down(price, value):
-    # true if price just fell under value
-    return price[-1] < value[-1] and price[-2] > value[-2]
+def crossing_down(price, value, delay=0):
+    # true if price just fell under value and stayed there for delay time
+    condition = False
+    delay = delay + 1
+    for i in range(1, delay):
+        condition = price[-i] < value[-i] and price[-i+1] > value[-i+1]
+        if not condition:
+            return False
+    return condition
 
 
-def crossing(price, value):
-    # true if price just went below or over value
-    return (price[-1] < value[-1] and price[-2] > value[-2]) or (price[-1] > value[-1] and price[-2] < value[-2])
-
+def crossing(price, value, delay=0):
+    # true if price just went below or over value and stayed there for delay time
+    condition = False
+    delay = delay + 1
+    for i in range(1, delay):
+        condition = (price[-i] < value[-i] and price[-i+1] > value[-i+1]) or (price[-i] > value[-i] and price[-i+1] < value[-i+1])
+        if not condition:
+            return False
+    return condition
