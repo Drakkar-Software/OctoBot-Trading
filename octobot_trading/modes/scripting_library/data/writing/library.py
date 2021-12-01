@@ -34,6 +34,7 @@ async def store_orders(ctx, orders,
     order_data = [
         {
             "x": order.creation_time * x_multiplier,
+            "text": f"{order.order_type.name} {order.origin_quantity} {order.currency} at {order.origin_price}",
             "id": order.order_id,
             "symbol": order.symbol,
             "type": order.order_type.name if order.order_type is not None else 'Unknown',
@@ -71,7 +72,7 @@ async def plot_candles(ctx, symbol, time_frame, chart=trading_enums.PlotCharts.M
 
 async def plot(ctx, title, x=None,
                y=None, z=None, open=None, high=None, low=None, close=None, volume=None,
-               kind="scatter", mode="lines", init_only=True,
+               text=None, kind="scatter", mode="lines", init_only=True,
                condition=None, x_function=exchange_public_data.Time,
                x_multiplier=1000, time_frame=None,
                chart=trading_enums.PlotCharts.SUB_CHART.value,
@@ -114,8 +115,9 @@ async def plot(ctx, title, x=None,
             count_query) == 0:
         if cache_value is not None:
             table = trading_enums.DBTables.CACHE_SOURCE.value
-            cache_identifier = {
+            cache_data = {
                 "title": title,
+                "text": text,
                 "time_frame": ctx.time_frame,
                 "value": cache_full_path,
                 "cache_value": cache_value,
@@ -131,7 +133,7 @@ async def plot(ctx, title, x=None,
                             & (update_query.mode == mode)
                             & (update_query.time_frame == ctx.time_frame)
                             & (update_query.title == title))
-            await ctx.symbol_writer.upsert(table, cache_identifier, update_query)
+            await ctx.symbol_writer.upsert(table, cache_data, update_query)
         else:
             adapted_x = None
             if x is not None:
@@ -144,27 +146,6 @@ async def plot(ctx, title, x=None,
             if adapted_x is None:
                 raise RuntimeError("No confirmed adapted_x")
             adapted_x = adapted_x * x_multiplier
-            # TODO multiple updates on init
-            # update = [
-            #         ({
-            #             "x": value,
-            #             "y": ctx.symbol_writer.get_value_from_array(y, index),
-            #             "z": ctx.symbol_writer.get_value_from_array(z, index),
-            #             "open": ctx.symbol_writer.get_value_from_array(open, index),
-            #             "high": ctx.symbol_writer.get_value_from_array(high, index),
-            #             "low": ctx.symbol_writer.get_value_from_array(low, index),
-            #             "close": ctx.symbol_writer.get_value_from_array(close, index),
-            #             "volume": ctx.symbol_writer.get_value_from_array(volume, index),
-            #             "time_frame": ctx.time_frame,
-            #             "kind": kind,
-            #             "mode": mode,
-            #             "chart": chart,
-            #             "own_yaxis": own_yaxis,
-            #             "color": color,
-            #         }, (await ctx.symbol_writer.search()).x == value)
-            #         for index, value in enumerate(adapted_x)
-            #     ]
-            # await ctx.symbol_writer.update_many(title, update)
             await ctx.symbol_writer.log_many(
                 title,
                 [
@@ -183,6 +164,7 @@ async def plot(ctx, title, x=None,
                         "chart": chart,
                         "own_yaxis": own_yaxis,
                         "color": color,
+                        "text": text,
                     }
                     for index, value in enumerate(adapted_x)
                 ]
@@ -208,6 +190,7 @@ async def plot(ctx, title, x=None,
                 "chart": chart,
                 "own_yaxis": own_yaxis,
                 "color": color,
+                "text": text,
             },
             (await ctx.symbol_writer.search()).x == x_value
         )

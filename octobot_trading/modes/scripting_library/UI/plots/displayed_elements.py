@@ -99,7 +99,8 @@ class DisplayedElements:
                     low = []
                     close = []
                     volume = []
-                    color = dataset[0].get("color", None)
+                    text = []
+                    color = []
                     if dataset[0].get("x", None) is None:
                         x = None
                     if dataset[0].get("y", None) is None:
@@ -114,6 +115,10 @@ class DisplayedElements:
                         close = None
                     if dataset[0].get("volume", None) is None:
                         volume = None
+                    if dataset[0].get("text", None) is None:
+                        text = None
+                    if dataset[0].get("color", None) is None:
+                        color = None
                     own_yaxis = dataset[0].get("own_yaxis", False)
                     for data in dataset:
                         if x is not None:
@@ -130,6 +135,10 @@ class DisplayedElements:
                             close.append(data["close"])
                         if volume is not None:
                             volume.append(data["volume"])
+                        if text is not None:
+                            text.append(data["text"])
+                        if color is not None:
+                            color.append(data["color"])
                     part.plot(
                         kind=data.get("kind", None),
                         x=x,
@@ -140,6 +149,7 @@ class DisplayedElements:
                         close=close,
                         volume=volume,
                         title=title,
+                        text=text,
                         x_type="date",
                         y_type=None,
                         mode=data.get("mode", None),
@@ -370,6 +380,7 @@ class DisplayedElements:
         x_type="date",
         y_type=None,
         title=None,
+        text=None,
         mode="lines",
         own_xaxis=False,
         own_yaxis=False,
@@ -387,6 +398,7 @@ class DisplayedElements:
             x_type=x_type,
             y_type=y_type,
             title=title,
+            text=text,
             mode=mode,
             own_xaxis=own_xaxis,
             own_yaxis=own_yaxis,
@@ -486,6 +498,7 @@ class Element:
         x_type=None,
         y_type=None,
         title=None,
+        text=None,
         mode=None,
         own_xaxis=False,
         own_yaxis=False,
@@ -512,6 +525,7 @@ class Element:
         self.x_type = x_type
         self.y_type = y_type
         self.title = title
+        self.text = text
         self.mode = mode
         self.own_xaxis = own_xaxis
         self.own_yaxis = own_yaxis
@@ -540,6 +554,7 @@ class Element:
             trading_enums.PlotAttributes.X_TYPE.value: self.x_type,
             trading_enums.PlotAttributes.Y_TYPE.value: self.y_type,
             trading_enums.PlotAttributes.TITLE.value: self.title,
+            trading_enums.PlotAttributes.TEXT.value: self.text,
             trading_enums.PlotAttributes.MODE.value: self.mode,
             trading_enums.PlotAttributes.OWN_XAXIS.value: self.own_xaxis,
             trading_enums.PlotAttributes.OWN_YAXIS.value: self.own_yaxis,

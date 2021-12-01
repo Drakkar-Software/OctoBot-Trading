@@ -437,6 +437,7 @@ class PlotAttributes(enum.Enum):
     CLOSE = "close"
     VOLUME = "volume"
     TITLE = "title"
+    TEXT = "text"
     SUB_ELEMENTS = "sub_elements"
     ELEMENTS = "elements"
     NAME = "name"
