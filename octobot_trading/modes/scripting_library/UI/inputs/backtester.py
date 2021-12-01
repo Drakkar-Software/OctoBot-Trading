@@ -1,1 +1,0 @@
-# idea defining available settings for the backtester to try out
