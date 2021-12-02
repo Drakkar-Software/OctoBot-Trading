@@ -302,6 +302,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                 await scripting_library.save_metadata(self.run_data_writer, await self.get_live_metadata())
                 await scripting_library.save_portfolio(self.run_data_writer, context)
                 self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
+            await self._pre_script_call(context)
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise
@@ -319,6 +320,9 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             self.symbol_writer.are_data_initialized = initialized
             self.symbol_writer.are_data_initialized_by_key[time_frame] = initialized
             self.contexts.remove(context)
+
+    async def _pre_script_call(self, context):
+        await scripting_library.user_input(context, trading_constants.CONFIG_VISIBLE_LIVE_HISTORY, "int", 800)
 
     @contextlib.asynccontextmanager
     async def get_metadata_writer(self, with_lock):
