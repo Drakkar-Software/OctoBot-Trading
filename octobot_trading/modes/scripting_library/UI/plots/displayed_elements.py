@@ -101,6 +101,8 @@ class DisplayedElements:
                     volume = []
                     text = []
                     color = []
+                    size = []
+                    shape = []
                     if dataset[0].get("x", None) is None:
                         x = None
                     if dataset[0].get("y", None) is None:
@@ -119,6 +121,10 @@ class DisplayedElements:
                         text = None
                     if dataset[0].get("color", None) is None:
                         color = None
+                    if dataset[0].get("size", None) is None:
+                        size = None
+                    if dataset[0].get("shape", None) is None:
+                        shape = None
                     own_yaxis = dataset[0].get("own_yaxis", False)
                     for data in dataset:
                         if x is not None:
@@ -139,6 +145,10 @@ class DisplayedElements:
                             text.append(data["text"])
                         if color is not None:
                             color.append(data["color"])
+                        if size is not None:
+                            size.append(data["size"])
+                        if shape is not None:
+                            shape.append(data["shape"])
                     part.plot(
                         kind=data.get("kind", None),
                         x=x,
@@ -154,7 +164,9 @@ class DisplayedElements:
                         y_type=None,
                         mode=data.get("mode", None),
                         own_yaxis=own_yaxis,
-                        color=color)
+                        color=color,
+                        size=size,
+                        symbol=shape)
 
     def _base_schema(self, tentacle):
         return {
@@ -285,13 +297,25 @@ class DisplayedElements:
                 for values in cache:
                     try:
                         if condition is None or condition == values[cache_displayed_value]:
-                            plotted_values.append({
-                                "x": values[commons_enums.CacheDatabaseColumns.TIMESTAMP.value] * 1000,
-                                "y": values[plotted_displayed_value],
-                                "kind": kind,
-                                "mode": mode,
-                                "own_yaxis": own_yaxis,
-                            })
+                            x = values[commons_enums.CacheDatabaseColumns.TIMESTAMP.value] * 1000
+                            y = values[plotted_displayed_value]
+                            if not isinstance(x, list) and isinstance(y, list):
+                                for y_val in y:
+                                    plotted_values.append({
+                                        "x": x,
+                                        "y": y_val,
+                                        "kind": kind,
+                                        "mode": mode,
+                                        "own_yaxis": own_yaxis,
+                                    })
+                            else:
+                                plotted_values.append({
+                                    "x": x,
+                                    "y": y,
+                                    "kind": kind,
+                                    "mode": mode,
+                                    "own_yaxis": own_yaxis,
+                                })
                     except KeyError:
                         pass
                 return plotted_values
@@ -385,6 +409,8 @@ class DisplayedElements:
         own_xaxis=False,
         own_yaxis=False,
         color=None,
+        size=None,
+        symbol=None,
     ):
         element = Element(
             kind,
@@ -403,7 +429,9 @@ class DisplayedElements:
             own_xaxis=own_xaxis,
             own_yaxis=own_yaxis,
             type=trading_enums.DisplayedElementTypes.CHART.value,
-            color=color
+            color=color,
+            size=size,
+            symbol=symbol
         )
         self.elements.append(element)
 
@@ -513,6 +541,8 @@ class Element:
         type=trading_enums.DisplayedElementTypes.CHART.value,
         color=None,
         html=None,
+        size=None,
+        symbol=None,
     ):
         self.kind = kind
         self.x = x
@@ -540,6 +570,8 @@ class Element:
         self.type = type
         self.color = color
         self.html = html
+        self.size = size
+        self.symbol = symbol
 
     def to_json(self):
         return {
@@ -569,6 +601,8 @@ class Element:
             trading_enums.PlotAttributes.TYPE.value: self.type,
             trading_enums.PlotAttributes.COLOR.value: self.color,
             trading_enums.PlotAttributes.HTML.value: self.html,
+            trading_enums.PlotAttributes.SIZE.value: self.size,
+            trading_enums.PlotAttributes.SYMBOL.value: self.symbol,
         }
 
     @staticmethod

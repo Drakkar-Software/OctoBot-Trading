@@ -459,6 +459,8 @@ class PlotAttributes(enum.Enum):
     TYPE = "type"
     COLOR = "color"
     HTML = "html"
+    SIZE = "size"
+    SYMBOL = "symbol"
 
 
 class PlotCharts(enum.Enum):

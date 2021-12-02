@@ -78,7 +78,7 @@ async def plot(ctx, title, x=None,
                condition=None, x_function=exchange_public_data.Time,
                x_multiplier=1000, time_frame=None,
                chart=trading_enums.PlotCharts.SUB_CHART.value,
-               cache_value=None, own_yaxis=False, color=None):
+               cache_value=None, own_yaxis=False, color=None, size=None, shape=None):
     time_frame = time_frame or ctx.time_frame
     if condition is not None and cache_value is None:
         if isinstance(ctx.symbol_writer.get_serializable_value(condition), bool):
@@ -130,6 +130,8 @@ async def plot(ctx, title, x=None,
                 "own_yaxis": own_yaxis,
                 "condition": condition,
                 "color": color,
+                "size": size,
+                "shape": shape,
             }
             update_query = await ctx.symbol_writer.search()
             update_query = ((update_query.kind == kind)
@@ -140,15 +142,23 @@ async def plot(ctx, title, x=None,
         else:
             adapted_x = None
             if x is not None:
-                min_available_data = len(x)
+                try:
+                    min_available_data = len(x)
+                except TypeError:
+                    pass
                 if y is not None:
                     min_available_data = len(y)
+                    if isinstance(y, list) and not isinstance(x, list):
+                        x = [x] * len(y)
                 if z is not None:
                     min_available_data = min(min_available_data, len(z))
+                    if isinstance(z, list) and not isinstance(z, list):
+                        x = [x] * len(z)
                 adapted_x = x[-min_available_data:] if min_available_data != len(x) else x
             if adapted_x is None:
                 raise RuntimeError("No confirmed adapted_x")
-            adapted_x = adapted_x * x_multiplier
+            adapted_x = [a_x * x_multiplier for a_x in adapted_x] if isinstance(adapted_x, list) \
+                else adapted_x * x_multiplier
             await ctx.symbol_writer.log_many(
                 title,
                 [
@@ -168,35 +178,44 @@ async def plot(ctx, title, x=None,
                         "own_yaxis": own_yaxis,
                         "color": color,
                         "text": text,
+                        "size": size,
+                        "shape": shape,
                     }
                     for index, value in enumerate(adapted_x)
                 ]
 
             )
-    elif cache_value is None and x is not None and len(x) \
-            and not ctx.symbol_writer.contains_x(title, ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier):
-        x_value = ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier
-        await ctx.symbol_writer.upsert(
-            title,
-            {
-                "time_frame": ctx.time_frame,
-                "x": x_value,
-                "y": ctx.symbol_writer.get_value_from_array(y, -1),
-                "z": ctx.symbol_writer.get_value_from_array(z, -1),
-                "open": ctx.symbol_writer.get_value_from_array(open, -1),
-                "high": ctx.symbol_writer.get_value_from_array(high, -1),
-                "low": ctx.symbol_writer.get_value_from_array(low, -1),
-                "close": ctx.symbol_writer.get_value_from_array(close, -1),
-                "volume": ctx.symbol_writer.get_value_from_array(volume, -1),
-                "kind": kind,
-                "mode": mode,
-                "chart": chart,
-                "own_yaxis": own_yaxis,
-                "color": color,
-                "text": text,
-            },
-            (await ctx.symbol_writer.search()).x == x_value
-        )
+    elif cache_value is None and x is not None:
+        if isinstance(y, list) and not isinstance(x, list):
+            x = [x] * len(y)
+        elif isinstance(z, list) and not isinstance(x, list):
+            x = [x] * len(z)
+        if len(x) and \
+                not ctx.symbol_writer.contains_x(title, ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier):
+            x_value = ctx.symbol_writer.get_value_from_array(x, -1) * x_multiplier
+            await ctx.symbol_writer.upsert(
+                title,
+                {
+                    "time_frame": ctx.time_frame,
+                    "x": x_value,
+                    "y": ctx.symbol_writer.get_value_from_array(y, -1),
+                    "z": ctx.symbol_writer.get_value_from_array(z, -1),
+                    "open": ctx.symbol_writer.get_value_from_array(open, -1),
+                    "high": ctx.symbol_writer.get_value_from_array(high, -1),
+                    "low": ctx.symbol_writer.get_value_from_array(low, -1),
+                    "close": ctx.symbol_writer.get_value_from_array(close, -1),
+                    "volume": ctx.symbol_writer.get_value_from_array(volume, -1),
+                    "kind": kind,
+                    "mode": mode,
+                    "chart": chart,
+                    "own_yaxis": own_yaxis,
+                    "color": color,
+                    "text": text,
+                    "size": size,
+                    "shape": shape,
+                },
+                (await ctx.symbol_writer.search()).x == x_value
+            )
 
 
 async def plot_shape(ctx, title, value, y_value,
