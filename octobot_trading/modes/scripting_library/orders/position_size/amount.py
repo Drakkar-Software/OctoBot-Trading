@@ -26,6 +26,7 @@ async def get_amount(input_amount=None,
                      context=None,
                      side="buy"
                      ):
+    input_amount = str(input_amount)
     amount_type = re.sub(r"\d|\.", "", input_amount)
     amount_value = decimal.Decimal(input_amount.replace(amount_type, ""))
 
@@ -33,7 +34,7 @@ async def get_amount(input_amount=None,
         raise RuntimeError("amount cant be zero or negative")
 
     if amount_type == "":
-        return cut_position_size(context, amount_value, side)
+        return await cut_position_size(context, amount_value, side)
 
     elif amount_type == "%":
         amount_value = await total_account_balance(context, side) * amount_value / 100

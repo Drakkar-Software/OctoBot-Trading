@@ -24,6 +24,7 @@ async def get_target_position(
         target=None,
         context=None
 ):
+    target = str(target)
     target_position_type = re.sub(r"\d|\.", "", target)
     target_position_value = decimal.Decimal(target.replace(target_position_type, ""))
     order_size = None
