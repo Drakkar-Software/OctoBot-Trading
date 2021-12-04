@@ -121,6 +121,7 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
             if self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE:
                 mark_price, funding_rate = await self.channel.exchange_manager.exchange. \
                     get_mark_price_and_funding(symbol)
+                mark_price = decimal.Decimal(str(mark_price))
                 await self.push_funding_rate(symbol, funding_rate)
             else:
                 mark_price = await self.channel.exchange_manager.exchange.get_mark_price(symbol)
