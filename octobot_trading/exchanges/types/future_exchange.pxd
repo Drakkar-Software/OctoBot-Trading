@@ -25,6 +25,9 @@ cdef class FutureExchange(abstract_exchange.AbstractExchange):
     cpdef double calculate_position_value(self, double quantity, double mark_price)
     cpdef object get_pair_future_contract(self, str pair) # TODO : fix cimport positions.FutureContract
     cpdef void set_pair_future_contract(self, str pair, object future_contract) # TODO : fix cimport positions.FutureContract
+    cpdef bint is_linear_symbol(self, str symbol)
+    cpdef bint is_inverse_symbol(self, str symbol)
+    cpdef bint is_futures_symbol(self, str symbol)
 
     """
     Parsers
