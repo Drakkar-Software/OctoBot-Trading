@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
 import octobot_trading.enums
 import octobot_trading.errors as errors
@@ -39,15 +40,29 @@ class FutureExchange(abstract_exchange.AbstractExchange):
 
     async def load_pair_future_contract(self, pair: str):
         """
-        Create a new FutureContract for the pair
-        :param pair: the pair
+        Load and create a new FutureContract for the pair
+        :param pair: the contract pair
         """
-        self.logger.debug(f"Loading {pair} contract...")
-        self.pair_contracts[pair] = contracts.FutureContract(
+        self.create_pair_contract(
             pair=pair,
             current_leverage=await self.get_symbol_leverage(pair),
             margin_type=await self.get_margin_type(pair),
-            contract_type=await self.get_contract_type(pair))
+            contract_type=await self.get_contract_type(pair)
+        )
+
+    def create_pair_contract(self, pair, current_leverage, margin_type, contract_type):
+        """
+        Create a new FutureContract for the pair
+        :param pair: the contract pair
+        :param current_leverage: the contract current leverage
+        :param margin_type: the contract margin type
+        :param contract_type: the contract type
+        """
+        self.logger.debug(f"Creating {pair} contract...")
+        self.pair_contracts[pair] = contracts.FutureContract(pair=pair,
+                                                             current_leverage=current_leverage,
+                                                             margin_type=margin_type,
+                                                             contract_type=contract_type)
 
     def get_pair_future_contract(self, pair):
         """
