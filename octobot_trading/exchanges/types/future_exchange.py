@@ -47,22 +47,28 @@ class FutureExchange(abstract_exchange.AbstractExchange):
             pair=pair,
             current_leverage=await self.get_symbol_leverage(pair),
             margin_type=await self.get_margin_type(pair),
-            contract_type=await self.get_contract_type(pair)
+            contract_type=await self.get_contract_type(pair),
+            position_mode=await self.get_position_mode(pair),
         )
 
-    def create_pair_contract(self, pair, current_leverage, margin_type, contract_type):
+    def create_pair_contract(self, pair, current_leverage, margin_type,
+                             contract_type, position_mode, maximum_leverage=None):
         """
         Create a new FutureContract for the pair
         :param pair: the contract pair
         :param current_leverage: the contract current leverage
         :param margin_type: the contract margin type
         :param contract_type: the contract type
+        :param position_mode: the contract position mode
+        :param maximum_leverage: the contract maximum leverage
         """
         self.logger.debug(f"Creating {pair} contract...")
         self.pair_contracts[pair] = contracts.FutureContract(pair=pair,
                                                              current_leverage=current_leverage,
                                                              margin_type=margin_type,
-                                                             contract_type=contract_type)
+                                                             contract_type=contract_type,
+                                                             position_mode=position_mode,
+                                                             maximum_leverage=maximum_leverage)
 
     def get_pair_future_contract(self, pair):
         """
@@ -253,8 +259,8 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :param side: the raw side
         :return: the uniformized PositionSide instance from the raw side
         """
-        return octobot_trading.enums.PositionSide.LONG.value \
-            if side == self.LONG_STR else octobot_trading.enums.PositionSide.SHORT.value
+        return octobot_trading.enums.PositionSide.LONG \
+            if side == self.LONG_STR else octobot_trading.enums.PositionSide.SHORT
 
     def calculate_position_value(self, quantity, mark_price):
         """
