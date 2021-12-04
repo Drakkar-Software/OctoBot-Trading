@@ -35,15 +35,14 @@ class PositionsManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_positions()
 
-    def get_symbol_position(self, symbol, side, contract=None):
+    def get_symbol_position(self, symbol, side):
         """
         Returns or create the symbol position instance
         :param symbol: the position symbol
         :param side: the position side
-        :param contract: the symbol contract (optional)
         :return: the existing position or the newly created position
         """
-        return self._get_or_create_position(symbol=symbol, side=side, contract=contract)
+        return self._get_or_create_position(symbol=symbol, side=side)
 
     def get_order_position(self, order, contract=None):
         """
@@ -54,9 +53,7 @@ class PositionsManager(util.Initializable):
         """
         future_contract = contract if contract is not None \
             else self.trader.exchange_manager.exchange.get_pair_future_contract(order.symbol)
-        return self.get_symbol_position(symbol=order.symbol,
-                                        side=order.get_position_side(future_contract),
-                                        contract=future_contract)
+        return self.get_symbol_position(symbol=order.symbol, side=order.get_position_side(future_contract))
 
     def get_symbol_positions(self, symbol=None):
         """
@@ -77,6 +74,7 @@ class PositionsManager(util.Initializable):
         position_id = self._generate_position_id(symbol=symbol, side=side)
         if position_id not in self.positions:
             new_position = position_factory.create_position_instance_from_raw(self.trader, raw_position=raw_position)
+            new_position.position_id = position_id
             return await self._finalize_position_creation(new_position, is_from_exchange_data=True)
 
         return self.positions[position_id].update_from_raw(raw_position)
@@ -112,18 +110,13 @@ class PositionsManager(util.Initializable):
         self._reset_positions()
 
     # private
-    def _generate_position_id(self, symbol, side, contract=None):
+    def _generate_position_id(self, symbol, side):
         """
         Generate a position ID for one way and hedge position modes
         :param symbol: the position symbol
         :param side: the position side
-        :param contract: the symbol contract (optional)
         :return: the computed position id
         """
-        symbol_contract = self.trader.exchange_manager.exchange.get_pair_future_contract(symbol) \
-            if contract is None else contract
-        if symbol_contract.is_one_way_position_mode():
-            return symbol
         return f"{symbol}{self.POSITION_ID_SEPARATOR}{side.value}"
 
     async def _finalize_position_creation(self, new_position, is_from_exchange_data=False) -> bool:
@@ -146,15 +139,14 @@ class PositionsManager(util.Initializable):
         self.positions[new_position.position_id] = new_position
         return new_position
 
-    def _get_or_create_position(self, symbol, side, contract=None):
+    def _get_or_create_position(self, symbol, side):
         """
         Get or create position by symbol and side
         :param symbol: the expected position symbol
         :param side: the expected position side
-        :param contract: the symbol contract (optional)
         :return: the matching position
         """
-        expected_position_id = self._generate_position_id(symbol=symbol, side=side, contract=contract)
+        expected_position_id = self._generate_position_id(symbol=symbol, side=side)
         try:
             return self.positions[expected_position_id]
         except KeyError:
@@ -168,11 +160,8 @@ class PositionsManager(util.Initializable):
         :return: existing symbol positions list
         """
         positions = []
-        symbol_contract = self.trader.exchange_manager.exchange.get_pair_future_contract(symbol)
-        sides = [enums.PositionSide.BOTH] if symbol_contract.is_one_way_position_mode() \
-            else [enums.PositionSide.SHORT, enums.PositionSide.LONG]
-        for side in sides:
-            position_id = self._generate_position_id(symbol=symbol, side=side, contract=symbol_contract)
+        for side in [enums.PositionSide.BOTH, enums.PositionSide.SHORT, enums.PositionSide.LONG]:
+            position_id = self._generate_position_id(symbol=symbol, side=side)
             try:
                 positions.append(self.positions[position_id])
             except KeyError:

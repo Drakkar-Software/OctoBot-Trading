@@ -28,12 +28,12 @@ cdef class PositionsManager(util.Initializable):
     cdef public object positions
 
     cdef void _reset_positions(self)
-    cdef positions_personal_data.Position _get_or_create_position(self, str symbol, object side, object contract=*)
+    cdef positions_personal_data.Position _get_or_create_position(self, str symbol, object side)
     cdef object _create_symbol_position(self, str symbol)
-    cdef str _generate_position_id(self, str symbol, object side, object contract=*)
+    cdef str _generate_position_id(self, str symbol, object side)
     cdef list _get_symbol_positions(self, str symbol)
 
-    cpdef positions_personal_data.Position get_symbol_position(self, str symbol, object side, object contract=*)
+    cpdef positions_personal_data.Position get_symbol_position(self, str symbol, object side)
     cpdef positions_personal_data.Position get_order_position(self, object order, object contract=*)
     cpdef list get_symbol_positions(self, str symbol=*)
     cpdef bint upsert_position_instance(self, positions_personal_data.Position position)
