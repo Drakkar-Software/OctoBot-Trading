@@ -191,12 +191,6 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
         return self.connector.client.safe_string(
             self.connector.client.safe_value(self.connector.client.options, 'marketTypes', {}), pair, None)
 
-    def is_linear_pair(self, pair):
-        return self._get_pair_market_type(pair) == 'linear'
-
-    def is_inverse_pair(self, pair):
-        return self._get_pair_market_type(pair) == 'inverse'
-
     def parse_position(self, position_dict) -> dict:
         try:
             position_dict.update({

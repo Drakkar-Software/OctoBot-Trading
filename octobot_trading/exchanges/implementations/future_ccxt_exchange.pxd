@@ -17,7 +17,4 @@
 cimport octobot_trading.exchanges.types as exchanges_types
 
 cdef class FutureCCXTExchange(exchanges_types.FutureExchange):
-    cpdef bint is_linear_pair(self, str pair)
-    cpdef bint is_inverse_pair(self, str pair)
-
     cdef str _get_pair_market_type(self, str pair)

@@ -203,6 +203,27 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("set_symbol_position_mode is not implemented")
 
+    def is_linear_symbol(self, symbol):
+        """
+        :param symbol: the symbol
+        :return: True if the symbol is related to a linear contract
+        """
+        raise NotImplementedError("is_linear_symbol is not implemented")
+
+    def is_inverse_symbol(self, symbol):
+        """
+        :param symbol: the symbol
+        :return: True if the symbol is related to an inverse contract
+        """
+        raise NotImplementedError("is_inverse_symbol is not implemented")
+
+    def is_futures_symbol(self, symbol):
+        """
+        :param symbol: the symbol
+        :return: True if the symbol is related to a futures contract
+        """
+        raise NotImplementedError("is_futures_symbol is not implemented")
+
     """
     Parsers
     """
