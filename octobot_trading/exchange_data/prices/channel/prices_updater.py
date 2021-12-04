@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
 import octobot_trading.errors as errors
 import octobot_trading.exchange_channel as exchanges_channel
@@ -83,7 +84,7 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
         """
         try:
             mark_price = prices_manager.calculate_mark_price_from_recent_trade_prices(
-                [float(last_price[enums.ExchangeConstantsOrderColumns.PRICE.value])
+                [decimal.Decimal(str(last_price[enums.ExchangeConstantsOrderColumns.PRICE.value]))
                  for last_price in recent_trades])
 
             await self.push(symbol, mark_price, mark_price_source=enums.MarkPriceSources.RECENT_TRADE_AVERAGE.value)
@@ -96,7 +97,7 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
         Ticker channel consumer callback
         """
         try:
-            await self.push(symbol, ticker[enums.ExchangeConstantsTickersColumns.CLOSE.value],
+            await self.push(symbol, decimal.Decimal(str(ticker[enums.ExchangeConstantsTickersColumns.CLOSE.value])),
                             mark_price_source=enums.MarkPriceSources.TICKER_CLOSE_PRICE.value)
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle ticker update : {e}")
