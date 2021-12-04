@@ -107,14 +107,14 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
         Create a new FutureContract for the pair
         :param pair: the pair
         """
-        self.logger.debug(f"Loading {pair} contract...")
-        self.pair_contracts[pair] = contracts.FutureContract(
+        self.create_pair_contract(
             pair=pair,
             current_leverage=self.DEFAULT_SYMBOL_LEVERAGE,
             maximum_leverage=self.DEFAULT_SYMBOL_MAX_LEVERAGE,
             margin_type=self.DEFAULT_SYMBOL_MARGIN_TYPE,
             contract_type=self.DEFAULT_SYMBOL_CONTRACT_TYPE,
-            position_mode=self.DEFAULT_SYMBOL_POSITION_MODE)
+            position_mode=self.DEFAULT_SYMBOL_POSITION_MODE,
+        )
 
     async def get_symbol_leverage(self, symbol: str):
         return self.DEFAULT_SYMBOL_LEVERAGE
