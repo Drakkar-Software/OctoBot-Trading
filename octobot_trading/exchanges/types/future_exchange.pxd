@@ -19,7 +19,9 @@ cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
 cdef class FutureExchange(abstract_exchange.AbstractExchange):
     cdef dict pair_contracts
 
-    cpdef void create_pair_contract(self, str pair, object current_leverage, object margin_type, object contract_type)
+    cpdef void create_pair_contract(self, str pair,
+                                    object current_leverage, object margin_type,
+                                    object contract_type, object position_mode, object maximum_leverage)
     cpdef double calculate_position_value(self, double quantity, double mark_price)
     cpdef object get_pair_future_contract(self, str pair) # TODO : fix cimport positions.FutureContract
     cpdef void set_pair_future_contract(self, str pair, object future_contract) # TODO : fix cimport positions.FutureContract
@@ -32,5 +34,5 @@ cdef class FutureExchange(abstract_exchange.AbstractExchange):
     cpdef dict parse_funding(self, dict funding_dict, bint from_ticker=*)
     cpdef dict parse_mark_price(self, dict mark_price_dict, bint from_ticker=*)
     cpdef dict parse_liquidation(self, dict liquidation_dict)
-    cpdef str parse_position_status(self, str status)
-    cpdef str parse_position_side(self, str side)
+    cpdef object parse_position_status(self, str status)
+    cpdef object parse_position_side(self, str side)
