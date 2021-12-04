@@ -27,28 +27,24 @@ import octobot_trading.exchange_channel as exchanges_channel
 
 class PositionsUpdater(positions_channel.PositionsProducer):
     """
-    Update open positions from exchange
+    Update positions from exchange
     Can also be used to update a specific positions from exchange
     """
 
     CHANNEL_NAME = constants.POSITIONS_CHANNEL
     POSITIONS_STARTING_REFRESH_TIME = 12
-    OPEN_POSITION_REFRESH_TIME = 9
+    POSITION_REFRESH_TIME = 9
     TIME_BETWEEN_POSITIONS_REFRESH = 3
 
     def __init__(self, channel):
         super().__init__(channel)
-        self.should_use_open_position_per_symbol = False
+        self.should_use_position_per_symbol = False
 
         # create async jobs
-        self.open_positions_job = async_job.AsyncJob(self._open_positions_fetch_and_push,
-                                                     execution_interval_delay=self.OPEN_POSITION_REFRESH_TIME,
-                                                     min_execution_delay=self.TIME_BETWEEN_POSITIONS_REFRESH)
-        self.position_update_job = async_job.AsyncJob(self._position_fetch_and_push,
-                                                      is_periodic=False,
-                                                      enable_multiple_runs=True)
-        self.position_update_job.add_job_dependency(self.open_positions_job)
-        self.open_positions_job.add_job_dependency(self.position_update_job)
+        self.position_update_job = async_job.AsyncJob(self._positions_fetch_and_push,
+                                                      execution_interval_delay=self.POSITION_REFRESH_TIME,
+                                                      min_execution_delay=self.TIME_BETWEEN_POSITIONS_REFRESH)
+        self.position_update_job.add_job_dependency(self.position_update_job)
 
     async def initialize(self) -> None:
         """
@@ -75,7 +71,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         try:
             await self.fetch_and_push(should_initialize_contract=True)
         except NotImplementedError:
-            self.should_use_open_position_per_symbol = True
+            self.should_use_position_per_symbol = True
             try:
                 await self.fetch_and_push(should_initialize_contract=True)
             except NotImplementedError:
@@ -96,69 +92,69 @@ class PositionsUpdater(positions_channel.PositionsProducer):
 
         await self.initialize()
         await asyncio.sleep(self.POSITIONS_STARTING_REFRESH_TIME)
-        await self.open_positions_job.run()
+        await self.position_update_job.run()
 
     async def fetch_and_push(self, should_initialize_contract=False):
         """
-        Update open and closed positions from exchange
+        Update positions from exchange
         :param should_initialize_contract: if fetch and push should create contract if necessary
         """
-        await self._open_positions_fetch_and_push(should_initialize_contract=should_initialize_contract)
+        await self._positions_fetch_and_push(should_initialize_contract=should_initialize_contract)
         await asyncio.sleep(self.TIME_BETWEEN_POSITIONS_REFRESH)
 
-    async def _open_positions_fetch_and_push(self, should_initialize_contract=False):
+    async def _positions_fetch_and_push(self, should_initialize_contract=False):
         """
-        Update open positions from exchange
+        Update positions from exchange
         :param should_initialize_contract: if the fetch method should create contract if necessary
         """
         try:
-            if self.should_use_open_position_per_symbol:
-                await self.fetch_open_position_per_symbol(should_initialize_contract=should_initialize_contract)
+            if self.should_use_position_per_symbol:
+                await self.fetch_position_per_symbol(should_initialize_contract=should_initialize_contract)
             else:
-                await self.fetch_open_positions(should_initialize_contract=should_initialize_contract)
+                await self.fetch_positions(should_initialize_contract=should_initialize_contract)
         except Exception as e:
-            self.logger.error(f"Fail to update open positions : {e}")
+            self.logger.error(f"Fail to update positions : {e}")
 
     def _should_run(self):
         return self.channel.exchange_manager.is_future
 
-    async def fetch_open_position_per_symbol(self, should_initialize_contract=False):
-        open_positions = []
+    async def fetch_position_per_symbol(self, should_initialize_contract=False):
+        positions = []
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            positions: list = await self.channel.exchange_manager.exchange.get_symbol_open_positions(symbol=symbol)
+            fetched_positions = await self.channel.exchange_manager.exchange.get_symbol_positions(symbol=symbol)
             if positions:
-                open_positions += positions
+                positions += fetched_positions
 
-        if open_positions:
+        if positions:
             if should_initialize_contract:
-                self._initialize_contract_if_necessary(open_positions)
-            await self._push_open_positions(open_positions)
+                self._initialize_contract_if_necessary(positions)
+            await self._push_positions(positions)
 
     def _is_valid_position(self, position_dict):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
                in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
 
-    async def fetch_open_positions(self, should_initialize_contract=False):
-        open_positions = [
+    async def fetch_positions(self, should_initialize_contract=False):
+        positions = [
             position
-            for position in await self.channel.exchange_manager.exchange.get_open_positions()
+            for position in await self.channel.exchange_manager.exchange.get_positions()
             if self._is_valid_position(position)
         ]
 
-        if open_positions:
+        if positions:
             if should_initialize_contract:
-                self._initialize_contract_if_necessary(open_positions)
-            await self._push_open_positions(open_positions)
+                self._initialize_contract_if_necessary(positions)
+            await self._push_positions(positions)
 
-    async def _push_open_positions(self, open_positions):
-        await self.push(positions=open_positions)
+    async def _push_positions(self, positions):
+        await self.push(positions=positions)
 
         if self._should_push_mark_price():
-            for position in open_positions:
+            for position in positions:
                 await self.extract_mark_price(position)
 
-    def _initialize_contract_if_necessary(self, open_positions):
-        for position in open_positions:
+    def _initialize_contract_if_necessary(self, positions):
+        for position in positions:
             pair = position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None)
             if pair and pair not in self.channel.exchange_manager.exchange.pair_contracts:
                 self.channel.exchange_manager.exchange.create_pair_contract(
@@ -195,24 +191,6 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                                            ignore_dependencies_check=force_job_execution,
                                            position=position, should_notify=should_notify)
 
-    async def _position_fetch_and_push(self, position, should_notify=False):
-        """
-        Update Position from exchange
-        :param position: the position to update
-        :param should_notify: if Positions channel consumers should be notified
-        :return: True if the position was updated
-        """
-        exchange_name = position.exchange_manager.exchange_name \
-            if position.exchange_manager else "cleared order's exchange"
-        self.logger.debug(f"Requested update for {position} on {exchange_name}")
-
-        raw_position = await self.channel.exchange_manager.exchange.get_position(position.position_id, position.symbol)
-        # TODO manage exchanges without get_position()
-        if raw_position is not None:
-            self.logger.debug(f"Received update for {position} on {exchange_name}: {raw_position}")
-            await self.channel.exchange_manager.exchange_personal_data.handle_position_update_from_raw(
-                position.position_id, raw_position, should_notify=should_notify)
-
     def _should_push_mark_price(self):
         return self.channel.exchange_manager.exchange.MARK_PRICE_IN_POSITION
 
@@ -223,7 +201,6 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         await super().stop()
         if not self._should_run():
             return
-        self.open_positions_job.stop()
         self.position_update_job.stop()
 
     async def resume(self) -> None:
