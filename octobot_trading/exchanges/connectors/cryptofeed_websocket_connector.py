@@ -49,8 +49,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
     INIT_REQUIRING_EXCHANGE_FEEDS = [Feeds.CANDLE]
 
     IGNORED_FEED_PAIRS = {
-        Feeds.TRADES: [Feeds.TICKER],  # When ticker is available : no need to calculate mark price from recent trades
-        Feeds.TICKER: [Feeds.CANDLE]  # When candles are available : use min timeframe kline to push ticker
+        # When ticker or future index is available : no need to calculate mark price from recent trades
+        Feeds.TRADES: [Feeds.TICKER, Feeds.FUTURES_INDEX],
+        # When candles are available : use min timeframe kline to push ticker
+        Feeds.TICKER: [Feeds.CANDLE]
     }
 
     CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS = {
@@ -737,6 +739,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param index: the index object defined in cryptofeed.types.Index
         :param receipt_timestamp: received timestamp
         """
+        await self.push_to_channel(channel_name=trading_constants.MARK_PRICE_CHANNEL,
+                                   symbol=self.get_pair_from_exchange(index.symbol),
+                                   mark_price=index.price,
+                                   mark_price_source=trading_enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value)
 
     async def order(self, order: cryptofeed_types.OrderInfo, receipt_timestamp: float):
         """
