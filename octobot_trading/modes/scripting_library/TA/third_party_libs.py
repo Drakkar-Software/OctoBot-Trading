@@ -15,7 +15,7 @@
 #  License along with this library.
 
 try:
-    import ta
+    import pandas_ta as ta
 except ImportError:
     pass
 try:
