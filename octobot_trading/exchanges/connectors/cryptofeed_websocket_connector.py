@@ -81,6 +81,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     PAIR_INDEPENDENT_CHANNELS = [
         cryptofeed_constants.BALANCES,
+        cryptofeed_constants.ORDER_INFO,
     ]
     CANDLE_CHANNELS = [
         cryptofeed_constants.CANDLES,
@@ -143,7 +144,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
         # Creates cryptofeed exchange instance
         self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](
-            config=self.client_config, **self.EXCHANGE_CONSTRUCTOR_KWARGS)
+            config=self.client_config, sandbox=self.exchange_manager.is_sandboxed, **self.EXCHANGE_CONSTRUCTOR_KWARGS)
 
     """
     Abstract methods
@@ -466,9 +467,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                              channels=channels,
                              **feed_kwargs)
         for channel in channels:
-            symbols_str = f"for {', '.join(symbols)}" if symbols else ""
+            symbols_str = f"for {', '.join(symbols)} " if symbols else ""
             candle_interval_str = f"on {candle_interval}" if candle_interval else ""
-            self.logger.debug(f"Subscribed to {channel} {symbols_str} {candle_interval_str}")
+            self.logger.debug(f"Subscribed to {channel} {symbols_str}{candle_interval_str}")
 
     def _filter_exchange_pairs_and_timeframes(self):
         """
