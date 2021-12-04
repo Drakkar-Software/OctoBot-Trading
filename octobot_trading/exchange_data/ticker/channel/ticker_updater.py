@@ -14,6 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import asyncio
 
 import octobot_trading.errors as errors
@@ -146,7 +148,8 @@ class TickerUpdater(ticker_channel.TickerProducer):
             ticker = self.channel.exchange_manager.exchange.parse_mark_price(ticker, from_ticker=True)
             await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL,
                                              self.channel.exchange_manager.id).get_internal_producer(). \
-                push(symbol=symbol, mark_price=ticker[enums.ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])
+                push(symbol=symbol,
+                     mark_price=decimal.Decimal(str(ticker[enums.ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])))
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update mark price from ticker : {e}")
 
@@ -156,7 +159,10 @@ class TickerUpdater(ticker_channel.TickerProducer):
             await exchanges_channel.get_chan(constants.FUNDING_CHANNEL,
                                              self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol=symbol,
-                     funding_rate=ticker[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
+                     funding_rate=decimal.Decimal(str(
+                         ticker[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value])),
+                     predicted_funding_rate=decimal.Decimal(str(
+                         ticker[enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value])),
                      next_funding_time=ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
                      timestamp=ticker[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
         except Exception as e:
