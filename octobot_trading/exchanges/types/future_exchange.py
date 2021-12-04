@@ -88,20 +88,20 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     Positions
     """
 
-    async def get_symbol_open_positions(self, symbol: str) -> list:
+    async def get_symbol_positions(self, symbol: str) -> list:
         """
-        Get the current user open symbol position list
+        Get the current user symbol position list
         :param symbol: the position symbol
-        :return: the user open symbol position list
+        :return: the user symbol position list
         """
-        raise NotImplementedError("get_symbol_open_positions is not implemented")
+        raise NotImplementedError("get_symbol_positions is not implemented")
 
-    async def get_open_positions(self, **kwargs: dict) -> list:
+    async def get_positions(self, **kwargs: dict) -> list:
         """
-        Get the current user open position list
-        :return: the user open position list
+        Get the current user position list
+        :return: the user position list
         """
-        raise NotImplementedError("get_open_positions is not implemented")
+        raise NotImplementedError("get_positions is not implemented")
 
     async def get_mark_price(self, symbol: str) -> dict:
         raise NotImplementedError("get_mark_price is not implemented")
