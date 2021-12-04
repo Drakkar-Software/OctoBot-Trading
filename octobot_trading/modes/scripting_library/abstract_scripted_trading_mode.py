@@ -105,13 +105,6 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         else:
             return os.path.join(root, commons_constants.OPTIMIZER_RUNS_FOLDER, str(optimizer_id))
 
-    # @classmethod
-    # def init_db_folder(cls):
-    #     if not os.path.exists(cls.get_db_folder()):
-    #         os.makedirs(cls.get_db_folder())
-    #     if not os.path.exists(cls.get_db_folder(backtesting=True)):
-    #         os.makedirs(cls.get_db_folder(backtesting=True))
-
     @classmethod
     def get_db_name(cls, prefix=0, suffix=0, backtesting=False, metadata_db=False, bot_id=None, optimizer_id=None):
         if prefix == 0 and bot_id is not None:
@@ -214,19 +207,18 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                        for tf in trading_api.get_exchange_available_required_time_frames(self.exchange_name,
                                                                                          self.exchange_manager.id)]
         return {
-            "id": await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id),
-            "p&l": float(profitability),
-            "p&l%": float(profitability_percent),
-            "symbols": trading_api.get_trading_pairs(self.exchange_manager),
-            "time_frames": time_frames,
-            "start_time": backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting),
-            "end_time": backtesting_api.get_backtesting_ending_time(self.exchange_manager.exchange.backtesting),
-            "trades": len(trading_api.get_trade_history(self.exchange_manager)),
-            "timestamp": self.trading_mode.timestamp,
-            "name": self.trading_mode.script_name,
-            "user_inputs": self.trading_mode.trading_config,
-            "backtesting_files": trading_api.get_backtesting_data_files(self.exchange_manager)
-        }
+            trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id),
+            trading_enums.BacktestingMetadata.PNL.value: float(profitability),
+            trading_enums.BacktestingMetadata.PNL_PERCENT.value: float(profitability_percent),
+            trading_enums.BacktestingMetadata.SYMBOLS.value: trading_api.get_trading_pairs(self.exchange_manager),
+            trading_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
+            trading_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting),
+            trading_enums.BacktestingMetadata.END_TIME.value: backtesting_api.get_backtesting_ending_time(self.exchange_manager.exchange.backtesting),
+            trading_enums.BacktestingMetadata.TRADES.value: len(trading_api.get_trade_history(self.exchange_manager)),
+            trading_enums.BacktestingMetadata.TIMESTAMP.value: self.trading_mode.timestamp,
+            trading_enums.BacktestingMetadata.NAME.value: self.trading_mode.script_name,
+            trading_enums.BacktestingMetadata.USER_INPUTS.value: self.trading_mode.trading_config,
+            trading_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(self.exchange_manager)        }
 
     async def get_live_metadata(self):
         start_time = backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting) \

@@ -463,6 +463,23 @@ class PlotAttributes(enum.Enum):
     SYMBOL = "symbol"
 
 
+class BacktestingMetadata(enum.Enum):
+    ID = "id"
+    PNL = "p&l"
+    PNL_PERCENT = "p&l%"
+    SYMBOLS = "symbols"
+    TIME_FRAMES = "time_frames"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    TRADES = "trades"
+    TIMESTAMP = "timestamp"
+    NAME = "name"
+    USER_INPUTS = "user_inputs"
+    BACKTESTING_FILES = "backtesting_files"
+    CHILDREN = "children"
+    OPTIMIZER_ID = "optimizer_id"
+
+
 class PlotCharts(enum.Enum):
     MAIN_CHART = "main-chart"
     SUB_CHART = "sub-chart"

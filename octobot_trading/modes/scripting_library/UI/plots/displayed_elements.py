@@ -23,7 +23,6 @@ import octobot_commons.enums as commons_enums
 import octobot_commons.constants as commons_constants
 import octobot_commons.databases as databases
 import octobot_commons.logging as logging
-import octobot_trading.constants as trading_constants
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.api as trading_api
 
