@@ -73,11 +73,11 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         Initialize data before starting jobs
         """
         try:
-            await self.fetch_and_push()
+            await self.fetch_and_push(should_initialize_contract=True)
         except NotImplementedError:
             self.should_use_open_position_per_symbol = True
             try:
-                await self.fetch_and_push()
+                await self.fetch_and_push(should_initialize_contract=True)
             except NotImplementedError:
                 self.logger.warning("Position updater cannot fetch positions : required methods are not implemented")
                 await self.stop()
@@ -98,30 +98,31 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         await asyncio.sleep(self.POSITIONS_STARTING_REFRESH_TIME)
         await self.open_positions_job.run()
 
-    async def fetch_and_push(self):
+    async def fetch_and_push(self, should_initialize_contract=False):
         """
         Update open and closed positions from exchange
-        :param limit: the exchange request positions count limit
+        :param should_initialize_contract: if fetch and push should create contract if necessary
         """
-        await self._open_positions_fetch_and_push()
+        await self._open_positions_fetch_and_push(should_initialize_contract=should_initialize_contract)
         await asyncio.sleep(self.TIME_BETWEEN_POSITIONS_REFRESH)
 
-    async def _open_positions_fetch_and_push(self):
+    async def _open_positions_fetch_and_push(self, should_initialize_contract=False):
         """
         Update open positions from exchange
+        :param should_initialize_contract: if the fetch method should create contract if necessary
         """
         try:
             if self.should_use_open_position_per_symbol:
-                await self.fetch_open_position_per_symbol()
+                await self.fetch_open_position_per_symbol(should_initialize_contract=should_initialize_contract)
             else:
-                await self.fetch_open_positions()
+                await self.fetch_open_positions(should_initialize_contract=should_initialize_contract)
         except Exception as e:
             self.logger.error(f"Fail to update open positions : {e}")
 
     def _should_run(self):
         return self.channel.exchange_manager.is_future
 
-    async def fetch_open_position_per_symbol(self):
+    async def fetch_open_position_per_symbol(self, should_initialize_contract=False):
         open_positions = []
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
             positions: list = await self.channel.exchange_manager.exchange.get_symbol_open_positions(symbol=symbol)
@@ -129,13 +130,15 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 open_positions += positions
 
         if open_positions:
+            if should_initialize_contract:
+                self._initialize_contract_if_necessary(open_positions)
             await self._push_open_positions(open_positions)
 
     def _is_valid_position(self, position_dict):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
                in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
 
-    async def fetch_open_positions(self):
+    async def fetch_open_positions(self, should_initialize_contract=False):
         open_positions = [
             position
             for position in await self.channel.exchange_manager.exchange.get_open_positions()
@@ -143,6 +146,8 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         ]
 
         if open_positions:
+            if should_initialize_contract:
+                self._initialize_contract_if_necessary(open_positions)
             await self._push_open_positions(open_positions)
 
     async def _push_open_positions(self, open_positions):
@@ -151,6 +156,17 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         if self._should_push_mark_price():
             for position in open_positions:
                 await self.extract_mark_price(position)
+
+    def _initialize_contract_if_necessary(self, open_positions):
+        for position in open_positions:
+            pair = position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None)
+            if pair and pair not in self.channel.exchange_manager.exchange.pair_contracts:
+                self.channel.exchange_manager.exchange.create_pair_contract(
+                    pair=pair,
+                    current_leverage=position.get(
+                        enums.ExchangeConstantsPositionColumns.LEVERAGE.value, constants.ZERO),
+                    margin_type=position.get(enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value, None),
+                    contract_type=position.get(enums.ExchangeConstantsPositionColumns.CONTRACT_TYPE.value, None))
 
     async def extract_mark_price(self, position_dict: dict):
         try:
