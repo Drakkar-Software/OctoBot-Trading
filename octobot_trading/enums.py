@@ -323,6 +323,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     COLLATERAL = "collateral"
     LEVERAGE = "leverage"
     MARGIN_TYPE = "margin_type"
+    CONTRACT_TYPE = "contract_type"
     STATUS = "status"
     SIDE = "side"
 
