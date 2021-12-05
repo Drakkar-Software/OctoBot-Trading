@@ -18,6 +18,7 @@ import octobot_backtesting.errors as errors
 
 import octobot_commons.constants as constants
 import octobot_commons.enums as enums
+import octobot_commons.time_frame_manager as time_frame_manager
 
 import octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater as ohlcv_updater
 import octobot_trading.util as util
@@ -41,6 +42,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
         self.require_last_init_candles_pairs_push = False
         self.traded_pairs = self._get_traded_pairs()
         self.traded_time_frame = self._get_time_frames()
+        self.shortest_time_frame = time_frame_manager.find_min_time_frame(self.traded_time_frame)
 
     async def start(self):
         if not self.is_initialized:
@@ -49,6 +51,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
 
     async def handle_timestamp(self, timestamp, **kwargs):
         try:
+            pushed_data = False
             for pair in self.traded_pairs:
                 for time_frame in self.traded_time_frame:
                     # Use last_timestamp_pushed + 1 for inferior timestamp to avoid select of an already selected candle
@@ -64,9 +67,10 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                                         if self.future_candle_time_frame is time_frame else 0)
                     )
                     if ohlcv_data:
-                        # There should always be at least 2 candles in read data, otherwise this means that the exchange
-                        # was down for some time. Consider it unreachable
-                        self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) < 2
+                        if time_frame is self.shortest_time_frame:
+                            # There should always be at least 2 candles in read data, otherwise this means that
+                            # the exchange was down for some time. Consider it unreachable
+                            self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) < 2
                         current_candle_index = 0
                         if self.future_candle_time_frame is time_frame:
                             if ohlcv_data[0][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
@@ -85,6 +89,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                             pair,
                                             [ohlcv[-1] for ohlcv in ohlcv_data[current_candle_index:]],
                                             partial=True)
+                            pushed_data = True
                     elif self.require_last_init_candles_pairs_push:
                         # triggered on first iteration to initialize large candles that might be pushed much later
                         # otherwise but are required to complete TA evaluation
@@ -93,8 +98,8 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                             pair,
                                             [self.last_candles_by_pair_by_time_frame[pair][time_frame.value][-1]],
                                             partial=True)
-                    else:
-                        self.channel.exchange_manager.exchange.is_unreachable = True
+                            pushed_data = True
+            self.channel.exchange_manager.exchange.is_unreachable = not pushed_data
 
         except errors.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")

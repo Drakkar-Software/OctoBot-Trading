@@ -218,7 +218,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             trading_enums.BacktestingMetadata.TIMESTAMP.value: self.trading_mode.timestamp,
             trading_enums.BacktestingMetadata.NAME.value: self.trading_mode.script_name,
             trading_enums.BacktestingMetadata.USER_INPUTS.value: self.trading_mode.trading_config,
-            trading_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(self.exchange_manager)        }
+            trading_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(self.exchange_manager)
+        }
 
     async def get_live_metadata(self):
         start_time = backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting) \
