@@ -20,110 +20,156 @@ import octobot_evaluators.enums as evaluators_enums
 
 def is_evaluation_higher_than(
         context,
-        evaluator_class=None,
-        value=None,
+        evaluator_name,
+        value,
         time_frames=None,
         symbols=None,
 ):
-    for symbol in symbols or [context.symbol]:
+    symbols = [context.symbol] or symbols
+    time_frames = [context.time_frame] or time_frames
+    for symbol in symbols:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
-                        context.matrix_id,
-                        matrix.get_tentacle_nodes(context.matrix_id,
-                                                  exchange_name=context.exchange_name,
-                                                  tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                                  tentacle_name=evaluator_class.get_name()),
-                        symbol=symbol,
-                        time_frame=time_frame):
-                if evaluated_ta_node.node_value >= value:
-                    return True
+                    context.matrix_id,
+                    matrix.get_tentacle_nodes(context.matrix_id,
+                                              exchange_name=context.exchange_name,
+                                              tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
+                                              tentacle_name=evaluator_name.get_name()),
+                    symbol=symbol,
+                    time_frame=time_frame):
+                try:
+                    if evaluated_ta_node.node_value >= value:
+                        return True
+                except:
+                    raise RuntimeError("Evaluator doesnt support Evaluation Value. Try evaluator_get_result instead. "
+                                       "Read the documentaion for more informations")
     return False
 
 
 def is_evaluation_lower_than(
         context,
-        evaluator_class=None,
-        value=None,
+        evaluator_name,
+        value,
         time_frames=None,
         symbols=None,
 ):
+    symbols = [context.symbol] or symbols
+    time_frames = [context.time_frame] or time_frames
     for symbol in symbols:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
-                        context.matrix_id,
-                        matrix.get_tentacle_nodes(context.matrix_id,
-                                                  exchange_name=context.exchange_name,
-                                                  tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                                  tentacle_name=evaluator_class.get_name()),
-                        symbol=symbol,
-                        time_frame=time_frame):
-                if evaluated_ta_node.node_value <= value:
-                    return True
+                    context.matrix_id,
+                    matrix.get_tentacle_nodes(context.matrix_id,
+                                              exchange_name=context.exchange_name,
+                                              tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
+                                              tentacle_name=evaluator_name.get_name()),
+                    symbol=symbol,
+                    time_frame=time_frame):
+                try:
+                    if evaluated_ta_node.node_value <= value:
+                        return True
+                except:
+                    raise RuntimeError("Evaluator doesnt support Evaluation Value. Try evaluator_get_result instead. "
+                                       "Read the documentaion for more informations")
     return False
 
 
 def evaluator_buy(
-        evaluator_class=None,
+        context,
+        evaluator_name,
         time_frames=None,
         symbols=None,
-        exchange_name=None,
-        matrix_id=None
 ):
+    symbols = [context.symbol] or symbols
+    time_frames = [context.time_frame] or time_frames
     for symbol in symbols:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
-                        matrix_id,
-                        matrix.get_tentacle_nodes(matrix_id,
-                                                  exchange_name=exchange_name,
-                                                  tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                                  tentacle_name=evaluator_class.get_name()),
-                        symbol=symbol,
-                        time_frame=time_frame):
-                if evaluated_ta_node.node_value == -1:
-                    return True
+                    context.matrix_id,
+                    matrix.get_tentacle_nodes(context.matrix_id,
+                                              exchange_name=context.exchange_name,
+                                              tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
+                                              tentacle_name=evaluator_name.get_name()),
+                    symbol=symbol,
+                    time_frame=time_frame):
+                try:
+                    if evaluated_ta_node.node_value == -1:
+                        return True
+                except:
+                    raise RuntimeError("Evaluator doesnt support Evaluation Value. Try evaluator_get_result instead. "
+                                       "Read the documentaion for more informations")
     return False
 
 
 def evaluator_sell(
-        evaluator_class=None,
+        context,
+        evaluator_name=None,
         time_frames=None,
         symbols=None,
-        exchange_name=None,
-        matrix_id=None
 ):
+    symbols = [context.symbol] or symbols
+    time_frames = [context.time_frame] or time_frames
     for symbol in symbols:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
-                        matrix_id,
-                        matrix.get_tentacle_nodes(matrix_id,
-                                                  exchange_name=exchange_name,
-                                                  tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                                  tentacle_name=evaluator_class.get_name()),
-                        symbol=symbol,
-                        time_frame=time_frame):
-                if evaluated_ta_node.node_value == 1:
-                    return True
+                    context.matrix_id,
+                    matrix.get_tentacle_nodes(context.matrix_id,
+                                              exchange_name=context.exchange_name,
+                                              tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
+                                              tentacle_name=evaluator_name.get_name()),
+                    symbol=symbol,
+                    time_frame=time_frame):
+                try:
+                    if evaluated_ta_node.node_value == 1:
+                        return True
+                except:
+                    raise RuntimeError("Evaluator doesnt support Evaluation Value. Try evaluator_get_result instead. "
+                                       "Read the documentaion for more informations")
     return False
 
 
 def evaluator_buy_or_sell(
-        evaluator_class=None,
+        context,
+        evaluator_name=None,
         time_frames=None,
         symbols=None,
-        currencies=None,
-        exchange_name=None,
-        matrix_id=None
 ):
+    symbols = [context.symbol] or symbols
+    time_frames = [context.time_frame] or time_frames
     for symbol in symbols:
         for time_frame in time_frames:
             for evaluated_ta_node in matrix.get_tentacles_value_nodes(
-                        matrix_id,
-                        matrix.get_tentacle_nodes(matrix_id,
-                                                  exchange_name=exchange_name,
-                                                  tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                                  tentacle_name=evaluator_class.get_name()),
-                        symbol=symbol,
-                        time_frame=time_frame):
-                if evaluated_ta_node.node_value == 1 or evaluated_ta_node.node_value == -1:
-                    return True
+                    context.matrix_id,
+                    matrix.get_tentacle_nodes(context.matrix_id,
+                                              exchange_name=context.exchange_name,
+                                              tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
+                                              tentacle_name=evaluator_name.get_name()),
+                    symbol=symbol,
+                    time_frame=time_frame):
+                try:
+                    if evaluated_ta_node.node_value == 1 or evaluated_ta_node.node_value == -1:
+                        return True
+                except:
+                    raise RuntimeError("Evaluator doesnt support Evaluation Value. Try evaluator_get_result instead. "
+                                       "Read the documentaion for more informations")
     return False
+
+
+def evaluator_get_result(
+        context,
+        evaluator_name,
+        time_frame=None,
+        symbol=None,
+):
+    symbol = context.symbol or symbol
+    time_frame = context.time_frame or time_frame
+    for evaluated_ta_node in matrix.get_tentacles_value_nodes(
+            context.matrix_id,
+            matrix.get_tentacle_nodes(context.matrix_id,
+                                      exchange_name=context.exchange_name,
+                                      tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
+                                      tentacle_name=evaluator_name.get_name()),
+            symbol=symbol,
+            time_frame=time_frame):
+        return evaluated_ta_node.node_value
+    return
