@@ -144,6 +144,9 @@ from octobot_trading.api.orders import (
     cancel_order_with_id,
     LOGGER,
 )
+from octobot_trading.api.positions import (
+    get_positions,
+)
 
 __all__ = [
     "get_symbol_data",
@@ -247,4 +250,5 @@ __all__ = [
     "cancel_all_open_orders",
     "cancel_all_open_orders_with_currency",
     "cancel_order_with_id",
+    "get_positions",
 ]
