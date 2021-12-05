@@ -20,7 +20,7 @@ import octobot_evaluators.enums as evaluators_enums
 
 def is_evaluation_higher_than(
         context,
-        evaluator_name,
+        evaluator_class,
         value,
         time_frames=None,
         symbols=None,
@@ -34,7 +34,7 @@ def is_evaluation_higher_than(
                     matrix.get_tentacle_nodes(context.matrix_id,
                                               exchange_name=context.exchange_name,
                                               tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                              tentacle_name=evaluator_name.get_name()),
+                                              tentacle_name=evaluator_class.get_name()),
                     symbol=symbol,
                     time_frame=time_frame):
                 try:
@@ -48,7 +48,7 @@ def is_evaluation_higher_than(
 
 def is_evaluation_lower_than(
         context,
-        evaluator_name,
+        evaluator_class,
         value,
         time_frames=None,
         symbols=None,
@@ -62,7 +62,7 @@ def is_evaluation_lower_than(
                     matrix.get_tentacle_nodes(context.matrix_id,
                                               exchange_name=context.exchange_name,
                                               tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                              tentacle_name=evaluator_name.get_name()),
+                                              tentacle_name=evaluator_class.get_name()),
                     symbol=symbol,
                     time_frame=time_frame):
                 try:
@@ -76,7 +76,7 @@ def is_evaluation_lower_than(
 
 def evaluator_buy(
         context,
-        evaluator_name,
+        evaluator_class,
         time_frames=None,
         symbols=None,
 ):
@@ -89,7 +89,7 @@ def evaluator_buy(
                     matrix.get_tentacle_nodes(context.matrix_id,
                                               exchange_name=context.exchange_name,
                                               tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                              tentacle_name=evaluator_name.get_name()),
+                                              tentacle_name=evaluator_class.get_name()),
                     symbol=symbol,
                     time_frame=time_frame):
                 try:
@@ -103,7 +103,7 @@ def evaluator_buy(
 
 def evaluator_sell(
         context,
-        evaluator_name=None,
+        evaluator_class=None,
         time_frames=None,
         symbols=None,
 ):
@@ -116,7 +116,7 @@ def evaluator_sell(
                     matrix.get_tentacle_nodes(context.matrix_id,
                                               exchange_name=context.exchange_name,
                                               tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                              tentacle_name=evaluator_name.get_name()),
+                                              tentacle_name=evaluator_class.get_name()),
                     symbol=symbol,
                     time_frame=time_frame):
                 try:
@@ -130,7 +130,7 @@ def evaluator_sell(
 
 def evaluator_buy_or_sell(
         context,
-        evaluator_name=None,
+        evaluator_class=None,
         time_frames=None,
         symbols=None,
 ):
@@ -143,7 +143,7 @@ def evaluator_buy_or_sell(
                     matrix.get_tentacle_nodes(context.matrix_id,
                                               exchange_name=context.exchange_name,
                                               tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                              tentacle_name=evaluator_name.get_name()),
+                                              tentacle_name=evaluator_class.get_name()),
                     symbol=symbol,
                     time_frame=time_frame):
                 try:
@@ -157,7 +157,7 @@ def evaluator_buy_or_sell(
 
 def evaluator_get_result(
         context,
-        evaluator_name,
+        evaluator_class,
         time_frame=None,
         symbol=None,
 ):
@@ -168,7 +168,7 @@ def evaluator_get_result(
             matrix.get_tentacle_nodes(context.matrix_id,
                                       exchange_name=context.exchange_name,
                                       tentacle_type=evaluators_enums.EvaluatorMatrixTypes.TA.value,
-                                      tentacle_name=evaluator_name.get_name()),
+                                      tentacle_name=evaluator_class.get_name()),
             symbol=symbol,
             time_frame=time_frame):
         return evaluated_ta_node.node_value
