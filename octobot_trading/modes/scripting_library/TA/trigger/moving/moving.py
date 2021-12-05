@@ -18,11 +18,11 @@ import tulipy as ti
 from octobot_trading.modes.scripting_library.orders.offsets import get_offset
 
 
-def moving_up(price, moving, bars):
+async def moving_up(price, moving, bars):
     if (price[-1] - ti.min(price, bars)) > await get_offset(moving):
         return True
 
 
-def moving_down(price, moving, bars):
+async def moving_down(price, moving, bars):
     if (ti.max(price, bars) - price[-1]) > await get_offset(moving):
         return True
