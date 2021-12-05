@@ -19,6 +19,7 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_commons.constants
 import octobot_commons.databases as databases
 import octobot_commons.enums as commons_enums
+import octobot_commons.errors as commons_errors
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.logging
 
@@ -291,15 +292,19 @@ async def plot_table(meta_database, plotted_element, data_source, columns=None, 
             query = (await symbol_db.search()).title == data_source
             cache_data = await symbol_db.select(trading_enums.DBTables.CACHE_SOURCE.value, query)
             if cache_data:
-                cache_database = databases.CacheDatabase(cache_data[0][trading_enums.PlotAttributes.VALUE.value])
-                cache = await cache_database.get_cache()
-                data = [
-                    {
-                        "x": cache_element[commons_enums.CacheDatabaseColumns.TIMESTAMP.value] * 1000,
-                        "y": cache_element[cache_value]
-                    }
-                    for cache_element in cache
-                ]
+                try:
+                    cache_database = databases.CacheDatabase(cache_data[0][trading_enums.PlotAttributes.VALUE.value])
+                    cache = await cache_database.get_cache()
+                    data = [
+                        {
+                            "x": cache_element[commons_enums.CacheDatabaseColumns.TIMESTAMP.value] * 1000,
+                            "y": cache_element[cache_value]
+                        }
+                        for cache_element in cache
+                    ]
+                except commons_errors.DatabaseNotFoundError as e:
+                    get_logger().warning(f"Missing cache values: {e}")
+
     if not data:
         get_logger().debug(f"Nothing to create a table from when reading {data_source}")
         return

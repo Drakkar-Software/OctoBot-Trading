@@ -20,6 +20,7 @@ import contextlib
 import octobot_commons.enums
 import octobot_trading.enums as trading_enums
 import octobot_commons.enums as commons_enums
+import octobot_commons.errors as commons_errors
 import octobot_commons.constants as commons_constants
 import octobot_commons.databases as databases
 import octobot_commons.logging as logging
@@ -274,8 +275,8 @@ class DisplayedElements:
         mode = cached_value_metadata["mode"]
         own_yaxis = cached_value_metadata["own_yaxis"]
         condition = cached_value_metadata.get("condition", None)
-        cache_database = databases.CacheDatabase(cache_file)
         try:
+            cache_database = databases.CacheDatabase(cache_file)
             cache_type = (await cache_database.get_metadata())[commons_enums.CacheDatabaseColumns.TYPE.value]
             if cache_type == databases.CacheTimestampDatabase.__name__:
                 cache = await cache_database.get_cache()
@@ -321,6 +322,8 @@ class DisplayedElements:
             self.logger.error(f"Unhandled cache type to display: {cache_type}")
         except TypeError:
             self.logger.error(f"Missing cache type in {cache_file} metadata file")
+        except commons_errors.DatabaseNotFoundError as ex:
+            self.logger.warning(f"Missing cache values ({ex})")
         return []
 
     @staticmethod
