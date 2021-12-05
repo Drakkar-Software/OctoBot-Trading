@@ -36,6 +36,11 @@ class FutureContract(margin_contract.MarginContract):
         self.position_mode = position_mode
         self.maintenance_margin_rate = maintenance_margin_rate
 
+    def __str__(self):
+        return (f"{self.pair} x{self.current_leverage} "
+                f"{'inverse' if self.is_inverse_contract() else 'linear'} "
+                f"{'perpetual' if self.is_perpetual_contract() else 'future'}")
+
     def is_inverse_contract(self):
         """
         Inverse Contract is a contract using the coin itself as collateral
