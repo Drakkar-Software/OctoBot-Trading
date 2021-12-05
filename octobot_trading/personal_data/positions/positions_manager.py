@@ -61,6 +61,8 @@ class PositionsManager(util.Initializable):
         :param symbol: the position symbol
         :return: the symbol positions
         """
+        if symbol is None:
+            return list(self.positions.values())
         return self._get_symbol_positions(symbol)
 
     async def upsert_position(self, symbol: str, side, raw_position: dict) -> bool:
