@@ -34,6 +34,8 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
         self.symbols = self.connector.symbols
         self.time_frames = self.connector.time_frames
 
+        self.connector.client.options['defaultType'] = self.get_default_type()
+
     async def stop(self) -> None:
         await self.connector.stop()
         self.exchange_manager = None
@@ -41,6 +43,9 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
         return exchange_connectors.CCXTExchange.is_supporting_exchange(exchange_candidate_name)
+
+    def get_default_type(self):
+        return 'future'
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()
