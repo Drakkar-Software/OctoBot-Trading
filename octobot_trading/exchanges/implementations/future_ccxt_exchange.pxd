@@ -17,4 +17,6 @@
 cimport octobot_trading.exchanges.types as exchanges_types
 
 cdef class FutureCCXTExchange(exchanges_types.FutureExchange):
+    cpdef str get_default_type(self)
+
     cdef str _get_pair_market_type(self, str pair)
