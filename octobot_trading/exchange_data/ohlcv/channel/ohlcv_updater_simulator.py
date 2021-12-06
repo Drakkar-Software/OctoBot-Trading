@@ -42,7 +42,6 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
         self.require_last_init_candles_pairs_push = False
         self.traded_pairs = self._get_traded_pairs()
         self.traded_time_frame = self._get_time_frames()
-        self.shortest_time_frame = time_frame_manager.find_min_time_frame(self.traded_time_frame)
 
     async def start(self):
         if not self.is_initialized:
@@ -67,27 +66,28 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                                         if self.future_candle_time_frame is time_frame else 0)
                     )
                     if ohlcv_data:
-                        if time_frame is self.shortest_time_frame:
+                        if time_frame is self.future_candle_time_frame:
                             # There should always be at least 2 candles in read data, otherwise this means that
                             # the exchange was down for some time. Consider it unreachable
                             self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) < 2
-                        current_candle_index = 0
+                        has_future_candle = False
                         if self.future_candle_time_frame is time_frame:
-                            if ohlcv_data[0][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
+                            if ohlcv_data[-1][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
                                 # register future candle
                                 self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = \
-                                    ohlcv_data[0][-1]
+                                    ohlcv_data[-1][-1]
                                 # do not push future candle
-                                current_candle_index = 1
+                                has_future_candle = True
                             else:
                                 # if no future candle available
                                 # (end of backtesting of missing data: reset future candle)
                                 self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = None
-                        if current_candle_index == 0 or len(ohlcv_data) > 1:
+                        if not has_future_candle or len(ohlcv_data) > 1:
                             # push current candle(s)
+                            candles = ohlcv_data[:-1] if has_future_candle else ohlcv_data
                             await self.push(time_frame,
                                             pair,
-                                            [ohlcv[-1] for ohlcv in ohlcv_data[current_candle_index:]],
+                                            [ohlcv[-1] for ohlcv in candles],
                                             partial=True)
                             pushed_data = True
                     elif self.require_last_init_candles_pairs_push:
