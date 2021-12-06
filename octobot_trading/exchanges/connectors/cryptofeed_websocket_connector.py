@@ -682,7 +682,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             Ectc.LAST.value: float(candle_data.close),
             Ectc.PREVIOUS_CLOSE.value: None,
             Ectc.BASE_VOLUME.value: float(candle_data.volume),
-            Ectc.TIMESTAMP.value: candle_data.timestamp,
+            Ectc.TIMESTAMP.value: self.exchange.get_exchange_current_time(),
         }
 
         if candle_data.symbol not in self.watched_pairs:
