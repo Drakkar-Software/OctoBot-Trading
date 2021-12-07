@@ -69,10 +69,10 @@ class LinearPosition(position_class.Position):
         try:
             if self.is_long():
                 self.liquidation_price = self.entry_price * (
-                        constants.ONE - self.get_initial_margin_rate() + self.calculate_maintenance_margin())
+                        constants.ONE - self.get_initial_margin_rate() + self.get_maintenance_margin_rate())
             elif self.is_short():
                 self.liquidation_price = self.entry_price * (
-                        constants.ONE + self.get_initial_margin_rate() - self.calculate_maintenance_margin())
+                        constants.ONE + self.get_initial_margin_rate() - self.get_maintenance_margin_rate())
             else:
                 self.liquidation_price = constants.ZERO
             self.update_fee_to_close()
