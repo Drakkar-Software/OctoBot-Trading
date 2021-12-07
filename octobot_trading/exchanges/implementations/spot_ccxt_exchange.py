@@ -37,6 +37,8 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         super().__init__(config, exchange_manager)
         self.connector = exchange_connectors.CCXTExchange(config, exchange_manager)
 
+        self.connector.client.options['defaultType'] = self.get_default_type()
+
     async def initialize_impl(self):
         await self.connector.initialize()
         self.symbols = self.connector.symbols
@@ -49,6 +51,10 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
         return exchange_connectors.CCXTExchange.is_supporting_exchange(exchange_candidate_name)
+
+    def get_default_type(self):
+        # keep default value
+        return self.connector.client.options['defaultType']
 
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
