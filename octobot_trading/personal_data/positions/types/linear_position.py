@@ -47,7 +47,7 @@ class LinearPosition(position_class.Position):
         Updates position initial margin = (Position quantity x entry price) / leverage
         """
         try:
-            self.initial_margin = (self.size * self.entry_price) / self.symbol_contract.current_leverage
+            self.initial_margin = ((self.size * self.entry_price) / self.symbol_contract.current_leverage).copy_abs()
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.initial_margin = constants.ZERO
