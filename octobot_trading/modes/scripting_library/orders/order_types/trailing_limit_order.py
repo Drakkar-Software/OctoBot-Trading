@@ -14,8 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import octobot_trading.modes.scripting_library.orders.order_types.create_order as create_order
 
-from .create_order import _create_order_instance
 
 async def trailing_limit(
         context,
@@ -36,8 +36,8 @@ async def trailing_limit(
         post_only=False,
         tag=None,
 ):
-    await _create_order_instance(
-        trader=context.trader,
+    await create_order.create_order_instance(
+        context,
         side=side,
         symbol=symbol or context.symbol,
 
@@ -54,7 +54,5 @@ async def trailing_limit(
         time_limit=time_limit,
         reduce_only=reduce_only,
         post_only=post_only,
-        tag=tag,
-
-        context=context
+        tag=tag
     )

@@ -14,44 +14,32 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import octobot_trading.modes.scripting_library.orders.order_types.create_order as create_order
 
-from .create_order import _create_order_instance
 
-
-async def limit(
+async def stop_loss(
         context,
         side=None,
         symbol=None,
 
+        offset=None,
+
         amount=None,
         target_position=None,
 
-        offset=None,
-
-        slippage_limit=None,
-        time_limit=None,
-
-        reduce_only=False,
-        post_only=False,
         tag=None,
+
 ):
-    await _create_order_instance(
-        trader=context.trader,
+    await create_order.create_order_instance(
+        context,
         side=side,
         symbol=symbol or context.symbol,
 
         order_amount=amount,
         order_target_position=target_position,
 
-        order_type_name="limit",
+        order_type_name="stop_loss",
         order_offset=offset,
 
-        slippage_limit=slippage_limit,
-        time_limit=time_limit,
-        reduce_only=reduce_only,
-        post_only=post_only,
-        tag=tag,
-
-        context=context
+        tag=tag
     )
-

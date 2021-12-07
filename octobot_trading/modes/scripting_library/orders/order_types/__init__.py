@@ -15,9 +15,9 @@
 #  License along with this library.
 
 
-from .limit import *
-from .market import *
-from .stop_loss import *
-from .trailing_market import *
-from .trailing_limit import *
-from .trailing_stop_loss import *
+from .limit_order import *
+from .market_order import *
+from .stop_loss_order import *
+from .trailing_market_order import *
+from .trailing_limit_order import *
+from .trailing_stop_loss_order import *

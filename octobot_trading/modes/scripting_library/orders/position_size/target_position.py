@@ -60,7 +60,7 @@ async def get_target_position(
         raise RuntimeError("Computed position Size is 0")
 
     order_size = await cut_position_size(context, order_size, side)
-    return [order_size, side]
+    return order_size, side
 
 
 def target_position_side(ordersize):

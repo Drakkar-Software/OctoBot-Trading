@@ -15,7 +15,7 @@
 #  License along with this library.
 
 
-from .create_order import _create_order_instance
+from .create_order import create_order_instance
 from ..position_size.target_position import *
 from ..offsets import *
 
@@ -68,8 +68,8 @@ async def scaled_limit(
         raise RuntimeError("there is something wrong with your scaled order")
 
     for order in range(1, order_count):
-        await _create_order_instance(
-            trader=context.trader,
+        await create_order_instance(
+            context,
             side=side,
             symbol=symbol or context.symbol,
 
@@ -80,7 +80,5 @@ async def scaled_limit(
 
             reduce_only=reduce_only,
             post_only=post_only,
-            tag=tag,
-
-            context=context
+            tag=tag
         )

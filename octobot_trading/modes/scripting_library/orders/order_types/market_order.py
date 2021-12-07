@@ -14,12 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-from .create_order import _create_order_instance
-import octobot_trading.enums as trading_enums
+import octobot_trading.modes.scripting_library.orders.order_types.create_order as create_order
 
 
-async def trailing_market(
+async def market(
         context,
         side=None,
         symbol=None,
@@ -27,25 +25,19 @@ async def trailing_market(
         amount=None,
         target_position=None,
 
-        offset=None,
-
         reduce_only=False,
         tag=None,
 ):
-    await _create_order_instance(
-        trader=context.trader,
+    await create_order.create_order_instance(
+        context,
         side=side,
         symbol=symbol or context.symbol,
 
         order_amount=amount,
         order_target_position=target_position,
 
-        order_type_name="trailing_market",
-
-        order_offset=offset,
+        order_type_name="market",
 
         reduce_only=reduce_only,
-        tag=tag,
-
-        context=context
+        tag=tag
     )

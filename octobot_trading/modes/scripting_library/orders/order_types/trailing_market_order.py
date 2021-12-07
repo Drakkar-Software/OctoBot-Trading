@@ -14,35 +14,34 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import octobot_trading.modes.scripting_library.orders.order_types.create_order as create_order
 
-from .create_order import _create_order_instance
 
-
-async def stop_loss(
+async def trailing_market(
         context,
         side=None,
         symbol=None,
 
-        offset=None,
-
         amount=None,
         target_position=None,
 
-        tag=None,
+        offset=None,
 
+        reduce_only=False,
+        tag=None,
 ):
-    await _create_order_instance(
-        trader=context.trader,
+    await create_order.create_order_instance(
+        context,
         side=side,
         symbol=symbol or context.symbol,
 
         order_amount=amount,
         order_target_position=target_position,
 
-        order_type_name="stop_loss",
+        order_type_name="trailing_market",
+
         order_offset=offset,
 
-        tag=tag,
-
-        context=context
+        reduce_only=reduce_only,
+        tag=tag
     )
