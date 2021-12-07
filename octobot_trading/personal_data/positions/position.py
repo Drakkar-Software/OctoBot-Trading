@@ -105,8 +105,8 @@ class Position(util.Initializable):
 
     def _update(self, position_id, symbol, currency, market, timestamp,
                 entry_price, mark_price, liquidation_price,
-                quantity, size, value, margin,
-                unrealised_pnl, realised_pnl,
+                quantity, size, value, initial_margin,
+                unrealised_pnl, realised_pnl, fee_to_close,
                 status=None, side=None):
         changed: bool = False
 
@@ -138,8 +138,9 @@ class Position(util.Initializable):
             self.value = value
             changed = True
 
-        if self._should_change(self.margin, margin):
-            self.margin = margin
+        if self._should_change(self.initial_margin, initial_margin):
+            self.initial_margin = initial_margin
+            self._update_margin()
             changed = True
 
         if self._should_change(self.unrealised_pnl, unrealised_pnl):
@@ -152,12 +153,20 @@ class Position(util.Initializable):
 
         if self._should_change(self.entry_price, entry_price):
             self.entry_price = entry_price
+            changed = True
 
         if self._should_change(self.mark_price, mark_price):
             self.mark_price = mark_price
+            changed = True
+
+        if self._should_change(self.fee_to_close, fee_to_close):
+            self.fee_to_close = fee_to_close
+            self._update_margin()
+            changed = True
 
         if self._should_change(self.liquidation_price, liquidation_price):
             self.liquidation_price = liquidation_price
+            changed = True
 
         if self._should_change(self.status.value, status):
             self.status = enums.PositionStatus(status)
@@ -486,12 +495,13 @@ class Position(util.Initializable):
             quantity=raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO),
             size=raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO),
             value=raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO),
-            margin=raw_position.get(enums.ExchangeConstantsPositionColumns.COLLATERAL.value, constants.ZERO),
+            initial_margin=raw_position.get(enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value, constants.ZERO),
             position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
             unrealised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value,
                                             constants.ZERO),
             realised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO),
+            fee_to_close=raw_position.get(enums.ExchangeConstantsPositionColumns.CLOSING_FEE.value, constants.ZERO),
             status=position_util.parse_position_status(raw_position),
             side=raw_position.get(enums.ExchangeConstantsPositionColumns.SIDE.value, None)
         )
