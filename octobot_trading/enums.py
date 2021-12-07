@@ -317,6 +317,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     BANKRUPTCY_PRICE = "bankruptcy_price"
     UNREALISED_PNL = "unrealised_pnl"
     REALISED_PNL = "realised_pnl"
+    CLOSING_FEE = "closing_fee"
     QUANTITY = "quantity"
     SIZE = "size"
     NOTIONAL = "notional"
