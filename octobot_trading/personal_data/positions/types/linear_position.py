@@ -56,7 +56,7 @@ class LinearPosition(position_class.Position):
         """
         :return: Maintenance margin = Position quantity x entry price x Maintenance margin rate
         """
-        return self.size * self.entry_price * self.get_maintenance_margin_rate()
+        return self.size * self.entry_price * self.symbol_contract.maintenance_margin_rate
 
     def update_isolated_liquidation_price(self):
         """
@@ -69,10 +69,10 @@ class LinearPosition(position_class.Position):
         try:
             if self.is_long():
                 self.liquidation_price = self.entry_price * (
-                        constants.ONE - self.get_initial_margin_rate() + self.get_maintenance_margin_rate())
+                        constants.ONE - self.get_initial_margin_rate() + self.symbol_contract.maintenance_margin_rate)
             elif self.is_short():
                 self.liquidation_price = self.entry_price * (
-                        constants.ONE + self.get_initial_margin_rate() - self.get_maintenance_margin_rate())
+                        constants.ONE + self.get_initial_margin_rate() - self.symbol_contract.maintenance_margin_rate)
             else:
                 self.liquidation_price = constants.ZERO
             self.update_fee_to_close()

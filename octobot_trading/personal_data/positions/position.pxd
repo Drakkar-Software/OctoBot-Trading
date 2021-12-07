@@ -92,7 +92,6 @@ cdef class Position(util.Initializable):
     cpdef void update_pnl(self)
     cpdef void update_initial_margin(self)
     cpdef void update_average_entry_price(self, object update_size, object update_price)
-    cpdef object get_maintenance_margin_rate(self)
     cpdef object get_initial_margin_rate(self)
     cpdef object calculate_maintenance_margin(self)
     cpdef bint update_from_raw(self, dict raw_position)
