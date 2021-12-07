@@ -177,7 +177,6 @@ class Position(util.Initializable):
         self._update_side()
         self._update_quantity_or_size_if_necessary()
         self._update_entry_price_if_necessary(mark_price)
-        self.update_pnl()
         return changed
 
     async def _ensure_position_initialized(self):
@@ -213,7 +212,7 @@ class Position(util.Initializable):
         """
         self.mark_price = mark_price
         self._update_entry_price_if_necessary(mark_price)
-        if not self.is_idle():
+        if not self.is_idle() and self.exchange_manager.is_simulated:
             self.update_value()
             self.update_pnl()
 
@@ -301,11 +300,12 @@ class Position(util.Initializable):
         self._check_and_update_size(update_size)
         self._update_quantity()
         self._update_side()
-        self.update_initial_margin()
-        self.update_fee_to_close()
-        self.update_liquidation_price()
-        self.update_value()
-        self.update_pnl()
+        if self.exchange_manager.is_simulated:
+            self.update_initial_margin()
+            self.update_fee_to_close()
+            self.update_liquidation_price()
+            self.update_value()
+            self.update_pnl()
 
     def _check_and_update_size(self, size_update):
         """
