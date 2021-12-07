@@ -37,9 +37,10 @@ class FutureContract(margin_contract.MarginContract):
         self.maintenance_margin_rate = maintenance_margin_rate
 
     def __str__(self):
-        return (f"{self.pair} x{self.current_leverage} "
+        return (f"{self.pair} "
                 f"{'inverse' if self.is_inverse_contract() else 'linear'} "
-                f"{'perpetual' if self.is_perpetual_contract() else 'future'}")
+                f"{'perpetual' if self.is_perpetual_contract() else 'future'} "
+                f"{self.margin_type.value} x{self.current_leverage}")
 
     def is_inverse_contract(self):
         """
