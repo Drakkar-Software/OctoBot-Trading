@@ -24,7 +24,7 @@ class LinearPosition(position_class.Position):
         """
         Notional value = CONTRACT_QUANTITY * MARK_PRICE
         """
-        self.value = self.quantity * self.mark_price
+        self.value = self.size * self.mark_price
 
     def update_pnl(self):
         """
@@ -33,9 +33,9 @@ class LinearPosition(position_class.Position):
         """
         try:
             if self.is_long():
-                self.unrealised_pnl = self.quantity * (self.mark_price - self.entry_price)
+                self.unrealised_pnl = self.size * (self.mark_price - self.entry_price)
             elif self.is_short():
-                self.unrealised_pnl = -self.quantity * (self.entry_price - self.mark_price)
+                self.unrealised_pnl = -self.size * (self.entry_price - self.mark_price)
             else:
                 self.unrealised_pnl = constants.ZERO
             self.on_pnl_update()
@@ -47,7 +47,7 @@ class LinearPosition(position_class.Position):
         Updates position initial margin = (Position quantity x entry price) / leverage
         """
         try:
-            self.initial_margin = (self.quantity * self.entry_price) / self.symbol_contract.current_leverage
+            self.initial_margin = (self.size * self.entry_price) / self.symbol_contract.current_leverage
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.initial_margin = constants.ZERO
@@ -56,7 +56,7 @@ class LinearPosition(position_class.Position):
         """
         :return: Maintenance margin = Position quantity x entry price x Maintenance margin rate
         """
-        return self.quantity * self.entry_price * self.get_maintenance_margin_rate()
+        return self.size * self.entry_price * self.get_maintenance_margin_rate()
 
     def update_isolated_liquidation_price(self):
         """
@@ -98,7 +98,7 @@ class LinearPosition(position_class.Position):
         """
         :return: Fee to open = (Quantity * Mark Price) x Taker fee
         """
-        return self.quantity * self.mark_price * self.get_taker_fee()
+        return self.size * self.mark_price * self.get_taker_fee()
 
     def get_order_cost(self):
         """
@@ -110,7 +110,7 @@ class LinearPosition(position_class.Position):
         """
         :return: Fee to close = (Quantity * Bankruptcy Price derived from mark price) x Taker fee
         """
-        self.fee_to_close = self.quantity * self.get_bankruptcy_price(with_mark_price=True) * self.get_taker_fee()
+        self.fee_to_close = self.size * self.get_bankruptcy_price(with_mark_price=True) * self.get_taker_fee()
 
     def update_average_entry_price(self, update_size, update_price):
         """

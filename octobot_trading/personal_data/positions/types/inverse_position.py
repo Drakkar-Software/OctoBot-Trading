@@ -25,7 +25,7 @@ class InversePosition(position_class.Position):
         Notional value = CONTRACT_QUANTITY / MARK_PRICE
         """
         try:
-            self.value = self.quantity / self.mark_price
+            self.value = self.size / self.mark_price
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.value = constants.ZERO
 
@@ -36,10 +36,10 @@ class InversePosition(position_class.Position):
         """
         try:
             if self.is_long():
-                self.unrealised_pnl = self.quantity * ((constants.ONE / self.entry_price) -
+                self.unrealised_pnl = self.size * ((constants.ONE / self.entry_price) -
                                                        (constants.ONE / self.mark_price))
             elif self.is_short():
-                self.unrealised_pnl = -self.quantity * ((constants.ONE / self.mark_price) -
+                self.unrealised_pnl = -self.size * ((constants.ONE / self.mark_price) -
                                                         (constants.ONE / self.entry_price))
             else:
                 self.unrealised_pnl = constants.ZERO
@@ -52,7 +52,7 @@ class InversePosition(position_class.Position):
         Updates position initial margin = Position quantity / (entry price x leverage)
         """
         try:
-            self.initial_margin = self.quantity / (self.entry_price * self.symbol_contract.current_leverage)
+            self.initial_margin = self.size / (self.entry_price * self.symbol_contract.current_leverage)
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.initial_margin = constants.ZERO
@@ -62,7 +62,7 @@ class InversePosition(position_class.Position):
         :return: Maintenance margin = (Position quantity / entry price) x Maintenance margin rate
         """
         try:
-            return (self.quantity / self.entry_price) * self.get_maintenance_margin_rate()
+            return (self.size / self.entry_price) * self.get_maintenance_margin_rate()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
@@ -118,7 +118,7 @@ class InversePosition(position_class.Position):
         :return: Fee to open = (Quantity / Mark price ) x taker fee
         """
         try:
-            return (self.quantity / self.mark_price) * self.get_taker_fee()
+            return (self.size / self.mark_price) * self.get_taker_fee()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
@@ -127,7 +127,7 @@ class InversePosition(position_class.Position):
         :return: Fee to close = (Quantity / Bankruptcy Price derived from mark price) x taker fee
         """
         try:
-            self.fee_to_close = (self.quantity / self.get_bankruptcy_price(with_mark_price=True)) * self.get_taker_fee()
+            self.fee_to_close = (self.size / self.get_bankruptcy_price(with_mark_price=True)) * self.get_taker_fee()
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.fee_to_close = constants.ZERO
