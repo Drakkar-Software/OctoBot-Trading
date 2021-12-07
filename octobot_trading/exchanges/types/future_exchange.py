@@ -48,10 +48,11 @@ class FutureExchange(abstract_exchange.AbstractExchange):
             margin_type=await self.get_margin_type(pair),
             contract_type=await self.get_contract_type(pair),
             position_mode=await self.get_position_mode(pair),
+            maintenance_margin_rate=await self.get_maintenance_margin_rate(pair),
         )
 
     def create_pair_contract(self, pair, current_leverage, margin_type,
-                             contract_type, position_mode, maximum_leverage=None):
+                             contract_type, position_mode, maintenance_margin_rate, maximum_leverage=None):
         """
         Create a new FutureContract for the pair
         :param pair: the contract pair
@@ -59,6 +60,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :param margin_type: the contract margin type
         :param contract_type: the contract type
         :param position_mode: the contract position mode
+        :param maintenance_margin_rate: the contract maintenance margin rate
         :param maximum_leverage: the contract maximum leverage
         """
         self.logger.debug(f"Creating {pair} contract...")
@@ -67,6 +69,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
                                                              margin_type=margin_type,
                                                              contract_type=contract_type,
                                                              position_mode=position_mode,
+                                                             maintenance_margin_rate=maintenance_margin_rate,
                                                              maximum_leverage=maximum_leverage)
 
     def get_pair_future_contract(self, pair):
@@ -174,6 +177,13 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :return: the position mode for the requested symbol. Can be PositionMode HEDGE or ONE_WAY
         """
         raise NotImplementedError("get_position_mode is not implemented")
+
+    async def get_maintenance_margin_rate(self, symbol: str):
+        """
+        :param symbol: the symbol
+        :return: the symbol maintenance margin rate
+        """
+        raise NotImplementedError("get_maintenance_margin_rate is not implemented")
 
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         """
