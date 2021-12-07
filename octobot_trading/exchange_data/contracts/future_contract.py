@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 
@@ -25,12 +27,14 @@ class FutureContract(margin_contract.MarginContract):
                  maximum_leverage=constants.ONE,
                  current_leverage=constants.ONE,
                  position_mode=enums.PositionMode.ONE_WAY,
+                 maintenance_margin_rate=decimal.Decimal(0.01),
                  minimum_tick_size=0.5):
         super().__init__(pair, margin_type=margin_type, contract_size=contract_size,
                          maximum_leverage=maximum_leverage, current_leverage=current_leverage)
         self.contract_type = contract_type
         self.minimum_tick_size = minimum_tick_size
         self.position_mode = position_mode
+        self.maintenance_margin_rate = maintenance_margin_rate
 
     def is_inverse_contract(self):
         """
