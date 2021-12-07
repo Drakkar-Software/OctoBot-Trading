@@ -350,13 +350,6 @@ class Position(util.Initializable):
     def update_average_entry_price(self, update_size, update_price):
         raise NotImplementedError("get_average_entry_price not implemented")
 
-    def get_maintenance_margin_rate(self):
-        """
-        :return: Position symbol funding rate
-        """
-        return self.exchange_manager.exchange_symbols_data. \
-            get_exchange_symbol_data(self.symbol).funding_manager.funding_rate
-
     def get_initial_margin_rate(self):
         """
         :return: Initial Margin Rate = 1 / Leverage
@@ -555,15 +548,17 @@ class Position(util.Initializable):
         return self.to_string()
 
     def to_string(self):
+        currency = self.currency if self.symbol_contract.is_inverse_contract() else self.market
         return (f"{self.symbol} | "
                 f"Size : {round(self.size, 10).normalize()} "
-                f"({self.side.value} {self.symbol_contract} | "
+                f"({round(self.value, 10).normalize()} {currency}) "
+                f"--> {self.side.value} {self.symbol_contract} | "
                 f"Mark price : {round(self.mark_price, 10).normalize()} | "
                 f"Entry price : {round(self.entry_price, 10).normalize()} | "
-                f"Unrealized PNL : {round(self.unrealised_pnl, 14).normalize()} "
+                f"Margin : {round(self.margin, 10).normalize()} {currency} | "
+                f"Unrealized PNL : {round(self.unrealised_pnl, 14).normalize()} {currency} "
                 f"({round(self.get_unrealised_pnl_percent(), 3)}%) | "
                 f"Liquidation price : {round(self.liquidation_price, 10).normalize()} | "
-                f"Realized PNL : {round(self.realised_pnl, 14).normalize()} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} "
                 f"({self.symbol_contract.position_mode.value})")
 

@@ -62,7 +62,7 @@ class InversePosition(position_class.Position):
         :return: Maintenance margin = (Position quantity / entry price) x Maintenance margin rate
         """
         try:
-            return (self.size / self.entry_price) * self.get_maintenance_margin_rate()
+            return (self.size / self.entry_price) * self.symbol_contract.maintenance_margin_rate
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
@@ -76,11 +76,13 @@ class InversePosition(position_class.Position):
             if self.is_long():
                 self.liquidation_price = (self.entry_price * self.symbol_contract.current_leverage) / \
                                          (self.symbol_contract.current_leverage + constants.ONE -
-                                          (self.get_maintenance_margin_rate() * self.symbol_contract.current_leverage))
+                                          (self.symbol_contract.maintenance_margin_rate *
+                                           self.symbol_contract.current_leverage))
             elif self.is_short():
                 self.liquidation_price = (self.entry_price * self.symbol_contract.current_leverage) / \
                                          (self.symbol_contract.current_leverage - constants.ONE +
-                                          (self.get_maintenance_margin_rate() * self.symbol_contract.current_leverage))
+                                          (self.symbol_contract.maintenance_margin_rate *
+                                           self.symbol_contract.current_leverage))
             else:
                 self.liquidation_price = constants.ZERO
             self.update_fee_to_close()
