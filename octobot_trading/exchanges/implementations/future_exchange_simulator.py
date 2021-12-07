@@ -29,6 +29,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.LINEAR_PERPETUAL
     DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
     DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal("0.00005")
+    DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE = decimal.Decimal("0.01")
 
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
@@ -114,6 +115,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
             margin_type=self.DEFAULT_SYMBOL_MARGIN_TYPE,
             contract_type=self.DEFAULT_SYMBOL_CONTRACT_TYPE,
             position_mode=self.DEFAULT_SYMBOL_POSITION_MODE,
+            maintenance_margin_rate=self.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE
         )
 
     async def get_symbol_leverage(self, symbol: str):
