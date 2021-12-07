@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-import decimal
 
 import octobot_trading.enums
 import octobot_trading.errors as errors
