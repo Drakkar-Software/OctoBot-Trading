@@ -66,9 +66,10 @@ cdef class Position(util.Initializable):
                       object quantity,
                       object size,
                       object value,
-                      object margin,
+                      object initial_margin,
                       object unrealised_pnl,
                       object realised_pnl,
+                      object fee_to_close,
                       object status=*,
                       object side=*)
     cdef bint _should_change(self, object original_value, object new_value)
