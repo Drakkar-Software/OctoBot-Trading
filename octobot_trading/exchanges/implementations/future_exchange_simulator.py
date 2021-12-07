@@ -13,11 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import decimal
-
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
-import octobot_trading.exchange_data.contracts as contracts
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 
@@ -28,8 +25,8 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     DEFAULT_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
     DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.LINEAR_PERPETUAL
     DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
-    DEFAULT_SYMBOL_FUNDING_RATE = decimal.Decimal("0.00005")
-    DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE = decimal.Decimal("0.01")
+    DEFAULT_SYMBOL_FUNDING_RATE = constants.CONFIG_DEFAULT_FUNDING_RATE
+    DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE = constants.CONFIG_DEFAULT_MAINTENANCE_MARGIN_RATE
 
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
