@@ -15,9 +15,13 @@
 #  License along with this library.
 import pytest
 import mock
+import decimal
 
 import octobot_trading.modes.scripting_library as scripting_library
 import octobot_trading.enums as enums
+
+import tests.personal_data.portfolios as portfolios
+import tests.test_utils.random_numbers as random_numbers
 
 
 @pytest.fixture
@@ -48,7 +52,7 @@ def null_context():
 
 
 @pytest.fixture
-def mock_context(backtesting_trader):
+async def mock_context(backtesting_trader):
     _, exchange_manager, trader_inst = backtesting_trader
     context = scripting_library.Context(
         mock.Mock(),
@@ -72,6 +76,21 @@ def mock_context(backtesting_trader):
         mock.Mock(),
         mock.Mock(),
     )
+    # init portfolio with 0.5 BTC, 20 ETH and 30000 USDT and only 0.1 available BTC
+    portfolios.update_portfolio_balance({
+        'BTC': {'available': decimal.Decimal("0.1"), 'total': decimal.Decimal("0.5")},
+        'ETH': {'available': decimal.Decimal("20"), 'total': decimal.Decimal("20")},
+        'USDT': {'available': decimal.Decimal("30000"), 'total': decimal.Decimal("30000")}
+    }, exchange_manager)
+    exchange_manager.client_symbols.append("BTC/USDT")
+    exchange_manager.client_symbols.append("ETH/USDT")
+    exchange_manager.client_symbols.append("ETH/BTC")
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    # init prices with BTC/USDT = 40000, ETH/BTC = 0.1 and ETH/USDT = 4000
+    portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair["BTC/USDT"] = decimal.Decimal("40000")
+    portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair["ETH/USDT"] = decimal.Decimal("4000")
+    portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair["ETH/BTC"] = decimal.Decimal("0.1")
+    await portfolio_manager.handle_balance_updated()
     yield context
 
 

@@ -44,16 +44,16 @@ async def test_get_offset(null_context):
         with mock.patch.object(offset, "parse_offset", mock.Mock(return_value=("%", decimal.Decimal(1000)))):
             assert await offset.get_offset(null_context, 10) == decimal.Decimal(2200)
 
-    with mock.patch.object(open_positions, "average_open_pos_entry", mock.AsyncMock(return_value=500)) \
+    with mock.patch.object(open_positions, "average_open_pos_entry", mock.Mock(return_value=500)) \
             as average_open_pos_entry_mock:
         with mock.patch.object(offset, "parse_offset", mock.Mock(return_value=("e%", decimal.Decimal(-50)))):
-            assert await offset.get_offset(null_context, 10) == decimal.Decimal(250)
-            average_open_pos_entry_mock.assert_called_once()
+            assert await offset.get_offset(null_context, 10, "sell") == decimal.Decimal(250)
+            average_open_pos_entry_mock.assert_called_once_with(null_context, "sell")
 
-    with mock.patch.object(open_positions, "average_open_pos_entry", mock.AsyncMock(return_value=500)) \
+    with mock.patch.object(open_positions, "average_open_pos_entry", mock.Mock(return_value=500)) \
             as average_open_pos_entry_mock:
         with mock.patch.object(offset, "parse_offset", mock.Mock(return_value=("e", decimal.Decimal(50)))):
-            assert await offset.get_offset(null_context, 10) == decimal.Decimal(550)
+            assert await offset.get_offset(null_context, 10, "sell") == decimal.Decimal(550)
             average_open_pos_entry_mock.assert_called_once()
 
     with mock.patch.object(offset, "parse_offset", mock.Mock(return_value=("@", decimal.Decimal(50)))):

@@ -47,7 +47,7 @@ async def scaled_limit(
     else:
         raise RuntimeError("Either use side with amount or target_position for scaled orders.")
 
-    scale_from_price = get_offset(scale_from)
+    scale_from_price = get_offset(scale_from,)
     scale_to_price = get_offset(scale_to)
     order_price_array = []
     if distribution == "linear":

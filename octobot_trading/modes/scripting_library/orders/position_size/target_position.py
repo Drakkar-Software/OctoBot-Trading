@@ -30,17 +30,17 @@ async def get_target_position(
     order_size = None
 
     if target_position_type == "%p":
-        open_position_size_val = await open_position_size(context)
+        open_position_size_val = open_position_size(context)
         target_size = open_position_size_val * target_position_value / 100
         order_size = target_size - open_position_size_val
 
     elif target_position_type == "%":
         total_acc_bal = total_account_balance(context)
         target_size = total_acc_bal * target_position_value / 100
-        order_size = target_size - await open_position_size(context)
+        order_size = target_size - open_position_size(context)
 
     elif target_position_type == "":
-        order_size = target_position_value - await open_position_size(context)
+        order_size = target_position_value - open_position_size(context)
 
     elif target_position_type == "%a":
         available_account_balance_val = await available_account_balance(context)

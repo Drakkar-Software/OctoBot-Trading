@@ -20,7 +20,7 @@ import octobot_trading.modes.scripting_library.data.reading.exchange_public_data
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data.open_positions as open_positions
 
 
-async def get_offset(context=None, offset_in=None):
+async def get_offset(context, offset_in, side=None):
     offset_type, offset_value = parse_offset(offset_in)
 
     if offset_type == "":
@@ -32,11 +32,11 @@ async def get_offset(context=None, offset_in=None):
         return current_price_val * (1 + (offset_value / 100))
 
     elif offset_type == "e%":
-        average_open_pos_entry_val = await open_positions.average_open_pos_entry(context)
+        average_open_pos_entry_val = open_positions.average_open_pos_entry(context, side)
         return average_open_pos_entry_val * (1 + (offset_value / 100))
 
     elif offset_type == "e":
-        average_open_pos_entry_val = await open_positions.average_open_pos_entry(context)
+        average_open_pos_entry_val = open_positions.average_open_pos_entry(context, side)
         return average_open_pos_entry_val + offset_value
 
     elif offset_type == "@":
