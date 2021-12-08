@@ -48,12 +48,19 @@ async def test_open_position_size(mock_context):
 @pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
 async def test_average_open_pos_entry(mock_context):
     mock_context.exchange_manager.is_future = False
-    # init prices with BTC/USDT = 40000, ETH/BTC = 0.1 and ETH/USDT = 4000
-    mock_context.symbol = "ETH/USDT"
-    assert open_positions.average_open_pos_entry(mock_context, trading_enums.TradeOrderSide.BUY.value) == \
-           decimal.Decimal("4000")
-    mock_context.symbol = "BTC/USDT"
-    assert open_positions.average_open_pos_entry(mock_context, trading_enums.TradeOrderSide.BUY.value) == \
-           decimal.Decimal("40000")
+    with mock.patch.object(trading_personal_data, "get_up_to_date_price",
+                           mock.AsyncMock(return_value=(decimal.Decimal("40000")))) \
+        as get_up_to_date_price_mock:
+        mock_context.symbol = "ETH/USDT"
+        assert await open_positions.average_open_pos_entry(mock_context, trading_enums.TradeOrderSide.BUY.value) == \
+               decimal.Decimal("40000")
+        get_up_to_date_price_mock.assert_called_once_with(mock_context.exchange_manager, "ETH/USDT",
+                                                          timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
+        get_up_to_date_price_mock.reset_mock()
+        mock_context.symbol = "BTC/USDT"
+        assert await open_positions.average_open_pos_entry(mock_context, trading_enums.TradeOrderSide.BUY.value) == \
+               decimal.Decimal("40000")
+        get_up_to_date_price_mock.assert_called_once_with(mock_context.exchange_manager, "BTC/USDT",
+                                                          timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
 
     # TODO future tests

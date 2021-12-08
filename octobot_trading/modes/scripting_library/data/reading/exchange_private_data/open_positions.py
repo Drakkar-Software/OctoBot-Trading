@@ -16,6 +16,8 @@
 
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.constants as commons_constants
+import octobot_trading.personal_data as personal_data
+import octobot_trading.constants as trading_constants
 
 
 def open_position_size(
@@ -35,7 +37,7 @@ def open_position_size(
     # todo handle futures and return negative for shorts
 
 
-def average_open_pos_entry(
+async def average_open_pos_entry(
         context,
         side
 ):
@@ -44,10 +46,8 @@ def average_open_pos_entry(
         # TODO
         return
     # for spot just get the current currency value
-    currency = symbol_util.split_symbol(context.symbol)[0]
-    return context.exchange_manager.exchange_personal_data.portfolio_manager. \
-        portfolio_value_holder.current_crypto_currencies_values[currency]
-
+    return await personal_data.get_up_to_date_price(context.exchange_manager, context.symbol,
+                                                    timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
 
 async def is_position_open(
         context=None,

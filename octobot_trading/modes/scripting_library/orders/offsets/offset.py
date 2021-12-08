@@ -32,11 +32,11 @@ async def get_offset(context, offset_in, side=None):
         return current_price_val * (1 + (offset_value / 100))
 
     elif offset_type == "e%":
-        average_open_pos_entry_val = open_positions.average_open_pos_entry(context, side)
+        average_open_pos_entry_val = await open_positions.average_open_pos_entry(context, side)
         return average_open_pos_entry_val * (1 + (offset_value / 100))
 
     elif offset_type == "e":
-        average_open_pos_entry_val = open_positions.average_open_pos_entry(context, side)
+        average_open_pos_entry_val = await open_positions.average_open_pos_entry(context, side)
         return average_open_pos_entry_val + offset_value
 
     elif offset_type == "@":

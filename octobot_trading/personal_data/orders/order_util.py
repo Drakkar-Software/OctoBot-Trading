@@ -98,8 +98,7 @@ def check_cost(total_order_price, min_cost):
     return True
 
 
-async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
-                             portfolio_type=commons_constants.PORTFOLIO_AVAILABLE):
+async def get_up_to_date_price(exchange_manager, symbol: str, timeout: int = None):
     exchange_time = exchange_manager.exchange.get_exchange_current_time()
     base_error = f"Can't get the necessary price data to create a new order on the " \
                  f"{timestamp_util.convert_timestamp_to_datetime(exchange_time)} (timestamp: {exchange_time}):"
@@ -110,7 +109,12 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
         raise asyncio.TimeoutError(f"{base_error} mark price is not available")
     except errors.UnreachableExchange as e:
         raise errors.UnreachableExchange(f"{base_error} exchange is unreachable") from e
-    mark_price = decimal.Decimal(str(mark_price))
+    return decimal.Decimal(str(mark_price))
+
+
+async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
+                             portfolio_type=commons_constants.PORTFOLIO_AVAILABLE):
+    mark_price = get_up_to_date_price(exchange_manager, symbol, timeout=timeout)
     symbol_market = exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
     currency, market = symbol_util.split_symbol(symbol)
