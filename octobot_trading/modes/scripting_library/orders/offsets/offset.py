@@ -14,41 +14,35 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
-import re
 
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data.open_positions as open_positions
+import octobot_trading.modes.scripting_library.dsl as dsl
 
 
 async def get_offset(context, offset_in, side=None):
-    offset_type, offset_value = parse_offset(offset_in)
+    offset_type, offset_value = dsl.parse_quantity(offset_in)
 
-    if offset_type == "":
+    if offset_type is dsl.QuantityType.DELTA:
         current_price_val = decimal.Decimal(await exchange_public_data.current_price(context))
         return current_price_val + offset_value  # offset should be negative when wanting to buy bellow current price
 
-    elif offset_type == "%":
+    elif offset_type is dsl.QuantityType.PERCENT:
         current_price_val = decimal.Decimal(await exchange_public_data.current_price(context))
         return current_price_val * (1 + (offset_value / 100))
 
-    elif offset_type == "e%":
+    elif offset_type is dsl.QuantityType.ENTRY_PERCENT:
         average_open_pos_entry_val = await open_positions.average_open_pos_entry(context, side)
         return average_open_pos_entry_val * (1 + (offset_value / 100))
 
-    elif offset_type == "e":
+    elif offset_type is dsl.QuantityType.ENTRY:
         average_open_pos_entry_val = await open_positions.average_open_pos_entry(context, side)
         return average_open_pos_entry_val + offset_value
 
-    elif offset_type == "@":
+    elif offset_type is dsl.QuantityType.FLAT:
         if offset_value < 0:
             raise RuntimeError("Flat offsets should be a positive price. Ex: @10")
         return offset_value
 
     raise RuntimeError("make sure to use a supported syntax for offset, supported parameters are: @65100 5% e5% e500")
 
-
-def parse_offset(input_offset) -> (str, decimal.Decimal):
-    input_offset = str(input_offset)
-    offset_type = re.sub(r"-?\d|\.", "", input_offset)
-    offset_value = decimal.Decimal(input_offset.replace(offset_type, ""))
-    return offset_type, offset_value

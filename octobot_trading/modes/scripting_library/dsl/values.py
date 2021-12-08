@@ -14,6 +14,27 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import enum
 
-from .amount import *
-from .target_position import *
+
+class QuantityType(enum.Enum):
+    DELTA = ""
+    PERCENT = "%"
+    AVAILABLE = "a"
+    POSITION = "p"
+    ENTRY = "e"
+    AVAILABLE_PERCENT = "a%"
+    POSITION_PERCENT = "p%"
+    ENTRY_PERCENT = "e%"
+    FLAT = "@"
+    UNKNOWN = "?"
+
+    @staticmethod
+    def parse(value):
+        try:
+            # try reading directly as enum
+            return QuantityType(value), value
+        except ValueError:
+            # try with letters in reverse order
+            reversed_value = value[::-1]
+            return QuantityType(reversed_value), value

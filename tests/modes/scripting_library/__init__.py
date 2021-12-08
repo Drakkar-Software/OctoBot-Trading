@@ -76,6 +76,7 @@ async def mock_context(backtesting_trader):
         mock.Mock(),
         mock.Mock(),
     )
+    context.orders_writer.log_many = mock.AsyncMock()
     # init portfolio with 0.5 BTC, 20 ETH and 30000 USDT and only 0.1 available BTC
     portfolios.update_portfolio_balance({
         'BTC': {'available': decimal.Decimal("0.1"), 'total': decimal.Decimal("0.5")},

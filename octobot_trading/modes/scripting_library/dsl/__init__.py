@@ -14,6 +14,5 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-from .amount import *
-from .target_position import *
+from octobot_trading.modes.scripting_library.dsl.quantity import parse_quantity
+from octobot_trading.modes.scripting_library.dsl.values import QuantityType

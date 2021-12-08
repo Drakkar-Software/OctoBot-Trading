@@ -14,39 +14,29 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import decimal
-import re
-
-from octobot_trading.modes.scripting_library.data.reading.exchange_private_data.account_balance import *
-from octobot_trading.modes.scripting_library.data.reading.exchange_private_data.open_positions import *
-from octobot_trading.modes.scripting_library.orders.position_size.cut_position_size import *
+import octobot_trading.modes.scripting_library.dsl as dsl
+import octobot_trading.modes.scripting_library.data.reading.exchange_private_data as exchange_private_data
 
 
-async def get_amount(input_amount=None,
-                     context=None,
-                     side="buy"
-                     ):
-    input_amount = str(input_amount)
-    amount_type = re.sub(r"\d|\.", "", input_amount)
-    amount_value = decimal.Decimal(input_amount.replace(amount_type, ""))
+async def get_amount(
+        context=None,
+        input_amount=None,
+        side="buy"
+):
+    amount_type, amount_value = dsl.parse_quantity(input_amount)
 
-    if amount_value <= 0:
+    if amount_type is dsl.QuantityType.UNKNOWN or amount_value <= 0:
         raise RuntimeError("amount cant be zero or negative")
 
-    if amount_type == "":
-        return await cut_position_size(context, amount_value, side)
-
-    elif amount_type == "%":
-        amount_value = total_account_balance(context) * amount_value / 100
-        return await cut_position_size(context, amount_value, side)
-
-    elif amount_type == "%a":
-        amount_value = await available_account_balance(context, side) * amount_value / 100
-        return await cut_position_size(context, amount_value, side)
-
-    elif amount_type == "%p":
-        amount_value = open_position_size(context, side) * amount_value / 100
-        return await cut_position_size(context, amount_value, side)
-
+    if amount_type is dsl.QuantityType.DELTA:
+        # nothing to do
+        pass
+    elif amount_type is dsl.QuantityType.PERCENT:
+        amount_value = await exchange_private_data.total_account_balance(context) * amount_value / 100
+    elif amount_type is dsl.QuantityType.AVAILABLE_PERCENT:
+        amount_value = await exchange_private_data.available_account_balance(context, side) * amount_value / 100
+    elif amount_type is dsl.QuantityType.POSITION_PERCENT:
+        amount_value = exchange_private_data.open_position_size(context, side) * amount_value / 100
     else:
         raise RuntimeError("make sure to use a supported syntax for amount")
+    return await exchange_private_data.adapt_amount_to_holdings(context, amount_value, side)

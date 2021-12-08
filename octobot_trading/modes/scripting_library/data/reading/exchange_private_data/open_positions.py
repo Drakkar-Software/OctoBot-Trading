@@ -25,8 +25,7 @@ def open_position_size(
         side=None
 ):
     if context.exchange_manager.is_future:
-        # TODO
-        return
+        raise NotImplementedError("future is not implemented")
     currency = symbol_util.split_symbol(context.symbol)[0]
     return context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
         currency,
@@ -43,15 +42,14 @@ async def average_open_pos_entry(
 ):
 
     if context.exchange_manager.is_future:
-        # TODO
-        return
+        raise NotImplementedError("future is not implemented")
     # for spot just get the current currency value
     return await personal_data.get_up_to_date_price(context.exchange_manager, context.symbol,
                                                     timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
 
-async def is_position_open(
+
+def is_position_open(
         context=None,
         side=None
 ):
-    #TODO
-    pass
+    return open_position_size(context, side=side) != trading_constants.ZERO

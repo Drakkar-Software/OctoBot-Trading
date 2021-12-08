@@ -13,20 +13,15 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-
 import octobot_trading.api as api
-import asyncio
 import octobot_trading.constants as trading_constants
+import octobot_trading.personal_data as personal_data
 
 
 async def current_price(ctx, symbol=None):
-    symbol = symbol or ctx.symbol
-    try:
-        return await ctx.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol) \
-            .prices_manager.get_mark_price(timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
-    except asyncio.TimeoutError:
-        raise asyncio.TimeoutError("Mark price is not available")
+    return await personal_data.get_up_to_date_price(ctx.exchange_manager, symbol or ctx.symbol,
+                                                    timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
+                                                    base_error="Can't get the current price:")
 
 
 def current_time(context) -> float:

@@ -13,58 +13,51 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import decimal
-import re
 
-from octobot_trading.modes.scripting_library.data.reading.exchange_private_data.account_balance import *
-from octobot_trading.modes.scripting_library.data.reading.exchange_private_data.open_positions import *
-from octobot_trading.modes.scripting_library.orders.position_size.cut_position_size import *
+import octobot_trading.enums as trading_enums
+import octobot_trading.modes.scripting_library.dsl as dsl
+import octobot_trading.modes.scripting_library.data.reading.exchange_private_data as exchange_private_data
+
 
 async def get_target_position(
-        target=None,
-        context=None
+        context=None,
+        target=None
 ):
-    target = str(target)
-    target_position_type = re.sub(r"\d|\.", "", target)
-    target_position_value = decimal.Decimal(target.replace(target_position_type, ""))
-    order_size = None
+    target_position_type, target_position_value = dsl.parse_quantity(target)
 
-    if target_position_type == "%p":
-        open_position_size_val = open_position_size(context)
+    if target_position_type is dsl.QuantityType.POSITION_PERCENT:
+        open_position_size_val = exchange_private_data.open_position_size(context)
         target_size = open_position_size_val * target_position_value / 100
         order_size = target_size - open_position_size_val
 
-    elif target_position_type == "%":
-        total_acc_bal = total_account_balance(context)
+    elif target_position_type is dsl.QuantityType.PERCENT:
+        total_acc_bal = await exchange_private_data.total_account_balance(context)
         target_size = total_acc_bal * target_position_value / 100
-        order_size = target_size - open_position_size(context)
+        order_size = target_size - exchange_private_data.open_position_size(context)
 
-    elif target_position_type == "":
-        order_size = target_position_value - open_position_size(context)
+    # in target position, we always provide the position size we want to end up with
+    elif target_position_type is dsl.QuantityType.DELTA or target_position_type is dsl.QuantityType.FLAT:
+        order_size = target_position_value - exchange_private_data.open_position_size(context)
 
-    elif target_position_type == "%a":
-        available_account_balance_val = await available_account_balance(context)
-        target_size = available_account_balance_val * target_position_value / 100
-        order_size = target_size - available_account_balance_val
+    elif target_position_type is dsl.QuantityType.AVAILABLE_PERCENT:
+        available_account_balance_val = await exchange_private_data.available_account_balance(context)
+        order_size = available_account_balance_val * target_position_value / 100
 
-    elif True:
+    else:
         raise RuntimeError("make sure to use a supported syntax for position")
 
-    side = None
-    if order_size < 0:
-        side = "sell"
+    side = get_target_position_side(order_size)
+    if side == trading_enums.TradeOrderSide.SELL.value:
         order_size = order_size * -1
-    elif order_size > 0:
-        side = "buy"
-    elif order_size == 0:
-        raise RuntimeError("Computed position Size is 0")
 
-    order_size = await cut_position_size(context, order_size, side)
+    order_size = await exchange_private_data.adapt_amount_to_holdings(context, order_size, side)
     return order_size, side
 
 
-def target_position_side(ordersize):
-    if ordersize <= 0:
-        return "sell"
-    if ordersize >= 0:
-        return "buy"
+def get_target_position_side(order_size):
+    if order_size < 0:
+        return trading_enums.TradeOrderSide.SELL.value
+    elif order_size > 0:
+        return trading_enums.TradeOrderSide.BUY.value
+    # order_size == 0
+    raise RuntimeError("Computed position size is 0")

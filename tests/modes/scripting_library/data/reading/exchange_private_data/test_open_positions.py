@@ -50,7 +50,7 @@ async def test_average_open_pos_entry(mock_context):
     mock_context.exchange_manager.is_future = False
     with mock.patch.object(trading_personal_data, "get_up_to_date_price",
                            mock.AsyncMock(return_value=(decimal.Decimal("40000")))) \
-        as get_up_to_date_price_mock:
+         as get_up_to_date_price_mock:
         mock_context.symbol = "ETH/USDT"
         assert await open_positions.average_open_pos_entry(mock_context, trading_enums.TradeOrderSide.BUY.value) == \
                decimal.Decimal("40000")
@@ -64,3 +64,18 @@ async def test_average_open_pos_entry(mock_context):
                                                           timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
 
     # TODO future tests
+
+
+async def test_is_position_open(mock_context):
+    with mock.patch.object(open_positions, "open_position_size",
+                           mock.Mock(return_value=decimal.Decimal("40000"))) as open_position_size_mock:
+        assert open_positions.is_position_open(mock_context, side="side") is True
+        open_position_size_mock.assert_called_once_with(mock_context, side="side")
+    with mock.patch.object(open_positions, "open_position_size",
+                           mock.Mock(return_value=decimal.Decimal("-40000"))) as open_position_size_mock:
+        assert open_positions.is_position_open(mock_context, side="side") is True
+        open_position_size_mock.assert_called_once_with(mock_context, side="side")
+    with mock.patch.object(open_positions, "open_position_size",
+                           mock.Mock(return_value=decimal.Decimal("0"))) as open_position_size_mock:
+        assert open_positions.is_position_open(mock_context, side="side") is False
+        open_position_size_mock.assert_called_once_with(mock_context, side="side")

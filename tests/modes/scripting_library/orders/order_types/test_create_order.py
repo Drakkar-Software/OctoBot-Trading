@@ -72,13 +72,13 @@ async def test_get_order_quantity_and_side(null_context):
                            mock.AsyncMock(return_value=(decimal.Decimal(1)))) as get_amount_mock:
         assert await create_order._get_order_quantity_and_side(null_context, 1, None, None, "sell") \
                == (decimal.Decimal(1), "sell")
-        get_amount_mock.assert_called_once_with(1, null_context, "sell")
+        get_amount_mock.assert_called_once_with(null_context, 1, "sell")
 
     with mock.patch.object(position_size, "get_target_position",
                            mock.AsyncMock(return_value=(decimal.Decimal(10), "buy"))) as get_target_position_mock:
         assert await create_order._get_order_quantity_and_side(null_context, None, 1, None, None) \
                == (decimal.Decimal(10), "buy")
-        get_target_position_mock.assert_called_once_with(1, null_context)
+        get_target_position_mock.assert_called_once_with(null_context, 1)
 
 
 async def test_get_order_details(null_context):

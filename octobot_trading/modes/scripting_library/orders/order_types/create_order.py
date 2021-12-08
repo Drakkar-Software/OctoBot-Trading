@@ -51,8 +51,8 @@ async def create_order_instance(
     min_offset_val, max_offset_val, order_limit_offset, limit_offset_val = \
         await _get_order_details(context, order_type_name, side, order_offset, reduce_only, order_limit_offset)
 
-    await _create_order(context, symbol, order_quantity, order_price,
-                        order_type, side, order_min_offset, max_offset_val)
+    return await _create_order(context, symbol, order_quantity, order_price,
+                               order_type, side, order_min_offset, max_offset_val)
 
 
 async def _get_order_quantity_and_side(context, order_amount, order_target_position, order_type_name, side):
@@ -66,11 +66,11 @@ async def _get_order_quantity_and_side(context, order_amount, order_target_posit
             # we should skip that cause of performance
             raise RuntimeError(f"Side parameter needs to be {trading_enums.TradeOrderSide.BUY.value} "
                                f"or {trading_enums.TradeOrderSide.SELL.value} for your {order_type_name}.")
-        return await position_size.get_amount(order_amount, context, side), side
+        return await position_size.get_amount(context, order_amount, side), side
 
     # size and side based on target position
     if order_target_position is not None:
-        return await position_size.get_target_position(order_target_position, context)
+        return await position_size.get_target_position(context, order_target_position)
 
     raise RuntimeError("Either use side with amount or target_position.")
 

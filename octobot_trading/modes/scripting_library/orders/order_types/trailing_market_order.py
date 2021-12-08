@@ -30,7 +30,7 @@ async def trailing_market(
         reduce_only=False,
         tag=None,
 ):
-    await create_order.create_order_instance(
+    return await create_order.create_order_instance(
         context,
         side=side,
         symbol=symbol or context.symbol,

@@ -13,7 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+import re
+
+import octobot_trading.modes.scripting_library.dsl.values as dsl_values
 
 
-from .amount import *
-from .target_position import *
+QUANTITY_REGEX = r"-?\d|\."
+
+
+def parse_quantity(input_offset) -> (dsl_values.QuantityType, decimal.Decimal):
+    input_offset = input_offset or ""
+    input_offset = str(input_offset)
+    try:
+        quantity_type, value = dsl_values.QuantityType.parse(re.sub(QUANTITY_REGEX, "", input_offset))
+        offset_value = None if input_offset == value else decimal.Decimal(input_offset.replace(value, ""))
+        return quantity_type, offset_value
+    except ValueError:
+        return dsl_values.QuantityType.UNKNOWN, None

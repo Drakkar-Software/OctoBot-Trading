@@ -98,10 +98,11 @@ def check_cost(total_order_price, min_cost):
     return True
 
 
-async def get_up_to_date_price(exchange_manager, symbol: str, timeout: int = None):
+async def get_up_to_date_price(exchange_manager, symbol: str, timeout: int = None, base_error: str = None):
     exchange_time = exchange_manager.exchange.get_exchange_current_time()
-    base_error = f"Can't get the necessary price data to create a new order on the " \
-                 f"{timestamp_util.convert_timestamp_to_datetime(exchange_time)} (timestamp: {exchange_time}):"
+    base_error = base_error or f"Can't get the necessary price data to create a new order on the " \
+                               f"{timestamp_util.convert_timestamp_to_datetime(exchange_time)} " \
+                               f"(timestamp: {exchange_time}):"
     try:
         mark_price = await exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol) \
             .prices_manager.get_mark_price(timeout=timeout)
