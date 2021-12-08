@@ -37,7 +37,7 @@ async def get_amount(input_amount=None,
         return await cut_position_size(context, amount_value, side)
 
     elif amount_type == "%":
-        amount_value = await total_account_balance(context, side) * amount_value / 100
+        amount_value = total_account_balance(context, side) * amount_value / 100
         return await cut_position_size(context, amount_value, side)
 
     elif amount_type == "%a":

@@ -14,26 +14,23 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_commons.constants as commons_constants
 import octobot_trading.constants as trading_constants
+import octobot_trading.enums as trading_enums
 import octobot_trading.personal_data as trading_personal_data
 
 
-async def total_account_balance(context=None):
+def total_account_balance(context):
     return context.exchange_manager.exchange_personal_data.\
         portfolio_manager.portfolio_value_holder.portfolio_current_value
 
 
-async def available_account_balance(context=None, side="buy"):
-    trade_data = await trading_personal_data.get_pre_order_data(context.trader.exchange_manager,
-                                                                symbol=context.symbol,
-                                                                timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
-    current_symbol_holding, current_market_holding, market_quantity, current_price, symbol_market = trade_data
+async def available_account_balance(context, side=trading_enums.TradeOrderSide.BUY.value):
+    current_symbol_holding, current_market_holding, market_quantity, current_price, symbol_market = \
+        await trading_personal_data.get_pre_order_data(context.exchange_manager,
+                                                       symbol=context.symbol,
+                                                       timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
 
-    if side == "buy":
-        return current_market_holding / current_price
-    else:
-        return current_symbol_holding
+    return market_quantity if side == trading_enums.TradeOrderSide.BUY.value else current_symbol_holding
 
     # todo handle reference market change
     # todo handle futures and margin
