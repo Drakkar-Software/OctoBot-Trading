@@ -335,6 +335,9 @@ class Order(util.Initializable):
     def generate_executed_time(self):
         return self.exchange_manager.exchange.get_exchange_current_time()
 
+    def is_counted_in_available_funds(self):
+        return not self.is_self_managed()
+
     def is_self_managed(self):
         return self.allow_self_managed and not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
 

@@ -111,6 +111,7 @@ cdef class Order(util.Initializable):
     cpdef dict get_computed_fee(self, object forced_value=*)
     cpdef object get_profitability(self)
     cpdef double generate_executed_time(self)
+    cpdef bint is_counted_in_available_funds(self)
     cpdef bint is_self_managed(self)
     cpdef object update_from_raw(self, dict raw_order)
     cpdef void consider_as_filled(self)

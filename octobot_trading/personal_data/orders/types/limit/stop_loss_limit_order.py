@@ -28,6 +28,9 @@ class StopLossLimitOrder(limit_order.LimitOrder):
         self.trigger_above = False
         self.limit_price = limit_price
 
+    def is_counted_in_available_funds(self):
+        return False
+
     async def on_filled(self):
         await limit_order.LimitOrder.on_filled(self)
         await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
