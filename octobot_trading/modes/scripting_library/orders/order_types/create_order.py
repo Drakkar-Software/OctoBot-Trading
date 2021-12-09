@@ -13,10 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 
 import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
+import octobot_trading.errors as trading_errors
 import octobot_trading.modes.scripting_library.data as library_data
 import octobot_trading.modes.scripting_library.orders.position_size as position_size
 import octobot_trading.modes.scripting_library.orders.offsets as offsets
@@ -157,31 +159,46 @@ async def _get_order_details(context, order_type_name, side, order_offset, reduc
 async def _create_order(context, symbol, order_quantity, order_price,
                         order_type, side, order_min_offset, max_offset_val):
     # todo handle offsets, reduce_only, post_only,
-    _, _, _, current_price, symbol_market = \
-        await trading_personal_data.get_pre_order_data(context.exchange_manager,
-                                                       symbol=symbol,
-                                                       timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
     orders = []
-    for final_order_quantity, final_order_price in \
-            trading_personal_data.decimal_check_and_adapt_order_details_if_necessary(
-                order_quantity,
-                order_price,
-                symbol_market
-            ):
-        created_order = trading_personal_data.create_order_instance(
-            trader=context.trader,
-            order_type=order_type,
-            symbol=symbol,
-            current_price=current_price,
-            quantity=final_order_quantity,
-            price=final_order_price,
-            side=side
-        )
-        if order_min_offset is not None:
-            await created_order.set_trailing_percent(order_min_offset)
-        # 2. submit it to trader
-        created_order = await context.trader.create_order(created_order)
-        orders.append(created_order)
-    if context is not None:
-        await library_data.store_orders(context, orders)
+    error_message = ""
+    try:
+        _, _, _, current_price, symbol_market = \
+            await trading_personal_data.get_pre_order_data(context.exchange_manager,
+                                                           symbol=symbol,
+                                                           timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
+        for final_order_quantity, final_order_price in \
+                trading_personal_data.decimal_check_and_adapt_order_details_if_necessary(
+                    order_quantity,
+                    order_price,
+                    symbol_market
+                ):
+            created_order = trading_personal_data.create_order_instance(
+                trader=context.trader,
+                order_type=order_type,
+                symbol=symbol,
+                current_price=current_price,
+                quantity=final_order_quantity,
+                price=final_order_price,
+                side=side
+            )
+            if order_min_offset is not None:
+                await created_order.set_trailing_percent(order_min_offset)
+            created_order = await context.trader.create_order(created_order)
+            orders.append(created_order)
+    except (trading_errors.MissingFunds, trading_errors.MissingMinimalExchangeTradeVolume):
+        error_message = "missing minimal funds"
+    except asyncio.TimeoutError as e:
+        error_message = f"{e} and is necessary to compute the order details"
+    except Exception as e:
+        error_message = f"failed to create order : {e}."
+        context.logger.exception(e, True, f"Failed to create order : {e}.")
+    if orders:
+        if context is not None:
+            await library_data.store_orders(context, orders)
+    else:
+        error_message = f"not enough funds"
+    if error_message:
+        context.logger.warning(f"No order created when asking for {symbol} {order_type} "
+                               f"with a volume of {order_quantity} on {context.exchange_manager.exchange_name}: "
+                               f"{error_message}.")
     return orders

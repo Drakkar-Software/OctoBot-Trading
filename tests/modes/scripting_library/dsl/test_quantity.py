@@ -14,11 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import mock
+
+import pytest
 
 import octobot_trading.modes.scripting_library.dsl as dsl
 
 
-def test_parse_quantity():
+def test_parse_quantity_types():
     assert dsl.parse_quantity(None) == (dsl.QuantityType.DELTA, None)
     assert dsl.parse_quantity(10) == (dsl.QuantityType.DELTA, decimal.Decimal(10))
     assert dsl.parse_quantity(-10) == (dsl.QuantityType.DELTA, decimal.Decimal(-10))
@@ -60,3 +63,15 @@ def test_parse_quantity():
     assert dsl.parse_quantity("wyz-0.11") == (dsl.QuantityType.UNKNOWN, None)
     assert dsl.parse_quantity("wyz12") == (dsl.QuantityType.UNKNOWN, None)
     assert dsl.parse_quantity("wyz") == (dsl.QuantityType.UNKNOWN, None)
+
+
+def test_parse_quantity_edge_numbers():
+    assert dsl.parse_quantity(0.000000001) == (dsl.QuantityType.DELTA, decimal.Decimal("0.000000001"))
+    assert dsl.parse_quantity(100000000000000000000) \
+           == (dsl.QuantityType.DELTA, decimal.Decimal("100000000000000000000"))
+    assert dsl.parse_quantity("-1e-09e%") == (dsl.QuantityType.ENTRY_PERCENT, decimal.Decimal("-1e-09"))
+    assert dsl.parse_quantity("1e09%e") == (dsl.QuantityType.ENTRY_PERCENT, decimal.Decimal("1e09"))
+    assert dsl.parse_quantity("1e9e") == (dsl.QuantityType.ENTRY, decimal.Decimal("1e9"))
+    with mock.patch.object(dsl.QuantityType, "parse", mock.Mock(return_value=(dsl.QuantityType.ENTRY, "e"))):
+        with pytest.raises(RuntimeError):
+            dsl.parse_quantity("0.000000001aa")
