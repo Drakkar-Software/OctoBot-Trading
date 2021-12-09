@@ -353,7 +353,7 @@ class DisplayedElements:
         if candles_metadata[trading_enums.DBRows.VALUE.value] == commons_constants.LOCAL_BOT_DATA:
             exchange_manager = trading_api.get_exchange_manager_from_exchange_id(exchange_id)
             array_candles = trading_api.get_symbol_historical_candles(
-                trading_api.get_symbol_data(exchange_manager, symbol), time_frame
+                trading_api.get_symbol_data(exchange_manager, symbol, allow_creation=False), time_frame
             )
             return [
                 {

@@ -115,4 +115,5 @@ def Volume(context, symbol=None, time_frame=None):
 #     var = 0 # todo
 
 def _get_candle_manager(exchange_manager, symbol, time_frame):
-    return api.get_symbol_candles_manager(api.get_symbol_data(exchange_manager, symbol), time_frame)
+    return api.get_symbol_candles_manager(api.get_symbol_data(exchange_manager, symbol, allow_creation=False),
+                                          time_frame)
