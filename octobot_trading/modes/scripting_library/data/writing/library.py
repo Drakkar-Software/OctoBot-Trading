@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
-import os
 
 import numpy
 
@@ -24,6 +23,7 @@ import octobot_trading.api as trading_api
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.enums as commons_enums
 import octobot_commons.constants as commons_constants
+import octobot_commons.databases as databases
 
 
 async def store_orders(ctx, orders,
@@ -242,14 +242,35 @@ async def plot_shape(ctx, title, value, y_value,
 
 
 async def clear_run_data(writer):
-    await writer.delete(
-        trading_enums.DBTables.METADATA.value,
-        None,
-    )
-    await writer.delete(
-        trading_enums.DBTables.PORTFOLIO.value,
-        None,
-    )
+    await _clear_table(writer, trading_enums.DBTables.METADATA.value, flush=False)
+    await _clear_table(writer, trading_enums.DBTables.PORTFOLIO.value, flush=False)
+
+
+async def clear_orders_cache(writer):
+    await _clear_table(writer, trading_enums.DBTables.ORDERS.value)
+
+
+async def clear_trades_cache(writer):
+    await _clear_table(writer, trading_enums.DBTables.TRADES.value)
+
+
+async def clear_plotting_cache(writer):
+    await _clear_table(writer, trading_enums.DBTables.CACHE_SOURCE.value)
+
+
+async def _clear_table(writer, table, flush=True):
+    await writer.delete(table, None)
+    if flush:
+        await writer.flush()
+
+
+async def clear_tentacle_cache(tentacle):
+    for val in tentacle.caches.values():
+        if isinstance(val, dict):
+            for cache in val.values():
+                await cache.clear()
+        elif isinstance(val, databases.CacheDatabase):
+            await val.clear()
 
 
 async def save_metadata(writer, metadata):

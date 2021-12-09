@@ -86,6 +86,29 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         if action == commons_enums.UserCommands.RELOAD_SCRIPT.value:
             await self.reload_script(live=True)
             await self.reload_script(live=False)
+        if action == commons_enums.UserCommands.CLEAR_PLOTTING_CACHE.value:
+            await self.clear_plotting_cache()
+        if action == commons_enums.UserCommands.CLEAR_ALL_CACHE.value:
+            await self.clear_all_cache()
+        if action == commons_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
+            await self.clear_simulated_orders_cache()
+        if action == commons_enums.UserCommands.CLEAR_SIMULATED_TRADES_CACHE.value:
+            await self.clear_simulated_trades_cache()
+
+    async def clear_simulated_orders_cache(self):
+        for producer in self.producers:
+            await scripting_library.clear_orders_cache(producer.orders_writer)
+
+    async def clear_simulated_trades_cache(self):
+        for producer in self.producers:
+            await scripting_library.clear_trades_cache(producer.trades_writer)
+
+    async def clear_all_cache(self):
+        await scripting_library.clear_tentacle_cache(self)
+
+    async def clear_plotting_cache(self):
+        for producer in self.producers:
+            await scripting_library.clear_plotting_cache(producer.symbol_writer)
 
     @classmethod
     async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id):
