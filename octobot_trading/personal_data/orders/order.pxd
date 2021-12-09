@@ -39,6 +39,7 @@ cdef class Order(util.Initializable):
     cdef public bint is_synchronized_with_exchange
     cdef public bint is_from_this_octobot
     cdef public bint simulated
+    cdef public bint allow_self_managed
     cdef public bint reduce_only
     cdef public bint close_position
 

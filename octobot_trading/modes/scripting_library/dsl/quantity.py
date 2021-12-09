@@ -19,11 +19,13 @@ import re
 import octobot_trading.modes.scripting_library.dsl.values as dsl_values
 
 
-QUANTITY_REGEX = re.compile(r"([+-]?(?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)?)")
+# Do not compile regex to use builtin regex cache
+# (re always looks into cache 1st and compile regex are not cached)
+QUANTITY_REGEX = r"([+-]?(?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)?)"
 
 
 def parse_quantity(input_offset) -> (dsl_values.QuantityType, decimal.Decimal):
-    input_offset = input_offset or ""
+    input_offset = "" if input_offset is None else input_offset
     input_offset = str(input_offset)
     value = None
     try:

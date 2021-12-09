@@ -18,12 +18,14 @@ import mock
 import decimal
 
 import octobot_trading.enums as trading_enums
+import octobot_trading.errors as errors
 import octobot_trading.modes.scripting_library.dsl as dsl
 import octobot_trading.modes.scripting_library.orders.position_size.target_position as target_position
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data as exchange_private_data
 
 from tests import event_loop
-from tests.modes.scripting_library import null_context
+from tests.modes.scripting_library import mock_context
+from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -36,9 +38,9 @@ def test_get_target_position_side():
         target_position.get_target_position_side(0)
 
 
-async def test_get_target_position(null_context):
-    with pytest.raises(RuntimeError):
-        await target_position.get_target_position(null_context, "1sdsqdq")
+async def test_get_target_position(mock_context):
+    with pytest.raises(errors.InvalidArgumentError):
+        await target_position.get_target_position(mock_context, "1sdsqdq")
 
     # with positive (long) position
     with mock.patch.object(exchange_private_data, "adapt_amount_to_holdings",
@@ -52,12 +54,12 @@ async def test_get_target_position(null_context):
              mock.patch.object(target_position, "get_target_position_side",
                                mock.Mock(return_value=trading_enums.TradeOrderSide.SELL.value)) \
                 as get_target_position_side_mock:
-            assert await target_position.get_target_position(null_context, "1") == \
+            assert await target_position.get_target_position(mock_context, "1") == \
                    (decimal.Decimal(1), trading_enums.TradeOrderSide.SELL.value)
             parse_quantity_mock.assert_called_once_with("1")
-            open_position_size_mock.assert_called_once_with(null_context)
+            open_position_size_mock.assert_called_once_with(mock_context)
             get_target_position_side_mock.assert_called_once_with(decimal.Decimal(-9))
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(9),
+            adapt_amount_to_holdings_mock.assert_called_once_with(mock_context, decimal.Decimal(9),
                                                                   trading_enums.TradeOrderSide.SELL.value)
             adapt_amount_to_holdings_mock.reset_mock()
             get_target_position_side_mock.reset_mock()
@@ -72,13 +74,13 @@ async def test_get_target_position(null_context):
              mock.patch.object(target_position, "get_target_position_side",
                                mock.Mock(return_value=trading_enums.TradeOrderSide.BUY.value)) \
                 as get_target_position_side_mock:
-            assert await target_position.get_target_position(null_context, "1") == \
+            assert await target_position.get_target_position(mock_context, "1") == \
                    (decimal.Decimal(1), trading_enums.TradeOrderSide.BUY.value)
             parse_quantity_mock.assert_called_once_with("1")
-            total_account_balance_mock.assert_called_once_with(null_context)
-            open_position_size_mock.assert_called_once_with(null_context)
+            total_account_balance_mock.assert_called_once_with(mock_context)
+            open_position_size_mock.assert_called_once_with(mock_context)
             get_target_position_side_mock.assert_called_once_with(decimal.Decimal(1))
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(1),
+            adapt_amount_to_holdings_mock.assert_called_once_with(mock_context, decimal.Decimal(1),
                                                                   trading_enums.TradeOrderSide.BUY.value)
             adapt_amount_to_holdings_mock.reset_mock()
             get_target_position_side_mock.reset_mock()
@@ -90,12 +92,12 @@ async def test_get_target_position(null_context):
              mock.patch.object(target_position, "get_target_position_side",
                                mock.Mock(return_value=trading_enums.TradeOrderSide.SELL.value)) \
                 as get_target_position_side_mock:
-            assert await target_position.get_target_position(null_context, "1") == \
+            assert await target_position.get_target_position(mock_context, "1") == \
                    (decimal.Decimal(1), trading_enums.TradeOrderSide.SELL.value)
             parse_quantity_mock.assert_called_once_with("1")
-            open_position_size_mock.assert_called_once_with(null_context)
+            open_position_size_mock.assert_called_once_with(mock_context)
             get_target_position_side_mock.assert_called_once_with(decimal.Decimal(-13))
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(13),
+            adapt_amount_to_holdings_mock.assert_called_once_with(mock_context, decimal.Decimal(13),
                                                                   trading_enums.TradeOrderSide.SELL.value)
             adapt_amount_to_holdings_mock.reset_mock()
             get_target_position_side_mock.reset_mock()
@@ -110,13 +112,13 @@ async def test_get_target_position(null_context):
              mock.patch.object(target_position, "get_target_position_side",
                                mock.Mock(return_value=trading_enums.TradeOrderSide.BUY.value)) \
                 as get_target_position_side_mock:
-            assert await target_position.get_target_position(null_context, "1") == \
+            assert await target_position.get_target_position(mock_context, "1") == \
                    (decimal.Decimal(1), trading_enums.TradeOrderSide.BUY.value)
             parse_quantity_mock.assert_called_once_with("1")
-            available_account_balance_mock.assert_called_once_with(null_context)
+            available_account_balance_mock.assert_called_once_with(mock_context)
             # we are at initially at 10, we want add 20% of 5 => need to buy 1.25
             get_target_position_side_mock.assert_called_once_with(decimal.Decimal("1.25"))
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(1.25),
+            adapt_amount_to_holdings_mock.assert_called_once_with(mock_context, decimal.Decimal(1.25),
                                                                   trading_enums.TradeOrderSide.BUY.value)
             adapt_amount_to_holdings_mock.reset_mock()
             get_target_position_side_mock.reset_mock()
@@ -133,12 +135,12 @@ async def test_get_target_position(null_context):
              mock.patch.object(target_position, "get_target_position_side",
                                mock.Mock(return_value=trading_enums.TradeOrderSide.BUY.value)) \
                 as get_target_position_side_mock:
-            assert await target_position.get_target_position(null_context, "1") == \
+            assert await target_position.get_target_position(mock_context, "1") == \
                    (decimal.Decimal(2), trading_enums.TradeOrderSide.BUY.value)
             parse_quantity_mock.assert_called_once_with("1")
-            open_position_size_mock.assert_called_once_with(null_context)
+            open_position_size_mock.assert_called_once_with(mock_context)
             get_target_position_side_mock.assert_called_once_with(decimal.Decimal(7))
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(7),
+            adapt_amount_to_holdings_mock.assert_called_once_with(mock_context, decimal.Decimal(7),
                                                                   trading_enums.TradeOrderSide.BUY.value)
             adapt_amount_to_holdings_mock.reset_mock()
             get_target_position_side_mock.reset_mock()
@@ -150,12 +152,12 @@ async def test_get_target_position(null_context):
              mock.patch.object(target_position, "get_target_position_side",
                                mock.Mock(return_value=trading_enums.TradeOrderSide.BUY.value)) \
                 as get_target_position_side_mock:
-            assert await target_position.get_target_position(null_context, "1") == \
+            assert await target_position.get_target_position(mock_context, "1") == \
                    (decimal.Decimal(2), trading_enums.TradeOrderSide.BUY.value)
             parse_quantity_mock.assert_called_once_with("1")
-            open_position_size_mock.assert_called_once_with(null_context)
+            open_position_size_mock.assert_called_once_with(mock_context)
             get_target_position_side_mock.assert_called_once_with(decimal.Decimal("10.3"))
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("10.3"),
+            adapt_amount_to_holdings_mock.assert_called_once_with(mock_context, decimal.Decimal("10.3"),
                                                                   trading_enums.TradeOrderSide.BUY.value)
             adapt_amount_to_holdings_mock.reset_mock()
             get_target_position_side_mock.reset_mock()

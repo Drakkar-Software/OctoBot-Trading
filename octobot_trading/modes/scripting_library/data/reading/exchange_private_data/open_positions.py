@@ -22,14 +22,15 @@ import octobot_trading.constants as trading_constants
 
 def open_position_size(
         context=None,
-        side=None
+        side=None,
+        amount_type=commons_constants.PORTFOLIO_TOTAL
 ):
     if context.exchange_manager.is_future:
         raise NotImplementedError("future is not implemented")
     currency = symbol_util.split_symbol(context.symbol)[0]
     return context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
         currency,
-        portfolio_type=commons_constants.PORTFOLIO_TOTAL
+        portfolio_type=amount_type
     )
     # todo handle reference market change
     # todo handle futures: its account balance from exchange

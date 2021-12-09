@@ -13,20 +13,25 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 import pytest
 import mock
 import decimal
+import contextlib
 
 import octobot_commons.constants as commons_constants
 import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.modes.scripting_library as scripting_library
 import octobot_trading.api as api
+import octobot_trading.errors as errors
 
 from tests import event_loop
 from tests.modes.scripting_library import mock_context
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 import tests.personal_data.portfolios as portfolios
+import tests.test_utils.order_util as test_order_util
+
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -40,7 +45,7 @@ async def test_orders_with_invalid_values(mock_context):
          mock.patch.object(order_util, "get_up_to_date_price", mock.AsyncMock(return_value=btc_price)), \
          mock.patch.object(mock_context.trader, "create_order", mock.AsyncMock()) as create_order_mock:
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(errors.InvalidArgumentError):
             # no amount
             await scripting_library.market(
                 mock_context,
@@ -49,7 +54,7 @@ async def test_orders_with_invalid_values(mock_context):
             create_order_mock.assert_not_called()
             create_order_mock.reset_mock()
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(errors.InvalidArgumentError):
             # negative amount
             await scripting_library.market(
                 mock_context,
@@ -58,6 +63,21 @@ async def test_orders_with_invalid_values(mock_context):
             )
             create_order_mock.assert_not_called()
             create_order_mock.reset_mock()
+
+        with pytest.raises(errors.InvalidArgumentError):
+            # missing offset parameter
+            await scripting_library.limit(
+                mock_context,
+                target_position="20%",
+                side="buy"
+            )
+
+        with pytest.raises(errors.InvalidArgumentError):
+            # missing side parameter
+            await scripting_library.market(
+                mock_context,
+                amount="1"
+            )
 
         # orders without having enough funds
         for amount, side in ((1, "sell"), (0.000000001, "buy")):
@@ -75,7 +95,7 @@ async def test_orders_with_invalid_values(mock_context):
 
 
 @pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
-async def test_market_orders_amount_then_position_sequence(mock_context):
+async def test_orders_amount_then_position_sequence(mock_context):
     initial_usdt_holdings, btc_price = await _usdt_trading_context(mock_context)
 
     with mock.patch.object(trading_personal_data, "get_up_to_date_price", mock.AsyncMock(return_value=btc_price)), \
@@ -89,17 +109,18 @@ async def test_market_orders_amount_then_position_sequence(mock_context):
         )
         btc_val = decimal.Decimal(10)   # 10.00
         usdt_val = decimal.Decimal(45000)   # 45000.00
-        _ensure_orders_validity(mock_context, btc_val, usdt_val, orders)
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders)
 
         # buy for 10% of the portfolio available value
-        orders = await scripting_library.market(
+        orders = await scripting_library.limit(
             mock_context,
             amount="10%a",
+            offset="0",
             side="buy"
         )
         btc_val = btc_val + decimal.Decimal(str((45000 * decimal.Decimal("0.1")) / 500))    # 19.0
         usdt_val = usdt_val * decimal.Decimal(str(0.9))     # 40500.00
-        _ensure_orders_validity(mock_context, btc_val, usdt_val, orders)
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders)
 
         # buy for for 10% of the current position value
         orders = await scripting_library.market(
@@ -109,7 +130,7 @@ async def test_market_orders_amount_then_position_sequence(mock_context):
         )
         usdt_val = usdt_val - (btc_val * decimal.Decimal("0.1") * btc_price)   # 39550.00
         btc_val = btc_val * decimal.Decimal("1.1")   # 20.90
-        _ensure_orders_validity(mock_context, btc_val, usdt_val, orders)
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders)
 
     # price changes to 1000
     btc_price = 1000
@@ -125,17 +146,18 @@ async def test_market_orders_amount_then_position_sequence(mock_context):
         )
         usdt_val = usdt_val - ((25 - btc_val) * btc_price)   # 35450.00
         btc_val = decimal.Decimal(25)   # 25
-        _ensure_orders_validity(mock_context, btc_val, usdt_val, orders)
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders)
 
         # buy to reach a target position of 60% of the total portfolio (in BTC)
-        orders = await scripting_library.market(
+        orders = await scripting_library.limit(
             mock_context,
-            target_position="60%"
+            target_position="60%",
+            offset=0
         )
         previous_btc_val = btc_val
         btc_val = (btc_val + (usdt_val / btc_price)) * decimal.Decimal("0.6")   # 36.27
         usdt_val = usdt_val - (btc_val - previous_btc_val) * btc_price   # 24180.00
-        _ensure_orders_validity(mock_context, btc_val, usdt_val, orders)
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders)
 
         # buy to reach a target position including an additional 50% of the available USDT in BTC
         orders = await scripting_library.market(
@@ -144,21 +166,144 @@ async def test_market_orders_amount_then_position_sequence(mock_context):
         )
         btc_val = btc_val + usdt_val / 2 / btc_price   # 48.36
         usdt_val = usdt_val / 2   # 12090.00
-        _ensure_orders_validity(mock_context, btc_val, usdt_val, orders)
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders)
 
-        # sell to keep only 10% of the position
-        orders = await scripting_library.market(
+        # sell to keep only 10% of the position, sell at 2000 (1000 + 100%)
+        orders = await scripting_library.limit(
             mock_context,
-            target_position="10%p"
+            target_position="10%p",
+            offset="100%"
         )
-        usdt_val = usdt_val + btc_val * decimal.Decimal("0.9") * btc_price  # 55614.00
+        usdt_val = usdt_val + btc_val * decimal.Decimal("0.9") * (btc_price * 2)  # 99138.00
         btc_val = btc_val / 10   # 4.836
-        _ensure_orders_validity(mock_context, btc_val, usdt_val, orders)
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders)
 
 
 @pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
 async def test_concurrent_orders(mock_context):
-    pass
+    async with _20_percent_position_trading_context(mock_context) as context_data:
+        btc_val, usdt_val, btc_price = context_data
+
+        # create 3 sell orders (at price = 500 + 10 = 510)
+        # that would end up selling more than what we have if not executed sequentially
+        # 1st order is 80% of position, second is 80% of the remaining 20% and so on
+
+        orders = []
+        async def create_order(amount):
+            orders.append(
+                (await scripting_library.limit(
+                    mock_context,
+                    amount=amount,
+                    offset=10,
+                    side="sell"
+                ))[0]
+            )
+        await asyncio.gather(
+            *(
+                create_order("80%p")
+                for _ in range(3)
+            )
+        )
+
+        initial_btc_holdings = btc_val
+        btc_val = initial_btc_holdings * decimal.Decimal("0.2") ** 3  # 0.16
+        usdt_val = usdt_val + (initial_btc_holdings - btc_val) * (btc_price + 10)   # 50118.40
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders, orders_count=3)
+
+        # create 3 buy orders (at price = 500 + 10 = 510) all of them for a target position of 10%
+        # first order gets created to have this 10% position, others are not created at all
+        # (ConflictingOrdersError is raised)
+
+        # update portfolio current value
+        await mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_balance_updated()
+
+        orders = []
+        conflicting_orders = []
+
+        async def create_order(target_position):
+            try:
+                orders.append(
+                    (await scripting_library.limit(
+                        mock_context,
+                        target_position=target_position,
+                        offset=10
+                    ))[0]
+                )
+            except errors.ConflictingOrdersError:
+                conflicting_orders.append(True)
+        await asyncio.gather(
+            *(
+                create_order("10%")
+                for _ in range(3)
+            )
+        )
+
+        assert len(conflicting_orders) == 2
+        initial_btc_holdings = btc_val
+        btc_val = (initial_btc_holdings * btc_price + usdt_val) * decimal.Decimal("0.1") / btc_price    # 10.03968
+        usdt_val = usdt_val - (btc_val - initial_btc_holdings) * (btc_price + 10)   # 45079.7632
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders, orders_count=1)
+
+
+# @pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
+# async def test_sell_limit_with_stop_loss_orders_single_sell_and_stop(mock_context):
+#     async with _20_percent_position_trading_context(mock_context) as context_data:
+#         btc_val, usdt_val, btc_price = context_data
+#
+#         sell_limit_orders = await scripting_library.limit(
+#             mock_context,
+#             target_position="0%",
+#             offset=50,
+#         )
+#         stop_loss_orders = await scripting_library.stop_loss(
+#             mock_context,
+#             target_position="0%",
+#             offset=-75,
+#             side="sell",
+#             linked_to=sell_limit_orders
+#         )
+#         assert len(sell_limit_orders) == len(stop_loss_orders) == 1
+#         btc_val = (usdt_val * decimal.Decimal("0.2")) / btc_price  # 20.00
+#         usdt_val = usdt_val * decimal.Decimal("0.8")   # 40000.00
+#         await _fill_and_check(mock_context, btc_val, usdt_val, buy_limit_orders)
+#
+#
+# @pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
+# async def test_sell_limit_with_stop_loss_orders_two_sells_and_stop(mock_context):
+#     initial_usdt_holdings, btc_price = await _usdt_trading_context(mock_context)
+#     usdt_val = decimal.Decimal(str(initial_usdt_holdings))
+#     with mock.patch.object(trading_personal_data, "get_up_to_date_price",
+#                            mock.AsyncMock(return_value=btc_price)), \
+#             mock.patch.object(order_util, "get_up_to_date_price", mock.AsyncMock(return_value=btc_price)):
+#         buy_limit_orders = await scripting_library.limit(
+#             mock_context,
+#             target_position="20%",
+#             offset=0,
+#             side="buy"
+#         )
+#         btc_val = (usdt_val * decimal.Decimal("0.2")) / btc_price  # 20.00
+#         usdt_val = usdt_val * decimal.Decimal("0.8")   # 40000.00
+#         await _fill_and_check(mock_context, btc_val, usdt_val, buy_limit_orders)
+#
+#         take_profit_limit_orders_1 = await scripting_library.limit(
+#             mock_context,
+#             target_position="50%",
+#             offset=50
+#         )
+#         take_profit_limit_orders_2 = await scripting_library.limit(
+#             mock_context,
+#             target_position="0%",
+#             offset=100
+#         )
+#         stop_loss_orders = await scripting_library.stop_loss(
+#             mock_context,
+#             target_position="0%",
+#             offset=-50,
+#             side="sell"
+#         )
+#         btc_val = (usdt_val * decimal.Decimal("0.2")) / btc_price  # 20.00
+#         usdt_val = usdt_val * decimal.Decimal("0.8")   # 40000.00
+#         await _fill_and_check(mock_context, btc_val, usdt_val, buy_limit_orders)
 
 
 async def _usdt_trading_context(mock_context):
@@ -176,13 +321,45 @@ async def _usdt_trading_context(mock_context):
     return initial_usdt_holdings, btc_price
 
 
-def _ensure_orders_validity(mock_context, btc_available, usdt_available, orders, btc_total=None, usdt_total=None):
+@contextlib.asynccontextmanager
+async def _20_percent_position_trading_context(mock_context):
+    initial_usdt_holdings, btc_price = await _usdt_trading_context(mock_context)
+    usdt_val = decimal.Decimal(str(initial_usdt_holdings))
+    with mock.patch.object(trading_personal_data, "get_up_to_date_price", mock.AsyncMock(return_value=btc_price)), \
+            mock.patch.object(order_util, "get_up_to_date_price", mock.AsyncMock(return_value=btc_price)):
+        # initial limit buy order: buy with 20% of portfolio
+        buy_limit_orders = await scripting_library.limit(
+            mock_context,
+            target_position="20%",
+            offset=0,
+            side="buy"
+        )
+        btc_val = (usdt_val * decimal.Decimal("0.2")) / btc_price  # 20.00
+        usdt_val = usdt_val * decimal.Decimal("0.8")  # 40000.00
+        await _fill_and_check(mock_context, btc_val, usdt_val, buy_limit_orders)
+        yield btc_val, usdt_val, btc_price
+
+
+async def _fill_and_check(mock_context, btc_available, usdt_available, orders,
+                          btc_total=None, usdt_total=None, orders_count=1):
+    for order in orders:
+        if isinstance(order, trading_personal_data.LimitOrder):
+            await test_order_util.fill_limit_or_stop_order(order)
+        elif isinstance(order, trading_personal_data.MarketOrder):
+            await test_order_util.fill_market_order(order)
+
+    _ensure_orders_validity(mock_context, btc_available, usdt_available, orders,
+                            btc_total=btc_total, usdt_total=usdt_total, orders_count=orders_count)
+
+
+def _ensure_orders_validity(mock_context, btc_available, usdt_available, orders,
+                            btc_total=None, usdt_total=None, orders_count=1):
     exchange_manager = mock_context.exchange_manager
     btc_total = btc_total or btc_available
     usdt_total = usdt_total or usdt_available
-    assert len(orders) == 1
-    assert isinstance(orders[0], trading_personal_data.Order)
-    mock_context.orders_writer.log_many.assert_called_once()
+    assert len(orders) == orders_count
+    assert all(isinstance(order, trading_personal_data.Order) for order in orders)
+    assert mock_context.orders_writer.log_many.call_count == orders_count
     mock_context.orders_writer.log_many.reset_mock()
     mock_context.logger.warning.assert_not_called()
     mock_context.logger.warning.reset_mock()

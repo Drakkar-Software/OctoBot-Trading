@@ -24,7 +24,7 @@ class StopLossOrder(limit_order.LimitOrder):
 
     async def on_filled(self):
         await limit_order.LimitOrder.on_filled(self)
-        if not self.trader.simulate:
+        if not self.trader.simulate and self.is_self_managed():
             await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
                                                       if self.side is enums.TradeOrderSide.SELL
                                                       else enums.TraderOrderType.BUY_MARKET,

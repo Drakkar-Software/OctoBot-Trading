@@ -108,3 +108,15 @@ class MissingCandlesError(Exception):
     """
     Raised when there is not enough available candles
     """
+
+
+class InvalidArgumentError(Exception):
+    """
+    Raised when a keyword is called with invalid arguments
+    """
+
+
+class ConflictingOrdersError(Exception):
+    """
+    Raised when an order is that would create an order conflict is created
+    """

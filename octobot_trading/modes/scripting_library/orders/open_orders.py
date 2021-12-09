@@ -14,36 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_trading.modes.scripting_library.orders.order_types.create_order as create_order
 
-
-async def stop_loss(
-        context,
-        side=None,
-        symbol=None,
-
-        offset=None,
-
-        amount=None,
-        target_position=None,
-
-        tag=None,
-
-        linked_to=None
-
-):
-    return await create_order.create_order_instance(
-        context,
-        side=side,
-        symbol=symbol or context.symbol,
-
-        order_amount=amount,
-        order_target_position=target_position,
-
-        order_type_name="stop_loss",
-        order_offset=offset,
-
-        tag=tag,
-
-        linked_to=linked_to
-    )
+def get_open_orders(context):
+    return [
+        order
+        for order in context.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
+            symbol=context.symbol
+        )
+    ]

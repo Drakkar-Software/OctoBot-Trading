@@ -18,9 +18,12 @@ import decimal
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data.open_positions as open_positions
 import octobot_trading.modes.scripting_library.dsl as dsl
+import octobot_trading.errors as errors
 
 
 async def get_offset(context, offset_in, side=None):
+    if offset_in is None:
+        raise errors.InvalidArgumentError("offset is required")
     offset_type, offset_value = dsl.parse_quantity(offset_in)
 
     if offset_type is dsl.QuantityType.DELTA:
@@ -41,8 +44,9 @@ async def get_offset(context, offset_in, side=None):
 
     elif offset_type is dsl.QuantityType.FLAT:
         if offset_value < 0:
-            raise RuntimeError("Flat offsets should be a positive price. Ex: @10")
+            raise errors.InvalidArgumentError("Flat offsets should be a positive price. Ex: @10")
         return offset_value
 
-    raise RuntimeError("make sure to use a supported syntax for offset, supported parameters are: @65100 5% e5% e500")
+    raise errors.InvalidArgumentError("make sure to use a supported syntax for offset, "
+                                      "supported parameters are: @65100 5% e5% e500")
 

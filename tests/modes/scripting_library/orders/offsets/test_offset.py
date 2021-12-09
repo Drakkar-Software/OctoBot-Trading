@@ -21,6 +21,8 @@ import octobot_trading.modes.scripting_library.dsl as dsl
 import octobot_trading.modes.scripting_library.orders.offsets.offset as offset
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data.open_positions as open_positions
+import octobot_trading.errors as errors
+
 
 from tests import event_loop
 from tests.modes.scripting_library import null_context
@@ -30,7 +32,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_get_offset(null_context):
-    with pytest.raises(RuntimeError):
+    with pytest.raises(errors.InvalidArgumentError):
         await offset.get_offset(null_context, "1sdsqdq")
 
     with mock.patch.object(exchange_public_data, "current_price", mock.AsyncMock(return_value=200)) \
@@ -71,11 +73,11 @@ async def test_get_offset(null_context):
 
     with mock.patch.object(dsl, "parse_quantity",
                            mock.Mock(return_value=(dsl.QuantityType.FLAT, decimal.Decimal(-50)))):
-        with pytest.raises(RuntimeError):
+        with pytest.raises(errors.InvalidArgumentError):
             await offset.get_offset(null_context, 10)
 
     with mock.patch.object(dsl, "parse_quantity",
                            mock.Mock(return_value=(dsl.QuantityType.UNKNOWN, decimal.Decimal(-50)))):
-        with pytest.raises(RuntimeError):
+        with pytest.raises(errors.InvalidArgumentError):
             await offset.get_offset(null_context, 10)
 

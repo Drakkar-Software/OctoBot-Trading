@@ -45,36 +45,42 @@ async def create_order_instance(
         reduce_only=False,  # Todo
         post_only=False,  # Todo
         tag=None,  # Todo
+
+        linked_to=None
 ):
-    order_quantity, side = await _get_order_quantity_and_side(context, order_amount, order_target_position,
-                                                              order_type_name, side)
+    async with context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+        order_quantity, side = await _get_order_quantity_and_side(context, order_amount, order_target_position,
+                                                                  order_type_name, side)
 
-    order_type, order_price, side, reduce_only, trailing_method, \
-    min_offset_val, max_offset_val, order_limit_offset, limit_offset_val = \
-        await _get_order_details(context, order_type_name, side, order_offset, reduce_only, order_limit_offset)
+        order_type, order_price, side, reduce_only, trailing_method, \
+        min_offset_val, max_offset_val, order_limit_offset, limit_offset_val = \
+            await _get_order_details(context, order_type_name, side, order_offset, reduce_only, order_limit_offset)
 
-    return await _create_order(context, symbol, order_quantity, order_price,
-                               order_type, side, order_min_offset, max_offset_val)
+        return await _create_order(context, symbol, order_quantity, order_price, tag,
+                                   order_type, side, order_min_offset, max_offset_val,
+                                   linked_to)
 
 
 async def _get_order_quantity_and_side(context, order_amount, order_target_position, order_type_name, side):
     if order_amount is not None and order_target_position is not None:
-        raise RuntimeError("order_amount and order_target_position can't be both given as parameter")
+        raise trading_errors.InvalidArgumentError("order_amount and order_target_position can't be "
+                                                  "both given as parameter")
 
     # size based on amount
     if side is not None and order_amount is not None:
         # side
         if side != trading_enums.TradeOrderSide.BUY.value and side != trading_enums.TradeOrderSide.SELL.value:
             # we should skip that cause of performance
-            raise RuntimeError(f"Side parameter needs to be {trading_enums.TradeOrderSide.BUY.value} "
-                               f"or {trading_enums.TradeOrderSide.SELL.value} for your {order_type_name}.")
+            raise trading_errors.InvalidArgumentError(
+                f"Side parameter needs to be {trading_enums.TradeOrderSide.BUY.value} "
+                f"or {trading_enums.TradeOrderSide.SELL.value} for your {order_type_name}.")
         return await position_size.get_amount(context, order_amount, side), side
 
     # size and side based on target position
     if order_target_position is not None:
         return await position_size.get_target_position(context, order_target_position)
 
-    raise RuntimeError("Either use side with amount or target_position.")
+    raise trading_errors.InvalidArgumentError("Either use side with amount or target_position.")
 
 
 async def _get_order_details(context, order_type_name, side, order_offset, reduce_only, order_limit_offset):
@@ -156,11 +162,17 @@ async def _get_order_details(context, order_type_name, side, order_offset, reduc
            min_offset_val, max_offset_val, order_limit_offset, limit_offset_val
 
 
-async def _create_order(context, symbol, order_quantity, order_price,
-                        order_type, side, order_min_offset, max_offset_val):
+async def _create_order(context, symbol, order_quantity, order_price, tag,
+                        order_type, side, order_min_offset, max_offset_val, linked_to):
     # todo handle offsets, reduce_only, post_only,
     orders = []
     error_message = ""
+    if isinstance(linked_to, list) and linked_to:
+        linked_to = linked_to[0]
+    elif isinstance(linked_to, trading_personal_data.Order):
+        linked_to = linked_to
+    else:
+        linked_to = None
     try:
         _, _, _, current_price, symbol_market = \
             await trading_personal_data.get_pre_order_data(context.exchange_manager,
@@ -179,7 +191,9 @@ async def _create_order(context, symbol, order_quantity, order_price,
                 current_price=current_price,
                 quantity=final_order_quantity,
                 price=final_order_price,
-                side=side
+                side=side,
+                allow_self_managed=False,
+                linked_to=linked_to
             )
             if order_min_offset is not None:
                 await created_order.set_trailing_percent(order_min_offset)

@@ -53,7 +53,8 @@ def create_order_instance(trader,
                           total_cost=constants.ZERO,
                           timestamp=0,
                           linked_portfolio=None,
-                          side=None):
+                          side=None,
+                          allow_self_managed=True):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
                                    side=side
@@ -73,6 +74,7 @@ def create_order_instance(trader,
                  fee=None,
                  total_cost=total_cost,
                  linked_to=linked_to,
-                 linked_portfolio=linked_portfolio)
+                 linked_portfolio=linked_portfolio,
+                 allow_self_managed=allow_self_managed)
 
     return order

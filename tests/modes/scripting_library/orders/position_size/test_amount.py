@@ -17,9 +17,11 @@ import pytest
 import mock
 import decimal
 
+import octobot_trading.errors as errors
 import octobot_trading.modes.scripting_library.dsl as dsl
 import octobot_trading.modes.scripting_library.orders.position_size.amount as amount
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data as exchange_private_data
+import octobot_commons.constants as commons_constants
 
 from tests import event_loop
 from tests.modes.scripting_library import null_context
@@ -29,10 +31,10 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_get_amount(null_context):
-    with pytest.raises(RuntimeError):
+    with pytest.raises(errors.InvalidArgumentError):
         await amount.get_amount(null_context, "-1")
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(errors.InvalidArgumentError):
         await amount.get_amount(null_context, "1sdsqdq")
 
     with mock.patch.object(exchange_private_data, "adapt_amount_to_holdings",
@@ -74,9 +76,10 @@ async def test_get_amount(null_context):
                 as parse_quantity_mock, \
             mock.patch.object(exchange_private_data, "open_position_size",
                               mock.Mock(return_value=decimal.Decimal(2))) \
-                as available_account_balance_mock:
+                as open_position_size_mock:
             assert await amount.get_amount(null_context, "50", "buy") == decimal.Decimal(1)
             adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy")
             parse_quantity_mock.assert_called_once_with("50")
-            available_account_balance_mock.assert_called_once_with(null_context, "buy")
+            open_position_size_mock.assert_called_once_with(null_context, "buy",
+                                                            amount_type=commons_constants.PORTFOLIO_AVAILABLE)
             adapt_amount_to_holdings_mock.reset_mock()

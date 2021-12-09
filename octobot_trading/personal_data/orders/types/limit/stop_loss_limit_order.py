@@ -20,6 +20,7 @@ import octobot_trading.personal_data.orders.types.limit.limit_order as limit_ord
 
 
 class StopLossLimitOrder(limit_order.LimitOrder):
+    # TO CHECK: is it used anywhere ?
     UNINITIALIZED_LIMIT_PRICE = decimal.Decimal("-1")
 
     def __init__(self, trader, side=enums.TradeOrderSide.SELL, limit_price=UNINITIALIZED_LIMIT_PRICE):

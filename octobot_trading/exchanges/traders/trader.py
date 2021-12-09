@@ -134,6 +134,7 @@ class Trader(util.Initializable):
         Creates an exchange managed order, it might be a simulated or a real order. Then updates the portfolio.
         """
         if not self.simulate and not new_order.is_self_managed():
+            allow_self_managed = new_order.allow_self_managed
             created_order = await self.exchange_manager.exchange.create_order(new_order.order_type,
                                                                               new_order.symbol,
                                                                               new_order.origin_quantity,
@@ -147,6 +148,9 @@ class Trader(util.Initializable):
 
             # rebind linked portfolio to new order instance
             new_order.linked_portfolio = portfolio
+
+            # rebind allow_self_managed
+            new_order.allow_self_managed = allow_self_managed
         return new_order
 
     async def cancel_order(self, order: object, ignored_order: object = None) -> bool:

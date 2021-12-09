@@ -15,18 +15,21 @@
 #  License along with this library.
 
 import octobot_trading.modes.scripting_library.dsl as dsl
+import octobot_trading.errors as trading_errors
+import octobot_trading.enums as trading_enums
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data as exchange_private_data
+import octobot_commons.constants as commons_constants
 
 
 async def get_amount(
         context=None,
         input_amount=None,
-        side="buy"
+        side=trading_enums.TradeOrderSide.BUY.value
 ):
     amount_type, amount_value = dsl.parse_quantity(input_amount)
 
     if amount_type is dsl.QuantityType.UNKNOWN or amount_value <= 0:
-        raise RuntimeError("amount cant be zero or negative")
+        raise trading_errors.InvalidArgumentError("amount cant be zero or negative")
 
     if amount_type is dsl.QuantityType.DELTA:
         # nothing to do
@@ -36,7 +39,9 @@ async def get_amount(
     elif amount_type is dsl.QuantityType.AVAILABLE_PERCENT:
         amount_value = await exchange_private_data.available_account_balance(context, side) * amount_value / 100
     elif amount_type is dsl.QuantityType.POSITION_PERCENT:
-        amount_value = exchange_private_data.open_position_size(context, side) * amount_value / 100
+        amount_value = \
+            exchange_private_data.open_position_size(context, side, amount_type=commons_constants.PORTFOLIO_AVAILABLE) \
+            * amount_value / 100
     else:
-        raise RuntimeError("make sure to use a supported syntax for amount")
+        raise trading_errors.InvalidArgumentError("make sure to use a supported syntax for amount")
     return await exchange_private_data.adapt_amount_to_holdings(context, amount_value, side)

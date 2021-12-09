@@ -66,6 +66,7 @@ def test_parse_quantity_types():
 
 
 def test_parse_quantity_edge_numbers():
+    assert dsl.parse_quantity(0) == (dsl.QuantityType.DELTA, decimal.Decimal(0))
     assert dsl.parse_quantity(0.000000001) == (dsl.QuantityType.DELTA, decimal.Decimal("0.000000001"))
     assert dsl.parse_quantity(100000000000000000000) \
            == (dsl.QuantityType.DELTA, decimal.Decimal("100000000000000000000"))

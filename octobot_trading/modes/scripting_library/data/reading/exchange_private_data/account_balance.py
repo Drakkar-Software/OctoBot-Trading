@@ -41,7 +41,7 @@ async def available_account_balance(context, side=trading_enums.TradeOrderSide.B
     #  for futures its (balance - frozen balance) * leverage
     #  _
     #  for live
-    #  futures available blance based on exchange values
+    #  futures available balance based on exchange values
 
 
 async def adapt_amount_to_holdings(context, amount, side):

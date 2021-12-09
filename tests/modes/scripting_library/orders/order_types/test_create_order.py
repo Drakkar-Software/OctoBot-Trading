@@ -24,6 +24,7 @@ import octobot_trading.modes.scripting_library.orders.position_size as position_
 import octobot_trading.modes.scripting_library.orders.offsets as offsets
 import octobot_trading.modes.scripting_library.data as library_data
 import octobot_trading.enums as trading_enums
+import octobot_trading.errors as errors
 import octobot_trading.constants as trading_constants
 
 from tests import event_loop
@@ -35,7 +36,7 @@ from tests.exchanges import backtesting_trader, backtesting_config, backtesting_
 pytestmark = pytest.mark.asyncio
 
 
-async def test_create_order_instance(null_context):
+async def test_create_order_instance(mock_context):
     with mock.patch.object(create_order, "_get_order_quantity_and_side",
                            mock.AsyncMock(return_value=(decimal.Decimal(1), "sell"))) \
             as _get_order_quantity_and_side_mock, \
@@ -44,28 +45,29 @@ async def test_create_order_instance(null_context):
             as _get_order_details_mock, \
             mock.patch.object(create_order, "_create_order", mock.AsyncMock()) as _create_order_mock:
         await create_order.create_order_instance(
-            null_context, "side", "symbol", "order_amount", "order_target_position",
+            mock_context, "side", "symbol", "order_amount", "order_target_position",
             "order_type_name", "order_offset")  # todo add other params
-        _get_order_quantity_and_side_mock.assert_called_once_with(null_context, "order_amount",
+        _get_order_quantity_and_side_mock.assert_called_once_with(mock_context, "order_amount",
                                                                   "order_target_position", "order_type_name", "side")
-        _get_order_details_mock.assert_called_once_with(null_context, "order_type_name", "sell", "order_offset", False,
+        _get_order_details_mock.assert_called_once_with(mock_context, "order_type_name", "sell", "order_offset", False,
                                                         None)
-        _create_order_mock.assert_called_once_with(null_context, "symbol", decimal.Decimal(1), 2, 1, 3, None, 7)
+        _create_order_mock.assert_called_once_with(mock_context, "symbol", decimal.Decimal(1), 2, None,
+                                                   1, 3, None, 7, None)
 
 
 async def test_get_order_quantity_and_side(null_context):
     # order_amount and order_target_position are both not set
-    with pytest.raises(RuntimeError):
+    with pytest.raises(errors.InvalidArgumentError):
         await create_order._get_order_quantity_and_side(null_context, None, None, None, "")
 
     # order_amount and order_target_position are set
-    with pytest.raises(RuntimeError):
+    with pytest.raises(errors.InvalidArgumentError):
         await create_order._get_order_quantity_and_side(null_context, 1, 2, None, "")
 
     # order_amount but no side
-    with pytest.raises(RuntimeError):
+    with pytest.raises(errors.InvalidArgumentError):
         await create_order._get_order_quantity_and_side(null_context, 1, None, None, None)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(errors.InvalidArgumentError):
         await create_order._get_order_quantity_and_side(null_context, 1, None, None, "fsdsfds")
 
     with mock.patch.object(position_size, "get_amount",
@@ -156,8 +158,9 @@ async def test_create_order(mock_context, symbol_market):
                            mock.AsyncMock(return_value=(None, None, None, decimal.Decimal(105), symbol_market))) \
         as get_pre_order_data_mock, \
         mock.patch.object(library_data, "store_orders", mock.AsyncMock()) as store_orders_mock:
-        await create_order._create_order(mock_context, "BTC/USDT", decimal.Decimal(1), decimal.Decimal(100),
-                                         trading_enums.TraderOrderType.BUY_MARKET, None, None, None)
+        await create_order._create_order(mock_context, "BTC/USDT", decimal.Decimal(1), decimal.Decimal(100), None,
+                                         trading_enums.TraderOrderType.BUY_MARKET, None, None, None,
+                                         None)
         get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol="BTC/USDT",
                                                         timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
         store_orders_mock.assert_called_once()
@@ -172,9 +175,10 @@ async def test_create_order(mock_context, symbol_market):
         get_pre_order_data_mock.reset_mock()
         store_orders_mock.reset_mock()
 
-        await create_order._create_order(mock_context, "BTC/USDT", decimal.Decimal(1), decimal.Decimal(100),
+        await create_order._create_order(mock_context, "BTC/USDT", decimal.Decimal(1), decimal.Decimal(100), None,
                                          trading_enums.TraderOrderType.TRAILING_STOP,
-                                         trading_enums.TradeOrderSide.BUY, decimal.Decimal(5), None)
+                                         trading_enums.TradeOrderSide.BUY, decimal.Decimal(5), None,
+                                         [trading_personal_data.LimitOrder(mock_context.trader)])
         get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol="BTC/USDT",
                                                         timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
         store_orders_mock.assert_called_once()
