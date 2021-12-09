@@ -32,9 +32,9 @@ async def test_trailing_limit(null_context):
     with mock.patch.object(create_order, "create_order_instance", mock.AsyncMock()) as create_order_instance:
         await trailing_limit_order.trailing_limit(null_context, "side", "symbol", "amount", "target_position",
                                                   "offset", "min_offset", "max_offset", "slippage_limit", "time_limit",
-                                                  "reduce_only", "post_only", "tag")
+                                                  "reduce_only", "post_only", "tag", "linked_to")
         create_order_instance.assert_called_once_with(
             null_context, side="side", symbol="symbol", order_amount="amount", order_target_position="target_position",
             order_type_name="trailing_limit", order_min_offset="min_offset", order_max_offset="max_offset",
             order_offset="offset", slippage_limit="slippage_limit", time_limit="time_limit", reduce_only="reduce_only",
-            post_only="post_only", tag="tag")
+            post_only="post_only", tag="tag", linked_to="linked_to")

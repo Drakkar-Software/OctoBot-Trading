@@ -28,6 +28,8 @@ async def trailing_stop_loss(
         offset=None,
 
         tag=None,
+
+        linked_to=None
 ) -> list:
     return await create_order.create_order_instance(
         context,
@@ -42,5 +44,8 @@ async def trailing_stop_loss(
         order_offset=offset,
 
         reduce_only=True,
-        tag=tag
+
+        tag=tag,
+
+        linked_to=linked_to
     )

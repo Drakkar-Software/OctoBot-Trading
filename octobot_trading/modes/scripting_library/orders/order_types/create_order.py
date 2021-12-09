@@ -61,11 +61,16 @@ async def create_order_instance(
                                    linked_to)
 
 
+def _use_total_holding(order_type_name):
+    return "stop" in order_type_name
+
+
 async def _get_order_quantity_and_side(context, order_amount, order_target_position, order_type_name, side):
     if order_amount is not None and order_target_position is not None:
         raise trading_errors.InvalidArgumentError("order_amount and order_target_position can't be "
                                                   "both given as parameter")
 
+    use_total_holding = _use_total_holding(order_type_name)
     # size based on amount
     if side is not None and order_amount is not None:
         # side
@@ -74,11 +79,12 @@ async def _get_order_quantity_and_side(context, order_amount, order_target_posit
             raise trading_errors.InvalidArgumentError(
                 f"Side parameter needs to be {trading_enums.TradeOrderSide.BUY.value} "
                 f"or {trading_enums.TradeOrderSide.SELL.value} for your {order_type_name}.")
-        return await position_size.get_amount(context, order_amount, side), side
+        return await position_size.get_amount(context, order_amount, side, use_total_holding=use_total_holding), side
 
     # size and side based on target position
     if order_target_position is not None:
-        return await position_size.get_target_position(context, order_target_position)
+        return await position_size.get_target_position(context, order_target_position,
+                                                       use_total_holding=use_total_holding)
 
     raise trading_errors.InvalidArgumentError("Either use side with amount or target_position.")
 
@@ -192,7 +198,7 @@ async def _create_order(context, symbol, order_quantity, order_price, tag,
                 quantity=final_order_quantity,
                 price=final_order_price,
                 side=side,
-                allow_self_managed=False,
+                allow_self_managed=context.allow_self_managed_orders,
                 linked_to=linked_to
             )
             if order_min_offset is not None:

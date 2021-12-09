@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import octobot_commons.constants as commons_constants
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.personal_data as trading_personal_data
@@ -28,11 +29,13 @@ async def total_account_balance(context):
         portfolio_manager.portfolio_value_holder.portfolio_current_value / current_price
 
 
-async def available_account_balance(context, side=trading_enums.TradeOrderSide.BUY.value):
+async def available_account_balance(context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False):
+    portfolio_type = commons_constants.PORTFOLIO_TOTAL if use_total_holding else commons_constants.PORTFOLIO_AVAILABLE
     current_symbol_holding, current_market_holding, market_quantity, current_price, symbol_market = \
         await trading_personal_data.get_pre_order_data(context.exchange_manager,
                                                        symbol=context.symbol,
-                                                       timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
+                                                       timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
+                                                       portfolio_type=portfolio_type)
 
     return market_quantity if side == trading_enums.TradeOrderSide.BUY.value else current_symbol_holding
 
@@ -44,8 +47,8 @@ async def available_account_balance(context, side=trading_enums.TradeOrderSide.B
     #  futures available balance based on exchange values
 
 
-async def adapt_amount_to_holdings(context, amount, side):
-    available_acc_bal = await available_account_balance(context, side)
+async def adapt_amount_to_holdings(context, amount, side, use_total_holding):
+    available_acc_bal = await available_account_balance(context, side, use_total_holding=use_total_holding)
     if available_acc_bal > amount:
         return amount
     else:

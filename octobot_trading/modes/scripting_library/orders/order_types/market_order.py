@@ -26,7 +26,10 @@ async def market(
         target_position=None,
 
         reduce_only=False,
+
         tag=None,
+
+        linked_to=None
 ):
     return await create_order.create_order_instance(
         context,
@@ -39,5 +42,8 @@ async def market(
         order_type_name="market",
 
         reduce_only=reduce_only,
-        tag=tag
+
+        tag=tag,
+
+        linked_to=linked_to
     )

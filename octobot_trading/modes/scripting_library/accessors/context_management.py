@@ -79,6 +79,7 @@ class Context:
             if exchange_manager else False
         self.backtesting_id = backtesting_id
         self.optimizer_id = optimizer_id
+        self.allow_self_managed_orders = False
 
     @staticmethod
     def minimal(trading_mode_class, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):

@@ -25,6 +25,7 @@ import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.modes.scripting_library as scripting_library
 import octobot_trading.api as api
 import octobot_trading.errors as errors
+import octobot_trading.constants as trading_constants
 
 from tests import event_loop
 from tests.modes.scripting_library import mock_context
@@ -211,26 +212,22 @@ async def test_concurrent_orders(mock_context):
         await _fill_and_check(mock_context, btc_val, usdt_val, orders, orders_count=3)
 
         # create 3 buy orders (at price = 500 + 10 = 510) all of them for a target position of 10%
-        # first order gets created to have this 10% position, others are not created at all
-        # (ConflictingOrdersError is raised)
+        # first order gets created to have this 10% position, others are also created like this, ending up in a 30%
+        # position
 
         # update portfolio current value
         await mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_balance_updated()
 
         orders = []
-        conflicting_orders = []
 
         async def create_order(target_position):
-            try:
-                orders.append(
-                    (await scripting_library.limit(
-                        mock_context,
-                        target_position=target_position,
-                        offset=10
-                    ))[0]
-                )
-            except errors.ConflictingOrdersError:
-                conflicting_orders.append(True)
+            orders.append(
+                (await scripting_library.limit(
+                    mock_context,
+                    target_position=target_position,
+                    offset=10
+                ))[0]
+            )
         await asyncio.gather(
             *(
                 create_order("10%")
@@ -238,72 +235,79 @@ async def test_concurrent_orders(mock_context):
             )
         )
 
-        assert len(conflicting_orders) == 2
-        initial_btc_holdings = btc_val
-        btc_val = (initial_btc_holdings * btc_price + usdt_val) * decimal.Decimal("0.1") / btc_price    # 10.03968
-        usdt_val = usdt_val - (btc_val - initial_btc_holdings) * (btc_price + 10)   # 45079.7632
-        await _fill_and_check(mock_context, btc_val, usdt_val, orders, orders_count=1)
+        initial_btc_holdings = btc_val  # 0.16
+        initial_total_val = initial_btc_holdings * btc_price + usdt_val
+        initial_position_percent = decimal.Decimal(initial_btc_holdings * btc_price / initial_total_val)
+        btc_val = initial_btc_holdings + \
+                  initial_total_val * (decimal.Decimal("0.1") - initial_position_percent) * 3 / btc_price    # 29.79904
+        usdt_val = usdt_val - (btc_val - initial_btc_holdings) * (btc_price + 10)   # 35002.4896
+        await _fill_and_check(mock_context, btc_val, usdt_val, orders, orders_count=3)
 
 
-# @pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
-# async def test_sell_limit_with_stop_loss_orders_single_sell_and_stop(mock_context):
-#     async with _20_percent_position_trading_context(mock_context) as context_data:
-#         btc_val, usdt_val, btc_price = context_data
-#
-#         sell_limit_orders = await scripting_library.limit(
-#             mock_context,
-#             target_position="0%",
-#             offset=50,
-#         )
-#         stop_loss_orders = await scripting_library.stop_loss(
-#             mock_context,
-#             target_position="0%",
-#             offset=-75,
-#             side="sell",
-#             linked_to=sell_limit_orders
-#         )
-#         assert len(sell_limit_orders) == len(stop_loss_orders) == 1
-#         btc_val = (usdt_val * decimal.Decimal("0.2")) / btc_price  # 20.00
-#         usdt_val = usdt_val * decimal.Decimal("0.8")   # 40000.00
-#         await _fill_and_check(mock_context, btc_val, usdt_val, buy_limit_orders)
-#
-#
-# @pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
-# async def test_sell_limit_with_stop_loss_orders_two_sells_and_stop(mock_context):
-#     initial_usdt_holdings, btc_price = await _usdt_trading_context(mock_context)
-#     usdt_val = decimal.Decimal(str(initial_usdt_holdings))
-#     with mock.patch.object(trading_personal_data, "get_up_to_date_price",
-#                            mock.AsyncMock(return_value=btc_price)), \
-#             mock.patch.object(order_util, "get_up_to_date_price", mock.AsyncMock(return_value=btc_price)):
-#         buy_limit_orders = await scripting_library.limit(
-#             mock_context,
-#             target_position="20%",
-#             offset=0,
-#             side="buy"
-#         )
-#         btc_val = (usdt_val * decimal.Decimal("0.2")) / btc_price  # 20.00
-#         usdt_val = usdt_val * decimal.Decimal("0.8")   # 40000.00
-#         await _fill_and_check(mock_context, btc_val, usdt_val, buy_limit_orders)
-#
-#         take_profit_limit_orders_1 = await scripting_library.limit(
-#             mock_context,
-#             target_position="50%",
-#             offset=50
-#         )
-#         take_profit_limit_orders_2 = await scripting_library.limit(
-#             mock_context,
-#             target_position="0%",
-#             offset=100
-#         )
-#         stop_loss_orders = await scripting_library.stop_loss(
-#             mock_context,
-#             target_position="0%",
-#             offset=-50,
-#             side="sell"
-#         )
-#         btc_val = (usdt_val * decimal.Decimal("0.2")) / btc_price  # 20.00
-#         usdt_val = usdt_val * decimal.Decimal("0.8")   # 40000.00
-#         await _fill_and_check(mock_context, btc_val, usdt_val, buy_limit_orders)
+@pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
+async def test_sell_limit_with_stop_loss_orders_single_sell_and_stop(mock_context):
+    async with _20_percent_position_trading_context(mock_context) as context_data:
+        btc_val, usdt_val, btc_price = context_data
+
+        sell_limit_orders = await scripting_library.limit(
+            mock_context,
+            target_position="0%",
+            offset=50,
+        )
+        stop_loss_orders = await scripting_library.stop_loss(
+            mock_context,
+            target_position="0%",
+            offset=-75,
+            linked_to=sell_limit_orders
+        )
+        assert len(sell_limit_orders) == len(stop_loss_orders) == 1
+
+        # stop order is filled
+        usdt_val = usdt_val + btc_val * (btc_price - 75)   # 48500.00
+        btc_val = trading_constants.ZERO    # 0.00
+        await _fill_and_check(mock_context, btc_val, usdt_val, stop_loss_orders, logged_orders_count=2)
+        # linked order is cancelled
+        assert sell_limit_orders[0].is_cancelled()
+
+
+@pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
+async def test_sell_limit_with_stop_loss_orders_two_sells_and_stop(mock_context):
+    async with _20_percent_position_trading_context(mock_context) as context_data:
+        btc_val, usdt_val, btc_price = context_data
+
+        stop_loss_orders = await scripting_library.stop_loss(
+            mock_context,
+            target_position="0%",
+            offset=-50,
+            side="sell"
+        )
+        take_profit_limit_orders_1 = await scripting_library.limit(
+            mock_context,
+            target_position="50%p",
+            offset=50
+        )
+        take_profit_limit_orders_2 = await scripting_library.limit(
+            mock_context,
+            target_position="0%p",
+            offset=100,
+            linked_to=stop_loss_orders
+        )
+
+        # take_profit_limit_orders_1 filled
+        available_btc_val = trading_constants.ZERO  # 10.00
+        total_btc_val = btc_val / 2  # 10.00
+        usdt_val = usdt_val + btc_val / 2 * (btc_price + 50)   # 40000.00
+        await _fill_and_check(mock_context, available_btc_val, usdt_val, take_profit_limit_orders_1,
+                              btc_total=total_btc_val)
+        # linked order is not cancelled
+        assert stop_loss_orders[0].is_open()
+
+        # take_profit_limit_orders_2 filled
+        usdt_val = usdt_val + btc_val / 2 * (btc_price + 100)   # 40000.00
+        btc_val = trading_constants.ZERO  # 0.00
+        await _fill_and_check(mock_context, btc_val, usdt_val, take_profit_limit_orders_2)
+        # linked order is cancelled
+        assert stop_loss_orders[0].is_cancelled()
 
 
 async def _usdt_trading_context(mock_context):
@@ -341,7 +345,7 @@ async def _20_percent_position_trading_context(mock_context):
 
 
 async def _fill_and_check(mock_context, btc_available, usdt_available, orders,
-                          btc_total=None, usdt_total=None, orders_count=1):
+                          btc_total=None, usdt_total=None, orders_count=1, logged_orders_count=None):
     for order in orders:
         if isinstance(order, trading_personal_data.LimitOrder):
             await test_order_util.fill_limit_or_stop_order(order)
@@ -349,17 +353,18 @@ async def _fill_and_check(mock_context, btc_available, usdt_available, orders,
             await test_order_util.fill_market_order(order)
 
     _ensure_orders_validity(mock_context, btc_available, usdt_available, orders,
-                            btc_total=btc_total, usdt_total=usdt_total, orders_count=orders_count)
+                            btc_total=btc_total, usdt_total=usdt_total, orders_count=orders_count,
+                            logged_orders_count=logged_orders_count)
 
 
 def _ensure_orders_validity(mock_context, btc_available, usdt_available, orders,
-                            btc_total=None, usdt_total=None, orders_count=1):
+                            btc_total=None, usdt_total=None, orders_count=1, logged_orders_count=None):
     exchange_manager = mock_context.exchange_manager
     btc_total = btc_total or btc_available
     usdt_total = usdt_total or usdt_available
     assert len(orders) == orders_count
     assert all(isinstance(order, trading_personal_data.Order) for order in orders)
-    assert mock_context.orders_writer.log_many.call_count == orders_count
+    assert mock_context.orders_writer.log_many.call_count == logged_orders_count or orders_count
     mock_context.orders_writer.log_many.reset_mock()
     mock_context.logger.warning.assert_not_called()
     mock_context.logger.warning.reset_mock()

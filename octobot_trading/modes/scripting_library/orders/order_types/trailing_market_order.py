@@ -28,7 +28,10 @@ async def trailing_market(
         offset=None,
 
         reduce_only=False,
+
         tag=None,
+
+        linked_to=None
 ):
     return await create_order.create_order_instance(
         context,
@@ -43,5 +46,8 @@ async def trailing_market(
         order_offset=offset,
 
         reduce_only=reduce_only,
-        tag=tag
+
+        tag=tag,
+
+        linked_to=linked_to
     )

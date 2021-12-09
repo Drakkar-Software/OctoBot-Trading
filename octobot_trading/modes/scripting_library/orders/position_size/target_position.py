@@ -18,19 +18,13 @@ import octobot_trading.enums as trading_enums
 import octobot_trading.errors as trading_errors
 import octobot_trading.modes.scripting_library.dsl as dsl
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data as exchange_private_data
-import octobot_trading.modes.scripting_library.orders.open_orders as open_orders
 
 
 async def get_target_position(
-        context=None,
-        target=None
+    context=None,
+    target=None,
+    use_total_holding=False
 ):
-    # If an order is already open on this position, do not accept target position parameters
-    # as they would interfere with the previous order target position
-    if open_orders.get_open_orders(context):
-        raise trading_errors.ConflictingOrdersError(
-            f"Impossible to set a new target position when a related order is already in open. "
-            f"Cancel other {context.symbol} order(s) first.")
     target_position_type, target_position_value = dsl.parse_quantity(target)
 
     if target_position_type is dsl.QuantityType.POSITION_PERCENT:
@@ -58,7 +52,7 @@ async def get_target_position(
     if side == trading_enums.TradeOrderSide.SELL.value:
         order_size = order_size * -1
 
-    order_size = await exchange_private_data.adapt_amount_to_holdings(context, order_size, side)
+    order_size = await exchange_private_data.adapt_amount_to_holdings(context, order_size, side, use_total_holding)
     return order_size, side
 
 

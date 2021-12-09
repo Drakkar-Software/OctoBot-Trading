@@ -30,7 +30,8 @@ pytestmark = pytest.mark.asyncio
 
 async def test_market(null_context):
     with mock.patch.object(create_order, "create_order_instance", mock.AsyncMock()) as create_order_instance:
-        await market_order.market(null_context, "side", "symbol", "amount", "target_position", "reduce_only", "tag")
+        await market_order.market(null_context, "side", "symbol", "amount", "target_position", "reduce_only", "tag",
+                                  "linked_to")
         create_order_instance.assert_called_once_with(
             null_context, side="side", symbol="symbol", order_amount="amount", order_target_position="target_position",
-            order_type_name="market", reduce_only="reduce_only", tag="tag")
+            order_type_name="market", reduce_only="reduce_only", tag="tag", linked_to="linked_to")

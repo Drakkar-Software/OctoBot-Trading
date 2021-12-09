@@ -55,32 +55,66 @@ async def test_create_order_instance(mock_context):
                                                    1, 3, None, 7, None)
 
 
+def test_use_total_holding():
+    assert create_order._use_total_holding("") is False
+    assert create_order._use_total_holding("market") is False
+    assert create_order._use_total_holding("limit") is False
+    assert create_order._use_total_holding("stop_loss") is True
+    assert create_order._use_total_holding("stop_market") is True
+    assert create_order._use_total_holding("stop_limit") is True
+    assert create_order._use_total_holding("trailing_stop_loss") is True
+    assert create_order._use_total_holding("trailing_market") is False
+    assert create_order._use_total_holding("trailing_limit") is False
+
+
 async def test_get_order_quantity_and_side(null_context):
     # order_amount and order_target_position are both not set
     with pytest.raises(errors.InvalidArgumentError):
-        await create_order._get_order_quantity_and_side(null_context, None, None, None, "")
+        await create_order._get_order_quantity_and_side(null_context, None, None, "", "")
 
     # order_amount and order_target_position are set
     with pytest.raises(errors.InvalidArgumentError):
-        await create_order._get_order_quantity_and_side(null_context, 1, 2, None, "")
+        await create_order._get_order_quantity_and_side(null_context, 1, 2, "", "")
 
     # order_amount but no side
     with pytest.raises(errors.InvalidArgumentError):
-        await create_order._get_order_quantity_and_side(null_context, 1, None, None, None)
+        await create_order._get_order_quantity_and_side(null_context, 1, None, "", None)
     with pytest.raises(errors.InvalidArgumentError):
-        await create_order._get_order_quantity_and_side(null_context, 1, None, None, "fsdsfds")
+        await create_order._get_order_quantity_and_side(null_context, 1, None, "", "fsdsfds")
 
     with mock.patch.object(position_size, "get_amount",
-                           mock.AsyncMock(return_value=(decimal.Decimal(1)))) as get_amount_mock:
-        assert await create_order._get_order_quantity_and_side(null_context, 1, None, None, "sell") \
-               == (decimal.Decimal(1), "sell")
-        get_amount_mock.assert_called_once_with(null_context, 1, "sell")
+                           mock.AsyncMock(return_value=decimal.Decimal(1))) as get_amount_mock:
+        with mock.patch.object(create_order, "_use_total_holding",
+                               mock.Mock(return_value=False)) as _use_total_holding_mock:
+            assert await create_order._get_order_quantity_and_side(null_context, 1, None, "", "sell") \
+                   == (decimal.Decimal(1), "sell")
+            get_amount_mock.assert_called_once_with(null_context, 1, "sell", use_total_holding=False)
+            get_amount_mock.reset_mock()
+            _use_total_holding_mock.assert_called_once_with("")
+        with mock.patch.object(create_order, "_use_total_holding",
+                               mock.Mock(return_value=True)) as _use_total_holding_mock:
+            assert await create_order._get_order_quantity_and_side(null_context, 1, None, "order_type", "sell") \
+                   == (decimal.Decimal(1), "sell")
+            get_amount_mock.assert_called_once_with(null_context, 1, "sell", use_total_holding=True)
+            get_amount_mock.reset_mock()
+            _use_total_holding_mock.assert_called_once_with("order_type")
 
     with mock.patch.object(position_size, "get_target_position",
                            mock.AsyncMock(return_value=(decimal.Decimal(10), "buy"))) as get_target_position_mock:
-        assert await create_order._get_order_quantity_and_side(null_context, None, 1, None, None) \
-               == (decimal.Decimal(10), "buy")
-        get_target_position_mock.assert_called_once_with(null_context, 1)
+        with mock.patch.object(create_order, "_use_total_holding",
+                               mock.Mock(return_value=True)) as _use_total_holding_mock:
+            assert await create_order._get_order_quantity_and_side(null_context, None, 1, "order_type", None) \
+                   == (decimal.Decimal(10), "buy")
+            get_target_position_mock.assert_called_once_with(null_context, 1, use_total_holding=True)
+            get_target_position_mock.reset_mock()
+            _use_total_holding_mock.assert_called_once_with("order_type")
+        with mock.patch.object(create_order, "_use_total_holding",
+                               mock.Mock(return_value=False)) as _use_total_holding_mock:
+            assert await create_order._get_order_quantity_and_side(null_context, None, 1, "order_type", None) \
+                   == (decimal.Decimal(10), "buy")
+            get_target_position_mock.assert_called_once_with(null_context, 1, use_total_holding=False)
+            get_target_position_mock.reset_mock()
+            _use_total_holding_mock.assert_called_once_with("order_type")
 
 
 async def test_get_order_details(null_context):

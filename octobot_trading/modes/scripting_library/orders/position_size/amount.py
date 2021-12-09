@@ -22,9 +22,10 @@ import octobot_commons.constants as commons_constants
 
 
 async def get_amount(
-        context=None,
-        input_amount=None,
-        side=trading_enums.TradeOrderSide.BUY.value
+    context=None,
+    input_amount=None,
+    side=trading_enums.TradeOrderSide.BUY.value,
+    use_total_holding=False
 ):
     amount_type, amount_value = dsl.parse_quantity(input_amount)
 
@@ -44,4 +45,4 @@ async def get_amount(
             * amount_value / 100
     else:
         raise trading_errors.InvalidArgumentError("make sure to use a supported syntax for amount")
-    return await exchange_private_data.adapt_amount_to_holdings(context, amount_value, side)
+    return await exchange_private_data.adapt_amount_to_holdings(context, amount_value, side, use_total_holding)

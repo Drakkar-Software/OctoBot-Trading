@@ -35,7 +35,10 @@ async def scaled_limit(
 
         reduce_only=False,
         post_only=False,
+
         tag=None,
+
+        linked_to=None
 ):
     amount_per_order = None
     if target_position is None and amount is not None:

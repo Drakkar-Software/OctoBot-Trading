@@ -34,7 +34,10 @@ async def trailing_limit(
 
         reduce_only=False,
         post_only=False,
+
         tag=None,
+
+        linked_to=None
 ):
     return await create_order.create_order_instance(
         context,
@@ -54,5 +57,8 @@ async def trailing_limit(
         time_limit=time_limit,
         reduce_only=reduce_only,
         post_only=post_only,
-        tag=tag
+
+        tag=tag,
+
+        linked_to=linked_to
     )

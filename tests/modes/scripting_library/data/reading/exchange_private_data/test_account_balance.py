@@ -21,6 +21,7 @@ import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data.account_balance as account_balance
 import octobot_trading.enums as trading_enums
 import octobot_trading.constants as trading_constants
+import octobot_commons.constants as commons_constants
 
 from tests import event_loop
 from tests.modes.scripting_library import null_context, mock_context
@@ -46,11 +47,16 @@ async def test_available_account_balance(mock_context):
     with mock.patch.object(trading_personal_data, "get_pre_order_data", mock.AsyncMock(return_value=ret_val)) \
          as get_pre_order_data_mock:
         assert "market_quantity" == await account_balance.available_account_balance(
-            mock_context, side=trading_enums.TradeOrderSide.BUY.value)
+            mock_context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False)
         get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol=mock_context.symbol,
-                                                        timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
+                                                        timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
+                                                        portfolio_type=commons_constants.PORTFOLIO_AVAILABLE)
+        get_pre_order_data_mock.reset_mock()
         assert "current_symbol_holding" == await account_balance.available_account_balance(
-            mock_context, side=trading_enums.TradeOrderSide.SELL.value)
+            mock_context, side=trading_enums.TradeOrderSide.SELL.value, use_total_holding=True)
+        get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol=mock_context.symbol,
+                                                        timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
+                                                        portfolio_type=commons_constants.PORTFOLIO_TOTAL)
 
 
 @pytest.mark.asyncio
@@ -59,11 +65,18 @@ async def test_adapt_amount_to_holdings(null_context):
                            mock.AsyncMock(return_value=decimal.Decimal(1))) as available_account_balance_mock:
         assert await account_balance.adapt_amount_to_holdings(null_context,
                                                               decimal.Decimal(0),
-                                                              trading_enums.TradeOrderSide.SELL) == decimal.Decimal(0)
-        available_account_balance_mock.assert_called_once_with(null_context, trading_enums.TradeOrderSide.SELL)
+                                                              trading_enums.TradeOrderSide.SELL,
+                                                              False) == decimal.Decimal(0)
+        available_account_balance_mock.assert_called_once_with(null_context, trading_enums.TradeOrderSide.SELL,
+                                                               use_total_holding=False)
+        available_account_balance_mock.reset_mock()
         assert await account_balance.adapt_amount_to_holdings(null_context,
                                                               decimal.Decimal(1),
-                                                              trading_enums.TradeOrderSide.SELL) == decimal.Decimal(1)
+                                                              trading_enums.TradeOrderSide.SELL,
+                                                              True) == decimal.Decimal(1)
+        available_account_balance_mock.assert_called_once_with(null_context, trading_enums.TradeOrderSide.SELL,
+                                                               use_total_holding=True)
         assert await account_balance.adapt_amount_to_holdings(null_context,
                                                               decimal.Decimal(2),
-                                                              trading_enums.TradeOrderSide.SELL) == decimal.Decimal(1)
+                                                              trading_enums.TradeOrderSide.SELL,
+                                                              False) == decimal.Decimal(1)
