@@ -498,16 +498,23 @@ class DisplayedElements:
         )
         self.elements.append(element)
 
+    def is_empty(self):
+        return not (self.nested_elements or self.elements)
+
     def to_json(self, name="root"):
         return {
             trading_enums.PlotAttributes.NAME.value: name,
             trading_enums.PlotAttributes.TYPE.value: self.type,
             trading_enums.PlotAttributes.DATA.value: {
                 trading_enums.PlotAttributes.SUB_ELEMENTS.value: [
-                    element.to_json(key) for key, element in self.nested_elements.items()
+                    element.to_json(key)
+                    for key, element in self.nested_elements.items()
+                    if not element.is_empty()
                 ],
                 trading_enums.PlotAttributes.ELEMENTS.value: [
-                    element.to_json() for element in self.elements
+                    element.to_json()
+                    for element in self.elements
+                    if not element.is_empty()
                 ]
             }
         }
@@ -606,6 +613,9 @@ class Element:
             trading_enums.PlotAttributes.SIZE.value: self.size,
             trading_enums.PlotAttributes.SYMBOL.value: self.symbol,
         }
+
+    def is_empty(self):
+        return False
 
     @staticmethod
     def to_list(array, multiplier=1):
