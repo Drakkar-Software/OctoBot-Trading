@@ -98,8 +98,9 @@ async def test__generate_position_id(future_trader_simulator_with_default_linear
 
     if not os.getenv('CYTHON_IGNORE'):
         symbol_contract.set_position_mode(is_one_way=True)
-        assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, None) == \
-               DEFAULT_FUTURE_SYMBOL
+        with pytest.raises(AttributeError):
+            assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, None) == \
+                   DEFAULT_FUTURE_SYMBOL
         symbol_contract.set_position_mode(is_one_way=False)
         assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, enums.PositionSide.LONG) == \
                DEFAULT_FUTURE_SYMBOL + positions_mgr.PositionsManager.POSITION_ID_SEPARATOR \
