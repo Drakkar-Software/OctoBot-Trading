@@ -126,11 +126,11 @@ async def test_calculate_maintenance_margin(future_trader_simulator_with_default
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     assert position_inst.calculate_maintenance_margin() == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.calculate_maintenance_margin() == constants.ZERO
+    assert position_inst.calculate_maintenance_margin() == decimal.Decimal('0.01')
     exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_FUTURE_SYMBOL).funding_manager.funding_rate = decimal.Decimal(DEFAULT_FUTURE_FUNDING_RATE)
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.calculate_maintenance_margin() == decimal.Decimal("0.02000000000000000041633363423")
+    assert position_inst.calculate_maintenance_margin() == decimal.Decimal("0.02")
 
 
 async def test_update_isolated_liquidation_price_with_long(future_trader_simulator_with_default_inverse):
@@ -143,12 +143,12 @@ async def test_update_isolated_liquidation_price_with_long(future_trader_simulat
     position_inst.entry_price = constants.ONE_HUNDRED
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_isolated_liquidation_price()
-    assert position_inst.liquidation_price == decimal.Decimal("50.25125628140703518113600205")
+    assert position_inst.liquidation_price == decimal.Decimal("50.25125628140703517587939698")
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
     await position_inst.update(update_size=constants.ONE_HUNDRED,
                                mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
     position_inst.update_isolated_liquidation_price()
-    assert position_inst.liquidation_price == decimal.Decimal("100.0000000000000000208166817")
+    assert position_inst.liquidation_price == decimal.Decimal("1E+2")
 
 
 async def test_update_isolated_liquidation_price_with_short(future_trader_simulator_with_default_inverse):
@@ -161,12 +161,12 @@ async def test_update_isolated_liquidation_price_with_short(future_trader_simula
     position_inst.entry_price = constants.ONE_HUNDRED
     await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_isolated_liquidation_price()
-    assert position_inst.liquidation_price == decimal.Decimal("9999.999999999999791833182880")
+    assert position_inst.liquidation_price == decimal.Decimal("1.00E+4")
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
     await position_inst.update(update_size=-constants.ONE_HUNDRED,
                                mark_price=constants.ONE_HUNDRED / decimal.Decimal(10))
     position_inst.update_isolated_liquidation_price()
-    assert position_inst.liquidation_price == decimal.Decimal("99.99999999999999997918331830")
+    assert position_inst.liquidation_price == decimal.Decimal("1E+2")
 
 
 async def test_get_bankruptcy_price_with_long(future_trader_simulator_with_default_inverse):
