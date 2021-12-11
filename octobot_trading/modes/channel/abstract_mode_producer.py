@@ -108,7 +108,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 exchange_name=self.exchange_name,
                 time_frame=self.trading_mode.time_frame
                 if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard()
-                else common_constants.CONFIG_WILDCARD)
+                else common_constants.CONFIG_WILDCARD,
+                supervised=self.exchange_manager.is_backtesting)
         except (KeyError, ImportError):
             self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
 
