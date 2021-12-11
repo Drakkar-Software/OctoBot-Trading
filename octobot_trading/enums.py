@@ -314,6 +314,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     ENTRY_PRICE = "entry_price"
     MARK_PRICE = "mark_price"
     LIQUIDATION_PRICE = "liquidation_price"
+    BANKRUPTCY_PRICE = "bankruptcy_price"
     UNREALISED_PNL = "unrealised_pnl"
     REALISED_PNL = "realised_pnl"
     QUANTITY = "quantity"

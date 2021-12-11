@@ -44,9 +44,9 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
         if self.channel.is_paused:
             await self.pause()
         else:
-            if not self.channel.exchange_manager.is_future:
+            if self._should_subscribe():
                 await self.subscribe()
-            elif self._should_run():
+            elif self._should_fetch_on_exchange():
                 await self.start_fetching()
             else:
                 self.logger.debug(f"{self.__class__.__name__} wont be used, stopping...")
@@ -142,9 +142,13 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
                      next_funding_time=funding_rate[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
                      timestamp=funding_rate[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
 
-    def _should_run(self) -> bool:
+    def _should_fetch_on_exchange(self) -> bool:
         return not (
                 self.channel.exchange_manager.exchange.FUNDING_WITH_MARK_PRICE
                 or self.channel.exchange_manager.exchange.MARK_PRICE_IN_TICKER
                 or self.channel.exchange_manager.exchange.MARK_PRICE_IN_POSITION
         )
+
+    def _should_subscribe(self):
+        return not self.channel.exchange_manager.is_future or \
+            not self.channel.exchange_manager.exchange.MARK_PRICE_IN_POSITION

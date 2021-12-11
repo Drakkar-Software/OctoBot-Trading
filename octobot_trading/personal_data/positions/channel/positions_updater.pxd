@@ -25,3 +25,4 @@ cdef class PositionsUpdater(positions_channel.PositionsProducer):
 
     cdef bint _should_run(self)
     cdef bint _should_push_mark_price(self)
+    cdef bint _has_mark_price_in_position(self)

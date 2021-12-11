@@ -40,17 +40,6 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
             .new_consumer(self.handle_funding_rate)
         self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
 
-    async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
-        """
-        MarkPrice channel consumer callback
-        """
-        try:
-            for symbol_position in self.channel.exchange_manager.exchange_personal_data.positions_manager. \
-                    get_symbol_positions(symbol=symbol):
-                await symbol_position.update(mark_price=decimal.Decimal(str(mark_price)))
-        except Exception as e:
-            self.logger.exception(e, True, f"Fail to handle mark price : {e}")
-
     async def handle_funding_rate(self, exchange: str,
                                   exchange_id: str,
                                   cryptocurrency: str,

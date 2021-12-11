@@ -44,14 +44,22 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         self.position_update_job = async_job.AsyncJob(self._positions_fetch_and_push,
                                                       execution_interval_delay=self.POSITION_REFRESH_TIME,
                                                       min_execution_delay=self.TIME_BETWEEN_POSITIONS_REFRESH)
-        self.position_update_job.add_job_dependency(self.position_update_job)
 
     async def initialize(self) -> None:
         """
         Initialize positions and future contracts
         """
+        # fetch future contracts from exchange
         await self.initialize_contracts()
+
+        # subscribe to mark_price channel if necessary
+        if not self._has_mark_price_in_position():
+            await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id) \
+                .new_consumer(self.handle_mark_price)
+
+        # fetch current positions from exchange
         await self.initialize_positions()
+
         self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
 
     async def initialize_contracts(self) -> None:
@@ -193,7 +201,21 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                                            position=position, should_notify=should_notify)
 
     def _should_push_mark_price(self):
+        return self._has_mark_price_in_position()
+
+    def _has_mark_price_in_position(self):
         return self.channel.exchange_manager.exchange.MARK_PRICE_IN_POSITION
+
+    async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
+        """
+        MarkPrice channel consumer callback
+        """
+        try:
+            for symbol_position in self.channel.exchange_manager.exchange_personal_data.positions_manager. \
+                    get_symbol_positions(symbol=symbol):
+                symbol_position.update(mark_price=mark_price)
+        except Exception as e:
+            self.logger.exception(e, True, f"Fail to handle mark price : {e}")
 
     async def stop(self) -> None:
         """
