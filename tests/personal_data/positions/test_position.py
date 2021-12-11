@@ -42,7 +42,7 @@ async def test_update_entry_price(future_trader_simulator_with_default_linear):
     assert position_inst.mark_price == constants.ZERO
 
     mark_price = decimal_random_price(1)
-    position_inst.update(mark_price=mark_price)
+    await position_inst.update(mark_price=mark_price, update_size=constants.ONE)
     assert position_inst.entry_price == mark_price
     assert position_inst.mark_price == mark_price
 
@@ -55,7 +55,7 @@ async def test_update_update_quantity(future_trader_simulator_with_default_linea
     assert position_inst.quantity == constants.ZERO
 
     quantity = decimal_random_quantity(1)
-    position_inst.update(update_size=quantity)
+    await position_inst.update(update_size=quantity)
     assert position_inst.quantity == quantity
 
 
@@ -69,7 +69,7 @@ async def test__check_and_update_size_with_one_way_position_mode(future_trader_s
     if not os.getenv('CYTHON_IGNORE'):
         # LONG
         position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-        position_inst.update(update_size=decimal.Decimal(10))
+        await position_inst.update(update_size=decimal.Decimal(10))
         position_inst._check_and_update_size(decimal.Decimal(10))
         assert position_inst.size == decimal.Decimal(20)
         position_inst._check_and_update_size(decimal.Decimal(-10))
@@ -79,7 +79,7 @@ async def test__check_and_update_size_with_one_way_position_mode(future_trader_s
 
         # SHORT
         position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-        position_inst.update(update_size=decimal.Decimal(-100))
+        await position_inst.update(update_size=decimal.Decimal(-100))
         position_inst._check_and_update_size(decimal.Decimal(-1.5))
         assert position_inst.size == decimal.Decimal(-101.5)
         position_inst._check_and_update_size(decimal.Decimal(51.5))
@@ -98,7 +98,7 @@ async def test__check_and_update_size_with_hedge_position_mode(future_trader_sim
     if not os.getenv('CYTHON_IGNORE'):
         # LONG
         position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-        position_inst.update(update_size=decimal.Decimal(100))
+        await position_inst.update(update_size=decimal.Decimal(100))
         position_inst._check_and_update_size(decimal.Decimal(-5))
         assert position_inst.size == decimal.Decimal(95)
         position_inst._check_and_update_size(decimal.Decimal("-66.481231232156215215874878"))
@@ -108,7 +108,7 @@ async def test__check_and_update_size_with_hedge_position_mode(future_trader_sim
 
         # SHORT
         position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-        position_inst.update(update_size=decimal.Decimal(-10))
+        await position_inst.update(update_size=decimal.Decimal(-10))
         position_inst._check_and_update_size(decimal.Decimal(-10))
         assert position_inst.size == decimal.Decimal(-20)
         position_inst._check_and_update_size(decimal.Decimal(10))
@@ -132,13 +132,13 @@ async def test__is_update_increasing_size(future_trader_simulator_with_default_l
 
         # LONG
         position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-        position_inst.update(update_size=decimal.Decimal(100))
+        await position_inst.update(update_size=decimal.Decimal(100))
         assert not position_inst._is_update_increasing_size(decimal.Decimal(-5))
         assert position_inst._is_update_increasing_size(decimal.Decimal(5))
 
         # SHORT
         position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-        position_inst.update(update_size=decimal.Decimal(-100))
+        await position_inst.update(update_size=decimal.Decimal(-100))
         assert position_inst._is_update_increasing_size(decimal.Decimal(-5))
         assert not position_inst._is_update_increasing_size(decimal.Decimal(5))
 
@@ -148,12 +148,12 @@ async def test_get_quantity_to_close(future_trader_simulator_with_default_linear
 
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     quantity = decimal_random_quantity(1)
-    position_inst.update(update_size=quantity)
+    await position_inst.update(update_size=quantity)
     assert position_inst.get_quantity_to_close() == -quantity
 
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     quantity = -decimal_random_quantity(1)
-    position_inst.update(update_size=quantity)
+    await position_inst.update(update_size=quantity)
     assert position_inst.get_quantity_to_close() == -quantity
 
 
@@ -163,7 +163,7 @@ async def test_update_size_from_order_with_long_one_way_position(future_trader_s
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=constants.ONE_HUNDRED)
+    await position_inst.update(update_size=constants.ONE_HUNDRED)
 
     limit_sell = SellLimitOrder(trader_inst)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
@@ -179,7 +179,7 @@ async def test_update_size_from_order_with_long_close_position_one_way_position(
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=constants.ONE_HUNDRED)
+    await position_inst.update(update_size=constants.ONE_HUNDRED)
 
     limit_sell = SellLimitOrder(trader_inst)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
@@ -196,7 +196,7 @@ async def test_update_size_from_order_with_long_reduce_only_one_way_position(fut
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=constants.ONE_HUNDRED)
+    await position_inst.update(update_size=constants.ONE_HUNDRED)
     position_inst.entry_price = decimal.Decimal(15)
 
     limit_sell = SellLimitOrder(trader_inst)
@@ -210,7 +210,7 @@ async def test_update_size_from_order_with_long_reduce_only_one_way_position(fut
 
     # reduce only with closed position
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=constants.ZERO)
+    await position_inst.update(update_size=constants.ZERO)
     limit_sell = SellLimitOrder(trader_inst)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
                       symbol=DEFAULT_FUTURE_SYMBOL,
@@ -226,7 +226,7 @@ async def test_update_size_from_order_with_long_oversold_one_way_position(future
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=constants.ONE_HUNDRED)
+    await position_inst.update(update_size=constants.ONE_HUNDRED)
 
     limit_sell = SellLimitOrder(trader_inst)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
@@ -244,7 +244,7 @@ async def test_update_size_from_order_with_short_one_way_position(future_trader_
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=-constants.ONE_HUNDRED)
+    await position_inst.update(update_size=-constants.ONE_HUNDRED)
 
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
@@ -260,7 +260,7 @@ async def test_update_size_from_order_with_short_close_position_one_way_position
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=-constants.ONE_HUNDRED)
+    await position_inst.update(update_size=-constants.ONE_HUNDRED)
 
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
@@ -277,7 +277,7 @@ async def test_update_size_from_order_with_short_reduce_only_one_way_position(fu
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=-constants.ONE_HUNDRED)
+    await position_inst.update(update_size=-constants.ONE_HUNDRED)
     position_inst.entry_price = decimal.Decimal(12)
 
     buy_limit = BuyLimitOrder(trader_inst)
@@ -291,7 +291,7 @@ async def test_update_size_from_order_with_short_reduce_only_one_way_position(fu
 
     # reduce only with closed position
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=constants.ZERO)
+    await position_inst.update(update_size=constants.ZERO)
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
                      symbol=DEFAULT_FUTURE_SYMBOL,
@@ -309,7 +309,7 @@ async def test_update_size_from_order_realized_pnl_position(future_trader_simula
 
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.entry_price = decimal.Decimal(10)
-    position_inst.update(update_size=-constants.ONE_HUNDRED)
+    await position_inst.update(update_size=-constants.ONE_HUNDRED)
 
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
@@ -331,7 +331,7 @@ async def test_update_size_from_order_with_short_overbought_one_way_position(fut
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=-constants.ONE_HUNDRED)
+    await position_inst.update(update_size=-constants.ONE_HUNDRED)
 
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
@@ -349,7 +349,7 @@ async def test_update_size_from_order_with_long_oversold_hedge_position(future_t
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=False)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=constants.ONE_HUNDRED)
+    await position_inst.update(update_size=constants.ONE_HUNDRED)
 
     limit_sell = SellLimitOrder(trader_inst)
     limit_sell.update(order_type=enums.TraderOrderType.SELL_LIMIT,
@@ -368,7 +368,7 @@ async def test_update_size_from_order_with_short_overbought_hedge_position(futur
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=False)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
-    position_inst.update(update_size=-constants.ONE_HUNDRED)
+    await position_inst.update(update_size=-constants.ONE_HUNDRED)
 
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
