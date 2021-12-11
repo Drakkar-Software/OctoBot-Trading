@@ -144,13 +144,13 @@ async def test_get_holdings_ratio():
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio["USDT"] = \
         portfolio_assets.SpotAsset(name="USDT", available=decimal.Decimal("1000"), total=decimal.Decimal("1000"))
 
-    assert await consumer.get_holdings_ratio("BTC") == decimal.Decimal('0.9090909090909090909090909091')
-    assert await consumer.get_holdings_ratio("USDT") == decimal.Decimal('0.09090909090909090909090909091')
+    assert consumer.get_holdings_ratio("BTC") == decimal.Decimal('0.9090909090909090909090909091')
+    assert consumer.get_holdings_ratio("USDT") == decimal.Decimal('0.09090909090909090909090909091')
 
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio.pop("USDT")
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.\
         portfolio_current_value = decimal.Decimal("10")
-    assert await consumer.get_holdings_ratio("BTC") == constants.ONE
+    assert consumer.get_holdings_ratio("BTC") == constants.ONE
     # add ETH and try to get ratio without symbol price
     exchange_manager.exchange_personal_data.portfolio_manager.portfolio.\
         get_currency_portfolio("ETH").total = decimal.Decimal(10)
@@ -162,9 +162,9 @@ async def test_get_holdings_ratio():
         ratio = consumer.get_holdings_ratio("ETH")
     # let channel register proceed
     await wait_asyncio_next_cycle()
-    assert await consumer.get_holdings_ratio("BTC") == constants.ONE
-    assert await consumer.get_holdings_ratio("USDT") == constants.ZERO
-    assert await consumer.get_holdings_ratio("XYZ") == constants.ZERO
+    assert consumer.get_holdings_ratio("BTC") == constants.ONE
+    assert consumer.get_holdings_ratio("USDT") == constants.ZERO
+    assert consumer.get_holdings_ratio("XYZ") == constants.ZERO
 
 
 async def test_get_number_of_traded_assets():
