@@ -62,6 +62,6 @@ class LiquidatePositionState(position_state.PositionState):
         await self.position.exchange_manager.exchange_personal_data.handle_position_update_notification(self.position)
 
         # reset position to initial state (open)
-        self.position.close()
+        await self.position.close()
 
         logging.get_logger(self.position.get_logger_name()).warning(f"{self.position.position_id} has been liquidated")
