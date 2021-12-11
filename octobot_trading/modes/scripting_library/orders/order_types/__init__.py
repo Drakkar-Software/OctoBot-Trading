@@ -21,3 +21,4 @@ from .stop_loss_order import *
 from .trailing_market_order import *
 from .trailing_limit_order import *
 from .trailing_stop_loss_order import *
+from .scaled_order import *
