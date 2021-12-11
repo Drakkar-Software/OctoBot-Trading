@@ -38,8 +38,8 @@ async def get_candles(candles_sources, exchange, symbol, time_frame, metadata):
 
 
 async def get_trades(meta_database, symbol):
-    return await meta_database.get_orders_db().select(trading_enums.DBTables.TRADES.value,
-                                                      (await meta_database.get_orders_db().search()).symbol == symbol)  # TODO use trades db
+    return await meta_database.get_trades_db().select(trading_enums.DBTables.TRADES.value,
+                                                     (await meta_database.get_orders_db().search()).symbol == symbol)
 
 
 async def get_metadata(meta_database):
@@ -50,7 +50,8 @@ async def get_starting_portfolio(meta_database) -> dict:
     return (await meta_database.get_run_db().all(trading_enums.DBTables.PORTFOLIO.value))[0]
 
 
-async def _load_historical_values(meta_database, exchange, with_candles=True, with_trades=True, with_portfolio=True, time_frame=None):
+async def _load_historical_values(meta_database, exchange, with_candles=True,
+                                  with_trades=True, with_portfolio=True, time_frame=None):
     price_data = {}
     trades_data = {}
     moving_portfolio_data = {}
@@ -156,7 +157,6 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
 
 
 async def plot_historical_pnl_value(meta_database, plotted_element, exchange=None, x_as_trade_count=True, own_yaxis=False):
-    # TODO multiple symbols
     # PNL:
     # 1. open position: consider position opening fee from PNL
     # 2. close position: consider closed amount + closing fee into PNL
@@ -232,7 +232,7 @@ async def plot_historical_pnl_value(meta_database, plotted_element, exchange=Non
 
 
 async def plot_trades(meta_database, plotted_element):
-    data = await meta_database.get_orders_db().all(trading_enums.DBTables.TRADES.value)  # TODO use get_trades_db
+    data = await meta_database.get_trades_db().all(trading_enums.DBTables.TRADES.value)
     if not data:
         get_logger().debug(f"Nothing to create a table from when reading {trading_enums.DBTables.TRADES.value}")
         return
@@ -279,7 +279,7 @@ async def plot_table(meta_database, plotted_element, data_source, columns=None, 
                      searches=None, column_render=None, types=None, cache_value=None):
     data = []
     if data_source == trading_enums.DBTables.TRADES.value:
-        data = await meta_database.get_orders_db().all(trading_enums.DBTables.TRADES.value)  # TODO use get_trades_db
+        data = await meta_database.get_trades_db().all(trading_enums.DBTables.TRADES.value)
     elif data_source == trading_enums.DBTables.ORDERS.value:
         data = await meta_database.get_orders_db().all(trading_enums.DBTables.ORDERS.value)
     else:

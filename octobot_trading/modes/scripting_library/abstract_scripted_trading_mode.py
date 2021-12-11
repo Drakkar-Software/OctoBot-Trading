@@ -24,6 +24,7 @@ import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.enums as commons_enums
 import octobot_commons.constants as commons_constants
+import octobot_commons.channels_name as channels_name
 import async_channel.channels as channels
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.api as trading_api
@@ -69,6 +70,11 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
 
     async def create_consumers(self) -> list:
         try:
+            await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.TRADES_CHANNEL.value,
+                self.exchange_manager.id).new_consumer(
+                self._trades_callback,
+                symbol=self.symbol
+            )
             import octobot_services.channel as services_channels
             user_commands_consumer = \
                 await channels.get_chan(services_channels.UserCommandsChannel.get_name()).new_consumer(
@@ -80,6 +86,17 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         except KeyError:
             return []
         return [user_commands_consumer]
+
+    async def _trades_callback(
+        self,
+        exchange: str,
+        exchange_id: str,
+        cryptocurrency: str,
+        symbol: str,
+        trade: dict,
+        old_trade: bool,
+    ):
+        await scripting_library.store_trade(None, trade, writer=self.producers[0].trades_writer)
 
     async def _user_commands_callback(self, bot_id, subject, action, data) -> None:
         self.logger.debug(f"Received {action} command.")

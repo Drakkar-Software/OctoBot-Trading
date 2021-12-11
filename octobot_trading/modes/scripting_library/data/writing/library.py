@@ -46,12 +46,45 @@ async def store_orders(ctx, orders,
             "side": order.side.value,
             "mode": mode,
             "color": "red" if order.side is trading_enums.TradeOrderSide.SELL else "blue",
-            "fees_amount": float(order.origin_quantity * decimal.Decimal("0.1")),  # TODO
-            "fees_currency": symbol_util.split_symbol(order.symbol)[1],  # TODO
         }
         for order in orders
     ]
     await ctx.orders_writer.log_many(trading_enums.DBTables.ORDERS.value, order_data)
+
+
+async def store_trade(ctx,
+                      trade_dict,
+                      chart=trading_enums.PlotCharts.MAIN_CHART.value,
+                      x_multiplier=1000,
+                      kind="markers",
+                      mode="lines",
+                      writer=None):
+    trade_data = {
+        "x": trade_dict[trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] * x_multiplier,
+        "text": f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]} "
+                f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value]} "
+                f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.AMOUNT.value]} "
+                f"{symbol_util.split_symbol(trade_dict[trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value])[0]} "
+                f"at {trade_dict[trading_enums.ExchangeConstantsOrderColumns.PRICE.value]}",
+        "id": trade_dict[trading_enums.ExchangeConstantsOrderColumns.ID.value],
+        "symbol": trade_dict[trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value],
+        "type": trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value],
+        "volume": float(trade_dict[trading_enums.ExchangeConstantsOrderColumns.AMOUNT.value]),
+        "y": float(trade_dict[trading_enums.ExchangeConstantsOrderColumns.PRICE.value]),
+        "state": trade_dict[trading_enums.ExchangeConstantsOrderColumns.STATUS.value],
+        "chart": chart,
+        "kind": kind,
+        "side": trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value],
+        "mode": mode,
+        "color": "red" if trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value] ==
+        trading_enums.TradeOrderSide.SELL.value else "blue",
+        "fees_amount": float(trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value]
+                             [trading_enums.ExchangeConstantsFeesColumns.COST.value]),
+        "fees_currency": trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value]
+                             [trading_enums.ExchangeConstantsFeesColumns.CURRENCY.value],
+    }
+    writer = writer or ctx.trades_writer
+    await writer.log(trading_enums.DBTables.TRADES.value, trade_data)
 
 
 async def plot_candles(ctx, symbol=None, time_frame=None, chart=trading_enums.PlotCharts.MAIN_CHART.value):
