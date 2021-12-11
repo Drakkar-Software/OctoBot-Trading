@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 import decimal
 
 import octobot_trading.enums as enums
@@ -172,7 +171,7 @@ class Position(util.Initializable):
         self.update_pnl()
         return changed
 
-    def update(self, update_size=None, mark_price=None):
+    async def update(self, update_size=None, mark_price=None):
         """
         Updates position size and / or mark price
         :param update_size: the size update value
@@ -182,8 +181,11 @@ class Position(util.Initializable):
             self._update_mark_price(mark_price)
         if update_size is not None:
             self._update_size(update_size)
+
         if not self.is_idle():
-            self._check_for_liquidation()
+            await self._check_for_liquidation()
+        else:
+            await self.close()
 
     def _update_mark_price(self, mark_price):
         """
@@ -217,7 +219,8 @@ class Position(util.Initializable):
 
         # Close position if order is closing position
         if order.close_position:
-            self.close()
+            # set position size to 0 to schedule position close at the next update
+            self._update_size(-self.size if self.is_long() else self.size)
             return size_to_close, False
 
         # Calculates position quantity update from order
@@ -227,7 +230,7 @@ class Position(util.Initializable):
         # Updates position average entry price from order
         self.update_average_entry_price(size_update, order.filled_price)
 
-        self.update(update_size=size_update)
+        self._update_size(size_update)
         return size_update, is_increasing_position_size
 
     def _update_realized_pnl_from_order(self, order):
@@ -295,11 +298,8 @@ class Position(util.Initializable):
                 ((self.is_long() and self.size + size_update < constants.ZERO) or
                  (self.is_short() and self.size + size_update > constants.ZERO)):
             self.size = constants.ZERO
-            self.close()
         else:
             self.size += size_update
-            if self.size == constants.ZERO:
-                self.close()
 
     def _update_quantity_or_size_if_necessary(self):
         """
@@ -471,14 +471,16 @@ class Position(util.Initializable):
             market=market,
             entry_price=raw_position.get(enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value, constants.ZERO),
             mark_price=raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, constants.ZERO),
-            liquidation_price=raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value, constants.ZERO),
+            liquidation_price=raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value,
+                                               constants.ZERO),
             quantity=raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO),
             size=raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO),
             value=raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO),
             margin=raw_position.get(enums.ExchangeConstantsPositionColumns.COLLATERAL.value, constants.ZERO),
             position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
-            unrealised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value, constants.ZERO),
+            unrealised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value,
+                                            constants.ZERO),
             realised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO),
             status=position_util.parse_position_status(raw_position),
             side=raw_position.get(enums.ExchangeConstantsPositionColumns.SIDE.value, None)
@@ -503,19 +505,18 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
         }
 
-    def _check_for_liquidation(self):
+    async def _check_for_liquidation(self):
         """
-        _check_for_liquidation will defines rules for a simulated position to be liquidated
-        :return: True if the position is being liquidated else False
+        _check_for_liquidation defines rules for a position to be liquidated
         """
         if self.is_short():
             if self.mark_price >= self.liquidation_price > constants.ZERO:
                 self.status = enums.PositionStatus.LIQUIDATING
-                asyncio.create_task(positions_states.create_position_state(self))
+                await positions_states.create_position_state(self)
         if self.is_long():
             if self.mark_price <= self.liquidation_price > constants.ZERO:
                 self.status = enums.PositionStatus.LIQUIDATING
-                asyncio.create_task(positions_states.create_position_state(self))
+                await positions_states.create_position_state(self)
 
     def _update_side(self):
         """
@@ -546,10 +547,10 @@ class Position(util.Initializable):
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} "
                 f"({self.symbol_contract.position_mode.value})")
 
-    def close(self):
-        self.reset()
+    async def close(self):
+        await self.reset()
 
-    def reset(self):
+    async def reset(self):
         """
         Reset position attributes
         """
@@ -567,7 +568,7 @@ class Position(util.Initializable):
         self.unrealised_pnl = constants.ZERO
         self.realised_pnl = constants.ZERO
         self.creation_time = constants.ZERO
-        asyncio.create_task(self.on_open())
+        await self.on_open()
 
     def clear(self):
         """
