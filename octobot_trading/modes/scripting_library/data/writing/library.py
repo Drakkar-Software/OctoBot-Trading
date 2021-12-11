@@ -26,6 +26,10 @@ import octobot_commons.constants as commons_constants
 import octobot_commons.databases as databases
 
 
+def set_plot_orders(ctx, value):
+    ctx.plot_orders = value
+
+
 async def store_orders(ctx, orders,
                        chart=trading_enums.PlotCharts.MAIN_CHART.value,
                        x_multiplier=1000,
@@ -59,9 +63,11 @@ async def store_trade(ctx,
                       kind="markers",
                       mode="lines",
                       writer=None):
+    tag = f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TAG.value]} " \
+        if trade_dict[trading_enums.ExchangeConstantsOrderColumns.TAG.value] else ""
     trade_data = {
         "x": trade_dict[trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] * x_multiplier,
-        "text": f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]} "
+        "text": f"{tag}{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]} "
                 f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value]} "
                 f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.AMOUNT.value]} "
                 f"{symbol_util.split_symbol(trade_dict[trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value])[0]} "
@@ -79,9 +85,11 @@ async def store_trade(ctx,
         "color": "red" if trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value] ==
         trading_enums.TradeOrderSide.SELL.value else "blue",
         "fees_amount": float(trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value]
-                             [trading_enums.ExchangeConstantsFeesColumns.COST.value]),
-        "fees_currency": trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value]
-                             [trading_enums.ExchangeConstantsFeesColumns.CURRENCY.value],
+                             [trading_enums.ExchangeConstantsFeesColumns.COST.value] if
+                             trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value] else 0),
+        "fees_currency": trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value][
+            trading_enums.ExchangeConstantsFeesColumns.CURRENCY.value]
+            if trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value] else "",
     }
     writer = writer or ctx.trades_writer
     await writer.log(trading_enums.DBTables.TRADES.value, trade_data)
@@ -287,8 +295,9 @@ async def clear_trades_cache(writer):
     await _clear_table(writer, trading_enums.DBTables.TRADES.value)
 
 
-async def clear_plotting_cache(writer):
-    await _clear_table(writer, trading_enums.DBTables.CACHE_SOURCE.value)
+async def clear_all_tables(writer_reader):
+    for table in await writer_reader.tables():
+        await _clear_table(writer_reader, table)
 
 
 async def _clear_table(writer, table, flush=True):

@@ -18,19 +18,19 @@ import octobot_trading.modes.scripting_library.orders.order_types.create_order a
 
 
 async def stop_loss(
-        context,
-        side=None,
-        symbol=None,
+    context,
+    side=None,
+    symbol=None,
 
-        offset=None,
+    offset=None,
 
-        amount=None,
-        target_position=None,
+    amount=None,
+    target_position=None,
+    one_cancels_the_other=False,
 
-        tag=None,
+    tag=None,
 
-        linked_to=None
-
+    linked_to=None
 ):
     return await create_order.create_order_instance(
         context,
@@ -42,6 +42,7 @@ async def stop_loss(
 
         order_type_name="stop_loss",
         order_offset=offset,
+        one_cancels_the_other=one_cancels_the_other,
 
         tag=tag,
 

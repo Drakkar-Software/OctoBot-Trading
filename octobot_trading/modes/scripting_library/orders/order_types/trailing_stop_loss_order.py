@@ -18,18 +18,19 @@ import octobot_trading.modes.scripting_library.orders.order_types.create_order a
 
 
 async def trailing_stop_loss(
-        context,
-        side=None,
-        symbol=None,
+    context,
+    side=None,
+    symbol=None,
 
-        amount=None,
-        target_position=None,
+    amount=None,
+    target_position=None,
 
-        offset=None,
+    offset=None,
+    one_cancels_the_other=False,
 
-        tag=None,
+    tag=None,
 
-        linked_to=None
+    linked_to=None
 ) -> list:
     return await create_order.create_order_instance(
         context,
@@ -44,6 +45,7 @@ async def trailing_stop_loss(
         order_offset=offset,
 
         reduce_only=True,
+        one_cancels_the_other=one_cancels_the_other,
 
         tag=tag,
 

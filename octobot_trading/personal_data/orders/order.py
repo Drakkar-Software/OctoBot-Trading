@@ -55,6 +55,7 @@ class Order(util.Initializable):
         self.taker_or_maker = None
         self.timestamp = 0
         self.side = side
+        self.tag = None
 
         # original order attributes
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
@@ -83,6 +84,7 @@ class Order(util.Initializable):
         self.linked_portfolio = None
         self.linked_to = None
         self.linked_orders = []
+        self.one_cancels_the_other = False
 
         # order state is initialized in initialize_impl()
         self.state = None
@@ -111,7 +113,7 @@ class Order(util.Initializable):
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None, linked_to=None, linked_portfolio=None,
                order_type=None, reduce_only=False, close_position=False, position_side=None,
-               allow_self_managed=True) -> bool:
+               allow_self_managed=True, one_cancels_the_other=None, tag=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -208,6 +210,8 @@ class Order(util.Initializable):
         self.reduce_only = reduce_only
         self.close_position = close_position
         self.allow_self_managed = allow_self_managed
+        self.one_cancels_the_other = one_cancels_the_other
+        self.tag = tag
 
         return changed
 
@@ -441,7 +445,8 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
             enums.ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
-            enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only
+            enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
+            enums.ExchangeConstantsOrderColumns.TAG.value: self.tag
         }
 
     def clear(self):

@@ -80,6 +80,7 @@ class Context:
         self.backtesting_id = backtesting_id
         self.optimizer_id = optimizer_id
         self.allow_self_managed_orders = False
+        self.plot_orders = False
 
     @staticmethod
     def minimal(trading_mode_class, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):

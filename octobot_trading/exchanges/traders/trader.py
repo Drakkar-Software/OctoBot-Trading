@@ -149,8 +149,10 @@ class Trader(util.Initializable):
             # rebind linked portfolio to new order instance
             new_order.linked_portfolio = portfolio
 
-            # rebind allow_self_managed
+            # rebind order local variables
             new_order.allow_self_managed = allow_self_managed
+            new_order.one_cancels_the_other = new_order.one_cancels_the_other
+            new_order.tag = new_order.tag
         return new_order
 
     async def cancel_order(self, order: object, ignored_order: object = None) -> bool:
@@ -204,16 +206,19 @@ class Trader(util.Initializable):
         except KeyError:
             return False
 
-    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True) -> bool:
+    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None) -> bool:
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
         :param symbol: The symbol to cancel all orders on
         :param cancel_loaded_orders: When True, also cancels loaded orders (order that are not from this bot instance)
+        :param side: When set, only cancels orders from this side
         :return: True if all orders got cancelled, False if an error occurred
         """
         all_cancelled = True
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
-            if (order.symbol == symbol and not order.is_cancelled()) and \
+            if order.symbol == symbol and \
+                    (side is None or order.side is side) and \
+                    not order.is_cancelled() and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
                 all_cancelled = await self.cancel_order(order) and all_cancelled
         return all_cancelled

@@ -31,6 +31,7 @@ cdef class Trade:
     cdef public str origin_order_id
     cdef public bint simulated
     cdef public bint is_closing_order
+    cdef public str tag
 
     cdef public object origin_price
     cdef public object origin_quantity

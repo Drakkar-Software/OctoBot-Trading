@@ -18,26 +18,27 @@ import octobot_trading.modes.scripting_library.orders.order_types.create_order a
 
 
 async def trailing_limit(
-        context,
-        side=None,
-        symbol=None,
+    context,
+    side=None,
+    symbol=None,
 
-        amount=None,
-        target_position=None,
+    amount=None,
+    target_position=None,
 
-        offset=None,
-        min_offset=None,
-        max_offset=None,
+    offset=None,
+    min_offset=None,
+    max_offset=None,
 
-        slippage_limit=None,
-        time_limit=None,
+    slippage_limit=None,
+    time_limit=None,
 
-        reduce_only=False,
-        post_only=False,
+    reduce_only=False,
+    post_only=False,
+    one_cancels_the_other=False,
 
-        tag=None,
+    tag=None,
 
-        linked_to=None
+    linked_to=None
 ):
     return await create_order.create_order_instance(
         context,
@@ -57,6 +58,7 @@ async def trailing_limit(
         time_limit=time_limit,
         reduce_only=reduce_only,
         post_only=post_only,
+        one_cancels_the_other=one_cancels_the_other,
 
         tag=tag,
 

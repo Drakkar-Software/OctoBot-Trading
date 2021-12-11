@@ -22,31 +22,33 @@ import octobot_trading.errors as trading_errors
 import octobot_trading.modes.scripting_library.data as library_data
 import octobot_trading.modes.scripting_library.orders.position_size as position_size
 import octobot_trading.modes.scripting_library.orders.offsets as offsets
+import octobot_trading.modes.scripting_library.orders.order_tags as order_tags
 
 
 async def create_order_instance(
-        context,
-        side=None,
-        symbol=None,
+    context,
+    side=None,
+    symbol=None,
 
-        order_amount=None,
-        order_target_position=None,
+    order_amount=None,
+    order_target_position=None,
 
-        order_type_name=None,
+    order_type_name=None,
 
-        order_offset=None,
-        order_min_offset=None,
-        order_max_offset=None,
-        order_limit_offset=None,  # todo
+    order_offset=None,
+    order_min_offset=None,
+    order_max_offset=None,
+    order_limit_offset=None,  # todo
 
-        slippage_limit=None,
-        time_limit=None,
+    slippage_limit=None,
+    time_limit=None,
 
-        reduce_only=False,  # Todo
-        post_only=False,  # Todo
-        tag=None,  # Todo
+    reduce_only=False,  # Todo
+    post_only=False,  # Todo
+    one_cancels_the_other=False,
+    tag=None,
 
-        linked_to=None
+    linked_to=None
 ):
     async with context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
         order_quantity, side = await _get_order_quantity_and_side(context, order_amount, order_target_position,
@@ -58,7 +60,7 @@ async def create_order_instance(
 
         return await _create_order(context, symbol, order_quantity, order_price, tag,
                                    order_type, side, order_min_offset, max_offset_val,
-                                   linked_to)
+                                   linked_to, one_cancels_the_other)
 
 
 def _use_total_holding(order_type_name):
@@ -168,8 +170,8 @@ async def _get_order_details(context, order_type_name, side, order_offset, reduc
            min_offset_val, max_offset_val, order_limit_offset, limit_offset_val
 
 
-async def _create_order(context, symbol, order_quantity, order_price, tag,
-                        order_type, side, order_min_offset, max_offset_val, linked_to):
+async def _create_order(context, symbol, order_quantity, order_price, tag, order_type, side,
+                        order_min_offset, max_offset_val, linked_to, one_cancels_the_other):
     # todo handle offsets, reduce_only, post_only,
     orders = []
     error_message = ""
@@ -199,11 +201,20 @@ async def _create_order(context, symbol, order_quantity, order_price, tag,
                 price=final_order_price,
                 side=side,
                 allow_self_managed=context.allow_self_managed_orders,
-                linked_to=linked_to
+                linked_to=linked_to,
+                one_cancels_the_other=one_cancels_the_other,
+                tag=tag
             )
             if order_min_offset is not None:
                 await created_order.set_trailing_percent(order_min_offset)
             created_order = await context.trader.create_order(created_order)
+            if linked_to is None and one_cancels_the_other:
+                # cancel all other orders with same symbol and one_cancels_the_other,
+                # filter by tag if provided
+                for order in order_tags.get_tagged_orders(context, symbol=symbol, tag=tag):
+                    if created_order is not order and order.one_cancels_the_other:
+                        order.add_linked_order(created_order)
+                        created_order.add_linked_order(order)
             orders.append(created_order)
     except (trading_errors.MissingFunds, trading_errors.MissingMinimalExchangeTradeVolume):
         error_message = "missing minimal funds"
@@ -213,7 +224,7 @@ async def _create_order(context, symbol, order_quantity, order_price, tag,
         error_message = f"failed to create order : {e}."
         context.logger.exception(e, True, f"Failed to create order : {e}.")
     if orders:
-        if context is not None:
+        if context is not None and context.plot_orders:
             await library_data.store_orders(context, orders)
     else:
         error_message = f"not enough funds"

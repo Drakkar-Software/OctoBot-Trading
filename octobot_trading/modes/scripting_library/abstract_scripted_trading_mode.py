@@ -96,20 +96,21 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         trade: dict,
         old_trade: bool,
     ):
-        await scripting_library.store_trade(None, trade, writer=self.producers[0].trades_writer)
+        if trade[trading_enums.ExchangeConstantsOrderColumns.STATUS.value] != trading_enums.OrderStatus.CANCELED.value:
+            await scripting_library.store_trade(None, trade, writer=self.producers[0].trades_writer)
 
     async def _user_commands_callback(self, bot_id, subject, action, data) -> None:
         self.logger.debug(f"Received {action} command.")
         if action == commons_enums.UserCommands.RELOAD_SCRIPT.value:
             await self.reload_script(live=True)
             await self.reload_script(live=False)
-        if action == commons_enums.UserCommands.CLEAR_PLOTTING_CACHE.value:
+        elif action == commons_enums.UserCommands.CLEAR_PLOTTING_CACHE.value:
             await self.clear_plotting_cache()
-        if action == commons_enums.UserCommands.CLEAR_ALL_CACHE.value:
+        elif action == commons_enums.UserCommands.CLEAR_ALL_CACHE.value:
             await self.clear_all_cache()
-        if action == commons_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
+        elif action == commons_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
             await self.clear_simulated_orders_cache()
-        if action == commons_enums.UserCommands.CLEAR_SIMULATED_TRADES_CACHE.value:
+        elif action == commons_enums.UserCommands.CLEAR_SIMULATED_TRADES_CACHE.value:
             await self.clear_simulated_trades_cache()
 
     async def clear_simulated_orders_cache(self):
@@ -125,7 +126,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
 
     async def clear_plotting_cache(self):
         for producer in self.producers:
-            await scripting_library.clear_plotting_cache(producer.symbol_writer)
+            await scripting_library.clear_all_tables(producer.symbol_writer)
 
     @classmethod
     async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id):
@@ -182,6 +183,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             await self.start_over_database(not live)
 
     async def start_over_database(self, backtesting):
+        await self.clear_plotting_cache()
         for producer in self.producers:
             await scripting_library.clear_user_inputs(producer.run_data_writer)
             producer.run_data_writer.are_data_initialized = False
@@ -223,7 +225,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         except KeyError:
             if self.bot_id not in self.__class__.WRITER_IDENTIFIER_BY_BOT_ID:
                 self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id] = {}
-            writer = databases.DBWriter(writer_identifier)
+            writer = databases.DBWriterReader(writer_identifier)
             self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id][writer_identifier] = writer
             return writer
 

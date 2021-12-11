@@ -49,6 +49,7 @@ cdef class Order(util.Initializable):
     cdef public str taker_or_maker
     cdef public str order_id
     cdef public str logger_name
+    cdef public str tag
 
     cdef public object origin_price
     cdef public object origin_stop_price
@@ -69,6 +70,7 @@ cdef class Order(util.Initializable):
 
     cdef list last_prices
     cdef public list linked_orders
+    cdef public bint one_cancels_the_other
 
     cdef public object exchange_order_type # raw exchange order type, used to create order dict
 
@@ -91,8 +93,10 @@ cdef class Order(util.Initializable):
             object order_type=*,
             bint reduce_only=*,
             bint close_position=*,
-            object position_side=*)
-
+            object position_side=*,
+            bint allow_self_managed=*,
+            bint one_cancels_the_other=*,
+            str tag=*)
     cdef void _update_type_from_raw(self, dict raw_order)
     cdef void _update_taker_maker(self)
 

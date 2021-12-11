@@ -18,20 +18,21 @@ import octobot_trading.modes.scripting_library.orders.order_types.create_order a
 
 
 async def trailing_market(
-        context,
-        side=None,
-        symbol=None,
+    context,
+    side=None,
+    symbol=None,
 
-        amount=None,
-        target_position=None,
+    amount=None,
+    target_position=None,
 
-        offset=None,
+    offset=None,
 
-        reduce_only=False,
+    reduce_only=False,
+    one_cancels_the_other=False,
 
-        tag=None,
+    tag=None,
 
-        linked_to=None
+    linked_to=None
 ):
     return await create_order.create_order_instance(
         context,
@@ -46,6 +47,7 @@ async def trailing_market(
         order_offset=offset,
 
         reduce_only=reduce_only,
+        one_cancels_the_other=one_cancels_the_other,
 
         tag=tag,
 
