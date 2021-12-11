@@ -14,6 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from .inputs import *
+from .user_inputs import *
 from .select_time_frame import *
 from .select_candle import *

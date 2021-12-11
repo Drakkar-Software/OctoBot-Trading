@@ -15,7 +15,7 @@
 #  License along with this library.
 
 import octobot_commons.time_frame_manager as time_frame_manager
-from .inputs import user_input
+from .user_inputs import user_input
 
 
 async def user_select_time_frame(

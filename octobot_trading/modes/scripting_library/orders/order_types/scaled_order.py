@@ -21,24 +21,25 @@ from ..offsets import *
 
 
 async def scaled_limit(
-        context,
-        side=None,
-        symbol=None,
+    context,
+    side=None,
+    symbol=None,
 
-        scale_from=None,
-        scale_to=None,
-        order_count=10,
-        distribution="linear",
+    scale_from=None,
+    scale_to=None,
+    order_count=10,
+    distribution="linear",
 
-        amount=None,
-        target_position=None,
+    amount=None,
+    target_position=None,
 
-        reduce_only=False,
-        post_only=False,
+    reduce_only=False,
+    post_only=False,
+    one_cancels_the_other=False,
 
-        tag=None,
+    tag=None,
 
-        linked_to=None
+    linked_to=None
 ):
     amount_per_order = None
     if target_position is None and amount is not None:
@@ -83,5 +84,6 @@ async def scaled_limit(
 
             reduce_only=reduce_only,
             post_only=post_only,
+            one_cancels_the_other=one_cancels_the_other,
             tag=tag
         )

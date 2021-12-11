@@ -15,9 +15,9 @@
 #  License along with this library.
 
 from .data import *
+from .UI import *
 from .orders import *
 from .TA import *
-from .UI import *
 from .accessors import *
 from .backtesting import *
 from .abstract_scripted_trading_mode import AbstractScriptedTradingMode, AbstractScriptedTradingModeProducer

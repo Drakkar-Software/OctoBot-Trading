@@ -15,7 +15,7 @@
 #  License along with this library.
 
 from octobot_trading.modes.scripting_library.data.reading.exchange_public_data import Open, High, Low, Close, Volume # , hl2, ohl3, ohlc4
-from .inputs import user_input
+from .user_inputs import user_input
 
 
 async def user_select_candle(
