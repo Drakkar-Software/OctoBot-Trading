@@ -200,15 +200,11 @@ class Order(util.Initializable):
         if self.taker_or_maker is None:
             self._update_taker_maker()
 
-        if not self.reduce_only:
-            self.reduce_only = reduce_only
-
-        if not self.close_position:
-            self.close_position = close_position
-
         if position_side:
             self.position_side = position_side
 
+        self.reduce_only = reduce_only
+        self.close_position = close_position
         return changed
 
     async def initialize_impl(self, **kwargs):
