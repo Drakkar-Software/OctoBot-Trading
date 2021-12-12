@@ -88,6 +88,20 @@ def test_set():
     assert asset.available == decimal.Decimal(5)
     assert asset.total == decimal.Decimal(2)
     assert asset.wallet_balance == decimal.Decimal(5)
+    assert asset.set(total=decimal.Decimal(-5),
+                     available=decimal.Decimal(-5),
+                     margin_balance=decimal.Decimal(-5),
+                     initial_margin=decimal.Decimal(-5),
+                     order_margin=decimal.Decimal(-5),
+                     position_margin=decimal.Decimal(-5),
+                     unrealized_pnl=decimal.Decimal(-5))
+    assert asset.set(total=constants.ZERO,
+                     available=constants.ZERO,
+                     margin_balance=constants.ZERO,
+                     initial_margin=constants.ZERO,
+                     order_margin=constants.ZERO,
+                     position_margin=constants.ZERO,
+                     unrealized_pnl=constants.ZERO)
 
 
 def test_restore_available():
