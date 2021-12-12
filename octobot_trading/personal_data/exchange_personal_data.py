@@ -263,7 +263,8 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = await self.positions_manager.upsert_position(symbol, side, position)
             if should_notify:
-                position_instance = self.positions_manager.get_symbol_position(symbol=symbol, side=side)
+                position_instance = self.positions_manager.get_symbol_position(
+                    symbol=symbol, side=None if position.symbol_contract.is_one_way_position_mode() else side)
                 await self.handle_position_update_notification(position_instance, is_updated=changed)
             return changed
         except Exception as e:
