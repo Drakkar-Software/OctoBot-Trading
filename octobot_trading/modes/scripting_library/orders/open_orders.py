@@ -16,9 +16,4 @@
 
 
 def get_open_orders(context):
-    return [
-        order
-        for order in context.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
-            symbol=context.symbol
-        )
-    ]
+    return context.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol=context.symbol)

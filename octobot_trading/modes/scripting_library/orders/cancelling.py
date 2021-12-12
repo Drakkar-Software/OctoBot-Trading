@@ -19,8 +19,8 @@ import octobot_trading.enums as enums
 
 
 async def cancel_orders(ctx, which="all", symbol=None, symbols=None, cancel_loaded_orders=True) -> bool:
-    symbols = symbols or [symbol] if symbol else [ctx.symbol]
-    order_ids = None
+    symbols = symbols or [symbol] if symbol or symbols else [ctx.symbol]
+    orders = None
     orders_canceled = False
     side = None
     if which == "all":
@@ -30,13 +30,13 @@ async def cancel_orders(ctx, which="all", symbol=None, symbols=None, cancel_load
     elif which == "buy":
         side = enums.TradeOrderSide.BUY
     else:  # tagged order
-        order_ids = order_tags.get_tagged_orders(ctx, which)
-    if order_ids:
-        for order_id in order_ids:
-            await ctx.exchange_manager.trader.cancel_order
-            if await ctx.exchange_manager.trader.cancel_order_with_id(order_id):
+        orders = order_tags.get_tagged_orders(ctx, which)
+    if orders is not None:
+        for order in orders:
+            if await ctx.trader.cancel_order(order):
                 orders_canceled = True
-    for symbol in symbols:
-        await ctx.trader.cancel_open_orders(symbol, cancel_loaded_orders=cancel_loaded_orders, side=side)
-        orders_canceled = True
+    else:
+        for symbol in symbols:
+            await ctx.trader.cancel_open_orders(symbol, cancel_loaded_orders=cancel_loaded_orders, side=side)
+            orders_canceled = True
     return orders_canceled

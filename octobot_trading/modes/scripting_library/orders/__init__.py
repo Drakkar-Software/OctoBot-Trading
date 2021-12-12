@@ -19,6 +19,6 @@ from .offsets import *
 from .order_types import *
 from .position_size import *
 from .order_tags import *
-from .cancel_orders import *
+from .cancelling import *
 from .open_orders import *
 from .risk_management import *
