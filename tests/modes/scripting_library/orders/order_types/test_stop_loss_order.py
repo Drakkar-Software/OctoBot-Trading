@@ -31,7 +31,8 @@ pytestmark = pytest.mark.asyncio
 async def test_stop_loss(null_context):
     with mock.patch.object(create_order, "create_order_instance", mock.AsyncMock()) as create_order_instance:
         await stop_loss_order.stop_loss(null_context, "side", "symbol", "offset", "amount", "target_position",
-                                        "tag", "linked_to")
+                                        "one_cancels_the_other", "tag", "linked_to")
         create_order_instance.assert_called_once_with(
             null_context, side="side", symbol="symbol", order_amount="amount", order_target_position="target_position",
-            order_type_name="stop_loss", order_offset="offset", tag="tag", linked_to="linked_to")
+            order_type_name="stop_loss", order_offset="offset", one_cancels_the_other="one_cancels_the_other",
+            tag="tag", linked_to="linked_to")

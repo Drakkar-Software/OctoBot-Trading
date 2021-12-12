@@ -22,6 +22,7 @@ import octobot_trading.personal_data as trading_personal_data
 import octobot_trading.modes.scripting_library.orders.order_types.create_order as create_order
 import octobot_trading.modes.scripting_library.orders.position_size as position_size
 import octobot_trading.modes.scripting_library.orders.offsets as offsets
+import octobot_trading.modes.scripting_library.orders.order_tags as order_tags
 import octobot_trading.modes.scripting_library.data as library_data
 import octobot_trading.enums as trading_enums
 import octobot_trading.errors as errors
@@ -46,13 +47,14 @@ async def test_create_order_instance(mock_context):
             mock.patch.object(create_order, "_create_order", mock.AsyncMock()) as _create_order_mock:
         await create_order.create_order_instance(
             mock_context, "side", "symbol", "order_amount", "order_target_position",
-            "order_type_name", "order_offset")  # todo add other params
+            "order_type_name", "order_offset", "order_min_offset", "order_max_offset", "order_limit_offset",
+            "slippage_limit", "time_limit", "reduce_only", "post_only", "one_cancels_the_other", "tag", "linked_to")
         _get_order_quantity_and_side_mock.assert_called_once_with(mock_context, "order_amount",
                                                                   "order_target_position", "order_type_name", "side")
-        _get_order_details_mock.assert_called_once_with(mock_context, "order_type_name", "sell", "order_offset", False,
-                                                        None)
-        _create_order_mock.assert_called_once_with(mock_context, "symbol", decimal.Decimal(1), 2, None,
-                                                   1, 3, None, 7, None)
+        _get_order_details_mock.assert_called_once_with(mock_context, "order_type_name", "sell", "order_offset",
+                                                        "reduce_only", "order_limit_offset")
+        _create_order_mock.assert_called_once_with(mock_context, "symbol", decimal.Decimal(1), 2, "tag",
+                                                   1, 3, "order_min_offset", 7, "linked_to", "one_cancels_the_other")
 
 
 def test_use_total_holding():
@@ -192,37 +194,80 @@ async def test_create_order(mock_context, symbol_market):
                            mock.AsyncMock(return_value=(None, None, None, decimal.Decimal(105), symbol_market))) \
         as get_pre_order_data_mock, \
         mock.patch.object(library_data, "store_orders", mock.AsyncMock()) as store_orders_mock:
-        await create_order._create_order(mock_context, "BTC/USDT", decimal.Decimal(1), decimal.Decimal(100), None,
-                                         trading_enums.TraderOrderType.BUY_MARKET, None, None, None,
-                                         None)
+
+        # without linked orders
+        # don't plot orders
+        mock_context.plot_orders = False
+        orders = await create_order._create_order(
+            mock_context, "BTC/USDT", decimal.Decimal(1), decimal.Decimal(100), "tag",
+            trading_enums.TraderOrderType.BUY_MARKET, None, None, None, None, False)
         get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol="BTC/USDT",
                                                         timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
-        store_orders_mock.assert_called_once()
-        assert store_orders_mock.mock_calls
-        assert store_orders_mock.mock_calls[0].args[0] is mock_context
-        orders = store_orders_mock.mock_calls[0].args[1]
+        store_orders_mock.assert_not_called()
         assert len(orders) == 1
         assert isinstance(orders[0], trading_personal_data.BuyMarketOrder)
         assert orders[0].symbol == "BTC/USDT"
+        assert orders[0].tag == "tag"
+        assert orders[0].one_cancels_the_other is False
         assert orders[0].origin_price == decimal.Decimal(105)
         assert orders[0].origin_quantity == decimal.Decimal(1)
         get_pre_order_data_mock.reset_mock()
-        store_orders_mock.reset_mock()
 
-        await create_order._create_order(mock_context, "BTC/USDT", decimal.Decimal(1), decimal.Decimal(100), None,
-                                         trading_enums.TraderOrderType.TRAILING_STOP,
-                                         trading_enums.TradeOrderSide.BUY, decimal.Decimal(5), None,
-                                         [trading_personal_data.LimitOrder(mock_context.trader)])
+        # with linked orders
+        # plot orders
+        mock_context.plot_orders = True
+        linked_order = trading_personal_data.LimitOrder(mock_context.trader)
+        orders = await create_order._create_order(
+            mock_context, "BTC/USDT", decimal.Decimal(1), decimal.Decimal(100), "tag2",
+            trading_enums.TraderOrderType.TRAILING_STOP,
+            trading_enums.TradeOrderSide.BUY, decimal.Decimal(5), None,
+            [linked_order], False)
         get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol="BTC/USDT",
                                                         timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
         store_orders_mock.assert_called_once()
         assert store_orders_mock.mock_calls
         assert store_orders_mock.mock_calls[0].args[0] is mock_context
-        orders = store_orders_mock.mock_calls[0].args[1]
+        assert orders is store_orders_mock.mock_calls[0].args[1]
         assert len(orders) == 1
         assert isinstance(orders[0], trading_personal_data.TrailingStopOrder)
         assert orders[0].symbol == "BTC/USDT"
+        assert orders[0].tag == "tag2"
+        assert orders[0].one_cancels_the_other is False
         assert orders[0].origin_price == decimal.Decimal(100)
         assert orders[0].origin_quantity == decimal.Decimal(1)
         assert orders[0].trader == mock_context.trader
         assert orders[0].trailing_percent == decimal.Decimal(5)
+        assert orders[0].linked_to is linked_order
+        get_pre_order_data_mock.reset_mock()
+        store_orders_mock.reset_mock()
+
+        # with one_cancels_the_other and tag similar to previously created orders: links them together
+        previous_orders = [trading_personal_data.LimitOrder(mock_context.trader),
+                           trading_personal_data.LimitOrder(mock_context.trader)]
+        previous_orders[0].one_cancels_the_other = True
+        with mock.patch.object(order_tags, "get_tagged_orders", mock.Mock(return_value=previous_orders)) \
+             as get_tagged_orders_mock:
+            mock_context.plot_orders = False
+            orders = await create_order._create_order(
+                mock_context, "BTC/USDT", decimal.Decimal(1), decimal.Decimal(100), "tag2",
+                trading_enums.TraderOrderType.TRAILING_STOP,
+                trading_enums.TradeOrderSide.BUY, decimal.Decimal(5), None,
+                None, True)
+            get_pre_order_data_mock.assert_called_once_with(mock_context.exchange_manager, symbol="BTC/USDT",
+                                                            timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
+            store_orders_mock.assert_not_called()
+            get_tagged_orders_mock.assert_called_once_with(mock_context, symbol="BTC/USDT", tag="tag2")
+            assert len(orders) == 1
+            assert isinstance(orders[0], trading_personal_data.TrailingStopOrder)
+            assert orders[0].symbol == "BTC/USDT"
+            assert orders[0].tag == "tag2"
+            assert orders[0].one_cancels_the_other is True
+            assert orders[0].origin_price == decimal.Decimal(100)
+            assert orders[0].origin_quantity == decimal.Decimal(1)
+            assert orders[0].trader == mock_context.trader
+            assert orders[0].trailing_percent == decimal.Decimal(5)
+
+            # linked other "one_cancels_the_other" orders together
+            assert orders[0].linked_orders == [previous_orders[0]]
+            assert previous_orders[0].linked_orders == orders
+            assert previous_orders[1].linked_orders == []

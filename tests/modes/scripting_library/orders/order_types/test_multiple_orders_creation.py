@@ -245,7 +245,7 @@ async def test_concurrent_orders(mock_context):
 
 
 @pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
-async def test_sell_limit_with_stop_loss_orders_single_sell_and_stop(mock_context):
+async def test_sell_limit_with_stop_loss_orders_single_sell_and_stop_with_linked_to(mock_context):
     async with _20_percent_position_trading_context(mock_context) as context_data:
         btc_val, usdt_val, btc_price = context_data
 
@@ -271,7 +271,7 @@ async def test_sell_limit_with_stop_loss_orders_single_sell_and_stop(mock_contex
 
 
 @pytest.mark.parametrize("backtesting_config", ["USDT"], indirect=["backtesting_config"])
-async def test_sell_limit_with_stop_loss_orders_two_sells_and_stop(mock_context):
+async def test_sell_limit_with_stop_loss_orders_two_sells_and_stop_with_oco(mock_context):
     async with _20_percent_position_trading_context(mock_context) as context_data:
         btc_val, usdt_val, btc_price = context_data
 
@@ -279,7 +279,9 @@ async def test_sell_limit_with_stop_loss_orders_two_sells_and_stop(mock_context)
             mock_context,
             target_position="0%",
             offset=-50,
-            side="sell"
+            side="sell",
+            one_cancels_the_other=True,
+            tag="exitPosition"
         )
         take_profit_limit_orders_1 = await scripting_library.limit(
             mock_context,
@@ -290,7 +292,8 @@ async def test_sell_limit_with_stop_loss_orders_two_sells_and_stop(mock_context)
             mock_context,
             target_position="0%p",
             offset=100,
-            linked_to=stop_loss_orders
+            one_cancels_the_other=True,
+            tag="exitPosition"
         )
 
         # take_profit_limit_orders_1 filled
