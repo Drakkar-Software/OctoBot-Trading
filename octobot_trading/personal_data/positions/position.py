@@ -171,12 +171,22 @@ class Position(util.Initializable):
         self.update_pnl()
         return changed
 
+    async def _ensure_position_initialized(self):
+        """
+        Checks if the position has already been initialized
+        When it's not initialize it
+        """
+        if self.state is None:
+            await self.initialize()
+
     async def update(self, update_size=None, mark_price=None):
         """
         Updates position size and / or mark price
         :param update_size: the size update value
         :param mark_price: the mark price update value
         """
+        await self._ensure_position_initialized()
+
         if mark_price is not None:
             self._update_mark_price(mark_price)
         if update_size is not None:
@@ -574,6 +584,7 @@ class Position(util.Initializable):
         """
         Clear position references
         """
-        self.state.clear()
+        if self.state:
+            self.state.clear()
         self.trader = None
         self.exchange_manager = None
