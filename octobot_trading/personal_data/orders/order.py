@@ -112,8 +112,8 @@ class Order(util.Initializable):
                current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None, linked_to=None, linked_portfolio=None,
-               order_type=None, reduce_only=False, close_position=False, position_side=None,
-               allow_self_managed=True, one_cancels_the_other=None, tag=None) -> bool:
+               order_type=None, reduce_only=None, close_position=False, position_side=None,
+               allow_self_managed=None, one_cancels_the_other=None, tag=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -207,11 +207,19 @@ class Order(util.Initializable):
         if position_side:
             self.position_side = position_side
 
-        self.reduce_only = reduce_only
         self.close_position = close_position
-        self.allow_self_managed = allow_self_managed
-        self.one_cancels_the_other = one_cancels_the_other
-        self.tag = tag
+
+        if reduce_only is not None:
+            self.reduce_only = reduce_only
+
+        if allow_self_managed is not None:
+            self.allow_self_managed = allow_self_managed
+
+        if one_cancels_the_other is not None:
+            self.one_cancels_the_other = one_cancels_the_other
+
+        if tag is not None:
+            self.tag = tag
 
         return changed
 

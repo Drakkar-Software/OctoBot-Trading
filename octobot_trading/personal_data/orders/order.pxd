@@ -91,11 +91,11 @@ cdef class Order(util.Initializable):
             object linked_to=*,
             object linked_portfolio=*,
             object order_type=*,
-            bint reduce_only=*,
+            object reduce_only=*,
             bint close_position=*,
             object position_side=*,
-            bint allow_self_managed=*,
-            bint one_cancels_the_other=*,
+            object allow_self_managed=*,
+            object one_cancels_the_other=*,
             str tag=*)
     cdef void _update_type_from_raw(self, dict raw_order)
     cdef void _update_taker_maker(self)
