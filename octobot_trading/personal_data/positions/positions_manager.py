@@ -53,7 +53,9 @@ class PositionsManager(util.Initializable):
         """
         future_contract = contract if contract is not None \
             else self.trader.exchange_manager.exchange.get_pair_future_contract(order.symbol)
-        return self.get_symbol_position(symbol=order.symbol, side=order.get_position_side(future_contract))
+        return self.get_symbol_position(symbol=order.symbol,
+                                        side=None if future_contract.is_one_way_position_mode()
+                                        else order.get_position_side(future_contract))
 
     def get_symbol_positions(self, symbol=None):
         """
@@ -119,7 +121,7 @@ class PositionsManager(util.Initializable):
         :param side: the position side
         :return: the computed position id
         """
-        return f"{symbol}{self.POSITION_ID_SEPARATOR}{side.value}"
+        return f"{symbol}{f'{self.POSITION_ID_SEPARATOR}{side.value}' if side is not None else ''}"
 
     async def _finalize_position_creation(self, new_position, is_from_exchange_data=False) -> bool:
         """
