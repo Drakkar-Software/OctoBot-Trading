@@ -38,12 +38,11 @@ async def test_get_symbol_position(future_trader_simulator_with_default_linear):
     symbol_contract = default_contract
     trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL,  default_contract)
 
-    symbol_contract.set_position_mode(is_one_way=True)
-    p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.LONG)
+    p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=None)
     assert p1
-    p1bis = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.SHORT)
+    p1bis = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=None)
     assert p1 is p1bis
-    symbol_contract.set_position_mode(is_one_way=False)
+
     p2 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.LONG)
     assert p2
     p2bis = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.SHORT)
@@ -64,13 +63,6 @@ async def test_get_symbol_positions(future_trader_simulator_with_default_linear)
     p2 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.SHORT)
     assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 2
     assert positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL) == [p2, p1]
-    symbol_contract.set_position_mode(is_one_way=True)
-    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
-    p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=None)
-    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
-    assert positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL) == [p1]
-    p2 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=None)
-    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
 
 
 async def test_get_order_position(future_trader_simulator_with_default_linear):
@@ -98,9 +90,7 @@ async def test__generate_position_id(future_trader_simulator_with_default_linear
 
     if not os.getenv('CYTHON_IGNORE'):
         symbol_contract.set_position_mode(is_one_way=True)
-        with pytest.raises(AttributeError):
-            assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, None) == \
-                   DEFAULT_FUTURE_SYMBOL
+        assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, None) == DEFAULT_FUTURE_SYMBOL
         symbol_contract.set_position_mode(is_one_way=False)
         assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, enums.PositionSide.LONG) == \
                DEFAULT_FUTURE_SYMBOL + positions_mgr.PositionsManager.POSITION_ID_SEPARATOR \
