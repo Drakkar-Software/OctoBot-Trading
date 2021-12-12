@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 import collections
 
 import octobot_commons.logging as logging
@@ -144,7 +143,7 @@ class PositionsManager(util.Initializable):
         :return: the new symbol position instance
         """
         new_position = position_factory.create_symbol_position(self.trader, symbol)
-        asyncio.create_task(self._finalize_position_creation(new_position))
+        self.positions[new_position.position_id] = new_position
         return new_position
 
     def _get_or_create_position(self, symbol, side, contract=None):

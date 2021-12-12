@@ -65,7 +65,7 @@ async def test_get_symbol_positions(future_trader_simulator_with_default_linear)
     assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 2
     assert positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL) == [p2, p1]
     symbol_contract.set_position_mode(is_one_way=True)
-    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 0
+    assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
     p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=None)
     assert len(positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL)) == 1
     assert positions_manager.get_symbol_positions(symbol=DEFAULT_FUTURE_SYMBOL) == [p1]
