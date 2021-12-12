@@ -84,3 +84,9 @@ class InvalidPositionSide(Exception):
     """
     Raised when an order with an invalid position side is triggering a position update
     """
+
+
+class ContractExistsError(Exception):
+    """
+    Raised when asking for a contract that doesn't exist
+    """
