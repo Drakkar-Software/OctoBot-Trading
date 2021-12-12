@@ -16,6 +16,7 @@
 import asyncio
 
 import octobot_trading.enums
+import octobot_trading.errors as errors
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchange_data.contracts as contracts
 
@@ -58,7 +59,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
             return self.pair_contracts[pair]
         except KeyError:
             asyncio.create_task(self.load_pair_future_contract(pair))
-            return self.pair_contracts[pair]
+            raise errors.ContractExistsError(f"{pair} future contract doesn't exist, fetching...")
 
     def set_pair_future_contract(self, pair, future_contract):
         """
