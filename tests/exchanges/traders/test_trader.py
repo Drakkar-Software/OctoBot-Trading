@@ -21,13 +21,16 @@ import decimal
 import pytest
 import time
 from mock import AsyncMock, patch, Mock
+from octobot_commons import asyncio_tools
 
+from octobot_trading.personal_data import LinearPosition
 from tests import event_loop
 import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.personal_data.orders import Order
-from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, FeePropertyColumns
+from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, FeePropertyColumns, \
+    ExchangeConstantsPositionColumns
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.personal_data.orders import BuyLimitOrder, BuyMarketOrder, SellLimitOrder, StopLossOrder
@@ -36,6 +39,7 @@ import octobot_trading.personal_data.portfolios.assets as portfolio_assets
 from octobot_trading.exchanges.traders.trader import Trader
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
+from tests.exchanges.traders import get_default_future_inverse_contract
 import octobot_trading.constants as constants
 
 # All test coroutines will be treated as marked.
@@ -52,10 +56,11 @@ class TestTrader:
     EXCHANGE_MANAGER_CLASS_STRING = "binance"
 
     @staticmethod
-    async def init_default(simulated=True):
+    async def init_default(simulated=True, is_future=False):
         config = load_test_config()
         exchange_manager = ExchangeManager(config, TestTrader.EXCHANGE_MANAGER_CLASS_STRING)
         exchange_manager.is_simulated = simulated
+        exchange_manager.is_future = is_future
         await exchange_manager.initialize()
 
         trader = TraderSimulator(config, exchange_manager)
@@ -852,6 +857,41 @@ class TestTrader:
         assert order_to_test.creation_time != constants.ZERO
         assert order_to_test.order_id == "1546541123"
 
+        await self.stop(exchange_manager)
+
+    async def test_close_position(self):
+        _, exchange_manager, trader_inst = await self.init_default(is_future=True)
+
+        contract = get_default_future_inverse_contract()
+        exchange_manager.exchange.set_pair_future_contract(self.DEFAULT_SYMBOL, contract)
+        position_inst = LinearPosition(trader_inst, contract)
+        await position_inst.initialize()
+        position_inst.update_from_raw(
+            {
+                ExchangeConstantsPositionColumns.SYMBOL.value: self.DEFAULT_SYMBOL
+            }
+        )
+        await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
+        exchange_manager.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
+        if not os.getenv('CYTHON_IGNORE'):
+            with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
+                       new=AsyncMock(return_value=30)):
+                orders = await trader_inst.close_position(position_inst, limit_price=decimal.Decimal(5))
+                assert len(orders) == 1
+                assert orders[0].order_type is TraderOrderType.SELL_LIMIT
+                assert orders[0].origin_price == 5
+                assert orders[0].origin_quantity == 10
+
+            with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
+                       new=AsyncMock(return_value=20)):
+                orders = await trader_inst.close_position(position_inst)
+                assert len(orders) == 1
+                assert orders[0].order_type is TraderOrderType.SELL_MARKET
+                assert orders[0].origin_price == 20
+                assert orders[0].origin_quantity == 10
+
+        await asyncio_tools.wait_asyncio_next_cycle()
         await self.stop(exchange_manager)
 
 
