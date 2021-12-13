@@ -121,7 +121,8 @@ class PositionsManager(util.Initializable):
         :param side: the position side
         :return: the computed position id
         """
-        return f"{symbol}{f'{self.POSITION_ID_SEPARATOR}{side.value}' if side is not None else ''}"
+        return f"{symbol}" \
+               f"{'' if side is enums.PositionSide.BOTH or side is None else self.POSITION_ID_SEPARATOR + side.value}"
 
     async def _finalize_position_creation(self, new_position, is_from_exchange_data=False) -> bool:
         """
