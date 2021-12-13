@@ -40,16 +40,21 @@ class MarginContract:
         """
         return self.margin_type is enums.MarginType.ISOLATED
 
+    def check_leverage_update(self, new_leverage):
+        """
+        Check if the new leverage value is matching requirements (0 < maximum_leverage)
+        :param new_leverage: the leverage value to check
+        :return: True if valid
+        """
+        return 0 < new_leverage <= self.maximum_leverage
+
     def set_current_leverage(self, new_leverage):
         """
         Set the contract current leverage value
         :param new_leverage: the new leverage value
         """
-        if new_leverage <= self.maximum_leverage:
+        if self.check_leverage_update(new_leverage):
             self.current_leverage = new_leverage
-        else:
-            raise errors.InvalidLeverageValue(f"Trying to update leverage with {new_leverage} "
-                                              f"but maximal value is {self.maximum_leverage}")
 
     def set_margin_type(self, is_isolated=True, is_cross=False):
         """
