@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
+cimport octobot_trading.exchange_data.contracts as contracts
 
 cdef class FutureExchange(abstract_exchange.AbstractExchange):
     cdef dict pair_contracts
@@ -25,8 +26,8 @@ cdef class FutureExchange(abstract_exchange.AbstractExchange):
                                     object maintenance_margin_rate,
                                     object maximum_leverage=*)
     cpdef double calculate_position_value(self, double quantity, double mark_price)
-    cpdef object get_pair_future_contract(self, str pair) # TODO : fix cimport positions.FutureContract
-    cpdef void set_pair_future_contract(self, str pair, object future_contract) # TODO : fix cimport positions.FutureContract
+    cpdef contracts.FutureContract get_pair_future_contract(self, str pair)
+    cpdef void set_pair_future_contract(self, str pair, contracts.FutureContract future_contract)
     cpdef bint is_linear_symbol(self, str symbol)
     cpdef bint is_inverse_symbol(self, str symbol)
     cpdef bint is_futures_symbol(self, str symbol)
