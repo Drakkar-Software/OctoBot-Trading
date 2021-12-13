@@ -13,9 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
-
-import octobot_commons.logging as logging
+import decimal
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position_state as position_state
@@ -73,12 +71,9 @@ class OpenPositionState(position_state.PositionState):
             self.log_event_message(enums.StatesMessages.OPEN)
 
             # set position mark price
-            try:
-                await self.position.update(
-                    mark_price=await self.position.exchange_manager.exchange_symbols_data.
-                        get_exchange_symbol_data(self.position.symbol).prices_manager.get_mark_price(timeout=0))
-            except asyncio.TimeoutError:
-                logging.get_logger(self.position.get_logger_name()).warning(f"Can't get mark price for {self.position}")
+            self.position.mark_price = decimal.Decimal(
+                self.position.exchange_manager.exchange_symbols_data.
+                    get_exchange_symbol_data(self.position.symbol).prices_manager.mark_price)
 
             self.has_terminated = True
 
