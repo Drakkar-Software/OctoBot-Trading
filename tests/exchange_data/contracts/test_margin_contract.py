@@ -52,10 +52,6 @@ async def test_set_current_leverage():
     contract.set_current_leverage(decimal.Decimal(50))
     assert contract.current_leverage == decimal.Decimal(50)
 
-    if not os.getenv('CYTHON_IGNORE'):
-        with pytest.raises(errors.InvalidLeverageValue):
-            contract.set_current_leverage(decimal.Decimal(200))
-
 
 async def test_set_margin_type():
     contract = contracts.MarginContract(
