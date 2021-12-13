@@ -192,6 +192,9 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):
         return await self.connector.set_symbol_margin_type(symbol=symbol, isolated=isolated)
 
+    async def set_symbol_position_mode(self, symbol: str, one_way: bool):
+        return await self.connector.set_symbol_position_mode(symbol=symbol, one_way=one_way)
+
     def _get_pair_market_type(self, pair):
         return self.connector.client.safe_string(
             self.connector.client.safe_value(self.connector.client.options, 'marketTypes', {}), pair, None)
