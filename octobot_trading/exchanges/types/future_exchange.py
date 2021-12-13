@@ -65,12 +65,12 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         """
         self.logger.debug(f"Creating {pair} contract...")
         self.pair_contracts[pair] = contracts.FutureContract(pair=pair,
-                                                             current_leverage=current_leverage,
                                                              margin_type=margin_type,
                                                              contract_type=contract_type,
+                                                             maximum_leverage=maximum_leverage,
+                                                             current_leverage=current_leverage,
                                                              position_mode=position_mode,
-                                                             maintenance_margin_rate=maintenance_margin_rate,
-                                                             maximum_leverage=maximum_leverage)
+                                                             maintenance_margin_rate=maintenance_margin_rate)
 
     def get_pair_future_contract(self, pair):
         """

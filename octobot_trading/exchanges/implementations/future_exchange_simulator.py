@@ -108,11 +108,11 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
         self.create_pair_contract(
             pair=pair,
             current_leverage=self.DEFAULT_SYMBOL_LEVERAGE,
-            maximum_leverage=self.DEFAULT_SYMBOL_MAX_LEVERAGE,
             margin_type=self.DEFAULT_SYMBOL_MARGIN_TYPE,
             contract_type=self.DEFAULT_SYMBOL_CONTRACT_TYPE,
             position_mode=self.DEFAULT_SYMBOL_POSITION_MODE,
-            maintenance_margin_rate=self.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE
+            maintenance_margin_rate=self.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
+            maximum_leverage=self.DEFAULT_SYMBOL_MAX_LEVERAGE
         )
 
     async def get_symbol_leverage(self, symbol: str):
