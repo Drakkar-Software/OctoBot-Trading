@@ -214,9 +214,11 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         MarkPrice channel consumer callback
         """
         try:
+            l = self.channel.exchange_manager.exchange_personal_data.positions_manager. \
+                    get_symbol_positions(symbol=symbol)
             for symbol_position in self.channel.exchange_manager.exchange_personal_data.positions_manager. \
                     get_symbol_positions(symbol=symbol):
-                symbol_position.update(mark_price=mark_price)
+                await symbol_position.update(mark_price=mark_price)
         except Exception as e:
             self.logger.exception(e, True, f"Fail to handle mark price : {e}")
 
