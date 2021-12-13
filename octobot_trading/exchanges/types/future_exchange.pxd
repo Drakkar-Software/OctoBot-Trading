@@ -21,7 +21,9 @@ cdef class FutureExchange(abstract_exchange.AbstractExchange):
 
     cpdef void create_pair_contract(self, str pair,
                                     object current_leverage, object margin_type,
-                                    object contract_type, object position_mode, object maximum_leverage)
+                                    object contract_type, object position_mode,
+                                    object maintenance_margin_rate,
+                                    object maximum_leverage=*)
     cpdef double calculate_position_value(self, double quantity, double mark_price)
     cpdef object get_pair_future_contract(self, str pair) # TODO : fix cimport positions.FutureContract
     cpdef void set_pair_future_contract(self, str pair, object future_contract) # TODO : fix cimport positions.FutureContract
