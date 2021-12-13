@@ -18,13 +18,14 @@ import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TraderOrderType
+import octobot_trading.constants as trading_constants
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_SYMBOL_QUANTITY
 from tests.personal_data.orders import sell_limit_order
-from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity, random_price, \
-    random_recent_trade
+from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity, \
+    decimal_random_recent_trade
 
 pytestmark = pytest.mark.asyncio
 
@@ -45,17 +46,17 @@ async def test_sell_limit_order_trigger(sell_limit_order):
     price_events_manager = sell_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(max_value=float(order_price - 1)),
-                             timestamp=sell_limit_order.timestamp)])
+        [decimal_random_recent_trade(price=decimal_random_price(max_value=order_price - trading_constants.ONE),
+                                     timestamp=sell_limit_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not sell_limit_order.is_filled()
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=order_price,
-                             timestamp=sell_limit_order.timestamp - 1)])
+        [decimal_random_recent_trade(price=order_price,
+                                     timestamp=sell_limit_order.timestamp - 1)])
     await wait_asyncio_next_cycle()
     assert not sell_limit_order.is_filled()
-    price_events_manager.handle_recent_trades([random_recent_trade(price=order_price,
-                                                                   timestamp=sell_limit_order.timestamp)])
+    price_events_manager.handle_recent_trades([decimal_random_recent_trade(price=order_price,
+                                                                           timestamp=sell_limit_order.timestamp)])
 
     await wait_asyncio_next_cycle()
     assert sell_limit_order.is_filled()
