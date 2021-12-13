@@ -18,7 +18,7 @@ import os
 import pytest
 
 import octobot_trading.constants as constants
-from tests.test_utils.random_numbers import decimal_random_quantity, random_price
+from tests.test_utils.random_numbers import decimal_random_quantity, decimal_random_price, random_price
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 from tests import event_loop
@@ -70,7 +70,7 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
             'XLM': constants.ZERO,
             'USDT': constants.ZERO
         }
-        xlm_btc_price = random_price(max_value=0.05)
+        xlm_btc_price = decimal_random_price(max_value=decimal.Decimal(0.05))
         portfolio_value_holder.missing_currency_data_in_exchange.remove("XLM")
         await portfolio_manager.handle_mark_price_update("XLM/BTC", xlm_btc_price)
         assert portfolio_value_holder.get_current_crypto_currencies_values() == {
@@ -78,10 +78,10 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
             'ETH': constants.ZERO,
             'XRP': decimal.Decimal("0.005"),
             'NANO': decimal.Decimal("0.05"),
-            'XLM': decimal.Decimal(str(xlm_btc_price)),
+            'XLM': xlm_btc_price,
             'USDT': constants.ZERO
         }
-        usdt_btc_price = random_price(max_value=0.01)
+        usdt_btc_price = decimal_random_price(max_value=decimal.Decimal('0.01'))
         portfolio_value_holder.missing_currency_data_in_exchange.remove("USDT")
         await portfolio_manager.handle_mark_price_update("BTC/USDT", usdt_btc_price)
         assert portfolio_value_holder.get_current_crypto_currencies_values() == {
@@ -89,10 +89,10 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
             'ETH': constants.ZERO,
             'XRP': decimal.Decimal("0.005"),
             'NANO': decimal.Decimal("0.05"),
-            'XLM': decimal.Decimal(str(xlm_btc_price)),
-            'USDT': constants.ONE / decimal.Decimal(str(usdt_btc_price))
+            'XLM': xlm_btc_price,
+            'USDT': constants.ONE / usdt_btc_price
         }
-        eth_btc_price = random_price(max_value=1)
+        eth_btc_price = decimal_random_price(max_value=constants.ONE)
         exchange_manager.client_symbols.append("ETH/BTC")
         portfolio_value_holder.missing_currency_data_in_exchange.remove("ETH")
         await portfolio_manager.handle_mark_price_update("ETH/BTC", eth_btc_price)
@@ -101,8 +101,8 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
             'ETH': decimal.Decimal(str(eth_btc_price)),
             'XRP': decimal.Decimal("0.005"),
             'NANO': decimal.Decimal("0.05"),
-            'XLM': decimal.Decimal(str(xlm_btc_price)),
-            'USDT': constants.ONE / decimal.Decimal(str(usdt_btc_price))
+            'XLM': xlm_btc_price,
+            'USDT': constants.ONE / usdt_btc_price
         }
 
 
@@ -139,7 +139,7 @@ async def test_get_current_holdings_values(backtesting_trader):
         'XRP': constants.ZERO,
         'USDT': constants.ZERO
     }
-    await portfolio_manager.handle_mark_price_update("XRP/BTC", 0.00001)
+    await portfolio_manager.handle_mark_price_update("XRP/BTC", decimal.Decimal('0.00001'))
     assert portfolio_value_holder.get_current_holdings_values() == {
         'BTC': decimal.Decimal("10"),
         'ETH': decimal.Decimal("5000"),
@@ -149,7 +149,7 @@ async def test_get_current_holdings_values(backtesting_trader):
     if not os.getenv('CYTHON_IGNORE'):
         exchange_manager.client_symbols.append("XRP/BTC")
         portfolio_value_holder.missing_currency_data_in_exchange.remove("XRP")
-        await portfolio_manager.handle_mark_price_update("XRP/BTC", 0.00001)
+        await portfolio_manager.handle_mark_price_update("XRP/BTC", decimal.Decimal('0.00001'))
         assert portfolio_value_holder.get_current_holdings_values() == {
             'BTC': decimal.Decimal(10),
             'ETH': decimal.Decimal(5000),
