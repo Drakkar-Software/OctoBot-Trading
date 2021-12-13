@@ -118,9 +118,8 @@ async def test_update_initial_margin(future_trader_simulator_with_default_linear
     position_inst.update_initial_margin()
     assert position_inst.initial_margin == decimal.Decimal("10000")
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_initial_margin()
-    assert position_inst.initial_margin == decimal.Decimal("2")
+    assert position_inst.initial_margin == decimal.Decimal("100")
 
 
 async def test_calculate_maintenance_margin(future_trader_simulator_with_default_linear):
