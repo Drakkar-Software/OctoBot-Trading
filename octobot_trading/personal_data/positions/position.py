@@ -488,7 +488,8 @@ class Position(util.Initializable):
             quantity=raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO),
             size=raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO),
             value=raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO),
-            initial_margin=raw_position.get(enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value, constants.ZERO),
+            initial_margin=raw_position.get(enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value,
+                                            constants.ZERO),
             position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
             unrealised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value,
@@ -583,6 +584,7 @@ class Position(util.Initializable):
         self.unrealised_pnl = constants.ZERO
         self.realised_pnl = constants.ZERO
         self.creation_time = constants.ZERO
+        self.on_pnl_update()  # notify portfolio to reset unrealized PNL
         await self.on_open()
 
     def clear(self):
