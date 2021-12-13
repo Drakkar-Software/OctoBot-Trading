@@ -113,9 +113,8 @@ async def test_update_initial_margin(future_trader_simulator_with_default_invers
     position_inst.update_initial_margin()
     assert position_inst.initial_margin == constants.ONE
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_initial_margin()
-    assert position_inst.initial_margin == decimal.Decimal("0.0002")
+    assert position_inst.initial_margin == decimal.Decimal("0.01")
 
 
 async def test_calculate_maintenance_margin(future_trader_simulator_with_default_inverse):
