@@ -35,13 +35,13 @@ async def test_update_value(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     await position_inst.update(update_size=constants.ZERO)
-    position_inst.update_value()
+    await position_inst.update_value()
     assert position_inst.value == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED)
-    position_inst.update_value()
+    await position_inst.update_value()
     assert position_inst.value == constants.ZERO
     await position_inst.update(mark_price=constants.ONE_HUNDRED)
-    position_inst.update_value()
+    await position_inst.update_value()
     assert position_inst.value == decimal.Decimal("10000")
 
 

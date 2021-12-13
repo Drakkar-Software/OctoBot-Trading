@@ -372,12 +372,15 @@ async def test_update_portfolio_from_liquidated_position_with_long_position_inve
     default_contract.set_current_leverage(decimal.Decimal(10))
 
     position_inst = LinearPosition(trader_inst, default_contract)
+    await position_inst.initialize()
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
     await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
@@ -398,12 +401,16 @@ async def test_update_portfolio_from_liquidated_position_with_short_position_inv
     trader_inst.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, default_contract)
 
     position_inst = InversePosition(trader_inst, default_contract)
+    await position_inst.initialize()
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
     await position_inst.update(update_size=decimal.Decimal(-10000), mark_price=decimal.Decimal(100))
+
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
@@ -430,12 +437,14 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
     trader_inst.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, default_contract)
 
     position_inst = LinearPosition(trader_inst, default_contract)
+    await position_inst.initialize()
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
     await position_inst.update(update_size=decimal.Decimal(-100), mark_price=decimal.Decimal(99))
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
 
     # Test sell order
     market_sell = SellMarketOrder(trader_inst)
@@ -454,7 +463,7 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
 
     await fill_market_order(market_sell)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('989.902')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1009.702')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.802')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
@@ -468,22 +477,21 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
 
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('971.902')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1009.702')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.802')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
-    await fill_market_order(market_buy)
+    await fill_market_order(market_buy)  # reducing position with positive PNL
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('989.902')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('991.702')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1089.8020')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
     portfolio_manager.portfolio.get_currency_portfolio("BTC").wallet_balance = decimal.Decimal('10')
     portfolio_manager.portfolio.get_currency_portfolio("USDT").wallet_balance = decimal.Decimal('1000')
-    await position_inst.update(mark_price=decimal.Decimal(126))
-    portfolio_manager.portfolio.update_portfolio_from_liquidated_position(position_inst)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('748')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('694')
+    await position_inst.update(mark_price=position_inst.liquidation_price)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('808.2010')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('808.2010')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
@@ -495,38 +503,44 @@ async def test_update_portfolio_from_funding_with_long_position(
     default_contract.set_current_leverage(decimal.Decimal(10))
 
     position_inst = InversePosition(trader_inst, default_contract)
+    await position_inst.initialize()
     await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
     # long position holders have to pay the short position holders
     portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
                                                               funding_rate=decimal.Decimal(0.0001))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
-        '9.999998999999999999999952078')
+        '9.999989999999999999999520783')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
-        '9.999998999999999999999952078')
+        '9.999989999999999999999520783')
 
     position_inst = InversePosition(trader_inst, default_contract)
+    await position_inst.initialize()
     await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
     # short position holders have to pay the long position holders
     portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
                                                               funding_rate=decimal.Decimal(-0.0002))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
-        '10.00000100000000000000004792')
+        '10.00001000000000000000047922')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
-        '10.00000100000000000000004792')
+        '10.00001000000000000000047922')
 
 
 async def test_update_portfolio_from_funding_with_short_position(
@@ -536,38 +550,44 @@ async def test_update_portfolio_from_funding_with_short_position(
     default_contract.set_current_leverage(decimal.Decimal(10))
 
     position_inst = InversePosition(trader_inst, default_contract)
+    await position_inst.initialize()
     await position_inst.update(update_size=decimal.Decimal(-10), mark_price=decimal.Decimal(100))
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
     # long position holders have to pay the short position holders
     portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
                                                               funding_rate=decimal.Decimal(0.0003))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
-        '10.00000299999999999999973719')
+        '10.00002999999999999999737189')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
-        '10.00000299999999999999973719')
+        '10.00002999999999999999737189')
 
     position_inst = InversePosition(trader_inst, default_contract)
+    await position_inst.initialize()
     await position_inst.update(update_size=decimal.Decimal(-10), mark_price=decimal.Decimal(100))
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
     # short position holders have to pay the long position holders
     portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
                                                               funding_rate=decimal.Decimal(-0.0004))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
-        '9.999998999999999999999545503')
+        '9.999989999999999999995455021')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
-        '9.999998999999999999999545503')
+        '9.999989999999999999995455021')
 
 
 async def test_update_portfolio_data_with_fees(future_trader_simulator_with_default_linear):
@@ -606,12 +626,14 @@ async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contrac
     default_contract.set_current_leverage(decimal.Decimal(10))
 
     position_inst = LinearPosition(trader_inst, default_contract)
+    await position_inst.initialize()
     await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(101))
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
 
     # Test sell order
     market_sell = SellMarketOrder(trader_inst)
@@ -630,8 +652,8 @@ async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contrac
 
     # fill order
     await fill_market_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal("1251.49")
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str("746.49"))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal("998.99")
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str("998.99"))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
 
@@ -643,12 +665,14 @@ async def test_update_portfolio_reduce_size_with_market_buy_short_linear_contrac
     default_contract.set_current_leverage(decimal.Decimal(10))
 
     position_inst = LinearPosition(trader_inst, default_contract)
-    position_inst.update(update_size=decimal.Decimal(-70), mark_price=decimal.Decimal(9))
+    await position_inst.initialize()
+    await position_inst.update(update_size=decimal.Decimal(-70), mark_price=decimal.Decimal(9))
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
 
     # Test buy order
     market_buy = BuyMarketOrder(trader_inst)
@@ -667,8 +691,8 @@ async def test_update_portfolio_reduce_size_with_market_buy_short_linear_contrac
 
     # fill order
     await fill_market_order(market_buy)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(991)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(991))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(1000)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(1000))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
 
@@ -679,12 +703,14 @@ async def test_update_portfolio_from_pnl_with_long_inverse_contract(future_trade
     default_contract.set_current_leverage(decimal.Decimal(10))
 
     position_inst = InversePosition(trader_inst, default_contract)
-    position_inst.update(update_size=decimal.Decimal(-70), mark_price=decimal.Decimal(10))
+    await position_inst.initialize()
+    await position_inst.update(update_size=decimal.Decimal(-70), mark_price=decimal.Decimal(10))
     position_inst.update_from_raw(
         {
             enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
         }
     )
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
 
     position_inst.unrealised_pnl = decimal.Decimal(0.1)
     portfolio_manager.portfolio.update_portfolio_from_pnl(position_inst)
