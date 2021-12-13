@@ -90,3 +90,9 @@ class ContractExistsError(Exception):
     """
     Raised when asking for a contract that doesn't exist
     """
+
+
+class TooManyOpenPositionError(Exception):
+    """
+    Raised when changing future contract attributes without closing positions first
+    """
