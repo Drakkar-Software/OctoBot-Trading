@@ -17,9 +17,10 @@ import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_trading.enums import TraderOrderType
+import octobot_trading.constants as trading_constants
 from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_SYMBOL_QUANTITY
-from tests.test_utils.random_numbers import decimal_random_price, random_price, decimal_random_quantity, \
-    random_recent_trade
+from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity, \
+    decimal_random_recent_trade
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -46,17 +47,17 @@ async def test_stop_loss_sell_order_trigger(stop_loss_sell_order):
         DEFAULT_ORDER_SYMBOL).price_events_manager
     # stop loss sell order triggers when price is bellow or equal to its trigger price
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(min_value=float(order_price + 1)),
-                             timestamp=stop_loss_sell_order.timestamp)])
+        [decimal_random_recent_trade(price=decimal_random_price(min_value=order_price + trading_constants.ONE),
+                                     timestamp=stop_loss_sell_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not stop_loss_sell_order.is_filled()
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=order_price,
-                             timestamp=stop_loss_sell_order.timestamp - 1)])
+        [decimal_random_recent_trade(price=order_price,
+                                     timestamp=stop_loss_sell_order.timestamp - 1)])
     await wait_asyncio_next_cycle()
     assert not stop_loss_sell_order.is_filled()
-    price_events_manager.handle_recent_trades([random_recent_trade(price=order_price,
-                                                                   timestamp=stop_loss_sell_order.timestamp)])
+    price_events_manager.handle_recent_trades([decimal_random_recent_trade(price=order_price,
+                                                                           timestamp=stop_loss_sell_order.timestamp)])
 
     await wait_asyncio_next_cycle()
     assert stop_loss_sell_order.is_filled()
@@ -79,17 +80,17 @@ async def test_stop_loss_buy_order_trigger(stop_loss_buy_order):
         DEFAULT_ORDER_SYMBOL).price_events_manager
     # stop loss buy order triggers when price is above or equal to its trigger price
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(max_value=float(order_price - 1)),
-                             timestamp=stop_loss_buy_order.timestamp)])
+        [decimal_random_recent_trade(price=decimal_random_price(max_value=order_price - trading_constants.ONE),
+                                     timestamp=stop_loss_buy_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not stop_loss_buy_order.is_filled()
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=order_price,
-                             timestamp=stop_loss_buy_order.timestamp - 1)])
+        [decimal_random_recent_trade(price=order_price,
+                                     timestamp=stop_loss_buy_order.timestamp - 1)])
     await wait_asyncio_next_cycle()
     assert not stop_loss_buy_order.is_filled()
-    price_events_manager.handle_recent_trades([random_recent_trade(price=order_price,
-                                                                   timestamp=stop_loss_buy_order.timestamp)])
+    price_events_manager.handle_recent_trades([decimal_random_recent_trade(price=order_price,
+                                                                           timestamp=stop_loss_buy_order.timestamp)])
 
     await wait_asyncio_next_cycle()
     assert stop_loss_buy_order.is_filled()

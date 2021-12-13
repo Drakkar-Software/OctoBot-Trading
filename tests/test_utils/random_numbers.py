@@ -114,5 +114,14 @@ def random_recent_trade(price=None, timestamp: float = None) -> dict:
     }
 
 
+def decimal_random_recent_trade(price=None, timestamp: float = None) -> dict:
+    return {
+        ECOC.PRICE.value: price if price is not None else decimal_random_price(),
+        ECOC.AMOUNT.value: decimal_random_quantity(),
+        ECOC.COST.value: decimal_random_quantity(),
+        ECOC.TIMESTAMP.value: timestamp if timestamp is not None else decimal_random_quantity(),
+    }
+
+
 def random_recent_trades(count: int = 2) -> list:
     return [random_recent_trade() for _ in range(count)]

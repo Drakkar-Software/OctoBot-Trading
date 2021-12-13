@@ -19,9 +19,11 @@ import pytest
 from asyncio import Event
 from mock import patch, Mock
 
+import octobot_trading.constants as trading_constants
+
 from tests.exchange_data import price_events_manager
 from tests import event_loop
-from tests.test_utils.random_numbers import random_recent_trade, decimal_random_price, random_price, random_timestamp
+from tests.test_utils.random_numbers import decimal_random_recent_trade, decimal_random_price, random_timestamp
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -44,108 +46,109 @@ async def test_add_event(price_events_manager):
 
 
 async def test_handle_recent_trades(price_events_manager):
-    random_price_1 = random_price(min_value=2)
+    random_price_1 = decimal_random_price(min_value=decimal.Decimal(2))
     random_timestamp_1 = random_timestamp(min_value=2, max_value=1000)
-    price_event_1 = price_events_manager.add_event(decimal.Decimal(str(random_price_1)), random_timestamp_1, True)
+    price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
     with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set:
         price_events_manager.handle_recent_trades([])
         with pytest.raises(AssertionError):
             price_event_1_set.assert_called_once()
         price_events_manager.handle_recent_trades(
-            [random_recent_trade(price=random_price(max_value=random_price_1 - 1),
-                                 timestamp=random_timestamp(max_value=random_timestamp_1 - 1)),
-             random_recent_trade(price=random_price(max_value=random_price_1 - 1),
-                                 timestamp=random_timestamp(max_value=random_timestamp_1 - 1)),
-             random_recent_trade(price=random_price(max_value=random_price_1 - 1),
-                                 timestamp=random_timestamp(max_value=random_timestamp_1 - 1))])
+            [decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE),
+                                         timestamp=random_timestamp(max_value=random_timestamp_1 - 1)),
+             decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE),
+                                         timestamp=random_timestamp(max_value=random_timestamp_1 - 1)),
+             decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE),
+                                         timestamp=random_timestamp(max_value=random_timestamp_1 - 1))])
         with pytest.raises(AssertionError):
             price_event_1_set.assert_called_once()
         price_events_manager.handle_recent_trades(
-            [random_recent_trade(price=random_price(max_value=random_price_1 - 1)),
-             random_recent_trade(price=random_price_1,
-                                 timestamp=random_timestamp_1),
-             random_recent_trade(price=random_price(max_value=random_price_1 - 1)),
-             random_recent_trade(price=random_price(max_value=random_price_1 - 1))])
+            [decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE)),
+             decimal_random_recent_trade(price=random_price_1,
+                                         timestamp=random_timestamp_1),
+             decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE)),
+             decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE))])
         price_event_1_set.assert_called_once()
 
 
 async def test_handle_recent_trades_multiple_events(price_events_manager):
-    random_price_1 = random_price(min_value=2)
-    random_price_2 = random_price(min_value=random_price_1)
+    random_price_1 = decimal_random_price(min_value=decimal.Decimal(2))
+    random_price_2 = decimal_random_price(min_value=random_price_1)
     random_timestamp_1 = random_timestamp(min_value=2, max_value=1000)
     random_timestamp_2 = random_timestamp(min_value=random_timestamp_1 + 2, max_value=5000)
-    price_event_1 = price_events_manager.add_event(decimal.Decimal(str(random_price_1)), random_timestamp_1, True)
-    price_event_2 = price_events_manager.add_event(decimal.Decimal(str(random_price_2)), random_timestamp_2, True)
+    price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
+    price_event_2 = price_events_manager.add_event(random_price_2, random_timestamp_2, True)
     with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set, \
             patch.object(price_event_2, 'set', new=Mock()) as price_event_2_set:
         price_events_manager.handle_recent_trades(
-            [random_recent_trade(price=random_price(max_value=random_price_1 - 1)),
-             random_recent_trade(price=random_price(max_value=random_price_1 - 1)),
-             random_recent_trade(price=random_price(max_value=random_price_1 - 1))])
+            [decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE)),
+             decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE)),
+             decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE))])
         with pytest.raises(AssertionError):
             price_event_1_set.assert_called_once()
         with pytest.raises(AssertionError):
             price_event_2_set.assert_called_once()
         price_events_manager.handle_recent_trades(
-            [random_recent_trade(price=random_price(max_value=random_price_1 - 1),
-                                 timestamp=random_timestamp(max_value=random_timestamp_1 - 1)),
-             random_recent_trade(price=random_price_2 - 1,
-                                 timestamp=random_timestamp(min_value=random_timestamp_1,
-                                                            max_value=random_timestamp_2))])
+            [decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE),
+                                         timestamp=random_timestamp(max_value=random_timestamp_1 - 1)),
+             decimal_random_recent_trade(price=random_price_2 - trading_constants.ONE,
+                                         timestamp=random_timestamp(min_value=random_timestamp_1,
+                                                                    max_value=random_timestamp_2))])
         price_event_1_set.assert_called_once()
         with pytest.raises(AssertionError):
             price_event_2_set.assert_called_once()
         price_events_manager.handle_recent_trades(
-            [random_recent_trade(price=random_price(max_value=random_price_1 - 1)),
-             random_recent_trade(price=random_price_2,
-                                 timestamp=random_timestamp_2)])
+            [decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE)),
+             decimal_random_recent_trade(price=random_price_2,
+                                         timestamp=random_timestamp_2)])
         price_event_2_set.assert_called_once()
 
-    price_event_1 = price_events_manager.add_event(decimal.Decimal(str(random_price_1)), random_timestamp_1, True)
-    price_event_2 = price_events_manager.add_event(decimal.Decimal(str(random_price_2)), random_timestamp_2, True)
+    price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
+    price_event_2 = price_events_manager.add_event(random_price_2, random_timestamp_2, True)
     with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set, \
             patch.object(price_event_2, 'set', new=Mock()) as price_event_2_set:
         price_events_manager.handle_recent_trades(
-            [random_recent_trade(price=random_price(max_value=random_price_1 - 1),
-                                 timestamp=random_timestamp(max_value=random_timestamp_1 - 1)),
-             random_recent_trade(price=random_price_2 + 10,
-                                 timestamp=random_timestamp(min_value=random_timestamp_2 + 1))])
+            [decimal_random_recent_trade(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE),
+                                         timestamp=random_timestamp(max_value=random_timestamp_1 - 1)),
+             decimal_random_recent_trade(price=random_price_2 + decimal.Decimal(10),
+                                         timestamp=random_timestamp(min_value=random_timestamp_2 + 1))])
         price_event_1_set.assert_called_once()
         price_event_2_set.assert_called_once()
 
-    price_event_1 = price_events_manager.add_event(decimal.Decimal(str(random_price_1)), random_timestamp_1, True)
-    price_event_2 = price_events_manager.add_event(decimal.Decimal(str(random_price_2)), random_timestamp_2, True)
+    price_event_1 = price_events_manager.add_event(random_price_1, random_timestamp_1, True)
+    price_event_2 = price_events_manager.add_event(random_price_2, random_timestamp_2, True)
     with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set, \
             patch.object(price_event_2, 'set', new=Mock()) as price_event_2_set:
         price_events_manager.handle_recent_trades(
-            [random_recent_trade(price=random_price(min_value=random_price_1, max_value=random_price_2 - 1),
-                                 timestamp=random_timestamp(min_value=random_timestamp_1 - 1)),
-             random_recent_trade(price=random_price_2,
-                                 timestamp=random_timestamp(max_value=random_timestamp_2 - 1))])
+            [decimal_random_recent_trade(
+                price=decimal_random_price(min_value=random_price_1, max_value=random_price_2 - trading_constants.ONE),
+                timestamp=random_timestamp(min_value=random_timestamp_1 - 1)),
+             decimal_random_recent_trade(price=random_price_2,
+                                         timestamp=random_timestamp(max_value=random_timestamp_2 - 1))])
         price_event_1_set.assert_called_once()
         with pytest.raises(AssertionError):
             price_event_2_set.assert_called_once()
 
 
 async def test_handle_price(price_events_manager):
-    random_price_1 = random_price()
+    random_price_1 = decimal_random_price()
     random_timestamp_1 = random_timestamp(min_value=2, max_value=1000)
     price_event_1 = price_events_manager.add_event(decimal.Decimal(str(random_price_1)), random_timestamp_1, True)
     with patch.object(price_event_1, 'set', new=Mock()) as price_event_1_set:
-        price_events_manager.handle_price(0, random_timestamp())
+        price_events_manager.handle_price(trading_constants.ZERO, random_timestamp())
         with pytest.raises(AssertionError):
             price_event_1_set.assert_called_once()
-        price_events_manager.handle_price(price=random_price(max_value=random_price_1 - 1),
+        price_events_manager.handle_price(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE),
                                           timestamp=random_timestamp())
         with pytest.raises(AssertionError):
             price_event_1_set.assert_called_once()
-        price_events_manager.handle_price(price=random_price(max_value=random_price_1 - 1),
+        price_events_manager.handle_price(price=decimal_random_price(max_value=random_price_1 - trading_constants.ONE),
                                           timestamp=random_timestamp())
-        price_events_manager.handle_price(price=random_price(min_value=random_price_1),
+        price_events_manager.handle_price(price=decimal_random_price(min_value=random_price_1),
                                           timestamp=random_timestamp_1 - 1)
         with pytest.raises(AssertionError):
             price_event_1_set.assert_called_once()
-        price_events_manager.handle_price(price=random_price(min_value=random_price_1),
+        price_events_manager.handle_price(price=decimal_random_price(min_value=random_price_1),
                                           timestamp=random_timestamp_1 + 1)
         price_event_1_set.assert_called_once()
 

@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
 import octobot_commons.logging as logging
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ECOC
@@ -47,7 +48,7 @@ class PriceEventsManager:
         """
         for recent_trade in recent_trades:
             try:
-                for event_to_set in self._check_events(recent_trade[ECOC.PRICE.value],
+                for event_to_set in self._check_events(decimal.Decimal(recent_trade[ECOC.PRICE.value]),
                                                        recent_trade[ECOC.TIMESTAMP.value]):
                     self._remove_and_set_event(event_to_set)
             except KeyError:

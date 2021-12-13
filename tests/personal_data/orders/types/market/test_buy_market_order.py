@@ -16,7 +16,7 @@
 import pytest
 
 from octobot_trading.enums import TraderOrderType
-from tests.personal_data import DEFAULT_SYMBOL_QUANTITY, DEFAULT_ORDER_SYMBOL, DEFAULT_MARKET_QUANTITY
+from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_MARKET_QUANTITY
 from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
 
 from tests import event_loop
