@@ -15,7 +15,6 @@
 #  License along with this library.
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
-import octobot_trading.errors as errors
 
 
 class MarginContract:
