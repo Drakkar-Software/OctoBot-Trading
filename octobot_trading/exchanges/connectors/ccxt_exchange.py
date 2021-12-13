@@ -377,6 +377,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return await self.client.set_margin_mode(symbol=symbol,
                                                  marginType=self.CCXT_ISOLATED if isolated else self.CCXT_CROSSED)
 
+    async def set_symbol_position_mode(self, symbol: str, one_way: bool):
+        return await self.client.set_position_mode(self, hedged=not one_way, symbol=symbol)
+
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         fees = self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
