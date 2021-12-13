@@ -23,7 +23,7 @@ import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.personal_data.trades.trade_factory as trade_factory
-import octobot_trading.enums
+import octobot_trading.enums as enums
 import octobot_trading.constants
 import octobot_trading.util as util
 
@@ -302,21 +302,38 @@ class Trader(util.Initializable):
     Positions
     """
 
-    async def close_position(self, position, limit_price=None) -> None:
+    async def close_position(self, position, limit_price=None, timeout=1):
         """
         Creates a close position order
         :param position: the position to close
         :param limit_price: the close order limit price if None uses a market order
+        :param timeout: the mark price timeout
+        :return: the list of created orders
         """
-        # TODO use reduce only param
-        if limit_price is None:
-            # TODO market order
-            pass
-        else:
-            pass
+        created_orders = []
+        async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+            _, _, _, price, symbol_market = await order_util.get_pre_order_data(self.exchange_manager,
+                                                                                position.symbol,
+                                                                                timeout=timeout)
+            for order_quantity, order_price in decimal_order_adapter.decimal_check_and_adapt_order_details_if_necessary(
+                    position.get_quantity_to_close().copy_abs(), price, symbol_market):
 
-    async def set_leverage(self, position):
-        pass  # TODO
+                if limit_price is not None:
+                    order_type = enums.TraderOrderType.SELL_LIMIT \
+                        if position.is_long() else enums.TraderOrderType.BUY_LIMIT
+                else:
+                    order_type = enums.TraderOrderType.SELL_MARKET \
+                        if position.is_long() else enums.TraderOrderType.BUY_MARKET
 
-    async def set_margin_type(self, new_margin_type):
-        pass  # TODO
+                # TODO add reduce_only or close_position attribute
+                current_order = order_factory.create_order_instance(trader=self,
+                                                                    order_type=order_type,
+                                                                    symbol=position.symbol,
+                                                                    current_price=order_price,
+                                                                    quantity=order_quantity,
+                                                                    price=limit_price
+                                                                    if limit_price is not None else order_price)
+                created_orders.append(
+                    await self.create_order(current_order,
+                                            self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio))
+        return created_orders
