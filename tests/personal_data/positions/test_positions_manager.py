@@ -72,7 +72,7 @@ async def test_get_order_position(future_trader_simulator_with_default_linear):
     trader.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, 
                                                               default_contract)
 
-    p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.SHORT)
+    p1 = positions_manager.get_symbol_position(symbol=DEFAULT_FUTURE_SYMBOL, side=enums.PositionSide.BOTH)
     market_sell = SellMarketOrder(trader)
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,

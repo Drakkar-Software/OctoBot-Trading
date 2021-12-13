@@ -135,13 +135,16 @@ class PositionsManager(util.Initializable):
         await new_position.initialize(is_from_exchange_data=is_from_exchange_data)
         return True
 
-    def _create_symbol_position(self, symbol):
+    def _create_symbol_position(self, symbol, position_id):
         """
         Creates a position when it doesn't exist for the specified symbol
+        :param symbol: the new position symbol
+        :param side: the new position id
         :return: the new symbol position instance
         """
         new_position = position_factory.create_symbol_position(self.trader, symbol)
-        self.positions[new_position.position_id] = new_position
+        new_position.position_id = position_id
+        self.positions[position_id] = new_position
         return new_position
 
     def _get_or_create_position(self, symbol, side):
@@ -155,7 +158,7 @@ class PositionsManager(util.Initializable):
         try:
             return self.positions[expected_position_id]
         except KeyError:
-            self.positions[expected_position_id] = self._create_symbol_position(symbol)
+            self.positions[expected_position_id] = self._create_symbol_position(symbol, expected_position_id)
         return self.positions[expected_position_id]
 
     def _get_symbol_positions(self, symbol):
