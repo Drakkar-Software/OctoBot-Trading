@@ -39,7 +39,7 @@ pytestmark = pytest.mark.asyncio
 async def _update_position_mark_price(exchange_manager_inst, mark_price, symbol=DEFAULT_FUTURE_SYMBOL, side=None):
     symbol_position = exchange_manager_inst.exchange_personal_data.positions_manager. \
         get_symbol_position(symbol=symbol, side=side)
-    symbol_position.update(mark_price=mark_price)
+    await symbol_position.update(mark_price=mark_price)
 
 
 async def test_initial_portfolio(future_trader_simulator_with_default_linear):
@@ -64,9 +64,6 @@ async def test_update_future_portfolio_from_order(
                       quantity=decimal.Decimal(str(2)),
                       price=buy_price)
 
-    # update position mark price
-    await _update_position_mark_price(exchange_manager_inst, buy_price, DEFAULT_FUTURE_SYMBOL)
-
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(900))
@@ -77,10 +74,15 @@ async def test_update_future_portfolio_from_order(
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == decimal.Decimal(str(100))
 
+    # create a new position from order
     await fill_market_order(market_buy)
+
+    # update position mark price
+    await _update_position_mark_price(exchange_manager_inst, buy_price, DEFAULT_FUTURE_SYMBOL)
+
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(900))
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(900))
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == -constants.ONE_HUNDRED
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == 0
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").initial_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").wallet_balance == decimal.Decimal(str(1000))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal(str(100))
