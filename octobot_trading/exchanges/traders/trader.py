@@ -17,14 +17,15 @@
 import decimal
 
 import octobot_commons.logging as logging
-
 import octobot_commons.constants
+
 import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.personal_data.trades.trade_factory as trade_factory
 import octobot_trading.enums as enums
 import octobot_trading.constants
+import octobot_trading.errors as errors
 import octobot_trading.util as util
 
 
@@ -337,3 +338,68 @@ class Trader(util.Initializable):
                     await self.create_order(current_order,
                                             self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio))
         return created_orders
+
+    async def set_leverage(self, symbol, side, leverage):
+        """
+        Updates the symbol contract leverage
+        Can raise InvalidLeverageValue if leverage value is not matching requirements
+        :param symbol: the symbol to update
+        :param side: the side to update (TODO)
+        :param leverage: the new leverage value
+        """
+        contract = self.exchange_manager.exchange.get_pair_future_contract(symbol)
+        if not contract.check_leverage_update(leverage):
+            raise errors.InvalidLeverageValue(f"Trying to update leverage with {leverage} "
+                                              f"but maximal value is {contract.maximum_leverage}")
+        if not self.simulate:
+            await self.exchange_manager.exchange.set_symbol_leverage(
+                symbol=symbol,
+                leverage=leverage
+            )
+        contract.set_current_leverage(leverage)
+
+    async def set_margin_type(self, symbol, side, margin_type):
+        """
+        Updates the symbol contract margin type
+        :param symbol: the symbol to update
+        :param side: the side to update (TODO)
+        :param margin_type: the new margin type (enums.MarginType)
+        """
+        contract = self.exchange_manager.exchange.get_pair_future_contract(symbol)
+        if not self.simulate:
+            await self.exchange_manager.exchange.set_symbol_margin_type(
+                symbol=symbol,
+                isolated=margin_type is enums.MarginType.ISOLATED
+            )
+        contract.set_margin_type(
+            is_isolated=margin_type is enums.MarginType.ISOLATED,
+            is_cross=margin_type is enums.MarginType.CROSS
+        )
+
+    async def set_position_mode(self, symbol, position_mode):
+        """
+        Updates the symbol contract position mode
+        :param symbol: the symbol to update
+        :param position_mode: the new position mode (enums.PositionMode)
+        """
+        if self._has_open_position(symbol):
+            raise errors.TooManyOpenPositionError("Can't update position mode when having open position.")
+        contract = self.exchange_manager.exchange.get_pair_future_contract(symbol)
+        if not self.simulate:
+            await self.exchange_manager.exchange.set_symbol_position_mode(
+                symbol=symbol,
+                one_way=position_mode is enums.PositionMode.ONE_WAY
+            )
+        contract.set_position_mode(
+            is_one_way=position_mode is enums.PositionMode.ONE_WAY,
+            is_hedge=position_mode is enums.PositionMode.HEDGE
+        )
+
+    def _has_open_position(self, symbol):
+        """
+        Checks if open position exists for :symbol:
+        :param symbol: the position symbol
+        :return: True if open position for :symbol: exists
+        """
+        return len(self.exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions(
+            symbol=symbol)) != 0

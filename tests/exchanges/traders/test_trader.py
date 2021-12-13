@@ -23,14 +23,14 @@ import time
 from mock import AsyncMock, patch, Mock
 from octobot_commons import asyncio_tools
 
+from octobot_trading.errors import TooManyOpenPositionError, InvalidLeverageValue
 from octobot_trading.personal_data import LinearPosition
-from tests import event_loop
 import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.personal_data.orders import Order
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, FeePropertyColumns, \
-    ExchangeConstantsPositionColumns
+    ExchangeConstantsPositionColumns, PositionMode, MarginType
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.personal_data.orders import BuyLimitOrder, BuyMarketOrder, SellLimitOrder, StopLossOrder
@@ -39,8 +39,12 @@ import octobot_trading.personal_data.portfolios.assets as portfolio_assets
 from octobot_trading.exchanges.traders.trader import Trader
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
-from tests.exchanges.traders import get_default_future_inverse_contract
+from tests.exchanges.traders import get_default_future_inverse_contract, DEFAULT_FUTURE_SYMBOL
 import octobot_trading.constants as constants
+
+from tests import event_loop
+from tests.exchanges import future_simulated_exchange_manager
+from tests.exchanges.traders import future_trader_simulator_with_default_linear
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -859,40 +863,116 @@ class TestTrader:
 
         await self.stop(exchange_manager)
 
-    async def test_close_position(self):
-        _, exchange_manager, trader_inst = await self.init_default(is_future=True)
 
-        contract = get_default_future_inverse_contract()
-        exchange_manager.exchange.set_pair_future_contract(self.DEFAULT_SYMBOL, contract)
+async def test_close_position(future_trader_simulator_with_default_linear):
+    _, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, contract)
+    position_inst = LinearPosition(trader_inst, contract)
+    await position_inst.initialize()
+    position_inst.update_from_raw(
+        {
+            ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
+    await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
+    if not os.getenv('CYTHON_IGNORE'):
+        with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
+                   new=AsyncMock(return_value=30)):
+            orders = await trader_inst.close_position(position_inst, limit_price=decimal.Decimal(5))
+            assert len(orders) == 1
+            assert orders[0].order_type is TraderOrderType.SELL_LIMIT
+            assert orders[0].origin_price == 5
+            assert orders[0].origin_quantity == 10
+
+        with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
+                   new=AsyncMock(return_value=20)):
+            orders = await trader_inst.close_position(position_inst)
+            assert len(orders) == 1
+            assert orders[0].order_type is TraderOrderType.SELL_MARKET
+            assert orders[0].origin_price == 20
+            assert orders[0].origin_quantity == 10
+
+
+async def test_set_leverage(future_trader_simulator_with_default_linear):
+    _, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, contract)
+
+    await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(10))
+    assert contract.current_leverage == decimal.Decimal(10)
+    await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(10))
+    assert contract.current_leverage == decimal.Decimal(10)
+    await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(10))
+    assert contract.current_leverage == decimal.Decimal(10)
+
+    contract.maximum_leverage = decimal.Decimal(100)
+    with pytest.raises(InvalidLeverageValue):
+        await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(200))
+
+
+async def test_set_margin_type(future_trader_simulator_with_default_linear):
+    _, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, contract)
+
+    await trader_inst.set_margin_type(DEFAULT_FUTURE_SYMBOL, None, MarginType.ISOLATED)
+    assert contract.is_isolated()
+    await trader_inst.set_margin_type(DEFAULT_FUTURE_SYMBOL, None, MarginType.CROSS)
+    assert not contract.is_isolated()
+    await trader_inst.set_margin_type(DEFAULT_FUTURE_SYMBOL, None, MarginType.ISOLATED)
+    assert contract.is_isolated()
+
+
+async def test_set_position_mode(future_trader_simulator_with_default_linear):
+    _, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, contract)
+
+    await trader_inst.set_position_mode(DEFAULT_FUTURE_SYMBOL, PositionMode.ONE_WAY)
+    assert contract.is_one_way_position_mode()
+    await trader_inst.set_position_mode(DEFAULT_FUTURE_SYMBOL, PositionMode.HEDGE)
+    assert not contract.is_one_way_position_mode()
+    await trader_inst.set_position_mode(DEFAULT_FUTURE_SYMBOL, PositionMode.ONE_WAY)
+    assert contract.is_one_way_position_mode()
+
+    position_inst = LinearPosition(trader_inst, contract)
+    await position_inst.initialize()
+    position_inst.update_from_raw(
+        {
+            ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
+    with pytest.raises(TooManyOpenPositionError):
+        await trader_inst.set_position_mode(DEFAULT_FUTURE_SYMBOL, PositionMode.HEDGE)
+
+
+async def test__has_open_position(future_trader_simulator_with_default_linear):
+    _, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, contract)
+
+    if not os.getenv('CYTHON_IGNORE'):
+        assert not trader_inst._has_open_position(DEFAULT_FUTURE_SYMBOL)
+
         position_inst = LinearPosition(trader_inst, contract)
         await position_inst.initialize()
         position_inst.update_from_raw(
             {
-                ExchangeConstantsPositionColumns.SYMBOL.value: self.DEFAULT_SYMBOL
+                ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
             }
         )
-        await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(100))
-        exchange_manager.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
-
-        if not os.getenv('CYTHON_IGNORE'):
-            with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
-                       new=AsyncMock(return_value=30)):
-                orders = await trader_inst.close_position(position_inst, limit_price=decimal.Decimal(5))
-                assert len(orders) == 1
-                assert orders[0].order_type is TraderOrderType.SELL_LIMIT
-                assert orders[0].origin_price == 5
-                assert orders[0].origin_quantity == 10
-
-            with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
-                       new=AsyncMock(return_value=20)):
-                orders = await trader_inst.close_position(position_inst)
-                assert len(orders) == 1
-                assert orders[0].order_type is TraderOrderType.SELL_MARKET
-                assert orders[0].origin_price == 20
-                assert orders[0].origin_quantity == 10
-
-        await asyncio_tools.wait_asyncio_next_cycle()
-        await self.stop(exchange_manager)
+        exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+        assert trader_inst._has_open_position(DEFAULT_FUTURE_SYMBOL)
 
 
 def make_coroutine(response):
