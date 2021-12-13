@@ -585,7 +585,8 @@ class Position(util.Initializable):
         self.realised_pnl = constants.ZERO
         self.creation_time = constants.ZERO
         self.on_pnl_update()  # notify portfolio to reset unrealized PNL
-        await self.on_open()
+        if not self.is_open():
+            await self.on_open()
 
     def clear(self):
         """
