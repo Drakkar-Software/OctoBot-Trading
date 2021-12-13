@@ -15,19 +15,20 @@
 #  License along with this library.
 import asyncio
 
-import octobot_commons.constants as constants
+import octobot_commons.constants as commons_constants
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
 import octobot_trading.util as util
+import octobot_trading.constants as constants
 
 
 class PricesManager(util.Initializable):
-    MARK_PRICE_FETCH_TIMEOUT = 5 * constants.MINUTE_TO_SECONDS
+    MARK_PRICE_FETCH_TIMEOUT = 5 * commons_constants.MINUTE_TO_SECONDS
 
     def __init__(self, exchange_manager):
         super().__init__()
-        self.mark_price = 0
+        self.mark_price = constants.ZERO
         self.mark_price_set_time = 0
         self.mark_price_from_sources = {}
         self.exchange_manager = exchange_manager
@@ -127,10 +128,10 @@ class PricesManager(util.Initializable):
     def _compute_mark_price_validity_timeout(self):
         refresh_threshold = self.exchange_manager.get_rest_pairs_refresh_threshold()
         if refresh_threshold is enums.RestExchangePairsRefreshMaxThresholds.FAST:
-            return 3 * constants.MINUTE_TO_SECONDS
+            return 3 * commons_constants.MINUTE_TO_SECONDS
         if refresh_threshold is enums.RestExchangePairsRefreshMaxThresholds.MEDIUM:
-            return 5 * constants.MINUTE_TO_SECONDS
-        return 7 * constants.MINUTE_TO_SECONDS
+            return 5 * commons_constants.MINUTE_TO_SECONDS
+        return 7 * commons_constants.MINUTE_TO_SECONDS
 
     def _is_mark_price_valid(self, mark_price_updated_time):
         """

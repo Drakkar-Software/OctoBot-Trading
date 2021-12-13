@@ -13,13 +13,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import pytest
 
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
-from octobot_trading.enums import TraderOrderType, TradeOrderSide
+from octobot_trading.enums import TraderOrderType
+import octobot_trading.constants as trading_constants
 from tests.personal_data import DEFAULT_ORDER_SYMBOL, DEFAULT_SYMBOL_QUANTITY, DEFAULT_MARKET_QUANTITY
 
-from tests.test_utils.random_numbers import decimal_random_price, random_price, decimal_random_quantity, random_recent_trade
+from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity, decimal_random_recent_trade
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
 from tests.personal_data.orders import take_profit_sell_order, take_profit_buy_order
@@ -43,17 +46,17 @@ async def test_take_profit_sell_order_trigger(take_profit_sell_order):
     price_events_manager = take_profit_sell_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(max_value=float(order_price - 1)),
-                             timestamp=take_profit_sell_order.timestamp)])
+        [decimal_random_recent_trade(price=decimal_random_price(max_value=order_price - trading_constants.ONE),
+                                     timestamp=take_profit_sell_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not take_profit_sell_order.is_filled()
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=order_price,
-                             timestamp=take_profit_sell_order.timestamp - 1)])
+        [decimal_random_recent_trade(price=order_price,
+                                     timestamp=take_profit_sell_order.timestamp - 1)])
     await wait_asyncio_next_cycle()
     assert not take_profit_sell_order.is_filled()
-    price_events_manager.handle_recent_trades([random_recent_trade(price=order_price,
-                                                                   timestamp=take_profit_sell_order.timestamp)])
+    price_events_manager.handle_recent_trades([decimal_random_recent_trade(price=order_price,
+                                                                           timestamp=take_profit_sell_order.timestamp)])
 
     # wait for 2 cycles as secondary orders are created
     await wait_asyncio_next_cycle()
@@ -65,7 +68,8 @@ async def test_take_profit_buy_order_trigger(take_profit_buy_order):
     order_price = decimal_random_price()
     take_profit_buy_order.update(
         price=order_price,
-        quantity=decimal_random_quantity(max_value=DEFAULT_MARKET_QUANTITY / (order_price * 2)),
+        quantity=decimal_random_quantity(max_value=decimal.Decimal(
+            DEFAULT_MARKET_QUANTITY / (order_price * decimal.Decimal(2)))),
         symbol=DEFAULT_ORDER_SYMBOL,
         order_type=TraderOrderType.TAKE_PROFIT,
     )
@@ -77,17 +81,17 @@ async def test_take_profit_buy_order_trigger(take_profit_buy_order):
     price_events_manager = take_profit_buy_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_ORDER_SYMBOL).price_events_manager
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=random_price(min_value=float(order_price - 1)),
-                             timestamp=take_profit_buy_order.timestamp)])
+        [decimal_random_recent_trade(price=decimal_random_price(min_value=order_price - trading_constants.ONE),
+                                     timestamp=take_profit_buy_order.timestamp)])
     await wait_asyncio_next_cycle()
     assert not take_profit_buy_order.is_filled()
     price_events_manager.handle_recent_trades(
-        [random_recent_trade(price=order_price,
-                             timestamp=take_profit_buy_order.timestamp - 1)])
+        [decimal_random_recent_trade(price=order_price,
+                                     timestamp=take_profit_buy_order.timestamp - 1)])
     await wait_asyncio_next_cycle()
     assert not take_profit_buy_order.is_filled()
-    price_events_manager.handle_recent_trades([random_recent_trade(price=order_price,
-                                                                   timestamp=take_profit_buy_order.timestamp)])
+    price_events_manager.handle_recent_trades([decimal_random_recent_trade(price=order_price,
+                                                                           timestamp=take_profit_buy_order.timestamp)])
 
     # wait for 2 cycles as secondary orders are created
     await wait_asyncio_next_cycle()
