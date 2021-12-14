@@ -38,6 +38,7 @@ class ManagedOrdersSettings:
         self.atr_period = None
         self.position_size_type = None
         self.risk_in_d_or_p = None
+        self.total_risk_in_d_or_p = None
         self.try_limit_in = None
         self.slippage_limit = None
         self.market_in_if_limit_fails = None
@@ -59,7 +60,7 @@ class ManagedOrdersSettings:
 
         # SL
         self.sl_type = await user_inputs.user_input(self.context, "choose SL type", "options",
-                                                    self.sl_types["at_low_high_title"],
+                                                    self.sl_types["based_on_p_title"],
                                                     options=[self.sl_types["at_low_high_title"],
                                                              self.sl_types["based_on_p_title"],
                                                              self.sl_types["based_on_atr_title"]])
@@ -78,12 +79,17 @@ class ManagedOrdersSettings:
 
         # position size
         self.position_size_type = await user_inputs.user_input(self.context, "choose position Size Type", "options",
-                                                               self.position_size_types["based_on_d"],
+                                                               self.position_size_types["based_on_p"],
                                                                options=[
                                                                    self.position_size_types["based_on_p"],
                                                                    self.position_size_types["based_on_d"]]
                                                                )
-        self.risk_in_d_or_p = decimal.Decimal(str(await user_inputs.user_input(self.context, "Risk % or $", "int", 3)))
+        self.risk_in_d_or_p = decimal.Decimal(str(await user_inputs.user_input(self.context,
+                                                                               "risk per trade in % or $",
+                                                                               "float", 0.5)))
+        self.total_risk_in_d_or_p = decimal.Decimal(str(await user_inputs.user_input(self.context,
+                                                                                     "total risk in % or $",
+                                                                                     "float", 2)))
 
         # try limit in
         # todo handle on backtesting (maybe use always 1m to check if it got filled)
@@ -97,7 +103,7 @@ class ManagedOrdersSettings:
 
         # TP
         self.tp_is_activated = await user_inputs.user_input(self.context, "Activate TP based on Risk Reward", "boolean",
-                                                            False)
+                                                            True)
         if self.tp_is_activated:
             self.tp_rr = decimal.Decimal(
                 str(await user_inputs.user_input(self.context, "TP Risk Reward target", "float", 2)))
@@ -105,7 +111,7 @@ class ManagedOrdersSettings:
                                                               "Use Scaled Limit for Take Profit. (scales "
                                                               "from min RR to max RR to reach an average RR "
                                                               "as defined above in target RR)", "boolean",
-                                                              True)
+                                                              False)
             if self.use_scaled_tp:
                 self.tp_min_rr = decimal.Decimal(
                     str(await user_inputs.user_input(self.context, "TP min Risk Reward target", "float", 1)))
@@ -186,61 +192,67 @@ async def managed_order(ctx, side="long", orders_settings=None):
                 sl_in_p + (market_fee + market_fee))) / decimal.Decimal("0.01")
         position_size_limit = (managed_orders_settings.risk_in_d_or_p / (
                 sl_in_p + (limit_fee + market_fee))) / decimal.Decimal("0.01")
+        max_position_size = (managed_orders_settings.total_risk_in_d_or_p / (sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
 
         # cut the position size so that it aligns with target risk
         current_open_position_size = open_positions.open_position_size(ctx, side=side)
-        position_size_limit = position_size_limit - current_open_position_size
-        position_size_market = position_size_market - current_open_position_size
-        if position_size_limit < 0 or position_size_market < 0:
-            raise RuntimeError("Managed order cant open a new position, maximum risk is reached")
+        if current_open_position_size + position_size_market > max_position_size:
+            position_size_limit = max_position_size - current_open_position_size
+            position_size_market = max_position_size - current_open_position_size
 
     # position size based on percent of total account balance
     elif managed_orders_settings.position_size_type == managed_orders_settings.position_size_types["based_on_p"]:
         current_total_acc_balance = await exchange_private_data.total_account_balance(ctx)
         risk_in_d = (managed_orders_settings.risk_in_d_or_p / 100) * current_total_acc_balance
+        total_risk_in_d = (managed_orders_settings.total_risk_in_d_or_p / 100) * current_total_acc_balance
+
         position_size_market = (risk_in_d / (sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
-        position_size_limit = (managed_orders_settings.risk_in_d_or_p / (
-                sl_in_p + (limit_fee + market_fee))) / decimal.Decimal("0.01")
+        position_size_limit = (risk_in_d / (sl_in_p + (limit_fee + market_fee))) / decimal.Decimal("0.01")
+        max_position_size = (total_risk_in_d / (sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
 
         # cut the position size so that it aligns with target risk
         current_open_position_size = open_positions.open_position_size(ctx, side=side)
-        position_size_limit = position_size_limit - current_open_position_size
-        position_size_market = position_size_market - current_open_position_size
-        if position_size_limit < 0 or position_size_market < 0:
-            raise RuntimeError("Managed order cant open a new position, maximum position size is reached")
+        if current_open_position_size + position_size_market > max_position_size:
+            position_size_limit = max_position_size - current_open_position_size
+            position_size_market = max_position_size - current_open_position_size
+
+    if position_size_market <= 0:
+        # its not logging
+        ctx.logger.info("Managed order cant open a new position, maximum position size is reached")
 
     # create orders
-    if side == "long":
-        side = trading_enums.TradeOrderSide.BUY.value
-    elif side == "short":
-        side = trading_enums.TradeOrderSide.SELL.value
-
-    # limit or market in
-    if managed_orders_settings.try_limit_in:
-        await order_types.trailing_limit(ctx, amount=position_size_limit, side=side, min_offset=0, max_offset=0,
-                                         slippage_limit=managed_orders_settings.slippage_limit, tag="try_limit_in")
-        # wait for limit to get filled
-        if tag_triggered.tagged_order_unfilled("try_limit_in"):
-            unfilled_amount = tag_triggered.tagged_order_unfilled_amount("try_limit_in")
-            if unfilled_amount != position_size_limit:
-                position_size_market = 50  # todo calc smaller size cause of fees
-            await order_types.market(ctx, side=side, amount=position_size_market)
-    # market in only
     else:
-        await order_types.market(ctx, side=side, amount=position_size_market)
+        if side == "long":
+            side = trading_enums.TradeOrderSide.BUY.value
+        elif side == "short":
+            side = trading_enums.TradeOrderSide.SELL.value
 
-    await order_types.stop_loss(ctx, target_position=0, offset=f"@{sl_price}", one_cancels_the_other=True,
-                                tag="managed_order take_profit")
-
-    # take profit
-    if managed_orders_settings.tp_is_activated:
-        profit_in_p = managed_orders_settings.tp_rr * sl_in_p
-        if not managed_orders_settings.use_scaled_tp:
-            await order_types.limit(ctx, target_position=0, offset=f"{profit_in_p}%e", one_cancels_the_other=True,
-                                    tag="managed_order take_profit")
+        # limit or market in
+        if managed_orders_settings.try_limit_in:
+            await order_types.trailing_limit(ctx, amount=position_size_limit, side=side, min_offset=0, max_offset=0,
+                                             slippage_limit=managed_orders_settings.slippage_limit, tag="managed order long entry:")
+            # wait for limit to get filled
+            if tag_triggered.tagged_order_unfilled("managed order long entry:"):
+                unfilled_amount = tag_triggered.tagged_order_unfilled_amount("managed order long entry:")
+                if unfilled_amount != position_size_limit:
+                    position_size_market = 50  # todo calc smaller size cause of fees
+                await order_types.market(ctx, side=side, amount=position_size_market)
+        # market in only
         else:
-            scale_from = 10  # todo
-            scale_to = 10  # todo
-            await order_types.scaled_limit(ctx, target_position=0, side=side, scale_from=scale_from, scale_to=scale_to,
-                                           order_count=managed_orders_settings.tp_order_count,
-                                           one_cancels_the_other=True, tag="managed_order take_profit")
+            await order_types.market(ctx, side=side, amount=position_size_market, tag=f"managed_order {side} entry:")
+
+        await order_types.stop_loss(ctx, target_position=0, offset=f"@{sl_price}", one_cancels_the_other=True,
+                                    tag=f"managed_order {side} exit:")
+
+        # take profit
+        if managed_orders_settings.tp_is_activated:
+            profit_in_p = managed_orders_settings.tp_rr * sl_in_p
+            if not managed_orders_settings.use_scaled_tp:
+                await order_types.limit(ctx, target_position=0, offset=f"{profit_in_p}%e", one_cancels_the_other=True,
+                                        tag=f"managed_order {side} exit:")
+            else:
+                scale_from = 10  # todo
+                scale_to = 10  # todo
+                await order_types.scaled_limit(ctx, target_position=0, side=side, scale_from=scale_from, scale_to=scale_to,
+                                               order_count=managed_orders_settings.tp_order_count,
+                                               one_cancels_the_other=True, tag=f"managed_order {side} exit:")
