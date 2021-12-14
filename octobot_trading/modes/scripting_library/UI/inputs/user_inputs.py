@@ -32,6 +32,7 @@ async def user_input(
     if not ctx.run_data_writer.are_data_initialized and await ctx.run_data_writer.count(
             enums.DBTables.INPUTS.value,
             (input_query.name == name)
+            & (input_query.tentacle == ctx.tentacle.get_name())
             & (input_query.input_type == input_type)) == 0:
         tentacle_type = "trading_mode" if isinstance(ctx.tentacle, modes.AbstractTradingMode) else "evaluator"
         await ctx.run_data_writer.log(
