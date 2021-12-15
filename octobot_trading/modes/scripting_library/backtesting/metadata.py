@@ -49,7 +49,7 @@ async def _read_backtesting_metadata(db_manager, metadata_list):
 
 
 async def read_metadata(ctx=None, trading_mode=None, include_optimizer_runs=False):
-    trading_mode = trading_mode or ctx.trading_mode_class
+    trading_mode = trading_mode or ctx.trading_mode.__class__
     metadata = []
     optimizer_data_managers = []
     backtesting_database_manager = databases.DatabaseManager(trading_mode, backtesting_id="1")

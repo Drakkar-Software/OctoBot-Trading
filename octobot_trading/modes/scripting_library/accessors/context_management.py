@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 import os
 import json
 import inspect
@@ -47,7 +46,7 @@ class Context:
         orders_writer,
         trades_writer,
         symbol_writer,
-        trading_mode_class,
+        trading_mode,
         trigger_cache_timestamp,
         trigger_source,
         trigger_value,
@@ -68,7 +67,7 @@ class Context:
         self.orders_writer = orders_writer
         self.trades_writer = trades_writer
         self.symbol_writer = symbol_writer
-        self.trading_mode_class = trading_mode_class
+        self.trading_mode = trading_mode
         self.trigger_cache_timestamp = trigger_cache_timestamp
         self.trigger_source = trigger_source
         self.trigger_value = trigger_value
@@ -83,7 +82,7 @@ class Context:
         self.plot_orders = False
 
     @staticmethod
-    def minimal(trading_mode_class, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):
+    def minimal(trading_mode, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):
         return Context(
             None,
             None,
@@ -99,7 +98,7 @@ class Context:
             None,
             None,
             None,
-            trading_mode_class,
+            trading_mode,
             None,
             None,
             None,
@@ -112,30 +111,35 @@ class Context:
             if tentacle_name is None:
                 return self.tentacle.caches[self.symbol][self.time_frame]
             else:
-                return self.tentacle.remote_caches[tentacle_name][self.symbol][self.time_frame]
+                return self.trading_mode.remote_caches[tentacle_name][self.symbol][self.time_frame]
         except KeyError:
             if tentacle_name is None:
                 if self.symbol not in self.tentacle.caches:
                     self.tentacle.caches[self.symbol] = {}
-                cache = self._get_or_create_cache_database(self.tentacle)
+                # only the tentacle responsible for the cache is allowed to manage the actual database
+                cache = self._open_or_create_cache_database(self.tentacle)
                 self.tentacle.caches[self.symbol][self.time_frame] = cache
+                tentacle_name = self.tentacle.get_name()
+                # also register it in trading mode remote caches to share this instance later on
+                if tentacle_name not in self.trading_mode.remote_caches:
+                    self.trading_mode.remote_caches[tentacle_name] = {}
+                if self.symbol not in self.trading_mode.remote_caches[tentacle_name]:
+                    self.trading_mode.remote_caches[tentacle_name][self.symbol] = {}
+                self.trading_mode.remote_caches[tentacle_name][self.symbol][self.time_frame] = cache
             else:
-                tentacle = tentacles_manager_api.get_tentacle_class_from_string(tentacle_name)
-                if tentacle_name not in self.tentacle.remote_caches:
-                    self.tentacle.remote_caches[tentacle_name] = {}
-                if self.symbol not in self.tentacle.remote_caches[tentacle_name]:
-                    self.tentacle.remote_caches[tentacle_name][self.symbol] = {}
-                tentacle_inst = tentacle(self.exchange_manager.tentacles_setup_config)
-                cache = self._get_or_create_cache_database(tentacle_inst)
-                self.tentacle.remote_caches[tentacle_name][self.symbol][self.time_frame] = cache
+                try:
+                    # always look into the trading mode remote caches only to ensure memory caches sync
+                    cache = self.trading_mode.remote_caches[self.tentacle.get_name()][self.symbol][self.time_frame]
+                except KeyError as e:
+                    raise common_errors.NoCacheValue from e
             return cache
 
-    def _get_or_create_cache_database(self, tentacle):
+    def _open_or_create_cache_database(self, tentacle):
         cache_full_path = self.get_cache_path(tentacle)
         cache_dir = os.path.split(cache_full_path)[0]
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
-        return self._get_cache_database(cache_full_path)
+        return self._open_cache_database(cache_full_path)
 
     def has_cache(self, pair, time_frame):
         return pair in self.tentacle.caches and time_frame in self.tentacle.caches[pair]
@@ -199,7 +203,7 @@ class Context:
             json.dumps(config).encode()
         ).hexdigest()[:common_constants.CACHE_HASH_SIZE]
 
-    def _get_cache_database(self, file_path):
+    def _open_cache_database(self, file_path):
         """
         Override to use another cache database or adaptor
         :return: the cache database class
@@ -208,7 +212,8 @@ class Context:
 
     @contextlib.asynccontextmanager
     async def run_data(self, with_lock=False, cache_size=None, database_adaptor=adaptors.TinyDBAdaptor):
-        database_manager = databases.DatabaseManager(self.trading_mode_class, database_adaptor=database_adaptor,
+        database_manager = databases.DatabaseManager(self.trading_mode.__class__,
+                                                     database_adaptor=database_adaptor,
                                                      backtesting_id=self.backtesting_id,
                                                      optimizer_id=self.optimizer_id,
                                                      context=self)

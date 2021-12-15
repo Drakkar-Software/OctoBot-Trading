@@ -53,9 +53,10 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         self._backtesting_script = None
         self.timestamp = time.time()
         self.script_name = None
-        self.load_config()
-        # add config folder to importable files to import the user script
-        tentacles_manager_api.import_user_tentacles_config_folder(self.exchange_manager.tentacles_setup_config)
+        if exchange_manager:
+            self.load_config()
+            # add config folder to importable files to import the user script
+            tentacles_manager_api.import_user_tentacles_config_folder(self.exchange_manager.tentacles_setup_config)
 
     def get_current_state(self) -> (str, float):
         return super().get_current_state()[0] if self.producers[0].state is None else self.producers[0].state.name, \
@@ -130,7 +131,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
 
     @classmethod
     async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id):
-        ctx = scripting_library.Context.minimal(cls, logging.get_logger(cls.get_name()), exchange, symbol,
+        ctx = scripting_library.Context.minimal(cls({}, None), logging.get_logger(cls.get_name()), exchange, symbol,
                                                 backtesting_id, optimizer_id)
         return await cls.get_script_from_module(cls.BACKTESTING_SCRIPT_MODULE)(ctx)
 
@@ -316,7 +317,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             self.orders_writer,
             self.trades_writer,
             self.symbol_writer,
-            self.trading_mode.__class__,
+            self.trading_mode,
             None,    # trigger_timestamp todo
             None,
             None,
