@@ -174,11 +174,12 @@ class Context:
             cache = self.get_cache(tentacle_name=tentacle_name)
             await cache.set(cache_key or self.trigger_cache_timestamp, value, name=value_key)
             if kwargs:
-                await asyncio.gather(*(
-                    cache.set(cache_key or self.trigger_cache_timestamp, val,
-                              name=f"{value_key}{common_constants.CACHE_RELATED_DATA_SEPARATOR}{key}")
-                    for key, val in kwargs.items()
-                ))
+                for key, val in kwargs.items():
+                    await cache.set(
+                        cache_key or self.trigger_cache_timestamp,
+                        val,
+                        name=f"{value_key}{common_constants.CACHE_RELATED_DATA_SEPARATOR}{key}"
+                    )
         finally:
             if flush_if_necessary and self._flush_cache_when_necessary and cache:
                 await cache.flush()
