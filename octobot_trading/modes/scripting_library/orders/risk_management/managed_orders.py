@@ -23,7 +23,7 @@ import octobot_trading.modes.scripting_library.UI.inputs.user_inputs as user_inp
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data as exchange_private_data
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
-import tulipy as ti # TODO add requirement or import in if
+import tulipy as ti  # TODO add requirement or import in if
 
 
 class ManagedOrdersSettings:
@@ -34,6 +34,7 @@ class ManagedOrdersSettings:
         self.managed_order_active = None
         self.sl_type = None
         self.sl_low_high_lookback = None
+        self.sl_low_high_buffer = None
         self.sl_in_p_value = None
         self.atr_period = None
         self.position_size_type = None
@@ -42,8 +43,10 @@ class ManagedOrdersSettings:
         self.try_limit_in = None
         self.slippage_limit = None
         self.market_in_if_limit_fails = None
-        self.tp_is_activated = None
+        self.tp_types = None
+        self.tp_type = None
         self.tp_rr = None
+        self.tp_in_p = None
         self.use_scaled_tp = None
         self.tp_min_rr = None
         self.tp_max_rr = None
@@ -54,6 +57,9 @@ class ManagedOrdersSettings:
         self.sl_types = {"at_low_high_title": "SL at the low/high",
                          "based_on_p_title": "SL based on %",
                          "based_on_atr_title": "Sl based on ATR"}
+        self.tp_types = {"no_tp_title": "dont use managed Take Profit",
+                         "tp_based_on_rr_title": "Take Profit based on Risk Reward",
+                         "tp_based_on_p_title": "Take Profit based on fixed %"}
         self.position_size_types = {"based_on_d": "Position size based on $ risk",
                                     "based_on_p": "Position size based on % risk"}
         self.managed_order_active = True
@@ -67,8 +73,11 @@ class ManagedOrdersSettings:
         # SL based on low/high
         if self.sl_type == self.sl_types["at_low_high_title"]:
             self.sl_low_high_lookback = decimal.Decimal(
-                str(await user_inputs.user_input(self.context, "SL at low/highlookback period",
+                str(await user_inputs.user_input(self.context, "SL at low/high lookback period",
                                                  "int", 3)))
+            self.sl_low_high_buffer = decimal.Decimal(
+                str(await user_inputs.user_input(self.context, "SL at low/high buffer in %",
+                                                 "float", 0.2)))
         # sl based on percent
         elif self.sl_type == self.sl_types["based_on_p_title"]:
             self.sl_in_p_value = decimal.Decimal(
@@ -102,23 +111,32 @@ class ManagedOrdersSettings:
                                                                          True)
 
         # TP
-        self.tp_is_activated = await user_inputs.user_input(self.context, "Activate TP based on Risk Reward", "boolean",
-                                                            True)
-        if self.tp_is_activated:
-            self.tp_rr = decimal.Decimal(
-                str(await user_inputs.user_input(self.context, "TP Risk Reward target", "float", 2)))
+        self.tp_type = await user_inputs.user_input(self.context, "Activate TP based on Risk Reward", "options",
+                                                    self.tp_types["tp_based_on_rr_title"],
+                                                    options=[self.tp_types["no_tp_title"],
+                                                             self.tp_types["tp_based_on_rr_title"],
+                                                             self.tp_types["tp_based_on_p_title"]])
+
+        if self.tp_type == self.tp_types["tp_based_on_rr_title"]:
             self.use_scaled_tp = await user_inputs.user_input(self.context,
                                                               "Use Scaled Limit for Take Profit. (scales "
                                                               "from min RR to max RR to reach an average RR "
                                                               "as defined above in target RR)", "boolean",
                                                               False)
-            if self.use_scaled_tp:
+            if not self.use_scaled_tp:
+                self.tp_rr = decimal.Decimal(
+                    str(await user_inputs.user_input(self.context, "TP Risk Reward target", "float", 2)))
+
+            else:
                 self.tp_min_rr = decimal.Decimal(
                     str(await user_inputs.user_input(self.context, "TP min Risk Reward target", "float", 1)))
                 self.tp_max_rr = decimal.Decimal(
                     str(await user_inputs.user_input(self.context, "TP max Risk Reward target", "float", 3)))
                 self.tp_order_count = decimal.Decimal(
                     str(await user_inputs.user_input(self.context, "TP order count", "int", 3, 3)))
+        elif self.tp_type == self.tp_types["tp_based_on_p_title"]:
+            self.tp_in_p = await user_inputs.user_input(self.context, "TP in %", "float", 2, 0)
+
         self.initialized = True
 
 
@@ -142,12 +160,14 @@ async def managed_order(ctx, side="long", orders_settings=None):
     if managed_orders_settings.sl_type == managed_orders_settings.sl_types["at_low_high_title"]:
         if side == "long":
             sl_price = decimal.Decimal(
-                str(ti.min(exchange_public_data.Low(ctx), int(managed_orders_settings.sl_low_high_lookback))[-1]))
+                str(ti.min(exchange_public_data.Low(ctx), int(managed_orders_settings.sl_low_high_lookback))[-1]))\
+                       * (1 - (managed_orders_settings.sl_low_high_buffer / 100))
             sl_in_p = (current_price_val - sl_price) / current_price_val * 100
 
         elif side == "short":
             sl_price = decimal.Decimal(
-                str(ti.max(exchange_public_data.High(ctx), int(managed_orders_settings.sl_low_high_lookback))[-1]))
+                str(ti.max(exchange_public_data.High(ctx), int(managed_orders_settings.sl_low_high_lookback))[-1]))\
+                       * (1 + (managed_orders_settings.sl_low_high_buffer / 100))
             sl_in_p = (sl_price - current_price_val) / current_price_val * 100
         else:
             raise RuntimeError('Side needs to be "long" or "short" for your managed order')
@@ -164,7 +184,7 @@ async def managed_order(ctx, side="long", orders_settings=None):
             raise RuntimeError('Side needs to be "long" or "short" for your managed order')
 
     # SL based on ATR
-    if managed_orders_settings.sl_type == managed_orders_settings.sl_types["at_low_high_title"]:
+    if managed_orders_settings.sl_type == managed_orders_settings.sl_types["based_on_atr_title"]:
         if side == "long":
             sl_price = current_price_val - decimal.Decimal(
                 str(ti.atr(exchange_public_data.High(ctx), exchange_public_data.Low(ctx),
@@ -192,7 +212,8 @@ async def managed_order(ctx, side="long", orders_settings=None):
                 sl_in_p + (market_fee + market_fee))) / decimal.Decimal("0.01")
         position_size_limit = (managed_orders_settings.risk_in_d_or_p / (
                 sl_in_p + (limit_fee + market_fee))) / decimal.Decimal("0.01")
-        max_position_size = (managed_orders_settings.total_risk_in_d_or_p / (sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
+        max_position_size = (managed_orders_settings.total_risk_in_d_or_p / (
+                sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
 
         # cut the position size so that it aligns with target risk
         current_open_position_size = open_positions.open_position_size(ctx, side=side)
@@ -230,7 +251,8 @@ async def managed_order(ctx, side="long", orders_settings=None):
         # limit or market in
         if managed_orders_settings.try_limit_in:
             await order_types.trailing_limit(ctx, amount=position_size_limit, side=side, min_offset=0, max_offset=0,
-                                             slippage_limit=managed_orders_settings.slippage_limit, tag="managed order long entry:")
+                                             slippage_limit=managed_orders_settings.slippage_limit,
+                                             tag="managed order long entry:")
             # wait for limit to get filled
             if tag_triggered.tagged_order_unfilled("managed order long entry:"):
                 unfilled_amount = tag_triggered.tagged_order_unfilled_amount("managed order long entry:")
@@ -245,7 +267,7 @@ async def managed_order(ctx, side="long", orders_settings=None):
                                     tag=f"managed_order {side} exit:")
 
         # take profit
-        if managed_orders_settings.tp_is_activated:
+        if managed_orders_settings.tp_type == managed_orders_settings.tp_types["tp_based_on_rr_title"]:
             profit_in_p = managed_orders_settings.tp_rr * sl_in_p
             if not managed_orders_settings.use_scaled_tp:
                 await order_types.limit(ctx, target_position=0, offset=f"{profit_in_p}%e", one_cancels_the_other=True,
@@ -253,6 +275,12 @@ async def managed_order(ctx, side="long", orders_settings=None):
             else:
                 scale_from = 10  # todo
                 scale_to = 10  # todo
-                await order_types.scaled_limit(ctx, target_position=0, side=side, scale_from=scale_from, scale_to=scale_to,
+                await order_types.scaled_limit(ctx, target_position=0, side=side, scale_from=scale_from,
+                                               scale_to=scale_to,
                                                order_count=managed_orders_settings.tp_order_count,
                                                one_cancels_the_other=True, tag=f"managed_order {side} exit:")
+
+        # take profit
+        elif managed_orders_settings.tp_type == managed_orders_settings.tp_types["tp_based_on_p_title"]:
+            await order_types.limit(ctx, target_position=0, offset=f"{managed_orders_settings.tp_in_p}%e",
+                                    one_cancels_the_other=True, tag=f"managed_order {side} exit:")
