@@ -187,7 +187,9 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         await self.clear_plotting_cache()
         for producer in self.producers:
             await scripting_library.clear_user_inputs(producer.run_data_writer)
-            producer.run_data_writer.are_data_initialized = False
+            producer.run_data_writer.set_initialized_flags(False)
+            last_call_time_stamp = producer.last_call[-1]
+            producer.symbol_writer.set_initialized_flags(False, (last_call_time_stamp, ))
             self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
             await self.close_caches()
             await producer.set_final_eval(*producer.last_call)
@@ -352,9 +354,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                 await asyncio.gather(*(writer.flush() for writer in self.writers()))
                 if context.has_cache(context.symbol, context.time_frame):
                     await context.get_cache().flush()
-            self.run_data_writer.are_data_initialized = initialized
-            self.symbol_writer.are_data_initialized = initialized
-            self.symbol_writer.are_data_initialized_by_key[time_frame] = initialized
+            self.run_data_writer.set_initialized_flags(initialized)
+            self.symbol_writer.set_initialized_flags(initialized, (time_frame, ))
             self.contexts.remove(context)
 
     async def _pre_script_call(self, context):
