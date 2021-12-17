@@ -105,11 +105,13 @@ async def plot_candles(ctx, symbol=None, time_frame=None, chart=trading_enums.Pl
             if trading_api.get_is_backtesting(ctx.exchange_manager) else commons_constants.LOCAL_BOT_DATA,
         "chart": chart
     }
-    search_query = await ctx.symbol_writer.search()
     if (not ctx.symbol_writer.are_data_initialized_by_key.get(time_frame) and
-        await ctx.symbol_writer.count(
+        not await ctx.symbol_writer.contains_row(
             table,
-            ((search_query.time_frame == time_frame) & (search_query.value == candles_data["value"]))) == 0):
+            {
+                "time_frame": time_frame,
+                "value": candles_data["value"],
+            })):
         await ctx.symbol_writer.log(table, candles_data)
 
 
@@ -140,23 +142,20 @@ async def plot(ctx, title, x=None,
                     candidate_x.append(x_data[index])
             x = numpy.array(candidate_x)
             y = numpy.array(candidate_y)
-    indicator_query = await ctx.symbol_writer.search()
-    # needs parentheses to evaluate the right side of the equality first
-    count_query = ((indicator_query.kind == kind)
-                    & (indicator_query.mode == mode)
-                    & (indicator_query.time_frame == ctx.time_frame))
+    count_query = {
+        "kind": kind,
+        "mode": mode,
+        "time_frame": ctx.time_frame,
+    }
     cache_full_path = None
     if cache_value is not None:
         cache_full_path = ctx.get_cache_path(ctx.tentacle)
-        count_query = ((indicator_query.kind == kind)
-                       & (indicator_query.mode == mode)
-                       & (indicator_query.time_frame == ctx.time_frame)
-                       & (indicator_query.title == title)
-                       & (indicator_query.value == cache_full_path))
+        count_query["title"] = title
+        count_query["value"] = cache_full_path
     if init_only and not ctx.symbol_writer.are_data_initialized_by_key.get(time_frame, False) \
-            and await ctx.symbol_writer.count(
-            trading_enums.DBTables.CACHE_SOURCE.value if cache_value is not None else title,
-            count_query) == 0:
+            and not await ctx.symbol_writer.contains_row(
+                trading_enums.DBTables.CACHE_SOURCE.value if cache_value is not None else title,
+                count_query):
         if cache_value is not None:
             table = trading_enums.DBTables.CACHE_SOURCE.value
             cache_data = {
@@ -223,8 +222,8 @@ async def plot(ctx, title, x=None,
                         "shape": shape,
                     }
                     for index, value in enumerate(adapted_x)
-                ]
-
+                ],
+                cache=False
             )
     elif cache_value is None and x is not None:
         if isinstance(y, list) and not isinstance(x, list):
@@ -255,19 +254,20 @@ async def plot(ctx, title, x=None,
                     "size": size,
                     "shape": shape,
                 },
-                (await ctx.symbol_writer.search()).x == x_value
+                None,
+                cache_query={"x": x_value}
             )
 
 
 async def plot_shape(ctx, title, value, y_value,
                      chart=trading_enums.PlotCharts.SUB_CHART.value,
                      kind="markers", mode="lines", x_multiplier=1000):
-    count_query = await ctx.symbol_writer.search()
-    count_query = ((count_query.x == ctx.x)
-                    & (count_query.mode == mode)
-                    & (count_query.time_frame == ctx.time_frame)
-                    & (count_query.kind == kind))
-    if ctx.symbol_writer.count(title, count_query) == 0:
+    if not ctx.symbol_writer.contains_row(title, {
+        "x": ctx.x,
+        "mode": mode,
+        "time_frame": ctx.time_frame,
+        "kind": kind
+    }):
         await ctx.symbol_writer.log(
             title,
             {

@@ -28,12 +28,13 @@ async def user_input(
 ):
     config = ctx.tentacle.trading_config if hasattr(ctx.tentacle, "trading_config") else ctx.tentacle.specific_config
     value = config.get(name.replace(" ", "_"), def_val) if config else def_val
-    input_query = await ctx.run_data_writer.search()
-    if not ctx.run_data_writer.are_data_initialized and await ctx.run_data_writer.count(
+    if not ctx.run_data_writer.are_data_initialized and not await ctx.run_data_writer.contains_row(
             enums.DBTables.INPUTS.value,
-            (input_query.name == name)
-            & (input_query.tentacle == ctx.tentacle.get_name())
-            & (input_query.input_type == input_type)) == 0:
+            {
+                "name": name,
+                "tentacle": ctx.tentacle.get_name(),
+                "input_type": input_type
+            }):
         tentacle_type = "trading_mode" if isinstance(ctx.tentacle, modes.AbstractTradingMode) else "evaluator"
         await ctx.run_data_writer.log(
             enums.DBTables.INPUTS.value,
