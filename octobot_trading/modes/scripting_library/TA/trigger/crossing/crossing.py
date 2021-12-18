@@ -13,17 +13,49 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 
 
-def crossing_up(price, value, delay=0):
+def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_down=None, max_cross_down_lookback=5):
     # true if price just risen over value and stayed there for delay time
     condition = False
-    delay = delay + 2
-    for i in range(1, delay):
-        condition = price[-i] > value[-i] and price[-i-1] < value[-i-1]
-        if condition is False:
-            return False
-    return condition
+    delay = delay
+    if values_to_cross is None:
+        raise RuntimeError("crossing_up: you need to provide values_to_cross")
+    else:
+        if context is None and crossing_values is not None:
+            was_below = None
+            try:
+                was_below = crossing_values[-delay-2] < values_to_cross[-delay-2]
+            except IndexError:
+                print("crossing_up: not enough values_to_cross, you need to provide same amount as delay")
+            if was_below:
+                for i in range(1, delay+2):
+                    condition = crossing_values[-i] > values_to_cross[-i]
+                    if condition is False:
+                        return False
+                return condition
+            else:
+                return False
+        else:
+            closes = exchange_public_data.Close(context, limit=delay+max_cross_down_lookback)
+            highs = exchange_public_data.High(context, limit=delay+max_cross_down_lookback)
+            lows = exchange_public_data.Low(context, limit=delay+max_cross_down_lookback)
+            was_below = None
+            is_currently_above = None
+            try:
+                was_below = lows[-delay - 2] < values_to_cross[-delay - 2]
+                is_currently_above = closes[-1] > values_to_cross[-1]
+            except IndexError:
+                context.logger.info("crossing_up: not enough values_to_cross, you need to provide same amount as delay")
+            if was_below and is_currently_above:
+                for i in range(1, delay + 2):
+                    condition = highs[-i] > values_to_cross[-i]
+                    if condition is False:
+                        return False
+                return condition
+            else:
+                return False
 
 
 def crossing_down(price, value, delay=0):
