@@ -289,15 +289,18 @@ async def clear_run_data(writer):
 
 async def clear_orders_cache(writer):
     await _clear_table(writer, trading_enums.DBTables.ORDERS.value)
+    await writer.clear()
 
 
 async def clear_trades_cache(writer):
     await _clear_table(writer, trading_enums.DBTables.TRADES.value)
+    await writer.clear()
 
 
 async def clear_all_tables(writer_reader):
     for table in await writer_reader.tables():
         await _clear_table(writer_reader, table)
+    await writer_reader.clear()
 
 
 async def _clear_table(writer, table, flush=True):
