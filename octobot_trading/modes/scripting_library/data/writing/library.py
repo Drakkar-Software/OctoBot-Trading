@@ -285,6 +285,7 @@ async def plot_shape(ctx, title, value, y_value,
 async def clear_run_data(writer):
     await _clear_table(writer, trading_enums.DBTables.METADATA.value, flush=False)
     await _clear_table(writer, trading_enums.DBTables.PORTFOLIO.value, flush=False)
+    await writer.clear()
 
 
 async def clear_orders_cache(writer):

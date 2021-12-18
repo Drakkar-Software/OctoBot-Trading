@@ -335,10 +335,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         try:
             if not self.run_data_writer.are_data_initialized and not \
                     self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
-                await scripting_library.clear_run_data(self.run_data_writer)
-                await scripting_library.save_metadata(self.run_data_writer, await self.get_live_metadata())
-                await scripting_library.save_portfolio(self.run_data_writer, context)
-                self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
+                await self._reset_run_data(context)
             await self._pre_script_call(context)
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
@@ -349,13 +346,20 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             self.logger.exception(e, True, f"Error when running script: {e}")
         finally:
             if not self.exchange_manager.is_backtesting:
-                # only update db after each run in live mode
-                await asyncio.gather(*(writer.flush() for writer in self.writers()))
+                # update db after each run only in live mode
+                for writer in self.writers():
+                    await writer.flush()
                 if context.has_cache(context.symbol, context.time_frame):
                     await context.get_cache().flush()
             self.run_data_writer.set_initialized_flags(initialized)
             self.symbol_writer.set_initialized_flags(initialized, (time_frame, ))
             self.contexts.remove(context)
+
+    async def _reset_run_data(self, context):
+        await scripting_library.clear_run_data(self.run_data_writer)
+        await scripting_library.save_metadata(self.run_data_writer, await self.get_live_metadata())
+        await scripting_library.save_portfolio(self.run_data_writer, context)
+        self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
 
     async def _pre_script_call(self, context):
         await scripting_library.user_input(context, trading_constants.CONFIG_VISIBLE_LIVE_HISTORY, "int", 800)
