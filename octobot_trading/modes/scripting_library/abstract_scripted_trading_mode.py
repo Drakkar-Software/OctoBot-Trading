@@ -191,7 +191,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             last_call_time_stamp = producer.last_call[-1]
             producer.symbol_writer.set_initialized_flags(False, (last_call_time_stamp, ))
             self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
-            await self.close_caches()
+            await self.close_caches(reset_cache_db_ids=True)
             await producer.set_final_eval(*producer.last_call)
 
     def get_optimizer_id(self):

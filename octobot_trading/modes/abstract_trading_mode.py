@@ -142,12 +142,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         await self.close_caches()
         self.exchange_manager = None
 
-    async def close_caches(self):
+    async def close_caches(self, reset_cache_db_ids=False):
         await databases.CacheManager().close_cache(
             self.get_name(),
             self.exchange_manager.exchange_name,
             None if self.get_is_symbol_wildcard() else self.symbol,
-            None if self.get_is_time_frame_wildcard() else self.time_frame
+            None if self.get_is_time_frame_wildcard() else self.time_frame,
+            reset_cache_db_ids=reset_cache_db_ids
         )
 
     async def create_producers(self) -> list:
