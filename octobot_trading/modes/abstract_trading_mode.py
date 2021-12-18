@@ -18,6 +18,7 @@ import asyncio
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
+import octobot_commons.databases as databases
 import octobot_commons.tentacles_management as abstract_tentacle
 
 import async_channel.constants as channel_constants
@@ -68,13 +69,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # producers is the list of consumers created by this trading mode
         self.consumers = []
-
-        # Local caches, to be initialized if necessary
-        self.caches = {}
-
-        # Other caches, these are managed by other tentacles,
-        # they are referenced here for performances only
-        self.remote_caches = {}
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -145,19 +139,16 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await producer.stop()
         for consumer in self.consumers:
             await consumer.stop()
-        self.exchange_manager = None
         await self.close_caches()
+        self.exchange_manager = None
 
     async def close_caches(self):
-        self.remote_caches = {}
-        await asyncio.gather(
-            *(
-                cache.close()
-                for caches_by_tf in self.caches.values()
-                for cache in caches_by_tf.values()
-            )
+        await databases.CacheManager().close_cache(
+            self.get_name(),
+            self.exchange_manager.exchange_name,
+            None if self.get_is_symbol_wildcard() else self.symbol,
+            None if self.get_is_time_frame_wildcard() else self.time_frame
         )
-        self.caches = {}
 
     async def create_producers(self) -> list:
         """

@@ -123,7 +123,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             await scripting_library.clear_trades_cache(producer.trades_writer)
 
     async def clear_all_cache(self):
-        await scripting_library.clear_tentacle_cache(self)
+        await databases.CacheManager().clear_cache(self.get_name())
 
     async def clear_plotting_cache(self):
         for producer in self.producers:
@@ -198,21 +198,19 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
 
     @classmethod
-    def register_backtesting_id_for_bot(cls, bot_id, prefix):
-        cls.BACKTESTING_ID_BY_BOT_ID[bot_id] = prefix
-
-    @classmethod
-    async def get_backtesting_id(cls, bot_id, config=None):
+    async def get_backtesting_id(cls, bot_id, config=None, generate_if_not_found=False):
         try:
             return cls.BACKTESTING_ID_BY_BOT_ID[bot_id]
         except KeyError:
-            try:
-                backtesting_id = config.get(commons_constants.CONFIG_BACKTESTING_ID) \
-                                 or await cls._generate_new_backtesting_id()
-                cls.BACKTESTING_ID_BY_BOT_ID[bot_id] = backtesting_id
-                return backtesting_id
-            except AttributeError:
-                raise RuntimeError("config is required when a backtesting_id is not registered with a bot id")
+            if generate_if_not_found:
+                try:
+                    backtesting_id = config.get(commons_constants.CONFIG_BACKTESTING_ID) \
+                                     or await cls._generate_new_backtesting_id()
+                    cls.BACKTESTING_ID_BY_BOT_ID[bot_id] = backtesting_id
+                    return backtesting_id
+                except AttributeError:
+                    raise RuntimeError("config is required when a backtesting_id is not registered with a bot id")
+            raise RuntimeError(f"No backtesting id for bot_id: {bot_id}")
 
     @classmethod
     async def _generate_new_backtesting_id(cls):
@@ -289,7 +287,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
 
     async def start(self) -> None:
         await super().start()
-        backtesting_id = await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id, self.trading_mode.config) \
+        backtesting_id = await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id, self.trading_mode.config,
+                                                                    generate_if_not_found=True) \
             if self.exchange_manager.is_backtesting else None
         self.database_manager = databases.DatabaseManager(self.trading_mode.__class__,
                                                           backtesting_id=backtesting_id,

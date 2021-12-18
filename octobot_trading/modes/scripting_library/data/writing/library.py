@@ -306,15 +306,6 @@ async def _clear_table(writer, table, flush=True):
         await writer.flush()
 
 
-async def clear_tentacle_cache(tentacle):
-    for val in tentacle.caches.values():
-        if isinstance(val, dict):
-            for cache in val.values():
-                await cache.clear()
-        elif isinstance(val, databases.CacheDatabase):
-            await val.clear()
-
-
 async def save_metadata(writer, metadata):
     await writer.log(
         trading_enums.DBTables.METADATA.value,
