@@ -28,6 +28,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchanges.util as util
 
 
 class ExchangeSimulator(abstract_exchange.AbstractExchange):
@@ -194,7 +195,7 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
             [enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
         cost = float(number_util.round_into_str_with_max_digits(float(quantity) * rate, precision))
 
-        if order_type == enums.TraderOrderType.SELL_MARKET or order_type == enums.TraderOrderType.SELL_LIMIT:
+        if util.get_order_side(order_type) == enums.TradeOrderSide.SELL.value:
             cost = float(number_util.round_into_str_with_max_digits(cost * float(price), precision))
             fee_currency = market
 
