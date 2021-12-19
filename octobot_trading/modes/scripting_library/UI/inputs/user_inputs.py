@@ -53,6 +53,21 @@ async def user_input(
     return value
 
 
+async def external_user_input(
+    ctx,
+    name,
+    tentacle
+):
+    query = await ctx.run_data_writer.search()
+    raw_value = await ctx.run_data_writer.select(
+        enums.DBTables.INPUTS.value,
+        (query.name == name) & (query.tentacle == tentacle)
+    )
+    if raw_value:
+        return raw_value[0]["value"]
+    return None
+
+
 async def get_user_inputs(reader):
     return await reader.all(enums.DBTables.INPUTS.value)
 
