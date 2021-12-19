@@ -16,9 +16,8 @@
 #  License along with this library.
 
 cimport octobot_trading.personal_data.orders.order as order_class
-cimport octobot_trading.util as util
 
-cdef class Portfolio(util.Initializable):
+cdef class Portfolio:
     cdef object logger # Logger
     cdef public object lock # asyncio.Lock
 
