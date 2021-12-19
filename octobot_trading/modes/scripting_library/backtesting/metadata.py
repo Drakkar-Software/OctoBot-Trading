@@ -43,7 +43,10 @@ async def _read_backtesting_metadata(db_manager, metadata_list):
     async with data.MetadataReader.database(db_manager.get_backtesting_metadata_identifier()) \
             as reader:
         try:
-            metadata_list += await reader.read()
+            metadata = await reader.read()
+            for metadata_element in metadata:
+                metadata_element[enums.BacktestingMetadata.OPTIMIZER_ID.value] = 0
+            metadata_list += metadata
         except commons_errors.DatabaseNotFoundError:
             pass
 
