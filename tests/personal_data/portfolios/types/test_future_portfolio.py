@@ -257,9 +257,9 @@ async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio
                       price=decimal.Decimal(str(1000)))
 
     # test buy order creation
-    if not os.getenv('CYTHON_IGNORE'):
-        with pytest.raises(errors.PortfolioNegativeValueError):
-            portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    # if not os.getenv('CYTHON_IGNORE'):
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
 
 
 async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders_linear_contract(
