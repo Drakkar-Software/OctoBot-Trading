@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
+import octobot_trading.modes.scripting_library.orders.offsets.offset as offset
+import tulipy as ti
 
 
 def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_down=None, max_cross_down_lookback=5):
@@ -34,6 +36,10 @@ def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=
                     condition = crossing_values[-i] > values_to_cross[-i]
                     if condition is False:
                         return False
+                # try:
+                #     condition = ti.min(crossing_values, max_cross_down_lookback)[-1]
+                # except IndexError:
+
                 return condition
             else:
                 return False
