@@ -18,5 +18,5 @@ cimport octobot_trading.personal_data.portfolios.asset as asset_class
 
 
 cdef class SpotAsset(asset_class.Asset):
-    cpdef bint update(self, object available=*, object total=*)
-    cpdef bint set(self, object available, object total)
+    cpdef object update(self, object available=*, object total=*)
+    cpdef object set(self, object available, object total)

@@ -43,15 +43,14 @@ def test_to_dict():
 
 def test__ensure_update_validity():
     asset = assets.Asset(ASSET_CURRENCY_NAME, available=constants.ONE_HUNDRED, total=decimal.Decimal(2))
-    if not os.getenv('CYTHON_IGNORE'):
-        with pytest.raises(errors.PortfolioNegativeValueError):
-            asset._ensure_update_validity(constants.ONE, decimal.Decimal(-101))
-        asset._ensure_update_validity(constants.ZERO, -constants.ZERO)
-        with pytest.raises(errors.PortfolioNegativeValueError):
-            asset._ensure_update_validity(constants.ZERO, -constants.ONE)
-        asset._ensure_update_validity(constants.ONE, -constants.ONE)
-        with pytest.raises(errors.PortfolioNegativeValueError):
-            asset._ensure_update_validity(-constants.ONE, constants.ZERO)
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        asset._ensure_update_validity(constants.ONE, decimal.Decimal(-101))
+    asset._ensure_update_validity(constants.ZERO, -constants.ZERO)
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        asset._ensure_update_validity(constants.ZERO, -constants.ONE)
+    asset._ensure_update_validity(constants.ONE, -constants.ONE)
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        asset._ensure_update_validity(-constants.ONE, constants.ZERO)
 
 
 def test__ensure_not_negative():
