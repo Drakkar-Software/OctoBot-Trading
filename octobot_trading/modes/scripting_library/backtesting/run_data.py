@@ -142,11 +142,13 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
                         if trade[trading_enums.PlotAttributes.SIDE.value] == "sell":
                             moving_portfolio_data[symbol] -= trade[trading_enums.PlotAttributes.VOLUME.value]
                             moving_portfolio_data[ref_market] += trade[trading_enums.PlotAttributes.VOLUME.value] * \
-                                                                 trade[trading_enums.PlotAttributes.Y.value]
+                                trade[trading_enums.PlotAttributes.Y.value]
                         else:
                             moving_portfolio_data[symbol] += trade[trading_enums.PlotAttributes.VOLUME.value]
                             moving_portfolio_data[ref_market] -= trade[trading_enums.PlotAttributes.VOLUME.value] * \
-                                                                 trade[trading_enums.PlotAttributes.Y.value]
+                                trade[trading_enums.PlotAttributes.Y.value]
+                        moving_portfolio_data[trade[trading_enums.DBTables.FEES_CURRENCY.value]] -= \
+                            trade[trading_enums.DBTables.FEES_AMOUNT.value]
 
     plotted_element.plot(
         kind="scatter",
@@ -156,7 +158,7 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
         own_yaxis=own_yaxis)
 
 
-async def plot_historical_pnl_value(meta_database, plotted_element, exchange=None, x_as_trade_count=True, own_yaxis=False):
+async def _get_historical_pnl(meta_database, plotted_element, cumulative, exchange=None, x_as_trade_count=True, own_yaxis=False):
     # PNL:
     # 1. open position: consider position opening fee from PNL
     # 2. close position: consider closed amount + closing fee into PNL
@@ -214,6 +216,8 @@ async def plot_historical_pnl_value(meta_database, plotted_element, exchange=Non
                     else trade[trading_enums.PlotAttributes.Y.value]
                 pnl = (trade[trading_enums.PlotAttributes.Y.value] - average_buy_price) * total_bought_volume - \
                       fees * fees_multiplier
+                if cumulative:
+                    pnl += pnl_data[-1]
                 pnl_data.append(pnl)
                 if x_as_trade_count:
                     x_data.append(len(pnl_data) - 1)
@@ -227,8 +231,18 @@ async def plot_historical_pnl_value(meta_database, plotted_element, exchange=Non
         x=x_data,
         y=pnl_data,
         x_type="tick0" if x_as_trade_count else "date",
-        title="P&L",
+        title="Cumulative P&L" if cumulative else "P&L per trade",
         own_yaxis=own_yaxis)
+
+
+async def plot_historical_pnl_value(meta_database, plotted_element, exchange=None, x_as_trade_count=True, own_yaxis=False):
+    return await _get_historical_pnl(meta_database, plotted_element, False, exchange=exchange,
+                                     x_as_trade_count=x_as_trade_count, own_yaxis=own_yaxis)
+
+
+async def plot_cumulative_historical_pnl_value(meta_database, plotted_element, exchange=None, x_as_trade_count=True, own_yaxis=False):
+    return await _get_historical_pnl(meta_database, plotted_element, True, exchange=exchange,
+                                     x_as_trade_count=x_as_trade_count, own_yaxis=own_yaxis)
 
 
 async def plot_trades(meta_database, plotted_element):
@@ -242,6 +256,8 @@ async def plot_trades(meta_database, plotted_element):
         **plotted_element.TABLE_KEY_TO_COLUMN,
         **{
             "y": "Price",
+            "type": "Type",
+            "side": "Side",
         }
     }
     columns = _get_default_columns(plotted_element, data, column_render, key_to_label)
@@ -341,7 +357,7 @@ def _get_default_columns(plotted_element, data, column_render, key_to_label=None
             "render": column_render.get(key_to_label[row_key], None)
         }
         for row_key, row_value in data[0].items()
-        if row_key in plotted_element.TABLE_KEY_TO_COLUMN and row_value is not None
+        if row_key in key_to_label and row_value is not None
     ]
 
 
