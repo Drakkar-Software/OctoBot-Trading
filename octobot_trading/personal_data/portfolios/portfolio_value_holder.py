@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import copy
 
 import octobot_commons.logging as logging
 import octobot_commons.symbol_util as symbol_util
@@ -106,13 +107,13 @@ class PortfolioValueHolder:
                                         currency).total) / self.portfolio_current_value \
             if self.portfolio_current_value else constants.ZERO
 
-    async def handle_profitability_recalculation(self, force_recompute_origin_portfolio) -> None:
+    def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """
         Initialize values required by portfolio profitability to perform its profitability calculation
         :param force_recompute_origin_portfolio: when True, force origin portfolio computation
         """
         self._update_portfolio_and_currencies_current_value()
-        await self._init_portfolio_values_if_necessary(force_recompute_origin_portfolio)
+        self._init_portfolio_values_if_necessary(force_recompute_origin_portfolio)
 
     def get_origin_portfolio_current_value(self, refresh_values=False):
         """
@@ -126,22 +127,22 @@ class PortfolioValueHolder:
         return self._update_portfolio_current_value(self.origin_portfolio.portfolio,
                                                     currencies_values=self.current_crypto_currencies_values)
 
-    async def _init_portfolio_values_if_necessary(self, force_recompute_origin_portfolio) -> None:
+    def _init_portfolio_values_if_necessary(self, force_recompute_origin_portfolio):
         """
         Init origin portfolio values if necessary
         :param force_recompute_origin_portfolio: when True, force origin portfolio computation
         """
         if self.portfolio_origin_value == constants.ZERO:
             # try to update portfolio origin value if it's not known yet
-            await self._init_origin_portfolio_and_currencies_value()
+            self._init_origin_portfolio_and_currencies_value()
         if force_recompute_origin_portfolio:
             self._recompute_origin_portfolio_initial_value()
 
-    async def _init_origin_portfolio_and_currencies_value(self) -> None:
+    def _init_origin_portfolio_and_currencies_value(self):
         """
         Initialize origin portfolio and the origin portfolio currencies values
         """
-        self.origin_portfolio = self.origin_portfolio or await self.portfolio_manager.portfolio.copy()
+        self.origin_portfolio = self.origin_portfolio or copy.copy(self.portfolio_manager.portfolio)
         self.origin_crypto_currencies_values.update(
             self._evaluate_config_crypto_currencies_and_portfolio_values(self.origin_portfolio.portfolio,
                                                                          ignore_missing_currency_data=True))

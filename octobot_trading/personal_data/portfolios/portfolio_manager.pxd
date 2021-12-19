@@ -35,10 +35,14 @@ cdef class PortfolioManager(util.Initializable):
     cdef public portfolio_value_holder.PortfolioValueHolder portfolio_value_holder
     cdef public portfolio_class.Portfolio portfolio
 
+    cpdef object handle_balance_updated(self)
     cpdef bint handle_balance_update(self, dict balance, bint is_diff_update=*)
+    cpdef object handle_profitability_recalculation(self, bint force_recompute_origin_portfolio)
+    cpdef object handle_mark_price_update(self, str symbol, object mark_price)
     cpdef void clear(self)
 
     cdef void _load_portfolio(self)
+    cdef void _reset_portfolio(self)
     cdef void _set_starting_simulated_portfolio(self)
     cdef bint _refresh_simulated_trader_portfolio_from_order(self, object order)
     cdef bint _refresh_simulated_trader_portfolio_from_position(self, object position)
