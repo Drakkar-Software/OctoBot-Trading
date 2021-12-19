@@ -530,7 +530,7 @@ class TestTrader:
     async def test_close_filled_sell_limit_order_one_in_two(self):
         _, exchange_manager, trader_inst = await self.init_default()
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-        initial_portfolio = copy.deepcopy(portfolio_manager.portfolio.portfolio)
+        initial_portfolio = copy.copy(portfolio_manager.portfolio)
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
         trades_manager = exchange_manager.exchange_personal_data.trades_manager
 
@@ -587,7 +587,7 @@ class TestTrader:
     async def test_close_filled_sell_limit_order(self):
         _, exchange_manager, trader_inst = await self.init_default()
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-        initial_portfolio = copy.deepcopy(portfolio_manager.portfolio.portfolio)
+        initial_portfolio = copy.copy(portfolio_manager.portfolio)
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
         trades_manager = exchange_manager.exchange_personal_data.trades_manager
 
