@@ -44,8 +44,11 @@ cdef class PortfolioValueHolder:
     cpdef dict get_current_crypto_currencies_values(self)
     cpdef dict get_current_holdings_values(self)
     cpdef object get_origin_portfolio_current_value(self, bint refresh_values=*)
+    cpdef object handle_profitability_recalculation(self, bint force_recompute_origin_portfolio)
     # cpdef object get_currency_holding_ratio(self, str currency)
 
+    cdef object _init_portfolio_values_if_necessary(self, bint force_recompute_origin_portfolio)
+    cdef object _init_origin_portfolio_and_currencies_value(self)
     cdef object _update_portfolio_current_value(self, dict portfolio, dict currencies_values=*, bint fill_currencies_values=*)
     cdef void _fill_currencies_values(self, dict currencies_values)
     cdef dict _update_portfolio_and_currencies_current_value(self)
