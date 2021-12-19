@@ -28,10 +28,10 @@ def set_script_name(ctx, name):
 
 async def _get_optimizer_metadata_wrapper(db_manager, metadata_list):
     sample_run = metadata_list[0]
-    default_pnl = sample_run.get(enums.BacktestingMetadata.PNL_PERCENT.value, 0)
+    default_pnl = sample_run.get(enums.BacktestingMetadata.PERCENT_GAINS.value, 0)
     for metadata in metadata_list:
-        if metadata.get(enums.BacktestingMetadata.PNL_PERCENT.value, default_pnl) > \
-           sample_run.get(enums.BacktestingMetadata.PNL_PERCENT.value, default_pnl):
+        if metadata.get(enums.BacktestingMetadata.PERCENT_GAINS.value, default_pnl) > \
+           sample_run.get(enums.BacktestingMetadata.PERCENT_GAINS.value, default_pnl):
             sample_run = metadata
         metadata[enums.BacktestingMetadata.OPTIMIZER_ID.value] = db_manager.optimizer_id
     sample_run = copy.deepcopy(sample_run)

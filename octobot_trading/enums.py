@@ -466,8 +466,11 @@ class PlotAttributes(enum.Enum):
 
 class BacktestingMetadata(enum.Enum):
     ID = "id"
-    PNL = "p&l"
-    PNL_PERCENT = "p&l%"
+    GAINS = "gains"
+    PERCENT_GAINS = "% gains"
+    END_PORTFOLIO = "end_portfolio"
+    START_PORTFOLIO = "start_portfolio"
+    WIN_RATE = "win_rate"
     SYMBOLS = "symbols"
     TIME_FRAMES = "time_frames"
     START_TIME = "start_time"

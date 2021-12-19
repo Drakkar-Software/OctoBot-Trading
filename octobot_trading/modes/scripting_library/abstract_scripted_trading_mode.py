@@ -246,6 +246,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         :return: the metadata dict related to this backtesting run
         """
         profitability, profitability_percent, _, _, _ = trading_api.get_profitability_stats(self.exchange_manager)
+        origin_portfolio = trading_api.get_origin_portfolio(self.exchange_manager, as_decimal=False)
+        end_portfolio = trading_api.get_portfolio(self.exchange_manager, as_decimal=False)
         time_frames = [tf.value
                        for tf in trading_api.get_exchange_available_required_time_frames(self.exchange_name,
                                                                                          self.exchange_manager.id)]
@@ -259,8 +261,11 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                 }
         return {
             trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id),
-            trading_enums.BacktestingMetadata.PNL.value: float(profitability),
-            trading_enums.BacktestingMetadata.PNL_PERCENT.value: float(profitability_percent),
+            trading_enums.BacktestingMetadata.GAINS.value: float(profitability),
+            trading_enums.BacktestingMetadata.PERCENT_GAINS.value: float(profitability_percent),
+            trading_enums.BacktestingMetadata.END_PORTFOLIO.value: trading_api.get_portfolio_amounts(end_portfolio),
+            trading_enums.BacktestingMetadata.START_PORTFOLIO.value: trading_api.get_portfolio_amounts(origin_portfolio),
+            trading_enums.BacktestingMetadata.WIN_RATE.value: "TODO",
             trading_enums.BacktestingMetadata.SYMBOLS.value: trading_api.get_trading_pairs(self.exchange_manager),
             trading_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
             trading_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting),

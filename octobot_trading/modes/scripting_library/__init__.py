@@ -21,3 +21,4 @@ from .TA import *
 from .accessors import *
 from .backtesting import *
 from .abstract_scripted_trading_mode import AbstractScriptedTradingMode, AbstractScriptedTradingModeProducer
+from octobot_trading.enums import *
