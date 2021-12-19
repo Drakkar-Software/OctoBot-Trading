@@ -240,7 +240,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
 
 class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProducer):
 
-    async def get_backtesting_metadata(self) -> dict:
+    async def get_backtesting_metadata(self, user_inputs) -> dict:
         """
         Override this method to get add addition metadata
         :return: the metadata dict related to this backtesting run
@@ -249,6 +249,14 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         time_frames = [tf.value
                        for tf in trading_api.get_exchange_available_required_time_frames(self.exchange_name,
                                                                                          self.exchange_manager.id)]
+        formatted_user_inputs = {}
+        for user_input in user_inputs:
+            try:
+                formatted_user_inputs[user_input["tentacle"]][user_input["name"]] = user_input["value"]
+            except KeyError:
+                formatted_user_inputs[user_input["tentacle"]] = {
+                    user_input["name"]: user_input["value"]
+                }
         return {
             trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id),
             trading_enums.BacktestingMetadata.PNL.value: float(profitability),
@@ -260,9 +268,10 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             trading_enums.BacktestingMetadata.TRADES.value: len(trading_api.get_trade_history(self.exchange_manager)),
             trading_enums.BacktestingMetadata.TIMESTAMP.value: self.trading_mode.timestamp,
             trading_enums.BacktestingMetadata.NAME.value: self.trading_mode.script_name,
-            trading_enums.BacktestingMetadata.USER_INPUTS.value: self.trading_mode.trading_config,
+            trading_enums.BacktestingMetadata.USER_INPUTS.value: formatted_user_inputs,
             trading_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(self.exchange_manager)
         }
+
 
     async def get_live_metadata(self):
         start_time = backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting) \
@@ -375,12 +384,14 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         Stop trading mode channels subscriptions
         """
         if not self.are_metadata_saved and self.exchange_manager is not None and self.exchange_manager.is_backtesting:
+            await self.run_data_writer.flush()
+            user_inputs = await scripting_library.get_user_inputs(self.run_data_writer)
             await asyncio.gather(*(self.trading_mode.close_writer(writer.get_db_path()) for writer in self.writers()))
             if not self.trading_mode.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
                 try:
                     self.trading_mode.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
                     async with self.get_metadata_writer(with_lock=True) as writer:
-                        await scripting_library.save_metadata(writer, await self.get_backtesting_metadata())
+                        await scripting_library.save_metadata(writer, await self.get_backtesting_metadata(user_inputs))
                         self.are_metadata_saved = True
                 except Exception:
                     self.trading_mode.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.trading_mode.bot_id] = False

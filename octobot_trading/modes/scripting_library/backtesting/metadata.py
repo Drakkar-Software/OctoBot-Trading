@@ -57,7 +57,10 @@ async def read_metadata(ctx=None, trading_mode=None, include_optimizer_runs=Fals
         optimizer_ids = await backtesting_database_manager.get_optimizer_run_ids()
         optimizer_data_managers = [databases.DatabaseManager(trading_mode, optimizer_id=optimizer_id)
                                    for optimizer_id in optimizer_ids]
-    await _read_backtesting_metadata(backtesting_database_manager, metadata)
+    try:
+        await _read_backtesting_metadata(backtesting_database_manager, metadata)
+    except commons_errors.DatabaseNotFoundError:
+        pass
     for database_manager in optimizer_data_managers:
         optimizer_metadata = []
         await _read_backtesting_metadata(database_manager, optimizer_metadata)

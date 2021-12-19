@@ -53,5 +53,9 @@ async def user_input(
     return value
 
 
+async def get_user_inputs(reader):
+    return await reader.all(enums.DBTables.INPUTS.value)
+
+
 async def clear_user_inputs(writer):
     await writer.delete(enums.DBTables.INPUTS.value, None)
