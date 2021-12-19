@@ -115,16 +115,36 @@ class Context:
         return self.cache_manager.get_cache_path(tentacle, self.exchange_name, self.symbol, self.time_frame,
                                                  tentacle.get_name(), self.exchange_manager.tentacles_setup_config)
 
-    async def get_cached_value(self, value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
-                               cache_key=None, tentacle_name=None):
+    async def get_cached_value(self,
+                               value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
+                               cache_key=None,
+                               tentacle_name=None) -> tuple:
+        """
+        Get a value for the current cache
+        :param value_key: identifier of the value
+        :param cache_key: timestamp to use in order to look for a value
+        :param tentacle_name: name of the tentacle to get cache from
+        :return: the cached value and a boolean (True if cached value is missing from cache)
+        """
         try:
             return await self.get_cache(tentacle_name=tentacle_name).\
                 get(cache_key or self.trigger_cache_timestamp, name=value_key), False
         except common_errors.NoCacheValue:
             return None, True
 
-    async def get_cached_values(self, value_key: str = common_enums.CacheDatabaseColumns.VALUE.value, cache_key=None,
-                                limit=-1, tentacle_name=None) -> list:
+    async def get_cached_values(self,
+                                value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
+                                cache_key=None,
+                                limit=-1,
+                                tentacle_name=None) -> list:
+        """
+        Get a value for the current cache
+        :param value_key: identifier of the value
+        :param cache_key: timestamp to use in order to look for a value
+        :param limit: the maximum number elements to select (no limit by default)
+        :param tentacle_name: name of the tentacle to get cache from
+        :return: the cached values
+        """
         try:
             return await self.get_cache(tentacle_name=tentacle_name)\
                 .get_values(cache_key or self.trigger_cache_timestamp, name=value_key, limit=limit)
@@ -133,6 +153,16 @@ class Context:
 
     async def set_cached_value(self, value, value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
                                cache_key=None, flush_if_necessary=False, tentacle_name=None, **kwargs):
+        """
+        Set a value into the current cache
+        :param value: value to set
+        :param value_key: identifier of the value
+        :param cache_key: timestamp to associate the value to
+        :param flush_if_necessary: flush the cache after set (write into database)
+        :param tentacle_name: name of the tentacle to get cache from
+        :param kwargs: other related value_key / value couples to set at this timestamp. Use for plotted data
+        :return: None
+        """
         cache = None
         try:
             cache = self.get_cache(tentacle_name=tentacle_name)
