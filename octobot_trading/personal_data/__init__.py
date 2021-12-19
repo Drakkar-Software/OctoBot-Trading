@@ -135,6 +135,7 @@ from octobot_trading.personal_data.trades import (
     create_trade_instance,
     TradesUpdater,
     Trade,
+    compute_win_rate,
 )
 from octobot_trading.personal_data import exchange_personal_data
 from octobot_trading.personal_data.exchange_personal_data import (
@@ -281,6 +282,7 @@ __all__ = [
     "create_trade_instance",
     "TradesUpdater",
     "Trade",
+    "compute_win_rate",
     "ExchangePersonalData",
     "AUTHENTICATED_UPDATER_PRODUCERS",
     "AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS",

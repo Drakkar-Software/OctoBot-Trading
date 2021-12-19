@@ -49,6 +49,7 @@ from octobot_trading.api.trades import (
     get_trade_exchange_name,
     parse_trade_type,
     trade_to_dict,
+    get_win_rate,
 )
 from octobot_trading.api.channels import (
     subscribe_to_ohlcv_channel,
@@ -178,6 +179,7 @@ __all__ = [
     "get_trade_exchange_name",
     "parse_trade_type",
     "trade_to_dict",
+    "get_win_rate",
     "subscribe_to_ohlcv_channel",
     "subscribe_to_trades_channel",
     "subscribe_to_order_channel",

@@ -261,11 +261,11 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                 }
         return {
             trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id),
-            trading_enums.BacktestingMetadata.GAINS.value: float(profitability),
-            trading_enums.BacktestingMetadata.PERCENT_GAINS.value: float(profitability_percent),
+            trading_enums.BacktestingMetadata.GAINS.value: round(float(profitability), 8),
+            trading_enums.BacktestingMetadata.PERCENT_GAINS.value: round(float(profitability_percent), 3),
             trading_enums.BacktestingMetadata.END_PORTFOLIO.value: trading_api.get_portfolio_amounts(end_portfolio),
             trading_enums.BacktestingMetadata.START_PORTFOLIO.value: trading_api.get_portfolio_amounts(origin_portfolio),
-            trading_enums.BacktestingMetadata.WIN_RATE.value: "TODO",
+            trading_enums.BacktestingMetadata.WIN_RATE.value: round(float(trading_api.get_win_rate(self.exchange_manager) * 100), 3),
             trading_enums.BacktestingMetadata.SYMBOLS.value: trading_api.get_trading_pairs(self.exchange_manager),
             trading_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
             trading_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting),
