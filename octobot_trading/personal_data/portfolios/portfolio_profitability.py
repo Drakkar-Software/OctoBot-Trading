@@ -55,7 +55,7 @@ class PortfolioProfitability:
         self.portfolio_manager.portfolio_value_holder.get_current_crypto_currencies_values()
         return self._calculate_average_market_profitability()
 
-    async def update_profitability(self, force_recompute_origin_portfolio=False) -> bool:
+    def update_profitability(self, force_recompute_origin_portfolio=False):
         """
         Get profitability calls get_currencies_prices to update required data
         Then calls get_portfolio_current_value to set the current value of portfolio_current_value attribute
@@ -63,7 +63,7 @@ class PortfolioProfitability:
         """
         self._reset_before_profitability_calculation()
         try:
-            await self.portfolio_manager.handle_profitability_recalculation(force_recompute_origin_portfolio)
+            self.portfolio_manager.handle_profitability_recalculation(force_recompute_origin_portfolio)
             self._update_profitability_calculation()
             return self.profitability_diff != constants.ZERO
         except KeyError as missing_data_exception:

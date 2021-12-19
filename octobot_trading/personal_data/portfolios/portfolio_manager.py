@@ -42,7 +42,7 @@ class PortfolioManager(util.Initializable):
         """
         Reset the portfolio instance
         """
-        await self._reset_portfolio()
+        self._reset_portfolio()
 
     def handle_balance_update(self, balance, is_diff_update=False):
         """
@@ -102,29 +102,29 @@ class PortfolioManager(util.Initializable):
             return await self._refresh_real_trader_portfolio()
         return False
 
-    async def handle_balance_updated(self):
+    def handle_balance_updated(self):
         """
         Handle balance update notification
         :return: True if profitability changed
         """
-        return await self.portfolio_profitability.update_profitability()
+        return self.portfolio_profitability.update_profitability()
 
-    async def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
+    def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """
         Called before PortfolioProfitability's portfolio profitability recalculation
         to ensure portfolio values are available
         :param force_recompute_origin_portfolio: when True, force origin portfolio computation
         """
-        await self.portfolio_value_holder.handle_profitability_recalculation(force_recompute_origin_portfolio)
+        self.portfolio_value_holder.handle_profitability_recalculation(force_recompute_origin_portfolio)
 
-    async def handle_mark_price_update(self, symbol, mark_price):
+    def handle_mark_price_update(self, symbol, mark_price):
         """
         Handle a mark price update notification
         :param symbol: the update symbol
         :param mark_price: the updated mark price in float
         :return: True if profitability changed
         """
-        return await self.portfolio_profitability. \
+        return self.portfolio_profitability. \
             update_profitability(force_recompute_origin_portfolio=self.portfolio_value_holder.
                                  update_origin_crypto_currencies_values(symbol, mark_price))
 
@@ -137,12 +137,11 @@ class PortfolioManager(util.Initializable):
                                                self.exchange_manager.id).get_internal_producer().\
             refresh_real_trader_portfolio()
 
-    async def _reset_portfolio(self):
+    def _reset_portfolio(self):
         """
         Reset the portfolio and portfolio profitability instances
         """
         self.portfolio = personal_data.create_portfolio_from_exchange_manager(self.exchange_manager)
-        await self.portfolio.initialize()
         self._load_portfolio()
 
         self.reference_market = util.get_reference_market(self.config)

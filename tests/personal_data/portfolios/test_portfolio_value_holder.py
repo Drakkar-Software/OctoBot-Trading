@@ -41,7 +41,7 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
         'XLM': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
         'USDT': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()}
     }, exchange_manager)
-    await portfolio_manager.handle_balance_updated()
+    portfolio_manager.handle_balance_updated()
 
     assert portfolio_value_holder.get_current_crypto_currencies_values() == {
         'BTC': constants.ONE,
@@ -56,10 +56,10 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
     exchange_manager.client_symbols.append("XRP/BTC")
     if not os.getenv('CYTHON_IGNORE'):
         portfolio_value_holder.missing_currency_data_in_exchange.remove("XRP")
-        await portfolio_manager.handle_mark_price_update("XRP/BTC", decimal.Decimal("0.005"))
+        portfolio_manager.handle_mark_price_update("XRP/BTC", decimal.Decimal("0.005"))
         exchange_manager.client_symbols.append("NANO/BTC")
         portfolio_value_holder.missing_currency_data_in_exchange.remove("NANO")
-        await portfolio_manager.handle_mark_price_update("NANO/BTC", decimal.Decimal("0.05"))
+        portfolio_manager.handle_mark_price_update("NANO/BTC", decimal.Decimal("0.05"))
         exchange_manager.client_symbols.append("BTC/USDT")
 
         assert portfolio_value_holder.get_current_crypto_currencies_values() == {
@@ -72,7 +72,7 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
         }
         xlm_btc_price = decimal_random_price(max_value=decimal.Decimal(0.05))
         portfolio_value_holder.missing_currency_data_in_exchange.remove("XLM")
-        await portfolio_manager.handle_mark_price_update("XLM/BTC", xlm_btc_price)
+        portfolio_manager.handle_mark_price_update("XLM/BTC", xlm_btc_price)
         assert portfolio_value_holder.get_current_crypto_currencies_values() == {
             'BTC': constants.ONE,
             'ETH': constants.ZERO,
@@ -83,7 +83,7 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
         }
         usdt_btc_price = decimal_random_price(max_value=decimal.Decimal('0.01'))
         portfolio_value_holder.missing_currency_data_in_exchange.remove("USDT")
-        await portfolio_manager.handle_mark_price_update("BTC/USDT", usdt_btc_price)
+        portfolio_manager.handle_mark_price_update("BTC/USDT", usdt_btc_price)
         assert portfolio_value_holder.get_current_crypto_currencies_values() == {
             'BTC': constants.ONE,
             'ETH': constants.ZERO,
@@ -95,7 +95,7 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
         eth_btc_price = decimal_random_price(max_value=constants.ONE)
         exchange_manager.client_symbols.append("ETH/BTC")
         portfolio_value_holder.missing_currency_data_in_exchange.remove("ETH")
-        await portfolio_manager.handle_mark_price_update("ETH/BTC", eth_btc_price)
+        portfolio_manager.handle_mark_price_update("ETH/BTC", eth_btc_price)
         assert portfolio_value_holder.get_current_crypto_currencies_values() == {
             'BTC': constants.ONE,
             'ETH': decimal.Decimal(str(eth_btc_price)),
@@ -118,28 +118,28 @@ async def test_get_current_holdings_values(backtesting_trader):
         'XRP': {'available': decimal.Decimal("10000"), 'total': decimal.Decimal("10000")},
         'USDT': {'available': decimal.Decimal("1000"), 'total': decimal.Decimal("1000")}
     }, exchange_manager)
-    await portfolio_manager.handle_balance_updated()
+    portfolio_manager.handle_balance_updated()
     assert portfolio_value_holder.get_current_holdings_values() == {
         'BTC': decimal.Decimal("10"),
         'ETH': constants.ZERO,
         'XRP': constants.ZERO,
         'USDT': constants.ZERO
     }
-    await portfolio_manager.handle_mark_price_update("ETH/BTC", 50)
+    portfolio_manager.handle_mark_price_update("ETH/BTC", 50)
     assert portfolio_value_holder.get_current_holdings_values() == {
         'BTC': decimal.Decimal("10"),
         'ETH': decimal.Decimal("5000"),
         'XRP': constants.ZERO,
         'USDT': constants.ZERO
     }
-    await portfolio_manager.handle_mark_price_update("XRP/USDT", 2.5)
+    portfolio_manager.handle_mark_price_update("XRP/USDT", 2.5)
     assert portfolio_value_holder.get_current_holdings_values() == {
         'BTC': decimal.Decimal("10"),
         'ETH': decimal.Decimal("5000"),
         'XRP': constants.ZERO,
         'USDT': constants.ZERO
     }
-    await portfolio_manager.handle_mark_price_update("XRP/BTC", decimal.Decimal('0.00001'))
+    portfolio_manager.handle_mark_price_update("XRP/BTC", decimal.Decimal('0.00001'))
     assert portfolio_value_holder.get_current_holdings_values() == {
         'BTC': decimal.Decimal("10"),
         'ETH': decimal.Decimal("5000"),
@@ -149,7 +149,7 @@ async def test_get_current_holdings_values(backtesting_trader):
     if not os.getenv('CYTHON_IGNORE'):
         exchange_manager.client_symbols.append("XRP/BTC")
         portfolio_value_holder.missing_currency_data_in_exchange.remove("XRP")
-        await portfolio_manager.handle_mark_price_update("XRP/BTC", decimal.Decimal('0.00001'))
+        portfolio_manager.handle_mark_price_update("XRP/BTC", decimal.Decimal('0.00001'))
         assert portfolio_value_holder.get_current_holdings_values() == {
             'BTC': decimal.Decimal(10),
             'ETH': decimal.Decimal(5000),
@@ -158,7 +158,7 @@ async def test_get_current_holdings_values(backtesting_trader):
         }
         exchange_manager.client_symbols.append("BTC/USDT")
         portfolio_value_holder.missing_currency_data_in_exchange.remove("USDT")
-        await portfolio_manager.handle_mark_price_update("BTC/USDT", 5000)
+        portfolio_manager.handle_mark_price_update("BTC/USDT", 5000)
         assert portfolio_value_holder.get_current_holdings_values() == {
             'BTC': decimal.Decimal(10),
             'ETH': decimal.Decimal(5000),
@@ -172,7 +172,7 @@ async def test_get_origin_portfolio_current_value(backtesting_trader):
     portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     portfolio_value_holder = portfolio_manager.portfolio_value_holder
 
-    await portfolio_manager.handle_profitability_recalculation(True)
+    portfolio_manager.handle_profitability_recalculation(True)
     assert portfolio_value_holder.get_origin_portfolio_current_value() == decimal.Decimal(str(10))
 
 
@@ -182,7 +182,7 @@ async def test_get_origin_portfolio_current_value_with_different_reference_marke
     portfolio_value_holder = portfolio_manager.portfolio_value_holder
 
     portfolio_manager.reference_market = "USDT"
-    await portfolio_manager.handle_profitability_recalculation(True)
+    portfolio_manager.handle_profitability_recalculation(True)
     assert portfolio_value_holder.get_origin_portfolio_current_value() == decimal.Decimal(str(1000))
 
 
