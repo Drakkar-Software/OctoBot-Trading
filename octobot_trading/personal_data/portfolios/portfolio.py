@@ -45,6 +45,22 @@ class Portfolio:
         self.portfolio = None
         self.reset()
 
+    def __copy__(self):
+        """
+        Copy the portfolio instance
+        :return: the copied portfolio object
+        """
+        new_portfolio = self.__class__(self._exchange_name, is_simulated=self._is_simulated)
+        new_portfolio.portfolio = copy.deepcopy(self.portfolio)
+        return new_portfolio
+
+    def __eq__(self, other):
+        """
+        Compare two portfolio instances
+        :param other: the portfolio instance to compare
+        :return: True if the two portfolio instances are equals
+        """
+        return self.portfolio == other.portfolio
 
     def __str__(self):
         """
@@ -57,16 +73,6 @@ class Portfolio:
         Reset the portfolio dictionary
         """
         self.portfolio = {}
-
-    async def copy(self):
-        """
-        Copy the portfolio object
-        :return: the copied portfolio object
-        """
-        new_portfolio: Portfolio = Portfolio(self._exchange_name, self._is_simulated)
-        await new_portfolio.initialize()
-        new_portfolio.portfolio = copy.deepcopy(self.portfolio)
-        return new_portfolio
 
     def update_portfolio_from_balance(self, balance, force_replace=True):
         """
@@ -163,9 +169,6 @@ class Portfolio:
             raise RuntimeError("Portfolio has to be initialized using decimal.Decimal")
         return {currency: self.create_currency_asset(currency=currency, available=total, total=total).to_dict()
                 for currency, total in amount_dict.items()}
-
-    def __str__(self):
-        return f"{personal_data.portfolio_to_float(self.portfolio)}"
 
     def _update_portfolio_data(self, currency, total_value=constants.ZERO, available_value=constants.ZERO,
                                replace_value=False):
