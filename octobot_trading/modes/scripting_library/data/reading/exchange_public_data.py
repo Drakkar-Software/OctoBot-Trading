@@ -24,8 +24,12 @@ async def current_price(ctx, symbol=None):
                                                     base_error="Can't get the current price:")
 
 
-def current_time(context) -> float:
+def current_live_time(context) -> float:
     return api.get_exchange_current_time(context.exchange_manager)
+
+
+def current_candle_time(context):
+    return Time(context, limit=1)[-1]  # is there a more efficient way?
 
 
 # Use capital letters to avoid python native lib conflicts
