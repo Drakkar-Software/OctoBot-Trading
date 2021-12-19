@@ -910,7 +910,7 @@ async def test_set_leverage(future_trader_simulator_with_default_linear):
     await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(10))
     assert contract.current_leverage == decimal.Decimal(10)
 
-    contract.maximum_leverage = decimal.Decimal(100)
+    assert contract.maximum_leverage == decimal.Decimal(100)
     with pytest.raises(InvalidLeverageValue):
         await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(200))
 
