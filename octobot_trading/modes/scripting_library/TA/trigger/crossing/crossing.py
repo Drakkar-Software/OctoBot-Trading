@@ -50,7 +50,8 @@ def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=
             was_below = None
             is_currently_above = None
             try:
-                was_below = lows[-delay - 2] < values_to_cross[-delay - 2]
+                if max_cross_down:
+                    was_below = lows[-delay - 2] < values_to_cross[-delay - 2]
                 is_currently_above = closes[-1] > values_to_cross[-1]
             except IndexError:
                 context.logger.info("crossing_up: not enough values_to_cross, you need to provide same amount as delay")
