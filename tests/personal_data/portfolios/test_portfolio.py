@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import copy
 import os
 import decimal
 
@@ -44,6 +45,21 @@ async def test_load_portfolio(backtesting_trader):
     assert portfolio_manager.portfolio.portfolio['USDT'].available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.portfolio['USDT'].total == decimal.Decimal('1000')
 
+
+async def test_copy_portfolio(backtesting_trader):
+    config, exchange_manager, trader = backtesting_trader
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+    pf1 = portfolio_manager.portfolio
+    pf2 = copy.copy(pf1)
+    pf1.portfolio['BTC'].available = decimal.Decimal('5')
+    pf1.portfolio['BTC'].total = decimal.Decimal('9')
+    pf1.portfolio['USDT'].available = decimal.Decimal('10.5')
+    pf1.portfolio['USDT'].total = decimal.Decimal('1.3')
+    assert pf1.portfolio['BTC'].available != pf2.portfolio['BTC'].available
+    assert pf1.portfolio['BTC'].total != pf2.portfolio['BTC'].total
+    assert pf1.portfolio['USDT'].available != pf2.portfolio['USDT'].available
+    assert pf1.portfolio['USDT'].total != pf2.portfolio['USDT'].total
+    assert pf1 != pf2
 
 
 async def test_get_portfolio_from_amount_dict(backtesting_trader):
