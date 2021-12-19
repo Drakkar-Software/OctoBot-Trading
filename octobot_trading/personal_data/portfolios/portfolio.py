@@ -21,11 +21,10 @@ import octobot_commons.logging as logging
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
-import octobot_trading.util as util
 import octobot_trading.personal_data as personal_data
 
 
-class Portfolio(util.Initializable):
+class Portfolio:
     """
     The Portfolio class manage an exchange portfolio
     This will begin by loading current exchange portfolio (by pulling user data)
@@ -44,12 +43,14 @@ class Portfolio(util.Initializable):
             f"{self.__class__.__name__}{'Simulator' if is_simulated else ''}[{exchange_name}]")
         self.lock = asyncio_tools.RLock()
         self.portfolio = None
-
-    async def initialize_impl(self):
-        """
-        Initialize portfolio
-        """
         self.reset()
+
+
+    def __str__(self):
+        """
+        :return: the portfolio instance str representation
+        """
+        return f"{personal_data.portfolio_to_float(self.portfolio)}"
 
     def reset(self):
         """
