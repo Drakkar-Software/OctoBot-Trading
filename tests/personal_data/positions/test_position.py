@@ -22,7 +22,7 @@ from mock import mock
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
-from octobot_trading.personal_data import SellLimitOrder, BuyLimitOrder
+from octobot_trading.personal_data import SellLimitOrder, BuyLimitOrder, BuyMarketOrder, SellMarketOrder
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
@@ -174,7 +174,8 @@ async def test_update_size_from_order_with_long_one_way_position(future_trader_s
     assert position_inst.update_from_order(limit_sell) == (decimal.Decimal(-2), False)
 
 
-async def test_update_size_from_order_with_long_close_position_one_way_position(future_trader_simulator_with_default_linear):
+async def test_update_size_from_order_with_long_close_position_one_way_position(
+        future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
@@ -191,7 +192,8 @@ async def test_update_size_from_order_with_long_close_position_one_way_position(
     assert position_inst.update_from_order(limit_sell) == (-constants.ONE_HUNDRED, False)
 
 
-async def test_update_size_from_order_with_long_reduce_only_one_way_position(future_trader_simulator_with_default_linear):
+async def test_update_size_from_order_with_long_reduce_only_one_way_position(
+        future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
@@ -255,7 +257,8 @@ async def test_update_size_from_order_with_short_one_way_position(future_trader_
     assert position_inst.update_from_order(buy_limit) == (decimal.Decimal(2), False)
 
 
-async def test_update_size_from_order_with_short_close_position_one_way_position(future_trader_simulator_with_default_linear):
+async def test_update_size_from_order_with_short_close_position_one_way_position(
+        future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
@@ -272,7 +275,8 @@ async def test_update_size_from_order_with_short_close_position_one_way_position
     assert position_inst.update_from_order(buy_limit) == (constants.ONE_HUNDRED, False)
 
 
-async def test_update_size_from_order_with_short_reduce_only_one_way_position(future_trader_simulator_with_default_linear):
+async def test_update_size_from_order_with_short_reduce_only_one_way_position(
+        future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
@@ -326,7 +330,8 @@ async def test_update_size_from_order_realized_pnl_position(future_trader_simula
         assert position_inst.realised_pnl == decimal.Decimal("-5")
 
 
-async def test_update_size_from_order_with_short_overbought_one_way_position(future_trader_simulator_with_default_linear):
+async def test_update_size_from_order_with_short_overbought_one_way_position(
+        future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
@@ -381,3 +386,494 @@ async def test_update_size_from_order_with_short_overbought_hedge_position(futur
     assert position_inst.size == constants.ZERO
     assert position_inst.is_idle()
 
+
+async def test__calculates_size_update_from_filled_order_long_increasing_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(5),
+                      price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_long_increasing_one_way_reduce_only(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(5),
+                      price=decimal.Decimal(10))
+    market_buy.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == constants.ZERO
+
+
+async def test__calculates_size_update_from_filled_order_long_decreasing_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(5),
+                       price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_long_decreasing_reduce_only_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(5),
+                       price=decimal.Decimal(10))
+    market_sell.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_long_switching_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(20),
+                       price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(20)
+
+
+async def test__calculates_size_update_from_filled_order_long_switching_reduce_only_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(20),
+                       price=decimal.Decimal(10))
+    market_sell.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(10)
+
+
+async def test__calculates_size_update_from_filled_order_short_increasing_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(5),
+                       price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_short_increasing_one_way_reduce_only(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(5),
+                       price=decimal.Decimal(10))
+    market_sell.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == constants.ZERO
+
+
+async def test__calculates_size_update_from_filled_order_short_decreasing_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(5),
+                      price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_short_decreasing_reduce_only_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(5),
+                      price=decimal.Decimal(10))
+    market_buy.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_short_switching_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(30),
+                      price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(30)
+
+
+async def test__calculates_size_update_from_filled_order_short_switching_reduce_only_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(30),
+                      price=decimal.Decimal(10))
+    market_buy.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(10)
+
+
+async def test__calculates_size_update_from_filled_order_long_increasing_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(5),
+                      price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_long_increasing_one_way_reduce_only(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(5),
+                      price=decimal.Decimal(10))
+    market_buy.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == constants.ZERO
+
+
+async def test__calculates_size_update_from_filled_order_long_decreasing_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(5),
+                       price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_long_decreasing_reduce_only_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(5),
+                       price=decimal.Decimal(10))
+    market_sell.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_long_switching_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(20),
+                       price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(10)
+
+
+async def test__calculates_size_update_from_filled_order_long_switching_reduce_only_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(20),
+                       price=decimal.Decimal(10))
+    market_sell.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(10)
+
+
+async def test__calculates_size_update_from_filled_order_short_increasing_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(5),
+                       price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == -decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_short_increasing_one_way_reduce_only(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=decimal.Decimal(10),
+                       quantity=decimal.Decimal(5),
+                       price=decimal.Decimal(10))
+    market_sell.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_sell, position_inst.get_quantity_to_close()) == constants.ZERO
+
+
+async def test__calculates_size_update_from_filled_order_short_decreasing_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(5),
+                      price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_short_decreasing_reduce_only_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(5),
+                      price=decimal.Decimal(10))
+    market_buy.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(5)
+
+
+async def test__calculates_size_update_from_filled_order_short_switching_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(30),
+                      price=decimal.Decimal(10))
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(10)
+
+
+async def test__calculates_size_update_from_filled_order_short_switching_reduce_only_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=False)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    await position_inst.update(update_size=-decimal.Decimal(10))
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(30),
+                      price=decimal.Decimal(10))
+    market_buy.reduce_only = True
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(10)
