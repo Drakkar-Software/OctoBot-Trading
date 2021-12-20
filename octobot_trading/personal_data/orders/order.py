@@ -469,12 +469,13 @@ class Order(util.Initializable):
         return self.exchange_manager is None
 
     def to_string(self):
+        tag = f" | tag: {self.tag}" if self.tag else ""
         return (f"{self.symbol} | "
                 f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
                 f"Price : {str(self.origin_price)} | "
                 f"Quantity : {str(self.origin_quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
-                f"id : {self.order_id}")
+                f"id : {self.order_id}{tag}")
 
     def __str__(self):
         return self.to_string()
