@@ -243,6 +243,10 @@ class Order(util.Initializable):
         return self.state is not None and self.state.is_refreshing()
 
     def get_position_side(self, future_contract):
+        """
+        :param future_contract: the associated future contract
+        :return: the position side if it can be determined, else raise an InvalidPositionSide
+        """
         if self.position_side is not None:
             return self.position_side
         if future_contract.is_one_way_position_mode():
