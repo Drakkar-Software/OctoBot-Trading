@@ -877,3 +877,109 @@ async def test__calculates_size_update_from_filled_order_short_switching_reduce_
     market_buy.reduce_only = True
     assert position_inst._calculates_size_update_from_filled_order(
         market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(10)
+
+
+async def test_is_order_increasing_size_one_way(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
+    symbol_contract.set_position_mode(is_one_way=True)
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+
+    # orders
+    buy_market = BuyMarketOrder(trader_inst)
+    reduce_buy_market = BuyMarketOrder(trader_inst)
+    reduce_buy_market.reduce_only = True
+    close_buy_market = BuyMarketOrder(trader_inst)
+    close_buy_market.close_position = True
+    sell_market = SellMarketOrder(trader_inst)
+    reduce_sell_market = SellMarketOrder(trader_inst)
+    reduce_sell_market.reduce_only = True
+    close_sell_market = SellMarketOrder(trader_inst)
+    close_sell_market.close_position = True
+
+    # when idle
+    assert position_inst.is_order_increasing_size(buy_market)
+    assert position_inst.is_order_increasing_size(sell_market)
+    assert not position_inst.is_order_increasing_size(reduce_buy_market)
+    assert not position_inst.is_order_increasing_size(close_buy_market)
+    assert not position_inst.is_order_increasing_size(reduce_sell_market)
+    assert not position_inst.is_order_increasing_size(close_sell_market)
+
+    # when long
+    await position_inst.update(update_size=decimal.Decimal(10))
+    assert position_inst.is_order_increasing_size(buy_market)
+    assert not position_inst.is_order_increasing_size(sell_market)
+    assert not position_inst.is_order_increasing_size(reduce_buy_market)
+    assert not position_inst.is_order_increasing_size(close_buy_market)
+    assert not position_inst.is_order_increasing_size(reduce_sell_market)
+    assert not position_inst.is_order_increasing_size(close_sell_market)
+
+    # when short
+    await position_inst.update(update_size=decimal.Decimal(-100))
+    assert not position_inst.is_order_increasing_size(buy_market)
+    assert position_inst.is_order_increasing_size(sell_market)
+    assert not position_inst.is_order_increasing_size(reduce_buy_market)
+    assert not position_inst.is_order_increasing_size(close_buy_market)
+    assert not position_inst.is_order_increasing_size(reduce_sell_market)
+    assert not position_inst.is_order_increasing_size(close_sell_market)
+
+
+async def test_is_order_increasing_size_hedge(
+        future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
+    symbol_contract.set_position_mode(is_one_way=False)
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+
+    # orders
+    buy_market = BuyMarketOrder(trader_inst)
+    reduce_buy_market = BuyMarketOrder(trader_inst)
+    reduce_buy_market.reduce_only = True
+    close_buy_market = BuyMarketOrder(trader_inst)
+    close_buy_market.close_position = True
+    sell_market = SellMarketOrder(trader_inst)
+    reduce_sell_market = SellMarketOrder(trader_inst)
+    reduce_sell_market.reduce_only = True
+    close_sell_market = SellMarketOrder(trader_inst)
+    close_sell_market.close_position = True
+
+    # when idle on long side
+    position_inst.side = enums.PositionSide.LONG
+    assert position_inst.is_order_increasing_size(buy_market)
+    assert not position_inst.is_order_increasing_size(sell_market)
+    assert not position_inst.is_order_increasing_size(reduce_buy_market)
+    assert not position_inst.is_order_increasing_size(close_buy_market)
+    assert not position_inst.is_order_increasing_size(reduce_sell_market)
+    assert not position_inst.is_order_increasing_size(close_sell_market)
+
+    # when idle on short side
+    position_inst.side = enums.PositionSide.SHORT
+    assert not position_inst.is_order_increasing_size(buy_market)
+    assert position_inst.is_order_increasing_size(sell_market)
+    assert not position_inst.is_order_increasing_size(reduce_buy_market)
+    assert not position_inst.is_order_increasing_size(close_buy_market)
+    assert not position_inst.is_order_increasing_size(reduce_sell_market)
+    assert not position_inst.is_order_increasing_size(close_sell_market)
+
+    # when long
+    position_inst.side = enums.PositionSide.LONG
+    await position_inst.update(update_size=decimal.Decimal(10))
+    assert position_inst.is_order_increasing_size(buy_market)
+    assert not position_inst.is_order_increasing_size(sell_market)
+    assert not position_inst.is_order_increasing_size(reduce_buy_market)
+    assert not position_inst.is_order_increasing_size(close_buy_market)
+    assert not position_inst.is_order_increasing_size(reduce_sell_market)
+    assert not position_inst.is_order_increasing_size(close_sell_market)
+
+    # when short
+    position_inst.side = enums.PositionSide.SHORT
+    await position_inst.update(update_size=decimal.Decimal(-100))
+    assert not position_inst.is_order_increasing_size(buy_market)
+    assert position_inst.is_order_increasing_size(sell_market)
+    assert not position_inst.is_order_increasing_size(reduce_buy_market)
+    assert not position_inst.is_order_increasing_size(close_buy_market)
+    assert not position_inst.is_order_increasing_size(reduce_sell_market)
+    assert not position_inst.is_order_increasing_size(close_sell_market)
