@@ -87,6 +87,7 @@ cdef class Position(util.Initializable):
     # cdef void _check_for_liquidation(self)
 
     # cpdef void update(self, object update_size=*, object mark_price=*)
+    cpdef bint is_order_increasing_size(self, object order)
     cpdef tuple update_from_order(self, object order)
     cpdef void update_value(self)
     cpdef void update_pnl(self)
