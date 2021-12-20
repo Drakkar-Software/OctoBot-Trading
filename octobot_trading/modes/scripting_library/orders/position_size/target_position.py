@@ -20,6 +20,7 @@ import octobot_trading.modes.scripting_library.dsl as dsl
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data as exchange_private_data
 
 
+# todo handle negative open position for shorts
 async def get_target_position(
     context=None,
     target=None,

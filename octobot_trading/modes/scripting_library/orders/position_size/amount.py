@@ -39,7 +39,7 @@ async def get_amount(
         amount_value = await exchange_private_data.total_account_balance(context) * amount_value / 100
     elif amount_type is dsl.QuantityType.AVAILABLE_PERCENT:
         amount_value = await exchange_private_data.available_account_balance(context, side) * amount_value / 100
-    elif amount_type is dsl.QuantityType.POSITION_PERCENT:
+    elif amount_type is dsl.QuantityType.POSITION_PERCENT:  # todo handle existing open short position
         amount_value = \
             exchange_private_data.open_position_size(context, side, amount_type=commons_constants.PORTFOLIO_AVAILABLE) \
             * amount_value / 100

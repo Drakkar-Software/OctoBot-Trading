@@ -222,7 +222,7 @@ async def managed_order(ctx, side="long", orders_settings=None):
                 sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
 
         # cut the position size so that it aligns with target risk
-        current_open_position_size = open_positions.open_position_size(ctx, side=side)
+        current_open_position_size = open_positions.open_position_size(ctx, side="both")
         if current_open_position_size + position_size_market > max_position_size:
             position_size_limit = max_position_size - current_open_position_size
             position_size_market = max_position_size - current_open_position_size
@@ -241,7 +241,7 @@ async def managed_order(ctx, side="long", orders_settings=None):
             max_position_size = max_buying_power
 
         # cut the position size so that it aligns with target risk
-        current_open_position_size = open_positions.open_position_size(ctx, side=side)
+        current_open_position_size = open_positions.open_position_size(ctx, side="both")
         if current_open_position_size + position_size_market > max_position_size:
             position_size_limit = max_position_size - current_open_position_size
             position_size_market = max_position_size - current_open_position_size

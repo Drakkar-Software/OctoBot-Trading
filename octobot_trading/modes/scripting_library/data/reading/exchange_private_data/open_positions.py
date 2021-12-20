@@ -20,31 +20,53 @@ import octobot_trading.personal_data as personal_data
 import octobot_trading.constants as trading_constants
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.modes.scripting_library.orders.offsets.offset as offsets
+import octobot_trading.modes.scripting_library.orders.position_size.amount as amounts
 
 
+# returns negative values when in a short position
 def open_position_size(
-        context=None,
-        side=None,
+        context,
+        side="both",
+        symbol=None,
         amount_type=commons_constants.PORTFOLIO_TOTAL
 ):
     if context.exchange_manager.is_future:
         raise NotImplementedError("future is not implemented")
-    currency = symbol_util.split_symbol(context.symbol)[0]
+    symbol = symbol or context.symbol
+    currency = symbol_util.split_symbol(symbol)[0]
     return context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
         currency,
         portfolio_type=amount_type
     )
-    # todo for spot: collect data to get average entry and use input field for already existing funds
     # todo handle reference market change
     # todo handle futures: its account balance from exchange
     # todo handle futures and return negative for shorts
+
+
+# todo handle hedge mode and futures
+#  position is negative when in a short
+async def position_size_less_than(
+        context,
+        amount,
+        side="both",
+        symbol=None
+):
+    if context.exchange_manager.is_future:
+        raise NotImplementedError("future is not implemented")
+    symbol = symbol or context.symbol
+    currency = symbol_util.split_symbol(symbol)[0]
+    return await amounts.get_amount(context, amount) < context.exchange_manager.exchange_personal_data.\
+        portfolio_manager.portfolio.get_currency_portfolio(
+        currency,
+        portfolio_type=commons_constants.PORTFOLIO_TOTAL
+    )
 
 
 async def average_open_pos_entry(
         context,
         side="long"
 ):
-
+    # todo for spot: collect data to get average entry and use input field for already existing funds
     if context.exchange_manager.is_future:
         raise NotImplementedError("future is not implemented")
     # for spot just get the current currency value
@@ -102,7 +124,8 @@ async def is_position_in_profit(
     elif side == "short":
         return await average_open_pos_entry(context, side) - \
                await offsets.get_offset(context, min_distance_to_entry + "e", side="sell") \
-               > await exchange_public_data.current_live_price(context)  # todo add minus in front of min_distance_to_entry
+               > await exchange_public_data.current_live_price(
+            context)  # todo add minus in front of min_distance_to_entry
     else:
         raise RuntimeError("is_position_in_profit: side needs to be short or long")
 
