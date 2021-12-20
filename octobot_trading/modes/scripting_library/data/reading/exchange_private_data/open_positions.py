@@ -18,6 +18,8 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_commons.constants as commons_constants
 import octobot_trading.personal_data as personal_data
 import octobot_trading.constants as trading_constants
+import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
+import octobot_trading.modes.scripting_library.orders.offsets.offset as offsets
 
 
 def open_position_size(
@@ -32,6 +34,7 @@ def open_position_size(
         currency,
         portfolio_type=amount_type
     )
+    # todo for spot: collect data to get average entry and use input field for already existing funds
     # todo handle reference market change
     # todo handle futures: its account balance from exchange
     # todo handle futures and return negative for shorts
@@ -39,7 +42,7 @@ def open_position_size(
 
 async def average_open_pos_entry(
         context,
-        side
+        side="long"
 ):
 
     if context.exchange_manager.is_future:
@@ -50,7 +53,68 @@ async def average_open_pos_entry(
 
 
 def is_position_open(
-        context=None,
+        context,
         side=None
 ):
-    return open_position_size(context, side=side) != trading_constants.ZERO
+    if side is None:
+        long_open = open_position_size(context, side="long") != trading_constants.ZERO
+        short_open = open_position_size(context, side="short") != trading_constants.ZERO
+        return True if long_open or short_open else False
+    else:
+        return open_position_size(context, side=side) != trading_constants.ZERO
+
+
+def is_position_none(
+        context,
+        side=None
+):
+    if side is None:
+        long_none = open_position_size(context, side="long") == trading_constants.ZERO
+        short_none = open_position_size(context, side="short") == trading_constants.ZERO
+        return short_none and long_none
+    else:
+        return open_position_size(context, side=side) == trading_constants.ZERO
+
+
+def is_position_long(
+        context,
+):
+    return open_position_size(context, side="long") != trading_constants.ZERO
+
+
+def is_position_short(
+        context,
+):
+    return open_position_size(context, side="short") != trading_constants.ZERO
+
+
+# todo make sure min_distance_to_entry works with %
+async def is_position_in_profit(
+        context,
+        side="long",
+        min_distance_to_entry="0.1%"  # can be % or a price
+):
+    if side == "long":
+        return await average_open_pos_entry(context, side) + \
+               await offsets.get_offset(context, min_distance_to_entry + "e", side="buy") \
+               < await exchange_public_data.current_live_price(context)
+
+    elif side == "short":
+        return await average_open_pos_entry(context, side) - \
+               await offsets.get_offset(context, min_distance_to_entry + "e", side="sell") \
+               > await exchange_public_data.current_live_price(context)  # todo add minus in front of min_distance_to_entry
+    else:
+        raise RuntimeError("is_position_in_profit: side needs to be short or long")
+
+
+async def is_position_in_loss(
+        context,
+        side="long",
+):
+    if side == "long":
+        return await average_open_pos_entry(context, side) > await exchange_public_data.current_live_price(context)
+
+    elif side == "short":
+        return await average_open_pos_entry(context, side) < await exchange_public_data.current_live_price(context)
+    else:
+        raise RuntimeError("is_position_in_loss: side needs to be short or long")

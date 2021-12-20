@@ -18,18 +18,37 @@ import octobot_trading.constants as trading_constants
 import octobot_trading.personal_data as personal_data
 
 
-async def current_price(ctx, symbol=None):
-    return await personal_data.get_up_to_date_price(ctx.exchange_manager, symbol or ctx.symbol,
-                                                    timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
-                                                    base_error="Can't get the current price:")
-
-
+# real time in live mode
+# lowest available candle time on backtesting
 def current_live_time(context) -> float:
     return api.get_exchange_current_time(context.exchange_manager)
 
 
-def current_candle_time(context):
-    return Time(context, limit=1)[-1]  # is there a more efficient way?
+def current_candle_time(context, symbol=None, time_frame=None):
+    symbol = symbol or context.symbol
+    time_frame = time_frame or context.time_frame
+    return Time(context, symbol, time_frame, limit=1)[-1]  # todo is there a more efficient way?
+
+
+# Use capital letters to avoid python native lib conflicts
+def Time(context, symbol=None, time_frame=None, limit=-1):
+    symbol = symbol or context.symbol
+    time_frame = time_frame or context.time_frame
+    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_time_candles(limit)
+
+
+# real time in live mode
+# lowest available candle closes on backtesting
+async def current_live_price(context, symbol=None):
+    return await personal_data.get_up_to_date_price(context.exchange_manager, symbol or context.symbol,
+                                                    timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
+                                                    base_error="Can't get the current price:")
+
+
+def current_candle_price(context, symbol=None, time_frame=None):
+    symbol = symbol or context.symbol
+    time_frame = time_frame or context.time_frame
+    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_close_candles(1)[-1]  # todo more efficient way?
 
 
 # Use capital letters to avoid python native lib conflicts
@@ -56,11 +75,6 @@ def Close(context, symbol=None, time_frame=None, limit=-1):
     time_frame = time_frame or context.time_frame
     return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_close_candles(limit)
 
-# Use capital letters to avoid python native lib conflicts
-def Time(context, symbol=None, time_frame=None, limit=-1):
-    symbol = symbol or context.symbol
-    time_frame = time_frame or context.time_frame
-    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_time_candles(limit)
 
 def hl2(context, symbol=None, time_frame=None, limit=-1):
     try:

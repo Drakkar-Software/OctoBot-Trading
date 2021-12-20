@@ -23,15 +23,15 @@ import octobot_trading.errors as errors
 
 async def get_offset(context, offset_in, side=None):
     if offset_in is None:
-        raise errors.InvalidArgumentError("offset is required")
+        raise errors.InvalidArgumentError("offset is required") # todo do we need this?
     offset_type, offset_value = dsl.parse_quantity(offset_in)
 
     if offset_type is dsl.QuantityType.DELTA:
-        current_price_val = decimal.Decimal(await exchange_public_data.current_price(context))
+        current_price_val = decimal.Decimal(await exchange_public_data.current_live_price(context))
         return current_price_val + offset_value  # offset should be negative when wanting to buy bellow current price
 
     elif offset_type is dsl.QuantityType.PERCENT:
-        current_price_val = decimal.Decimal(await exchange_public_data.current_price(context))
+        current_price_val = decimal.Decimal(await exchange_public_data.current_live_price(context))
         return current_price_val * (1 + (offset_value / 100))
 
     elif offset_type is dsl.QuantityType.ENTRY_PERCENT:
