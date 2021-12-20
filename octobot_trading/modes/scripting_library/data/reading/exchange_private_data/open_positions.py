@@ -28,10 +28,14 @@ def open_position_size(
         context,
         side="both",
         symbol=None,
-        amount_type=commons_constants.PORTFOLIO_TOTAL
+        amount_type="total"
 ):
     if context.exchange_manager.is_future:
         raise NotImplementedError("future is not implemented")
+    if amount_type == "total":
+        amount_type = commons_constants.PORTFOLIO_TOTAL
+    elif amount_type == "available":
+        amount_type = commons_constants.PORTFOLIO_AVAILABLE
     symbol = symbol or context.symbol
     currency = symbol_util.split_symbol(symbol)[0]
     return context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
@@ -56,6 +60,63 @@ async def position_size_less_than(
     symbol = symbol or context.symbol
     currency = symbol_util.split_symbol(symbol)[0]
     return await amounts.get_amount(context, amount) < context.exchange_manager.exchange_personal_data.\
+        portfolio_manager.portfolio.get_currency_portfolio(
+        currency,
+        portfolio_type=commons_constants.PORTFOLIO_TOTAL
+    )
+
+
+# todo handle hedge mode and futures
+#  position is negative when in a short
+async def position_size_less_than_eq(
+        context,
+        amount,
+        side="both",
+        symbol=None
+):
+    if context.exchange_manager.is_future:
+        raise NotImplementedError("future is not implemented")
+    symbol = symbol or context.symbol
+    currency = symbol_util.split_symbol(symbol)[0]
+    return await amounts.get_amount(context, amount) <= context.exchange_manager.exchange_personal_data.\
+        portfolio_manager.portfolio.get_currency_portfolio(
+        currency,
+        portfolio_type=commons_constants.PORTFOLIO_TOTAL
+    )
+
+
+# todo handle hedge mode and futures
+#  position is negative when in a short
+async def position_size_greater_than(
+        context,
+        amount,
+        side="both",
+        symbol=None
+):
+    if context.exchange_manager.is_future:
+        raise NotImplementedError("future is not implemented")
+    symbol = symbol or context.symbol
+    currency = symbol_util.split_symbol(symbol)[0]
+    return await amounts.get_amount(context, amount) > context.exchange_manager.exchange_personal_data.\
+        portfolio_manager.portfolio.get_currency_portfolio(
+        currency,
+        portfolio_type=commons_constants.PORTFOLIO_TOTAL
+    )
+
+
+# todo handle hedge mode and futures
+#  position is negative when in a short
+async def position_size_greater_than_eq(
+        context,
+        amount,
+        side="both",
+        symbol=None
+):
+    if context.exchange_manager.is_future:
+        raise NotImplementedError("future is not implemented")
+    symbol = symbol or context.symbol
+    currency = symbol_util.split_symbol(symbol)[0]
+    return await amounts.get_amount(context, amount) >= context.exchange_manager.exchange_personal_data.\
         portfolio_manager.portfolio.get_currency_portfolio(
         currency,
         portfolio_type=commons_constants.PORTFOLIO_TOTAL

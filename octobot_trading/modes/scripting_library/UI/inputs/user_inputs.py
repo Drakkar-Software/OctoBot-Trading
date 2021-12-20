@@ -25,6 +25,7 @@ async def user_input(
     min_val=None,
     max_val=None,
     options=None,
+    not_important=False  # todo when true hide from optimizer inputs and all tables
 ):
     config = ctx.tentacle.trading_config if hasattr(ctx.tentacle, "trading_config") else ctx.tentacle.specific_config
     value = config.get(name.replace(" ", "_"), def_val) if config else def_val

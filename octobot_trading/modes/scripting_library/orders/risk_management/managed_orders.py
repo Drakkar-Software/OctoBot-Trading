@@ -25,6 +25,7 @@ import octobot_trading.modes.scripting_library.data.reading.exchange_private_dat
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import tulipy as ti  # TODO add requirement or import in if
+import random as random
 
 
 class ManagedOrdersSettings:
@@ -207,7 +208,7 @@ async def managed_order(ctx, side="long", orders_settings=None):
         else:
             raise RuntimeError('Side needs to be "long" or "short" for your managed order')
 
-        # position size
+    # position size
     position_size_market = trading_constants.ZERO
     position_size_limit = trading_constants.ZERO
     limit_fee = trading_constants.ZERO  # todo get fee also for real trading
@@ -236,9 +237,11 @@ async def managed_order(ctx, side="long", orders_settings=None):
         position_size_market = (risk_in_d / (sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
         position_size_limit = (risk_in_d / (sl_in_p + (limit_fee + market_fee))) / decimal.Decimal("0.01")
         max_position_size = (total_risk_in_d / (sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
-        max_buying_power = await account_balance.available_account_balance(ctx)
-        if max_buying_power < max_position_size:
-            max_position_size = max_buying_power
+        max_buying_power = await account_balance.available_account_balance(ctx, side="buy")
+        test = 1
+        if max_buying_power < position_size_market:
+            position_size_market = max_buying_power
+            position_size_limit = max_buying_power
 
         # cut the position size so that it aligns with target risk
         current_open_position_size = open_positions.open_position_size(ctx, side="both")
@@ -268,6 +271,7 @@ async def managed_order(ctx, side="long", orders_settings=None):
                 if unfilled_amount != position_size_limit:
                     position_size_market = 50  # todo calc smaller size cause of fees
                 await order_types.market(ctx, side=side, amount=position_size_market)
+
         # market in only
         else:
             await order_types.market(ctx, side=side, amount=position_size_market, tag=f"managed_order {side} entry:")
@@ -278,28 +282,31 @@ async def managed_order(ctx, side="long", orders_settings=None):
         exit_target_position = None
         if managed_orders_settings.recreate_exits:
             exit_target_position = 0
-        else:
+            exit_order_tag = f"managed_order {side} exit:"
+        else:  # keep existing exit orders and only add new exits
             exit_side = "sell" if side == "buy" else "buy"
             exit_amount = position_size_market
+            exit_order_tag = f"managed_order {side} exit (id: {random.randint(0, 999999999)}"  # {exchange_public_data.current_candle_time(ctx)})"  # todo use something unique to avoid canceling eventual other orders in the same candle
 
         # stop loss
-        await order_types.stop_loss(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position, offset=f"@{sl_price}", one_cancels_the_other=True,
-                                    tag=f"managed_order {side} exit:")
+        await order_types.stop_loss(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position,
+                                    offset=f"@{sl_price}", one_cancels_the_other=True, tag=exit_order_tag)
         # take profit
         if managed_orders_settings.tp_type == managed_orders_settings.tp_types["tp_based_on_rr_title"]:
             profit_in_p = managed_orders_settings.tp_rr * sl_in_p
             if not managed_orders_settings.use_scaled_tp:
-                await order_types.limit(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position, offset=f"{profit_in_p}%e", one_cancels_the_other=True,
-                                        tag=f"managed_order {side} exit:")
+                await order_types.limit(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position,
+                                        offset=f"{profit_in_p}%e", one_cancels_the_other=True, tag=exit_order_tag)
             else:
                 scale_from = 10  # todo
                 scale_to = 10  # todo
-                await order_types.scaled_limit(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position, scale_from=scale_from,
-                                               scale_to=scale_to,
-                                               order_count=managed_orders_settings.tp_order_count,
-                                               one_cancels_the_other=True, tag=f"managed_order {side} exit:")
+                await order_types.scaled_limit(ctx, side=exit_side, amount=exit_amount,
+                                               target_position=exit_target_position, scale_from=scale_from,
+                                               scale_to=scale_to, order_count=managed_orders_settings.tp_order_count,
+                                               one_cancels_the_other=True, tag=exit_order_tag)
 
         # take profit
         elif managed_orders_settings.tp_type == managed_orders_settings.tp_types["tp_based_on_p_title"]:
-            await order_types.limit(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position, offset=f"{managed_orders_settings.tp_in_p}%e",
-                                    one_cancels_the_other=True, tag=f"managed_order {side} exit:")
+            await order_types.limit(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position,
+                                    offset=f"{managed_orders_settings.tp_in_p}%e", one_cancels_the_other=True,
+                                    tag=exit_order_tag)
