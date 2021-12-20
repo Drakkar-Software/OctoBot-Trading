@@ -232,9 +232,11 @@ class Position(util.Initializable):
         """
         if order.reduce_only or order.close_position:
             return False  # Only reducing
-        return (self.is_idle() and self.symbol_contract.is_one_way_position_mode()) \
-               or (self.is_long() and order.is_long()) \
-               or (self.is_short() and order.is_short())
+        return (
+                (self.is_idle() and self.symbol_contract.is_one_way_position_mode())
+                or (self.is_long() and order.is_long())
+                or (self.is_short() and order.is_short())
+        )
 
     def update_from_order(self, order):
         """

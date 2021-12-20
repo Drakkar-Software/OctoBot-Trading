@@ -71,6 +71,12 @@ class FuturePortfolio(portfolio_class.Portfolio):
         :param is_new_order: True when the order is being created
         """
         pair_future_contract = order.exchange_manager.exchange.get_pair_future_contract(order.symbol)
+        position_instance = order.exchange_manager.exchange_personal_data.positions_manager. \
+            get_order_position(order, contract=pair_future_contract)
+
+        if not position_instance.is_order_increasing_size(order):
+            return  # decreasing position size order are not impacting availability
+
         try:
             real_order_quantity = (order.origin_quantity / pair_future_contract.current_leverage
                                    * (constants.ONE if is_new_order else -constants.ONE))

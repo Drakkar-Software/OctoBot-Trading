@@ -235,11 +235,10 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     # Should restore to first test step asserts
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
     await fill_market_order(market_sell)
-    # TODO : reducing position order shouldn't impact portfolio available
-    # assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(10)
-    # assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(92))
-    # assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(10)
-    # assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str('570.568'))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(10)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(299.8))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(10)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(999.8))
 
 
 async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio_linear_contract(
@@ -355,7 +354,7 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
 
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
     # => 975 - 250 = 725
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('809.9')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('874.9')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.9')
 
     # Close short position with loss
@@ -476,7 +475,7 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
                       price=decimal.Decimal(90))
 
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('971.902')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('989.902')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.802')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
@@ -643,7 +642,7 @@ async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contrac
 
     # test sell order creation
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(747.5))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(1000))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
@@ -682,7 +681,7 @@ async def test_update_portfolio_reduce_size_with_market_buy_short_linear_contrac
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(991))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(1000))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))
