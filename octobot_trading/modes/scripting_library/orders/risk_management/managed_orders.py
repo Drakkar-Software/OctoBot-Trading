@@ -31,6 +31,10 @@ import random as random
 class ManagedOrdersSettings:
     def __init__(self, context):
         self.context = context
+        self.entry_types=None
+        self.entry_type=None
+        self.shotgun_entry_types=None
+        self.shotgun_entry_type=None
         self.sl_types = None
         self.position_size_types = None
         self.managed_order_active = None
@@ -42,7 +46,7 @@ class ManagedOrdersSettings:
         self.position_size_type = None
         self.risk_in_d_or_p = None
         self.total_risk_in_d_or_p = None
-        self.try_limit_in = None
+        self.entry_type = None
         self.slippage_limit = None
         self.market_in_if_limit_fails = None
         self.tp_types = None
@@ -57,6 +61,11 @@ class ManagedOrdersSettings:
         self.initialized = False
 
     async def initialize(self):
+        self.entry_types = {"market_in": "Market in",
+                            "try_limit_in": "Try to limit in",
+                            "shotgun_order": "Shotgun entry orders"}
+        self.shotgun_entry_types = {"time_grid_orders": "spread entry orders across time",
+                                    "scaled_entry": "spread limit orders over a price range"}
         self.sl_types = {"at_low_high_title": "SL at the low/high",
                          "based_on_p_title": "SL based on %",
                          "based_on_atr_title": "Sl based on ATR"}
@@ -67,12 +76,32 @@ class ManagedOrdersSettings:
                                     "based_on_p": "Position size based on % risk"}
         self.managed_order_active = True
 
+        # entry type
+        self.entry_type = await user_inputs.user_input(self.context, "entry type", "options",
+                                                    self.entry_types["market_in"],
+                                                    options=[self.entry_types["market_in"],
+                                                             self.entry_types["try_limit_in"],
+                                                             self.entry_types["shotgun_order"]])
+        # entry: try limit in
+        if self.entry_type == self.entry_types["try_limit_in"]:
+            self.slippage_limit = decimal.Decimal(
+                str(await user_inputs.user_input(self.context, "Slippage Limit: can be % or price",
+                                                 "float", 40)))
+            self.market_in_if_limit_fails = await user_inputs.user_input(self.context, "try to limit in", "boolean",
+                                                                         True)
+        # shotgun entry
+        elif self.entry_type == self.entry_types["shotgun_order"]:
+            self.shotgun_entry_type = await user_inputs.user_input(self.context, "shotgun entry type", "options",
+                                                           self.shotgun_entry_types["scaled_entry"],
+                                                           options=[self.shotgun_entry_types["scaled_entry"],
+                                                                    self.shotgun_entry_types["time_grid_orders"]])
+
         self.recreate_exits = await user_inputs.user_input(self.context,
                                                            "Recreate exit orders on new entrys: When "
                                                            "enabled exit orders will be replaced with "
                                                            "new ones based on the current candle", "boolean", False)
         # SL
-        self.sl_type = await user_inputs.user_input(self.context, "choose SL type", "options",
+        self.sl_type = await user_inputs.user_input(self.context, "SL type", "options",
                                                     self.sl_types["based_on_p_title"],
                                                     options=[self.sl_types["at_low_high_title"],
                                                              self.sl_types["based_on_p_title"],
@@ -94,7 +123,7 @@ class ManagedOrdersSettings:
             self.atr_period = decimal.Decimal(str(await user_inputs.user_input(self.context, "ATR Period", "int", 4)))
 
         # position size
-        self.position_size_type = await user_inputs.user_input(self.context, "choose position Size Type", "options",
+        self.position_size_type = await user_inputs.user_input(self.context, "position Size Type", "options",
                                                                self.position_size_types["based_on_p"],
                                                                options=[
                                                                    self.position_size_types["based_on_p"],
@@ -107,18 +136,9 @@ class ManagedOrdersSettings:
                                                                                      "total risk in % or $",
                                                                                      "float", 2)))
 
-        # try limit in
-        # todo handle on backtesting (maybe use always 1m to check if it got filled)
-        self.try_limit_in = await user_inputs.user_input(self.context, "try to limit in", "boolean", False)
-        if self.try_limit_in:
-            self.slippage_limit = decimal.Decimal(
-                str(await user_inputs.user_input(self.context, "Slippage Limit: can be % or price",
-                                                 "float", 40)))
-            self.market_in_if_limit_fails = await user_inputs.user_input(self.context, "try to limit in", "boolean",
-                                                                         True)
 
         # TP
-        self.tp_type = await user_inputs.user_input(self.context, "Activate TP based on Risk Reward", "options",
+        self.tp_type = await user_inputs.user_input(self.context, "Take profit type", "options",
                                                     self.tp_types["tp_based_on_rr_title"],
                                                     options=[self.tp_types["no_tp_title"],
                                                              self.tp_types["tp_based_on_rr_title"],
@@ -126,9 +146,8 @@ class ManagedOrdersSettings:
 
         if self.tp_type == self.tp_types["tp_based_on_rr_title"]:
             self.use_scaled_tp = await user_inputs.user_input(self.context,
-                                                              "Use Scaled Limit for Take Profit. (scales "
-                                                              "from min RR to max RR to reach an average RR "
-                                                              "as defined above in target RR)", "boolean",
+                                                              "Scaled limit take profit. (spreads limit orders "
+                                                              "from min RR to max RR)", "boolean",
                                                               False)
             if not self.use_scaled_tp:
                 self.tp_rr = decimal.Decimal(
@@ -260,22 +279,6 @@ async def managed_order(ctx, side="long", orders_settings=None):
         elif side == "short":
             side = trading_enums.TradeOrderSide.SELL.value
 
-        # limit or market in
-        if managed_orders_settings.try_limit_in:
-            await order_types.trailing_limit(ctx, amount=position_size_limit, side=side, min_offset=0, max_offset=0,
-                                             slippage_limit=managed_orders_settings.slippage_limit,
-                                             tag="managed order long entry:")
-            # wait for limit to get filled
-            if tag_triggered.tagged_order_unfilled("managed order long entry:"):
-                unfilled_amount = tag_triggered.tagged_order_unfilled_amount("managed order long entry:")
-                if unfilled_amount != position_size_limit:
-                    position_size_market = 50  # todo calc smaller size cause of fees
-                await order_types.market(ctx, side=side, amount=position_size_market)
-
-        # market in only
-        else:
-            await order_types.market(ctx, side=side, amount=position_size_market, tag=f"managed_order {side} entry:")
-
         # either replace existing exits or keep them and add new exits for new entry
         exit_side = None
         exit_amount = None
@@ -283,10 +286,40 @@ async def managed_order(ctx, side="long", orders_settings=None):
         if managed_orders_settings.recreate_exits:
             exit_target_position = 0
             exit_order_tag = f"managed_order {side} exit:"
+            entry_order_tag = f"managed_order {side} entry:"
         else:  # keep existing exit orders and only add new exits
             exit_side = "sell" if side == "buy" else "buy"
             exit_amount = position_size_market
-            exit_order_tag = f"managed_order {side} exit (id: {random.randint(0, 999999999)}"  # {exchange_public_data.current_candle_time(ctx)})"  # todo use something unique to avoid canceling eventual other orders in the same candle
+            order_tag_id = random.randint(0, 999999999) # {exchange_public_data.current_candle_time(ctx)})"  # todo use something unique to avoid canceling eventual other orders in the same candle
+            exit_order_tag = f"managed_order {side} exit (id: {order_tag_id}"
+            entry_order_tag = f"managed_order {side} exit (id: {order_tag_id}"
+
+        # entry
+
+        # try limit in
+        # todo + handle on backtesting (maybe use always 1m to check if it got filled)
+        if managed_orders_settings.entry_type == managed_orders_settings.entry_types["try_limit_in"]:
+            await order_types.trailing_limit(ctx, amount=position_size_limit, side=side, min_offset=0, max_offset=0,
+                                             slippage_limit=managed_orders_settings.slippage_limit,
+                                             tag=entry_order_tag)
+            # wait for limit to get filled
+
+            if tag_triggered.tagged_order_unfilled("managed order long entry:"):
+                unfilled_amount = tag_triggered.tagged_order_unfilled_amount("managed order long entry:")
+                if unfilled_amount != position_size_limit:
+                    position_size_market = 50  # todo calc smaller size cause of fees
+                await order_types.market(ctx, side=side, amount=position_size_market, tag=entry_order_tag)
+
+        # market in only
+        elif managed_orders_settings.entry_type == managed_orders_settings.entry_types["market_in"]:
+            await order_types.market(ctx, side=side, amount=position_size_market, tag=entry_order_tag)
+
+        # shotgun orders
+        elif managed_orders_settings.entry_type == managed_orders_settings.entry_types["shotgun_order"]:
+            if managed_orders_settings.shotgun_entry_type == managed_orders_settings.shotgun_entry_types["time_grid_orders"]:
+                print("shotgun orders not implemented yet")
+            elif managed_orders_settings.shotgun_entry_type == managed_orders_settings.shotgun_entry_types["scaled_entry"]:
+                print("shotgun orders not implemented yet")
 
         # stop loss
         await order_types.stop_loss(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position,
