@@ -50,6 +50,8 @@ async def create_order_instance(
 
     linked_to=None
 ):
+    if _paired_order_is_closed(context, linked_to, one_cancels_the_other, tag):
+        return []
     async with context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
         order_quantity, side = await _get_order_quantity_and_side(context, order_amount, order_target_position,
                                                                   order_type_name, side)
@@ -61,6 +63,16 @@ async def create_order_instance(
         return await _create_order(context, symbol, order_quantity, order_price, tag,
                                    order_type, side, order_min_offset, max_offset_val,
                                    linked_to, one_cancels_the_other)
+
+
+def _paired_order_is_closed(context, linked_to, one_cancels_the_other, tag):
+    if linked_to is not None and linked_to.is_closed():
+        return True
+    if one_cancels_the_other:
+        for order in context.just_created_orders:
+            if order.one_cancels_the_other and order.tag == tag and order.is_closed():
+                return True
+    return False
 
 
 def _use_total_holding(order_type_name):
@@ -207,14 +219,9 @@ async def _create_order(context, symbol, order_quantity, order_price, tag, order
             )
             if order_min_offset is not None:
                 await created_order.set_trailing_percent(order_min_offset)
-            created_order = await context.trader.create_order(created_order)
-            if linked_to is None and one_cancels_the_other:
-                # cancel all other orders with same symbol and one_cancels_the_other,
-                # filter by tag if provided
-                for order in order_tags.get_tagged_orders(context, symbol=symbol, tag=tag):
-                    if created_order is not order and order.one_cancels_the_other:
-                        order.add_linked_order(created_order)
-                        created_order.add_linked_order(order)
+            pre_init_callback = _pre_initialize_order_callback if linked_to is None and one_cancels_the_other else None
+            created_order = await context.trader.create_order(created_order, pre_init_callback=pre_init_callback)
+            context.just_created_orders.append(created_order)
             orders.append(created_order)
     except (trading_errors.MissingFunds, trading_errors.MissingMinimalExchangeTradeVolume):
         error_message = "missing minimal funds"
@@ -233,3 +240,14 @@ async def _create_order(context, symbol, order_quantity, order_price, tag, order
                                f"with a volume of {order_quantity} on {context.exchange_manager.exchange_name}: "
                                f"{error_message}.")
     return orders
+
+
+async def _pre_initialize_order_callback(created_order):
+    # cancel all other orders with same symbol and one_cancels_the_other,
+    # filter by tag if provided
+    for order in created_order.trader.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
+       symbol=created_order.symbol,
+       tag=created_order.tag):
+        if created_order is not order and order.one_cancels_the_other:
+            order.add_linked_order(created_order)
+            created_order.add_linked_order(order)

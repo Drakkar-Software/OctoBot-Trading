@@ -78,13 +78,14 @@ class Trader(util.Initializable):
     Orders
     """
 
-    async def create_order(self, order, portfolio: object = None, loaded: bool = False):
+    async def create_order(self, order, portfolio: object = None, loaded: bool = False, pre_init_callback = None):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
         notifies order channel. Handles linked orders.
         :param order: Order to create
         :param portfolio: Portfolio to update (default is this exchange's portfolio)
         :param loaded: True if this order is fetched from an exchange only and therefore not created by this OctoBot
+        :param pre_init_callback: A callback function that will be called just before initializing the order
         :return: The crated order instance
         """
         if portfolio is None:
@@ -112,7 +113,8 @@ class Trader(util.Initializable):
         # if this order is linked to another
         if linked_order is not None:
             new_order.linked_orders.append(linked_order)
-
+        if pre_init_callback is not None:
+            await pre_init_callback(new_order)
         await new_order.initialize()
         return new_order
 

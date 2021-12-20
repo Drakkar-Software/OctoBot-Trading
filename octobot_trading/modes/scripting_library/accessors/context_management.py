@@ -75,6 +75,7 @@ class Context:
         self.allow_self_managed_orders = False
         self.plot_orders = False
         self.cache_manager = databases.CacheManager(database_adaptor=databases.TinyDBAdaptor)
+        self.just_created_orders = []
 
     @staticmethod
     def minimal(trading_mode, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):
