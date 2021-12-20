@@ -224,6 +224,18 @@ class Position(util.Initializable):
         if self.entry_price == constants.ZERO:
             self.entry_price = mark_price
 
+    def is_order_increasing_size(self, order):
+        """
+        Check if an order increase the position size
+        :param order: the order instance
+        :return: True if the order increase the position size when filled
+        """
+        if order.reduce_only or order.close_position:
+            return False  # Only reducing
+        return (self.is_idle() and self.symbol_contract.is_one_way_position_mode()) \
+               or (self.is_long() and order.is_long()) \
+               or (self.is_short() and order.is_short())
+
     def update_from_order(self, order):
         """
         Update position size and entry price from filled order portfolio
