@@ -131,7 +131,7 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
                     if symbol not in handled_currencies:
                         value_data[index] = \
                             value_data[index] + \
-                            moving_portfolio_data[symbol] * other_candle[commons_enums.PriceIndexes.IND_PRICE_CLOSE.value]
+                            moving_portfolio_data[symbol] * other_candle[commons_enums.PriceIndexes.IND_PRICE_OPEN.value]
                         handled_currencies.append(symbol)
                     if ref_market not in handled_currencies:
                         value_data[index] = value_data[index] + moving_portfolio_data[ref_market]
@@ -165,7 +165,7 @@ async def _get_historical_pnl(meta_database, plotted_element, cumulative, exchan
     # what is a trade ?
     #   futures: when position going to 0 (from long/short) => trade is closed
     #   spot: when position lowered => trade is closed
-    price_data, trades_data, moving_portfolio_data = await _load_historical_values(meta_database, exchange)
+    price_data, trades_data, _ = await _load_historical_values(meta_database, exchange)
     if not (price_data and next(iter(price_data.values()))):
         return
     x_data = [0 if x_as_trade_count else next(iter(price_data.values()))[0][commons_enums.PriceIndexes.IND_PRICE_TIME.value]]
