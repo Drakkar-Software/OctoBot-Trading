@@ -252,18 +252,16 @@ async def managed_order(ctx, side="long", orders_settings=None):
         current_total_acc_balance = await exchange_private_data.total_account_balance(ctx)
         risk_in_d = (managed_orders_settings.risk_in_d_or_p / 100) * current_total_acc_balance
         total_risk_in_d = (managed_orders_settings.total_risk_in_d_or_p / 100) * current_total_acc_balance
-
         position_size_market = (risk_in_d / (sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
         position_size_limit = (risk_in_d / (sl_in_p + (limit_fee + market_fee))) / decimal.Decimal("0.01")
-        max_position_size = (total_risk_in_d / (sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01")
+        current_open_position_size = open_positions.open_position_size(ctx, side="both")
+        max_position_size = (total_risk_in_d / (sl_in_p + (2 * market_fee))) / decimal.Decimal("0.01") - (current_open_position_size * (market_fee/100))
         max_buying_power = await account_balance.available_account_balance(ctx, side="buy")
-        test = 1
         if max_buying_power < position_size_market:
             position_size_market = max_buying_power
             position_size_limit = max_buying_power
 
         # cut the position size so that it aligns with target risk
-        current_open_position_size = open_positions.open_position_size(ctx, side="both")
         if current_open_position_size + position_size_market > max_position_size:
             position_size_limit = max_position_size - current_open_position_size
             position_size_market = max_position_size - current_open_position_size
