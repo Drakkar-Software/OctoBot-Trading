@@ -31,15 +31,17 @@ def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=
                 was_below = crossing_values[-delay-2] < values_to_cross[-delay-2]
             except IndexError:
                 print("crossing_up: not enough values_to_cross, you need to provide same amount as delay")
-            if was_below:
+
+            didnt_cross_to_much = True
+            if max_cross_down:
+                didnt_cross_to_much = ti.min(values_to_cross, max_cross_down_lookback) \
+                                      - await offset.get_offset(context, "-" + max_cross_down) \
+                                      < ti.min(crossing_values, max_cross_down_lookback)
+            if was_below and didnt_cross_to_much:
                 for i in range(1, delay+2):
                     condition = crossing_values[-i] > values_to_cross[-i]
                     if condition is False:
                         return False
-                # try:
-                #     condition = ti.min(crossing_values, max_cross_down_lookback)[-1]
-                # except IndexError:
-
                 return condition
             else:
                 return False
@@ -50,12 +52,16 @@ def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=
             was_below = None
             is_currently_above = None
             try:
-                if max_cross_down:
-                    was_below = lows[-delay - 2] < values_to_cross[-delay - 2]
+                was_below = lows[-delay - 2] < values_to_cross[-delay - 2]
                 is_currently_above = closes[-1] > values_to_cross[-1]
             except IndexError:
                 context.logger.info("crossing_up: not enough values_to_cross, you need to provide same amount as delay")
-            if was_below and is_currently_above:
+            didnt_cross_to_much = True
+            if max_cross_down:
+                didnt_cross_to_much = ti.min(values_to_cross, max_cross_down_lookback) \
+                                      - await offset.get_offset(context, "-" + max_cross_down) \
+                                      < ti.min(lows,max_cross_down_lookback)
+            if was_below and is_currently_above and didnt_cross_to_much:
                 for i in range(1, delay + 2):
                     condition = highs[-i] > values_to_cross[-i]
                     if condition is False:
@@ -65,23 +71,63 @@ def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=
                 return False
 
 
-def crossing_down(price, value, delay=0):
+def crossing_down(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_up=None, max_cross_up_lookback=5):
     # true if price just fell under value and stayed there for delay time
     condition = False
-    delay = delay + 2
-    for i in range(1, delay):
-        condition = price[-i] < value[-i] and price[-i-1] > value[-i-1]
-        if condition is False:
-            return False
-    return condition
+    delay = delay
+    if values_to_cross is None:
+        raise RuntimeError("crossing_down: you need to provide values_to_cross")
+    else:
+        if context is None and crossing_values is not None:
+            was_above = None
+            try:
+                was_above = crossing_values[-delay - 2] < values_to_cross[-delay - 2]
+            except IndexError:
+                print("crossing_down: not enough values_to_cross, you need to provide same amount as delay")
+
+            didnt_cross_to_much = True
+            if max_cross_up:
+                didnt_cross_to_much = ti.max(values_to_cross, max_cross_up_lookback) \
+                                      + await offset.get_offset(context, "-" + max_cross_up) \
+                                      > ti.max(crossing_values, max_cross_up_lookback)
+            if was_above and didnt_cross_to_much:
+                for i in range(1, delay + 2):
+                    condition = crossing_values[-i] < values_to_cross[-i]
+                    if condition is False:
+                        return False
+                return condition
+            else:
+                return False
+        else:
+            closes = exchange_public_data.Close(context, limit=delay + max_cross_up_lookback)
+            highs = exchange_public_data.High(context, limit=delay + max_cross_up_lookback)
+            lows = exchange_public_data.Low(context, limit=delay + max_cross_up_lookback)
+            was_above = None
+            is_currently_above = None
+            try:
+                was_above = highs[-delay - 2] > values_to_cross[-delay - 2]
+                is_currently_above = closes[-1] < values_to_cross[-1]
+            except IndexError:
+                context.logger.info("crossing_down: not enough values_to_cross, you need to provide same amount as delay")
+            didnt_cross_to_much = True
+            if max_cross_up:
+                didnt_cross_to_much = ti.max(values_to_cross, max_cross_up_lookback) \
+                                      - await offset.get_offset(context, max_cross_up) \
+                                      < ti.max(highs, max_cross_up_lookback)
+            if was_above and is_currently_above and didnt_cross_to_much:
+                for i in range(1, delay + 2):
+                    condition = lows[-i] < values_to_cross[-i]
+                    if condition is False:
+                        return False
+                return condition
+            else:
+                return False
 
 
-def crossing(price, value, delay=0):
-    # true if price just went below or over value and stayed there for delay time
-    condition = False
-    delay = delay + 2
-    for i in range(1, delay):
-        condition = (price[-i] < value[-i] and price[-i-1] > value[-i-1]) or (price[-i] > value[-i] and price[-i-1] < value[-i-1])
-        if condition is None:
-            return False
-    return condition
+def crossing(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_up=None, max_cross_up_lookback=5):
+    # true if price just went below or over value and stayed there for delay time and didnt cross to much
+    c_up = crossing_up(context, values_to_cross, crossing_values, delay, max_cross_up, max_cross_up_lookback)
+    if c_up:
+        return True
+    c_down = crossing_down(context, values_to_cross, crossing_values, delay, max_cross_up, max_cross_up_lookback)
+    return c_down
