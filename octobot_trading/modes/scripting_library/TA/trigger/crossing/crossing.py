@@ -18,7 +18,7 @@ import octobot_trading.modes.scripting_library.orders.offsets.offset as offset
 import tulipy as ti
 
 
-def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_down=None, max_cross_down_lookback=5):
+async def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_down=None, max_cross_down_lookback=5):
     # true if price just risen over value and stayed there for delay time
     condition = False
     delay = delay
@@ -71,7 +71,7 @@ def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=
                 return False
 
 
-def crossing_down(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_up=None, max_cross_up_lookback=5):
+async def crossing_down(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_up=None, max_cross_up_lookback=5):
     # true if price just fell under value and stayed there for delay time
     condition = False
     delay = delay
@@ -124,10 +124,10 @@ def crossing_down(context=None, values_to_cross=None, crossing_values=None, dela
                 return False
 
 
-def crossing(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_up=None, max_cross_up_lookback=5):
+async def crossing(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_up=None, max_cross_up_lookback=5):
     # true if price just went below or over value and stayed there for delay time and didnt cross to much
-    c_up = crossing_up(context, values_to_cross, crossing_values, delay, max_cross_up, max_cross_up_lookback)
+    c_up = await crossing_up(context, values_to_cross, crossing_values, delay, max_cross_up, max_cross_up_lookback)
     if c_up:
         return True
-    c_down = crossing_down(context, values_to_cross, crossing_values, delay, max_cross_up, max_cross_up_lookback)
+    c_down = await crossing_down(context, values_to_cross, crossing_values, delay, max_cross_up, max_cross_up_lookback)
     return c_down
