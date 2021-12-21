@@ -108,6 +108,7 @@ async def backtesting_data(meta_database, data_label):
     return None
 
 
+#TODO tests
 async def plot_historical_portfolio_value(meta_database, plotted_element, exchange=None, own_yaxis=False):
     price_data, trades_data, moving_portfolio_data = await _load_historical_values(meta_database, exchange)
     time_data = []
@@ -124,19 +125,8 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
             handled_currencies = []
             for pair in pairs:
                 other_candle = price_data[pair][index]
-                # part 1: compute portfolio total value
-                if other_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] == \
-                   ref_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]:
-                    symbol, ref_market = symbol_util.split_symbol(pair)
-                    if symbol not in handled_currencies:
-                        value_data[index] = \
-                            value_data[index] + \
-                            moving_portfolio_data[symbol] * other_candle[commons_enums.PriceIndexes.IND_PRICE_OPEN.value]
-                        handled_currencies.append(symbol)
-                    if ref_market not in handled_currencies:
-                        value_data[index] = value_data[index] + moving_portfolio_data[ref_market]
-                        handled_currencies.append(ref_market)
-                # part 2: compute portfolio total value after trade update when any
+                symbol, ref_market = symbol_util.split_symbol(pair)
+                # part 1: compute portfolio total value after trade update when any
                 for trade in trades_data[pair]:
                     if trade[trading_enums.PlotAttributes.X.value] == ref_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]:
                         if trade[trading_enums.PlotAttributes.SIDE.value] == "sell":
@@ -149,6 +139,17 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
                                 trade[trading_enums.PlotAttributes.Y.value]
                         moving_portfolio_data[trade[trading_enums.DBTables.FEES_CURRENCY.value]] -= \
                             trade[trading_enums.DBTables.FEES_AMOUNT.value]
+                # part 2: now that portfolio is up to date, compute portfolio total value
+                if other_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] == \
+                   ref_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]:
+                    if symbol not in handled_currencies:
+                        value_data[index] = \
+                            value_data[index] + \
+                            moving_portfolio_data[symbol] * other_candle[commons_enums.PriceIndexes.IND_PRICE_OPEN.value]
+                        handled_currencies.append(symbol)
+                    if ref_market not in handled_currencies:
+                        value_data[index] = value_data[index] + moving_portfolio_data[ref_market]
+                        handled_currencies.append(ref_market)
 
     plotted_element.plot(
         kind="scatter",
@@ -158,6 +159,7 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
         own_yaxis=own_yaxis)
 
 
+#TODO tests
 async def _get_historical_pnl(meta_database, plotted_element, cumulative, exchange=None, x_as_trade_count=True, own_yaxis=False):
     # PNL:
     # 1. open position: consider position opening fee from PNL
@@ -175,6 +177,8 @@ async def _get_historical_pnl(meta_database, plotted_element, cumulative, exchan
         for symbol in trades_data.keys()
     }
     all_trades = []
+    buy_fees = 0
+    sell_fees = 0
     for trades in trades_data.values():
         all_trades += trades
     for trade in sorted(all_trades, key=lambda x: x[trading_enums.PlotAttributes.X.value]):
@@ -182,14 +186,20 @@ async def _get_historical_pnl(meta_database, plotted_element, cumulative, exchan
         trade_volume = trade[trading_enums.PlotAttributes.VOLUME.value]
         buy_order_volume_by_price = buy_order_volume_by_price_by_currency[currency]
         if trade[trading_enums.PlotAttributes.SIDE.value] == trading_enums.TradeOrderSide.BUY.value:
+            fees = trade[trading_enums.DBTables.FEES_AMOUNT.value]
+            fees_multiplier = 1 if trade[trading_enums.DBTables.FEES_CURRENCY.value] == currency \
+                else 1 / trade[trading_enums.PlotAttributes.Y.value]
+            paid_fees = fees * fees_multiplier
+            buy_fees += paid_fees * trade[trading_enums.PlotAttributes.Y.value]
+            buy_cost = trade_volume * trade[trading_enums.PlotAttributes.Y.value]
             if trade[trading_enums.PlotAttributes.Y.value] in buy_order_volume_by_price:
-                buy_order_volume_by_price[trade[trading_enums.PlotAttributes.Y.value]] += trade_volume
+                buy_order_volume_by_price[buy_cost/(trade_volume-paid_fees)] += trade_volume - paid_fees
             else:
-                buy_order_volume_by_price[trade[trading_enums.PlotAttributes.Y.value]] = trade_volume
+                buy_order_volume_by_price[buy_cost/(trade_volume-paid_fees)] = trade_volume - paid_fees
         elif trade[trading_enums.PlotAttributes.SIDE.value] == trading_enums.TradeOrderSide.SELL.value:
             remaining_sell_volume = trade_volume
             volume_by_bought_prices = {}
-            for order_price in sorted(buy_order_volume_by_price.keys()):
+            for order_price in list(buy_order_volume_by_price.keys()):
                 if buy_order_volume_by_price[order_price] > remaining_sell_volume:
                     buy_order_volume_by_price[order_price] -= remaining_sell_volume
                     volume_by_bought_prices[order_price] = remaining_sell_volume
@@ -208,14 +218,13 @@ async def _get_historical_pnl(meta_database, plotted_element, cumulative, exchan
             if volume_by_bought_prices:
                 # use total_bought_volume only to avoid taking pre-existing open positions into account
                 # (ex if started with already 10 btc)
-                total_bought_volume = sum(volume for volume in volume_by_bought_prices.values())
-                average_buy_price = sum(price * (volume/total_bought_volume)
-                                        for price, volume in volume_by_bought_prices.items())
+                # total obtained (in ref market) – sell order fees – buy costs (in ref market before fees)
+                buy_cost = sum(price * volume for price, volume in volume_by_bought_prices.items())
                 fees = trade[trading_enums.DBTables.FEES_AMOUNT.value]
                 fees_multiplier = 1 if trade[trading_enums.DBTables.FEES_CURRENCY.value] == ref_market \
                     else trade[trading_enums.PlotAttributes.Y.value]
-                pnl = (trade[trading_enums.PlotAttributes.Y.value] - average_buy_price) * total_bought_volume - \
-                      fees * fees_multiplier
+                sell_fees += fees * fees_multiplier
+                pnl = trade[trading_enums.PlotAttributes.Y.value] * trade_volume - (fees * fees_multiplier) - buy_cost
                 if cumulative:
                     pnl += pnl_data[-1]
                 pnl_data.append(pnl)
@@ -233,6 +242,18 @@ async def _get_historical_pnl(meta_database, plotted_element, cumulative, exchan
         x_type="tick0" if x_as_trade_count else "date",
         title="Cumulative P&L" if cumulative else "P&L per trade",
         own_yaxis=own_yaxis)
+
+
+def total_paid_fees(all_trades):
+    paid_fees = 0
+    for trade in all_trades:
+        currency, ref_market = symbol_util.split_symbol(trade[trading_enums.DBTables.SYMBOL.value])
+        if trade[trading_enums.DBTables.FEES_CURRENCY.value] == currency:
+            paid_fees += trade[trading_enums.DBTables.FEES_AMOUNT.value] * \
+                         trade[trading_enums.PlotAttributes.Y.value]
+        else:
+            paid_fees += trade[trading_enums.DBTables.FEES_AMOUNT.value]
+    return paid_fees
 
 
 async def plot_historical_pnl_value(meta_database, plotted_element, exchange=None, x_as_trade_count=True, own_yaxis=False):
