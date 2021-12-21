@@ -89,18 +89,18 @@ class FutureAsset(asset_class.Asset):
         self._update_total()
         return True
 
-    def set(self, total=constants.ZERO, available=None, margin_balance=None, initial_margin=constants.ZERO,
-            position_margin=constants.ZERO, order_margin=constants.ZERO, unrealized_pnl=constants.ZERO):
+    def set(self, total=constants.ZERO, available=None, initial_margin=constants.ZERO, position_margin=constants.ZERO,
+            unrealized_pnl=constants.ZERO, order_margin=constants.ZERO, margin_balance=None):
         """
         Set available, total, initial_margin, wallet_balance, position_margin and maintenance_margin
         values for portfolio asset
         :param total: the wallet balance value
-        :param margin_balance: the margin balance value
         :param available: the available margin balance value
         :param initial_margin: the initial margin value
         :param position_margin: the position margin value
-        :param order_margin: the order margin value
         :param unrealized_pnl: the unrealized pnl value
+        :param order_margin: the order margin value
+        :param margin_balance: the margin balance value
         :return: True if updated
         """
         if position_margin == self.position_margin and order_margin == self.order_margin \
