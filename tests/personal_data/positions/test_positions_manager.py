@@ -15,6 +15,7 @@
 #  License along with this library.
 import decimal
 import os
+import time
 
 import pytest
 
@@ -89,12 +90,19 @@ async def test__generate_position_id(future_trader_simulator_with_default_linear
                                                               default_contract)
 
     if not os.getenv('CYTHON_IGNORE'):
+        sep = positions_mgr.PositionsManager.POSITION_ID_SEPARATOR
+        current_time = time.time()
         symbol_contract.set_position_mode(is_one_way=True)
         assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, None) == DEFAULT_FUTURE_SYMBOL
+        assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, None, None) == DEFAULT_FUTURE_SYMBOL
+        assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, None, expiration_time=current_time) == \
+               DEFAULT_FUTURE_SYMBOL + sep + str(current_time)
         symbol_contract.set_position_mode(is_one_way=False)
         assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, enums.PositionSide.LONG) == \
-               DEFAULT_FUTURE_SYMBOL + positions_mgr.PositionsManager.POSITION_ID_SEPARATOR \
-               + enums.PositionSide.LONG.value
+               DEFAULT_FUTURE_SYMBOL + sep + enums.PositionSide.LONG.value
+        assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, enums.PositionSide.LONG, current_time) == \
+               DEFAULT_FUTURE_SYMBOL + sep + str(current_time) + sep + enums.PositionSide.LONG.value
         assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, enums.PositionSide.SHORT) == \
-               DEFAULT_FUTURE_SYMBOL + positions_mgr.PositionsManager.POSITION_ID_SEPARATOR \
-               + enums.PositionSide.SHORT.value
+               DEFAULT_FUTURE_SYMBOL + sep + enums.PositionSide.SHORT.value
+        assert positions_manager._generate_position_id(DEFAULT_FUTURE_SYMBOL, enums.PositionSide.SHORT, current_time) == \
+               DEFAULT_FUTURE_SYMBOL + sep + str(current_time) + sep + enums.PositionSide.SHORT.value
