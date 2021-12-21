@@ -32,6 +32,9 @@ class LinearPosition(position_class.Position):
         SHORT_PNL = CONTRACT_QUANTITY x [ENTRY_PRICE - MARK_PRICE]
         """
         try:
+            # ensure update validity
+            if self.mark_price <= constants.ZERO or self.entry_price <= constants.ZERO:
+                return
             if self.is_long():
                 self.unrealised_pnl = self.size * (self.mark_price - self.entry_price)
             elif self.is_short():
