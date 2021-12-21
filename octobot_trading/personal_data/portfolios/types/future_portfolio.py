@@ -38,7 +38,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
             get_order_position(order, contract=pair_future_contract)
 
         try:
-            update_size, have_increased_position_size = position_instance.update_from_order(order)
+            update_size, has_increased_position_size = position_instance.update_from_order(order)
             real_order_quantity = decimal.Decimal(update_size / pair_future_contract.current_leverage).copy_abs()
 
             # When inverse contract, decrease a currency market equivalent quantity from currency balance
@@ -166,14 +166,14 @@ class FuturePortfolio(portfolio_class.Portfolio):
         try:
             if replace_value:
                 return self.portfolio[currency].set(total=wallet_value,
-                                                    position_margin=position_margin_value,
-                                                    initial_margin=initial_margin_value,
                                                     available=order_margin_value,
+                                                    initial_margin=initial_margin_value,
+                                                    position_margin=position_margin_value,
                                                     unrealized_pnl=unrealized_pnl_value)
             return self.portfolio[currency].update(total=wallet_value,
+                                                   available=order_margin_value,
                                                    position_margin=position_margin_value,
                                                    initial_margin=initial_margin_value,
-                                                   available=order_margin_value,
                                                    unrealized_pnl=unrealized_pnl_value)
         except KeyError:
             self.portfolio[currency] = self.create_currency_asset(currency=currency,

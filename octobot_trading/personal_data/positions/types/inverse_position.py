@@ -35,6 +35,9 @@ class InversePosition(position_class.Position):
         SHORT_PNL = CONTRACT_QUANTITY x [(1 / MARK_PRICE) - (1 / ENTRY_PRICE)]
         """
         try:
+            # ensure update validity
+            if self.mark_price <= constants.ZERO or self.entry_price <= constants.ZERO:
+                return
             if self.is_long():
                 self.unrealised_pnl = self.size * ((constants.ONE / self.entry_price) -
                                                        (constants.ONE / self.mark_price))
