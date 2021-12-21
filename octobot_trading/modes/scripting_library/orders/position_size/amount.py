@@ -25,6 +25,8 @@ async def get_amount(
     context=None,
     input_amount=None,
     side=trading_enums.TradeOrderSide.BUY.value,
+    reduce_only=False,
+    is_stop_order=False,
     use_total_holding=False
 ):
     amount_type, amount_value = dsl.parse_quantity(input_amount)
@@ -45,4 +47,5 @@ async def get_amount(
             * amount_value / 100
     else:
         raise trading_errors.InvalidArgumentError("make sure to use a supported syntax for amount")
-    return await exchange_private_data.adapt_amount_to_holdings(context, amount_value, side, use_total_holding)
+    return await exchange_private_data.adapt_amount_to_holdings(context, amount_value, side,
+                                                                use_total_holding, reduce_only, is_stop_order)

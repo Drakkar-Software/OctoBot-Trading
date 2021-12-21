@@ -24,6 +24,8 @@ import octobot_trading.modes.scripting_library.data.reading.exchange_private_dat
 async def get_target_position(
     context=None,
     target=None,
+    reduce_only=False,
+    is_stop_order=False,
     use_total_holding=False
 ):
     target_position_type, target_position_value = dsl.parse_quantity(target)
@@ -53,7 +55,8 @@ async def get_target_position(
     if side == trading_enums.TradeOrderSide.SELL.value:
         order_size = order_size * -1
 
-    order_size = await exchange_private_data.adapt_amount_to_holdings(context, order_size, side, use_total_holding)
+    order_size = await exchange_private_data.adapt_amount_to_holdings(context, order_size, side,
+                                                                      use_total_holding, reduce_only, is_stop_order)
     return order_size, side
 
 

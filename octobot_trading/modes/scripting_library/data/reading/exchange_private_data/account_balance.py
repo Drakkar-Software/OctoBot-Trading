@@ -29,15 +29,28 @@ async def total_account_balance(context):
         portfolio_manager.portfolio_value_holder.portfolio_current_value / current_price
 
 
-async def available_account_balance(context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False):
+def _get_locked_amount_in_stop_orders(context, side):
+    locked_amount = trading_constants.ZERO
+    for order in context.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(context.symbol):
+        if isinstance(order, (trading_personal_data.StopLossOrder, trading_personal_data.StopLossLimitOrder)) and \
+           order.side.value == side:
+            locked_amount += order.origin_quantity
+    return locked_amount
+
+
+async def available_account_balance(context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False,
+                                    reduce_only=False, is_stop_order=False):
     portfolio_type = commons_constants.PORTFOLIO_TOTAL if use_total_holding else commons_constants.PORTFOLIO_AVAILABLE
     current_symbol_holding, current_market_holding, market_quantity, current_price, symbol_market = \
         await trading_personal_data.get_pre_order_data(context.exchange_manager,
                                                        symbol=context.symbol,
                                                        timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT,
                                                        portfolio_type=portfolio_type)
-
-    return market_quantity if side == trading_enums.TradeOrderSide.BUY.value else current_symbol_holding
+    already_locked_amount = trading_constants.ZERO
+    if use_total_holding and is_stop_order:
+        already_locked_amount = _get_locked_amount_in_stop_orders(context, side)
+    return (market_quantity if side == trading_enums.TradeOrderSide.BUY.value else current_symbol_holding) \
+        - already_locked_amount
 
     # todo handle reference market change
     # todo handle futures and margin
@@ -47,8 +60,9 @@ async def available_account_balance(context, side=trading_enums.TradeOrderSide.B
     #  futures available balance based on exchange values
 
 
-async def adapt_amount_to_holdings(context, amount, side, use_total_holding):
-    available_acc_bal = await available_account_balance(context, side, use_total_holding=use_total_holding)
+async def adapt_amount_to_holdings(context, amount, side, use_total_holding, reduce_only, is_stop_order):
+    available_acc_bal = await available_account_balance(context, side, use_total_holding=use_total_holding,
+                                                        reduce_only=reduce_only, is_stop_order=is_stop_order)
     if available_acc_bal > amount:
         return amount
     else:

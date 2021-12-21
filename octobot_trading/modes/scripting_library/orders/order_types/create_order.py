@@ -54,7 +54,7 @@ async def create_order_instance(
         return []
     async with context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
         order_quantity, side = await _get_order_quantity_and_side(context, order_amount, order_target_position,
-                                                                  order_type_name, side)
+                                                                  order_type_name, side, reduce_only)
 
         order_type, order_price, side, reduce_only, trailing_method, \
         min_offset_val, max_offset_val, order_limit_offset, limit_offset_val = \
@@ -76,15 +76,21 @@ def _paired_order_is_closed(context, linked_to, one_cancels_the_other, tag):
 
 
 def _use_total_holding(order_type_name):
+    return _is_stop_order(order_type_name)
+
+
+def _is_stop_order(order_type_name):
     return "stop" in order_type_name
 
 
-async def _get_order_quantity_and_side(context, order_amount, order_target_position, order_type_name, side):
+async def _get_order_quantity_and_side(context, order_amount, order_target_position,
+                                       order_type_name, side, reduce_only):
     if order_amount is not None and order_target_position is not None:
         raise trading_errors.InvalidArgumentError("order_amount and order_target_position can't be "
                                                   "both given as parameter")
 
     use_total_holding = _use_total_holding(order_type_name)
+    is_stop_order = _is_stop_order(order_type_name)
     # size based on amount
     if side is not None and order_amount is not None:
         # side
@@ -93,11 +99,12 @@ async def _get_order_quantity_and_side(context, order_amount, order_target_posit
             raise trading_errors.InvalidArgumentError(
                 f"Side parameter needs to be {trading_enums.TradeOrderSide.BUY.value} "
                 f"or {trading_enums.TradeOrderSide.SELL.value} for your {order_type_name}.")
-        return await position_size.get_amount(context, order_amount, side, use_total_holding=use_total_holding), side
+        return await position_size.get_amount(context, order_amount, side, reduce_only, is_stop_order,
+                                              use_total_holding=use_total_holding), side
 
     # size and side based on target position
     if order_target_position is not None:
-        return await position_size.get_target_position(context, order_target_position,
+        return await position_size.get_target_position(context, order_target_position, reduce_only, is_stop_order,
                                                        use_total_holding=use_total_holding)
 
     raise trading_errors.InvalidArgumentError("Either use side with amount or target_position.")
