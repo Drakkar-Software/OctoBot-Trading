@@ -195,8 +195,8 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=buy_price,
-                      quantity=decimal.Decimal(str(3)),  # real quantity = 3 / 5 = 0.6
-                      price=buy_price)
+                      quantity=decimal.Decimal(3),  # real quantity = 3 / 5 = 0.6
+                      price=buy_price)  # real cost = 0.6 * 1000 = 600
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
@@ -215,8 +215,8 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=buy_price,
-                      quantity=decimal.Decimal(str(1)),
-                      price=buy_price)
+                      quantity=decimal.Decimal(1),  # 0.2
+                      price=buy_price)  # 200
 
     # test buy order creation
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
@@ -229,16 +229,46 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        current_price=buy_price,
-                       quantity=decimal.Decimal(str(0.5)),
-                       price=buy_price)
+                       quantity=decimal.Decimal(0.5),  # 0.1
+                       price=buy_price)  # 100
 
-    # Should restore to first test step asserts
+    # Should restore available
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
     await fill_market_order(market_sell)
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(10)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(299.8))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(10)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(999.8))
+
+    # Test buy order 2
+    market_buy = BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=buy_price,
+                      quantity=decimal.Decimal(0.5),  # 0.1
+                      price=buy_price)  # 100
+
+    # increase position size
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    await fill_market_order(market_buy)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(199.8))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(999.8))
+
+    # Test reducing again LONG position with a sell market order
+    market_sell = SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=buy_price,
+                       quantity=decimal.Decimal(4),  # 0.8
+                       price=buy_price)  # 800
+
+    # decrease position size
+    portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
+    await fill_market_order(market_sell)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(10)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(998.2))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(10)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(998.2))
 
 
 async def test_update_portfolio_data_from_order_that_triggers_negative_portfolio_linear_contract(
@@ -353,14 +383,13 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.9')
 
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    # => 975 - 250 = 725
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('874.9')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.9')
 
     # Close short position with loss
     await fill_market_order(market_buy)
     await _update_position_mark_price(exchange_manager_inst, buy_order_price, DEFAULT_FUTURE_SYMBOL)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('874.9')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('902.4')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('902.4')
 
 
@@ -481,8 +510,8 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
     await fill_market_order(market_buy)  # reducing position with positive PNL
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('989.902')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1089.8020')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('999.802')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1089.802')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
 
