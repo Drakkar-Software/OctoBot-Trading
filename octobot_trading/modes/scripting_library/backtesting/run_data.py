@@ -318,8 +318,10 @@ async def plot_table(meta_database, plotted_element, data_source, columns=None, 
                         }
                         for cache_element in cache
                     ]
+                except KeyError as e:
+                    get_logger().warning(f"Missing cache values when plotting data: {e}")
                 except commons_errors.DatabaseNotFoundError as e:
-                    get_logger().warning(f"Missing cache values: {e}")
+                    get_logger().warning(f"Missing cache values when plotting data: {e}")
 
     if not data:
         get_logger().debug(f"Nothing to create a table from when reading {data_source}")
