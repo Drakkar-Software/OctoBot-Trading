@@ -78,7 +78,7 @@ class Trader(util.Initializable):
     Orders
     """
 
-    async def create_order(self, order, portfolio: object = None, loaded: bool = False, pre_init_callback = None):
+    async def create_order(self, order, portfolio: object = None, loaded: bool = False, pre_init_callback=None):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
         notifies order channel. Handles linked orders.
