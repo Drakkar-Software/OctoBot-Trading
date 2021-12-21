@@ -48,8 +48,9 @@ class FuturePortfolio(portfolio_class.Portfolio):
                 self._update_future_portfolio_data(
                     order.currency,
                     wallet_value=fees_update_quantity,
-                    order_margin_value=-total_update_quantity,
-                    position_margin_value=total_update_quantity if have_increased_position_size else constants.ZERO)
+                    order_margin_value=-total_update_quantity if has_increased_position_size else constants.ZERO,
+                    position_margin_value=total_update_quantity
+                    if has_increased_position_size else -total_update_quantity)
 
             # When non-inverse contract, decrease directly market quantity
             else:
@@ -59,8 +60,9 @@ class FuturePortfolio(portfolio_class.Portfolio):
                 self._update_future_portfolio_data(
                     order.market,
                     wallet_value=fees_update_quantity,
-                    order_margin_value=-total_update_quantity,
-                    position_margin_value=total_update_quantity if have_increased_position_size else constants.ZERO)
+                    order_margin_value=-total_update_quantity if has_increased_position_size else constants.ZERO,
+                    position_margin_value=total_update_quantity
+                    if has_increased_position_size else -total_update_quantity)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from filled order : {order} ({e})")
 
