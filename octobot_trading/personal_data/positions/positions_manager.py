@@ -114,14 +114,16 @@ class PositionsManager(util.Initializable):
         self._reset_positions()
 
     # private
-    def _generate_position_id(self, symbol, side):
+    def _generate_position_id(self, symbol, side, expiration_time=None):
         """
         Generate a position ID for one way and hedge position modes
         :param symbol: the position symbol
         :param side: the position side
+        :param expiration_time: the symbol expiration timestamp
         :return: the computed position id
         """
         return f"{symbol}" \
+               f"{'' if expiration_time is None else self.POSITION_ID_SEPARATOR + str(expiration_time)}" \
                f"{'' if side is enums.PositionSide.BOTH or side is None else self.POSITION_ID_SEPARATOR + side.value}"
 
     async def _finalize_position_creation(self, new_position, is_from_exchange_data=False) -> bool:
