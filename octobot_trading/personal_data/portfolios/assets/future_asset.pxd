@@ -26,9 +26,9 @@ cdef class FutureAsset(asset_class.Asset):
 
     cpdef object update(self, object total=*, object available=*, object position_margin=*,
                       object unrealized_pnl=*, object initial_margin=*)
-    cpdef object set(self, object total=*, object available=*, object margin_balance=*, object initial_margin=*,
-                   object position_margin=*, object order_margin=*, object unrealized_pnl=*)
-    cpdef void set_unrealized_pnl(self, object unrealized_pnl)
+    cpdef object set(self, object total=*, object available=*, object initial_margin=*, object position_margin=*,
+                   object unrealized_pnl=*, object order_margin=*, object margin_balance=*)
+    cpdef object set_unrealized_pnl(self, object unrealized_pnl)  # needs object to forward exceptions
 
     cdef object _update_total(self)
     cdef object _update_available(self)
