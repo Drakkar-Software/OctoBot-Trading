@@ -28,20 +28,15 @@ def open_position_size(
         context,
         side="both",
         symbol=None,
-        amount_type="total"
+        amount_type=commons_constants.PORTFOLIO_TOTAL
 ):
     if context.exchange_manager.is_future:
         raise NotImplementedError("future is not implemented")
-    if amount_type == "total":
-        amount_type = commons_constants.PORTFOLIO_TOTAL
-    elif amount_type == "available":
-        amount_type = commons_constants.PORTFOLIO_AVAILABLE
     symbol = symbol or context.symbol
     currency = symbol_util.split_symbol(symbol)[0]
-    return context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
-        currency,
-        portfolio_type=amount_type
-    )
+    portfolio = context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
+    return portfolio.get_currency_portfolio(currency).total if amount_type == commons_constants.PORTFOLIO_TOTAL \
+        else portfolio.get_currency_portfolio(currency).available
     # todo handle reference market change
     # todo handle futures: its account balance from exchange
     # todo handle futures and return negative for shorts

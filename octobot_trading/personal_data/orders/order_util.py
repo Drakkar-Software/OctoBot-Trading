@@ -115,7 +115,7 @@ async def get_up_to_date_price(exchange_manager, symbol: str, timeout: int = Non
 
 async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
                              portfolio_type=commons_constants.PORTFOLIO_AVAILABLE):
-    mark_price = get_up_to_date_price(exchange_manager, symbol, timeout=timeout)
+    mark_price = await get_up_to_date_price(exchange_manager, symbol, timeout=timeout)
     symbol_market = exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
     currency, market = symbol_util.split_symbol(symbol)

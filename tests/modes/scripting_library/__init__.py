@@ -77,21 +77,21 @@ async def mock_context(backtesting_trader):
         mock.Mock(),
     )
     context.orders_writer.log_many = mock.AsyncMock()
+    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     # init portfolio with 0.5 BTC, 20 ETH and 30000 USDT and only 0.1 available BTC
-    portfolios.update_portfolio_balance({
+    portfolio_manager.portfolio.update_portfolio_from_balance({
         'BTC': {'available': decimal.Decimal("0.1"), 'total': decimal.Decimal("0.5")},
         'ETH': {'available': decimal.Decimal("20"), 'total': decimal.Decimal("20")},
         'USDT': {'available': decimal.Decimal("30000"), 'total': decimal.Decimal("30000")}
-    }, exchange_manager)
+    }, True)
     exchange_manager.client_symbols.append("BTC/USDT")
     exchange_manager.client_symbols.append("ETH/USDT")
     exchange_manager.client_symbols.append("ETH/BTC")
-    portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
     # init prices with BTC/USDT = 40000, ETH/BTC = 0.1 and ETH/USDT = 4000
     portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair["BTC/USDT"] = decimal.Decimal("40000")
     portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair["ETH/USDT"] = decimal.Decimal("4000")
     portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair["ETH/BTC"] = decimal.Decimal("0.1")
-    await portfolio_manager.handle_balance_updated()
+    portfolio_manager.handle_balance_updated()
     yield context
 
 

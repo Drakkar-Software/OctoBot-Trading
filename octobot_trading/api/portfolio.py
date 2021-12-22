@@ -16,6 +16,7 @@
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants
 import octobot_trading.personal_data as personal_data
+import octobot_commons.constants
 
 
 def get_portfolio(exchange_manager, as_decimal=True) -> dict:

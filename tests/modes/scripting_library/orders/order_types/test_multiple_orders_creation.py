@@ -135,7 +135,7 @@ async def test_orders_amount_then_position_sequence(mock_context):
 
     # price changes to 1000
     btc_price = 1000
-    await mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_mark_price_update(
+    mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_mark_price_update(
         "BTC/USDT", btc_price)
     with mock.patch.object(trading_personal_data, "get_up_to_date_price", mock.AsyncMock(return_value=btc_price)), \
          mock.patch.object(order_util, "get_up_to_date_price", mock.AsyncMock(return_value=btc_price)):
@@ -216,7 +216,7 @@ async def test_concurrent_orders(mock_context):
         # position
 
         # update portfolio current value
-        await mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_balance_updated()
+        mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_balance_updated()
 
         orders = []
 
@@ -315,15 +315,15 @@ async def test_sell_limit_with_stop_loss_orders_two_sells_and_stop_with_oco(mock
 
 async def _usdt_trading_context(mock_context):
     initial_usdt_holdings = 50000
-    portfolios.update_portfolio_balance({
+    mock_context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_from_balance({
         'BTC': {'available': decimal.Decimal(0), 'total': decimal.Decimal(0)},
         'ETH': {'available': decimal.Decimal(0), 'total': decimal.Decimal(0)},
         'USDT': {'available': decimal.Decimal(str(initial_usdt_holdings)),
                  'total': decimal.Decimal(str(initial_usdt_holdings))}
     }, mock_context.exchange_manager)
-    await mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_balance_updated()
+    mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_balance_updated()
     btc_price = 500
-    await mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_mark_price_update(
+    mock_context.exchange_manager.exchange_personal_data.portfolio_manager.handle_mark_price_update(
         "BTC/USDT", btc_price)
     return initial_usdt_holdings, btc_price
 
@@ -373,7 +373,7 @@ def _ensure_orders_validity(mock_context, btc_available, usdt_available, orders,
     mock_context.logger.warning.reset_mock()
     mock_context.logger.exception.assert_not_called()
     mock_context.logger.exception.reset_mock()
-    assert api.get_portfolio_currency(exchange_manager, "BTC", commons_constants.PORTFOLIO_AVAILABLE) == btc_available
-    assert api.get_portfolio_currency(exchange_manager, "BTC", commons_constants.PORTFOLIO_TOTAL) == btc_total
-    assert api.get_portfolio_currency(exchange_manager, "USDT", commons_constants.PORTFOLIO_AVAILABLE) == usdt_available
-    assert api.get_portfolio_currency(exchange_manager, "USDT", commons_constants.PORTFOLIO_TOTAL) == usdt_total
+    assert api.get_portfolio_currency(exchange_manager, "BTC").available == btc_available
+    assert api.get_portfolio_currency(exchange_manager, "BTC").total == btc_total
+    assert api.get_portfolio_currency(exchange_manager, "USDT").available == usdt_available
+    assert api.get_portfolio_currency(exchange_manager, "USDT").total == usdt_total
