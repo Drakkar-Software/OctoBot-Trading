@@ -174,7 +174,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                     position_mode=position.get(enums.ExchangeConstantsPositionColumns.POSITION_MODE.value, None),
                     maintenance_margin_rate=position.get(
                         enums.ExchangeConstantsPositionColumns.MAINTENANCE_MARGIN_RATE.value,
-                        constants.CONFIG_DEFAULT_MAINTENANCE_MARGIN_RATE))
+                        constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE))
 
     async def extract_mark_price(self, position_dict: dict):
         try:

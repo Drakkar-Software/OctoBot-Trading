@@ -14,20 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.constants as constants
-import octobot_trading.enums as enums
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 
 
 class FutureExchangeSimulator(exchanges_types.FutureExchange):
-    DEFAULT_SYMBOL_LEVERAGE = constants.ONE
-    DEFAULT_SYMBOL_MAX_LEVERAGE = constants.ONE_HUNDRED
-    DEFAULT_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
-    DEFAULT_SYMBOL_CONTRACT_TYPE = enums.FutureContractType.LINEAR_PERPETUAL
-    DEFAULT_SYMBOL_POSITION_MODE = enums.PositionMode.ONE_WAY
-    DEFAULT_SYMBOL_FUNDING_RATE = constants.CONFIG_DEFAULT_FUNDING_RATE
-    DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE = constants.CONFIG_DEFAULT_MAINTENANCE_MARGIN_RATE
-
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
         self.exchange_importers = []
@@ -107,28 +98,28 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
         """
         self.create_pair_contract(
             pair=pair,
-            current_leverage=self.DEFAULT_SYMBOL_LEVERAGE,
-            margin_type=self.DEFAULT_SYMBOL_MARGIN_TYPE,
-            contract_type=self.DEFAULT_SYMBOL_CONTRACT_TYPE,
-            position_mode=self.DEFAULT_SYMBOL_POSITION_MODE,
-            maintenance_margin_rate=self.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
-            maximum_leverage=self.DEFAULT_SYMBOL_MAX_LEVERAGE
+            current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
+            margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
+            contract_type=constants.DEFAULT_SYMBOL_CONTRACT_TYPE,
+            position_mode=constants.DEFAULT_SYMBOL_POSITION_MODE,
+            maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
+            maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE
         )
 
     async def get_symbol_leverage(self, symbol: str):
-        return self.DEFAULT_SYMBOL_LEVERAGE
+        return constants.DEFAULT_SYMBOL_LEVERAGE
 
     async def get_margin_type(self, symbol: str):
-        return self.DEFAULT_SYMBOL_MARGIN_TYPE
+        return constants.DEFAULT_SYMBOL_MARGIN_TYPE
 
     async def get_contract_type(self, symbol: str):
-        return self.DEFAULT_SYMBOL_CONTRACT_TYPE
+        return constants.DEFAULT_SYMBOL_CONTRACT_TYPE
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict):
-        return self.DEFAULT_SYMBOL_FUNDING_RATE
+        return constants.DEFAULT_SYMBOL_FUNDING_RATE
 
     async def get_position_mode(self, symbol: str, **kwargs: dict):
-        return self.DEFAULT_SYMBOL_POSITION_MODE
+        return constants.DEFAULT_SYMBOL_POSITION_MODE
 
     async def set_symbol_leverage(self, symbol: str, leverage: int):
         pass  # let trader update the contract
