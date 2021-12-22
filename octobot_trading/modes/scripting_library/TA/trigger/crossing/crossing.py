@@ -30,13 +30,17 @@ async def crossing_up(context=None, values_to_cross=None, crossing_values=None, 
             try:
                 was_below = crossing_values[-delay-2] < values_to_cross[-delay-2]
             except IndexError:
-                print("crossing_up: not enough values_to_cross, you need to provide same amount as delay")
+                print("crossing_up: not enough values_to_cross, length needs to be same as delay")
 
             didnt_cross_to_much = True
             if max_cross_down:
-                didnt_cross_to_much = ti.min(values_to_cross, max_cross_down_lookback) \
-                                      - await offset.get_offset(context, "-" + max_cross_down) \
-                                      < ti.min(crossing_values, max_cross_down_lookback)
+                try:
+                    didnt_cross_to_much = min(values_to_cross[-max_cross_down_lookback:]) \
+                                          - float(await offset.get_offset(context, "-" + max_cross_down)) \
+                                          < min(crossing_values[-max_cross_down_lookback:])
+                except ValueError:
+                    context.logger.info("crossing_up: not enough values_to_cross, length needs to be same "
+                                        "as max_cross_down_lookback")
             if was_below and didnt_cross_to_much:
                 for i in range(1, delay+2):
                     condition = crossing_values[-i] > values_to_cross[-i]
@@ -55,12 +59,16 @@ async def crossing_up(context=None, values_to_cross=None, crossing_values=None, 
                 was_below = lows[-delay - 2] < values_to_cross[-delay - 2]
                 is_currently_above = closes[-1] > values_to_cross[-1]
             except IndexError:
-                context.logger.info("crossing_up: not enough values_to_cross, you need to provide same amount as delay")
+                context.logger.info("crossing_up: not enough values_to_cross, length needs to be same as delay")
             didnt_cross_to_much = True
-            if max_cross_down:
-                didnt_cross_to_much = ti.min(values_to_cross, max_cross_down_lookback) \
-                                      - await offset.get_offset(context, "-" + max_cross_down) \
-                                      < ti.min(lows,max_cross_down_lookback)
+            if max_cross_down is not None:
+                try:
+                    didnt_cross_to_much = min(values_to_cross[-max_cross_down_lookback:]) \
+                                          - float(await offset.get_offset(context, "-" + max_cross_down)) \
+                                          < min(lows[-max_cross_down_lookback:])
+                except ValueError:
+                    context.logger.info("crossing_up: not enough values_to_cross, length needs to be same "
+                                        "as max_cross_down_lookback")
             if was_below and is_currently_above and didnt_cross_to_much:
                 for i in range(1, delay + 2):
                     condition = highs[-i] > values_to_cross[-i]
@@ -83,13 +91,17 @@ async def crossing_down(context=None, values_to_cross=None, crossing_values=None
             try:
                 was_above = crossing_values[-delay - 2] < values_to_cross[-delay - 2]
             except IndexError:
-                print("crossing_down: not enough values_to_cross, you need to provide same amount as delay")
+                print("crossing_down: not enough values_to_cross, length needs to be same as delay")
 
             didnt_cross_to_much = True
-            if max_cross_up:
-                didnt_cross_to_much = ti.max(values_to_cross, max_cross_up_lookback) \
-                                      + await offset.get_offset(context, "-" + max_cross_up) \
-                                      > ti.max(crossing_values, max_cross_up_lookback)
+            if max_cross_up is not None:
+                try:
+                    didnt_cross_to_much = max(values_to_cross[-max_cross_up_lookback:]) \
+                                          + float(await offset.get_offset(context, "-" + max_cross_up)) \
+                                          > max(crossing_values[-max_cross_up_lookback:])
+                except ValueError:
+                    context.logger.info("crossing_down: not enough values_to_cross, length needs to be same "
+                                        "as max_cross_up_lookback")
             if was_above and didnt_cross_to_much:
                 for i in range(1, delay + 2):
                     condition = crossing_values[-i] < values_to_cross[-i]
@@ -108,12 +120,16 @@ async def crossing_down(context=None, values_to_cross=None, crossing_values=None
                 was_above = highs[-delay - 2] > values_to_cross[-delay - 2]
                 is_currently_above = closes[-1] < values_to_cross[-1]
             except IndexError:
-                context.logger.info("crossing_down: not enough values_to_cross, you need to provide same amount as delay")
+                context.logger.info("crossing_down: not enough values_to_cross, length needs to be same as delay")
             didnt_cross_to_much = True
             if max_cross_up:
-                didnt_cross_to_much = ti.max(values_to_cross, max_cross_up_lookback) \
-                                      - await offset.get_offset(context, max_cross_up) \
-                                      < ti.max(highs, max_cross_up_lookback)
+                try:
+                    didnt_cross_to_much = max(values_to_cross[-max_cross_up_lookback:])  \
+                                          - float(await offset.get_offset(context, max_cross_up)) \
+                                          < max(highs[-max_cross_up_lookback:])
+                except ValueError:
+                    context.logger.info("crossing_down: not enough values_to_cross, length needs to be same "
+                                        "as max_cross_up_lookback")
             if was_above and is_currently_above and didnt_cross_to_much:
                 for i in range(1, delay + 2):
                     condition = lows[-i] < values_to_cross[-i]
