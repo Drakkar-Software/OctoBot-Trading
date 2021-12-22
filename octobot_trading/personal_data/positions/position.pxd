@@ -83,6 +83,7 @@ cdef class Position(util.Initializable):
     cdef object _update_size(self, object update_size)  # needs object to forward exceptions
     cdef void _check_and_update_size(self, object size_update)
     cdef void _update_margin(self)
+    cdef void _reset_entry_price(self)
     cdef void _update_side(self)
 
     cpdef bint is_order_increasing_size(self, object order)

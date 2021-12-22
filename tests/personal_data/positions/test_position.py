@@ -41,10 +41,51 @@ async def test_update_entry_price(future_trader_simulator_with_default_linear):
     assert position_inst.entry_price == constants.ZERO
     assert position_inst.mark_price == constants.ZERO
 
-    mark_price = decimal_random_price(1)
+    mark_price = decimal_random_price(constants.ONE)
     await position_inst.update(mark_price=mark_price, update_size=constants.ONE)
     assert position_inst.entry_price == mark_price
     assert position_inst.mark_price == mark_price
+
+
+async def test_update_entry_price_when_switching_side_on_one_way(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    symbol_contract = default_contract
+    position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    await position_inst.initialize()
+    position_inst.update_from_raw(
+        {
+            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
+
+    mark_price = decimal.Decimal(80)
+    await position_inst.update(mark_price=mark_price, update_size=decimal.Decimal(0.01))
+    assert position_inst.entry_price == mark_price
+    assert position_inst.mark_price == mark_price
+
+    # updating mark price
+    await position_inst.update(mark_price=decimal.Decimal(90))
+    assert position_inst.is_long()
+
+    # switching long to short with new mark price
+    mark_price = decimal.Decimal(100)
+    await position_inst.update(mark_price=mark_price, update_size=-decimal.Decimal(0.02))
+    assert position_inst.is_short()
+    assert position_inst.mark_price == mark_price
+    assert position_inst.entry_price == mark_price
+
+    # updating mark price
+    await position_inst.update(mark_price=decimal.Decimal(60))
+    assert position_inst.is_short()
+
+    # switching short to long with new mark price
+    mark_price = decimal.Decimal(50)
+    await position_inst.update(mark_price=mark_price, update_size=decimal.Decimal(0.03))
+    assert position_inst.is_long()
+    assert position_inst.mark_price == mark_price
+    assert position_inst.entry_price == mark_price
 
 
 async def test_update_update_quantity(future_trader_simulator_with_default_linear):
@@ -311,14 +352,15 @@ async def test_update_size_from_order_realized_pnl_position(future_trader_simula
     symbol_contract = default_contract
     symbol_contract.set_position_mode(is_one_way=True)
 
+    mark_price = decimal.Decimal(15)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
     position_inst.entry_price = decimal.Decimal(10)
-    await position_inst.update(update_size=-constants.ONE_HUNDRED)
+    await position_inst.update(mark_price=mark_price, update_size=-constants.ONE_HUNDRED)
 
     buy_limit = BuyLimitOrder(trader_inst)
     buy_limit.update(order_type=enums.TraderOrderType.BUY_LIMIT,
                      symbol=DEFAULT_FUTURE_SYMBOL,
-                     current_price=decimal.Decimal(15),
+                     current_price=mark_price,
                      quantity=constants.ONE,
                      price=decimal.Decimal(21))
 
@@ -326,7 +368,7 @@ async def test_update_size_from_order_realized_pnl_position(future_trader_simula
         with mock.patch.object(buy_limit, "get_total_fees", mock.Mock(return_value=5)):
             assert position_inst.update_from_order(buy_limit) == (constants.ONE, False)
         assert position_inst.size == decimal.Decimal("-99")
-        assert position_inst.entry_price == decimal.Decimal("10.10101010101010101010101010")
+        assert position_inst.entry_price == decimal.Decimal("15.15151515151515151515151515")
         assert position_inst.realised_pnl == decimal.Decimal("-5")
 
 

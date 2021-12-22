@@ -546,6 +546,13 @@ class Position(util.Initializable):
                 self.status = enums.PositionStatus.LIQUIDATING
                 await positions_states.create_position_state(self)
 
+    def _reset_entry_price(self):
+        """
+        Reset the entry price to ZERO and force entry price update
+        """
+        self.entry_price = constants.ZERO
+        self._update_entry_price_if_necessary(self.mark_price)
+
     def _update_side(self):
         """
         Checks if self.side still represents the position side
@@ -553,9 +560,13 @@ class Position(util.Initializable):
         """
         if self.symbol_contract.is_one_way_position_mode() or self.side is enums.PositionSide.UNKNOWN:
             if self.quantity >= constants.ZERO:
-                self.side = enums.PositionSide.LONG
+                if self.side is not enums.PositionSide.LONG:
+                    self.side = enums.PositionSide.LONG
+                    self._reset_entry_price()
             elif self.quantity < constants.ZERO:
-                self.side = enums.PositionSide.SHORT
+                if self.side is not enums.PositionSide.SHORT:
+                    self.side = enums.PositionSide.SHORT
+                    self._reset_entry_price()
             else:
                 self.side = enums.PositionSide.UNKNOWN
 
