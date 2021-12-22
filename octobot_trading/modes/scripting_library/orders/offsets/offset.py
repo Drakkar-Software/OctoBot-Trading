@@ -23,7 +23,7 @@ import octobot_trading.errors as errors
 
 async def get_offset(context, offset_in, side=None):
     if offset_in is None:
-        raise errors.InvalidArgumentError("offset is required") # todo do we need this?
+        raise errors.InvalidArgumentError("offset is required")
     offset_type, offset_value = dsl.parse_quantity(offset_in)
 
     if offset_type is dsl.QuantityType.DELTA:

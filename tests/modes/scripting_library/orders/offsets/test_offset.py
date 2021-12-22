@@ -35,7 +35,7 @@ async def test_get_offset(null_context):
     with pytest.raises(errors.InvalidArgumentError):
         await offset.get_offset(null_context, "1sdsqdq")
 
-    with mock.patch.object(exchange_public_data, "current_price", mock.AsyncMock(return_value=200)) \
+    with mock.patch.object(exchange_public_data, "current_live_price", mock.AsyncMock(return_value=200)) \
             as current_price_mock:
         with mock.patch.object(dsl, "parse_quantity",
                                mock.Mock(return_value=(dsl.QuantityType.DELTA, decimal.Decimal(10)))) \

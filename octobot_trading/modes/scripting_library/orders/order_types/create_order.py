@@ -66,7 +66,8 @@ async def create_order_instance(
 
 
 def _paired_order_is_closed(context, linked_to, one_cancels_the_other, tag):
-    if linked_to is not None and linked_to.is_closed():
+    linked_to_list = linked_to if isinstance(linked_to, list) else [linked_to]
+    if linked_to is not None and all(order.is_closed() for order in linked_to_list):
         return True
     if one_cancels_the_other:
         for order in context.just_created_orders:

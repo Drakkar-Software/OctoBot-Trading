@@ -43,18 +43,21 @@ async def test_get_amount(null_context):
                                mock.Mock(return_value=(dsl.QuantityType.DELTA, decimal.Decimal(2)))) \
                 as parse_quantity_mock:
             assert await amount.get_amount(null_context, "1", "buy") == decimal.Decimal(1)
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(2), "buy", False)
+            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal(2), "buy",
+                                                                  False, False, False)
             parse_quantity_mock.assert_called_once_with("1")
             adapt_amount_to_holdings_mock.reset_mock()
 
         with mock.patch.object(dsl, "parse_quantity",
                                mock.Mock(return_value=(dsl.QuantityType.PERCENT, decimal.Decimal(75)))) \
                 as parse_quantity_mock, \
-            mock.patch.object(exchange_private_data, "total_account_balance",
-                              mock.AsyncMock(return_value=decimal.Decimal(2))) \
+             mock.patch.object(exchange_private_data, "total_account_balance",
+                               mock.AsyncMock(return_value=decimal.Decimal(2))) \
                 as total_account_balance_mock:
-            assert await amount.get_amount(null_context, "50", "buy", use_total_holding=True) == decimal.Decimal(1)
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy", True)
+            assert await amount.get_amount(null_context, "50", "buy", use_total_holding=True,
+                                           reduce_only=True, is_stop_order=True) == decimal.Decimal(1)
+            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
+                                                                  True, True, True)
             parse_quantity_mock.assert_called_once_with("50")
             total_account_balance_mock.assert_called_once_with(null_context)
             adapt_amount_to_holdings_mock.reset_mock()
@@ -62,11 +65,12 @@ async def test_get_amount(null_context):
         with mock.patch.object(dsl, "parse_quantity",
                                mock.Mock(return_value=(dsl.QuantityType.AVAILABLE_PERCENT, decimal.Decimal(75)))) \
                 as parse_quantity_mock, \
-            mock.patch.object(exchange_private_data, "available_account_balance",
+             mock.patch.object(exchange_private_data, "available_account_balance",
                                mock.AsyncMock(return_value=decimal.Decimal(2))) \
                 as available_account_balance_mock:
             assert await amount.get_amount(null_context, "50", "buy") == decimal.Decimal(1)
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy", False)
+            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
+                                                                  False, False, False)
             parse_quantity_mock.assert_called_once_with("50")
             available_account_balance_mock.assert_called_once_with(null_context, "buy")
             adapt_amount_to_holdings_mock.reset_mock()
@@ -74,11 +78,12 @@ async def test_get_amount(null_context):
         with mock.patch.object(dsl, "parse_quantity",
                                mock.Mock(return_value=(dsl.QuantityType.POSITION_PERCENT, decimal.Decimal(75)))) \
                 as parse_quantity_mock, \
-            mock.patch.object(exchange_private_data, "open_position_size",
-                              mock.Mock(return_value=decimal.Decimal(2))) \
+             mock.patch.object(exchange_private_data, "open_position_size",
+                               mock.Mock(return_value=decimal.Decimal(2))) \
                 as open_position_size_mock:
             assert await amount.get_amount(null_context, "50", "buy") == decimal.Decimal(1)
-            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy", False)
+            adapt_amount_to_holdings_mock.assert_called_once_with(null_context, decimal.Decimal("1.5"), "buy",
+                                                                  False, False, False)
             parse_quantity_mock.assert_called_once_with("50")
             open_position_size_mock.assert_called_once_with(null_context, "buy",
                                                             amount_type=commons_constants.PORTFOLIO_AVAILABLE)

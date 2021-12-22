@@ -39,7 +39,7 @@ def _get_locked_amount_in_stop_orders(context, side):
 
 
 async def available_account_balance(context, side=trading_enums.TradeOrderSide.BUY.value, use_total_holding=False,
-                                    reduce_only=False, is_stop_order=False):
+                                    is_stop_order=False):
     portfolio_type = commons_constants.PORTFOLIO_TOTAL if use_total_holding else commons_constants.PORTFOLIO_AVAILABLE
     current_symbol_holding, current_market_holding, market_quantity, current_price, symbol_market = \
         await trading_personal_data.get_pre_order_data(context.exchange_manager,
@@ -62,7 +62,7 @@ async def available_account_balance(context, side=trading_enums.TradeOrderSide.B
 
 async def adapt_amount_to_holdings(context, amount, side, use_total_holding, reduce_only, is_stop_order):
     available_acc_bal = await available_account_balance(context, side, use_total_holding=use_total_holding,
-                                                        reduce_only=reduce_only, is_stop_order=is_stop_order)
+                                                        is_stop_order=is_stop_order)
     if available_acc_bal > amount:
         return amount
     else:
