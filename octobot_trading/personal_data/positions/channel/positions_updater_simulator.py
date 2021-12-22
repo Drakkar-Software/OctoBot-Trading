@@ -38,6 +38,20 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
             .new_consumer(self.handle_funding_rate)
         self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
 
+    async def initialize_contracts(self) -> None:
+        """
+        Initialize exchange FutureContracts required to manage positions
+        """
+        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            self.channel.exchange_manager.exchange.create_pair_contract(
+                pair=pair,
+                current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
+                margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
+                contract_type=constants.DEFAULT_SYMBOL_CONTRACT_TYPE,
+                position_mode=constants.DEFAULT_SYMBOL_POSITION_MODE,
+                maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
+                maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE)
+
     async def handle_funding_rate(self, exchange: str,
                                   exchange_id: str,
                                   cryptocurrency: str,

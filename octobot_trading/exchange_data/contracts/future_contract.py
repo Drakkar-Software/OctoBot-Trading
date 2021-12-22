@@ -25,7 +25,7 @@ class FutureContract(margin_contract.MarginContract):
                  maximum_leverage=constants.ONE,
                  current_leverage=constants.ONE,
                  position_mode=enums.PositionMode.ONE_WAY,
-                 maintenance_margin_rate=constants.CONFIG_DEFAULT_MAINTENANCE_MARGIN_RATE,
+                 maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
                  minimum_tick_size=0.5):
         super().__init__(pair, margin_type=margin_type, contract_size=contract_size,
                          maximum_leverage=maximum_leverage, current_leverage=current_leverage)
