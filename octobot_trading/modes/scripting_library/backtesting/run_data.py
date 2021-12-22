@@ -108,7 +108,6 @@ async def backtesting_data(meta_database, data_label):
     return None
 
 
-#TODO tests
 async def plot_historical_portfolio_value(meta_database, plotted_element, exchange=None, own_yaxis=False):
     price_data, trades_data, moving_portfolio_data = await _load_historical_values(meta_database, exchange)
     time_data = []
@@ -116,7 +115,6 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
     pairs = list(trades_data)
     if pairs:
         pair = pairs[0]
-        symbol, ref_market = symbol_util.split_symbol(pair)
         candles = price_data[pair]
         time_data = [candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] for candle in candles]
         value_data = [0] * len(candles)
@@ -129,7 +127,7 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
                 # part 1: compute portfolio total value after trade update when any
                 for trade in trades_data[pair]:
                     if trade[trading_enums.PlotAttributes.X.value] == ref_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value]:
-                        if trade[trading_enums.PlotAttributes.SIDE.value] == "sell":
+                        if trade[trading_enums.PlotAttributes.SIDE.value] == trading_enums.TradeOrderSide.SELL.value:
                             moving_portfolio_data[symbol] -= trade[trading_enums.PlotAttributes.VOLUME.value]
                             moving_portfolio_data[ref_market] += trade[trading_enums.PlotAttributes.VOLUME.value] * \
                                 trade[trading_enums.PlotAttributes.Y.value]
@@ -159,7 +157,6 @@ async def plot_historical_portfolio_value(meta_database, plotted_element, exchan
         own_yaxis=own_yaxis)
 
 
-#TODO tests
 async def _get_historical_pnl(meta_database, plotted_element, cumulative, exchange=None, x_as_trade_count=True, own_yaxis=False):
     # PNL:
     # 1. open position: consider position opening fee from PNL
