@@ -377,6 +377,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
 
     async def _pre_script_call(self, context):
         await scripting_library.user_input(context, trading_constants.CONFIG_VISIBLE_LIVE_HISTORY, "int", 800)
+        if context.exchange_manager.is_future:
+            await scripting_library.user_select_leverage(context)
 
     @contextlib.asynccontextmanager
     async def get_metadata_writer(self, with_lock):

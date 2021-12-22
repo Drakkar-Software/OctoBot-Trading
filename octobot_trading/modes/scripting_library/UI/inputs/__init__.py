@@ -17,3 +17,4 @@
 from .user_inputs import *
 from .select_time_frame import *
 from .select_candle import *
+from .future_contracts import *

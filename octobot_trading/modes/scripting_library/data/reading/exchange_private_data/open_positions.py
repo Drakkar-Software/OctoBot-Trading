@@ -18,6 +18,7 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_commons.constants as commons_constants
 import octobot_trading.personal_data as personal_data
 import octobot_trading.constants as trading_constants
+import octobot_trading.enums as trading_enums
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.modes.scripting_library.orders.offsets.offset as offsets
 import octobot_trading.modes.scripting_library.orders.position_size.amount as amounts
@@ -26,13 +27,14 @@ import octobot_trading.modes.scripting_library.orders.position_size.amount as am
 # returns negative values when in a short position
 def open_position_size(
         context,
-        side="both",
+        side=trading_enums.PositionSide.BOTH.value,
         symbol=None,
         amount_type=commons_constants.PORTFOLIO_TOTAL
 ):
-    if context.exchange_manager.is_future:
-        raise NotImplementedError("future is not implemented")
     symbol = symbol or context.symbol
+    if context.exchange_manager.is_future:
+        side = trading_enums.PositionSide(side)
+        return context.exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(symbol, side).size
     currency = symbol_util.split_symbol(symbol)[0]
     portfolio = context.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
     return portfolio.get_currency_portfolio(currency).total if amount_type == commons_constants.PORTFOLIO_TOTAL \
@@ -124,8 +126,10 @@ async def average_open_pos_entry(
 ):
     # todo for spot: collect data to get average entry and use input field for already existing funds
     if context.exchange_manager.is_future:
-        raise NotImplementedError("future is not implemented")
+        return context.exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(context.symbol,
+                                                                                                     side).entry_price
     # for spot just get the current currency value
+    # TODO: get real average entry price (for now position entry price is giving a different result)
     return await personal_data.get_up_to_date_price(context.exchange_manager, context.symbol,
                                                     timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
 

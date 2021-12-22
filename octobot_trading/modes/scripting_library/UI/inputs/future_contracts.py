@@ -13,28 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 
-import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_trading.modes.scripting_library.UI.inputs.user_inputs as user_inputs
 
 
-async def user_select_time_frame(
+async def user_select_leverage(
         ctx,
-        def_val="1h",
-        name="Timeframe",
-
-):
-    available_timeframes = time_frame_manager.sort_time_frames(ctx.exchange_manager.client_time_frames)
-    selected_timeframe = await user_inputs.user_input(ctx, name, "options", def_val, options=available_timeframes)
-    return selected_timeframe
-
-
-async def user_multi_select_time_frame(
-        ctx,
-        def_val="1h",
-        name="Timeframe",
-
-):
-    available_timeframes = time_frame_manager.sort_time_frames(ctx.exchange_manager.client_time_frames)
-    selected_timeframe = await user_inputs.user_input(ctx, name, "options", def_val, options=available_timeframes)
-    return selected_timeframe
+        def_val=1,
+        name="leverage"):
+    selected_leverage = await user_inputs.user_input(ctx, name, "int", def_val)
+    if ctx.exchange_manager.is_future:
+        side = None
+        # TODO remove this try when bybit tentacle is up
+        try:
+            await ctx.exchange_manager.trader.set_leverage(ctx.symbol, side, decimal.Decimal(str(selected_leverage)))
+        except AttributeError:
+            ctx.logger.warning("TODO: rebase tentacles when bybit exchange is up")
+    return selected_leverage
