@@ -327,7 +327,7 @@ async def managed_order(ctx, side="long", orders_settings=None):
             profit_in_p = managed_orders_settings.tp_rr * sl_in_p
             if not managed_orders_settings.use_scaled_tp:
                 await order_types.limit(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position,
-                                        offset=f"{profit_in_p}%e", one_cancels_the_other=True, tag=exit_order_tag)
+                                        offset=f"{profit_in_p}%", one_cancels_the_other=True, tag=exit_order_tag)
             else:
                 scale_from = 10  # todo
                 scale_to = 10  # todo
@@ -339,5 +339,5 @@ async def managed_order(ctx, side="long", orders_settings=None):
         # take profit
         elif managed_orders_settings.tp_type == managed_orders_settings.tp_types["tp_based_on_p_title"]:
             await order_types.limit(ctx, side=exit_side, amount=exit_amount, target_position=exit_target_position,
-                                    offset=f"{managed_orders_settings.tp_in_p}%e", one_cancels_the_other=True,
+                                    offset=f"{managed_orders_settings.tp_in_p}%", one_cancels_the_other=True,
                                     tag=exit_order_tag)

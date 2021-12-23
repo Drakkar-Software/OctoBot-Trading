@@ -16,7 +16,7 @@
 
 import asyncio
 import octobot_trading.api as api
-from octobot_trading.modes.scripting_library import current_live_price
+import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 
 
 async def wait_for_price(
@@ -30,7 +30,7 @@ async def wait_for_price(
     offset_entry_percent=None,
     order_tag=None
 ):
-    price = await current_live_price(context.traded_pair or pair, context.exchange_manager)
+    price = await exchange_public_data.current_live_price(context.traded_pair or pair, context.exchange_manager)
     target_price = absolute
     if offset is not None:
         target_price = price + offset
@@ -38,11 +38,11 @@ async def wait_for_price(
         target_price = price * (1 + (offset_percent / 100))
     if offset_entry is not None:
         order = None# get_order_from_tag(context.exchange_manager, order_tag) #TODO order tags
-        entry_price = order.filled_price
+        entry_price = order #.filled_price
         target_price = entry_price + offset
     if offset_entry_percent is not None:
         order = None #get_order_from_tag(context.exchange_manager, order_tag) #TODO order tags
-        entry_price = order.filled_price
+        entry_price = order #.filled_price
         target_price = entry_price * (1 + (offset_percent / 100))
     if target_price is None:
         raise RuntimeError("No offset has been provided")

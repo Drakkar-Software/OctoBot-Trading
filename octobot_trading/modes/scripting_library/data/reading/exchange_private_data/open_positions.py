@@ -124,11 +124,37 @@ async def average_open_pos_entry(
         context,
         side="long"
 ):
-    # todo for spot: collect data to get average entry and use input field for already existing funds
     if context.exchange_manager.is_future:
+        is_hedge_mode = False  # todo
+        # todo solve side buy sell from orders
+        if is_hedge_mode:
+            if side == "long":
+                side = trading_enums.PositionSide.LONG
+            elif side == "short":
+                side = trading_enums.PositionSide.SHORT
+            elif side == "both":
+                raise RuntimeError("average_open_pos_entry: both sides are not implemented yet for hedged mode")
+            else:
+                raise RuntimeError('average_open_pos_entry: side needs to be "long", "short" or "both"')
+
+        elif not is_hedge_mode:
+            if side == "long":
+                if is_position_long(context):
+                    side = trading_enums.PositionSide.BOTH
+            elif side == "short":
+                if is_position_short(context):
+                    side = trading_enums.PositionSide.BOTH
+            elif side == "both":
+                side = trading_enums.PositionSide.BOTH
+            else:
+                raise RuntimeError('average_open_pos_entry: side needs to be "long", "short" or "both"')
+
         return context.exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(context.symbol,
                                                                                                      side).entry_price
+
+
     # for spot just get the current currency value
+    # todo for spot: collect data to get average entry and use input field for already existing funds
     # TODO: get real average entry price (for now position entry price is giving a different result)
     return await personal_data.get_up_to_date_price(context.exchange_manager, context.symbol,
                                                     timeout=trading_constants.ORDER_DATA_FETCHING_TIMEOUT)
