@@ -289,8 +289,8 @@ async def managed_order(ctx, side="long", orders_settings=None):
             exit_side = "sell" if side == "buy" else "buy"
             exit_amount = position_size_market
             order_tag_id = random.randint(0, 999999999) # {exchange_public_data.current_candle_time(ctx)})"  # todo use something unique to avoid canceling eventual other orders in the same candle
-            exit_order_tag = f"managed_order {side} exit (id: {order_tag_id}"
-            entry_order_tag = f"managed_order {side} exit (id: {order_tag_id}"
+            exit_order_tag = f"managed_order {side} exit (id: {order_tag_id})"
+            entry_order_tag = f"managed_order {side} entry (id: {order_tag_id})"
 
         # entry
 
