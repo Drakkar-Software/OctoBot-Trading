@@ -92,7 +92,19 @@ from octobot_trading.personal_data.trades cimport (
     TradesUpdater,
     Trade,
 )
-
+from octobot_trading.personal_data cimport transactions
+from octobot_trading.personal_data.transactions cimport (
+    TransactionsManager,
+    Transaction,
+    BlockchainTransaction,
+    FeeTransaction,
+    RealisedPnlTransaction,
+    TransferTransaction,
+    create_blockchain_transaction,
+    create_realised_pnl_transaction,
+    create_fee_transaction,
+    create_transfer_transaction,
+)
 from octobot_trading.personal_data cimport exchange_personal_data
 from octobot_trading.personal_data.exchange_personal_data cimport (
     ExchangePersonalData,
@@ -171,4 +183,14 @@ __all__ = [
     "TradesUpdater",
     "Trade",
     "ExchangePersonalData",
+    "TransactionsManager",
+    "Transaction",
+    "BlockchainTransaction",
+    "FeeTransaction",
+    "RealisedPnlTransaction",
+    "TransferTransaction",
+    "create_blockchain_transaction",
+    "create_realised_pnl_transaction",
+    "create_fee_transaction",
+    "create_transfer_transaction",
 ]

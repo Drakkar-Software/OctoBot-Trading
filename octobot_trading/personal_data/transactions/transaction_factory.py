@@ -26,7 +26,7 @@ def create_blockchain_transaction(exchange_manager, currency,
     blockchain_transaction = transaction_types.BlockchainTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
-        symbol=currency,
+        currency=currency,
         blockchain_type=blockchain_type,
         blockchain_transaction_id=blockchain_transaction_id,
         blockchain_transaction_status=blockchain_transaction_status,
@@ -39,12 +39,13 @@ def create_blockchain_transaction(exchange_manager, currency,
     return blockchain_transaction
 
 
-def create_realised_pnl_transaction(exchange_manager, symbol,
+def create_realised_pnl_transaction(exchange_manager, currency, symbol,
                                     realised_pnl=constants.ZERO,
                                     is_closed_pnl=False):
     realised_pnl_transaction = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
+        currency=currency,
         symbol=symbol,
         realised_pnl=realised_pnl,
         is_closed_pnl=is_closed_pnl)
@@ -52,13 +53,14 @@ def create_realised_pnl_transaction(exchange_manager, symbol,
     return realised_pnl_transaction
 
 
-def create_fee_transaction(exchange_manager, symbol,
+def create_fee_transaction(exchange_manager, currency, symbol,
                            quantity=constants.ZERO,
                            order_id=None,
                            funding_rate=constants.ZERO):
     fee_transaction = transaction_types.FeeTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
+        currency=currency,
         symbol=symbol,
         quantity=quantity,
         order_id=order_id,
@@ -67,10 +69,11 @@ def create_fee_transaction(exchange_manager, symbol,
     return fee_transaction
 
 
-def create_transfer_transaction(exchange_manager, symbol):
+def create_transfer_transaction(exchange_manager, currency, symbol):
     transfer_transaction = transaction_types.TransferTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
+        currency=currency,
         symbol=symbol)
     _upsert_transaction_instance(exchange_manager, transfer_transaction)
     return transfer_transaction

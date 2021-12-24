@@ -114,7 +114,7 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = await self.portfolio_manager.handle_balance_update_from_funding(
                 position=position, funding_rate=funding_rate, require_exchange_update=require_exchange_update)
-            transaction_factory.create_fee_transaction(self.exchange_manager, position.symbol,
+            transaction_factory.create_fee_transaction(self.exchange_manager, position.get_currency(), position.symbol,
                                                        quantity=position.value * funding_rate,
                                                        funding_rate=funding_rate)
             if should_notify:

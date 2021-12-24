@@ -18,11 +18,11 @@ import octobot_trading.personal_data.transactions.transaction as transaction
 
 
 class FeeTransaction(transaction.Transaction):
-    def __init__(self, exchange_name, creation_time, symbol, quantity, order_id=None, funding_rate=constants.ZERO):
+    def __init__(self, exchange_name, creation_time, currency, symbol, quantity, order_id=None, funding_rate=constants.ZERO):
         self.quantity = quantity
         self.order_id = order_id
         self.funding_rate = funding_rate
-        super().__init__(exchange_name, creation_time, symbol)
+        super().__init__(exchange_name, creation_time, currency, symbol=symbol)
 
     def generate_id(self):
         return f"{self.exchange_name}-{self.order_id if self.order_id else self.symbol + '-' + str(self.creation_time)}"
