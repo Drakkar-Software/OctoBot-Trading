@@ -23,6 +23,8 @@ import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_m
 import octobot_trading.personal_data.positions.positions_manager as positions_manager
 import octobot_trading.personal_data.orders.orders_manager as orders_manager
 import octobot_trading.personal_data.trades.trades_manager as trades_manager
+import octobot_trading.personal_data.transactions.transactions_manager as transactions_manager
+import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
 import octobot_trading.util as util
 
 
@@ -36,10 +38,12 @@ class ExchangePersonalData(util.Initializable):
 
         self.trader = None
         self.exchange = None
+
         self.portfolio_manager = None
         self.trades_manager = None
         self.orders_manager = None
         self.positions_manager = None
+        self.transactions_manager = None
 
     async def initialize_impl(self):
         self.trader = self.exchange_manager.trader
@@ -51,6 +55,7 @@ class ExchangePersonalData(util.Initializable):
                 self.trades_manager = trades_manager.TradesManager(self.trader)
                 self.orders_manager = orders_manager.OrdersManager(self.trader)
                 self.positions_manager = positions_manager.PositionsManager(self.trader)
+                self.transactions_manager = transactions_manager.TransactionsManager()
                 await self.portfolio_manager.initialize()
                 await self.trades_manager.initialize()
                 await self.orders_manager.initialize()
@@ -109,6 +114,9 @@ class ExchangePersonalData(util.Initializable):
         try:
             changed: bool = await self.portfolio_manager.handle_balance_update_from_funding(
                 position=position, funding_rate=funding_rate, require_exchange_update=require_exchange_update)
+            transaction_factory.create_fee_transaction(self.exchange_manager, position.symbol,
+                                                       quantity=position.value * funding_rate,
+                                                       funding_rate=funding_rate)
             if should_notify:
                 await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
             return changed
@@ -309,3 +317,5 @@ class ExchangePersonalData(util.Initializable):
             self.positions_manager.clear()
         if self.trades_manager is not None:
             self.trades_manager.clear()
+        if self.transactions_manager is not None:
+            self.transactions_manager.clear()
