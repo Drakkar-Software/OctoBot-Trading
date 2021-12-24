@@ -257,13 +257,13 @@ class Position(util.Initializable):
 
         # Calculates position quantity update from order
         size_update = self._calculates_size_update_from_filled_order(order, size_to_close)
-        is_increasing_position_size = self._is_update_increasing_size(size_update=size_update)
 
         # Updates position average entry price from order
         self.update_average_entry_price(size_update, order.filled_price)
 
-        self._update_size(size_update)
-        return size_update, is_increasing_position_size
+        # update size and realised pnl
+        has_increase_position_size = self._update_size(size_update)
+        return size_update, has_increase_position_size
 
     def _update_realized_pnl_from_order(self, order):
         """
@@ -303,14 +303,29 @@ class Position(util.Initializable):
         if self.is_idle():
             return True
         if self.is_long():
-            return size_update > 0
-        return size_update < 0
+            return size_update > constants.ZERO
+        return size_update < constants.ZERO
+
+    def _is_update_closing(self, size_update):
+        """
+        :param size_update: the size update
+        :return: True if this update will close the position
+        """
+        if self.is_idle():
+            return True
+        if self.is_long():
+            return self.size + size_update <= constants.ZERO
+        return self.size + size_update >= constants.ZERO
 
     def _update_size(self, update_size):
         """
         Updates position size and triggers size related attributes update
         :param update_size: the size quantity
+        :return: True if the update increased position size
         """
+        is_update_increasing_position_size = self._is_update_increasing_size(update_size)
+        if not is_update_increasing_position_size:
+            self._update_realized_pnl_from_size_update(update_size, is_closing=self._is_update_closing(update_size))
         self._check_and_update_size(update_size)
         self._update_quantity()
         self._update_side()
@@ -320,6 +335,19 @@ class Position(util.Initializable):
             self.update_liquidation_price()
             self.update_value()
             self.update_pnl()
+        return is_update_increasing_position_size
+
+    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False):
+        """
+        Updates the position realized pnl from update size
+        :param size_update: the position update size
+        :param is_closing: True when the position will be closed after size update
+        """
+        try:
+            realised_pnl_update = -size_update / self.size * self.unrealised_pnl
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            realised_pnl_update = constants.ZERO
+        self.realised_pnl += realised_pnl_update
 
     def _check_and_update_size(self, size_update):
         """
@@ -582,9 +610,10 @@ class Position(util.Initializable):
                 f"Mark price : {round(self.mark_price, 10).normalize()} | "
                 f"Entry price : {round(self.entry_price, 10).normalize()} | "
                 f"Margin : {round(self.margin, 10).normalize()} {currency} | "
-                f"Unrealized PNL : {round(self.unrealised_pnl, 14).normalize()} {currency} "
+                f"Unrealised PNL : {round(self.unrealised_pnl, 14).normalize()} {currency} "
                 f"({round(self.get_unrealised_pnl_percent(), 3)}%) | "
                 f"Liquidation price : {round(self.liquidation_price, 10).normalize()} | "
+                f"Realised PNL : {round(self.realised_pnl, 14).normalize()} {currency} "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} "
                 f"({self.symbol_contract.position_mode.value})")
 
