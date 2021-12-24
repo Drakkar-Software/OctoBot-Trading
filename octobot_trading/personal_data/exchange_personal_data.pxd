@@ -19,6 +19,7 @@ cimport octobot_trading.personal_data.orders.order as order_class
 cimport octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 cimport octobot_trading.personal_data.positions.positions_manager as positions_manager
 cimport octobot_trading.personal_data.trades.trades_manager as trades_manager
+cimport octobot_trading.personal_data.transactions.transactions_manager as transactions_manager
 cimport octobot_trading.util as util
 
 cdef class ExchangePersonalData(util.Initializable):
@@ -34,6 +35,7 @@ cdef class ExchangePersonalData(util.Initializable):
     cdef public trades_manager.TradesManager trades_manager
     cdef public orders_manager.OrdersManager orders_manager
     cdef public positions_manager.PositionsManager positions_manager
+    cdef public transactions_manager.TransactionsManager transactions_manager
 
     cpdef object get_order_portfolio(self, order_class.Order order)
     cpdef void clear(self)
