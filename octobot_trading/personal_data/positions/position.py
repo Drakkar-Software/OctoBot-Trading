@@ -18,6 +18,7 @@ import decimal
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position_util as position_util
 import octobot_trading.personal_data.positions.states as positions_states
+import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
 import octobot_trading.util as util
 import octobot_trading.constants as constants
 
@@ -345,6 +346,11 @@ class Position(util.Initializable):
         """
         try:
             realised_pnl_update = -size_update / self.size * self.unrealised_pnl
+            transaction_factory.create_realised_pnl_transaction(self.exchange_manager,
+                                                                self.get_currency(),
+                                                                self.symbol,
+                                                                realised_pnl=realised_pnl_update,
+                                                                is_closed_pnl=is_closing)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             realised_pnl_update = constants.ZERO
         self.realised_pnl += realised_pnl_update
@@ -400,6 +406,12 @@ class Position(util.Initializable):
             return constants.ONE / self.symbol_contract.current_leverage
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
+
+    def get_currency(self):
+        """
+        :return: position currency
+        """
+        return self.currency if self.symbol_contract.is_inverse_contract() else self.market
 
     def calculate_maintenance_margin(self):
         raise NotImplementedError("calculate_maintenance_margin not implemented")
@@ -602,7 +614,7 @@ class Position(util.Initializable):
         return self.to_string()
 
     def to_string(self):
-        currency = self.currency if self.symbol_contract.is_inverse_contract() else self.market
+        currency = self.get_currency()
         return (f"{self.symbol} | "
                 f"Size : {round(self.size, 10).normalize()} "
                 f"({round(self.value, 10).normalize()} {currency}) "

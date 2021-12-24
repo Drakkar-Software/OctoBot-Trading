@@ -18,5 +18,5 @@ import octobot_trading.personal_data.transactions.transaction as transaction
 
 
 class TransferTransaction(transaction.Transaction):
-    def __init__(self, exchange_name, creation_time, symbol):
-        super().__init__(exchange_name, creation_time, symbol)
+    def __init__(self, exchange_name, creation_time, currency, symbol):
+        super().__init__(exchange_name, creation_time, currency, symbol=symbol)

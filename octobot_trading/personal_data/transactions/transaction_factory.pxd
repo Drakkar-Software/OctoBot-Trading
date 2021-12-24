@@ -18,7 +18,7 @@
 cimport octobot_trading.personal_data.transactions.types as transaction_types
 
 cpdef transaction_types.BlockchainTransaction create_blockchain_transaction(object exchange_manager,
-                                                                            str symbol,
+                                                                            str currency,
                                                                             object blockchain_type,
                                                                             str blockchain_transaction_id,
                                                                             object blockchain_transaction_status=*,
@@ -27,14 +27,18 @@ cpdef transaction_types.BlockchainTransaction create_blockchain_transaction(obje
                                                                             object quantity=*,
                                                                             object transaction_fee=*)
 cpdef transaction_types.RealisedPnlTransaction create_realised_pnl_transaction(object exchange_manager,
+                                                                               str currency,
                                                                                str symbol,
                                                                                object realised_pnl=*,
                                                                                bint is_closed_pnl=*)
 cpdef transaction_types.FeeTransaction create_fee_transaction(object exchange_manager,
+                                                              str currency,
                                                               str symbol,
                                                               object quantity=*,
                                                               str order_id=*,
                                                               object funding_rate=*)
-cpdef transaction_types.TransferTransaction create_transfer_transaction(object exchange_manager, str symbol)
+cpdef transaction_types.TransferTransaction create_transfer_transaction(object exchange_manager,
+                                                                        str currency,
+                                                                        str symbol)
 
 cdef void _upsert_transaction_instance(object exchange_manager, object transaction)
