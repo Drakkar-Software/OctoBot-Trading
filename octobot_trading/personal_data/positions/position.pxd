@@ -106,6 +106,7 @@ cdef class Position(util.Initializable):
     cpdef object get_two_way_taker_fee(self)
     cpdef object get_order_cost(self)
     cpdef object get_fee_to_open(self)
+    cpdef str get_currency(self)
     cpdef void update_fee_to_close(self)
     cpdef bint is_open(self)
     cpdef bint is_liquidated(self)

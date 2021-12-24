@@ -18,8 +18,10 @@ import octobot_trading.personal_data.transactions.transaction as transaction
 
 
 class RealisedPnlTransaction(transaction.Transaction):
-    def __init__(self, exchange_name, creation_time, symbol, realised_pnl,
-                 is_closed_pnl=False):
-        super().__init__(exchange_name, creation_time, symbol)
+    def __init__(self, exchange_name, creation_time, currency, symbol, realised_pnl, is_closed_pnl=False):
+        super().__init__(exchange_name, creation_time, currency, symbol=symbol)
         self.realised_pnl = realised_pnl
         self.is_closed_pnl = is_closed_pnl
+
+    def generate_id(self):
+        return f"{self.exchange_name}-{self.symbol + '-' + str(self.creation_time)}"

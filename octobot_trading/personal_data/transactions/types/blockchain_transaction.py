@@ -25,7 +25,6 @@ class BlockchainTransaction(transaction.Transaction):
                  destination_address=None,
                  quantity=constants.ZERO,
                  transaction_fee=constants.ZERO):
-        self.currency = currency
         self.source_address = source_address
         self.destination_address = destination_address
         self.blockchain_transaction_id = blockchain_transaction_id
@@ -33,7 +32,7 @@ class BlockchainTransaction(transaction.Transaction):
         self.blockchain_transaction_status = blockchain_transaction_status
         self.quantity = quantity
         self.transaction_fee = transaction_fee
-        super().__init__(exchange_name, creation_time)
+        super().__init__(exchange_name, creation_time, currency)
 
     def generate_id(self):
         # TODO: id before transaction_id exists
