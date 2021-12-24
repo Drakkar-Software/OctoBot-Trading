@@ -101,6 +101,14 @@ class PositionStatus(enum.Enum):
     ADL = "auto_deleveraging"
 
 
+class BlockchainTransactionStatus(enum.Enum):
+    CREATED = "created"
+    CONFIRMING = "confirming"
+    REPLACED = "replaced"
+    FAIL = "fail"
+    SUCCESS = "success"
+
+
 class TraderOrderType(enum.Enum):
     BUY_MARKET = "buy_market"
     BUY_LIMIT = "buy_limit"
