@@ -23,6 +23,7 @@ import asyncio
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.enums as commons_enums
+import octobot_commons.errors as commons_errors
 import octobot_commons.constants as commons_constants
 import octobot_commons.channels_name as channels_name
 import async_channel.channels as channels
@@ -354,7 +355,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise
-        except errors.MissingCandlesError:
+        except commons_errors.MissingDataError:
             initialized = False
         except Exception as e:
             self.logger.exception(e, True, f"Error when running script: {e}")

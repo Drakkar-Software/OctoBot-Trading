@@ -104,12 +104,6 @@ class UnreachableExchange(Exception):
     """
 
 
-class MissingCandlesError(Exception):
-    """
-    Raised when there is not enough available candles
-    """
-
-
 class InvalidArgumentError(Exception):
     """
     Raised when a keyword is called with invalid arguments
