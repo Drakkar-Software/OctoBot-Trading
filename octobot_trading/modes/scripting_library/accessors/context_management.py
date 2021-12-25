@@ -76,6 +76,16 @@ class Context:
         self.plot_orders = False
         self.cache_manager = databases.CacheManager(database_adaptor=databases.TinyDBAdaptor)
         self.just_created_orders = []
+        self.nested_config_name = None
+
+    @contextlib.contextmanager
+    def local_nested_config_name(self, nested_config_name):
+        previous_config_name = self.nested_config_name
+        self.nested_config_name = nested_config_name
+        try:
+            yield self
+        finally:
+            self.nested_config_name = previous_config_name
 
     @staticmethod
     def minimal(trading_mode, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):
@@ -100,6 +110,30 @@ class Context:
             None,
             backtesting_id,
             optimizer_id,
+        )
+
+    def copy(self, tentacle=None):
+        return Context(
+            tentacle or self.tentacle,
+            self.exchange_manager,
+            self.trader,
+            self.exchange_name,
+            self.symbol,
+            self.matrix_id,
+            self.cryptocurrency,
+            self.signal_symbol,
+            self.time_frame,
+            self.logger,
+            self.run_data_writer,
+            self.orders_writer,
+            self.trades_writer,
+            self.symbol_writer,
+            self.trading_mode,
+            self.trigger_cache_timestamp,
+            self.trigger_source,
+            self.trigger_value,
+            self.backtesting_id,
+            self.optimizer_id
         )
 
     def get_cache(self, tentacle_name=None, cache_type=databases.CacheTimestampDatabase):

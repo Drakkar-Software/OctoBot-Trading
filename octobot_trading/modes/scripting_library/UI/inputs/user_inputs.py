@@ -25,16 +25,50 @@ async def user_input(
     min_val=None,
     max_val=None,
     options=None,
+    config_name=None,
     not_important=False  # todo when true hide from optimizer inputs and all tables
 ):
     config = ctx.tentacle.trading_config if hasattr(ctx.tentacle, "trading_config") else ctx.tentacle.specific_config
-    value = config.get(name.replace(" ", "_"), def_val) if config else def_val
+    try:
+        value = config[name.replace(" ", "_")]
+    except KeyError:
+        config[name.replace(" ", "_")] = def_val
+        value = def_val
+    await save_user_input(
+        ctx,
+        name,
+        input_type,
+        value,
+        def_val,
+        min_val=min_val,
+        max_val=max_val,
+        options=options,
+        config_name=config_name,
+        not_important=not_important
+    )
+    return value
+
+
+async def save_user_input(
+        ctx,
+        name,
+        input_type,
+        value,
+        def_val,
+        min_val=None,
+        max_val=None,
+        options=None,
+        config_name=None,
+        not_important=False
+):
+    config_name = config_name or ctx.nested_config_name
     if not ctx.run_data_writer.are_data_initialized and not await ctx.run_data_writer.contains_row(
             enums.DBTables.INPUTS.value,
             {
                 "name": name,
                 "tentacle": ctx.tentacle.get_name(),
-                "input_type": input_type
+                "input_type": input_type,
+                "config_name": config_name
             }):
         tentacle_type = "trading_mode" if isinstance(ctx.tentacle, modes.AbstractTradingMode) else "evaluator"
         await ctx.run_data_writer.log(
@@ -42,6 +76,7 @@ async def user_input(
             {
                 "name": name,
                 "input_type": input_type,
+                "config_name": config_name,
                 "value": value,
                 "def_val": def_val,
                 "min_val": min_val,
@@ -51,7 +86,6 @@ async def user_input(
                 "tentacle": ctx.tentacle.get_name(),
             }
         )
-    return value
 
 
 async def external_user_input(

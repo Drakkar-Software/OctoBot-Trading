@@ -14,8 +14,12 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import octobot_commons.constants as commons_constants
+import octobot_commons.errors as commons_errors
 import octobot_evaluators.matrix as matrix
 import octobot_evaluators.enums as evaluators_enums
+import octobot_tentacles_manager.api as tentacles_manager_api
+import octobot_trading.modes.scripting_library.UI.inputs as inputs
 
 
 def is_evaluation_higher_than(
@@ -100,14 +104,62 @@ def evaluator_buy_or_sell(
     return False
 
 
-def evaluator_get_result(
+async def evaluator_get_result(
         context,
         tentacle_class,
         time_frame=None,
         symbol=None,
+        trigger=False,
+        config_name=None
 ):
+    if trigger:
+        return await _trigger_single_evaluation(context, tentacle_class, config_name)
     for value in _tentacle_values(context, tentacle_class, time_frame=time_frame, symbol=symbol):
         return value
+
+
+async def _trigger_single_evaluation(context, tentacle_class, config_name):
+    with context.local_nested_config_name(config_name):
+        if config_name is None:
+            tentacle_config = tentacles_manager_api.get_tentacle_config(
+                context.tentacle.tentacles_setup_config,
+                tentacle_class)
+        else:
+            try:
+                tentacle_config = context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG]\
+                    .get(config_name, {})
+            except KeyError:
+                await _init_nested_config(context, tentacle_class, config_name)
+                try:
+                    tentacle_config = context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG]\
+                        .get(config_name, {})
+                except KeyError as e:
+                    raise commons_errors.ConfigEvaluatorError(f"Missing evaluator configuration with name {e}")
+            await inputs.save_user_input(
+                context,
+                config_name,
+                commons_constants.NESTED_TENTACLES_CONFIG,
+                tentacle_config,
+                {}
+            )
+        return (await tentacle_class.single_evaluation(
+            context.tentacle.tentacles_setup_config,
+            tentacle_config,
+            context=context
+        ))[0]
+
+
+async def _init_nested_config(context, tentacle_class, config_name):
+    _, evaluator_instance = await tentacle_class.single_evaluation(
+        context.tentacle.tentacles_setup_config,
+        {},
+        context=context
+    )
+    try:
+        context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG][config_name] = evaluator_instance.specific_config
+    except KeyError:
+        context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG] = {}
+        context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG][config_name] = evaluator_instance.specific_config
 
 
 def _tentacle_values(context,
