@@ -30,7 +30,4 @@ class Transaction:
         self.currency = currency
 
         if self.transaction_id is None:
-            self.transaction_id = self.generate_id()
-
-    def generate_id(self):
-        return str(uuid.uuid4())
+            self.transaction_id = str(uuid.uuid4())

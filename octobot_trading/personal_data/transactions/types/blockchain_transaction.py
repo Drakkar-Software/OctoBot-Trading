@@ -35,9 +35,7 @@ class BlockchainTransaction(transaction.Transaction):
         self.quantity = quantity
         self.transaction_fee = transaction_fee
         super().__init__(exchange_name, creation_time, currency)
-
-    def generate_id(self):
-        return self.blockchain_transaction_id if self.blockchain_transaction_id else str(uuid.uuid4())
+        self.transaction_id = self.blockchain_transaction_id if self.blockchain_transaction_id else str(uuid.uuid4())
 
     def is_deposit(self):
         return self.source_address is not None

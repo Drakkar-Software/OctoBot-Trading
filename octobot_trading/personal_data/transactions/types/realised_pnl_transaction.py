@@ -23,9 +23,7 @@ class RealisedPnlTransaction(transaction.Transaction):
         super().__init__(exchange_name, creation_time, currency, symbol=symbol)
         self.realised_pnl = realised_pnl
         self.is_closed_pnl = is_closed_pnl
-
-    def generate_id(self):
-        return f"{self.exchange_name}" \
-               f"-{str(uuid.uuid4())[:4]}" \
-               f"-{self.symbol}" \
-               f"-{str(self.creation_time)}"
+        self.transaction_id = f"{self.exchange_name}" \
+                              f"-{str(uuid.uuid4())[:4]}" \
+                              f"-{self.symbol}" \
+                              f"-{str(self.creation_time)}"
