@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import uuid
 
 import octobot_trading.personal_data.transactions.transaction as transaction
 
@@ -24,4 +25,7 @@ class RealisedPnlTransaction(transaction.Transaction):
         self.is_closed_pnl = is_closed_pnl
 
     def generate_id(self):
-        return f"{self.exchange_name}-{self.symbol + '-' + str(self.creation_time)}"
+        return f"{self.exchange_name}" \
+               f"-{str(uuid.uuid4())[:4]}" \
+               f"-{self.symbol}" \
+               f"-{str(self.creation_time)}"

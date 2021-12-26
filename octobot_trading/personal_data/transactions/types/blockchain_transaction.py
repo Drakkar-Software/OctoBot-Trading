@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import uuid
+
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.transactions.transaction as transaction
@@ -35,8 +37,7 @@ class BlockchainTransaction(transaction.Transaction):
         super().__init__(exchange_name, creation_time, currency)
 
     def generate_id(self):
-        # TODO: id before transaction_id exists
-        return self.blockchain_transaction_id
+        return self.blockchain_transaction_id if self.blockchain_transaction_id else str(uuid.uuid4())
 
     def is_deposit(self):
         return self.source_address is not None
