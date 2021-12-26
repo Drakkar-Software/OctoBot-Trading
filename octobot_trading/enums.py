@@ -109,6 +109,15 @@ class BlockchainTransactionStatus(enum.Enum):
     SUCCESS = "success"
 
 
+class TransactionType(enum.Enum):
+    BLOCKCHAIN = "blockchain"
+    FUNDING_FEE = "funding_fee"
+    TRADING_FEE = "trading_fee"
+    REALISED_PNL = "realised_pnl"
+    CLOSE_REALISED_PNL = "close_realised_pnl"
+    TRANSFER = "transfer"
+
+
 class TraderOrderType(enum.Enum):
     BUY_MARKET = "buy_market"
     BUY_LIMIT = "buy_limit"

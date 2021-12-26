@@ -22,4 +22,4 @@ cdef class Transaction:
     cdef public str currency
 
     cdef public object logger
-    cdef public object transaction_type
+    cdef public object transaction_type  # enums.TransactionType
