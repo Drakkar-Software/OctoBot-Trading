@@ -146,7 +146,6 @@ packages_list = [
     "octobot_trading.personal_data.positions.states.liquidate_position_state",
     "octobot_trading.personal_data.positions.states.open_position_state",
     "octobot_trading.personal_data.positions.states.position_state_factory",
-    "octobot_trading.personal_data.transactions.trades_manager",
     "octobot_trading.personal_data.transactions.transaction",
     "octobot_trading.personal_data.transactions.transaction_factory",
     "octobot_trading.personal_data.transactions.transactions_manager",
