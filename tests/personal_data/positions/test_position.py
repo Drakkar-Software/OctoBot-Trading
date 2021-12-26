@@ -1068,10 +1068,12 @@ async def test_is_order_increasing_size_hedge(
 async def test__update_realized_pnl_from_size_update_long(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
+    tm = exchange_manager_inst.exchange_personal_data.transactions_manager
     symbol_contract = default_contract
     exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     mark_price = constants.ONE
     position_size = decimal.Decimal(10)
     await position_inst.update(mark_price=mark_price, update_size=position_size)
@@ -1086,6 +1088,10 @@ async def test__update_realized_pnl_from_size_update_long(future_trader_simulato
     # = position_size / decimal.Decimal(2) * decimal.Decimal(0.2)
     assert position_inst.realised_pnl == decimal.Decimal('1.000000000000000055511151232')
 
+    assert len(tm.transactions) == 1
+    assert list(tm.transactions.values())[-1].symbol == DEFAULT_FUTURE_SYMBOL
+    assert list(tm.transactions.values())[-1].realised_pnl == decimal.Decimal('1.000000000000000055511151232')
+
     position_size = decimal.Decimal(8)
 
     # reduce size by 50% --> 0.5
@@ -1095,20 +1101,27 @@ async def test__update_realized_pnl_from_size_update_long(future_trader_simulato
     # = position_size / decimal.Decimal(4) * decimal.Decimal(0.5) + previous realised pnl
     assert position_inst.realised_pnl == decimal.Decimal('3.000000000000000055511151232')
 
+    assert len(tm.transactions) == 2
+    assert list(tm.transactions.values())[-1].realised_pnl == decimal.Decimal('3.000000000000000055511151232') - \
+           decimal.Decimal('1.000000000000000055511151232')
+
     position_size = decimal.Decimal(4)
 
     # Increase by 50% --> shouldn't increase realised pnl
     await position_inst.update(position_size * decimal.Decimal(0.5))
     assert position_inst.realised_pnl == decimal.Decimal('3.000000000000000055511151232')  # = previous realised pnl
+    assert len(tm.transactions) == 2
 
 
 async def test__update_realized_pnl_from_size_update_short(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
+    tm = exchange_manager_inst.exchange_personal_data.transactions_manager
     symbol_contract = default_contract
     exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
     symbol_contract.set_position_mode(is_one_way=True)
     position_inst = personal_data.LinearPosition(trader_inst, symbol_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     mark_price = constants.ONE
     position_size = decimal.Decimal(100)
     await position_inst.update(mark_price=mark_price, update_size=-position_size)
@@ -1121,6 +1134,10 @@ async def test__update_realized_pnl_from_size_update_short(future_trader_simulat
     assert position_inst.unrealised_pnl == decimal.Decimal('35.00000000000000055511151232')
     assert position_inst.realised_pnl == decimal.Decimal('14.99999999999999944488848768')
 
+    assert len(tm.transactions) == 1
+    assert list(tm.transactions.values())[-1].symbol == DEFAULT_FUTURE_SYMBOL
+    assert list(tm.transactions.values())[-1].realised_pnl == decimal.Decimal('14.99999999999999944488848768')
+
     position_size = decimal.Decimal(70)
 
     # reduce size by 40% --> 0.4
@@ -1128,8 +1145,13 @@ async def test__update_realized_pnl_from_size_update_short(future_trader_simulat
     assert position_inst.unrealised_pnl == decimal.Decimal('20.99999999999999977795539508')
     assert position_inst.realised_pnl == decimal.Decimal('29.00000000000000022204460492')
 
+    assert len(tm.transactions) == 2
+    assert list(tm.transactions.values())[-1].realised_pnl == decimal.Decimal('29.00000000000000022204460492') - \
+           decimal.Decimal('14.99999999999999944488848768')
+
     position_size = decimal.Decimal(42)
 
     # Increase by 50% --> shouldn't increase realised pnl
     await position_inst.update(-position_size * decimal.Decimal(0.5))
     assert position_inst.realised_pnl == decimal.Decimal('29.00000000000000022204460492')  # = previous realised pnl
+    assert len(tm.transactions) == 2

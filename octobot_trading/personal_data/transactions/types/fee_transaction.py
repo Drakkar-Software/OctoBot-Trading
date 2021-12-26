@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import uuid
+
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.transactions.transaction as transaction
 
@@ -25,7 +27,10 @@ class FeeTransaction(transaction.Transaction):
         super().__init__(exchange_name, creation_time, currency, symbol=symbol)
 
     def generate_id(self):
-        return f"{self.exchange_name}-{self.order_id if self.order_id else self.symbol + '-' + str(self.creation_time)}"
+        return f"{self.exchange_name}" \
+               f"-{self.order_id if self.order_id else str(uuid.uuid4())[:4]}" \
+               f"-{self.symbol}" \
+               f"-{str(self.creation_time)}"
 
     def is_funding_fee(self):
         return self.order_id is not None
