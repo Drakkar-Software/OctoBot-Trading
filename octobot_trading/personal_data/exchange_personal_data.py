@@ -60,6 +60,7 @@ class ExchangePersonalData(util.Initializable):
                 await self.trades_manager.initialize()
                 await self.orders_manager.initialize()
                 await self.positions_manager.initialize()
+                await self.transactions_manager.initialize()
             except Exception as e:
                 self.logger.exception(e, True, f"Error when initializing : {e}. "
                                                f"{self.exchange.name} personal data disabled.")
