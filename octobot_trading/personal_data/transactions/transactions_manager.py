@@ -26,17 +26,17 @@ class TransactionsManager(util.Initializable):
     def __init__(self):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
-        self.transactions_initialized = False
         self.transactions = collections.OrderedDict()
 
     async def initialize_impl(self):
         self._reset_transactions()
-        self.transactions_initialized = True
 
-    def upsert_transaction_instance(self, transaction):
-        if transaction.transaction_id not in self.transactions:
+    def upsert_transaction_instance(self, transaction, replace_if_exists=False):
+        if transaction.transaction_id not in self.transactions or replace_if_exists:
             self.transactions[transaction.transaction_id] = transaction
             self._check_transactions_size()
+        else:
+            raise ValueError(f"Transaction with id '{transaction.transaction_id}' already exists")
 
     def get_transactions(self, transaction_id):
         return self.transactions[transaction_id]
