@@ -22,12 +22,10 @@ cdef class TransactionsManager(util.Initializable):
 
     cdef public object transactions
 
-    cdef public bint transactions_initialized
-
     cdef void _check_transactions_size(self)
     cdef void _reset_transactions(self)
     cdef void _remove_oldest_transactions(self, int nb_to_remove)
 
     cpdef object get_transactions(self, str transaction_id)
-    cpdef void upsert_transaction_instance(self, object transaction)
+    cpdef object upsert_transaction_instance(self, object transaction, bint replace_if_exists=*)  # needs object to forward exceptions
     cpdef void clear(self)
