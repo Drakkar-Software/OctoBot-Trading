@@ -1113,7 +1113,7 @@ async def test__update_realized_pnl_from_size_update_short(future_trader_simulat
     position_size = decimal.Decimal(100)
     await position_inst.update(mark_price=mark_price, update_size=-position_size)
 
-    # update pnl to +100%
+    # update pnl to +50%
     await position_inst.update(mark_price=mark_price * decimal.Decimal(0.5))
 
     # reduce size by 30% --> 0.3
