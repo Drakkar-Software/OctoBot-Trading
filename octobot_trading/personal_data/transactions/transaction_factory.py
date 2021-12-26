@@ -45,10 +45,11 @@ def create_realised_pnl_transaction(exchange_manager, currency, symbol,
     realised_pnl_transaction = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
+        transaction_type=enums.TransactionType.CLOSE_REALISED_PNL
+        if is_closed_pnl else enums.TransactionType.REALISED_PNL,
         currency=currency,
         symbol=symbol,
-        realised_pnl=realised_pnl,
-        is_closed_pnl=is_closed_pnl)
+        realised_pnl=realised_pnl)
     _upsert_transaction_instance(exchange_manager, realised_pnl_transaction)
     return realised_pnl_transaction
 
@@ -60,6 +61,7 @@ def create_fee_transaction(exchange_manager, currency, symbol,
     fee_transaction = transaction_types.FeeTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
+        transaction_type=enums.TransactionType.TRADING_FEE if order_id else enums.TransactionType.FUNDING_FEE,
         currency=currency,
         symbol=symbol,
         quantity=quantity,

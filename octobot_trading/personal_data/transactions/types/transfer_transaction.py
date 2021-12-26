@@ -14,9 +14,13 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.transactions.transaction as transaction
 
 
 class TransferTransaction(transaction.Transaction):
     def __init__(self, exchange_name, creation_time, currency, symbol):
-        super().__init__(exchange_name, creation_time, currency, symbol=symbol)
+        super().__init__(exchange_name, creation_time,
+                         transaction_type=enums.TransactionType.TRANSFER,
+                         currency=currency,
+                         symbol=symbol)
