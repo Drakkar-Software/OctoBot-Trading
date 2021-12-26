@@ -20,9 +20,10 @@ import octobot_commons.logging as logging
 
 class Transaction:
 
-    def __init__(self, exchange_name, creation_time, currency, symbol=None, transaction_id=None):
+    def __init__(self, exchange_name, creation_time, transaction_type, currency, symbol=None, transaction_id=None):
         self.logger = logging.get_logger(self.__class__.__name__)
         self.transaction_id = transaction_id
+        self.transaction_type = transaction_type
         self.creation_time = creation_time
 
         self.exchange_name = exchange_name

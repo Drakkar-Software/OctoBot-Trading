@@ -45,10 +45,10 @@ async def test_upsert_transaction_instance(backtesting_trader):
     transaction = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
+        transaction_type=enums.TransactionType.REALISED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
-        realised_pnl=constants.ZERO,
-        is_closed_pnl=False)
+        realised_pnl=constants.ZERO)
     transaction.transaction_id = t_id
     transaction_2 = transaction_types.BlockchainTransaction(
         exchange_name=exchange_manager.exchange_name,
@@ -95,17 +95,17 @@ async def test_get_transactions(backtesting_trader):
     transaction = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
+        transaction_type=enums.TransactionType.REALISED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
-        realised_pnl=constants.ZERO,
-        is_closed_pnl=False)
+        realised_pnl=constants.ZERO)
     transaction_2 = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
+        transaction_type=enums.TransactionType.REALISED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
-        realised_pnl=constants.ZERO,
-        is_closed_pnl=False)
+        realised_pnl=constants.ZERO)
     exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction)
 
     # succeed to return transaction instance

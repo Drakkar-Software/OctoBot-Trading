@@ -34,7 +34,9 @@ class BlockchainTransaction(transaction.Transaction):
         self.blockchain_transaction_status = blockchain_transaction_status
         self.quantity = quantity
         self.transaction_fee = transaction_fee
-        super().__init__(exchange_name, creation_time, currency)
+        super().__init__(exchange_name, creation_time,
+                         transaction_type=enums.TransactionType.TRANSFER,
+                         currency=currency)
         self.transaction_id = self.blockchain_transaction_id if self.blockchain_transaction_id else str(uuid.uuid4())
 
     def is_deposit(self):
