@@ -85,7 +85,7 @@ async def test_create_fee_transaction(backtesting_trader):
     assert transaction.symbol == TRANSACTION_SYMBOL
     assert transaction.creation_time <= time.time()
     assert transaction.order_id == o_id
-    assert transaction.transaction_id == exchange_manager.exchange_name + "-" + o_id
+    assert transaction.transaction_id
     assert transaction.quantity == decimal.Decimal(10)
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 1
 

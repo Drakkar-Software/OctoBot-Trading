@@ -23,5 +23,3 @@ cdef class Transaction:
 
     cdef public object logger
     cdef public object transaction_type
-
-    cpdef str generate_id(self)
