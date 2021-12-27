@@ -55,6 +55,7 @@ async def test_upsert_transaction_instance(backtesting_trader):
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
         currency=TRANSACTION_CURRENCY,
+        transaction_type=enums.TransactionType.BLOCKCHAIN_DEPOSIT,
         blockchain_type="Test",
         blockchain_transaction_id=t_id,
         blockchain_transaction_status=enums.BlockchainTransactionStatus.CONFIRMING,

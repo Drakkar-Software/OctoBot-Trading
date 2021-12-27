@@ -22,10 +22,12 @@ def create_blockchain_transaction(exchange_manager, currency,
                                   blockchain_type, blockchain_transaction_id,
                                   blockchain_transaction_status=enums.BlockchainTransactionStatus.CREATED,
                                   source_address=None, destination_address=None,
-                                  quantity=constants.ZERO, transaction_fee=constants.ZERO):
+                                  quantity=constants.ZERO, transaction_fee=constants.ZERO, is_deposit=False):
     blockchain_transaction = transaction_types.BlockchainTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
+        transaction_type=enums.TransactionType.BLOCKCHAIN_DEPOSIT
+        if is_deposit else enums.TransactionType.BLOCKCHAIN_WITHDRAW,
         currency=currency,
         blockchain_type=blockchain_type,
         blockchain_transaction_id=blockchain_transaction_id,

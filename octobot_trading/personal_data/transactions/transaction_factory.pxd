@@ -25,7 +25,8 @@ cpdef transaction_types.BlockchainTransaction create_blockchain_transaction(obje
                                                                             str source_address=*,
                                                                             str destination_address=*,
                                                                             object quantity=*,
-                                                                            object transaction_fee=*)
+                                                                            object transaction_fee=*,
+                                                                            bint is_deposit=*)
 cpdef transaction_types.RealisedPnlTransaction create_realised_pnl_transaction(object exchange_manager,
                                                                                str currency,
                                                                                str symbol,

@@ -21,7 +21,8 @@ import octobot_trading.personal_data.transactions.transaction as transaction
 
 
 class BlockchainTransaction(transaction.Transaction):
-    def __init__(self, exchange_name, creation_time, currency, blockchain_type, blockchain_transaction_id,
+    def __init__(self, exchange_name, creation_time, transaction_type, currency, blockchain_type,
+                 blockchain_transaction_id,
                  blockchain_transaction_status=enums.BlockchainTransactionStatus.CREATED,
                  source_address=None,
                  destination_address=None,
@@ -34,16 +35,14 @@ class BlockchainTransaction(transaction.Transaction):
         self.blockchain_transaction_status = blockchain_transaction_status
         self.quantity = quantity
         self.transaction_fee = transaction_fee
-        super().__init__(exchange_name, creation_time,
-                         transaction_type=enums.TransactionType.TRANSFER,
-                         currency=currency)
+        super().__init__(exchange_name, creation_time, transaction_type, currency=currency)
         self.transaction_id = self.blockchain_transaction_id if self.blockchain_transaction_id else str(uuid.uuid4())
 
     def is_deposit(self):
-        return self.source_address is not None
+        return self.transaction_type is enums.TransactionType.BLOCKCHAIN_DEPOSIT
 
     def is_withdraw(self):
-        return self.destination_address is not None
+        return self.transaction_type is enums.TransactionType.BLOCKCHAIN_WITHDRAW
 
     def is_pending(self):
         return self.blockchain_transaction_status is enums.BlockchainTransactionStatus.CONFIRMING
