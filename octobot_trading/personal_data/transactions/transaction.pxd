@@ -16,10 +16,12 @@
 #  License along with this library.
 
 cdef class Transaction:
-    cdef public str transaction_id
-    cdef public str exchange_name
-    cdef public str symbol
-    cdef public str currency
+    cdef readonly str transaction_id
+    cdef readonly str exchange_name
+    cdef readonly str symbol
+    cdef readonly str currency
 
-    cdef public object logger
-    cdef public object transaction_type  # enums.TransactionType
+    cdef readonly object logger
+    cdef readonly object transaction_type  # enums.TransactionType
+
+    cpdef void set_transaction_id(self, str new_id)
