@@ -16,6 +16,8 @@
 
 import octobot_commons.constants as commons_constants
 import octobot_commons.errors as commons_errors
+import octobot_commons.enums as commons_enums
+import octobot_commons.dict_util as dict_util
 import octobot_evaluators.matrix as matrix
 import octobot_evaluators.enums as evaluators_enums
 import octobot_tentacles_manager.api as tentacles_manager_api
@@ -110,56 +112,115 @@ async def evaluator_get_result(
         time_frame=None,
         symbol=None,
         trigger=False,
-        config_name=None
+        value_key=commons_enums.CacheDatabaseColumns.VALUE.value,
+        config_name=None,
+        config: dict = None
 ):
     if trigger:
-        return await _trigger_single_evaluation(context, tentacle_class, config_name)
+        # always trigger when asked to then return the triggered evaluation return
+        return await _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config)
+    if tentacle_class.use_cache():
+        # try reading from cache
+        value, is_missing = await context.get_cached_value(value_key=value_key, tentacle_name=tentacle_class.__name__,
+                                                           config_name=config_name)
+        return None if is_missing else value
+    _ensure_cache_when_set_value_key(value_key, tentacle_class)
+    # read from evaluation matrix
     for value in _tentacle_values(context, tentacle_class, time_frame=time_frame, symbol=symbol):
         return value
 
 
-async def _trigger_single_evaluation(context, tentacle_class, config_name):
-    with context.local_nested_config_name(config_name):
+async def evaluator_get_results(
+        context,
+        tentacle_class,
+        time_frame=None,
+        symbol=None,
+        trigger=False,
+        value_key=commons_enums.CacheDatabaseColumns.VALUE.value,
+        limit=-1,
+        config_name=None,
+        config: dict = None
+):
+    if trigger:
+        # always trigger when asked to
+        eval_result = await _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config)
+        if limit == 1:
+            # return already if only one value to return
+            return eval_result
+    if tentacle_class.use_cache():
+        # can return multiple values
+        return await context.get_cached_values(value_key=value_key, limit=limit,
+                                               tentacle_name=tentacle_class.__name__, config_name=config_name)
+    _ensure_cache_when_set_value_key(value_key, tentacle_class)
+    if limit == 1:
+        # read from evaluation matrix
+        for value in _tentacle_values(context, tentacle_class, time_frame=time_frame, symbol=symbol):
+            return value
+        raise commons_errors.MissingDataError(f"No evaluator value for {tentacle_class.__name__}")
+    else:
+        raise commons_errors.ConfigEvaluatorError(f"Evaluator cache is required to get more than one historical value "
+                                                  f"of an evaluator. Cache is disabled on {tentacle_class.__name__}")
+
+
+def _ensure_cache_when_set_value_key(value_key, tentacle_class):
+    if not tentacle_class.use_cache() and value_key != commons_enums.CacheDatabaseColumns.VALUE.value:
+        raise commons_errors.ConfigEvaluatorError(f"Evaluator cache is required to read a value_key different from "
+                                                  f"the evaluator output evaluation. "
+                                                  f"Cache is disabled on {tentacle_class.__name__}")
+
+
+async def _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config):
+    config = {key.replace(" ", "_"): val for key, val in config.items()} if config else {}
+    cleaned_config_name = config_name.replace(" ", "_")
+    context.tentacle.called_nested_evaluators.add(tentacle_class)
+    with context.local_nested_tentacle_config(config_name, True):
         if config_name is None:
             tentacle_config = tentacles_manager_api.get_tentacle_config(
                 context.tentacle.tentacles_setup_config,
                 tentacle_class)
+            # apply forced config if any
+            dict_util.check_and_merge_values_from_reference(tentacle_config, config, [], None)
         else:
             try:
-                tentacle_config = context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG]\
-                    .get(config_name, {})
+                tentacle_config = context.tentacle.specific_config[cleaned_config_name]
             except KeyError:
-                await _init_nested_config(context, tentacle_class, config_name)
+                await _init_nested_config(context, tentacle_class, cleaned_config_name, config)
                 try:
-                    tentacle_config = context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG]\
-                        .get(config_name, {})
+                    tentacle_config = context.tentacle.specific_config[cleaned_config_name]
                 except KeyError as e:
                     raise commons_errors.ConfigEvaluatorError(f"Missing evaluator configuration with name {e}")
+            # apply forced config if any
+            dict_util.check_and_merge_values_from_reference(tentacle_config, config, [], None)
             await inputs.save_user_input(
                 context,
                 config_name,
-                commons_constants.NESTED_TENTACLES_CONFIG,
+                commons_constants.NESTED_TENTACLE_CONFIG,
                 tentacle_config,
-                {}
+                {},
+                is_nested_config=context.nested_depth > 1,
+                nested_tentacle=tentacle_class.get_name()
             )
-        return (await tentacle_class.single_evaluation(
+        eval_result = (await tentacle_class.single_evaluation(
             context.tentacle.tentacles_setup_config,
             tentacle_config,
             context=context
         ))[0]
+        if value_key == commons_enums.CacheDatabaseColumns.VALUE.value:
+            return eval_result
+        else:
+            value, is_missing = await context.get_cached_value(value_key=value_key, tentacle_name=tentacle_class.__name__,
+                                                               config_name=config_name)
+            return None if is_missing else value
 
 
-async def _init_nested_config(context, tentacle_class, config_name):
+async def _init_nested_config(context, tentacle_class, cleaned_config_name, config):
     _, evaluator_instance = await tentacle_class.single_evaluation(
         context.tentacle.tentacles_setup_config,
-        {},
-        context=context
+        config,
+        context=context,
+        ignore_cache=True
     )
-    try:
-        context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG][config_name] = evaluator_instance.specific_config
-    except KeyError:
-        context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG] = {}
-        context.tentacle.specific_config[commons_constants.NESTED_TENTACLES_CONFIG][config_name] = evaluator_instance.specific_config
+    context.tentacle.specific_config[cleaned_config_name] = evaluator_instance.specific_config
 
 
 def _tentacle_values(context,

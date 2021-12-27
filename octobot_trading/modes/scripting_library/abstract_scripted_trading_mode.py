@@ -182,9 +182,9 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         self.load_config()
         if live:
             # todo cancel and restart live tasks
-            await self.start_over_database(not live)
+            await self.start_over_database()
 
-    async def start_over_database(self, backtesting):
+    async def start_over_database(self):
         await self.clear_plotting_cache()
         for producer in self.producers:
             await scripting_library.clear_user_inputs(producer.run_data_writer)

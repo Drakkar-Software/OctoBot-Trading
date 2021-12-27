@@ -117,7 +117,7 @@ async def plot_candles(ctx, symbol=None, time_frame=None, chart=trading_enums.Pl
 
 async def plot(ctx, title, x=None,
                y=None, z=None, open=None, high=None, low=None, close=None, volume=None,
-               text=None, kind="scatter", mode="lines", init_only=True,
+               text=None, kind="scatter", mode="lines",
                condition=None, x_function=exchange_public_data.Time,
                x_multiplier=1000, time_frame=None,
                chart=trading_enums.PlotCharts.SUB_CHART.value,
@@ -152,10 +152,10 @@ async def plot(ctx, title, x=None,
         cache_full_path = ctx.get_cache_path(ctx.tentacle)
         count_query["title"] = title
         count_query["value"] = cache_full_path
-    if init_only and not ctx.symbol_writer.are_data_initialized_by_key.get(time_frame, False) \
-            and not await ctx.symbol_writer.contains_row(
-                trading_enums.DBTables.CACHE_SOURCE.value if cache_value is not None else title,
-                count_query):
+    if not await ctx.symbol_writer.contains_row(
+                    trading_enums.DBTables.CACHE_SOURCE.value if cache_value is not None else title,
+                    count_query
+    ):
         if cache_value is not None:
             table = trading_enums.DBTables.CACHE_SOURCE.value
             cache_data = {

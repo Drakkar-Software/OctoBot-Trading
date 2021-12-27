@@ -25,7 +25,8 @@ async def user_input(
     min_val=None,
     max_val=None,
     options=None,
-    config_name=None,
+    is_nested_config=None,
+    nested_tentacle=None,
     not_important=False  # todo when true hide from optimizer inputs and all tables
 ):
     config = ctx.tentacle.trading_config if hasattr(ctx.tentacle, "trading_config") else ctx.tentacle.specific_config
@@ -43,32 +44,36 @@ async def user_input(
         min_val=min_val,
         max_val=max_val,
         options=options,
-        config_name=config_name,
+        is_nested_config=is_nested_config,
+        nested_tentacle=nested_tentacle,
         not_important=not_important
     )
     return value
 
 
 async def save_user_input(
-        ctx,
-        name,
-        input_type,
-        value,
-        def_val,
-        min_val=None,
-        max_val=None,
-        options=None,
-        config_name=None,
-        not_important=False
+    ctx,
+    name,
+    input_type,
+    value,
+    def_val,
+    min_val=None,
+    max_val=None,
+    options=None,
+    is_nested_config=None,
+    nested_tentacle=None,
+    not_important=False
 ):
-    config_name = config_name or ctx.nested_config_name
+    if is_nested_config is None:
+        is_nested_config = ctx.is_nested_tentacle
     if not ctx.run_data_writer.are_data_initialized and not await ctx.run_data_writer.contains_row(
             enums.DBTables.INPUTS.value,
             {
                 "name": name,
                 "tentacle": ctx.tentacle.get_name(),
+                "nested_tentacle": nested_tentacle,
                 "input_type": input_type,
-                "config_name": config_name
+                "is_nested_config": is_nested_config
             }):
         tentacle_type = "trading_mode" if isinstance(ctx.tentacle, modes.AbstractTradingMode) else "evaluator"
         await ctx.run_data_writer.log(
@@ -76,7 +81,6 @@ async def save_user_input(
             {
                 "name": name,
                 "input_type": input_type,
-                "config_name": config_name,
                 "value": value,
                 "def_val": def_val,
                 "min_val": min_val,
@@ -84,6 +88,8 @@ async def save_user_input(
                 "options": options,
                 "tentacle_type": tentacle_type,
                 "tentacle": ctx.tentacle.get_name(),
+                "nested_tentacle": nested_tentacle,
+                "is_nested_config": is_nested_config
             }
         )
 

@@ -76,16 +76,23 @@ class Context:
         self.plot_orders = False
         self.cache_manager = databases.CacheManager(database_adaptor=databases.TinyDBAdaptor)
         self.just_created_orders = []
-        self.nested_config_name = None
+        self.config_name = None
+        self.is_nested_tentacle = False
+        self.nested_depth = 0
 
     @contextlib.contextmanager
-    def local_nested_config_name(self, nested_config_name):
-        previous_config_name = self.nested_config_name
-        self.nested_config_name = nested_config_name
+    def local_nested_tentacle_config(self, config_name, is_nested_tentacle):
+        previous_is_nested_tentacle = self.is_nested_tentacle
+        previous_config_name = self.config_name
         try:
+            self.is_nested_tentacle = is_nested_tentacle
+            self.config_name = config_name
+            self.nested_depth += 1
             yield self
         finally:
-            self.nested_config_name = previous_config_name
+            self.is_nested_tentacle = previous_is_nested_tentacle
+            self.config_name = previous_config_name
+            self.nested_depth -= 1
 
     @staticmethod
     def minimal(trading_mode, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):
@@ -113,7 +120,7 @@ class Context:
         )
 
     def copy(self, tentacle=None):
-        return Context(
+        context = Context(
             tentacle or self.tentacle,
             self.exchange_manager,
             self.trader,
@@ -135,34 +142,45 @@ class Context:
             self.backtesting_id,
             self.optimizer_id
         )
+        context.is_nested_tentacle = self.is_nested_tentacle
+        context.config_name = self.config_name
+        context.nested_depth = self.nested_depth
+        return context
 
-    def get_cache(self, tentacle_name=None, cache_type=databases.CacheTimestampDatabase):
+    def get_cache(self, tentacle_name=None, cache_type=databases.CacheTimestampDatabase, config_name=None):
         tentacle = self.tentacle if tentacle_name is None else None
         tentacle_name = tentacle_name or self.tentacle.get_name()
+        config_name = config_name or self.config_name
         return self.cache_manager.get_cache(tentacle, tentacle_name, self.exchange_name, self.symbol, self.time_frame,
-                                            self.exchange_manager.tentacles_setup_config,
+                                            config_name, self.exchange_manager.tentacles_setup_config,
                                             cache_type=cache_type)
 
-    def has_cache(self, pair, time_frame):
-        return self.cache_manager.has_cache(self.tentacle.get_name(), self.exchange_name, pair, time_frame)
+    def has_cache(self, pair, time_frame, config_name=None):
+        config_name = config_name or self.config_name
+        return self.cache_manager.has_cache(self.tentacle.get_name(), self.exchange_name,
+                                            pair, time_frame, config_name)
 
-    def get_cache_path(self, tentacle):
+    def get_cache_path(self, tentacle, config_name=None):
+        config_name = config_name or self.config_name
         return self.cache_manager.get_cache_path(tentacle, self.exchange_name, self.symbol, self.time_frame,
-                                                 tentacle.get_name(), self.exchange_manager.tentacles_setup_config)
+                                                 tentacle.get_name(), config_name,
+                                                 self.exchange_manager.tentacles_setup_config)
 
     async def get_cached_value(self,
                                value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
                                cache_key=None,
-                               tentacle_name=None) -> tuple:
+                               tentacle_name=None,
+                               config_name=None) -> tuple:
         """
         Get a value for the current cache
         :param value_key: identifier of the value
         :param cache_key: timestamp to use in order to look for a value
         :param tentacle_name: name of the tentacle to get cache from
+        :param config_name: name of the tentacle configuration as used in nested tentacle calls
         :return: the cached value and a boolean (True if cached value is missing from cache)
         """
         try:
-            return await self.get_cache(tentacle_name=tentacle_name).\
+            return await self.get_cache(tentacle_name=tentacle_name, config_name=config_name).\
                 get(cache_key or self.trigger_cache_timestamp, name=value_key), False
         except common_errors.NoCacheValue:
             return None, True
@@ -171,23 +189,26 @@ class Context:
                                 value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
                                 cache_key=None,
                                 limit=-1,
-                                tentacle_name=None) -> list:
+                                tentacle_name=None,
+                                config_name=None) -> list:
         """
         Get a value for the current cache
         :param value_key: identifier of the value
         :param cache_key: timestamp to use in order to look for a value
         :param limit: the maximum number elements to select (no limit by default)
         :param tentacle_name: name of the tentacle to get cache from
+        :param config_name: name of the tentacle configuration as used in nested tentacle calls
         :return: the cached values
         """
         try:
-            return await self.get_cache(tentacle_name=tentacle_name)\
+            return await self.get_cache(tentacle_name=tentacle_name, config_name=config_name)\
                 .get_values(cache_key or self.trigger_cache_timestamp, name=value_key, limit=limit)
         except common_errors.NoCacheValue:
             return []
 
     async def set_cached_value(self, value, value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
-                               cache_key=None, flush_if_necessary=False, tentacle_name=None, **kwargs):
+                               cache_key=None, flush_if_necessary=False, tentacle_name=None, config_name=None,
+                               **kwargs):
         """
         Set a value into the current cache
         :param value: value to set
@@ -195,12 +216,13 @@ class Context:
         :param cache_key: timestamp to associate the value to
         :param flush_if_necessary: flush the cache after set (write into database)
         :param tentacle_name: name of the tentacle to get cache from
+        :param config_name: name of the tentacle configuration as used in nested tentacle calls
         :param kwargs: other related value_key / value couples to set at this timestamp. Use for plotted data
         :return: None
         """
         cache = None
         try:
-            cache = self.get_cache(tentacle_name=tentacle_name)
+            cache = self.get_cache(tentacle_name=tentacle_name, config_name=config_name)
             await cache.set(cache_key or self.trigger_cache_timestamp, value, name=value_key)
             if kwargs:
                 for key, val in kwargs.items():

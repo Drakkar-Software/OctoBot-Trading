@@ -40,6 +40,15 @@ class DisplayedElements:
         "volume": "Volume",
         "symbol": "Symbol",
     }
+    INPUT_TYPE_TO_SCHEMA_TYPE = {
+        "int": "number",
+        "float": "number",
+        "boolean": "boolean",
+        "options": "string",
+        "multiple-options": "array",
+        commons_constants.NESTED_TENTACLE_CONFIG: "object",
+    }
+    DEFAULT_NUMBER_MULTIPLIER = 0.00000001
 
     def __init__(self, element_type=trading_enums.DisplayedElementTypes.CHART.value):
         self.nested_elements = {}
@@ -173,6 +182,7 @@ class DisplayedElements:
             "type": "object",
             "title": f"{tentacle} inputs",
             "properties": {},
+            "format": "grid-strict",
         }
 
     def _display_inputs(self, inputs):
@@ -180,8 +190,15 @@ class DisplayedElements:
             config_by_tentacles = {}
             config_schema_by_tentacles = {}
             tentacle_type_by_tentacles = {}
+            nested_user_inputs_by_tentacle = self._extract_nested_user_inputs(inputs)
             for user_input_element in inputs:
                 try:
+                    if user_input_element["is_nested_config"]:
+                        # Do not display nested user input config as regular user inputs.
+                        # These are mere models that are used in association with
+                        # nested user inputs, which are used in the context of a
+                        # nested tentacle configuration
+                        continue
                     tentacle = user_input_element["tentacle"]
                     tentacle_type_by_tentacles[tentacle] = user_input_element["tentacle_type"]
                     if tentacle not in config_schema_by_tentacles:
@@ -189,7 +206,8 @@ class DisplayedElements:
                         config_by_tentacles[tentacle] = {}
                     config_by_tentacles[tentacle][user_input_element["name"].replace(" ", "_")] = \
                         user_input_element["value"]
-                    self._generate_schema(config_schema_by_tentacles[tentacle], user_input_element)
+                    self._generate_schema(config_schema_by_tentacles[tentacle], user_input_element,
+                                          nested_user_inputs_by_tentacle)
                 except KeyError as e:
                     self.logger.error(f"Error when loading user inputs for {tentacle}: missing {e}")
             for tentacle, schema in config_schema_by_tentacles.items():
@@ -201,15 +219,22 @@ class DisplayedElements:
                     tentacle_type_by_tentacles[tentacle],
                 )
 
-    def _generate_schema(self, main_schema, user_input_element):
-        input_type_to_schema_type = {
-            "int": "number",
-            "float": "number",
-            "boolean": "boolean",
-            "options": "string",
-            "multiple-options": "array",
+    def _extract_nested_user_inputs(self, inputs):
+        user_inputs_by_tentacles = {}
+        for user_input in inputs:
+            if user_input["is_nested_config"]:
+                tentacle = user_input["tentacle"]
+                if tentacle not in user_inputs_by_tentacles:
+                    user_inputs_by_tentacles[tentacle] = {}
+                user_inputs_by_tentacles[tentacle][user_input["name"].replace(" ", "_")] = user_input
+        return user_inputs_by_tentacles
+
+    def _generate_schema(self, main_schema, user_input_element, nested_user_inputs_by_tentacle):
+        properties = {
+            "options": {
+                "grid_columns": 4
+            }
         }
-        properties = {}
         if title := user_input_element.get("name"):
             properties["title"] = title
         if def_val := user_input_element.get("def_val"):
@@ -220,13 +245,13 @@ class DisplayedElements:
             properties["maximum"] = max_val
         if input_type := user_input_element.get("input_type"):
             try:
-                schema_type = input_type_to_schema_type[input_type]
+                schema_type = self.INPUT_TYPE_TO_SCHEMA_TYPE[input_type]
                 if schema_type == "boolean":
                     properties["format"] = "checkbox"
-                if schema_type == "number":
+                elif schema_type == "number":
                     if input_type == "float":
-                        properties["multipleOf"] = 0.00000001
-                if schema_type in ("string", "array"):
+                        properties["multipleOf"] = self.DEFAULT_NUMBER_MULTIPLIER
+                elif schema_type in ("string", "array"):
                     options = user_input_element.get("options", [])
                     default_value = def_val if def_val else options[0] if options else None
                     if schema_type == "string":
@@ -243,6 +268,19 @@ class DisplayedElements:
                             "default": default_value,
                             "enum": options
                         }
+                elif schema_type == "object":
+                    properties["properties"] = {}
+                    for user_input_name in user_input_element["value"]:
+                        try:
+                            nested_tentacle = user_input_element["nested_tentacle"]
+                            self._generate_schema(
+                                properties,
+                                nested_user_inputs_by_tentacle[nested_tentacle][user_input_name],
+                                nested_user_inputs_by_tentacle
+                            )
+                        except KeyError as e:
+                            self.logger.warning(f"Missing user input model for {e}. This element might not be "
+                                                f"associated to a tentacle")
                 properties["type"] = schema_type
             except KeyError as e:
                 self.logger.error(f"Unknown input type: {e}")
