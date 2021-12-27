@@ -110,7 +110,8 @@ class BlockchainTransactionStatus(enum.Enum):
 
 
 class TransactionType(enum.Enum):
-    BLOCKCHAIN = "blockchain"
+    BLOCKCHAIN_DEPOSIT = "blockchain_deposit"
+    BLOCKCHAIN_WITHDRAW = "blockchain_withdraw"
     FUNDING_FEE = "funding_fee"
     TRADING_FEE = "trading_fee"
     REALISED_PNL = "realised_pnl"
