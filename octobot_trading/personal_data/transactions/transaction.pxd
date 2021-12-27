@@ -21,6 +21,8 @@ cdef class Transaction:
     cdef readonly str symbol
     cdef readonly str currency
 
+    cdef readonly double creation_time
+
     cdef readonly object logger
     cdef readonly object transaction_type  # enums.TransactionType
 

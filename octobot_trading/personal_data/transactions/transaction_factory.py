@@ -27,7 +27,7 @@ def create_blockchain_transaction(exchange_manager, currency,
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
         transaction_type=enums.TransactionType.BLOCKCHAIN_DEPOSIT
-        if is_deposit else enums.TransactionType.BLOCKCHAIN_WITHDRAW,
+        if is_deposit else enums.TransactionType.BLOCKCHAIN_WITHDRAWAL,
         currency=currency,
         blockchain_type=blockchain_type,
         blockchain_transaction_id=blockchain_transaction_id,

@@ -75,6 +75,7 @@ async def test_upsert_transaction_instance(backtesting_trader):
     with pytest.raises(errors.DuplicateTransactionIdError):
         exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction_2)
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 1
+    assert list(exchange_manager.exchange_personal_data.transactions_manager.transactions.values())[-1] is transaction
 
     # can replace a transaction with the same transaction id
     exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction_2,

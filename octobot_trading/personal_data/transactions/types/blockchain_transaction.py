@@ -41,8 +41,8 @@ class BlockchainTransaction(transaction.Transaction):
     def is_deposit(self):
         return self.transaction_type is enums.TransactionType.BLOCKCHAIN_DEPOSIT
 
-    def is_withdraw(self):
-        return self.transaction_type is enums.TransactionType.BLOCKCHAIN_WITHDRAW
+    def is_withdrawal(self):
+        return self.transaction_type is enums.TransactionType.BLOCKCHAIN_WITHDRAWAL
 
     def is_pending(self):
         return self.blockchain_transaction_status is enums.BlockchainTransactionStatus.CONFIRMING
