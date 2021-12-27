@@ -39,6 +39,7 @@ async def test_create_blockchain_transaction(backtesting_trader):
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 0
     t_id = str(uuid.uuid4())
     transaction = transaction_factory.create_blockchain_transaction(exchange_manager,
+                                                                    is_deposit=True,
                                                                     currency=TRANSACTION_CURRENCY,
                                                                     blockchain_type="TEST",
                                                                     blockchain_transaction_id=t_id,
