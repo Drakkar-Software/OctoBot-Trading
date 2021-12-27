@@ -30,5 +30,14 @@ class Transaction:
         self.symbol = symbol
         self.currency = currency
 
+        # generate default transaction id
         if self.transaction_id is None:
             self.transaction_id = str(uuid.uuid4())
+
+    def set_transaction_id(self, new_id):
+        """
+        Shouldn't be called outside of TransactionsManager.update_transaction_id
+        to maintain TransactionsManager.transactions integrity
+        :param new_id: the new transaction id
+        """
+        self.transaction_id = new_id

@@ -26,6 +26,7 @@ cdef class TransactionsManager(util.Initializable):
     cdef void _reset_transactions(self)
     cdef void _remove_oldest_transactions(self, int nb_to_remove)
 
-    cpdef object get_transactions(self, str transaction_id)
+    cpdef object get_transaction(self, str transaction_id)
+    cpdef object update_transaction_id(self, str transaction_id, str new_transaction_id, bint replace_if_exists=*)  # needs object to forward exceptions
     cpdef object upsert_transaction_instance(self, object transaction, bint replace_if_exists=*)  # needs object to forward exceptions
     cpdef void clear(self)

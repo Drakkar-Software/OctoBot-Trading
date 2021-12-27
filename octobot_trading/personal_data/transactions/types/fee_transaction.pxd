@@ -18,10 +18,10 @@
 cimport octobot_trading.personal_data.transactions.transaction as transaction
 
 cdef class FeeTransaction(transaction.Transaction):
-    cdef public object quantity
-    cdef public object funding_rate
+    cdef readonly object quantity
+    cdef readonly object funding_rate
 
-    cdef public str order_id
+    cdef readonly str order_id
 
     cpdef bint is_funding_fee(self)
     cpdef bint is_trading_fee(self)

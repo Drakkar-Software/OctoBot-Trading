@@ -18,6 +18,6 @@
 cimport octobot_trading.personal_data.transactions.transaction as transaction
 
 cdef class RealisedPnlTransaction(transaction.Transaction):
-    cdef public object realised_pnl
+    cdef readonly object realised_pnl
 
-    cdef public bint is_closed_pnl
+    cpdef bint is_closed_pnl(self)
