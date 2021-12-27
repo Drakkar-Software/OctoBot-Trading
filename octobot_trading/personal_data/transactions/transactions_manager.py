@@ -80,7 +80,6 @@ class TransactionsManager(util.Initializable):
             self._remove_oldest_transactions(int(self.MAX_TRANSACTIONS_COUNT / 10))
 
     def _reset_transactions(self):
-        self.transactions_initialized = False
         self.transactions = collections.OrderedDict()
 
     def _remove_oldest_transactions(self, nb_to_remove):

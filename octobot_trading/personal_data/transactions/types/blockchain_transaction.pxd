@@ -28,6 +28,6 @@ cdef class BlockchainTransaction(transaction.Transaction):
     cdef readonly object transaction_fee
 
     cpdef bint is_deposit(self)
-    cpdef bint is_withdraw(self)
+    cpdef bint is_withdrawal(self)
     cpdef bint is_pending(self)
     cpdef bint is_validated(self)

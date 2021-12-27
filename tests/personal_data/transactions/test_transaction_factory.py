@@ -56,7 +56,7 @@ async def test_create_blockchain_transaction(backtesting_trader):
     assert transaction.quantity == decimal.Decimal(50)
     assert transaction.transaction_fee == decimal.Decimal(0.1)
     assert transaction.is_deposit()
-    assert not transaction.is_withdraw()
+    assert not transaction.is_withdrawal()
     assert not transaction.is_validated()
     assert transaction.is_pending()
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 1
