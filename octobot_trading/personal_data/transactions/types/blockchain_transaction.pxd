@@ -18,14 +18,14 @@
 cimport octobot_trading.personal_data.transactions.transaction as transaction
 
 cdef class BlockchainTransaction(transaction.Transaction):
-    cdef public str source_address
-    cdef public str destination_address
-    cdef public str blockchain_transaction_id
+    cdef readonly str source_address
+    cdef readonly str destination_address
+    cdef readonly str blockchain_transaction_id
 
-    cdef public object blockchain_type
-    cdef public object blockchain_transaction_status
-    cdef public object quantity
-    cdef public object transaction_fee
+    cdef readonly object blockchain_type
+    cdef readonly object blockchain_transaction_status
+    cdef readonly object quantity
+    cdef readonly object transaction_fee
 
     cpdef bint is_deposit(self)
     cpdef bint is_withdraw(self)

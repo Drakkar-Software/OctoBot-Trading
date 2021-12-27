@@ -96,3 +96,9 @@ class TooManyOpenPositionError(Exception):
     """
     Raised when changing future contract attributes without closing positions first
     """
+
+
+class DuplicateTransactionIdError(Exception):
+    """
+    Raised when trying to add a new transaction with a duplicate id
+    """

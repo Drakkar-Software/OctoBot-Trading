@@ -17,6 +17,7 @@ import collections
 
 import octobot_commons.logging as logging
 
+import octobot_trading.errors as errors
 import octobot_trading.util as util
 
 
@@ -32,14 +33,46 @@ class TransactionsManager(util.Initializable):
         self._reset_transactions()
 
     def upsert_transaction_instance(self, transaction, replace_if_exists=False):
+        """
+        Add the transaction instance to self.transactions by its transaction_id
+        Can raise DuplicateTransactionIdError if a transaction already exists
+        with the same transaction_id (when not replacing it with :replace_if_exists:)
+        :param transaction:
+        :param replace_if_exists: When True, replaces the transaction if a transaction has the same transaction_id
+        """
         if transaction.transaction_id not in self.transactions or replace_if_exists:
             self.transactions[transaction.transaction_id] = transaction
             self._check_transactions_size()
         else:
-            raise ValueError(f"Transaction with id '{transaction.transaction_id}' already exists")
+            raise errors.DuplicateTransactionIdError(
+                f"Transaction with id '{transaction.transaction_id}' already exists")
 
-    def get_transactions(self, transaction_id):
+    def get_transaction(self, transaction_id):
+        """
+        Return the transaction instance with :transaction_id: as transaction_id
+        Can raise KeyError when transaction_id doesn't exist
+        :param transaction_id: the transaction id
+        :return: the transaction with the id :transaction_id:
+        """
         return self.transactions[transaction_id]
+
+    def update_transaction_id(self, transaction_id, new_transaction_id, replace_if_exists=False):
+        """
+        Update a transaction by id
+        Can raise KeyError when initial transaction doesn't exist
+        Can raise DuplicateTransactionIdError when the :new_transaction_id: is already used
+        :param transaction_id: the transaction id to update
+        :param new_transaction_id: the transaction id to set
+        :param replace_if_exists: when True, replace the transaction with :new_transaction_id: if exist
+        """
+        transaction = self.get_transaction(transaction_id)
+        transaction.set_transaction_id(new_transaction_id)
+        try:
+            self.upsert_transaction_instance(transaction, replace_if_exists=replace_if_exists)
+            self.transactions.pop(transaction_id)
+        except errors.DuplicateTransactionIdError as e:
+            transaction.set_transaction_id(transaction_id)
+            raise errors.DuplicateTransactionIdError from e
 
     # private
     def _check_transactions_size(self):
