@@ -17,15 +17,26 @@ import async_channel.enums as channel_enums
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as common_constants
+import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.exchanges as exchanges
+import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
 import octobot_trading.errors as errors
 
 
 class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
+    TOPIC_TO_CHANNEL_NAME = {
+        common_enums.ActivationTopics.FULL_CANDLES.value:
+            channels_name.OctoBotTradingChannelsName.OHLCV_CHANNEL.value,
+        common_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value:
+            channels_name.OctoBotTradingChannelsName.KLINE_CHANNEL.value,
+        common_enums.ActivationTopics.EVALUATORS.value:
+            channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
+    }
+
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel)
         # the trading mode instance logger
@@ -43,14 +54,18 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         # shortcut
         self.exchange_name = self.exchange_manager.exchange_name
 
+        # matrix_id shortcut
+        self.matrix_id = None
+
         # the final eval used by TradingModeConsumers, default value is INIT_EVAL_NOTE
         self.final_eval = common_constants.INIT_EVAL_NOTE
 
         # the producer state used by TradingModeConsumers
         self.state = None
 
-        # the matrix consumer instance
-        self.matrix_consumer = None
+        # the consumer instances
+        self.evaluator_consumers = []
+        self.trading_consumers = []
 
         # Define trading modes default consumer priority level
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
@@ -87,31 +102,69 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         Start trading mode channels subscriptions
         """
-        try:
-            import octobot_evaluators.evaluators.channel as evaluators_channel
-            import octobot_evaluators.enums as evaluators_enums
-            matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                                    self.exchange_manager.id).matrix_id
-            self.matrix_consumer = await evaluators_channel.get_chan(
-                channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value, matrix_id).new_consumer(
-                callback=self.matrix_callback,
-                priority_level=self.priority_level,
-                matrix_id=exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
-                                                                      self.exchange_manager.id).matrix_id,
-                cryptocurrency=self.trading_mode.cryptocurrency
-                if self.trading_mode.cryptocurrency is not None and not self.is_cryptocurrency_wildcard()
-                else common_constants.CONFIG_WILDCARD,
-                symbol=self.trading_mode.symbol
-                if self.trading_mode.symbol is not None and not self.is_symbol_wildcard()
-                else common_constants.CONFIG_WILDCARD,
-                evaluator_type=evaluators_enums.EvaluatorMatrixTypes.STRATEGIES.value,
-                exchange_name=self.exchange_name,
-                time_frame=self.trading_mode.time_frame
-                if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard()
-                else common_constants.CONFIG_WILDCARD,
-                supervised=self.exchange_manager.is_backtesting)
-        except (KeyError, ImportError):
-            self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
+        registration_topics = self.get_channels_registration()
+        currency_filter = self.trading_mode.cryptocurrency \
+            if self.trading_mode.cryptocurrency is not None and not self.is_cryptocurrency_wildcard() \
+            else common_constants.CONFIG_WILDCARD
+        symbol_filter = self.trading_mode.symbol \
+            if self.trading_mode.symbol is not None and not self.is_symbol_wildcard() \
+            else common_constants.CONFIG_WILDCARD
+        time_frame_filter = self.trading_mode.time_frame \
+            if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard() \
+            else common_constants.CONFIG_WILDCARD
+        self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
+                                                                     self.exchange_manager.id).matrix_id
+        for registration_topic in registration_topics:
+            if registration_topic == channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value:
+                try:
+                    import octobot_evaluators.evaluators.channel as evaluators_channel
+                    import octobot_evaluators.enums as evaluators_enums
+                    consumer = await evaluators_channel.get_chan(registration_topic, self.matrix_id).new_consumer(
+                        callback=self.get_callback(registration_topic),
+                        priority_level=self.priority_level,
+                        matrix_id=self.matrix_id,
+                        cryptocurrency=currency_filter,
+                        symbol=symbol_filter,
+                        evaluator_type=evaluators_enums.EvaluatorMatrixTypes.STRATEGIES.value,
+                        exchange_name=self.exchange_name,
+                        time_frame=time_frame_filter,
+                        supervised=self.exchange_manager.is_backtesting
+                    )
+                    self.evaluator_consumers.append(
+                        (consumer, registration_topic)
+                    )
+                except (KeyError, ImportError):
+                    self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
+            else:
+                # trading channels
+                consumer = await exchanges_channel.get_chan(registration_topic, self.exchange_manager.id).new_consumer(
+                    callback=self.get_callback(registration_topic),
+                    priority_level=self.priority_level,
+                    cryptocurrency=currency_filter,
+                    symbol=symbol_filter,
+                    time_frame=time_frame_filter
+                )
+                self.trading_consumers.append(
+                    (consumer, registration_topic)
+                )
+
+    def get_callback(self, chan_name):
+        return {
+            channels_name.OctoBotTradingChannelsName.OHLCV_CHANNEL.value: self.ohlcv_callback,
+            channels_name.OctoBotTradingChannelsName.KLINE_CHANNEL.value: self.kline_callback,
+            channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value: self.matrix_callback,
+        }[chan_name]
+
+    def get_channels_registration(self):
+        registration_channels = []
+        # Activate on full candles only by default (same as technical evaluators)
+        for topic in self.trading_mode.trading_config.get(common_constants.CONFIG_ACTIVATION_TOPICS.replace(" ", "_"),
+                                                          [common_enums.ActivationTopics.EVALUATORS.value]):
+            try:
+                registration_channels.append(self.TOPIC_TO_CHANNEL_NAME[topic])
+            except KeyError:
+                self.logger.error(f"Unknown registration topic: {topic}")
+        return registration_channels
 
     async def stop(self) -> None:
         """
@@ -119,15 +172,21 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         await super().stop()
         if self.exchange_manager is not None:
-            try:
-                import octobot_evaluators.evaluators.channel as evaluators_channel
-                await evaluators_channel.get_chan(channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
-                                                  exchanges.Exchanges.instance().get_exchange(
-                                                      self.exchange_manager.exchange_name,
-                                                      self.exchange_manager.id).matrix_id
-                                                  ).remove_consumer(self.matrix_consumer)
-            except (KeyError, ImportError):
-                self.logger.error(f"Can't unregister matrix channel on {self.exchange_name}")
+            for consumer, channel_name in self.evaluator_consumers:
+                try:
+                    import octobot_evaluators.evaluators.channel as evaluators_channel
+                    await evaluators_channel.get_chan(channel_name,
+                                                      exchanges.Exchanges.instance().get_exchange(
+                                                          self.exchange_manager.exchange_name,
+                                                          self.exchange_manager.id).matrix_id
+                                                      ).remove_consumer(consumer)
+                except (KeyError, ImportError):
+                    self.logger.error(f"Can't unregister {channel_name} channel on {self.exchange_name}")
+            for consumer, channel_name in self.trading_consumers:
+                try:
+                    await exchanges_channel.get_chan(channel_name, self.exchange_manager.id).remove_consumer(consumer)
+                except (KeyError, ImportError):
+                    self.logger.error(f"Can't unregister {channel_name} channel on {self.exchange_name}")
         self.flush()
 
     def flush(self) -> None:
@@ -136,7 +195,15 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         self.trading_mode = None
         self.exchange_manager = None
-        self.matrix_consumer = None
+        self.consumers = []
+
+    async def ohlcv_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
+                              time_frame: str, candle: dict):
+        self.logger.error(f"ohlcv_callback is registered but not implemented")
+
+    async def kline_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
+                              time_frame, kline: dict):
+        self.logger.error(f"kline_callback is registered but not implemented")
 
     async def matrix_callback(self, matrix_id, evaluator_name, evaluator_type,
                               eval_note, eval_note_type, exchange_name, cryptocurrency, symbol, time_frame) -> None:

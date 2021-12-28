@@ -19,7 +19,6 @@ import contextlib
 import importlib
 import asyncio
 
-
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.enums as commons_enums
@@ -54,6 +53,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         self._backtesting_script = None
         self.timestamp = time.time()
         self.script_name = None
+
         if exchange_manager:
             self.load_config()
             # add config folder to importable files to import the user script
@@ -73,7 +73,7 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
     async def create_consumers(self) -> list:
         try:
             await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.TRADES_CHANNEL.value,
-                self.exchange_manager.id).new_consumer(
+                                             self.exchange_manager.id).new_consumer(
                 self._trades_callback,
                 symbol=self.symbol
             )
@@ -90,13 +90,13 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         return [user_commands_consumer]
 
     async def _trades_callback(
-        self,
-        exchange: str,
-        exchange_id: str,
-        cryptocurrency: str,
-        symbol: str,
-        trade: dict,
-        old_trade: bool,
+            self,
+            exchange: str,
+            exchange_id: str,
+            cryptocurrency: str,
+            symbol: str,
+            trade: dict,
+            old_trade: bool,
     ):
         if trade[trading_enums.ExchangeConstantsOrderColumns.STATUS.value] != trading_enums.OrderStatus.CANCELED.value:
             await scripting_library.store_trade(None, trade, writer=self.producers[0].trades_writer)
@@ -124,7 +124,10 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             await scripting_library.clear_trades_cache(producer.trades_writer)
 
     async def clear_all_cache(self):
-        await databases.CacheManager().clear_cache(self.get_name())
+
+        for tentacle_name in [self.get_name()] + [evaluator.get_name() for evaluator in
+                                                  self.called_nested_evaluators]:
+            await databases.CacheManager().clear_cache(tentacle_name)
 
     async def clear_plotting_cache(self):
         for producer in self.producers:
@@ -190,10 +193,10 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
             await scripting_library.clear_user_inputs(producer.run_data_writer)
             producer.run_data_writer.set_initialized_flags(False)
             last_call_time_stamp = producer.last_call[-1]
-            producer.symbol_writer.set_initialized_flags(False, (last_call_time_stamp, ))
+            producer.symbol_writer.set_initialized_flags(False, (last_call_time_stamp,))
             self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
             await self.close_caches(reset_cache_db_ids=True)
-            await producer.set_final_eval(*producer.last_call)
+            await producer.call_script(*producer.last_call)
 
     def get_optimizer_id(self):
         return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
@@ -261,23 +264,28 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                     user_input["name"]: user_input["value"]
                 }
         return {
-            trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id),
+            trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(
+                self.trading_mode.bot_id),
             trading_enums.BacktestingMetadata.GAINS.value: round(float(profitability), 8),
             trading_enums.BacktestingMetadata.PERCENT_GAINS.value: round(float(profitability_percent), 3),
             trading_enums.BacktestingMetadata.END_PORTFOLIO.value: trading_api.get_portfolio_amounts(end_portfolio),
-            trading_enums.BacktestingMetadata.START_PORTFOLIO.value: trading_api.get_portfolio_amounts(origin_portfolio),
-            trading_enums.BacktestingMetadata.WIN_RATE.value: round(float(trading_api.get_win_rate(self.exchange_manager) * 100), 3),
+            trading_enums.BacktestingMetadata.START_PORTFOLIO.value: trading_api.get_portfolio_amounts(
+                origin_portfolio),
+            trading_enums.BacktestingMetadata.WIN_RATE.value: round(
+                float(trading_api.get_win_rate(self.exchange_manager) * 100), 3),
             trading_enums.BacktestingMetadata.SYMBOLS.value: trading_api.get_trading_pairs(self.exchange_manager),
             trading_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
-            trading_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting),
-            trading_enums.BacktestingMetadata.END_TIME.value: backtesting_api.get_backtesting_ending_time(self.exchange_manager.exchange.backtesting),
+            trading_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(
+                self.exchange_manager.exchange.backtesting),
+            trading_enums.BacktestingMetadata.END_TIME.value: backtesting_api.get_backtesting_ending_time(
+                self.exchange_manager.exchange.backtesting),
             trading_enums.BacktestingMetadata.TRADES.value: len(trading_api.get_trade_history(self.exchange_manager)),
             trading_enums.BacktestingMetadata.TIMESTAMP.value: self.trading_mode.timestamp,
             trading_enums.BacktestingMetadata.NAME.value: self.trading_mode.script_name,
             trading_enums.BacktestingMetadata.USER_INPUTS.value: formatted_user_inputs,
-            trading_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(self.exchange_manager)
+            trading_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(
+                self.exchange_manager)
         }
-
 
     async def get_live_metadata(self):
         start_time = backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting) \
@@ -310,6 +318,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                                                           optimizer_id=self.trading_mode.get_optimizer_id())
         await self.database_manager.initialize(self.exchange_name)
         self.run_data_writer = self.trading_mode.get_writer(self.database_manager.get_run_data_db_identifier())
+        # refresh user inputs
+        await scripting_library.clear_user_inputs(self.run_data_writer)
         self.orders_writer = self.trading_mode.get_writer(self.database_manager.get_orders_db_identifier())
         self.trades_writer = self.trading_mode.get_writer(self.database_manager.get_trades_db_identifier())
         self.symbol_writer = self.trading_mode.get_writer(self.database_manager.get_symbol_db_identifier(
@@ -317,7 +327,43 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             self.traded_pair
         ))
 
+    async def ohlcv_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
+                             time_frame: str, candle: dict):
+        await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
+                               commons_enums.ActivationTopics.FULL_CANDLES.value,
+                               candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
+                               candle=candle)
+
+    async def kline_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
+                             time_frame, kline: dict):
+        await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
+                               commons_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value,
+                               kline[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
+                               kline=kline)
+
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
+
+        await self.call_script(matrix_id, cryptocurrency, symbol, time_frame,
+                               commons_enums.ActivationTopics.EVALUATORS.value,
+                               self._get_latest_eval_time(matrix_id, cryptocurrency, symbol, time_frame))
+
+    def _get_latest_eval_time(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
+        try:
+            import octobot_evaluators.matrix as matrix
+            import octobot_evaluators.enums as evaluators_enums
+            return matrix.get_latest_eval_time(matrix_id,
+                                               exchange_name=self.exchange_name,
+                                               tentacle_type=evaluators_enums.EvaluatorMatrixTypes.SCRIPTED.value,
+                                               cryptocurrency=cryptocurrency,
+                                               symbol=symbol,
+                                               time_frame=time_frame)
+        except ImportError:
+            self.logger.error("OctoBot-Evaluators is required for a matrix callback")
+            return None
+
+    async def call_script(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame: str,
+                          trigger_source: str, trigger_cache_timestamp: float,
+                          candle: dict = None, kline: dict = None):
         context = scripting_library.Context(
             self.trading_mode,
             self.exchange_manager,
@@ -334,14 +380,15 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             self.trades_writer,
             self.symbol_writer,
             self.trading_mode,
-            None,    # trigger_timestamp todo
-            None,
-            None,
+            trigger_cache_timestamp,
+            trigger_source,
+            candle or kline,
             None,
             None,
         )
         self.contexts.append(context)
-        self.last_call = (matrix_id, cryptocurrency, symbol, time_frame)
+        self.last_call = (matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
+                          candle, kline)
         context.matrix_id = matrix_id
         context.cryptocurrency = cryptocurrency
         context.symbol = symbol
@@ -367,7 +414,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                 if context.has_cache(context.symbol, context.time_frame):
                     await context.get_cache().flush()
             self.run_data_writer.set_initialized_flags(initialized)
-            self.symbol_writer.set_initialized_flags(initialized, (time_frame, ))
+            self.symbol_writer.set_initialized_flags(initialized, (time_frame,))
             self.contexts.remove(context)
 
     async def _reset_run_data(self, context):
@@ -380,6 +427,16 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         await scripting_library.user_input(context, trading_constants.CONFIG_VISIBLE_LIVE_HISTORY, "int", 800)
         if context.exchange_manager.is_future:
             await scripting_library.user_select_leverage(context)
+
+        # register activating topics user input
+        activation_topic_values = [
+            commons_enums.ActivationTopics.EVALUATORS.value,
+            commons_enums.ActivationTopics.FULL_CANDLES.value,
+            commons_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value
+        ]
+        await scripting_library.user_input(context, commons_constants.CONFIG_ACTIVATION_TOPICS, "multiple-options",
+                                           [commons_enums.ActivationTopics.EVALUATORS.value],
+                                           options=activation_topic_values)
 
     @contextlib.asynccontextmanager
     async def get_metadata_writer(self, with_lock):

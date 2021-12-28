@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import abc
-import asyncio
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
@@ -69,6 +68,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # producers is the list of consumers created by this trading mode
         self.consumers = []
+
+        # Other evaluators that might have been called by this trading mode.
+        # This trading mode is now responsible for managing their cache
+        self.called_nested_evaluators = set()
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -143,13 +146,14 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         self.exchange_manager = None
 
     async def close_caches(self, reset_cache_db_ids=False):
-        await databases.CacheManager().close_cache(
-            self.get_name(),
-            self.exchange_manager.exchange_name,
-            None if self.get_is_symbol_wildcard() else self.symbol,
-            None if self.get_is_time_frame_wildcard() else self.time_frame,
-            reset_cache_db_ids=reset_cache_db_ids
-        )
+        for tentacle_name in [self.get_name()] + [evaluator.get_name() for evaluator in self.called_nested_evaluators]:
+            await databases.CacheManager().close_cache(
+                tentacle_name,
+                self.exchange_manager.exchange_name,
+                None if self.get_is_symbol_wildcard() else self.symbol,
+                None if self.get_is_time_frame_wildcard() else self.time_frame,
+                reset_cache_db_ids=reset_cache_db_ids
+            )
 
     async def create_producers(self) -> list:
         """

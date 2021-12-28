@@ -116,6 +116,8 @@ async def evaluator_get_result(
         config_name=None,
         config: dict = None
 ):
+    tentacle_class = tentacles_manager_api.get_tentacle_class_from_string(tentacle_class) \
+        if isinstance(tentacle_class, str) else tentacle_class
     if trigger:
         # always trigger when asked to then return the triggered evaluation return
         return await _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config)
@@ -141,6 +143,8 @@ async def evaluator_get_results(
         config_name=None,
         config: dict = None
 ):
+    tentacle_class = tentacles_manager_api.get_tentacle_class_from_string(tentacle_class) \
+        if isinstance(tentacle_class, str) else tentacle_class
     if trigger:
         # always trigger when asked to
         eval_result = await _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config)
@@ -173,20 +177,25 @@ async def _trigger_single_evaluation(context, tentacle_class, value_key, config_
     config = {key.replace(" ", "_"): val for key, val in config.items()} if config else {}
     cleaned_config_name = config_name.replace(" ", "_")
     context.tentacle.called_nested_evaluators.add(tentacle_class)
+    tentacle_config = context.tentacle.specific_config if hasattr(context.tentacle, "specific_config") \
+        else context.tentacle.trading_config
+    tentacles_setup_config = context.tentacle.tentacles_setup_config \
+        if hasattr(context.tentacle, "tentacles_setup_config") else context.exchange_manager.tentacles_setup_config
     with context.local_nested_tentacle_config(config_name, True):
         if config_name is None:
             tentacle_config = tentacles_manager_api.get_tentacle_config(
-                context.tentacle.tentacles_setup_config,
+                tentacles_setup_config,
                 tentacle_class)
             # apply forced config if any
             dict_util.check_and_merge_values_from_reference(tentacle_config, config, [], None)
         else:
             try:
-                tentacle_config = context.tentacle.specific_config[cleaned_config_name]
+                tentacle_config = tentacle_config[cleaned_config_name]
             except KeyError:
-                await _init_nested_config(context, tentacle_class, cleaned_config_name, config)
+                await _init_nested_config(context, tentacle_class, cleaned_config_name,
+                                          tentacles_setup_config, tentacle_config, config)
                 try:
-                    tentacle_config = context.tentacle.specific_config[cleaned_config_name]
+                    tentacle_config = tentacle_config[cleaned_config_name]
                 except KeyError as e:
                     raise commons_errors.ConfigEvaluatorError(f"Missing evaluator configuration with name {e}")
             # apply forced config if any
@@ -201,26 +210,28 @@ async def _trigger_single_evaluation(context, tentacle_class, value_key, config_
                 nested_tentacle=tentacle_class.get_name()
             )
         eval_result = (await tentacle_class.single_evaluation(
-            context.tentacle.tentacles_setup_config,
+            tentacles_setup_config,
             tentacle_config,
             context=context
         ))[0]
         if value_key == commons_enums.CacheDatabaseColumns.VALUE.value:
             return eval_result
         else:
-            value, is_missing = await context.get_cached_value(value_key=value_key, tentacle_name=tentacle_class.__name__,
+            value, is_missing = await context.get_cached_value(value_key=value_key,
+                                                               tentacle_name=tentacle_class.__name__,
                                                                config_name=config_name)
             return None if is_missing else value
 
 
-async def _init_nested_config(context, tentacle_class, cleaned_config_name, config):
+async def _init_nested_config(context, tentacle_class, cleaned_config_name,
+                              tentacles_setup_config, tentacle_config, config):
     _, evaluator_instance = await tentacle_class.single_evaluation(
-        context.tentacle.tentacles_setup_config,
+        tentacles_setup_config,
         config,
         context=context,
         ignore_cache=True
     )
-    context.tentacle.specific_config[cleaned_config_name] = evaluator_instance.specific_config
+    tentacle_config[cleaned_config_name] = evaluator_instance.specific_config
 
 
 def _tentacle_values(context,
