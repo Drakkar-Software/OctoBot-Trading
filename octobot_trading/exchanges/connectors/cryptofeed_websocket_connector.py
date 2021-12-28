@@ -52,7 +52,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         # When ticker or future index is available : no need to calculate mark price from recent trades
         Feeds.TRADES: [Feeds.TICKER, Feeds.FUTURES_INDEX],
         # When candles are available : use min timeframe kline to push ticker
-        Feeds.TICKER: [Feeds.CANDLE]
+        Feeds.TICKER: [Feeds.KLINE]
     }
 
     CRYPTOFEED_FEEDS_TO_WEBSOCKET_FEEDS = {
