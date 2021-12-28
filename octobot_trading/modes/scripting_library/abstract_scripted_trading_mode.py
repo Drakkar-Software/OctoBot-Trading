@@ -305,7 +305,6 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         super().__init__(channel, config, trading_mode, exchange_manager)
         self.last_call = None
         self.traded_pair = trading_mode.symbol
-        self.contexts = []
         self.are_metadata_saved = False
 
     async def start(self) -> None:
@@ -320,6 +319,8 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         self.run_data_writer = self.trading_mode.get_writer(self.database_manager.get_run_data_db_identifier())
         # refresh user inputs
         await scripting_library.clear_user_inputs(self.run_data_writer)
+        await self._register_required_user_inputs(
+            self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None))
         self.orders_writer = self.trading_mode.get_writer(self.database_manager.get_orders_db_identifier())
         self.trades_writer = self.trading_mode.get_writer(self.database_manager.get_trades_db_identifier())
         self.symbol_writer = self.trading_mode.get_writer(self.database_manager.get_symbol_db_identifier(
@@ -364,7 +365,39 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
     async def call_script(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame: str,
                           trigger_source: str, trigger_cache_timestamp: float,
                           candle: dict = None, kline: dict = None):
-        context = scripting_library.Context(
+        context = self.get_context(matrix_id, cryptocurrency, symbol, time_frame, trigger_source,
+                                   trigger_cache_timestamp, candle, kline)
+        self.last_call = (matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
+                          candle, kline)
+        context.matrix_id = matrix_id
+        context.cryptocurrency = cryptocurrency
+        context.symbol = symbol
+        context.time_frame = time_frame
+        initialized = True
+        try:
+            if not self.run_data_writer.are_data_initialized and not \
+                    self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
+                await self._reset_run_data(context)
+            await self.trading_mode.get_script(live=True)(context)
+        except errors.UnreachableExchange:
+            raise
+        except commons_errors.MissingDataError:
+            initialized = False
+        except Exception as e:
+            self.logger.exception(e, True, f"Error when running script: {e}")
+        finally:
+            if not self.exchange_manager.is_backtesting:
+                # update db after each run only in live mode
+                for writer in self.writers():
+                    await writer.flush()
+                if context.has_cache(context.symbol, context.time_frame):
+                    await context.get_cache().flush()
+            self.run_data_writer.set_initialized_flags(initialized)
+            self.symbol_writer.set_initialized_flags(initialized, (time_frame,))
+
+    def get_context(self, matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
+                    candle, kline):
+        return scripting_library.Context(
             self.trading_mode,
             self.exchange_manager,
             self.exchange_manager.trader,
@@ -386,36 +419,6 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
             None,
             None,
         )
-        self.contexts.append(context)
-        self.last_call = (matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
-                          candle, kline)
-        context.matrix_id = matrix_id
-        context.cryptocurrency = cryptocurrency
-        context.symbol = symbol
-        context.time_frame = time_frame
-        initialized = True
-        try:
-            if not self.run_data_writer.are_data_initialized and not \
-                    self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
-                await self._reset_run_data(context)
-            await self._pre_script_call(context)
-            await self.trading_mode.get_script(live=True)(context)
-        except errors.UnreachableExchange:
-            raise
-        except commons_errors.MissingDataError:
-            initialized = False
-        except Exception as e:
-            self.logger.exception(e, True, f"Error when running script: {e}")
-        finally:
-            if not self.exchange_manager.is_backtesting:
-                # update db after each run only in live mode
-                for writer in self.writers():
-                    await writer.flush()
-                if context.has_cache(context.symbol, context.time_frame):
-                    await context.get_cache().flush()
-            self.run_data_writer.set_initialized_flags(initialized)
-            self.symbol_writer.set_initialized_flags(initialized, (time_frame,))
-            self.contexts.remove(context)
 
     async def _reset_run_data(self, context):
         await scripting_library.clear_run_data(self.run_data_writer)
@@ -423,7 +426,7 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
         await scripting_library.save_portfolio(self.run_data_writer, context)
         self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
 
-    async def _pre_script_call(self, context):
+    async def _register_required_user_inputs(self, context):
         await scripting_library.user_input(context, trading_constants.CONFIG_VISIBLE_LIVE_HISTORY, "int", 800)
         if context.exchange_manager.is_future:
             await scripting_library.user_select_leverage(context)
