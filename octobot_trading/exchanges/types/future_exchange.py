@@ -55,6 +55,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
                              contract_type, position_mode, maintenance_margin_rate, maximum_leverage=None):
         """
         Create a new FutureContract for the pair
+        # TODO: support 1 contract by side when using hedge position mode --> think about another way to store contracts
         :param pair: the contract pair
         :param current_leverage: the contract current leverage
         :param margin_type: the contract margin type

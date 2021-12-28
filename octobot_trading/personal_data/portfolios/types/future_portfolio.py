@@ -140,6 +140,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
     def update_portfolio_from_pnl(self, position):
         """
         Updates the portfolio from a Position PNL update
+        TODO: manage portfolio PNL update when using cross margin
         :param position: position: the position instance with the new PNL
         """
         if position.symbol_contract.is_isolated():

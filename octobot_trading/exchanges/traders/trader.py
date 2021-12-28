@@ -361,6 +361,7 @@ class Trader(util.Initializable):
     async def set_margin_type(self, symbol, side, margin_type):
         """
         Updates the symbol contract margin type
+        TODO: recreate position instances if any
         :param symbol: the symbol to update
         :param side: the side to update (TODO)
         :param margin_type: the new margin type (enums.MarginType)
