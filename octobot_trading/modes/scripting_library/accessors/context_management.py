@@ -76,7 +76,10 @@ class Context:
         self.plot_orders = False
         self.cache_manager = databases.CacheManager(database_adaptor=databases.TinyDBAdaptor)
         self.just_created_orders = []
+
+        # nested calls management
         self.config_name = None
+        self.top_level_tentacle = tentacle
         self.is_nested_tentacle = False
         self.nested_depth = 0
 
@@ -119,7 +122,7 @@ class Context:
             optimizer_id,
         )
 
-    def copy(self, tentacle=None):
+    def copy(self, tentacle=None, keep_top_level_tentacle=True):
         context = Context(
             tentacle or self.tentacle,
             self.exchange_manager,
@@ -145,6 +148,9 @@ class Context:
         context.is_nested_tentacle = self.is_nested_tentacle
         context.config_name = self.config_name
         context.nested_depth = self.nested_depth
+        if keep_top_level_tentacle and context.nested_depth > 0:
+            # always keep top level tentacle
+            context.top_level_tentacle = self.top_level_tentacle
         return context
 
     def get_cache(self, tentacle_name=None, cache_type=databases.CacheTimestampDatabase, config_name=None):
