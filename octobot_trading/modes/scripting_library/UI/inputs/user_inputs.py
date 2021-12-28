@@ -27,7 +27,8 @@ async def user_input(
     options=None,
     is_nested_config=None,
     nested_tentacle=None,
-    not_important=False  # todo when true hide from optimizer inputs and all tables
+    show_in_summary=True,
+    show_in_optimizer=True
 ):
     config = ctx.tentacle.trading_config if hasattr(ctx.tentacle, "trading_config") else ctx.tentacle.specific_config
     try:
@@ -46,7 +47,8 @@ async def user_input(
         options=options,
         is_nested_config=is_nested_config,
         nested_tentacle=nested_tentacle,
-        not_important=not_important
+        show_in_summary=show_in_summary,
+        show_in_optimizer=show_in_optimizer
     )
     return value
 
@@ -62,7 +64,8 @@ async def save_user_input(
     options=None,
     is_nested_config=None,
     nested_tentacle=None,
-    not_important=False
+    show_in_summary=True,
+    show_in_optimizer=True
 ):
     if is_nested_config is None:
         is_nested_config = ctx.is_nested_tentacle
@@ -89,7 +92,9 @@ async def save_user_input(
                 "tentacle_type": tentacle_type,
                 "tentacle": ctx.tentacle.get_name(),
                 "nested_tentacle": nested_tentacle,
-                "is_nested_config": is_nested_config
+                "is_nested_config": is_nested_config,
+                "in_summary": show_in_summary,
+                "in_optimizer": show_in_optimizer,
             }
         )
 

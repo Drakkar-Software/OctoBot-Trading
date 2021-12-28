@@ -232,7 +232,9 @@ class DisplayedElements:
     def _generate_schema(self, main_schema, user_input_element, nested_user_inputs_by_tentacle):
         properties = {
             "options": {
-                "grid_columns": 4
+                "grid_columns": 4,
+                "in_summary": user_input_element.get("in_summary", True),
+                "in_optimizer": user_input_element.get("in_optimizer", True),
             }
         }
         if title := user_input_element.get("name"):
