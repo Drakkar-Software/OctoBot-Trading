@@ -507,7 +507,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param time_frame: the time frame to add
         """
         try:
-            if time_frame.value in self.cryptofeed_exchange.valid_candle_intervals:
+            if self.cryptofeed_exchange.valid_candle_intervals is not NotImplemented and \
+                    time_frame.value in self.cryptofeed_exchange.valid_candle_intervals :
                 self.filtered_timeframes.append(time_frame)
             else:
                 self.logger.error(f"{time_frame.value} time frame is not supported by this exchange's websocket")
