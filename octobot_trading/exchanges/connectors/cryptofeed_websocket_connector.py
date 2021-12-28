@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 import logging
 import os
 import threading
@@ -610,7 +611,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         # Push (ask + bid) / 2 as close price in MARK_PRICE channel
         await self.push_to_channel(channel_name=trading_constants.MARK_PRICE_CHANNEL,
                                    symbol=symbol,
-                                   mark_price=float((ticker.ask + ticker.bid) / 2),
+                                   mark_price=(ticker.ask + ticker.bid) / decimal.Decimal(2),
                                    mark_price_source=trading_enums.MarkPriceSources.TICKER_CLOSE_PRICE.value)
 
     async def trades(self, trade: cryptofeed_types.Trade, receipt_timestamp: float):
