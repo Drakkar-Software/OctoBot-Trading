@@ -111,7 +111,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             else common_constants.CONFIG_WILDCARD
         time_frame_filter = self.trading_mode.time_frame \
             if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard() \
-            else common_constants.CONFIG_WILDCARD
+            else [tf.value for tf in self.exchange_manager.exchange_config.available_required_time_frames]
         self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                                      self.exchange_manager.id).matrix_id
         for registration_topic in registration_topics:
