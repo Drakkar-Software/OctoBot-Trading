@@ -192,8 +192,8 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
         for producer in self.producers:
             await scripting_library.clear_user_inputs(producer.run_data_writer)
             producer.run_data_writer.set_initialized_flags(False)
-            last_call_time_stamp = producer.last_call[-1]
-            producer.symbol_writer.set_initialized_flags(False, (last_call_time_stamp,))
+            last_call_timestamp = producer.last_call[3]
+            producer.symbol_writer.set_initialized_flags(False, (last_call_timestamp,))
             self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
             await self.close_caches(reset_cache_db_ids=True)
             await producer.call_script(*producer.last_call)
