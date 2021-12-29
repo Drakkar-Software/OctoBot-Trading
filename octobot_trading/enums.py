@@ -457,6 +457,7 @@ class PlotAttributes(enum.Enum):
     COLUMNS = "columns"
     ROWS = "rows"
     SEARCHES = "searches"
+    IS_HIDDEN = "is_hidden"
     TYPE = "type"
     COLOR = "color"
     HTML = "html"

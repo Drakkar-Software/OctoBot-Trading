@@ -190,16 +190,20 @@ class DisplayedElements:
             config_by_tentacles = {}
             config_schema_by_tentacles = {}
             tentacle_type_by_tentacles = {}
+            shown_tentacles = {}
             nested_user_inputs_by_tentacle = self._extract_nested_user_inputs(inputs)
             for user_input_element in inputs:
                 try:
+                    tentacle = user_input_element["tentacle"]
                     if user_input_element["is_nested_config"]:
                         # Do not display nested user input config as regular user inputs.
                         # These are mere models that are used in association with
                         # nested user inputs, which are used in the context of a
                         # nested tentacle configuration
-                        continue
-                    tentacle = user_input_element["tentacle"]
+                        if tentacle not in shown_tentacles:
+                            shown_tentacles[tentacle] = False
+                    else:
+                        shown_tentacles[tentacle] = True
                     tentacle_type_by_tentacles[tentacle] = user_input_element["tentacle_type"]
                     if tentacle not in config_schema_by_tentacles:
                         config_schema_by_tentacles[tentacle] = self._base_schema(tentacle)
@@ -217,6 +221,7 @@ class DisplayedElements:
                     schema,
                     tentacle,
                     tentacle_type_by_tentacles[tentacle],
+                    not shown_tentacles[tentacle]
                 )
 
     def _extract_nested_user_inputs(self, inputs):
@@ -484,6 +489,7 @@ class DisplayedElements:
         schema,
         tentacle,
         tentacle_type,
+        is_hidden,
     ):
         element = Element(
             None,
@@ -494,7 +500,8 @@ class DisplayedElements:
             config_values=config_values,
             tentacle=tentacle,
             tentacle_type=tentacle_type,
-            type=trading_enums.DisplayedElementTypes.INPUT.value
+            is_hidden=is_hidden,
+            type=trading_enums.DisplayedElementTypes.INPUT.value,
         )
         self.elements.append(element)
 
@@ -587,6 +594,7 @@ class Element:
         columns=None,
         rows=None,
         searches=None,
+        is_hidden=None,
         type=trading_enums.DisplayedElementTypes.CHART.value,
         color=None,
         html=None,
@@ -616,6 +624,7 @@ class Element:
         self.columns = columns
         self.rows = rows
         self.searches = searches
+        self.is_hidden = is_hidden
         self.type = type
         self.color = color
         self.html = html
@@ -647,6 +656,7 @@ class Element:
             trading_enums.PlotAttributes.COLUMNS.value: self.columns,
             trading_enums.PlotAttributes.ROWS.value: self.rows,
             trading_enums.PlotAttributes.SEARCHES.value: self.searches,
+            trading_enums.PlotAttributes.IS_HIDDEN.value: self.is_hidden,
             trading_enums.PlotAttributes.TYPE.value: self.type,
             trading_enums.PlotAttributes.COLOR.value: self.color,
             trading_enums.PlotAttributes.HTML.value: self.html,
