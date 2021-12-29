@@ -257,12 +257,13 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                                                                                          self.exchange_manager.id)]
         formatted_user_inputs = {}
         for user_input in user_inputs:
-            try:
-                formatted_user_inputs[user_input["tentacle"]][user_input["name"]] = user_input["value"]
-            except KeyError:
-                formatted_user_inputs[user_input["tentacle"]] = {
-                    user_input["name"]: user_input["value"]
-                }
+            if not user_input["is_nested_config"]:
+                try:
+                    formatted_user_inputs[user_input["tentacle"]][user_input["name"]] = user_input["value"]
+                except KeyError:
+                    formatted_user_inputs[user_input["tentacle"]] = {
+                        user_input["name"]: user_input["value"]
+                    }
         return {
             trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(
                 self.trading_mode.bot_id),
