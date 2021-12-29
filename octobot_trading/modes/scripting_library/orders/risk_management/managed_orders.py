@@ -17,6 +17,7 @@ import decimal
 
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.modes.scripting_library.orders.order_types as order_types
+import octobot_trading.modes.scripting_library.orders.cancelling as cancelling
 import octobot_trading.modes.scripting_library.TA.trigger.tag_triggered as tag_triggered
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data.open_positions as open_positions
 import octobot_trading.modes.scripting_library.data.reading.exchange_private_data.account_balance as account_balance
@@ -285,10 +286,15 @@ async def managed_order(ctx, side="long", orders_settings=None):
             exit_target_position = 0
             exit_order_tag = f"managed_order {side} exit:"
             entry_order_tag = f"managed_order {side} entry:"
+            # todo use replace orders instead
+            await cancelling.cancel_orders(ctx, exit_order_tag)
+            await cancelling.cancel_orders(ctx, entry_order_tag)
+
         else:  # keep existing exit orders and only add new exits
             exit_side = "sell" if side == "buy" else "buy"
             exit_amount = position_size_market
-            order_tag_id = random.randint(0, 999999999) # {exchange_public_data.current_candle_time(ctx)})"  # todo use something unique to avoid canceling eventual other orders in the same candle
+            # todo use something unique to avoid canceling eventual other orders in the same candle
+            order_tag_id = random.randint(0, 999999999)
             exit_order_tag = f"managed_order {side} exit (id: {order_tag_id})"
             entry_order_tag = f"managed_order {side} entry (id: {order_tag_id})"
 
@@ -302,8 +308,8 @@ async def managed_order(ctx, side="long", orders_settings=None):
                                              tag=entry_order_tag)
             # wait for limit to get filled
 
-            if tag_triggered.tagged_order_unfilled("managed order long entry:"):
-                unfilled_amount = tag_triggered.tagged_order_unfilled_amount("managed order long entry:")
+            if tag_triggered.tagged_order_unfilled(entry_order_tag):
+                unfilled_amount = tag_triggered.tagged_order_unfilled_amount(entry_order_tag)
                 if unfilled_amount != position_size_limit:
                     position_size_market = 50  # todo calc smaller size cause of fees
                 await order_types.market(ctx, side=side, amount=position_size_market, tag=entry_order_tag)

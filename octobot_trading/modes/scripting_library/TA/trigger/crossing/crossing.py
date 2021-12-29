@@ -25,7 +25,7 @@ async def crossing_up(context=None, values_to_cross=None, crossing_values=None, 
     if values_to_cross is None:
         raise RuntimeError("crossing_up: you need to provide values_to_cross")
     else:
-        if context is None and crossing_values is not None:
+        if crossing_values is not None:
             was_below = None
             try:
                 was_below = crossing_values[-delay-2] < values_to_cross[-delay-2]
@@ -86,7 +86,7 @@ async def crossing_down(context=None, values_to_cross=None, crossing_values=None
     if values_to_cross is None:
         raise RuntimeError("crossing_down: you need to provide values_to_cross")
     else:
-        if context is None and crossing_values is not None:
+        if crossing_values is not None:
             was_above = None
             try:
                 was_above = crossing_values[-delay - 2] < values_to_cross[-delay - 2]
