@@ -344,7 +344,6 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
                                kline=kline)
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
-
         await self.call_script(matrix_id, cryptocurrency, symbol, time_frame,
                                commons_enums.ActivationTopics.EVALUATORS.value,
                                self._get_latest_eval_time(matrix_id, cryptocurrency, symbol, time_frame))

@@ -125,7 +125,19 @@ async def evaluator_get_result(
         # try reading from cache
         value, is_missing = await context.get_cached_value(value_key=value_key, tentacle_name=tentacle_class.__name__,
                                                            config_name=config_name)
-        return None if is_missing else value
+        if is_missing:
+            # on ohlcv triggers, eval time stored in matrix is one timeframe after, try with removing it
+            trigger_time = context.trigger_cache_timestamp - \
+                commons_enums.TimeFramesMinutes[commons_enums.TimeFrames(time_frame or context.time_frame)] \
+                * commons_constants.MINUTE_TO_SECONDS
+            value, is_missing = await context.get_cached_value(value_key=value_key,
+                                                               cache_key=trigger_time,
+                                                               tentacle_name=tentacle_class.__name__,
+                                                               config_name=config_name)
+            if not is_missing:
+                return value
+        else:
+            return value
     _ensure_cache_when_set_value_key(value_key, tentacle_class)
     # read from evaluation matrix
     for value in _tentacle_values(context, tentacle_class, time_frame=time_frame, symbol=symbol):
