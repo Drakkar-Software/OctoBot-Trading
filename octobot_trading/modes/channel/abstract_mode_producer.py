@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
+
 import async_channel.enums as channel_enums
 
 import octobot_commons.channels_name as channels_name
@@ -234,15 +236,21 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             # Do nothing if not its exchange
             return
 
-        try:
+        with self.trading_mode_trigger():
             await self.set_final_eval(matrix_id=matrix_id,
                                       cryptocurrency=cryptocurrency,
                                       symbol=symbol,
                                       time_frame=time_frame)
+
+    @contextlib.contextmanager
+    def trading_mode_trigger(self):
+        try:
+            yield
         except errors.UnreachableExchange as e:
             self.logger.warning(f"Error when calling trading mode: {e}")
         except Exception as e:
             self.logger.exception(e, True, f"Error when calling trading mode: {e}")
+
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame) -> None:
         """

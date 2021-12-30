@@ -123,21 +123,29 @@ async def evaluator_get_result(
         return await _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config)
     if tentacle_class.use_cache():
         # try reading from cache
-        value, is_missing = await context.get_cached_value(value_key=value_key, tentacle_name=tentacle_class.__name__,
-                                                           config_name=config_name)
-        if is_missing:
-            # on ohlcv triggers, eval time stored in matrix is one timeframe after, try with removing it
-            trigger_time = context.trigger_cache_timestamp - \
-                commons_enums.TimeFramesMinutes[commons_enums.TimeFrames(time_frame or context.time_frame)] \
-                * commons_constants.MINUTE_TO_SECONDS
+        try:
             value, is_missing = await context.get_cached_value(value_key=value_key,
-                                                               cache_key=trigger_time,
                                                                tentacle_name=tentacle_class.__name__,
                                                                config_name=config_name)
-            if not is_missing:
+            if is_missing:
+                # on ohlcv triggers, eval time stored in matrix is one timeframe after, try with removing it
+                trigger_time = context.trigger_cache_timestamp - \
+                    commons_enums.TimeFramesMinutes[commons_enums.TimeFrames(time_frame or context.time_frame)] \
+                    * commons_constants.MINUTE_TO_SECONDS
+                value, is_missing = await context.get_cached_value(value_key=value_key,
+                                                                   cache_key=trigger_time,
+                                                                   tentacle_name=tentacle_class.__name__,
+                                                                   config_name=config_name)
+                if not is_missing:
+                    return value
+            else:
                 return value
-        else:
-            return value
+        except commons_errors.UninitializedCache:
+            if tentacle_class is not None and trigger is False:
+                raise commons_errors.UninitializedCache(f"Can't read cache from {tentacle_class} before initializing "
+                                                        f"it. Either activate this tentacle or set the 'trigger' "
+                                                        f"parameter to True") from None
+
     _ensure_cache_when_set_value_key(value_key, tentacle_class)
     # read from evaluation matrix
     for value in _tentacle_values(context, tentacle_class, time_frame=time_frame, symbol=symbol):
@@ -164,9 +172,15 @@ async def evaluator_get_results(
             # return already if only one value to return
             return eval_result
     if tentacle_class.use_cache():
-        # can return multiple values
-        return await context.get_cached_values(value_key=value_key, limit=limit,
-                                               tentacle_name=tentacle_class.__name__, config_name=config_name)
+        try:
+            # can return multiple values
+            return await context.get_cached_values(value_key=value_key, limit=limit,
+                                                   tentacle_name=tentacle_class.__name__, config_name=config_name)
+        except commons_errors.UninitializedCache:
+            if tentacle_class is not None and trigger is False:
+                raise commons_errors.UninitializedCache(f"Can't read cache from {tentacle_class} before initializing "
+                                                        f"it. Either activate this tentacle or set the 'trigger' "
+                                                        f"parameter to True") from None
     _ensure_cache_when_set_value_key(value_key, tentacle_class)
     if limit == 1:
         # read from evaluation matrix

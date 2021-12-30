@@ -190,13 +190,14 @@ class AbstractScriptedTradingMode(trading_modes.AbstractTradingMode):
     async def start_over_database(self):
         await self.clear_plotting_cache()
         for producer in self.producers:
-            await scripting_library.clear_user_inputs(producer.run_data_writer)
-            producer.run_data_writer.set_initialized_flags(False)
-            last_call_timestamp = producer.last_call[3]
-            producer.symbol_writer.set_initialized_flags(False, (last_call_timestamp,))
-            self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
-            await self.close_caches(reset_cache_db_ids=True)
-            await producer.call_script(*producer.last_call)
+            if producer.last_call is not None:
+                await scripting_library.clear_user_inputs(producer.run_data_writer)
+                producer.run_data_writer.set_initialized_flags(False)
+                last_call_timestamp = producer.last_call[3]
+                producer.symbol_writer.set_initialized_flags(False, (last_call_timestamp,))
+                self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
+                await self.close_caches(reset_cache_db_ids=True)
+                await producer.call_script(*producer.last_call)
 
     def get_optimizer_id(self):
         return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
@@ -331,17 +332,19 @@ class AbstractScriptedTradingModeProducer(trading_modes.AbstractTradingModeProdu
 
     async def ohlcv_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
                              time_frame: str, candle: dict):
-        await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
-                               commons_enums.ActivationTopics.FULL_CANDLES.value,
-                               candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
-                               candle=candle)
+        with self.trading_mode_trigger():
+            await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
+                                   commons_enums.ActivationTopics.FULL_CANDLES.value,
+                                   candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
+                                   candle=candle)
 
     async def kline_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
                              time_frame, kline: dict):
-        await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
-                               commons_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value,
-                               kline[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
-                               kline=kline)
+        with self.trading_mode_trigger():
+            await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
+                                   commons_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value,
+                                   kline[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
+                                   kline=kline)
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
         await self.call_script(matrix_id, cryptocurrency, symbol, time_frame,
