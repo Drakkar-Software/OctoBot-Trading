@@ -15,10 +15,10 @@
 #  License along with this library.
 import octobot_trading.modes.scripting_library.data.reading.exchange_public_data as exchange_public_data
 import octobot_trading.modes.scripting_library.orders.offsets.offset as offset
-import tulipy as ti
 
 
-async def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_down=None, max_cross_down_lookback=5):
+async def crossing_up(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_down=None,
+                      max_cross_down_lookback=5):
     # true if price just risen over value and stayed there for delay time
     condition = False
     delay = delay
@@ -54,12 +54,12 @@ async def crossing_up(context=None, values_to_cross=None, crossing_values=None, 
                 return False
         else:
             closes = exchange_public_data.Close(context, limit=delay+max_cross_down_lookback)
-            highs = exchange_public_data.High(context, limit=delay+max_cross_down_lookback)
+            # highs = exchange_public_data.High(context, limit=delay+max_cross_down_lookback)
             lows = exchange_public_data.Low(context, limit=delay+max_cross_down_lookback)
             was_below = None
             is_currently_above = None
             try:
-                was_below = lows[-delay - 2] < values_to_cross[-delay - 2]
+                was_below = lows[-delay - 1] < values_to_cross[-delay - 1]
                 is_currently_above = closes[-1] > values_to_cross[-1]
             except IndexError:
                 context.logger.info("crossing_up: not enough values_to_cross, length needs to be same as delay")
@@ -77,8 +77,9 @@ async def crossing_up(context=None, values_to_cross=None, crossing_values=None, 
                     return None
 
             if was_below and is_currently_above and didnt_cross_to_much:
+                # check if closed above within delay time
                 for i in range(1, delay + 2):
-                    condition = highs[-i] > values_to_cross[-i]
+                    condition = closes[-i] > values_to_cross[-i]
                     if condition is False:
                         return False
                 return condition
@@ -86,7 +87,8 @@ async def crossing_up(context=None, values_to_cross=None, crossing_values=None, 
                 return False
 
 
-async def crossing_down(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_up=None, max_cross_up_lookback=5):
+async def crossing_down(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_up=None,
+                        max_cross_up_lookback=5):
     # true if price just fell under value and stayed there for delay time
     condition = False
     delay = delay
@@ -124,11 +126,11 @@ async def crossing_down(context=None, values_to_cross=None, crossing_values=None
         else:
             closes = exchange_public_data.Close(context, limit=delay + max_cross_up_lookback)
             highs = exchange_public_data.High(context, limit=delay + max_cross_up_lookback)
-            lows = exchange_public_data.Low(context, limit=delay + max_cross_up_lookback)
+            # lows = exchange_public_data.Low(context, limit=delay + max_cross_up_lookback)
             was_above = None
             is_currently_above = None
             try:
-                was_above = highs[-delay - 2] > values_to_cross[-delay - 2]
+                was_above = highs[-delay - 1] > values_to_cross[-delay - 1]
                 is_currently_above = closes[-1] < values_to_cross[-1]
             except IndexError:
                 context.logger.info("crossing_down: not enough values_to_cross, length needs to be same as delay")
@@ -146,8 +148,9 @@ async def crossing_down(context=None, values_to_cross=None, crossing_values=None
                     return None
 
             if was_above and is_currently_above and didnt_cross_to_much:
+                # check if closed below within delay time
                 for i in range(1, delay + 2):
-                    condition = lows[-i] < values_to_cross[-i]
+                    condition = closes[-i] < values_to_cross[-i]
                     if condition is False:
                         return False
                 return condition
@@ -155,10 +158,11 @@ async def crossing_down(context=None, values_to_cross=None, crossing_values=None
                 return False
 
 
-async def crossing(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross_up=None, max_cross_up_lookback=5):
+async def crossing(context=None, values_to_cross=None, crossing_values=None, delay=0, max_cross=None,
+                   max_cross_lookback=5):
     # true if price just went below or over value and stayed there for delay time and didnt cross to much
-    c_up = await crossing_up(context, values_to_cross, crossing_values, delay, max_cross_up, max_cross_up_lookback)
+    c_up = await crossing_up(context, values_to_cross, crossing_values, delay, max_cross, max_cross_lookback)
     if c_up:
         return True
-    c_down = await crossing_down(context, values_to_cross, crossing_values, delay, max_cross_up, max_cross_up_lookback)
+    c_down = await crossing_down(context, values_to_cross, crossing_values, delay, max_cross, max_cross_lookback)
     return c_down
