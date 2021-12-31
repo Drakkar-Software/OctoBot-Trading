@@ -109,10 +109,10 @@ def ohlc4(context, symbol=None, time_frame=None, limit=-1):
         raise RuntimeError("CandlesUtil tentacle is required to use OHLC4")
 
 # Use capital letters to avoid python native lib conflicts
-def Volume(context, symbol=None, time_frame=None):
+def Volume(context, symbol=None, time_frame=None, limit=-1):
     symbol = symbol or context.symbol
     time_frame = time_frame or context.time_frame
-    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_volume_candles()
+    return _get_candle_manager(context.exchange_manager, symbol, time_frame).get_symbol_volume_candles(limit)
 
 # def buy_volume():
 #         var=0 #todo
