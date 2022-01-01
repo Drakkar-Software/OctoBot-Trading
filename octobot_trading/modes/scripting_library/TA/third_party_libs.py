@@ -27,6 +27,6 @@ try:
 except ImportError:
     pass
 try:
-    import finta as fta
+    from finta import TA as fta
 except ImportError:
     pass
