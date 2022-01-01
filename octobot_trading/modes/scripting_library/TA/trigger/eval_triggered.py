@@ -201,6 +201,7 @@ def _ensure_cache_when_set_value_key(value_key, tentacle_class):
 
 async def _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config):
     config = {key.replace(" ", "_"): val for key, val in config.items()} if config else {}
+    config_name = f"nested_{tentacle_class.get_name()}_config" if config_name is None else config_name
     cleaned_config_name = config_name.replace(" ", "_")
     context.top_level_tentacle.called_nested_evaluators.add(tentacle_class)
     tentacle_config = context.tentacle.specific_config if hasattr(context.tentacle, "specific_config") \
