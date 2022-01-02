@@ -214,7 +214,7 @@ async def _trigger_single_evaluation(context, tentacle_class, value_key, config_
                 tentacles_setup_config,
                 tentacle_class)
             # apply forced config if any
-            dict_util.check_and_merge_values_from_reference(tentacle_config, config, [], None)
+            dict_util.nested_update_dict(tentacle_config, config)
         else:
             try:
                 tentacle_config = tentacle_config[cleaned_config_name]
@@ -226,7 +226,7 @@ async def _trigger_single_evaluation(context, tentacle_class, value_key, config_
                 except KeyError as e:
                     raise commons_errors.ConfigEvaluatorError(f"Missing evaluator configuration with name {e}")
             # apply forced config if any
-            dict_util.check_and_merge_values_from_reference(tentacle_config, config, [], None)
+            dict_util.nested_update_dict(tentacle_config, config)
             await inputs.save_user_input(
                 context,
                 config_name,
