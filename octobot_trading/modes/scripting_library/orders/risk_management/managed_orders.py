@@ -181,19 +181,19 @@ async def managed_order(ctx, side="long", orders_settings=None):
     # SL
     sl_price = trading_constants.ZERO
     sl_in_p = trading_constants.ZERO
-    current_price_val = decimal.Decimal(str(exchange_public_data.Close(ctx)[-1]))
+    current_price_val = decimal.Decimal(str((await exchange_public_data.Close(ctx))[-1]))
 
     # SL based on low/high
     if managed_orders_settings.sl_type == managed_orders_settings.sl_types["at_low_high_title"]:
         if side == "long":
             sl_price = decimal.Decimal(
-                str(ti.min(exchange_public_data.Low(ctx), int(managed_orders_settings.sl_low_high_lookback))[-1]))\
+                str(ti.min(await exchange_public_data.Low(ctx), int(managed_orders_settings.sl_low_high_lookback))[-1]))\
                        * (1 - (managed_orders_settings.sl_low_high_buffer / 100))
             sl_in_p = (current_price_val - sl_price) / current_price_val * 100
 
         elif side == "short":
             sl_price = decimal.Decimal(
-                str(ti.max(exchange_public_data.High(ctx), int(managed_orders_settings.sl_low_high_lookback))[-1]))\
+                str(ti.max(await exchange_public_data.High(ctx), int(managed_orders_settings.sl_low_high_lookback))[-1]))\
                        * (1 + (managed_orders_settings.sl_low_high_buffer / 100))
             sl_in_p = (sl_price - current_price_val) / current_price_val * 100
         else:
@@ -214,15 +214,15 @@ async def managed_order(ctx, side="long", orders_settings=None):
     if managed_orders_settings.sl_type == managed_orders_settings.sl_types["based_on_atr_title"]:
         if side == "long":
             sl_price = current_price_val - decimal.Decimal(
-                str(ti.atr(exchange_public_data.High(ctx), exchange_public_data.Low(ctx),
-                           exchange_public_data.Close(ctx), int(managed_orders_settings.atr_period))[
+                str(ti.atr(await exchange_public_data.High(ctx), await exchange_public_data.Low(ctx),
+                           await exchange_public_data.Close(ctx), int(managed_orders_settings.atr_period))[
                         -1]))
             sl_in_p = (current_price_val - sl_price) / current_price_val * 100
 
         elif side == "short":
             sl_price = current_price_val + decimal.Decimal(
-                str(ti.atr(exchange_public_data.High(ctx), exchange_public_data.Low(ctx),
-                           exchange_public_data.Close(ctx), int(managed_orders_settings.atr_period))[
+                str(ti.atr(await exchange_public_data.High(ctx), await exchange_public_data.Low(ctx),
+                           await exchange_public_data.Close(ctx), int(managed_orders_settings.atr_period))[
                         -1]))
             sl_in_p = (sl_price - current_price_val) / current_price_val * 100
         else:

@@ -246,6 +246,34 @@ class Context:
             if flush_if_necessary and self._flush_cache_when_necessary and cache:
                 await cache.flush()
 
+    async def set_cached_values(self, values, value_key, cache_keys, flush_if_necessary=False, tentacle_name=None,
+                                config_name=None, **kwargs):
+        """
+        Set a value into the current cache
+        :param values: values to set
+        :param value_key: identifier of the value
+        :param cache_keys: timestamps to associate the values to
+        :param flush_if_necessary: flush the cache after set (write into database)
+        :param tentacle_name: name of the tentacle to get cache from
+        :param config_name: name of the tentacle configuration as used in nested tentacle calls
+        :param kwargs: other related value_key / value couples to set at this timestamp. Use for plotted data
+        :return: None
+        """
+        cache = None
+        try:
+            cache = self.get_cache(tentacle_name=tentacle_name, config_name=config_name)
+            await cache.set_values(cache_keys, values, name=value_key)
+            if kwargs:
+                for key, val in kwargs.items():
+                    await cache.set_values(
+                        cache_keys,
+                        values,
+                        name=f"{value_key}{common_constants.CACHE_RELATED_DATA_SEPARATOR}{key}"
+                    )
+        finally:
+            if flush_if_necessary and self._flush_cache_when_necessary and cache:
+                await cache.flush()
+
     @contextlib.asynccontextmanager
     async def run_data(self, with_lock=False, cache_size=None, database_adaptor=databases.TinyDBAdaptor):
         database_manager = databases.DatabaseManager(self.trading_mode.__class__,

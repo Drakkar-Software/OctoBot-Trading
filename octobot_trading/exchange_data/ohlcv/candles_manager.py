@@ -62,12 +62,12 @@ class CandlesManager(util.Initializable):
         self.time_candles_index = 0
         self.volume_candles_index = 0
 
-        self.close_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.open_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.high_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.low_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.time_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.volume_candles = np.full(CandlesManager.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.close_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.open_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.high_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.low_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.time_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.volume_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
 
     # getters
     def get_symbol_candles_count(self):
@@ -164,7 +164,7 @@ class CandlesManager(util.Initializable):
             self._change_current_candle()
 
     def _inc_candle_index(self):
-        if self.close_candles_index < CandlesManager.MAX_CANDLES_COUNT - 1:
+        if self.close_candles_index < self.MAX_CANDLES_COUNT - 1:
             self.close_candles_index += 1
             self.open_candles_index += 1
             self.high_candles_index += 1

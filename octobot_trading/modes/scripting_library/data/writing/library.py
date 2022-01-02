@@ -126,7 +126,7 @@ async def plot(ctx, title, x=None,
     if condition is not None and cache_value is None:
         if isinstance(ctx.symbol_writer.get_serializable_value(condition), bool):
             if condition:
-                x = numpy.array((x_function(ctx, ctx.symbol, time_frame)[-1],))
+                x = numpy.array(((await x_function(ctx, ctx.symbol, time_frame))[-1],))
                 y = numpy.array((y[-1], ))
             else:
                 x = []
@@ -134,7 +134,7 @@ async def plot(ctx, title, x=None,
         else:
             candidate_y = []
             candidate_x = []
-            x_data = x_function(ctx, ctx.symbol, time_frame)[-len(condition):]
+            x_data = (await x_function(ctx, ctx.symbol, time_frame))[-len(condition):]
             y_data = y[-len(condition):]
             for index, value in enumerate(condition):
                 if value:

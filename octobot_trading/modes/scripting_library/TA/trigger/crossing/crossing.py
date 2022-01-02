@@ -53,9 +53,9 @@ async def crossing_up(context=None, values_to_cross=None, crossing_values=None, 
             else:
                 return False
         else:
-            closes = exchange_public_data.Close(context, limit=delay+max_cross_down_lookback)
+            closes = await exchange_public_data.Close(context, limit=delay+max_cross_down_lookback)
             # highs = exchange_public_data.High(context, limit=delay+max_cross_down_lookback)
-            lows = exchange_public_data.Low(context, limit=delay+max_cross_down_lookback)
+            lows = await exchange_public_data.Low(context, limit=delay+max_cross_down_lookback)
             was_below = None
             is_currently_above = None
             try:
@@ -124,8 +124,8 @@ async def crossing_down(context=None, values_to_cross=None, crossing_values=None
             else:
                 return False
         else:
-            closes = exchange_public_data.Close(context, limit=delay + max_cross_up_lookback)
-            highs = exchange_public_data.High(context, limit=delay + max_cross_up_lookback)
+            closes = await exchange_public_data.Close(context, limit=delay + max_cross_up_lookback)
+            highs = await exchange_public_data.High(context, limit=delay + max_cross_up_lookback)
             # lows = exchange_public_data.Low(context, limit=delay + max_cross_up_lookback)
             was_above = None
             is_currently_above = None
