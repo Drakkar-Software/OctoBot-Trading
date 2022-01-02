@@ -51,8 +51,8 @@ class TestHuobiRealExchangeTester(RealExchangeTester):
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2)
             assert market_status[Ecmsc.PRECISION.value]
-            assert market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] >= 1
-            assert market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value] >= 1
+            assert 1e-06 <= market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] <= 1
+            assert 1e-06 <= market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value] <= 1
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
