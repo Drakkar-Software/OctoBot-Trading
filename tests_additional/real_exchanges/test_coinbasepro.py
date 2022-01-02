@@ -101,8 +101,9 @@ class TestCoinbaseProRealExchangeTester(RealExchangeTester):
         self._check_ticker(ticker, self.SYMBOL, check_content=True)
 
     async def test_get_all_currencies_price_ticker(self):
-        with pytest.raises(octobot_trading.errors.NotSupported):
-            await self.get_all_currencies_price_ticker()
+        tickers = await self.get_all_currencies_price_ticker()
+        for symbol, ticker in tickers.items():
+            self._check_ticker(ticker, symbol)
 
     @staticmethod
     def _check_ticker(ticker, symbol, check_content=False):
