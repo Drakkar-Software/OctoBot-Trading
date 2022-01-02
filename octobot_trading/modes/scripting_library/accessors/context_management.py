@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import contextlib
+import copy
 
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
@@ -82,6 +83,7 @@ class Context:
         self.top_level_tentacle = tentacle
         self.is_nested_tentacle = False
         self.nested_depth = 0
+        self.nested_config_names = []
 
     @contextlib.contextmanager
     def local_nested_tentacle_config(self, config_name, is_nested_tentacle):
@@ -91,11 +93,13 @@ class Context:
             self.is_nested_tentacle = is_nested_tentacle
             self.config_name = config_name
             self.nested_depth += 1
+            self.nested_config_names.append(config_name)
             yield self
         finally:
             self.is_nested_tentacle = previous_is_nested_tentacle
             self.config_name = previous_config_name
             self.nested_depth -= 1
+            del self.nested_config_names[-1]
 
     @staticmethod
     def minimal(trading_mode, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):
@@ -148,6 +152,7 @@ class Context:
         context.is_nested_tentacle = self.is_nested_tentacle
         context.config_name = self.config_name
         context.nested_depth = self.nested_depth
+        context.nested_config_names = copy.copy(self.nested_config_names)
         if keep_top_level_tentacle and context.nested_depth > 0:
             # always keep top level tentacle
             context.top_level_tentacle = self.top_level_tentacle

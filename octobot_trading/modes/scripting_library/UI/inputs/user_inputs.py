@@ -13,8 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.enums as commons_enums
+import octobot_commons.constants as commons_constants
 import octobot_trading.enums as enums
 import octobot_trading.modes as modes
+import octobot_trading.modes.scripting_library.TA.trigger.eval_triggered as eval_triggered
+import octobot_tentacles_manager.api as tentacles_manager_api
 
 
 async def user_input(
@@ -99,18 +103,62 @@ async def save_user_input(
         )
 
 
+def _find_configuration(nested_configuration, nested_config_names, element):
+    for key, config in nested_configuration.items():
+        if len(nested_config_names) == 0 and key == element:
+            return config
+        if isinstance(config, dict) and (len(nested_config_names) == 0 or key == nested_config_names[0]):
+            found_config = _find_configuration(config, nested_config_names[1:], element)
+            if found_config is not None:
+                return found_config
+    return None
+
+
 async def external_user_input(
     ctx,
     name,
-    tentacle
+    tentacle,
+    config_name=None,
+    trigger_if_necessary=True,
+    config: dict = None
 ):
-    query = await ctx.run_data_writer.search()
-    raw_value = await ctx.run_data_writer.select(
-        enums.DBTables.INPUTS.value,
-        (query.name == name) & (query.tentacle == tentacle)
-    )
-    if raw_value:
-        return raw_value[0]["value"]
+    if config_name is None:
+        query = await ctx.run_data_writer.search()
+        raw_value = await ctx.run_data_writer.select(
+            enums.DBTables.INPUTS.value,
+            (query.name == name) & (query.tentacle == tentacle)
+        )
+        if raw_value:
+            return raw_value[0]["value"]
+    else:
+        # look for the user input in non nested user inputs
+        user_inputs = await get_user_inputs(ctx.run_data_writer)
+        # First try with the current top level tentacle (faster and to avoid name conflicts), then use all tentacles
+        top_tentacle_config = ctx.top_level_tentacle.specific_config \
+            if hasattr(ctx.top_level_tentacle, "specific_config") else ctx.top_level_tentacle.trading_config
+        tentacle_config = _find_configuration(top_tentacle_config,
+                                              ctx.nested_config_names,
+                                              config_name.replace(" ", "_"))
+        if tentacle_config is None:
+            for local_user_input in user_inputs:
+                if not local_user_input["is_nested_config"] and \
+                   local_user_input["input_type"] == commons_constants.NESTED_TENTACLE_CONFIG:
+                    tentacle_config = _find_configuration(local_user_input["value"],
+                                                          ctx.nested_config_names,
+                                                          config_name.replace(" ", "_"))
+                    if tentacle_config is not None:
+                        break
+        if tentacle_config is None and trigger_if_necessary:
+            tentacle_class = tentacles_manager_api.get_tentacle_class_from_string(tentacle) \
+                if isinstance(tentacle, str) else tentacle
+            _, tentacle_config = await eval_triggered._trigger_single_evaluation(
+                ctx, tentacle_class,
+                commons_enums.CacheDatabaseColumns.VALUE.value,
+                config_name, config)
+        try:
+            return None if tentacle_config is None else tentacle_config[name.replace(" ", "_")]
+        except KeyError:
+            return None
     return None
 
 

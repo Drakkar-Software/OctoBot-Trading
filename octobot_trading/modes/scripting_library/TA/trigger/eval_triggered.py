@@ -120,7 +120,7 @@ async def evaluator_get_result(
         if isinstance(tentacle_class, str) else tentacle_class
     if trigger:
         # always trigger when asked to then return the triggered evaluation return
-        return await _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config)
+        return (await _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config))[0]
     if tentacle_class.use_cache():
         # try reading from cache
         try:
@@ -167,7 +167,7 @@ async def evaluator_get_results(
         if isinstance(tentacle_class, str) else tentacle_class
     if trigger:
         # always trigger when asked to
-        eval_result = await _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config)
+        eval_result, _ = await _trigger_single_evaluation(context, tentacle_class, value_key, config_name, config)
         if limit == 1:
             # return already if only one value to return
             return eval_result
@@ -236,18 +236,18 @@ async def _trigger_single_evaluation(context, tentacle_class, value_key, config_
                 is_nested_config=context.nested_depth > 1,
                 nested_tentacle=tentacle_class.get_name()
             )
-        eval_result = (await tentacle_class.single_evaluation(
+        eval_result, evaluator_instance = (await tentacle_class.single_evaluation(
             tentacles_setup_config,
             tentacle_config,
             context=context
-        ))[0]
+        ))
         if value_key == commons_enums.CacheDatabaseColumns.VALUE.value:
-            return eval_result
+            return eval_result, evaluator_instance.specific_config
         else:
             value, is_missing = await context.get_cached_value(value_key=value_key,
                                                                tentacle_name=tentacle_class.__name__,
                                                                config_name=config_name)
-            return None if is_missing else value
+            return None if is_missing else value, evaluator_instance.specific_config
 
 
 async def _init_nested_config(context, tentacle_class, cleaned_config_name,
