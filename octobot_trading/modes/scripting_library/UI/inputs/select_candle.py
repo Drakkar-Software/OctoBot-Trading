@@ -24,13 +24,17 @@ async def user_select_candle(
         def_val="close",
         time_frame=None,
         symbol=None,
-        limit=-1
+        limit=-1,
+        enable_volume=True,
+        return_source_name=False,
 ):
-    data_source = await user_input(ctx, name, "options", def_val,
-                                   options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "volume"])
+    available_data_src = ["open", "high", "low", "close", "hl2", "hlc3", "ohlc4"]
+    if enable_volume:
+        available_data_src.append("volume")
+
+    data_source = await user_input(ctx, name, "options", def_val, options=available_data_src)
     symbol = symbol or ctx.symbol
     time_frame = time_frame or ctx.time_frame
-
     candle_source = None
     if data_source == "close":
         candle_source = Close(ctx, symbol, time_frame, limit)
@@ -38,7 +42,7 @@ async def user_select_candle(
         candle_source = Open(ctx, symbol, time_frame, limit)
     elif data_source == "high":
         candle_source = High(ctx, symbol, time_frame, limit)
-    elif data_source == "low":
+    elif data_source == "low" and enable_volume:
         candle_source = Low(ctx, symbol, time_frame, limit)
     elif data_source == "volume":
         candle_source = Volume(ctx, symbol, time_frame, limit)
@@ -48,4 +52,7 @@ async def user_select_candle(
         candle_source = hlc3(ctx, symbol, time_frame, limit)
     elif data_source == "ohlc4":
         candle_source = ohlc4(ctx, symbol, time_frame, limit)
-    return candle_source
+    if return_source_name:
+        return candle_source, data_source
+    else:
+        return candle_source
