@@ -244,8 +244,8 @@ class DisplayedElements:
         }
         if title := user_input_element.get("name"):
             properties["title"] = title
-        if def_val := user_input_element.get("def_val"):
-            properties["default"] = def_val
+        def_val = user_input_element.get("def_val")
+        properties["default"] = def_val
         if min_val := user_input_element.get("min_val"):
             properties["minimum"] = min_val
         if max_val := user_input_element.get("max_val"):
@@ -260,7 +260,7 @@ class DisplayedElements:
                         properties["multipleOf"] = self.DEFAULT_NUMBER_MULTIPLIER
                 elif schema_type in ("string", "array"):
                     options = user_input_element.get("options", [])
-                    default_value = def_val if def_val else options[0] if options else None
+                    default_value = def_val if def_val is not None else options[0] if options else None
                     if schema_type == "string":
                         properties["default"] = default_value,
                         properties["format"] = "select"
