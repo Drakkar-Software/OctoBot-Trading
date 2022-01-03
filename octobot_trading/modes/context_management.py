@@ -22,6 +22,7 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_commons.errors as common_errors
 import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
+import octobot_trading.modes as modes
 
 
 class Context:
@@ -83,6 +84,20 @@ class Context:
         self.is_nested_tentacle = False
         self.nested_depth = 0
         self.nested_config_names = []
+
+    @contextlib.contextmanager
+    def adapted_trigger_timestamp(self, tentacle_class, config_name):
+        previous_trigger_cache_timestamp = self.trigger_cache_timestamp
+        try:
+            if isinstance(self.tentacle, modes.AbstractTradingMode) and \
+                    self.trigger_source == common_enums.ActivationTopics.EVALUATORS.value:
+                # only trading modes can have a delayed trigger timestamp when they are waken up from evaluators
+                self.trigger_cache_timestamp = self._get_adapted_trigger_timestamp(tentacle_class,
+                                                                                   previous_trigger_cache_timestamp,
+                                                                                   config_name)
+            yield self
+        finally:
+            self.trigger_cache_timestamp = previous_trigger_cache_timestamp
 
     @contextlib.contextmanager
     def local_nested_tentacle_config(self, config_name, is_nested_tentacle):
@@ -157,17 +172,38 @@ class Context:
             context.top_level_tentacle = self.top_level_tentacle
         return context
 
+    def _get_adapted_trigger_timestamp(self, tentacle_class, base_trigger_timestamp, config_name):
+        try:
+            if self.has_cache(self.symbol, self.time_frame, tentacle_name=tentacle_class.get_name(),
+                              config_name=config_name):
+                cache = self.get_cache(tentacle_name=tentacle_class.get_name(), config_name=config_name)
+                if cache.metadata.get(common_enums.CacheDatabaseColumns.TRIGGERED_AFTER_CANDLES_CLOSE.value, False):
+                    return base_trigger_timestamp - \
+                           common_enums.TimeFramesMinutes[common_enums.TimeFrames(self.time_frame)] * \
+                           common_constants.MINUTE_TO_SECONDS
+            return base_trigger_timestamp
+        except common_errors.NoCacheValue:
+            # should not happen
+            raise
+
     def get_cache(self, tentacle_name=None, cache_type=databases.CacheTimestampDatabase, config_name=None):
         tentacle = self.tentacle if tentacle_name is None else None
         tentacle_name = tentacle_name or self.tentacle.get_name()
         config_name = config_name or self.config_name
-        return self.cache_manager.get_cache(tentacle, tentacle_name, self.exchange_name, self.symbol, self.time_frame,
-                                            config_name, self.exchange_manager.tentacles_setup_config,
-                                            cache_type=cache_type)
+        cache, just_created = self.cache_manager.get_cache(tentacle, tentacle_name, self.exchange_name, self.symbol,
+                                                           self.time_frame,
+                                                           config_name, self.exchange_manager.tentacles_setup_config,
+                                                           cache_type=cache_type)
+        if just_created and cache_type is databases.CacheTimestampDatabase:
+            cache.add_metadata({
+                common_enums.CacheDatabaseColumns.TRIGGERED_AFTER_CANDLES_CLOSE.value:
+                    tentacle.is_triggered_after_candle_close
+            })
+        return cache
 
-    def has_cache(self, pair, time_frame, config_name=None):
+    def has_cache(self, pair, time_frame, tentacle_name=None, config_name=None):
         config_name = config_name or self.config_name
-        return self.cache_manager.has_cache(self.tentacle.get_name(), self.exchange_name,
+        return self.cache_manager.has_cache(tentacle_name or self.tentacle.get_name(), self.exchange_name,
                                             pair, time_frame, config_name)
 
     def get_cache_path(self, tentacle, config_name=None):
