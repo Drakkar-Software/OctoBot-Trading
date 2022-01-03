@@ -30,6 +30,7 @@ def compute_win_rate(exchange_manager):
                 lost_trades_count += constants.ONE
             else:
                 won_trades_count += constants.ONE
-    if lost_trades_count > constants.ZERO:
-        return won_trades_count / lost_trades_count
-    return constants.ZERO if won_trades_count is constants.ZERO else constants.ONE
+    total_counted_trades = won_trades_count + lost_trades_count
+    if total_counted_trades > constants.ZERO:
+        return won_trades_count / total_counted_trades
+    return constants.ZERO if total_counted_trades is constants.ZERO else constants.ONE
