@@ -22,6 +22,7 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_commons.errors as common_errors
 import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
+import octobot_commons.tentacles_management as tentacles_management
 import octobot_trading.modes as modes
 
 
@@ -84,6 +85,8 @@ class Context:
         self.is_nested_tentacle = False
         self.nested_depth = 0
         self.nested_config_names = []
+        self.tentacles_requirements = tentacles_management.TentacleRequirements(self.tentacle, self.config_name)
+        self.parent_tentacles_requirements = None
 
     @contextlib.contextmanager
     def adapted_trigger_timestamp(self, tentacle_class, config_name):
@@ -99,21 +102,35 @@ class Context:
         finally:
             self.trigger_cache_timestamp = previous_trigger_cache_timestamp
 
-    @contextlib.contextmanager
-    def local_nested_tentacle_config(self, config_name, is_nested_tentacle):
+    @contextlib.asynccontextmanager
+    async def local_nested_tentacle_config(self, tentacle_class, config_name, is_nested_tentacle):
         previous_is_nested_tentacle = self.is_nested_tentacle
         previous_config_name = self.config_name
+        previous_parent_tentacles_requirements = self.parent_tentacles_requirements
+        previous_tentacle_requirements = self.tentacles_requirements
         try:
             self.is_nested_tentacle = is_nested_tentacle
             self.config_name = config_name
             self.nested_depth += 1
             self.nested_config_names.append(config_name)
+            self.parent_tentacles_requirements = self.tentacles_requirements
+            # self.tentacles_requirements.get_requirement might return None on the 1st call,
+            # it will be populated during this first call
+            self.tentacles_requirements = self.tentacles_requirements.get_requirement(tentacle_class, config_name)
             yield self
         finally:
             self.is_nested_tentacle = previous_is_nested_tentacle
             self.config_name = previous_config_name
+            self.parent_tentacles_requirements = previous_parent_tentacles_requirements
+            self.tentacles_requirements = previous_tentacle_requirements
             self.nested_depth -= 1
             del self.nested_config_names[-1]
+            registered_requirements = self.get_cache_registered_requirements()
+            if registered_requirements is not None and not registered_requirements.includes_nested_requirements(
+                    self.tentacles_requirements
+            ):
+                # if tentacles requirements changed: reset cache of this tentacle to include the new requirements
+                await self._reset_cache()
 
     @staticmethod
     def minimal(trading_mode, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):
@@ -140,9 +157,9 @@ class Context:
             optimizer_id,
         )
 
-    def copy(self, tentacle=None, keep_top_level_tentacle=True):
+    def get_nested_call_context(self, tentacle):
         context = Context(
-            tentacle or self.tentacle,
+            tentacle,
             self.exchange_manager,
             self.trader,
             self.exchange_name,
@@ -167,10 +184,17 @@ class Context:
         context.config_name = self.config_name
         context.nested_depth = self.nested_depth
         context.nested_config_names = copy.copy(self.nested_config_names)
-        if keep_top_level_tentacle and context.nested_depth > 0:
-            # always keep top level tentacle
-            context.top_level_tentacle = self.top_level_tentacle
+        # always keep top level tentacle
+        context.top_level_tentacle = self.top_level_tentacle
+        context.tentacles_requirements = self.tentacles_requirements  # keep the same tentacles_requirements
+        context.parent_tentacles_requirements = self.parent_tentacles_requirements
+        context.add_tentacle_requirement(tentacle, context.config_name)
         return context
+
+    def add_tentacle_requirement(self, tentacle, config_name):
+        if self.tentacles_requirements is None:
+            self.tentacles_requirements = tentacles_management.TentacleRequirements(tentacle, config_name)
+        self.parent_tentacles_requirements.add_requirement(self.tentacles_requirements)
 
     def _get_adapted_trigger_timestamp(self, tentacle_class, base_trigger_timestamp, config_name):
         try:
@@ -186,19 +210,50 @@ class Context:
             # should not happen
             raise
 
+    def get_cache_registered_requirements(self, tentacle_name=None, config_name=None):
+        try:
+            return self.cache_manager.get_cache_registered_requirements(
+                tentacle_name or self.tentacle.get_name(),
+                self.exchange_name,
+                self.symbol,
+                self.time_frame,
+                config_name or self.config_name
+            )
+        except KeyError:
+            return None
+
+    async def _reset_cache(self):
+        previous_cache_requirements = self.get_cache_registered_requirements()
+        await self.cache_manager.reset_cache(
+            self.tentacle.get_name(), self.exchange_name, self.symbol, self.time_frame, self.config_name
+        )
+        self.init_cache()
+        self.logger.debug(f"Replaced cache for {self.tentacle.get_name()} ({self.config_name}) to include "
+                          f"{self.get_cache_registered_requirements()} requirements (previously was "
+                          f"{previous_cache_requirements}")
+
     def get_cache(self, tentacle_name=None, cache_type=databases.CacheTimestampDatabase, config_name=None):
         tentacle = self.tentacle if tentacle_name is None else None
         tentacle_name = tentacle_name or self.tentacle.get_name()
         config_name = config_name or self.config_name
-        cache, just_created = self.cache_manager.get_cache(tentacle, tentacle_name, self.exchange_name, self.symbol,
-                                                           self.time_frame,
-                                                           config_name, self.exchange_manager.tentacles_setup_config,
-                                                           cache_type=cache_type)
+        cache, just_created = self.cache_manager.get_cache(
+            tentacle, tentacle_name, self.exchange_name, self.symbol, self.time_frame, config_name,
+            self.exchange_manager.tentacles_setup_config, self.tentacles_requirements, cache_type=cache_type
+        )
         if just_created and cache_type is databases.CacheTimestampDatabase:
-            cache.add_metadata({
-                common_enums.CacheDatabaseColumns.TRIGGERED_AFTER_CANDLES_CLOSE.value:
-                    tentacle.is_triggered_after_candle_close
-            })
+            metadata = self.cache_manager.get_cache_previous_db_metadata(
+                tentacle_name, self.exchange_name, self.symbol, self.time_frame, config_name)
+            if tentacle is None:
+                metadata = self.cache_manager.get_cache_previous_db_metadata(
+                    tentacle_name, self.exchange_name, self.symbol, self.time_frame, config_name)
+            else:
+                metadata = {
+                    common_enums.CacheDatabaseColumns.TRIGGERED_AFTER_CANDLES_CLOSE.value:
+                        tentacle.is_triggered_after_candle_close
+                }
+            if metadata is None:
+                raise RuntimeError(f"Missing db metadata. Please provide the tentacle parameter to this method")
+            cache.add_metadata(metadata)
         return cache
 
     def has_cache(self, pair, time_frame, tentacle_name=None, config_name=None):
@@ -208,9 +263,13 @@ class Context:
 
     def get_cache_path(self, tentacle, config_name=None):
         config_name = config_name or self.config_name
-        return self.cache_manager.get_cache_path(tentacle, self.exchange_name, self.symbol, self.time_frame,
-                                                 tentacle.get_name(), config_name,
-                                                 self.exchange_manager.tentacles_setup_config)
+        return self.cache_manager.get_cache_or_build_path(
+            tentacle, self.exchange_name, self.symbol, self.time_frame, tentacle.get_name(), config_name,
+            self.exchange_manager.tentacles_setup_config, self.tentacles_requirements
+        )
+
+    def init_cache(self):
+        self.get_cache()
 
     async def get_cached_value(self,
                                value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
