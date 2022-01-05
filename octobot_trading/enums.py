@@ -477,6 +477,8 @@ class BacktestingMetadata(enum.Enum):
     START_TIME = "start time"
     END_TIME = "end time"
     ENTRIES = "entries"
+    WINS = "wins"
+    LOSES = "loses"
     TRADES = "trades"
     TIMESTAMP = "timestamp"
     NAME = "name"
