@@ -56,7 +56,7 @@ class ExchangeConfig(util.Initializable):
         self.real_time_time_frames = []
 
         # number of required historical candles
-        self.required_historical_candles_count = []
+        self.required_historical_candles_count = -1
 
     async def initialize_impl(self):
         pass
