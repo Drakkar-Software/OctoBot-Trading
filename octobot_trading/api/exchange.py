@@ -210,6 +210,12 @@ def get_currently_handled_pair_with_time_frame(exchange_manager) -> int:
     return exchange_manager.get_currently_handled_pair_with_time_frame()
 
 
+def get_required_historical_candles_count(exchange_manager) -> int:
+    return exchange_manager.exchange_config.required_historical_candles_count \
+        if exchange_manager.exchange_config.required_historical_candles_count > \
+        exchange_data.OHLCVUpdater.DEFAULT_OHLCV_OLD_LIMIT else exchange_data.OHLCVUpdater.DEFAULT_OHLCV_OLD_LIMIT
+
+
 def is_overloaded(exchange_manager) -> bool:
     return exchange_manager.get_is_overloaded()
 
