@@ -248,6 +248,13 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                     formatted_user_inputs[user_input["tentacle"]] = {
                         user_input["name"]: user_input["value"]
                     }
+        trades = trading_api.get_trade_history(self.exchange_manager)
+        entries = [
+            trade
+            for trade in trades
+            if trade.status is trading_enums.OrderStatus.FILLED and trade.side is trading_enums.TradeOrderSide.BUY
+        ]
+
         return {
             trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(
                 self.trading_mode.bot_id),
@@ -264,7 +271,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                 self.exchange_manager.exchange.backtesting),
             trading_enums.BacktestingMetadata.END_TIME.value: backtesting_api.get_backtesting_ending_time(
                 self.exchange_manager.exchange.backtesting),
-            trading_enums.BacktestingMetadata.TRADES.value: len(trading_api.get_trade_history(self.exchange_manager)),
+            trading_enums.BacktestingMetadata.ENTRIES.value: len(entries),
+            trading_enums.BacktestingMetadata.TRADES.value: len(trades),
             trading_enums.BacktestingMetadata.TIMESTAMP.value: self.trading_mode.timestamp,
             trading_enums.BacktestingMetadata.NAME.value: self.trading_mode.script_name,
             trading_enums.BacktestingMetadata.USER_INPUTS.value: formatted_user_inputs,
