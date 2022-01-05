@@ -254,7 +254,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             for trade in trades
             if trade.status is trading_enums.OrderStatus.FILLED and trade.side is trading_enums.TradeOrderSide.BUY
         ]
-
+        win_rate = round(float(trading_api.get_win_rate(self.exchange_manager) * 100), 3)
+        wins = round(win_rate * len(entries) / 100)
         return {
             trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(
                 self.trading_mode.bot_id),
@@ -263,8 +264,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             trading_enums.BacktestingMetadata.END_PORTFOLIO.value: trading_api.get_portfolio_amounts(end_portfolio),
             trading_enums.BacktestingMetadata.START_PORTFOLIO.value: trading_api.get_portfolio_amounts(
                 origin_portfolio),
-            trading_enums.BacktestingMetadata.WIN_RATE.value: round(
-                float(trading_api.get_win_rate(self.exchange_manager) * 100), 3),
+            trading_enums.BacktestingMetadata.WIN_RATE.value: win_rate,
             trading_enums.BacktestingMetadata.SYMBOLS.value: trading_api.get_trading_pairs(self.exchange_manager),
             trading_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
             trading_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(
@@ -272,6 +272,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             trading_enums.BacktestingMetadata.END_TIME.value: backtesting_api.get_backtesting_ending_time(
                 self.exchange_manager.exchange.backtesting),
             trading_enums.BacktestingMetadata.ENTRIES.value: len(entries),
+            trading_enums.BacktestingMetadata.WINS.value: wins,
+            trading_enums.BacktestingMetadata.LOSES.value: len(entries) - wins,
             trading_enums.BacktestingMetadata.TRADES.value: len(trades),
             trading_enums.BacktestingMetadata.TIMESTAMP.value: self.trading_mode.timestamp,
             trading_enums.BacktestingMetadata.NAME.value: self.trading_mode.script_name,
