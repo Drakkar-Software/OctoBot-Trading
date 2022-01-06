@@ -44,6 +44,7 @@ class Order(util.Initializable):
         self.is_synchronized_with_exchange = False
         self.is_from_this_octobot = True
         self.simulated = trader.simulate
+        self.allow_self_managed = True
 
         self.logger_name = None
         self.order_id = trader.parse_order_id(None)
@@ -54,6 +55,7 @@ class Order(util.Initializable):
         self.taker_or_maker = None
         self.timestamp = 0
         self.side = side
+        self.tag = None
 
         # original order attributes
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
@@ -82,6 +84,7 @@ class Order(util.Initializable):
         self.linked_portfolio = None
         self.linked_to = None
         self.linked_orders = []
+        self.one_cancels_the_other = False
 
         # order state is initialized in initialize_impl()
         self.state = None
@@ -109,7 +112,8 @@ class Order(util.Initializable):
                current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None, linked_to=None, linked_portfolio=None,
-               order_type=None, reduce_only=False, close_position=False, position_side=None) -> bool:
+               order_type=None, reduce_only=None, close_position=False, position_side=None,
+               allow_self_managed=None, one_cancels_the_other=None, tag=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -203,8 +207,20 @@ class Order(util.Initializable):
         if position_side:
             self.position_side = position_side
 
-        self.reduce_only = reduce_only
         self.close_position = close_position
+
+        if reduce_only is not None:
+            self.reduce_only = reduce_only
+
+        if allow_self_managed is not None:
+            self.allow_self_managed = allow_self_managed
+
+        if one_cancels_the_other is not None:
+            self.one_cancels_the_other = one_cancels_the_other
+
+        if tag is not None:
+            self.tag = tag
+
         return changed
 
     async def initialize_impl(self, **kwargs):
@@ -331,8 +347,11 @@ class Order(util.Initializable):
     def generate_executed_time(self):
         return self.exchange_manager.exchange.get_exchange_current_time()
 
+    def is_counted_in_available_funds(self):
+        return not self.is_self_managed()
+
     def is_self_managed(self):
-        return not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
+        return self.allow_self_managed and not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
 
     def is_long(self):
         return self.side is enums.TradeOrderSide.BUY
@@ -434,7 +453,8 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
             enums.ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
-            enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only
+            enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
+            enums.ExchangeConstantsOrderColumns.TAG.value: self.tag
         }
 
     def clear(self):
@@ -449,12 +469,13 @@ class Order(util.Initializable):
         return self.exchange_manager is None
 
     def to_string(self):
+        tag = f" | tag: {self.tag}" if self.tag else ""
         return (f"{self.symbol} | "
                 f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
                 f"Price : {str(self.origin_price)} | "
                 f"Quantity : {str(self.origin_quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
-                f"id : {self.order_id}")
+                f"id : {self.order_id}{tag}")
 
     def __str__(self):
         return self.to_string()

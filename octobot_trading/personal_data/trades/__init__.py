@@ -35,6 +35,9 @@ from octobot_trading.personal_data.trades.channel import (
 from octobot_trading.personal_data.trades.trade import (
     Trade,
 )
+from octobot_trading.personal_data.trades.trades_util import (
+    compute_win_rate,
+)
 
 __all__ = [
     "TradesManager",
@@ -45,4 +48,5 @@ __all__ = [
     "create_trade_instance",
     "TradesUpdater",
     "Trade",
+    "compute_win_rate",
 ]

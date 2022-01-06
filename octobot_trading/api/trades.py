@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_trading.enums
 import octobot_trading.personal_data as personal_data
 
@@ -55,3 +57,7 @@ def parse_trade_type(dict_trade) -> octobot_trading.enums.TraderOrderType:
 
 def trade_to_dict(trade) -> dict:
     return trade.to_dict()
+
+
+def get_win_rate(exchange_manager) -> decimal.Decimal:
+    return personal_data.compute_win_rate(exchange_manager)

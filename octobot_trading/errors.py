@@ -102,3 +102,21 @@ class DuplicateTransactionIdError(Exception):
     """
     Raised when trying to add a new transaction with a duplicate id
     """
+
+
+class UnreachableExchange(Exception):
+    """
+    Raised when an exchange cant be reached (likely when it's offline)
+    """
+
+
+class InvalidArgumentError(Exception):
+    """
+    Raised when a keyword is called with invalid arguments
+    """
+
+
+class ConflictingOrdersError(Exception):
+    """
+    Raised when an order is that would create an order conflict is created
+    """

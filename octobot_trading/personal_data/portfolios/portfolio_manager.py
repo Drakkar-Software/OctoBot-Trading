@@ -162,7 +162,8 @@ class PortfolioManager(util.Initializable):
                 self.portfolio.update_portfolio_available(order, is_new_order=False)
             return True
         except errors.PortfolioNegativeValueError as portfolio_negative_value_error:
-            self.logger.exception(f"Failed to update portfolio : {portfolio_negative_value_error}")
+            self.logger.exception(f"Failed to update portfolio : {portfolio_negative_value_error} "
+                                  f"for order {order.to_dict()}")
         return False
 
     def _refresh_simulated_trader_portfolio_from_position(self, position):

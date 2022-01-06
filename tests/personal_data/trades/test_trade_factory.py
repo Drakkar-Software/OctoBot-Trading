@@ -100,6 +100,7 @@ class TestTradeFactory:
             FeePropertyColumns.RATE.value: 0.002
         }
         assert trade.is_closing_order is True
+        assert trade.tag is None
 
         await self.stop(exchange_manager)
 
@@ -134,6 +135,7 @@ class TestTradeFactory:
             """)
 
         order = create_order_instance_from_raw(trader, raw_order)
+        order.tag = "tag"
         trade = create_trade_from_order(order, close_status=OrderStatus.FILLED)
 
         assert trade.trade_id == '12345-67890:09876/54321'
@@ -148,6 +150,7 @@ class TestTradeFactory:
         assert trade.executed_price == decimal.Decimal("7684")
         assert trade.status == OrderStatus.FILLED
         assert trade.is_closing_order is True
+        assert trade.tag == 'tag'
 
         trade = create_trade_from_order(order)
         assert trade.status == OrderStatus.FILLED
