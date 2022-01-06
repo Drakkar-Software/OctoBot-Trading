@@ -264,7 +264,7 @@ def _should_update_available(order):
     :param order: The order to check
     :return: True if the order should update available portfolio
     """
-    return not order.is_self_managed()
+    return order.is_counted_in_available_funds()
 
 
 def _parse_raw_currency_balance(raw_currency_balance):

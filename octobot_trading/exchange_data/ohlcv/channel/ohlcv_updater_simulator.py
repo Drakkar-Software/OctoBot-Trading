@@ -18,6 +18,7 @@ import octobot_backtesting.errors as errors
 
 import octobot_commons.constants as constants
 import octobot_commons.enums as enums
+import octobot_commons.time_frame_manager as time_frame_manager
 
 import octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater as ohlcv_updater
 import octobot_trading.util as util
@@ -49,6 +50,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
 
     async def handle_timestamp(self, timestamp, **kwargs):
         try:
+            pushed_data = False
             for pair in self.traded_pairs:
                 for time_frame in self.traded_time_frame:
                     # Use last_timestamp_pushed + 1 for inferior timestamp to avoid select of an already selected candle
@@ -64,24 +66,30 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                                         if self.future_candle_time_frame is time_frame else 0)
                     )
                     if ohlcv_data:
-                        current_candle_index = 0
+                        if time_frame is self.future_candle_time_frame:
+                            # There should always be at least 2 candles in read data, otherwise this means that
+                            # the exchange was down for some time. Consider it unreachable
+                            self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) < 2
+                        has_future_candle = False
                         if self.future_candle_time_frame is time_frame:
-                            if ohlcv_data[0][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
+                            if ohlcv_data[-1][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
                                 # register future candle
                                 self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = \
-                                    ohlcv_data[0][-1]
+                                    ohlcv_data[-1][-1]
                                 # do not push future candle
-                                current_candle_index = 1
+                                has_future_candle = True
                             else:
                                 # if no future candle available
                                 # (end of backtesting of missing data: reset future candle)
                                 self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = None
-                        if current_candle_index == 0 or len(ohlcv_data) > 1:
+                        if not has_future_candle or len(ohlcv_data) > 1:
                             # push current candle(s)
+                            candles = ohlcv_data[:-1] if has_future_candle else ohlcv_data
                             await self.push(time_frame,
                                             pair,
-                                            [ohlcv[-1] for ohlcv in ohlcv_data[current_candle_index:]],
+                                            [ohlcv[-1] for ohlcv in candles],
                                             partial=True)
+                            pushed_data = True
                     elif self.require_last_init_candles_pairs_push:
                         # triggered on first iteration to initialize large candles that might be pushed much later
                         # otherwise but are required to complete TA evaluation
@@ -90,6 +98,9 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                             pair,
                                             [self.last_candles_by_pair_by_time_frame[pair][time_frame.value][-1]],
                                             partial=True)
+                            pushed_data = True
+            self.channel.exchange_manager.exchange.is_unreachable = not pushed_data
+
         except errors.DataBaseNotExists as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
@@ -135,14 +146,16 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
             self.logger.exception(e, True, f"Error while fetching historical candles: {e}")
         if ohlcv_data:
             # init historical candles
+            # Order candles by time
+            chronological_candles = sorted(ohlcv_data, key=lambda candle: candle[0])
             await self.channel.exchange_manager.get_symbol_data(pair) \
                 .handle_candles_update(time_frame,
-                                       [ohlcv[-1] for ohlcv in ohlcv_data],
+                                       [ohlcv[-1] for ohlcv in chronological_candles],
                                        replace_all=True,
                                        partial=False)
             if pair not in self.last_candles_by_pair_by_time_frame:
                 self.last_candles_by_pair_by_time_frame[pair] = {}
-            self.last_candles_by_pair_by_time_frame[pair][time_frame.value] = ohlcv_data[0]
+            self.last_candles_by_pair_by_time_frame[pair][time_frame.value] = chronological_candles[-1]
             self.require_last_init_candles_pairs_push = True
         # self.initial_timestamp - 1 to re-select this candle and push it when init step will be over
         self.last_timestamp_pushed = self.initial_timestamp - 1

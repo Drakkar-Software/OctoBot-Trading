@@ -32,6 +32,7 @@ from octobot_trading.personal_data.orders import (
     parse_raw_fees,
     parse_order_status,
     parse_is_cancelled,
+    get_up_to_date_price,
     get_pre_order_data,
     OrderState,
     OrdersUpdater,
@@ -134,6 +135,7 @@ from octobot_trading.personal_data.trades import (
     create_trade_instance,
     TradesUpdater,
     Trade,
+    compute_win_rate,
 )
 from octobot_trading.personal_data import transactions
 from octobot_trading.personal_data.transactions import (
@@ -199,6 +201,7 @@ __all__ = [
     "parse_raw_fees",
     "parse_order_status",
     "parse_is_cancelled",
+    "get_up_to_date_price",
     "get_pre_order_data",
     "OrderState",
     "OrdersUpdater",
@@ -292,6 +295,7 @@ __all__ = [
     "create_trade_instance",
     "TradesUpdater",
     "Trade",
+    "compute_win_rate",
     "ExchangePersonalData",
     "AUTHENTICATED_UPDATER_PRODUCERS",
     "AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS",

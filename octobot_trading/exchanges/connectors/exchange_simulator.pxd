@@ -28,6 +28,8 @@ cdef class ExchangeSimulator(abstract_exchange.AbstractExchange):
 
     cpdef str get_pair_cryptocurrency(self, str pair)
     cpdef list get_available_time_frames(self)
+    cpdef list get_backtesting_data_files(self)
+    cpdef str get_backtesting_data_file(self, str symbol, object time_frame)
     cpdef list get_time_frames(self, object importer)
 
 # Should be cythonized with cython 3.0

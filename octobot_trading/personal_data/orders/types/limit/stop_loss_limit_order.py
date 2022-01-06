@@ -20,12 +20,16 @@ import octobot_trading.personal_data.orders.types.limit.limit_order as limit_ord
 
 
 class StopLossLimitOrder(limit_order.LimitOrder):
+    # TO CHECK: is it used anywhere ?
     UNINITIALIZED_LIMIT_PRICE = decimal.Decimal("-1")
 
     def __init__(self, trader, side=enums.TradeOrderSide.SELL, limit_price=UNINITIALIZED_LIMIT_PRICE):
         super().__init__(trader, side)
         self.trigger_above = False
         self.limit_price = limit_price
+
+    def is_counted_in_available_funds(self):
+        return False
 
     async def on_filled(self):
         await limit_order.LimitOrder.on_filled(self)

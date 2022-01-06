@@ -28,6 +28,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchange_data as exchange_data
+import octobot_trading.exchanges.util as util
 
 
 class ExchangeSimulator(abstract_exchange.AbstractExchange):
@@ -110,6 +111,16 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
                     for time_frame in backtesting_api.get_available_time_frames(next(iter(self.exchange_importers)))]
         return []
 
+    def get_backtesting_data_files(self):
+        return [backtesting_api.get_data_file_path(importer) for importer in self.exchange_importers]
+
+    def get_backtesting_data_file(self, symbol, time_frame):
+        for importer in self.exchange_importers:
+            if symbol in backtesting_api.get_available_symbols(importer) and \
+                    time_frame in backtesting_api.get_available_time_frames(importer):
+                return backtesting_api.get_data_file_path(importer)
+        return None
+
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
         return {
             # number of decimal digits "after the dot"
@@ -184,7 +195,7 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
             [enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
         cost = float(number_util.round_into_str_with_max_digits(float(quantity) * rate, precision))
 
-        if order_type == enums.TraderOrderType.SELL_MARKET or order_type == enums.TraderOrderType.SELL_LIMIT:
+        if util.get_order_side(order_type) == enums.TradeOrderSide.SELL.value:
             cost = float(number_util.round_into_str_with_max_digits(cost * float(price), precision))
             fee_currency = market
 

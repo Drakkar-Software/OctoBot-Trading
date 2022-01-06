@@ -78,13 +78,14 @@ class Trader(util.Initializable):
     Orders
     """
 
-    async def create_order(self, order, portfolio: object = None, loaded: bool = False):
+    async def create_order(self, order, portfolio: object = None, loaded: bool = False, pre_init_callback=None):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
         notifies order channel. Handles linked orders.
         :param order: Order to create
         :param portfolio: Portfolio to update (default is this exchange's portfolio)
         :param loaded: True if this order is fetched from an exchange only and therefore not created by this OctoBot
+        :param pre_init_callback: A callback function that will be called just before initializing the order
         :return: The crated order instance
         """
         if portfolio is None:
@@ -112,7 +113,8 @@ class Trader(util.Initializable):
         # if this order is linked to another
         if linked_order is not None:
             new_order.linked_orders.append(linked_order)
-
+        if pre_init_callback is not None:
+            await pre_init_callback(new_order)
         await new_order.initialize()
         return new_order
 
@@ -134,6 +136,7 @@ class Trader(util.Initializable):
         Creates an exchange managed order, it might be a simulated or a real order. Then updates the portfolio.
         """
         if not self.simulate and not new_order.is_self_managed():
+            allow_self_managed = new_order.allow_self_managed
             created_order = await self.exchange_manager.exchange.create_order(new_order.order_type,
                                                                               new_order.symbol,
                                                                               new_order.origin_quantity,
@@ -147,6 +150,11 @@ class Trader(util.Initializable):
 
             # rebind linked portfolio to new order instance
             new_order.linked_portfolio = portfolio
+
+            # rebind order local variables
+            new_order.allow_self_managed = allow_self_managed
+            new_order.one_cancels_the_other = new_order.one_cancels_the_other
+            new_order.tag = new_order.tag
         return new_order
 
     async def cancel_order(self, order: object, ignored_order: object = None) -> bool:
@@ -200,16 +208,19 @@ class Trader(util.Initializable):
         except KeyError:
             return False
 
-    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True) -> bool:
+    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None) -> bool:
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
         :param symbol: The symbol to cancel all orders on
         :param cancel_loaded_orders: When True, also cancels loaded orders (order that are not from this bot instance)
+        :param side: When set, only cancels orders from this side
         :return: True if all orders got cancelled, False if an error occurred
         """
         all_cancelled = True
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
-            if (order.symbol == symbol and not order.is_cancelled()) and \
+            if order.symbol == symbol and \
+                    (side is None or order.side is side) and \
+                    not order.is_cancelled() and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
                 all_cancelled = await self.cancel_order(order) and all_cancelled
         return all_cancelled

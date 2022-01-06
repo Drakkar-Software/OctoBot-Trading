@@ -68,6 +68,7 @@ from octobot_trading.personal_data.orders.order_util import (
     parse_raw_fees,
     parse_order_status,
     parse_is_cancelled,
+    get_up_to_date_price,
     get_pre_order_data,
 )
 from octobot_trading.personal_data.orders import order_adapter
@@ -110,6 +111,7 @@ __all__ = [
     "parse_raw_fees",
     "parse_order_status",
     "parse_is_cancelled",
+    "get_up_to_date_price",
     "get_pre_order_data",
     "OrderState",
     "OrdersUpdater",

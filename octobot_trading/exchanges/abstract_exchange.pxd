@@ -32,6 +32,7 @@ cdef class AbstractExchange(util.Initializable):
     cdef public double allowed_time_lag
 
     cdef public str name
+    cdef public bint is_unreachable
 
     cpdef str get_name(cls)
 

@@ -90,3 +90,9 @@ class SpotExchangeSimulator(exchanges_types.SpotExchange):
 
     def get_current_future_candles(self):
         return self.connector.current_future_candles
+
+    def get_backtesting_data_files(self):
+        return self.connector.get_backtesting_data_files()
+
+    def get_backtesting_data_file(self, symbol, time_frame):
+        return self.connector.get_backtesting_data_file(symbol, time_frame)

@@ -20,6 +20,7 @@ import time
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 
+import octobot_backtesting.api as backtesting_api
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.ohlcv.channel.ohlcv as ohlcv_channel
@@ -28,7 +29,8 @@ import octobot_trading.exchange_data.ohlcv.channel.ohlcv as ohlcv_channel
 class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
     CHANNEL_NAME = constants.OHLCV_CHANNEL
     OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
-    OHLCV_OLD_LIMIT = 200  # should be < to candle manager's MAX_CANDLES_COUNT
+    DEFAULT_OHLCV_OLD_LIMIT = 200
+    OHLCV_OLD_LIMIT = DEFAULT_OHLCV_OLD_LIMIT  # should be < to candle manager's MAX_CANDLES_COUNT
     OHLCV_ON_ERROR_TIME = 5
     OHLCV_MIN_REFRESH_TIME = 1
     OHLCV_REFRESH_TIME_THRESHOLD = 1.5  # to prevent spamming at candle closing
@@ -82,6 +84,34 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             self.logger.debug("Candle history initial fetch completed")
             self.is_initialized = True
 
+    def _get_historical_candles_count(self):
+        if self.channel.exchange_manager.exchange_config.required_historical_candles_count > 0:
+            if self.channel.exchange_manager.exchange_name in constants.FULL_CANDLE_HISTORY_EXCHANGES:
+                return self.channel.exchange_manager.exchange_config.required_historical_candles_count
+            else:
+                self.logger.warning(f"Can't initialize the required "
+                                    f"{self.channel.exchange_manager.exchange_config.required_historical_candles_count}"
+                                    f" historical candles: {self.channel.exchange_manager.exchange_name} is not "
+                                    f"supporting candles history.")
+        return self.OHLCV_OLD_LIMIT
+
+    async def _get_init_candles(self, time_frame, pair):
+        historical_candles_count_limit = self._get_historical_candles_count()
+        if historical_candles_count_limit > self.DEFAULT_OHLCV_OLD_LIMIT:
+            tf_seconds = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
+            end_time = time.time() * 1000
+            # add 1 to historical_candles_count_limit to fetch the required count (otherwise one is missing)
+            start_time = end_time - (historical_candles_count_limit + 1) * tf_seconds * 1000
+            candles = []
+            async for new_candles in backtesting_api.historical_ohlcv_collector(self.channel.exchange_manager, pair,
+                                                                                time_frame, start_time, end_time):
+                candles += new_candles
+            return candles
+        candles: list = await self.channel.exchange_manager.exchange \
+            .get_symbol_prices(pair, time_frame, limit=self.OHLCV_OLD_LIMIT)
+        self.channel.exchange_manager.exchange.uniformize_candles_if_necessary(candles)
+        return candles
+
     async def _initialize_candles(self, time_frame, pair, should_retry) -> (str, common_enums.TimeFrames, list):
         """
         Manage timeframe OHLCV data refreshing for all pairs
@@ -91,9 +121,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         # fetch history
         candles = None
         try:
-            candles: list = await self.channel.exchange_manager.exchange \
-                .get_symbol_prices(pair, time_frame, limit=self.OHLCV_OLD_LIMIT)
-            self.channel.exchange_manager.exchange.uniformize_candles_if_necessary(candles)
+            candles: list = await self._get_init_candles(time_frame, pair)
         except errors.FailedRequest as e:
             self.logger.warning(str(e))
         if candles and len(candles) > 1:

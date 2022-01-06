@@ -23,10 +23,12 @@ import octobot_trading.personal_data.orders.order as order_class
 class MarketOrder(order_class.Order):
     async def update_order_status(self, force_refresh=False):
         if self.trader.simulate:
-            asyncio.create_task(self.on_fill(force_fill=True))
-            # In trading simulation wait for the next asyncio loop iteration to ensure this order status
-            # is updated before leaving this method
-            await asyncio_tools.wait_asyncio_next_cycle()
+            # TODO: ensure no issue un not running it in task anymore
+            await self.on_fill(force_fill=True)
+            # asyncio.create_task(self.on_fill(force_fill=True))
+            # # In trading simulation wait for the next asyncio loop iteration to ensure this order status
+            # # is updated before leaving this method
+            # await asyncio_tools.wait_asyncio_next_cycle()
 
     def on_fill_actions(self):
         self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
