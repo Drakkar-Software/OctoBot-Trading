@@ -14,6 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+# required to be imported first to prevent circular imports
+# TODO fix (testable by starting personal_data/positions tests only)
+import octobot_trading.api
+
 DEFAULT_ORDER_SYMBOL = "BTC/USDT"
 DEFAULT_SYMBOL_QUANTITY = 10
 DEFAULT_MARKET_QUANTITY = 1000
