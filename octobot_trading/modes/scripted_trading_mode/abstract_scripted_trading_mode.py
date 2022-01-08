@@ -173,14 +173,14 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
     async def start_over_database(self):
         await self.clear_plotting_cache()
         for producer in self.producers:
-            if producer.last_call is not None:
+            for time_frame, call_args in producer.last_call_by_timeframe.items():
                 await basic_keywords.clear_user_inputs(producer.run_data_writer)
-                producer.run_data_writer.set_initialized_flags(False)
-                last_call_timestamp = producer.last_call[3]
+                producer.run_data_writer.set_initialized_flags(False, (time_frame, ))
+                last_call_timestamp = call_args[3]
                 producer.symbol_writer.set_initialized_flags(False, (last_call_timestamp,))
                 self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
                 await self.close_caches(reset_cache_db_ids=True)
-                await producer.call_script(*producer.last_call)
+                await producer.call_script(*call_args)
 
     def get_optimizer_id(self):
         return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
@@ -298,7 +298,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
         super().__init__(channel, config, trading_mode, exchange_manager)
-        self.last_call = None
+        self.last_call_by_timeframe = {}
         self.traded_pair = trading_mode.symbol
         self.are_metadata_saved = False
 
@@ -363,8 +363,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                           candle: dict = None, kline: dict = None):
         context = self.get_context(matrix_id, cryptocurrency, symbol, time_frame, trigger_source,
                                    trigger_cache_timestamp, candle, kline)
-        self.last_call = (matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
-                          candle, kline)
+        self.last_call_by_timeframe[time_frame] = \
+            (matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp, candle, kline)
         context.matrix_id = matrix_id
         context.cryptocurrency = cryptocurrency
         context.symbol = symbol
