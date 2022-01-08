@@ -23,6 +23,7 @@ import octobot_commons.errors as common_errors
 import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
 import octobot_commons.tentacles_management as tentacles_management
+import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
 
 
@@ -295,19 +296,30 @@ class Context:
                                 cache_key=None,
                                 limit=-1,
                                 tentacle_name=None,
-                                config_name=None) -> list:
+                                config_name=None,
+                                bound_to_backtesting_time=True) -> list:
         """
-        Get a value for the current cache
+        Get a value for the current cache with the current backtesting boundaries
         :param value_key: identifier of the value
         :param cache_key: timestamp to use in order to look for a value
         :param limit: the maximum number elements to select (no limit by default)
         :param tentacle_name: name of the tentacle to get cache from
         :param config_name: name of the tentacle configuration as used in nested tentacle calls
+        :param bound_to_backtesting_time: only select cache from values within the current total backtesting time window
         :return: the cached values
         """
         try:
+            min_timestamp = 0
+            max_timestamp = cache_key or self.trigger_cache_timestamp
+            if bound_to_backtesting_time and self.exchange_manager.is_backtesting:
+                min_timestamp = backtesting_api.get_backtesting_starting_time(
+                    self.exchange_manager.exchange.backtesting)
+                max_timestamp = min(cache_key or self.trigger_cache_timestamp,
+                                    backtesting_api.get_backtesting_ending_time(
+                                        self.exchange_manager.exchange.backtesting))
             return await self.get_cache(tentacle_name=tentacle_name, config_name=config_name)\
-                .get_values(cache_key or self.trigger_cache_timestamp, name=value_key, limit=limit)
+                .get_values(max_timestamp, name=value_key, limit=limit,
+                            min_timestamp=min_timestamp)
         except common_errors.NoCacheValue:
             return []
 
