@@ -423,7 +423,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
 
     async def _register_required_user_inputs(self, context):
-        await basic_keywords.user_input(context, trading_constants.CONFIG_VISIBLE_LIVE_HISTORY, "int", 800)
+        await basic_keywords.user_input(context, trading_constants.CONFIG_VISIBLE_LIVE_HISTORY, "int", 800,
+                                        show_in_optimizer=False, show_in_summary=False)
         if context.exchange_manager.is_future:
             await basic_keywords.user_select_leverage(context)
 
@@ -433,9 +434,10 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             commons_enums.ActivationTopics.FULL_CANDLES.value,
             commons_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value
         ]
-        await basic_keywords.user_input(context, commons_constants.CONFIG_ACTIVATION_TOPICS, "multiple-options",
-                                        [commons_enums.ActivationTopics.EVALUATORS.value],
-                                        options=activation_topic_values)
+        await basic_keywords.user_input(context, commons_constants.CONFIG_ACTIVATION_TOPICS, "options",
+                                        commons_enums.ActivationTopics.EVALUATORS.value,
+                                        options=activation_topic_values,
+                                        show_in_optimizer=False, show_in_summary=False)
 
     @contextlib.asynccontextmanager
     async def get_metadata_writer(self, with_lock):
