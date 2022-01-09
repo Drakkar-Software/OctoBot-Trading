@@ -126,10 +126,7 @@ class Context:
             self.tentacles_requirements = previous_tentacle_requirements
             self.nested_depth -= 1
             del self.nested_config_names[-1]
-            registered_requirements = self.get_cache_registered_requirements()
-            if registered_requirements is not None and not registered_requirements.includes_nested_requirements(
-                    self.tentacles_requirements
-            ):
+            if self._requires_cache_sync_synchronization():
                 # if tentacles requirements changed: reset cache of this tentacle to include the new requirements
                 await self._reset_cache()
 
@@ -189,13 +186,40 @@ class Context:
         context.top_level_tentacle = self.top_level_tentacle
         context.tentacles_requirements = self.tentacles_requirements  # keep the same tentacles_requirements
         context.parent_tentacles_requirements = self.parent_tentacles_requirements
-        context.add_tentacle_requirement(tentacle, context.config_name)
+        context.add_tentacle_requirement_from_nested_context(tentacle, context.config_name)
         return context
 
-    def add_tentacle_requirement(self, tentacle, config_name):
+    def add_tentacle_requirement_from_nested_context(self, tentacle, config_name) \
+            -> (bool, tentacles_management.TentacleRequirements):
+        """
+        Used to add a requirement to a tentacle that has been triggered. Allows initialise its cache.
+        Updates self.tentacles_requirements and self.parent_tentacles_requirements
+        :param tentacle: the required tentacle tentacle
+        :param config_name: its configuration name
+        :return True if the requirement was not already registered and the created requirement
+        """
+        # self.tentacles_requirements might be None during the 1st nested call as it is retrieved from
+        # the parent context. At 1st call, it has not yet been initialized
         if self.tentacles_requirements is None:
             self.tentacles_requirements = tentacles_management.TentacleRequirements(tentacle, config_name)
-        self.parent_tentacles_requirements.add_requirement(self.tentacles_requirements)
+        return self.parent_tentacles_requirements.add_requirement(self.tentacles_requirements), \
+            self.tentacles_requirements
+
+    def add_referenced_tentacle_requirement(self, tentacle_class, config_name) \
+            -> (bool, tentacles_management.TentacleRequirements):
+        """
+        Used to add a requirement to a tentacle that was already triggered. Does not allow to initialise its cache.
+        Only updates self.tentacles_requirements.
+        Does not update self.parent_tentacles_requirements is it should already contain a reference to
+        self.tentacles_requirements from the previous trigger. Even if it was called, resetting its cache would fail
+        because there is no available tentacle instance to get its configuration from (only a class is available).
+        Set the return requirement tentacle attribute to allow cache initialization
+        :param tentacle_class: the required tentacle class
+        :param config_name: its configuration name
+        :return True if the requirement was not already registered and the created requirement
+        """
+        requirement = tentacles_management.TentacleRequirements(None, config_name, tentacle_class=tentacle_class)
+        return self.tentacles_requirements.add_requirement(requirement), requirement
 
     def _get_adapted_trigger_timestamp(self, tentacle_class, base_trigger_timestamp, config_name):
         try:
@@ -222,6 +246,39 @@ class Context:
             )
         except KeyError:
             return None
+
+    async def ensure_nested_call_cache_requirements(self, tentacle_class, config_name):
+        """
+        Takes into account a tentacle and its config_name to identify cache.
+        Requires the given tentacle to have been called previously as this method is not
+        initializing this tentacle cache but only binding to it
+        """
+        added, requirement = self.add_referenced_tentacle_requirement(tentacle_class, config_name)
+        if added and self._requires_cache_sync_synchronization():
+            # build a new tentacle instance with appropriate config (from previous trigger) to use it as requirement
+            config_name, _, _, tentacles_setup_config, _ = \
+                self.get_tentacle_config_elements(tentacle_class, config_name, None)
+            # use already registered requirement to access its configuration (config might be updated during script run)
+            registered_requirement = self.get_cache_registered_requirements(tentacle_class.get_name(), config_name)
+            requirement.tentacle = tentacle_class.factory_with_local_config(tentacles_setup_config,
+                                                                            registered_requirement.tentacle_config)
+            await self._reset_cache()
+
+    def get_tentacle_config_elements(self, tentacle_class, config_name, config):
+        config_name = f"nested_{tentacle_class.get_name()}_config" if config_name is None else config_name
+        cleaned_config_name = config_name.replace(" ", "_")
+        config = {key.replace(" ", "_"): val for key, val in config.items()} if config else {}
+        tentacles_setup_config = self.tentacle.tentacles_setup_config \
+            if hasattr(self.tentacle, "tentacles_setup_config") else self.exchange_manager.tentacles_setup_config
+        tentacle_config = self.tentacle.specific_config if hasattr(self.tentacle, "specific_config") \
+            else self.tentacle.trading_config
+        return config_name, cleaned_config_name, config, tentacles_setup_config, tentacle_config
+
+    def _requires_cache_sync_synchronization(self):
+        registered_requirements = self.get_cache_registered_requirements()
+        return registered_requirements is not None and not registered_requirements.includes_nested_requirements(
+                self.tentacles_requirements
+        )
 
     async def _reset_cache(self):
         previous_cache_requirements = self.get_cache_registered_requirements()
