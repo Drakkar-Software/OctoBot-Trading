@@ -160,12 +160,12 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     def get_channels_registration(self):
         registration_channels = []
         # Activate on full candles only by default (same as technical evaluators)
-        for topic in self.trading_mode.trading_config.get(common_constants.CONFIG_ACTIVATION_TOPICS.replace(" ", "_"),
-                                                          [common_enums.ActivationTopics.EVALUATORS.value]):
-            try:
-                registration_channels.append(self.TOPIC_TO_CHANNEL_NAME[topic])
-            except KeyError:
-                self.logger.error(f"Unknown registration topic: {topic}")
+        topic = self.trading_mode.trading_config.get(common_constants.CONFIG_ACTIVATION_TOPICS.replace(" ", "_"),
+                                                     common_enums.ActivationTopics.EVALUATORS.value)
+        try:
+            registration_channels.append(self.TOPIC_TO_CHANNEL_NAME[topic])
+        except KeyError:
+            self.logger.error(f"Unknown registration topic: {topic}")
         return registration_channels
 
     async def stop(self) -> None:
@@ -250,7 +250,6 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             self.logger.warning(f"Error when calling trading mode: {e}")
         except Exception as e:
             self.logger.exception(e, True, f"Error when calling trading mode: {e}")
-
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame) -> None:
         """
