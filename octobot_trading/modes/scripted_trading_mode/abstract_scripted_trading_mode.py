@@ -175,6 +175,7 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         for producer in self.producers:
             for time_frame, call_args in producer.last_call_by_timeframe.items():
                 await basic_keywords.clear_user_inputs(producer.run_data_writer)
+                await producer.init_user_inputs(False)
                 producer.run_data_writer.set_initialized_flags(False, (time_frame, ))
                 last_call_timestamp = call_args[3]
                 producer.symbol_writer.set_initialized_flags(False, (last_call_timestamp,))
@@ -313,9 +314,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         await self.database_manager.initialize(self.exchange_name)
         self.run_data_writer = self.trading_mode.get_writer(self.database_manager.get_run_data_db_identifier())
         # refresh user inputs
-        await basic_keywords.clear_user_inputs(self.run_data_writer)
-        await self._register_required_user_inputs(
-            self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None))
+        await self.init_user_inputs(True)
         self.orders_writer = self.trading_mode.get_writer(self.database_manager.get_orders_db_identifier())
         self.trades_writer = self.trading_mode.get_writer(self.database_manager.get_trades_db_identifier())
         self.symbol_writer = self.trading_mode.get_writer(self.database_manager.get_symbol_db_identifier(
@@ -421,6 +420,12 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         await basic_keywords.save_metadata(self.run_data_writer, await self.get_live_metadata())
         await basic_keywords.save_portfolio(self.run_data_writer, context)
         self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
+
+    async def init_user_inputs(self, should_clear_inputs):
+        if should_clear_inputs:
+            await basic_keywords.clear_user_inputs(self.run_data_writer)
+        await self._register_required_user_inputs(
+            self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None))
 
     async def _register_required_user_inputs(self, context):
         await basic_keywords.user_input(context, trading_constants.CONFIG_VISIBLE_LIVE_HISTORY, "int", 800,
