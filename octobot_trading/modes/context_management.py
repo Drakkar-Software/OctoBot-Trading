@@ -24,6 +24,7 @@ import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
 import octobot_commons.tentacles_management as tentacles_management
 import octobot_trading.modes as modes
+import octobot_tentacles_manager.api as tentacles_manager_api
 
 
 class Context:
@@ -246,7 +247,7 @@ class Context:
         except KeyError:
             return None
 
-    async def ensure_nested_call_cache_requirements(self, tentacle_class, config_name):
+    async def ensure_tentacle_cache_requirements(self, tentacle_class, config_name):
         """
         Takes into account a tentacle and its config_name to identify cache.
         Requires the given tentacle to have been called previously as this method is not
@@ -346,6 +347,8 @@ class Context:
                 get(cache_key or self.trigger_cache_timestamp, name=value_key), False
         except common_errors.NoCacheValue:
             return None, True
+        finally:
+            await self._try_add_tentacle_as_cache_requirement(tentacle_name, config_name)
 
     async def get_cached_values(self,
                                 value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
@@ -367,6 +370,17 @@ class Context:
                 .get_values(cache_key or self.trigger_cache_timestamp, name=value_key, limit=limit)
         except common_errors.NoCacheValue:
             return []
+        finally:
+            await self._try_add_tentacle_as_cache_requirement(tentacle_name, config_name)
+
+    async def _try_add_tentacle_as_cache_requirement(self, tentacle_name, config_name):
+        try:
+            if tentacle_name is not None:
+                tentacle_class = tentacles_manager_api.get_tentacle_class_from_string(tentacle_name) \
+                    if isinstance(tentacle_name, str) else tentacle_name
+                await self.ensure_tentacle_cache_requirements(tentacle_class, config_name)
+        except Exception as e:
+            self.logger.exception(e, True, f"Error when adding tentacle as a requirement {e}")
 
     async def set_cached_value(self, value, value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
                                cache_key=None, flush_if_necessary=False, tentacle_name=None, config_name=None,
