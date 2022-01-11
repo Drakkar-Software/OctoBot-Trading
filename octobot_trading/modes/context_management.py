@@ -334,7 +334,8 @@ class Context:
                                value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
                                cache_key=None,
                                tentacle_name=None,
-                               config_name=None) -> tuple:
+                               config_name=None,
+                               ignore_requirement=False) -> tuple:
         """
         Get a value for the current cache
         :param value_key: identifier of the value
@@ -342,6 +343,7 @@ class Context:
         :param tentacle_name: name of the tentacle to get cache from
         :param config_name: name of the tentacle configuration as used in nested tentacle calls
         :return: the cached value and a boolean (True if cached value is missing from cache)
+        :param ignore_requirement: if True, tentacle_name will not be added as a requirement from this call
         """
         try:
             return await self.get_cache(tentacle_name=tentacle_name, config_name=config_name).\
@@ -349,7 +351,8 @@ class Context:
         except common_errors.NoCacheValue:
             return None, True
         finally:
-            await self._try_add_tentacle_as_cache_requirement(tentacle_name, config_name)
+            if not ignore_requirement:
+                await self._try_add_tentacle_as_cache_requirement(tentacle_name, config_name)
 
     async def get_cached_values(self,
                                 value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
@@ -357,7 +360,8 @@ class Context:
                                 limit=-1,
                                 tentacle_name=None,
                                 config_name=None,
-                                bound_to_backtesting_time=True) -> list:
+                                bound_to_backtesting_time=True,
+                                ignore_requirement=False) -> list:
         """
         Get a value for the current cache with the current backtesting boundaries
         :param value_key: identifier of the value
@@ -366,6 +370,7 @@ class Context:
         :param tentacle_name: name of the tentacle to get cache from
         :param config_name: name of the tentacle configuration as used in nested tentacle calls
         :param bound_to_backtesting_time: only select cache from values within the current total backtesting time window
+        :param ignore_requirement: if True, tentacle_name will not be added as a requirement from this call
         :return: the cached values
         """
         try:
@@ -383,7 +388,8 @@ class Context:
         except common_errors.NoCacheValue:
             return []
         finally:
-            await self._try_add_tentacle_as_cache_requirement(tentacle_name, config_name)
+            if not ignore_requirement:
+                await self._try_add_tentacle_as_cache_requirement(tentacle_name, config_name)
 
     async def _try_add_tentacle_as_cache_requirement(self, tentacle_name, config_name):
         try:
