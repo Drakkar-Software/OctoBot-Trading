@@ -70,7 +70,7 @@ async def save_user_input(
 ):
     if is_nested_config is None:
         is_nested_config = ctx.is_nested_tentacle
-    if not ctx.run_data_writer.are_data_initialized and not await ctx.run_data_writer.contains_row(
+    if not await ctx.run_data_writer.contains_row(
             trading_enums.DBTables.INPUTS.value,
             {
                 "name": name,
@@ -99,6 +99,10 @@ async def save_user_input(
                 "in_optimizer": show_in_optimizer,
             }
         )
+        if ctx.run_data_writer.are_data_initialized and not ctx.exchange_manager.is_backtesting:
+            # in some cases, user inputs might be setup after the 1st trading mode cycle: flush
+            # writer in live mode to ensure writing
+            await ctx.run_data_writer.flush()
 
 
 async def get_user_inputs(reader):
