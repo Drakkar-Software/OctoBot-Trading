@@ -428,8 +428,6 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None))
 
     async def _register_required_user_inputs(self, context):
-        await basic_keywords.user_input(context, trading_constants.CONFIG_VISIBLE_LIVE_HISTORY, "int", 800,
-                                        show_in_optimizer=False, show_in_summary=False)
         if context.exchange_manager.is_future:
             await basic_keywords.user_select_leverage(context)
 
