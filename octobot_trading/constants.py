@@ -43,6 +43,7 @@ CONFIG_VISIBLE_LIVE_HISTORY = "visible_live_history"
 DEFAULT_EXCHANGE_TIME_LAG = 10
 DEFAULT_BACKTESTING_TIME_LAG = 0
 INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME = -1
+DEFAULT_CANDLE_HISTORY_SIZE = 200
 
 # Decimal default values (decimals are immutable, can be stored as constant)
 ZERO = decimal.Decimal(0)

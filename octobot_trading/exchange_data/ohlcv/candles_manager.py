@@ -25,11 +25,14 @@ import octobot_trading.util as util
 class CandlesManager(util.Initializable):
     MAX_CANDLES_COUNT = 1000
 
-    def __init__(self):
+    def __init__(self, max_candles_count=None):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
 
         self.candles_initialized = False
+        self.max_candles_count = max_candles_count \
+            if max_candles_count and max_candles_count > self.__class__.MAX_CANDLES_COUNT \
+            else self.__class__.MAX_CANDLES_COUNT
 
         self.close_candles_index = 0
         self.open_candles_index = 0
@@ -62,12 +65,12 @@ class CandlesManager(util.Initializable):
         self.time_candles_index = 0
         self.volume_candles_index = 0
 
-        self.close_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.open_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.high_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.low_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.time_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
-        self.volume_candles = np.full(self.MAX_CANDLES_COUNT, fill_value=np.nan, dtype=np.float64)
+        self.close_candles = np.full(self.max_candles_count, fill_value=np.nan, dtype=np.float64)
+        self.open_candles = np.full(self.max_candles_count, fill_value=np.nan, dtype=np.float64)
+        self.high_candles = np.full(self.max_candles_count, fill_value=np.nan, dtype=np.float64)
+        self.low_candles = np.full(self.max_candles_count, fill_value=np.nan, dtype=np.float64)
+        self.time_candles = np.full(self.max_candles_count, fill_value=np.nan, dtype=np.float64)
+        self.volume_candles = np.full(self.max_candles_count, fill_value=np.nan, dtype=np.float64)
 
     # getters
     def get_symbol_candles_count(self):
@@ -164,7 +167,7 @@ class CandlesManager(util.Initializable):
             self._change_current_candle()
 
     def _inc_candle_index(self):
-        if self.close_candles_index < self.MAX_CANDLES_COUNT - 1:
+        if self.close_candles_index < self.max_candles_count - 1:
             self.close_candles_index += 1
             self.open_candles_index += 1
             self.high_candles_index += 1
@@ -175,7 +178,7 @@ class CandlesManager(util.Initializable):
             self.reached_max = True
 
     def _extract_limited_data(self, data, limit=-1, max_limit=-1):
-        max_handled_limit: int = self.MAX_CANDLES_COUNT if self.reached_max else max_limit
+        max_handled_limit: int = self.max_candles_count if self.reached_max else max_limit
         if limit == -1:
             if max_limit == -1:
                 return np.array(data)
