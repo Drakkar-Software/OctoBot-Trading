@@ -105,6 +105,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         Start trading mode channels subscriptions
         """
         registration_topics = self.get_channels_registration()
+        trigger_time_frames = self.get_trigger_time_frames()
         currency_filter = self.trading_mode.cryptocurrency \
             if self.trading_mode.cryptocurrency is not None and not self.is_cryptocurrency_wildcard() \
             else common_constants.CONFIG_WILDCARD
@@ -113,7 +114,15 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             else common_constants.CONFIG_WILDCARD
         time_frame_filter = self.trading_mode.time_frame \
             if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard() \
-            else [tf.value for tf in self.exchange_manager.exchange_config.available_required_time_frames]
+            else [tf.value
+                  for tf in self.exchange_manager.exchange_config.available_required_time_frames
+                  if tf.value in trigger_time_frames or
+                  trigger_time_frames == common_constants.CONFIG_WILDCARD]
+        if trigger_time_frames != common_constants.CONFIG_WILDCARD and \
+           len(time_frame_filter) < len(trigger_time_frames):
+            missing_time_frames = [tf for tf in trigger_time_frames if tf not in time_frame_filter]
+            self.logger.error(f"Missing timeframe to satisfy {trigger_time_frames} required time frames. "
+                              f"Please activate those timeframes {missing_time_frames}")
         self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                                      self.exchange_manager.id).matrix_id
         for registration_topic in registration_topics:
@@ -167,6 +176,10 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         except KeyError:
             self.logger.error(f"Unknown registration topic: {topic}")
         return registration_channels
+
+    def get_trigger_time_frames(self):
+        return self.trading_mode.trading_config.get(common_constants.CONFIG_TRIGGER_TIMEFRAMES,
+                                                    common_constants.CONFIG_WILDCARD)
 
     async def stop(self) -> None:
         """
