@@ -29,7 +29,8 @@ async def user_input(
     is_nested_config=None,
     nested_tentacle=None,
     show_in_summary=True,
-    show_in_optimizer=True
+    show_in_optimizer=True,
+    flush_if_necessary=False
 ):
     config = ctx.tentacle.trading_config if hasattr(ctx.tentacle, "trading_config") else ctx.tentacle.specific_config
     try:
@@ -49,7 +50,8 @@ async def user_input(
         is_nested_config=is_nested_config,
         nested_tentacle=nested_tentacle,
         show_in_summary=show_in_summary,
-        show_in_optimizer=show_in_optimizer
+        show_in_optimizer=show_in_optimizer,
+        flush_if_necessary=flush_if_necessary
     )
     return value
 
@@ -66,7 +68,8 @@ async def save_user_input(
     is_nested_config=None,
     nested_tentacle=None,
     show_in_summary=True,
-    show_in_optimizer=True
+    show_in_optimizer=True,
+    flush_if_necessary=False
 ):
     if is_nested_config is None:
         is_nested_config = ctx.is_nested_tentacle
@@ -99,7 +102,7 @@ async def save_user_input(
                 "in_optimizer": show_in_optimizer,
             }
         )
-        if ctx.run_data_writer.are_data_initialized and not ctx.exchange_manager.is_backtesting:
+        if (flush_if_necessary or ctx.run_data_writer.are_data_initialized) and not ctx.exchange_manager.is_backtesting:
             # in some cases, user inputs might be setup after the 1st trading mode cycle: flush
             # writer in live mode to ensure writing
             await ctx.run_data_writer.flush()
