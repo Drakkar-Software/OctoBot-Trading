@@ -29,8 +29,7 @@ import octobot_trading.exchange_data.ohlcv.channel.ohlcv as ohlcv_channel
 class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
     CHANNEL_NAME = constants.OHLCV_CHANNEL
     OHLCV_LIMIT = 5  # should be < to candle manager's MAX_CANDLES_COUNT
-    DEFAULT_OHLCV_OLD_LIMIT = 200
-    OHLCV_OLD_LIMIT = DEFAULT_OHLCV_OLD_LIMIT  # should be < to candle manager's MAX_CANDLES_COUNT
+    OHLCV_OLD_LIMIT = constants.DEFAULT_CANDLE_HISTORY_SIZE  # should be <= to candle manager's MAX_CANDLES_COUNT
     OHLCV_ON_ERROR_TIME = 5
     OHLCV_MIN_REFRESH_TIME = 1
     OHLCV_REFRESH_TIME_THRESHOLD = 1.5  # to prevent spamming at candle closing
@@ -97,7 +96,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
 
     async def _get_init_candles(self, time_frame, pair):
         historical_candles_count_limit = self._get_historical_candles_count()
-        if historical_candles_count_limit > self.DEFAULT_OHLCV_OLD_LIMIT:
+        if historical_candles_count_limit > constants.DEFAULT_CANDLE_HISTORY_SIZE:
             tf_seconds = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
             end_time = time.time() * 1000
             # add 1 to historical_candles_count_limit to fetch the required count (otherwise one is missing)
