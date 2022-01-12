@@ -22,6 +22,7 @@ cdef class CandlesManager(util.Initializable):
     cdef object logger
 
     cdef public bint candles_initialized
+    cdef int max_candles_count
 
     cdef public np.float64_t[::1] close_candles
     cdef public np.float64_t[::1] open_candles

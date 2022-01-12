@@ -52,7 +52,10 @@ class ExchangeSymbolData:
         try:
             symbol_candles = self.symbol_candles[time_frame]
         except KeyError:
-            symbol_candles = candles_manager.CandlesManager()
+            # If set, use exchange required_historical_candles_count as it is asked in configuration
+            symbol_candles = candles_manager.CandlesManager(
+                max_candles_count=self.exchange_manager.exchange_config.required_historical_candles_count
+            )
             await symbol_candles.initialize()
 
             if replace_all:

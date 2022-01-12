@@ -130,6 +130,31 @@ def test_reach_max_candles_count():
                other_candles[-1][PriceIndexes.IND_PRICE_CLOSE.value])
 
 
+def test_reach_max_candles_count_with_custom_candles_count():
+    # negative value: use default MAX_CANDLES_COUNT
+    candles_manager = CandlesManager(max_candles_count=-1)
+    assert candles_manager.max_candles_count == candles_manager.MAX_CANDLES_COUNT
+
+    candles_manager = CandlesManager(max_candles_count=CandlesManager.MAX_CANDLES_COUNT + 21)
+    assert candles_manager.max_candles_count != candles_manager.MAX_CANDLES_COUNT
+    assert candles_manager.MAX_CANDLES_COUNT == CandlesManager.MAX_CANDLES_COUNT
+    all_candles = _gen_candles(candles_manager.max_candles_count + 3)
+    max_candles = all_candles[0:candles_manager.max_candles_count]
+    other_candles = all_candles[candles_manager.max_candles_count:]
+
+    assert candles_manager.reached_max is False
+    candles_manager.add_old_and_new_candles(max_candles)
+    assert candles_manager.reached_max is True
+    _test_data(candles_manager.get_symbol_close_candles(), candles_manager.max_candles_count,
+               max_candles[-1][PriceIndexes.IND_PRICE_CLOSE.value])
+    assert candles_manager.close_candles_index == candles_manager.max_candles_count - 1
+
+    # should remove oldest (first) candles and insert new ones instead
+    candles_manager.add_old_and_new_candles(other_candles)
+    _test_data(candles_manager.get_symbol_close_candles(), candles_manager.max_candles_count,
+               other_candles[-1][PriceIndexes.IND_PRICE_CLOSE.value])
+
+
 def _test_data(candles_data, expected_len, expected_last_val):
     assert len(candles_data) == expected_len
     if expected_len > 0:

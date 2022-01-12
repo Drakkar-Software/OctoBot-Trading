@@ -118,10 +118,12 @@ class ExchangeManager(util.Initializable):
         await self.exchange_personal_data.initialize()
         await self.exchange_config.initialize()
 
-    def load_constants(self):
-        self._load_config_symbols_and_time_frames()
-        self.exchange_config.set_config_time_frame()
-        self.exchange_config.set_config_traded_pairs()
+    def load_constants(self, is_simulated_exchange):
+        if not is_simulated_exchange:
+            self._load_config_symbols_and_time_frames()
+            self.exchange_config.set_config_time_frame()
+            self.exchange_config.set_config_traded_pairs()
+        # always call set_historical_settings
         self.exchange_config.set_historical_settings()
 
     def need_user_stream(self):
