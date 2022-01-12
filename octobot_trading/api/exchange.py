@@ -213,7 +213,7 @@ def get_currently_handled_pair_with_time_frame(exchange_manager) -> int:
 def get_required_historical_candles_count(exchange_manager) -> int:
     return exchange_manager.exchange_config.required_historical_candles_count \
         if exchange_manager.exchange_config.required_historical_candles_count > \
-        exchange_data.OHLCVUpdater.DEFAULT_OHLCV_OLD_LIMIT else exchange_data.OHLCVUpdater.DEFAULT_OHLCV_OLD_LIMIT
+        octobot_trading.constants.DEFAULT_CANDLE_HISTORY_SIZE else octobot_trading.constants.DEFAULT_CANDLE_HISTORY_SIZE
 
 
 def is_overloaded(exchange_manager) -> bool:

@@ -81,8 +81,8 @@ def get_symbol_time_candles(symbol_data, time_frame, limit=-1, include_in_constr
     return exchange_data.get_symbol_time_candles(symbol_data, time_frame, limit, include_in_construction)
 
 
-def create_new_candles_manager(candles=None) -> exchange_data.CandlesManager:
-    manager = exchange_data.CandlesManager()
+def create_new_candles_manager(candles=None, max_candles_count=None) -> exchange_data.CandlesManager:
+    manager = exchange_data.CandlesManager(max_candles_count=max_candles_count)
     if candles is not None:
         manager.replace_all_candles(candles)
     return manager
