@@ -32,3 +32,6 @@ cdef class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     cpdef bint is_cryptocurrency_wildcard(self)
     cpdef bint is_symbol_wildcard(self)
     cpdef bint is_time_frame_wildcard(self)
+    cpdef dict get_callback(self)
+    cpdef list get_channels_registration(self)
+    cpdef object get_trigger_time_frames(self)

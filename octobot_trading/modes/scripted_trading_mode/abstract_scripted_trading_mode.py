@@ -376,8 +376,9 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise
-        except commons_errors.MissingDataError:
-            initialized = False
+        except (commons_errors.MissingDataError, commons_errors.ExecutionAborted) as e:
+            self.logger.debug(f"Script execution aborted: {e}")
+            initialized = self.run_data_writer.are_data_initialized
         except Exception as e:
             self.logger.exception(e, True, f"Error when running script: {e}")
         finally:
