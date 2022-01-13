@@ -32,7 +32,8 @@ async def user_input(
     show_in_optimizer=True,
     flush_if_necessary=False
 ):
-    config = ctx.tentacle.trading_config if hasattr(ctx.tentacle, "trading_config") else ctx.tentacle.specific_config
+    tentacle_type_str = "trading_mode" if hasattr(ctx.tentacle, "trading_config") else "evaluator"
+    config = ctx.tentacle.trading_config if tentacle_type_str == "trading_mode" else ctx.tentacle.specific_config
     try:
         value = config[name.replace(" ", "_")]
     except KeyError:
@@ -44,6 +45,7 @@ async def user_input(
         input_type,
         value,
         def_val,
+        tentacle_type_str,
         min_val=min_val,
         max_val=max_val,
         options=options,
@@ -62,6 +64,7 @@ async def save_user_input(
     input_type,
     value,
     def_val,
+    tentacle_type_str,
     min_val=None,
     max_val=None,
     options=None,
@@ -79,11 +82,8 @@ async def save_user_input(
                 "name": name,
                 "tentacle": ctx.tentacle.get_name(),
                 "nested_tentacle": nested_tentacle,
-                "input_type": input_type,
                 "is_nested_config": is_nested_config
             }):
-        tentacle_type = "trading_mode" if isinstance(ctx.tentacle, abstract_trading_mode.AbstractTradingMode) \
-            else "evaluator"
         await ctx.run_data_writer.log(
             trading_enums.DBTables.INPUTS.value,
             {
@@ -94,7 +94,7 @@ async def save_user_input(
                 "min_val": min_val,
                 "max_val": max_val,
                 "options": options,
-                "tentacle_type": tentacle_type,
+                "tentacle_type": tentacle_type_str,
                 "tentacle": ctx.tentacle.get_name(),
                 "nested_tentacle": nested_tentacle,
                 "is_nested_config": is_nested_config,
@@ -102,7 +102,7 @@ async def save_user_input(
                 "in_optimizer": show_in_optimizer,
             }
         )
-        if (flush_if_necessary or ctx.run_data_writer.are_data_initialized) and not ctx.exchange_manager.is_backtesting:
+        if not ctx.exchange_manager.is_backtesting and (flush_if_necessary or ctx.run_data_writer.are_data_initialized):
             # in some cases, user inputs might be setup after the 1st trading mode cycle: flush
             # writer in live mode to ensure writing
             await ctx.run_data_writer.flush()
