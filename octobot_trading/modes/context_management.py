@@ -156,7 +156,8 @@ class Context:
             optimizer_id,
         )
 
-    def get_nested_call_context(self, tentacle):
+    @contextlib.asynccontextmanager
+    async def nested_call_context(self, tentacle):
         context = Context(
             tentacle,
             self.exchange_manager,
@@ -188,7 +189,12 @@ class Context:
         context.tentacles_requirements = self.tentacles_requirements  # keep the same tentacles_requirements
         context.parent_tentacles_requirements = self.parent_tentacles_requirements
         context.add_tentacle_requirement_from_nested_context(tentacle, context.config_name)
-        return context
+        try:
+            yield context
+        finally:
+            if not self.exchange_manager.is_backtesting:
+                # when not in backtesting, make sure to flush the cache after nested call
+                await context.get_cache().flush()
 
     def add_tentacle_requirement_from_nested_context(self, tentacle, config_name) \
             -> (bool, tentacles_management.TentacleRequirements):
