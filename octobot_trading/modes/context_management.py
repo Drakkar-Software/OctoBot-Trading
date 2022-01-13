@@ -262,7 +262,7 @@ class Context:
         added, requirement = self.add_referenced_tentacle_requirement(tentacle_class, config_name)
         if added and self._requires_cache_sync_synchronization():
             # build a new tentacle instance with appropriate config (from previous trigger) to use it as requirement
-            config_name, _, _, tentacles_setup_config, _ = \
+            config_name, _, _, tentacles_setup_config, _, _ = \
                 self.get_tentacle_config_elements(tentacle_class, config_name, None)
             # use already registered requirement to access its configuration (config might be updated during script run)
             registered_requirement = self.get_cache_registered_requirements(tentacle_class.get_name(), config_name)
@@ -280,9 +280,10 @@ class Context:
         config = {key.replace(" ", "_"): val for key, val in config.items()} if config else {}
         tentacles_setup_config = self.tentacle.tentacles_setup_config \
             if hasattr(self.tentacle, "tentacles_setup_config") else self.exchange_manager.tentacles_setup_config
-        tentacle_config = self.tentacle.specific_config if hasattr(self.tentacle, "specific_config") \
-            else self.tentacle.trading_config
-        return config_name, cleaned_config_name, config, tentacles_setup_config, tentacle_config
+        tentacle_type_str = "trading_mode" if hasattr(self.tentacle, "trading_config") else "evaluator"
+        tentacle_config = self.tentacle.trading_config if tentacle_type_str == "trading_mode" \
+            else self.tentacle.specific_config
+        return config_name, cleaned_config_name, config, tentacles_setup_config, tentacle_config, tentacle_type_str
 
     def _requires_cache_sync_synchronization(self):
         registered_requirements = self.get_cache_registered_requirements()
