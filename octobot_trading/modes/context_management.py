@@ -264,8 +264,12 @@ class Context:
                                                                             registered_requirement.tentacle_config)
             await self._reset_cache()
 
+    @staticmethod
+    def get_config_name_or_default(tentacle_class, config_name):
+        return f"nested_{tentacle_class.get_name()}_config" if config_name is None else config_name
+
     def get_tentacle_config_elements(self, tentacle_class, config_name, config):
-        config_name = f"nested_{tentacle_class.get_name()}_config" if config_name is None else config_name
+        config_name = self.get_config_name_or_default(tentacle_class, config_name)
         cleaned_config_name = config_name.replace(" ", "_")
         config = {key.replace(" ", "_"): val for key, val in config.items()} if config else {}
         tentacles_setup_config = self.tentacle.tentacles_setup_config \
