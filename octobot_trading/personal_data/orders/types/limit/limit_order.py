@@ -48,8 +48,11 @@ class LimitOrder(order_class.Order):
         await asyncio.wait_for(self.limit_price_hit_event.wait(), timeout=None)
         await self.on_fill()
 
+    def _filled_maker_or_taker(self):
+        return enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
+
     def on_fill_actions(self):
-        self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
+        self.taker_or_maker = self._filled_maker_or_taker()
         self.filled_price = self.origin_price
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity

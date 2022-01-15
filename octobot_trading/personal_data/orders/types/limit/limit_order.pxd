@@ -21,3 +21,5 @@ cdef class LimitOrder(order_class.Order):
     cdef object wait_for_hit_event_task # object is asyncio.Task
 
     cdef bint trigger_above
+
+    cpdef str _filled_maker_or_taker(self)
