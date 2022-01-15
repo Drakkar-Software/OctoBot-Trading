@@ -4,6 +4,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2022-01-15
+### Added
+- [CryptofeedWebsocketConnector] future index feed
+- [CryptofeedWebsocketConnector] sandbox support
+- [FutureExchangeSimulator] default leverage and margin_type values
+- [Future][Exchange] get_contract_type
+- [Contracts] MarginContract
+- [Portfolio] Asset class
+- [Portfolio] spot, margin and future assets
+- [Portfolio] create_currency_asset
+- [MarginAsset] implementation
+- [FutureAsset] implementation
+- [FundingManager] predicted_funding_rate
+- [FundingChannel] predicted_funding_rate
+- [Position] LiquidationState creation when liquidation detected
+- [Position] size attribute from quantity
+- [Positions] InversePosition and LinearPosition (from cross and isolated)
+- [Position] Notional value update
+- [LiquidatePositionState] terminate implementation
+- [MarginContract] set_current_leverage
+- [FutureContract] PositionMode
+- [FutureExchange] PositionMode
+- [FuturePortfolio] update_portfolio_from_liquidated_position
+- [Position] close method
+- [Order] get_position_side
+- [Positions] multiple position per symbol support
+- [FutureContract] is_one_way_position_mode
+- [ExchangePersonalData] reduce only and close position when filling order
+- [PositionsManager] get_order_position
+- [Position] get_quantity_to_close and get_update_quantity_from_order
+- [Position] close when size after update is ZERO
+- [Position] InvalidOperation catching
+- [Asset] _ensure_not_negative
+- [Position] on_pnl_update
+- [ExchangePersonalData] handle_portfolio_update_from_funding
+
+### Updated
+- FutureContract Moved to exchange_data
+- Moved Asset methods to SpotAsset
+- [MarginContract] Made margin_type and current_leverage writable
+- [Portfolio] Migrated to assets
+- [Portfolio] Migrated to get_currency_portfolio
+
+### Fixed
+- [ExchangeSymbolData] FundingManager when future
+
+### Removed
+- [Order] get_currency_and_market
+
 ## [1.14.2] - 2021-11-23
 ### Fixed
 - Orders: fees related typing issues
