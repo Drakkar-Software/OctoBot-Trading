@@ -340,6 +340,13 @@ class Context:
     def init_cache(self):
         self.get_cache()
 
+    def ensure_no_missing_cached_value(self, is_missing):
+        if is_missing:
+            raise common_errors.NoCacheValue(
+                f"No cache value for {self.trigger_cache_timestamp} with cache "
+                f"key: {common_enums.CacheDatabaseColumns.VALUE.value} on {self.tentacle}. Impossible process "
+                f"{common_constants.DO_NOT_OVERRIDE_CACHE} return value.")
+
     async def get_cached_value(self,
                                value_key: str = common_enums.CacheDatabaseColumns.VALUE.value,
                                cache_key=None,
