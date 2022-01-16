@@ -132,11 +132,13 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
         # fetch history
         ohlcv_data = None
         try:
+            # only load candles starting from the star time of the backtesting
             ohlcv_data: list = await self.exchange_data_importer.get_ohlcv_from_timestamps(
                 exchange_name=self.exchange_name,
                 symbol=pair,
                 time_frame=time_frame,
                 limit=self.OHLCV_OLD_LIMIT,
+                inferior_timestamp=self.initial_timestamp,
                 superior_timestamp=self.initial_timestamp)
             candles_len = len(ohlcv_data)
             self.logger.info(f"Loaded pre-backtesting starting timestamp historical "
