@@ -27,7 +27,11 @@ import octobot_trading.enums as trading_enums
 class FutureCCXTExchange(exchanges_types.FutureExchange):
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
-        self.connector = exchange_connectors.CCXTExchange(config, exchange_manager)
+        self.connector = exchange_connectors.CCXTExchange(
+            config,
+            exchange_manager,
+            additional_ccxt_config=self.get_additional_connector_config()
+        )
 
     async def initialize_impl(self):
         await self.connector.initialize()

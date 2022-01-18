@@ -27,6 +27,8 @@ cdef class CCXTExchange(abstract_exchange.AbstractExchange):
     cdef dict options
     cdef dict headers
 
+    cdef object additional_ccxt_config
+
     # private
     cdef void _create_client(self)
 
@@ -40,4 +42,5 @@ cdef class CCXTExchange(abstract_exchange.AbstractExchange):
 
     cdef void _unauthenticated_exchange_fallback(self, object err)
     cdef object _get_unauthenticated_exchange(self)
+    cdef object _get_client_config(self, object api_key=*, object secret=*, object password=*)
     cdef bint _should_authenticate(self)

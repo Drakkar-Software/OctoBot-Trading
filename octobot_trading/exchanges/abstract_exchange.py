@@ -558,6 +558,19 @@ class AbstractExchange(util.Initializable):
         """
         return self.connector.get_max_handled_pair_with_time_frame()
 
+    def get_additional_connector_config(self):
+        """
+        :return: a dict with additional elements to give to the connector constructor
+        """
+        return {}
+
+    @classmethod
+    def is_configurable(cls):
+        """
+        Override if the exchange is allowed to be configured
+        """
+        return False
+
     def log_order_creation_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {str(quantity)}, price: {str(price)}," \
                      f" stop_price: {str(stop_price)}"
