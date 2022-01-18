@@ -24,6 +24,7 @@ import octobot_commons.enums as commons_enums
 import octobot_commons.errors as commons_errors
 import octobot_commons.constants as commons_constants
 import octobot_commons.channels_name as channels_name
+import octobot_commons.optimization_campaign as optimization_campaign
 import async_channel.channels as channels
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.api as trading_api
@@ -136,9 +137,9 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             await basic_keywords.clear_all_tables(producer.symbol_writer)
 
     @classmethod
-    async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id):
+    async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id, optimization_campaign):
         ctx = context_management.Context.minimal(cls({}, None), logging.get_logger(cls.get_name()), exchange, symbol,
-                                                 backtesting_id, optimizer_id)
+                                                 backtesting_id, optimizer_id, optimization_campaign)
         return await cls.get_script_from_module(cls.BACKTESTING_SCRIPT_MODULE)(ctx)
 
     @classmethod
@@ -187,14 +188,14 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
 
     @classmethod
-    async def get_backtesting_id(cls, bot_id, config=None, generate_if_not_found=False):
+    async def get_backtesting_id(cls, bot_id, config=None, generate_if_not_found=False, tentacles_setup_config=None):
         try:
             return cls.BACKTESTING_ID_BY_BOT_ID[bot_id]
         except KeyError:
             if generate_if_not_found:
                 try:
                     backtesting_id = config.get(commons_constants.CONFIG_BACKTESTING_ID) \
-                                     or await cls._generate_new_backtesting_id()
+                                     or await cls._generate_new_backtesting_id(tentacles_setup_config)
                     cls.BACKTESTING_ID_BY_BOT_ID[bot_id] = backtesting_id
                     return backtesting_id
                 except AttributeError:
@@ -202,8 +203,11 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             raise RuntimeError(f"No backtesting id for bot_id: {bot_id}")
 
     @classmethod
-    async def _generate_new_backtesting_id(cls):
-        db_manager = databases.DatabaseManager(cls)
+    async def _generate_new_backtesting_id(cls, tentacles_setup_config):
+        db_manager = databases.DatabaseManager(
+            cls,
+            optimization_campaign.OptimizationCampaign.get_campaign_name(tentacles_setup_config)
+        )
         db_manager.backtesting_id = await db_manager.generate_new_backtesting_id()
         # initialize to lock the backtesting id
         await db_manager.initialize()
@@ -258,6 +262,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         win_rate = round(float(trading_api.get_win_rate(self.exchange_manager) * 100), 3)
         wins = round(win_rate * len(entries) / 100)
         return {
+            trading_enums.BacktestingMetadata.OPTIMIZATION_CAMPAIGN.value:
+                self.database_manager.optimization_campaign_name,
             trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(
                 self.trading_mode.bot_id),
             trading_enums.BacktestingMetadata.GAINS.value: round(float(profitability), 8),
@@ -305,12 +311,18 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     async def start(self) -> None:
         await super().start()
-        backtesting_id = await self.trading_mode.get_backtesting_id(self.trading_mode.bot_id, self.trading_mode.config,
-                                                                    generate_if_not_found=True) \
+        backtesting_id = await self.trading_mode.get_backtesting_id(
+            self.trading_mode.bot_id, self.trading_mode.config, generate_if_not_found=True,
+            tentacles_setup_config=self.trading_mode.exchange_manager.tentacles_setup_config) \
             if self.exchange_manager.is_backtesting else None
-        self.database_manager = databases.DatabaseManager(self.trading_mode.__class__,
-                                                          backtesting_id=backtesting_id,
-                                                          optimizer_id=self.trading_mode.get_optimizer_id())
+        self.database_manager = databases.DatabaseManager(
+            self.trading_mode.__class__,
+            optimization_campaign.OptimizationCampaign.get_campaign_name(
+                self.trading_mode.exchange_manager.tentacles_setup_config
+            ),
+            backtesting_id=backtesting_id,
+            optimizer_id=self.trading_mode.get_optimizer_id()
+        )
         await self.database_manager.initialize(self.exchange_name)
         self.run_data_writer = self.trading_mode.get_writer(self.database_manager.get_run_data_db_identifier())
         # refresh user inputs
