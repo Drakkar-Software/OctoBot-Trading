@@ -38,7 +38,7 @@ async def test_initialized(backtesting_trader):
     assert exchange_manager.exchange_personal_data.transactions_manager.is_initialized
 
 
-async def test_upsert_transaction_instance(backtesting_trader):
+async def test_insert_transaction_instance(backtesting_trader):
     _, exchange_manager, _ = backtesting_trader
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 0
     t_id = str(uuid.uuid4())
@@ -68,23 +68,23 @@ async def test_upsert_transaction_instance(backtesting_trader):
 
     # succeed to upsert unknown transaction
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 0
-    exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction)
+    exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction)
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 1
 
     # can't add transaction with the same transaction id without replacing it --> DuplicateTransactionIdError
     with pytest.raises(errors.DuplicateTransactionIdError):
-        exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction_2)
+        exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction_2)
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 1
     assert list(exchange_manager.exchange_personal_data.transactions_manager.transactions.values())[-1] is transaction
 
     # can replace a transaction with the same transaction id
-    exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction_2,
+    exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction_2,
                                                                                              replace_if_exists=True)
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 1
 
     # succeed to upsert a transaction with a new id
     transaction.set_transaction_id(t_id_2)
-    exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction)
+    exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction)
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 2
 
     # check transaction instances
@@ -109,7 +109,7 @@ async def test_get_transaction(backtesting_trader):
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
         realised_pnl=constants.ZERO)
-    exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction)
+    exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction)
 
     # succeed to return transaction instance
     assert exchange_manager.exchange_personal_data.transactions_manager. \
@@ -124,7 +124,7 @@ async def test_get_transaction(backtesting_trader):
         exchange_manager.exchange_personal_data.transactions_manager.get_transaction(transaction_2.transaction_id)
 
     # succeed to return transaction instances
-    exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction_2)
+    exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction_2)
     assert exchange_manager.exchange_personal_data.transactions_manager. \
                get_transaction(transaction.transaction_id) is transaction
     assert exchange_manager.exchange_personal_data.transactions_manager. \
@@ -156,9 +156,9 @@ async def test_update_transaction_id(backtesting_trader):
     transaction_2.set_transaction_id(t_id_2)
 
     # Add transaction instances to TransactionsManager.transactions
-    exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction)
+    exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction)
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 1
-    exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction_2)
+    exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction_2)
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 2
 
     # Update the first transaction id and see if the previous entry was properly deleted
@@ -200,5 +200,5 @@ async def test_update_transaction_id(backtesting_trader):
 
     # restore transaction in list
     transaction.set_transaction_id(t_id_4)
-    exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction)
+    exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction)
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 2

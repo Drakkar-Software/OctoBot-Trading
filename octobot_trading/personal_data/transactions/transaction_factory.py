@@ -37,7 +37,7 @@ def create_blockchain_transaction(exchange_manager, currency,
         quantity=quantity,
         transaction_fee=transaction_fee
     )
-    _upsert_transaction_instance(exchange_manager, blockchain_transaction)
+    _insert_transaction_instance(exchange_manager, blockchain_transaction)
     return blockchain_transaction
 
 
@@ -52,7 +52,7 @@ def create_realised_pnl_transaction(exchange_manager, currency, symbol,
         currency=currency,
         symbol=symbol,
         realised_pnl=realised_pnl)
-    _upsert_transaction_instance(exchange_manager, realised_pnl_transaction)
+    _insert_transaction_instance(exchange_manager, realised_pnl_transaction)
     return realised_pnl_transaction
 
 
@@ -69,7 +69,7 @@ def create_fee_transaction(exchange_manager, currency, symbol,
         quantity=quantity,
         order_id=order_id,
         funding_rate=funding_rate)
-    _upsert_transaction_instance(exchange_manager, fee_transaction)
+    _insert_transaction_instance(exchange_manager, fee_transaction)
     return fee_transaction
 
 
@@ -79,9 +79,9 @@ def create_transfer_transaction(exchange_manager, currency, symbol):
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
         currency=currency,
         symbol=symbol)
-    _upsert_transaction_instance(exchange_manager, transfer_transaction)
+    _insert_transaction_instance(exchange_manager, transfer_transaction)
     return transfer_transaction
 
 
-def _upsert_transaction_instance(exchange_manager, transaction):
-    exchange_manager.exchange_personal_data.transactions_manager.upsert_transaction_instance(transaction)
+def _insert_transaction_instance(exchange_manager, transaction):
+    exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction)

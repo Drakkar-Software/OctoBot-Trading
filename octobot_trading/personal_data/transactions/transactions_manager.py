@@ -32,7 +32,7 @@ class TransactionsManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_transactions()
 
-    def upsert_transaction_instance(self, transaction, replace_if_exists=False):
+    def insert_transaction_instance(self, transaction, replace_if_exists=False):
         """
         Add the transaction instance to self.transactions by its transaction_id
         Can raise DuplicateTransactionIdError if a transaction already exists
@@ -68,7 +68,7 @@ class TransactionsManager(util.Initializable):
         transaction = self.get_transaction(transaction_id)
         transaction.set_transaction_id(new_transaction_id)
         try:
-            self.upsert_transaction_instance(transaction, replace_if_exists=replace_if_exists)
+            self.insert_transaction_instance(transaction, replace_if_exists=replace_if_exists)
             self.transactions.pop(transaction_id)
         except errors.DuplicateTransactionIdError as e:
             transaction.set_transaction_id(transaction_id)
