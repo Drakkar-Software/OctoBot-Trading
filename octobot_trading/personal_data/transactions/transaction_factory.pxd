@@ -42,4 +42,4 @@ cpdef transaction_types.TransferTransaction create_transfer_transaction(object e
                                                                         str currency,
                                                                         str symbol)
 
-cdef void _upsert_transaction_instance(object exchange_manager, object transaction)
+cdef void _insert_transaction_instance(object exchange_manager, object transaction)

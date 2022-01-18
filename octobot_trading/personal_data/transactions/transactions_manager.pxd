@@ -28,5 +28,5 @@ cdef class TransactionsManager(util.Initializable):
 
     cpdef object get_transaction(self, str transaction_id)
     cpdef object update_transaction_id(self, str transaction_id, str new_transaction_id, bint replace_if_exists=*)  # needs object to forward exceptions
-    cpdef object upsert_transaction_instance(self, object transaction, bint replace_if_exists=*)  # needs object to forward exceptions
+    cpdef object insert_transaction_instance(self, object transaction, bint replace_if_exists=*)  # needs object to forward exceptions
     cpdef void clear(self)
