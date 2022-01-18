@@ -41,13 +41,14 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     CCXT_ISOLATED = "ISOLATED"
     CCXT_CROSSED = "CROSSED"
 
-    def __init__(self, config, exchange_manager):
+    def __init__(self, config, exchange_manager, additional_ccxt_config=None):
         super().__init__(config, exchange_manager)
         self.client = None
         self.exchange_type = None
         self.all_currencies_price_ticker = None
         self.is_authenticated = False
 
+        self.additional_ccxt_config = additional_ccxt_config
         self.headers = {}
         self.options = {}
         # add default options
@@ -141,16 +142,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 elif not self.exchange_manager.is_simulated:
                     self.logger.warning(f"No exchange API key set for {self.exchange_manager.exchange_name}. "
                                         f"Enter your account details to enable real trading on this exchange.")
-
-                self.client = self.exchange_type({
-                    'apiKey': key,
-                    'secret': secret,
-                    'password': password,
-                    'verbose': False,
-                    'enableRateLimit': True,
-                    'options': self.options,
-                    'headers': self.headers
-                })
+                self.client = self.exchange_type(self._get_client_config(key, secret, password))
                 if self._should_authenticate():
                     self.client.checkRequiredCredentials()
             except (ccxt.AuthenticationError, Exception) as e:
@@ -171,12 +163,24 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         self.client = self._get_unauthenticated_exchange()
 
     def _get_unauthenticated_exchange(self):
-        return self.exchange_type({
+        return self.exchange_type(self._get_client_config())
+
+    def _get_client_config(self, api_key=None, secret=None, password=None):
+        config = {
             'verbose': False,
             'enableRateLimit': True,
             'options': self.options,
             'headers': self.headers
-        })
+        }
+        if api_key is not None:
+            config['apiKey'] = api_key
+        if secret is not None:
+            config['secret'] = secret
+        if password is not None:
+            config['password'] = password
+        # apply self.additional_ccxt_config
+        config.update(self.additional_ccxt_config or {})
+        return config
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
         try:

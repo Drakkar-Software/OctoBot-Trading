@@ -35,7 +35,11 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
-        self.connector = exchange_connectors.CCXTExchange(config, exchange_manager)
+        self.connector = exchange_connectors.CCXTExchange(
+            config,
+            exchange_manager,
+            additional_ccxt_config=self.get_additional_connector_config()
+        )
 
         self.connector.client.options['defaultType'] = self.get_default_type()
 
@@ -82,7 +86,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             raise errors.NotSupported
         except Exception as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.error(e)
+            self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
         return None
 
     async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
