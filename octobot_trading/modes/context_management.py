@@ -22,6 +22,7 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_commons.errors as common_errors
 import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
+import octobot_commons.optimization_campaign as optimization_campaign
 import octobot_commons.tentacles_management as tentacles_management
 import octobot_trading.modes as modes
 import octobot_tentacles_manager.api as tentacles_manager_api
@@ -50,6 +51,7 @@ class Context:
         trigger_value,
         backtesting_id,
         optimizer_id,
+        optimization_campaign_name=None,
     ):
         self.tentacle = tentacle
         self.exchange_manager = exchange_manager
@@ -88,6 +90,7 @@ class Context:
         self.nested_config_names = []
         self.tentacles_requirements = tentacles_management.TentacleRequirements(self.tentacle, self.config_name)
         self.parent_tentacles_requirements = None
+        self.optimization_campaign_name = optimization_campaign_name
 
     @contextlib.contextmanager
     def adapted_trigger_timestamp(self, tentacle_class, config_name):
@@ -131,7 +134,8 @@ class Context:
                 await self._reset_cache()
 
     @staticmethod
-    def minimal(trading_mode, logger, exchange_name, traded_pair, backtesting_id, optimizer_id):
+    def minimal(trading_mode, logger, exchange_name, traded_pair,
+                backtesting_id, optimizer_id, optimization_campaign_name):
         return Context(
             None,
             None,
@@ -153,6 +157,7 @@ class Context:
             None,
             backtesting_id,
             optimizer_id,
+            optimization_campaign_name,
         )
 
     @contextlib.asynccontextmanager
@@ -462,11 +467,14 @@ class Context:
     @contextlib.asynccontextmanager
     async def backtesting_results(self, with_lock=False, cache_size=None, database_adaptor=databases.TinyDBAdaptor):
         display = commons_display.display_translator_factory()
-        database_manager = databases.DatabaseManager(self.trading_mode.__class__,
-                                                     database_adaptor=database_adaptor,
-                                                     backtesting_id=self.backtesting_id,
-                                                     optimizer_id=self.optimizer_id,
-                                                     context=self)
+        database_manager = databases.DatabaseManager(
+            self.trading_mode.__class__,
+            self.optimization_campaign_name or optimization_campaign.OptimizationCampaign.get_campaign_name(),
+            database_adaptor=database_adaptor,
+            backtesting_id=self.backtesting_id,
+            optimizer_id=self.optimizer_id,
+            context=self
+        )
         async with databases.MetaDatabase.database(database_manager, with_lock=with_lock,
                                                    cache_size=cache_size) as meta_db:
             yield meta_db, display
