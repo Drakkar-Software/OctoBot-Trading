@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2022-01-18
+### Added
+- [Exchange] hollaex support
+- [MarkPrice] Decimal conversion
+- [FutureCCXTExchange] is_linear_pair and is_inverse_pair
+- [FutureExchange] contract initialization
+- [FutureContract] maintenance_margin_rate
+- [FutureExchange] position mode parsing
+- [FutureExchange] is_inverse, is_linear and is_futures
+- [PositionsManager] both position side in position id
+- [FutureContract] `__str__`
+- [PositionsManager] get_symbol_positions with None symbol
+- [API] positions
+- [CCXTExchanges] get_default_type
+- [Position] initial_margin and fee_to_close in _update
+- [Trader] close position, set_margin_type, set_leverage and set_position_mode
+- [MarginContract] check_leverage_update
+- [Transaction] class
+- [TransactionsManager] class
+- [TransactionsManager] factory
+- [TransactionsManager] transfer, blockchain, fee and realised_pnl
+
+### Fixed
+- [Positions] missing mark_price fetching
+- [Positions] Prevent negative margin
+- [LinearPosition] liquidation price calculation
+- [Position] liquidation PNL total impact
+- [FuturePortfolio] order available decreasing size release
+
+### Removed
+- [FutureExchange] "open" position references
+- [Portfolio] inheritance
+- [Portfolio] unused async
+
 ## [2.0.0] - 2022-01-15
 ### Added
 - [CryptofeedWebsocketConnector] future index feed
