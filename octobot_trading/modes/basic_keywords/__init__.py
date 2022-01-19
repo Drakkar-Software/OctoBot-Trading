@@ -30,11 +30,13 @@ from octobot_trading.modes.basic_keywords.run_persistence import (
     set_plot_orders,
     store_orders,
     store_trade,
+    store_transactions,
     save_metadata,
     save_portfolio,
     clear_run_data,
     clear_orders_cache,
     clear_trades_cache,
+    clear_transactions_cache,
     clear_all_tables,
 )
 
@@ -48,10 +50,12 @@ __all__ = [
     "set_plot_orders",
     "store_orders",
     "store_trade",
+    "store_transactions",
     "save_metadata",
     "save_portfolio",
     "clear_run_data",
     "clear_orders_cache",
     "clear_trades_cache",
+    "clear_transactions_cache",
     "clear_all_tables",
 ]

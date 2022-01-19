@@ -88,6 +88,39 @@ async def store_trade(ctx,
     await writer.log(trading_enums.DBTables.TRADES.value, trade_data)
 
 
+async def store_transactions(ctx,
+                             transactions,
+                             chart=trading_enums.PlotCharts.MAIN_CHART.value,
+                             x_multiplier=1000,
+                             kind="markers",
+                             mode="lines",
+                             y_data=None,
+                             writer=None):
+    y_data = y_data or [0] * len(transactions)
+    transactions_data = [
+        {
+            "x": transaction.creation_time * x_multiplier,
+            "type": transaction.transaction_type.value,
+            "id": transaction.transaction_id,
+            "exchange": transaction.exchange_name,
+            "symbol": transaction.symbol,
+            "currency": transaction.currency,
+            "quantity": float(transaction.quantity) if hasattr(transaction, "quantity") else None,
+            "order_id": transaction.order_id if hasattr(transaction, "order_id") else None,
+            "funding_rate": float(transaction.funding_rate) if hasattr(transaction, "funding_rate") else None,
+            "realised_pnl": float(transaction.realised_pnl) if hasattr(transaction, "realised_pnl") else None,
+            "transaction_fee": transaction.realised_pnl if hasattr(transaction, "transaction_fee") else None,
+            "y": y_data[index],
+            "chart": chart,
+            "kind": kind,
+            "mode": mode
+        }
+        for index, transaction in enumerate(transactions)
+    ]
+    writer = writer or ctx.transactions_writer
+    await writer.log_many(trading_enums.DBTables.TRANSACTIONS.value, transactions_data)
+
+
 async def save_metadata(writer, metadata):
     await writer.log(
         trading_enums.DBTables.METADATA.value,
@@ -115,6 +148,11 @@ async def clear_orders_cache(writer):
 
 async def clear_trades_cache(writer):
     await _clear_table(writer, trading_enums.DBTables.TRADES.value)
+    await writer.clear()
+
+
+async def clear_transactions_cache(writer):
+    await _clear_table(writer, trading_enums.DBTables.TRANSACTIONS.value)
     await writer.clear()
 
 
