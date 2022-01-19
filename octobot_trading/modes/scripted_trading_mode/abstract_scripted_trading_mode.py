@@ -117,6 +117,8 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             await self.clear_simulated_orders_cache()
         elif action == commons_enums.UserCommands.CLEAR_SIMULATED_TRADES_CACHE.value:
             await self.clear_simulated_trades_cache()
+        elif action == commons_enums.UserCommands.CLEAR_SIMULATED_TRANSACTIONS_CACHE.value:
+            await self.clear_simulated_transactions_cache()
 
     async def clear_simulated_orders_cache(self):
         for producer in self.producers:
@@ -125,6 +127,10 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
     async def clear_simulated_trades_cache(self):
         for producer in self.producers:
             await basic_keywords.clear_trades_cache(producer.trades_writer)
+
+    async def clear_simulated_transactions_cache(self):
+        for producer in self.producers:
+            await basic_keywords.clear_transactions_cache(producer.transactions_cache)
 
     async def clear_all_cache(self):
 
@@ -329,6 +335,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         await self.init_user_inputs(True)
         self.orders_writer = self.trading_mode.get_writer(self.database_manager.get_orders_db_identifier())
         self.trades_writer = self.trading_mode.get_writer(self.database_manager.get_trades_db_identifier())
+        self.transactions_writer = self.trading_mode.get_writer(self.database_manager.get_transactions_db_identifier())
         self.symbol_writer = self.trading_mode.get_writer(self.database_manager.get_symbol_db_identifier(
             self.exchange_name,
             self.traded_pair
@@ -419,6 +426,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             self.run_data_writer,
             self.orders_writer,
             self.trades_writer,
+            self.transactions_writer,
             self.symbol_writer,
             self.trading_mode,
             trigger_cache_timestamp,
@@ -461,6 +469,14 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                                                with_lock=with_lock) as writer:
             yield writer
 
+    async def _save_transactions(self):
+        await basic_keywords.store_transactions(
+            None,
+            self.exchange_manager.exchange_personal_data.transactions_manager.transactions.values(),
+            chart=None,
+            writer=self.transactions_writer
+        )
+
     async def stop(self) -> None:
         """
         Stop trading mode channels subscriptions
@@ -468,6 +484,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         if not self.are_metadata_saved and self.exchange_manager is not None and self.exchange_manager.is_backtesting:
             await self.run_data_writer.flush()
             user_inputs = await basic_keywords.get_user_inputs(self.run_data_writer)
+            await self._save_transactions()
             await asyncio.gather(*(self.trading_mode.close_writer(writer.get_db_path()) for writer in self.writers()))
             if not self.trading_mode.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
                 try:

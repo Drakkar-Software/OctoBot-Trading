@@ -548,6 +548,7 @@ class DBTables(enum.Enum):
     PORTFOLIO = "portfolio"
     ORDERS = "all_orders"
     TRADES = "all_trades"
+    TRANSACTIONS = "all_transactions"
     CANDLES = "candles"
     CANDLES_SOURCE = "candles_source"
     CACHE_SOURCE = "cache_source"
