@@ -73,7 +73,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
         self.database_manager = None
-        self.run_data_writer = self.orders_writer = self.trades_writer = self.symbol_writer = None
+        self.run_data_writer = self.orders_writer = self.trades_writer = self.transactions_writer = self.symbol_writer \
+            = None
 
     def is_cryptocurrency_wildcard(self):
         """
@@ -301,4 +302,5 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         return True
 
     def writers(self):
-        return self.run_data_writer, self.orders_writer, self.trades_writer, self.symbol_writer
+        return self.run_data_writer, self.orders_writer, self.trades_writer, \
+               self.transactions_writer, self.symbol_writer

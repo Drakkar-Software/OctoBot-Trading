@@ -44,6 +44,7 @@ class Context:
         run_data_writer,
         orders_writer,
         trades_writer,
+        transaction_writer,
         symbol_writer,
         trading_mode,
         trigger_cache_timestamp,
@@ -66,6 +67,7 @@ class Context:
         self.run_data_writer = run_data_writer
         self.orders_writer = orders_writer
         self.trades_writer = trades_writer
+        self.transaction_writer = transaction_writer
         self.symbol_writer = symbol_writer
         self.trading_mode = trading_mode
         self.trigger_cache_timestamp = trigger_cache_timestamp
@@ -151,6 +153,7 @@ class Context:
             None,
             None,
             None,
+            None,
             trading_mode,
             None,
             None,
@@ -176,6 +179,7 @@ class Context:
             self.run_data_writer,
             self.orders_writer,
             self.trades_writer,
+            self.transaction_writer,
             self.symbol_writer,
             self.trading_mode,
             self.trigger_cache_timestamp,
