@@ -75,10 +75,12 @@ cdef class Position(util.Initializable):
     cdef bint _should_change(self, object original_value, object new_value)
     cdef void _update_mark_price(self, object mark_price)
     cdef void _update_entry_price_if_necessary(self, object mark_price)
+    cdef object _update_size_from_margin(self, object margin_update)  # needs object to forward exceptions
     cdef void _update_quantity_or_size_if_necessary(self)
     cdef void _update_quantity(self)
     cdef void _update_realized_pnl_from_order(self, object order)
     cdef void _update_realized_pnl_from_size_update(self, object size_update, bint is_closing=*)
+    cdef void _update_initial_margin(self)
     cdef object _calculates_size_update_from_filled_order(self, object order, object size_to_close)
     cdef bint _is_update_increasing_size(self, object size_update)
     cdef bint _is_update_closing(self, object size_update)
@@ -92,8 +94,9 @@ cdef class Position(util.Initializable):
     cpdef object update_from_order(self, object order)  # returns tuple but needs object to forward exceptions
     cpdef void update_value(self)
     cpdef object update_pnl(self)  # needs object to forward exceptions
-    cpdef void update_initial_margin(self)
     cpdef void update_average_entry_price(self, object update_size, object update_price)
+    cpdef object get_margin_from_size(self, object size)
+    cpdef object get_size_from_margin(self, object margin)
     cpdef object get_initial_margin_rate(self)
     cpdef object calculate_maintenance_margin(self)
     cpdef bint update_from_raw(self, dict raw_position)

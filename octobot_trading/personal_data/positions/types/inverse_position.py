@@ -40,25 +40,27 @@ class InversePosition(position_class.Position):
                 return
             if self.is_long():
                 self.unrealised_pnl = self.size * ((constants.ONE / self.entry_price) -
-                                                       (constants.ONE / self.mark_price))
+                                                   (constants.ONE / self.mark_price))
             elif self.is_short():
                 self.unrealised_pnl = -self.size * ((constants.ONE / self.mark_price) -
-                                                        (constants.ONE / self.entry_price))
+                                                    (constants.ONE / self.entry_price))
             else:
                 self.unrealised_pnl = constants.ZERO
             self.on_pnl_update()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.unrealised_pnl = constants.ZERO
 
-    def update_initial_margin(self):
+    def get_margin_from_size(self, size):
         """
-        Updates position initial margin = Position quantity / (entry price x leverage)
+        Calculates margin from size : margin = Position quantity / (entry price x leverage)
         """
-        try:
-            self.initial_margin = (self.size / (self.entry_price * self.symbol_contract.current_leverage)).copy_abs()
-            self._update_margin()
-        except (decimal.DivisionByZero, decimal.InvalidOperation):
-            self.initial_margin = constants.ZERO
+        return size / (self.entry_price * self.symbol_contract.current_leverage)
+
+    def get_size_from_margin(self, margin):
+        """
+        Calculates size from margin : size = Position quantity x entry price x leverage
+        """
+        return margin * self.entry_price * self.symbol_contract.current_leverage
 
     def calculate_maintenance_margin(self):
         """

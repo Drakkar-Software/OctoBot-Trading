@@ -26,7 +26,8 @@ from octobot_trading.personal_data import SellLimitOrder, BuyLimitOrder, BuyMark
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
-from tests.exchanges.traders import future_trader_simulator_with_default_linear, DEFAULT_FUTURE_SYMBOL
+from tests.exchanges.traders import future_trader_simulator_with_default_linear, \
+    future_trader_simulator_with_default_inverse, DEFAULT_FUTURE_SYMBOL
 from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
 
 # All test coroutines will be treated as marked.
@@ -45,6 +46,50 @@ async def test_update_entry_price(future_trader_simulator_with_default_linear):
     await position_inst.update(mark_price=mark_price, update_size=constants.ONE)
     assert position_inst.entry_price == mark_price
     assert position_inst.mark_price == mark_price
+
+
+async def test_update_margin_linear(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    default_contract.set_current_leverage(decimal.Decimal(10))
+
+    assert position_inst.entry_price == constants.ZERO
+    assert position_inst.mark_price == constants.ZERO
+    assert position_inst.initial_margin == constants.ZERO
+    assert position_inst.size == constants.ZERO
+
+    await position_inst.update(mark_price=constants.ONE, update_margin=decimal.Decimal(5))
+    assert position_inst.mark_price == constants.ONE
+    assert position_inst.initial_margin == decimal.Decimal(5)
+    assert position_inst.size == decimal.Decimal(50)
+
+    await position_inst.update(mark_price=constants.ONE, update_margin=-decimal.Decimal(3))
+    assert position_inst.mark_price == constants.ONE
+    assert position_inst.initial_margin == decimal.Decimal(2)
+    assert position_inst.size == decimal.Decimal(20)
+
+
+async def test_update_margin_inverse(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+
+    position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    default_contract.set_current_leverage(decimal.Decimal(5))
+
+    assert position_inst.entry_price == constants.ZERO
+    assert position_inst.mark_price == constants.ZERO
+    assert position_inst.initial_margin == constants.ZERO
+    assert position_inst.size == constants.ZERO
+
+    await position_inst.update(mark_price=constants.ONE, update_margin=decimal.Decimal(8)/constants.ONE_HUNDRED)
+    assert position_inst.mark_price == constants.ONE
+    assert position_inst.initial_margin == decimal.Decimal('0.08')
+    assert position_inst.size == decimal.Decimal('0.4')
+
+    await position_inst.update(mark_price=constants.ONE, update_margin=-constants.ONE/constants.ONE_HUNDRED)
+    assert position_inst.mark_price == constants.ONE
+    assert position_inst.initial_margin == decimal.Decimal('0.07')
+    assert position_inst.size == decimal.Decimal('0.35')
 
 
 async def test_update_entry_price_when_switching_side_on_one_way(future_trader_simulator_with_default_linear):

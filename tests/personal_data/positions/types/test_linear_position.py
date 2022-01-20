@@ -15,6 +15,7 @@
 #  License along with this library.
 
 import decimal
+import os
 
 import pytest
 import octobot_trading.constants as constants
@@ -111,15 +112,44 @@ async def test_update_initial_margin(future_trader_simulator_with_default_linear
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
 
-    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
-    position_inst.update_initial_margin()
-    assert position_inst.initial_margin == constants.ZERO
+    if not os.getenv('CYTHON_IGNORE'):
+        await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
+        position_inst._update_initial_margin()
+        assert position_inst.initial_margin == constants.ZERO
+        await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+        position_inst._update_initial_margin()
+        assert position_inst.initial_margin == decimal.Decimal("10000")
+        default_contract.set_current_leverage(constants.ONE_HUNDRED)
+        position_inst._update_initial_margin()
+        assert position_inst.initial_margin == decimal.Decimal("100")
+
+
+async def test_get_margin_from_size(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    position_inst.update_initial_margin()
-    assert position_inst.initial_margin == decimal.Decimal("10000")
+    assert position_inst.get_margin_from_size(constants.ONE) == decimal.Decimal('100')
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    position_inst.update_initial_margin()
-    assert position_inst.initial_margin == decimal.Decimal("100")
+    assert position_inst.get_margin_from_size(constants.ONE) == constants.ONE
+    default_contract.set_current_leverage(constants.ONE)
+    assert position_inst.get_margin_from_size(decimal.Decimal('0.01')) == constants.ONE
+    assert position_inst.get_margin_from_size(decimal.Decimal('0.1')) == decimal.Decimal('10')
+    assert position_inst.get_margin_from_size(decimal.Decimal('1')) == decimal.Decimal('100')
+
+
+async def test_get_size_from_margin(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+
+    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+    assert position_inst.get_size_from_margin(constants.ONE) == decimal.Decimal('0.01')
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
+    assert position_inst.get_size_from_margin(constants.ONE) == constants.ONE
+    default_contract.set_current_leverage(constants.ONE)
+    assert position_inst.get_size_from_margin(decimal.Decimal('0.01')) == decimal.Decimal('0.0001')
+    assert position_inst.get_size_from_margin(decimal.Decimal('0.1')) == decimal.Decimal('0.001')
+    assert position_inst.get_size_from_margin(decimal.Decimal('1')) == decimal.Decimal('0.01')
 
 
 async def test_calculate_maintenance_margin(future_trader_simulator_with_default_linear):

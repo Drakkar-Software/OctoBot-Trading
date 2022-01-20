@@ -188,16 +188,19 @@ class Position(util.Initializable):
         if self.state is None:
             await self.initialize()
 
-    async def update(self, update_size=None, mark_price=None):
+    async def update(self, update_size=None, mark_price=None, update_margin=None):
         """
         Updates position size and / or mark price
         :param update_size: the size update value
         :param mark_price: the mark price update value
+        :param update_margin: the margin update value
         """
         await self._ensure_position_initialized()
 
         if mark_price is not None:
             self._update_mark_price(mark_price)
+        if update_margin is not None:
+            self._update_size_from_margin(update_margin)
         if update_size is not None:
             self._update_size(update_size)
 
@@ -224,6 +227,16 @@ class Position(util.Initializable):
         """
         if self.entry_price == constants.ZERO:
             self.entry_price = mark_price
+
+    def _update_size_from_margin(self, margin_update):
+        """
+        Updates position size and margin by converting margin to size and calling self._update_size
+        :param margin_update: the position margin update
+        """
+        try:
+            self._update_size(self.get_size_from_margin(margin_update))
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            pass
 
     def is_order_increasing_size(self, order):
         """
@@ -331,7 +344,7 @@ class Position(util.Initializable):
         self._update_quantity()
         self._update_side()
         if self.exchange_manager.is_simulated:
-            self.update_initial_margin()
+            self._update_initial_margin()
             self.update_fee_to_close()
             self.update_liquidation_price()
             self.update_value()
@@ -392,8 +405,21 @@ class Position(util.Initializable):
         """
         raise NotImplementedError("update_pnl not implemented")
 
-    def update_initial_margin(self):
-        raise NotImplementedError("update_initial_margin not implemented")
+    def get_margin_from_size(self, size):
+        raise NotImplementedError("get_margin_from_size not implemented")
+
+    def get_size_from_margin(self, margin):
+        raise NotImplementedError("get_size_from_margin not implemented")
+
+    def _update_initial_margin(self):
+        """
+        Updates position initial margin
+        """
+        try:
+            self.initial_margin = self.get_margin_from_size(self.size).copy_abs()
+            self._update_margin()
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            self.initial_margin = constants.ZERO
 
     def update_average_entry_price(self, update_size, update_price):
         raise NotImplementedError("get_average_entry_price not implemented")
