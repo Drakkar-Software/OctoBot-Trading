@@ -45,15 +45,17 @@ class LinearPosition(position_class.Position):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.unrealised_pnl = constants.ZERO
 
-    def update_initial_margin(self):
+    def get_margin_from_size(self, size):
         """
-        Updates position initial margin = (Position quantity x entry price) / leverage
+        Calculates margin from size : margin = (Position quantity x entry price) / leverage
         """
-        try:
-            self.initial_margin = ((self.size * self.entry_price) / self.symbol_contract.current_leverage).copy_abs()
-            self._update_margin()
-        except (decimal.DivisionByZero, decimal.InvalidOperation):
-            self.initial_margin = constants.ZERO
+        return (size * self.entry_price) / self.symbol_contract.current_leverage
+
+    def get_size_from_margin(self, margin):
+        """
+        Calculates size from margin : size = (margin x leverage) / entry price
+        """
+        return (margin * self.symbol_contract.current_leverage) / self.entry_price
 
     def calculate_maintenance_margin(self):
         """
