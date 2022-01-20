@@ -15,6 +15,9 @@
 #  License along with this library.
 import decimal
 
+import pytest
+
+import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.portfolios.assets.spot_asset as spot_asset
 
@@ -56,3 +59,21 @@ def test_reset():
     assert asset.available == asset.total == constants.ONE_HUNDRED
     asset.reset()
     assert asset.available == asset.total == constants.ZERO
+
+
+def test_restore():
+    asset = spot_asset.SpotAsset(ASSET_CURRENCY_NAME, total=constants.ONE_HUNDRED, available=constants.ONE_HUNDRED)
+
+    asset.update(total=-decimal.Decimal(50))
+    assert asset.total == decimal.Decimal(50)
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        asset.update(total=-decimal.Decimal(70))
+    assert asset.total == decimal.Decimal(50)
+
+    asset.update(available=-decimal.Decimal(2.5))
+    assert asset.available == decimal.Decimal(97.5)
+    asset.update(available=-decimal.Decimal(2.5))
+    assert asset.available == decimal.Decimal(95)
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        asset.update(available=-decimal.Decimal(96))
+    assert asset.available == decimal.Decimal(95)

@@ -13,6 +13,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
+import copy
+
 import octobot_commons.constants as common_constants
 
 import octobot_trading.constants as constants
@@ -60,6 +63,15 @@ class Asset:
         """
         raise NotImplementedError("reset is not implemented")
 
+    def restore(self, old_asset):
+        """
+        Restore asset from previous state
+        :param old_asset: previous asset state
+        """
+        self.name = old_asset.name
+        self.available = old_asset.available
+        self.total = old_asset.total
+
     def to_dict(self):
         """
         :return: asset to dictionary
@@ -93,3 +105,15 @@ class Asset:
         if new_value > constants.ZERO:
             return new_value
         return replacement_value
+
+    @contextlib.contextmanager
+    def update_or_restore(self):
+        """
+        Ensure update complete without raising PortfolioNegativeValueError else restore Asset instance's attributes
+        """
+        previous_asset = copy.copy(self)
+        try:
+            yield
+        except errors.PortfolioNegativeValueError as negative_value_error:
+            self.restore(previous_asset)
+            raise negative_value_error

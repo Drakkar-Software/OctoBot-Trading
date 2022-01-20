@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
 import octobot_trading.constants as constants
 import octobot_trading.personal_data.portfolios.asset as asset_class
 
@@ -66,6 +67,18 @@ class FutureAsset(asset_class.Asset):
                    self.position_margin == other.position_margin and self.order_margin == other.order_margin
         return False
 
+    def restore(self, old_asset):
+        """
+        Restore asset from previous state
+        :param old_asset: previous asset state
+        """
+        super().restore(old_asset)
+        self.unrealized_pnl = old_asset.unrealized_pnl
+        self.initial_margin = old_asset.initial_margin
+        self.wallet_balance = old_asset.wallet_balance
+        self.position_margin = old_asset.position_margin
+        self.order_margin = old_asset.order_margin
+
     def update(self, total=constants.ZERO, available=constants.ZERO, position_margin=constants.ZERO,
                unrealized_pnl=constants.ZERO, initial_margin=constants.ZERO):
         """
@@ -80,14 +93,16 @@ class FutureAsset(asset_class.Asset):
         if available == constants.ZERO and position_margin == constants.ZERO \
                 and total == constants.ZERO and unrealized_pnl == constants.ZERO:
             return False
-        self.initial_margin += self._ensure_update_validity(self.initial_margin, initial_margin)
-        self.position_margin = self._ensure_not_negative(self.position_margin + position_margin)
-        self.order_margin = self._ensure_not_negative(self.order_margin + available)
-        self.unrealized_pnl += unrealized_pnl
-        self.wallet_balance += self._ensure_update_validity(self.wallet_balance, total)
-        self._update_available()
-        self._update_total()
-        return True
+
+        with self.update_or_restore():
+            self.initial_margin += self._ensure_update_validity(self.initial_margin, initial_margin)
+            self.position_margin = self._ensure_not_negative(self.position_margin + position_margin)
+            self.order_margin = self._ensure_not_negative(self.order_margin + available)
+            self.unrealized_pnl += unrealized_pnl
+            self.wallet_balance += self._ensure_update_validity(self.wallet_balance, total)
+            self._update_available()
+            self._update_total()
+            return True
 
     def set(self, total=constants.ZERO, available=None, initial_margin=constants.ZERO, position_margin=constants.ZERO,
             unrealized_pnl=constants.ZERO, order_margin=constants.ZERO, margin_balance=None):
@@ -106,20 +121,22 @@ class FutureAsset(asset_class.Asset):
         if position_margin == self.position_margin and order_margin == self.order_margin \
                 and total == self.wallet_balance:
             return False
-        self.initial_margin = initial_margin
-        self.position_margin = position_margin
-        self.order_margin = order_margin
-        self.unrealized_pnl = unrealized_pnl
-        self.wallet_balance = total
-        if available is not None:
-            self.available = available
-        else:
-            self._update_available()
-        if margin_balance is not None:
-            self.total = margin_balance
-        else:
-            self._update_total()
-        return True
+
+        with self.update_or_restore():
+            self.initial_margin = initial_margin
+            self.position_margin = position_margin
+            self.order_margin = order_margin
+            self.unrealized_pnl = unrealized_pnl
+            self.wallet_balance = total
+            if available is not None:
+                self.available = available
+            else:
+                self._update_available()
+            if margin_balance is not None:
+                self.total = margin_balance
+            else:
+                self._update_total()
+            return True
 
     def set_unrealized_pnl(self, unrealized_pnl):
         """
