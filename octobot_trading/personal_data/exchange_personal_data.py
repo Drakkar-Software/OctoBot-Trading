@@ -19,6 +19,7 @@ import octobot_commons.logging as logging
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 import octobot_trading.personal_data.positions.positions_manager as positions_manager
 import octobot_trading.personal_data.orders.orders_manager as orders_manager
@@ -113,8 +114,13 @@ class ExchangePersonalData(util.Initializable):
                                                    require_exchange_update: bool = True,
                                                    should_notify: bool = True) -> bool:
         try:
-            changed: bool = await self.portfolio_manager.handle_balance_update_from_funding(
-                position=position, funding_rate=funding_rate, require_exchange_update=require_exchange_update)
+            try:
+                changed = await self.portfolio_manager.handle_balance_update_from_funding(
+                    position=position, funding_rate=funding_rate, require_exchange_update=require_exchange_update)
+            except errors.PortfolioNegativeValueError:
+                self.logger.warning(True, "Not enough available balance to handle funding. Reducing position margin...")
+                await position.update(update_margin=position.value * funding_rate)
+                changed = True
             transaction_factory.create_fee_transaction(self.exchange_manager, position.get_currency(), position.symbol,
                                                        quantity=position.value * funding_rate,
                                                        funding_rate=funding_rate)

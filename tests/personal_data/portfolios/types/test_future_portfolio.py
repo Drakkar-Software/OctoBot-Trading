@@ -570,6 +570,17 @@ async def test_update_portfolio_from_funding_with_long_position(
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
         '10.00001000000000000000047922')
 
+    # should raise PortfolioNegativeValueError when funding fee > available
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
+                                                                  funding_rate=decimal.Decimal(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
+        '10.00001000000000000000047922')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
+        '10.00001000000000000000047922')
+
 
 async def test_update_portfolio_from_funding_with_short_position(
         future_trader_simulator_with_default_inverse):
@@ -610,6 +621,17 @@ async def test_update_portfolio_from_funding_with_short_position(
     # short position holders have to pay the long position holders
     portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
                                                               funding_rate=decimal.Decimal(-0.0004))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
+        '9.999989999999999999995455021')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(
+        '9.999989999999999999995455021')
+
+    # should raise PortfolioNegativeValueError when funding fee > available
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        portfolio_manager.portfolio.update_portfolio_from_funding(position=position_inst,
+                                                                  funding_rate=decimal.Decimal(-2378))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(
