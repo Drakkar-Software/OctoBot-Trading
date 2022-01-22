@@ -489,6 +489,10 @@ class Context:
             optimizer_id=self.optimizer_id,
             context=self
         )
+        if not database_manager.exchange_base_identifier_exists(self.exchange_name):
+            raise common_errors.MissingExchangeDataError(
+                f"No data for {self.exchange_name}. This run might have happened on other exchange(s)"
+            )
         async with databases.MetaDatabase.database(database_manager, with_lock=with_lock,
                                                    cache_size=cache_size) as meta_db:
             yield meta_db, display
