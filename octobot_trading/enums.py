@@ -464,6 +464,7 @@ class PlotAttributes(enum.Enum):
     X_TYPE = "x_type"
     Y_TYPE = "y_type"
     MODE = "mode"
+    LINE_SHAPE = "line_shape"
     OWN_XAXIS = "own_xaxis"
     OWN_YAXIS = "own_yaxis"
     SIDE = "side"
