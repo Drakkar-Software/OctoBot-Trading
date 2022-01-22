@@ -118,8 +118,8 @@ class ExchangePersonalData(util.Initializable):
                 changed = await self.portfolio_manager.handle_balance_update_from_funding(
                     position=position, funding_rate=funding_rate, require_exchange_update=require_exchange_update)
             except errors.PortfolioNegativeValueError:
-                self.logger.warning(True, "Not enough available balance to handle funding. Reducing position margin...")
-                await position.update(update_margin=position.value * funding_rate)
+                self.logger.warning("Not enough available balance to handle funding. Reducing position margin...")
+                await position.update(update_margin=-position.value * funding_rate)
                 changed = True
             transaction_factory.create_fee_transaction(self.exchange_manager, position.get_currency(), position.symbol,
                                                        quantity=position.value * funding_rate,

@@ -320,6 +320,17 @@ class Position(util.Initializable):
             return size_update > constants.ZERO
         return size_update < constants.ZERO
 
+    def _is_update_decreasing_size(self, size_update):
+        """
+        :param size_update: the size update
+        :return: True if this update will increase position size
+        """
+        if self.is_idle():
+            return False
+        if self.is_long():
+            return size_update < constants.ZERO
+        return size_update > constants.ZERO
+
     def _is_update_closing(self, size_update):
         """
         :param size_update: the size update
@@ -337,8 +348,8 @@ class Position(util.Initializable):
         :param update_size: the size quantity
         :return: True if the update increased position size
         """
-        is_update_increasing_position_size = self._is_update_increasing_size(update_size)
-        if not is_update_increasing_position_size:
+        is_increasing_size = self._is_update_increasing_size(update_size)
+        if self._is_update_decreasing_size(update_size):
             self._update_realized_pnl_from_size_update(update_size, is_closing=self._is_update_closing(update_size))
         self._check_and_update_size(update_size)
         self._update_quantity()
@@ -349,7 +360,7 @@ class Position(util.Initializable):
             self.update_liquidation_price()
             self.update_value()
             self.update_pnl()
-        return is_update_increasing_position_size
+        return is_increasing_size
 
     def _update_realized_pnl_from_size_update(self, size_update, is_closing=False):
         """

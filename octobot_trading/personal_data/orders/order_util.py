@@ -114,18 +114,22 @@ async def get_up_to_date_price(exchange_manager, symbol: str, timeout: int = Non
 
 
 async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
-                             portfolio_type=commons_constants.PORTFOLIO_AVAILABLE):
+                             portfolio_type=commons_constants.PORTFOLIO_AVAILABLE,
+                             return_position_margin=False):
     mark_price = await get_up_to_date_price(exchange_manager, symbol, timeout=timeout)
     symbol_market = exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
     currency, market = symbol_util.split_symbol(symbol)
     portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio
-    currency_available = portfolio .get_currency_portfolio(currency).available \
+    currency_available = portfolio.get_currency_portfolio(currency).available \
         if portfolio_type == commons_constants.PORTFOLIO_AVAILABLE else portfolio.get_currency_portfolio(currency).total
-    market_available = portfolio .get_currency_portfolio(market).available \
+    market_available = portfolio.get_currency_portfolio(market).available \
         if portfolio_type == commons_constants.PORTFOLIO_AVAILABLE else portfolio.get_currency_portfolio(market).total
+    currency_position_margin = market_position_margin = None
 
     if exchange_manager.is_future:
+        currency_position_margin = portfolio.get_currency_portfolio(currency).position_margin
+        market_position_margin = portfolio.get_currency_portfolio(market).position_margin
         pair_future_contract = exchange_manager.exchange.get_pair_future_contract(symbol)
         if pair_future_contract.is_inverse_contract():
             currency_available *= pair_future_contract.current_leverage
@@ -137,6 +141,9 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
         market_quantity = constants.ZERO  # TODO
     else:
         market_quantity = market_available / mark_price if mark_price else constants.ZERO
+    if return_position_margin:
+        return currency_available, market_available, market_quantity, mark_price, symbol_market, \
+               currency_position_margin, market_position_margin
     return currency_available, market_available, market_quantity, mark_price, symbol_market
 
 

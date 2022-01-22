@@ -60,6 +60,10 @@ class FutureAsset(asset_class.Asset):
                                    f"Order Margin: {float(self.order_margin)} | " \
                                    f"Position Margin: {float(self.position_margin)}"
 
+    def __repr__(self):
+        # __repr__ is called when a dict is turned into string (like in logs)
+        return str(self)
+
     def __eq__(self, other):
         if isinstance(other, FutureAsset):
             return self.available == other.available and self.total == other.total and \
