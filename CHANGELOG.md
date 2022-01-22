@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2022-01-22
+### Added
+- [Asset] Add restore state when raising PortfolioNegativeError
+- [Position] Add get_margin_from_size and get_size_from_margin
+
+### Fixed
+- [ExchangePersonalData] Deduct funding fee from the position margin when no sufficient available balance
+
 ## [2.1.0] - 2022-01-18
 ### Added
 - [Exchange] hollaex support
