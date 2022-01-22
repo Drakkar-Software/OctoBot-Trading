@@ -333,9 +333,15 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         self.run_data_writer = self.trading_mode.get_writer(self.database_manager.get_run_data_db_identifier())
         # refresh user inputs
         await self.init_user_inputs(True)
-        self.orders_writer = self.trading_mode.get_writer(self.database_manager.get_orders_db_identifier())
-        self.trades_writer = self.trading_mode.get_writer(self.database_manager.get_trades_db_identifier())
-        self.transactions_writer = self.trading_mode.get_writer(self.database_manager.get_transactions_db_identifier())
+        self.orders_writer = self.trading_mode.get_writer(self.database_manager.get_orders_db_identifier(
+            self.exchange_name
+        ))
+        self.trades_writer = self.trading_mode.get_writer(self.database_manager.get_trades_db_identifier(
+            self.exchange_name
+        ))
+        self.transactions_writer = self.trading_mode.get_writer(self.database_manager.get_transactions_db_identifier(
+            self.exchange_name
+        ))
         self.symbol_writer = self.trading_mode.get_writer(self.database_manager.get_symbol_db_identifier(
             self.exchange_name,
             self.traded_pair
