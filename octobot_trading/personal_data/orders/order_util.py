@@ -18,6 +18,7 @@ import decimal
 
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.logging as logging
+import octobot_commons.constants as commons_constants
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
@@ -95,7 +96,9 @@ def check_cost(total_order_price, min_cost):
     return True
 
 
-async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None):
+async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
+                             portfolio_type=commons_constants.PORTFOLIO_AVAILABLE,
+                             return_position_margin=False):
     try:
         mark_price = await exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol) \
             .prices_manager.get_mark_price(timeout=timeout)
@@ -105,12 +108,16 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
     symbol_market = exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
     currency, market = symbol_util.split_symbol(symbol)
-    currency_available = exchange_manager.exchange_personal_data.portfolio_manager.portfolio \
-        .get_currency_portfolio(currency).available
-    market_available = exchange_manager.exchange_personal_data.portfolio_manager.portfolio \
-        .get_currency_portfolio(market).available
+    portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio
+    currency_available = portfolio.get_currency_portfolio(currency).available \
+        if portfolio_type == commons_constants.PORTFOLIO_AVAILABLE else portfolio.get_currency_portfolio(currency).total
+    market_available = portfolio.get_currency_portfolio(market).available \
+        if portfolio_type == commons_constants.PORTFOLIO_AVAILABLE else portfolio.get_currency_portfolio(market).total
+    currency_position_margin = market_position_margin = None
 
     if exchange_manager.is_future:
+        currency_position_margin = portfolio.get_currency_portfolio(currency).position_margin
+        market_position_margin = portfolio.get_currency_portfolio(market).position_margin
         pair_future_contract = exchange_manager.exchange.get_pair_future_contract(symbol)
         if pair_future_contract.is_inverse_contract():
             currency_available *= pair_future_contract.current_leverage
@@ -122,6 +129,9 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
         market_quantity = constants.ZERO  # TODO
     else:
         market_quantity = market_available / mark_price if mark_price else constants.ZERO
+    if return_position_margin:
+        return currency_available, market_available, market_quantity, mark_price, symbol_market, \
+               currency_position_margin, market_position_margin
     return currency_available, market_available, market_quantity, mark_price, symbol_market
 
 
