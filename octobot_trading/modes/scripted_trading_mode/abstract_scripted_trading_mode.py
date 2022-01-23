@@ -35,6 +35,7 @@ import octobot_trading.modes.basic_keywords as basic_keywords
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.errors as errors
+import octobot_trading.personal_data as personal_data
 import octobot_backtesting.api as backtesting_api
 import octobot_tentacles_manager.api as tentacles_manager_api
 
@@ -244,9 +245,19 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         Override this method to get add addition metadata
         :return: the metadata dict related to this backtesting run
         """
+        symbols = trading_api.get_trading_pairs(self.exchange_manager)
         profitability, profitability_percent, _, _, _ = trading_api.get_profitability_stats(self.exchange_manager)
-        origin_portfolio = trading_api.get_origin_portfolio(self.exchange_manager, as_decimal=False)
-        end_portfolio = trading_api.get_portfolio(self.exchange_manager, as_decimal=False)
+        origin_portfolio = personal_data.portfolio_to_float(
+            self.exchange_manager.exchange_personal_data.portfolio_manager.
+            portfolio_value_holder.origin_portfolio.portfolio)
+        end_portfolio = personal_data.portfolio_to_float(
+            self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio)
+        for portfolio in (origin_portfolio, end_portfolio):
+            for values in portfolio.values():
+                values.pop("available", None)
+        if self.exchange_manager.is_future:
+            for position in self.exchange_manager.exchange_personal_data.positions_manager.positions.values():
+                end_portfolio[position.get_currency()]["position"] = float(position.quantity)
         time_frames = [tf.value
                        for tf in trading_api.get_exchange_available_required_time_frames(self.exchange_name,
                                                                                          self.exchange_manager.id)]
@@ -274,11 +285,10 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                 self.trading_mode.bot_id),
             trading_enums.BacktestingMetadata.GAINS.value: round(float(profitability), 8),
             trading_enums.BacktestingMetadata.PERCENT_GAINS.value: round(float(profitability_percent), 3),
-            trading_enums.BacktestingMetadata.END_PORTFOLIO.value: trading_api.get_portfolio_amounts(end_portfolio),
-            trading_enums.BacktestingMetadata.START_PORTFOLIO.value: trading_api.get_portfolio_amounts(
-                origin_portfolio),
+            trading_enums.BacktestingMetadata.END_PORTFOLIO.value: str(end_portfolio),
+            trading_enums.BacktestingMetadata.START_PORTFOLIO.value: str(origin_portfolio),
             trading_enums.BacktestingMetadata.WIN_RATE.value: win_rate,
-            trading_enums.BacktestingMetadata.SYMBOLS.value: trading_api.get_trading_pairs(self.exchange_manager),
+            trading_enums.BacktestingMetadata.SYMBOLS.value: symbols,
             trading_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
             trading_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(
                 self.exchange_manager.exchange.backtesting),
@@ -306,6 +316,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             trading_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config),
             trading_enums.DBRows.START_TIME.value: start_time,
             trading_enums.DBRows.END_TIME.value: end_time,
+            trading_enums.DBRows.TRADING_TYPE.value: "future" if self.exchange_manager.is_future else "spot",
             trading_enums.DBRows.EXCHANGES.value: [self.exchange_name],  # TODO multi exchange
         }
 
