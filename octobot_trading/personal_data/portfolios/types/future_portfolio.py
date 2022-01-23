@@ -43,26 +43,37 @@ class FuturePortfolio(portfolio_class.Portfolio):
 
             # When inverse contract, decrease a currency market equivalent quantity from currency balance
             if pair_future_contract.is_inverse_contract():
-                total_update_quantity = real_order_quantity / order.filled_price
                 fees_update_quantity = -order.get_total_fees(order.currency)
+                total_update_quantity = real_order_quantity / order.filled_price
+                position_margin_update = real_order_quantity / position_instance.entry_price - fees_update_quantity
                 self._update_future_portfolio_data(
                     order.currency,
                     wallet_value=fees_update_quantity,
                     order_margin_value=-total_update_quantity if has_increased_position_size else constants.ZERO,
-                    position_margin_value=total_update_quantity
-                    if has_increased_position_size else -total_update_quantity)
+                    position_margin_value=position_margin_update
+                    if has_increased_position_size else -position_margin_update)
 
             # When non-inverse contract, decrease directly market quantity
             else:
                 # decrease market quantity from market available balance
+                fees_update_quantity = -(order.get_total_fees(order.market) +
+                                         order.get_total_fees(order.currency) * order.filled_price)
                 total_update_quantity = real_order_quantity * order.filled_price
-                fees_update_quantity = -order.get_total_fees(order.market)
+                wallet_value_update = total_update_quantity - self.portfolio[order.market].wallet_balance
+                if has_increased_position_size:
+                    position_margin_update = total_update_quantity + fees_update_quantity
+                else:
+                    if position_instance.is_idle():
+                        # position is empty: no margin remains (force reset)
+                        position_margin_update = self.portfolio[order.market].position_margin
+                    else:
+                        position_margin_update = real_order_quantity * position_instance.entry_price
                 self._update_future_portfolio_data(
                     order.market,
-                    wallet_value=fees_update_quantity,
+                    wallet_value=wallet_value_update + fees_update_quantity,
                     order_margin_value=-total_update_quantity if has_increased_position_size else constants.ZERO,
-                    position_margin_value=total_update_quantity
-                    if has_increased_position_size else -total_update_quantity)
+                    position_margin_value=position_margin_update
+                    if has_increased_position_size else -position_margin_update)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from filled order : {order} ({e})")
 
