@@ -30,6 +30,7 @@ async def user_input(
     nested_tentacle=None,
     show_in_summary=True,
     show_in_optimizer=True,
+    order=None,
     flush_if_necessary=False
 ):
     tentacle_type_str = "trading_mode" if hasattr(ctx.tentacle, "trading_config") else "evaluator"
@@ -53,6 +54,7 @@ async def user_input(
         nested_tentacle=nested_tentacle,
         show_in_summary=show_in_summary,
         show_in_optimizer=show_in_optimizer,
+        order=order,
         flush_if_necessary=flush_if_necessary
     )
     return value
@@ -72,6 +74,7 @@ async def save_user_input(
     nested_tentacle=None,
     show_in_summary=True,
     show_in_optimizer=True,
+    order=None,
     flush_if_necessary=False
 ):
     if is_nested_config is None:
@@ -100,6 +103,7 @@ async def save_user_input(
                 "is_nested_config": is_nested_config,
                 "in_summary": show_in_summary,
                 "in_optimizer": show_in_optimizer,
+                "order": order
             }
         )
         if not ctx.exchange_manager.is_backtesting and (flush_if_necessary or ctx.run_data_writer.are_data_initialized):

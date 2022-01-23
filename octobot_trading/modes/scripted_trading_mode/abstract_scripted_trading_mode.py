@@ -467,7 +467,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         await basic_keywords.user_input(context, commons_constants.CONFIG_ACTIVATION_TOPICS, "options",
                                         commons_enums.ActivationTopics.EVALUATORS.value,
                                         options=activation_topic_values,
-                                        show_in_optimizer=False, show_in_summary=False)
+                                        show_in_optimizer=False, show_in_summary=False, order=1000)
 
     @contextlib.asynccontextmanager
     async def get_metadata_writer(self, with_lock):
