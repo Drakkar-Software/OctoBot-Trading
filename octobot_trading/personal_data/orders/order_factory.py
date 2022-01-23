@@ -57,7 +57,8 @@ def create_order_instance(
     side=None,
     allow_self_managed=True,
     one_cancels_the_other=None,
-    tag=None
+    tag=None,
+    reduce_only=False,
 ):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
@@ -82,7 +83,8 @@ def create_order_instance(
         linked_portfolio=linked_portfolio,
         allow_self_managed=allow_self_managed,
         one_cancels_the_other=one_cancels_the_other,
-        tag=tag
+        tag=tag,
+        reduce_only=reduce_only,
     )
 
     return order
