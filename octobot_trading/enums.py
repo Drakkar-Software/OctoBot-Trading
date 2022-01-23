@@ -544,4 +544,5 @@ class DBRows(enum.Enum):
     VALUE = "value"
     START_TIME = "start_time"
     END_TIME = "end_time"
+    TRADING_TYPE = "trading_type"
     SYMBOLS = "symbols"
