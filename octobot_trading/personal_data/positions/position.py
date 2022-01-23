@@ -21,7 +21,7 @@ import octobot_trading.personal_data.positions.states as positions_states
 import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
 import octobot_trading.util as util
 import octobot_trading.constants as constants
-
+import octobot_commons.logging as commons_logging
 
 class Position(util.Initializable):
     def __init__(self, trader, symbol_contract):
@@ -273,7 +273,8 @@ class Position(util.Initializable):
         size_update = self._calculates_size_update_from_filled_order(order, size_to_close)
 
         # Updates position average entry price from order
-        self.update_average_entry_price(size_update, order.filled_price)
+        if self._is_update_increasing_size(size_update):
+            self.update_average_entry_price(size_update, order.filled_price)
 
         # update size and realised pnl
         has_increase_position_size = self._update_size(size_update)
@@ -636,16 +637,21 @@ class Position(util.Initializable):
         Only relevant when account is using one way position mode
         """
         if self.symbol_contract.is_one_way_position_mode() or self.side is enums.PositionSide.UNKNOWN:
+            changed_side = False
             if self.quantity >= constants.ZERO:
                 if self.side is not enums.PositionSide.LONG:
                     self.side = enums.PositionSide.LONG
                     self._reset_entry_price()
+                    changed_side = True
             elif self.quantity < constants.ZERO:
                 if self.side is not enums.PositionSide.SHORT:
                     self.side = enums.PositionSide.SHORT
                     self._reset_entry_price()
+                    changed_side = True
             else:
                 self.side = enums.PositionSide.UNKNOWN
+            if changed_side:
+                commons_logging.get_logger(self.get_logger_name()).info(f"Changed position side: now {self.side.name}")
 
     def __str__(self):
         return self.to_string()

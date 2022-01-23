@@ -124,8 +124,7 @@ class LinearPosition(position_class.Position):
                                           + (Update quantity * Update price)]
         """
         total_contract_value = self.size + update_size
-        if self._is_update_increasing_size(update_size):
-            self.entry_price = ((self.size * self.entry_price + update_size * update_price) /
-                                (total_contract_value if total_contract_value != constants.ZERO else constants.ONE))
+        self.entry_price = ((self.size * self.entry_price + update_size * update_price) /
+                            (total_contract_value if total_contract_value != constants.ZERO else constants.ONE))
         if self.entry_price < constants.ZERO:
             self.entry_price = constants.ZERO
