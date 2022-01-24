@@ -43,26 +43,24 @@ class FuturePortfolio(portfolio_class.Portfolio):
 
             # When inverse contract, decrease a currency market equivalent quantity from currency balance
             if pair_future_contract.is_inverse_contract():
-                total_update_quantity = real_order_quantity / order.filled_price
+                order_margin_update_quantity = real_order_quantity / order.filled_price
                 fees_update_quantity = -order.get_total_fees(order.currency)
                 self._update_future_portfolio_data(
                     order.currency,
                     wallet_value=fees_update_quantity,
-                    order_margin_value=-total_update_quantity if has_increased_position_size else constants.ZERO,
-                    position_margin_value=total_update_quantity
-                    if has_increased_position_size else -total_update_quantity)
+                    position_margin_value=constants.ZERO,
+                    order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
 
             # When non-inverse contract, decrease directly market quantity
             else:
                 # decrease market quantity from market available balance
-                total_update_quantity = real_order_quantity * order.filled_price
+                order_margin_update_quantity = real_order_quantity * order.filled_price
                 fees_update_quantity = -order.get_total_fees(order.market)
                 self._update_future_portfolio_data(
                     order.market,
                     wallet_value=fees_update_quantity,
-                    order_margin_value=-total_update_quantity if has_increased_position_size else constants.ZERO,
-                    position_margin_value=total_update_quantity
-                    if has_increased_position_size else -total_update_quantity)
+                    position_margin_value=constants.ZERO,
+                    order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from filled order : {order} ({e})")
 
@@ -137,16 +135,33 @@ class FuturePortfolio(portfolio_class.Portfolio):
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from funding : {position} ({e})")
 
-    def update_portfolio_from_pnl(self, position):
+    def update_portfolio_from_pnl(self, position, realised_pnl_update=constants.ZERO):
         """
         Updates the portfolio from a Position PNL update
         TODO: manage portfolio PNL update when using cross margin
-        :param position: position: the position instance with the new PNL
+        :param position: the updating position instance
+        :param realised_pnl_update: the position realised PNL update
         """
         if position.symbol_contract.is_isolated():
             self.get_currency_portfolio(
                 currency=position.currency if position.symbol_contract.is_inverse_contract() else position.market). \
                 set_unrealized_pnl(position.unrealised_pnl)
+            self.get_currency_portfolio(
+                currency=position.currency if position.symbol_contract.is_inverse_contract() else position.market). \
+                update_realised_pnl(realised_pnl_update)
+
+    def update_portfolio_from_margin(self, position, margin_update=constants.ZERO):
+        """
+        Updates the portfolio from a Position margin update
+        TODO: manage portfolio margin update when using cross margin
+        :param position: the updating position instance
+        :param margin_update: the position margin update
+        """
+        if position.symbol_contract.is_isolated():
+            self._update_future_portfolio_data(
+                position.currency if position.symbol_contract.is_inverse_contract() else position.market,
+                wallet_value=constants.ZERO,
+                position_margin_value=margin_update)
 
     def _update_future_portfolio_data(self, currency,
                                       wallet_value=constants.ZERO,
