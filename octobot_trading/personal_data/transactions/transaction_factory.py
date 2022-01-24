@@ -43,7 +43,13 @@ def create_blockchain_transaction(exchange_manager, currency,
 
 def create_realised_pnl_transaction(exchange_manager, currency, symbol,
                                     realised_pnl=constants.ZERO,
-                                    is_closed_pnl=False):
+                                    is_closed_pnl=False,
+                                    closed_quantity=constants.ZERO,
+                                    first_entry_time=0,
+                                    average_entry_price=constants.ZERO,
+                                    average_exit_price=constants.ZERO,
+                                    order_exit_price=constants.ZERO,
+                                    leverage=constants.ZERO):
     realised_pnl_transaction = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
@@ -51,7 +57,13 @@ def create_realised_pnl_transaction(exchange_manager, currency, symbol,
         if is_closed_pnl else enums.TransactionType.REALISED_PNL,
         currency=currency,
         symbol=symbol,
-        realised_pnl=realised_pnl)
+        realised_pnl=realised_pnl,
+        closed_quantity=closed_quantity,
+        first_entry_time=first_entry_time,
+        average_entry_price=average_entry_price,
+        average_exit_price=average_exit_price,
+        order_exit_price=order_exit_price,
+        leverage=leverage)
     _insert_transaction_instance(exchange_manager, realised_pnl_transaction)
     return realised_pnl_transaction
 
