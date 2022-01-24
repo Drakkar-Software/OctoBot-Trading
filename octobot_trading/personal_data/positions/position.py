@@ -177,7 +177,7 @@ class Position(util.Initializable):
 
         self._update_side()
         self._update_quantity_or_size_if_necessary()
-        self._update_entry_price_if_necessary(mark_price)
+        self._update_prices_if_necessary(mark_price)
         return changed
 
     async def _ensure_position_initialized(self):
@@ -215,16 +215,18 @@ class Position(util.Initializable):
         :param mark_price: the update mark_price
         """
         self.mark_price = mark_price
-        self._update_entry_price_if_necessary(mark_price)
+        self._update_prices_if_necessary(mark_price)
         if not self.is_idle() and self.exchange_manager.is_simulated:
             self.update_value()
             self.update_pnl()
 
-    def _update_entry_price_if_necessary(self, mark_price):
+    def _update_prices_if_necessary(self, mark_price):
         """
-        Update the position entry price when entry price is 0 or when the position is new
-        :param mark_price: the position mark_price
+        Update the position entry price and mark price when their value is 0 or when the position is new
+        :param mark_price: the current mark_price
         """
+        if self.mark_price == constants.ZERO:
+            self.mark_price = mark_price
         if self.entry_price == constants.ZERO:
             self.entry_price = mark_price
 
@@ -271,6 +273,9 @@ class Position(util.Initializable):
 
         # Calculates position quantity update from order
         size_update = self._calculates_size_update_from_filled_order(order, size_to_close)
+
+        # set position entry price if necessary
+        self._update_prices_if_necessary(order.filled_price)
 
         # Updates position average entry price from order
         if self._is_update_increasing_size(size_update):
@@ -376,6 +381,7 @@ class Position(util.Initializable):
                                                                 self.symbol,
                                                                 realised_pnl=realised_pnl_update,
                                                                 is_closed_pnl=is_closing)
+            self.on_pnl_update(realised_pnl_update=realised_pnl_update)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             realised_pnl_update = constants.ZERO
         self.realised_pnl += realised_pnl_update
@@ -414,7 +420,7 @@ class Position(util.Initializable):
 
     def update_pnl(self):
         """
-        Should call on_pnl_update() when succeed
+        Should call on_unrealised_pnl_update() when succeed
         """
         raise NotImplementedError("update_pnl not implemented")
 
@@ -429,8 +435,10 @@ class Position(util.Initializable):
         Updates position initial margin
         """
         try:
+            previous_initial_margin = self.initial_margin
             self.initial_margin = self.get_margin_from_size(self.size).copy_abs()
             self._update_margin()
+            self.on_margin_update(self.initial_margin - previous_initial_margin)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.initial_margin = constants.ZERO
 
@@ -555,11 +563,21 @@ class Position(util.Initializable):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
-    def on_pnl_update(self):
+    def on_pnl_update(self, realised_pnl_update=constants.ZERO):
         """
         Triggers external calls when position pnl has been updated
+        :param realised_pnl_update: the realised pnl update when self.realised_pnl was updated
         """
-        self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_from_pnl(self)
+        self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.\
+            update_portfolio_from_pnl(self, realised_pnl_update)
+
+    def on_margin_update(self, margin_update=constants.ZERO):
+        """
+        Called when position margin has been updated
+        :param margin_update: the margin update value
+        """
+        self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.\
+            update_portfolio_from_margin(self, margin_update)
 
     async def recreate(self):
         """
@@ -630,7 +648,7 @@ class Position(util.Initializable):
         Reset the entry price to ZERO and force entry price update
         """
         self.entry_price = constants.ZERO
-        self._update_entry_price_if_necessary(self.mark_price)
+        self._update_prices_if_necessary(self.mark_price)
 
     def _update_side(self):
         """

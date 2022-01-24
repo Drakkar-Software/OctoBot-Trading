@@ -156,6 +156,15 @@ class FutureAsset(asset_class.Asset):
         self.unrealized_pnl = unrealized_pnl
         self._update_total()
 
+    def update_realised_pnl(self, realized_pnl_update):
+        """
+        Updates the realized pnl value
+        :param realized_pnl_update: the realized pnl update
+        """
+        self.wallet_balance += self._ensure_update_validity(self.wallet_balance, realized_pnl_update)
+        self._update_total()
+        self._update_available()
+
     def reset(self):
         """
         Reset asset portfolio to zero

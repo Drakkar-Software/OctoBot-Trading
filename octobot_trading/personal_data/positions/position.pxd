@@ -74,7 +74,7 @@ cdef class Position(util.Initializable):
                       object side=*)
     cdef bint _should_change(self, object original_value, object new_value)
     cdef void _update_mark_price(self, object mark_price)
-    cdef void _update_entry_price_if_necessary(self, object mark_price)
+    cdef void _update_prices_if_necessary(self, object mark_price)
     cdef object _update_size_from_margin(self, object margin_update)  # needs object to forward exceptions
     cdef void _update_quantity_or_size_if_necessary(self)
     cdef void _update_quantity(self)
@@ -119,7 +119,8 @@ cdef class Position(util.Initializable):
     cpdef bint is_idle(self)
     cpdef object get_quantity_to_close(self)
     cpdef object get_unrealised_pnl_percent(self)
-    cpdef object on_pnl_update(self)  # needs object to forward exceptions
+    cpdef object on_pnl_update(self, object realised_pnl_update=*)  # needs object to forward exceptions
+    cpdef object on_margin_update(self, object margin_update=*)  # needs object to forward exceptions
     cpdef str to_string(self)
     cpdef dict to_dict(self)
     cpdef void clear(self)

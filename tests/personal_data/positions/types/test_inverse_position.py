@@ -47,9 +47,10 @@ async def test_update_value(future_trader_simulator_with_default_inverse):
 
 async def test_update_pnl_with_long(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
-
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
+    
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == constants.ZERO
@@ -63,6 +64,7 @@ async def test_update_pnl_with_short(future_trader_simulator_with_default_invers
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
 
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_pnl()
@@ -106,6 +108,11 @@ async def test_update_pnl_with_loss_with_short(future_trader_simulator_with_defa
 async def test_update_initial_margin(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw(
+        {
+            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
+        }
+    )
 
     if not os.getenv('CYTHON_IGNORE'):
         await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
@@ -150,6 +157,7 @@ async def test_get_size_from_margin(future_trader_simulator_with_default_inverse
 async def test_calculate_maintenance_margin(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     position_inst.symbol = DEFAULT_FUTURE_SYMBOL
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
@@ -237,6 +245,7 @@ async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_defa
 async def test_get_order_cost(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     assert position_inst.get_order_cost() == constants.ZERO
@@ -247,6 +256,7 @@ async def test_get_order_cost(future_trader_simulator_with_default_inverse):
 async def test_get_fee_to_open(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     assert position_inst.get_fee_to_open() == constants.ZERO
@@ -257,6 +267,7 @@ async def test_get_fee_to_open(future_trader_simulator_with_default_inverse):
 async def test_update_fee_to_close(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     position_inst.update_fee_to_close()
