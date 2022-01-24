@@ -275,7 +275,7 @@ class Position(util.Initializable):
         size_update = self._calculates_size_update_from_filled_order(order, size_to_close)
 
         # Updates position average entry price from order
-        if self._is_update_increasing_size(size_update):
+        if is_increasing_size := self._is_update_increasing_size(size_update):
             if self.size == constants.ZERO:
                 self.first_entry_time = self.exchange_manager.exchange.get_exchange_current_time()
             self.update_average_entry_price(size_update, order.filled_price)
@@ -283,8 +283,8 @@ class Position(util.Initializable):
             self.update_average_exit_price(size_update, order.filled_price)
 
         # update size and realised pnl
-        has_increase_position_size = self._update_size(size_update, order.filled_price)
-        return size_update, has_increase_position_size
+        self._update_size(size_update, order.filled_price)
+        return size_update, is_increasing_size
 
     def _update_realized_pnl_from_order(self, order):
         """
@@ -353,9 +353,7 @@ class Position(util.Initializable):
         """
         Updates position size and triggers size related attributes update
         :param update_size: the size quantity
-        :return: True if the update increased position size
         """
-        is_increasing_size = self._is_update_increasing_size(update_size)
         if self._is_update_decreasing_size(update_size):
             self._update_realized_pnl_from_size_update(update_size,
                                                        is_closing=self._is_update_closing(update_size),
@@ -369,7 +367,6 @@ class Position(util.Initializable):
             self.update_liquidation_price()
             self.update_value()
             self.update_pnl()
-        return is_increasing_size
 
     def _update_realized_pnl_from_size_update(self, size_update, is_closing=False, order_price=constants.ZERO):
         """
