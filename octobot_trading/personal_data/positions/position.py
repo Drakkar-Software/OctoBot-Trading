@@ -202,7 +202,7 @@ class Position(util.Initializable):
         if mark_price is not None:
             self._update_mark_price(mark_price)
         if update_margin is not None:
-            self._update_size_from_margin(update_margin)
+            self.update_size_from_margin(update_margin)
         if update_size is not None:
             self._update_size(update_size, mark_price)
 
@@ -232,13 +232,13 @@ class Position(util.Initializable):
         if self.entry_price == constants.ZERO:
             self.entry_price = mark_price
 
-    def _update_size_from_margin(self, margin_update):
+    def update_size_from_margin(self, margin_update, update_order_margin=False):
         """
         Updates position size and margin by converting margin to size and calling self._update_size
         :param margin_update: the position margin update
         """
         try:
-            self._update_size(self.get_size_from_margin(margin_update))
+            self._update_size(self.get_size_from_margin(margin_update), update_order_margin=update_order_margin)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             pass
 
@@ -262,6 +262,9 @@ class Position(util.Initializable):
         :param order: the filled order instance
         :return: the updated quantity, True if the order increased position size
         """
+        # consider the order filled price as the current reference price for pnl computation
+        self._update_mark_price(order.filled_price)
+
         size_to_close = self.get_quantity_to_close()
 
         # Remove / add order fees from realized pnl
@@ -270,7 +273,7 @@ class Position(util.Initializable):
         # Close position if order is closing position
         if order.close_position:
             # set position size to 0 to schedule position close at the next update
-            self._update_size(-self.size if self.is_long() else self.size, order.filled_price)
+            self._update_size(-self.size if self.is_long() else self.size, order)
             return size_to_close, False
 
         # Calculates position quantity update from order
@@ -288,7 +291,7 @@ class Position(util.Initializable):
             self.update_average_exit_price(size_update, order.filled_price)
 
         # update size and realised pnl
-        has_increase_position_size = self._update_size(size_update, order.filled_price)
+        has_increase_position_size = self._update_size(size_update, order)
         return size_update, has_increase_position_size
 
     def _update_realized_pnl_from_order(self, order):
@@ -354,29 +357,42 @@ class Position(util.Initializable):
             return self.size + size_update <= constants.ZERO
         return self.size + size_update >= constants.ZERO
 
-    def _update_size(self, update_size, order_price=constants.ZERO):
+    def _update_size(self, size_update, closed_order=None, update_order_margin=False):
         """
         Updates position size and triggers size related attributes update
-        :param update_size: the size quantity
+        :param size_update: the size quantity
         :return: True if the update increased position size
         """
-        is_increasing_size = self._is_update_increasing_size(update_size)
-        if self._is_update_decreasing_size(update_size):
-            self._update_realized_pnl_from_size_update(update_size,
-                                                       is_closing=self._is_update_closing(update_size),
-                                                       order_price=order_price)
-        self._check_and_update_size(update_size)
+        order_price = constants.ZERO if closed_order is None else closed_order.filled_price
+        is_increasing_size = self._is_update_increasing_size(size_update)
+        realized_pnl_update = constants.ZERO
+        if self._is_update_decreasing_size(size_update):
+            realized_pnl_update = self._update_realized_pnl_from_size_update(
+                size_update,
+                is_closing=self._is_update_closing(size_update),
+                order_price=order_price
+            )
+            # TODO check: funding fees when no wallet balance: as they reduce the size of the position, the final
+            # realized pnl will be smaller, it should therefore be taken into account.
+        self._check_and_update_size(size_update)
         self._update_quantity()
         self._update_side()
         if self.exchange_manager.is_simulated:
-            self._update_initial_margin()
+            margin_update = self._update_initial_margin()
+            if closed_order is None:
+                self.on_margin_update(margin_update, update_order_margin=update_order_margin)
+            else:
+                # TODO: check if needed in real trader ?
+                self.on_closed_order_update(closed_order, realized_pnl_update, size_update, margin_update,
+                                            is_increasing_size)
             self.update_fee_to_close()
             self.update_liquidation_price()
             self.update_value()
             self.update_pnl()
         return is_increasing_size
 
-    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False, order_price=constants.ZERO):
+    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False,
+                                              order_price=constants.ZERO):
         """
         Updates the position realized pnl from update size
         :param size_update: the position update size
@@ -395,10 +411,10 @@ class Position(util.Initializable):
                                                                 average_exit_price=self.exit_price,
                                                                 order_exit_price=order_price,
                                                                 leverage=self.symbol_contract.current_leverage)
-            self.on_pnl_update(realised_pnl_update=realised_pnl_update)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             realised_pnl_update = constants.ZERO
         self.realised_pnl += realised_pnl_update
+        return realised_pnl_update
 
     def _check_and_update_size(self, size_update):
         """
@@ -452,7 +468,7 @@ class Position(util.Initializable):
             previous_initial_margin = self.initial_margin
             self.initial_margin = self.get_margin_from_size(self.size).copy_abs()
             self._update_margin()
-            self.on_margin_update(self.initial_margin - previous_initial_margin)
+            return self.initial_margin - previous_initial_margin
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.initial_margin = constants.ZERO
 
@@ -588,13 +604,23 @@ class Position(util.Initializable):
         self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.\
             update_portfolio_from_pnl(self, realised_pnl_update)
 
-    def on_margin_update(self, margin_update=constants.ZERO):
+    def on_closed_order_update(self, order, realized_pnl_update, size_update, margin_update,
+                               has_increased_position_size):
         """
         Called when position margin has been updated
         :param margin_update: the margin update value
         """
         self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.\
-            update_portfolio_from_margin(self, margin_update)
+            update_portfolio_data_from_closed_order(self, order, realized_pnl_update, size_update, margin_update,
+                                                    has_increased_position_size)
+
+    def on_margin_update(self, margin_update=constants.ZERO, update_order_margin=False):
+        """
+        Called when position margin has been updated
+        :param margin_update: the margin update value
+        """
+        self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.\
+            update_portfolio_from_margin(self, margin_update, margin_update if update_order_margin else constants.ZERO)
 
     async def recreate(self):
         """
