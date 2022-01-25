@@ -407,6 +407,7 @@ class Position(util.Initializable):
         Update position quantity from position quantity
         """
         self.quantity = self.size / self.symbol_contract.current_leverage
+        commons_logging.get_logger(self.get_logger_name()).info(f"position: {self.quantity}")
 
     def update_value(self):
         raise NotImplementedError("update_value not implemented")

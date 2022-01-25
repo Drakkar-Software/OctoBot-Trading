@@ -106,6 +106,12 @@ class FutureAsset(asset_class.Asset):
             self.wallet_balance += self._ensure_update_validity(self.wallet_balance, total)
             self._update_available()
             self._update_total()
+            import octobot_commons.logging
+            octobot_commons.logging.get_logger(f"{self.__class__.__name__}{self.name}").info(
+                f"wallet_balance: {self.wallet_balance} (added {total}) "
+                f"position_margin: {self.position_margin} (added {position_margin}) "
+                f"available: {self.available} "
+            )
             return True
 
     def set(self, total=constants.ZERO, available=None, initial_margin=constants.ZERO, position_margin=constants.ZERO,
