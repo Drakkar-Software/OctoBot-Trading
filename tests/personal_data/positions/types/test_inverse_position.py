@@ -34,7 +34,7 @@ pytestmark = pytest.mark.asyncio
 async def test_update_value(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-    await position_inst.update(update_size=constants.ZERO)
+    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
     position_inst.update_value()
     assert position_inst.value == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED)
@@ -108,14 +108,10 @@ async def test_update_pnl_with_loss_with_short(future_trader_simulator_with_defa
 async def test_update_initial_margin(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-    position_inst.update_from_raw(
-        {
-            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
-        }
-    )
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     if not os.getenv('CYTHON_IGNORE'):
-        await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
+        await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
         position_inst._update_initial_margin()
         assert position_inst.initial_margin == constants.ZERO
         await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
@@ -129,7 +125,7 @@ async def test_update_initial_margin(future_trader_simulator_with_default_invers
 async def test_get_margin_from_size(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_margin_from_size(constants.ONE) == decimal.Decimal('0.01')
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
@@ -143,7 +139,7 @@ async def test_get_margin_from_size(future_trader_simulator_with_default_inverse
 async def test_get_size_from_margin(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_size_from_margin(constants.ONE) == decimal.Decimal('100')
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
@@ -158,9 +154,8 @@ async def test_calculate_maintenance_margin(future_trader_simulator_with_default
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-
-    position_inst.symbol = DEFAULT_FUTURE_SYMBOL
-    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
     assert position_inst.calculate_maintenance_margin() == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.calculate_maintenance_margin() == decimal.Decimal('0.01')
@@ -174,9 +169,8 @@ async def test_update_isolated_liquidation_price_with_long(future_trader_simulat
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_FUTURE_SYMBOL).funding_manager.funding_rate = decimal.Decimal(DEFAULT_FUTURE_FUNDING_RATE)
-
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-    position_inst.symbol = DEFAULT_FUTURE_SYMBOL
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_isolated_liquidation_price()
@@ -192,9 +186,8 @@ async def test_update_isolated_liquidation_price_with_short(future_trader_simula
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_FUTURE_SYMBOL).funding_manager.funding_rate = decimal.Decimal(DEFAULT_FUTURE_FUNDING_RATE)
-
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-    position_inst.symbol = DEFAULT_FUTURE_SYMBOL
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_isolated_liquidation_price()
@@ -208,7 +201,6 @@ async def test_update_isolated_liquidation_price_with_short(future_trader_simula
 
 async def test_get_bankruptcy_price_with_long(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
-
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
@@ -226,7 +218,6 @@ async def test_get_bankruptcy_price_with_long(future_trader_simulator_with_defau
 
 async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
-
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
@@ -246,8 +237,8 @@ async def test_get_order_cost(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-
-    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_order_cost() == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_order_cost() == decimal.Decimal("1.003")
@@ -257,8 +248,8 @@ async def test_get_fee_to_open(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-
-    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_fee_to_open() == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_fee_to_open() == decimal.Decimal("0.001")
@@ -268,8 +259,8 @@ async def test_update_fee_to_close(future_trader_simulator_with_default_inverse)
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-
-    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
     position_inst.update_fee_to_close()
     assert position_inst.fee_to_close == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
@@ -280,7 +271,7 @@ async def test_update_fee_to_close(future_trader_simulator_with_default_inverse)
 async def test_update_average_entry_price_increased_long(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(10))
     position_inst.entry_price = decimal.Decimal(10)
     position_inst.update_average_entry_price(decimal.Decimal(10), decimal.Decimal(20))
@@ -294,7 +285,7 @@ async def test_update_average_entry_price_increased_long(future_trader_simulator
 async def test_update_average_entry_price_increased_short(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=-decimal.Decimal(10), mark_price=decimal.Decimal(10))
     position_inst.entry_price = decimal.Decimal(10)
     position_inst.update_average_entry_price(-decimal.Decimal(10), decimal.Decimal(5))
@@ -308,7 +299,7 @@ async def test_update_average_entry_price_increased_short(future_trader_simulato
 async def test_update_average_entry_price_decreased_long(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=decimal.Decimal(100), mark_price=decimal.Decimal(10))
     position_inst.entry_price = decimal.Decimal(10)
     position_inst.update_average_entry_price(-decimal.Decimal(10), decimal.Decimal(20))
@@ -322,7 +313,7 @@ async def test_update_average_entry_price_decreased_long(future_trader_simulator
 async def test_update_average_entry_price_decreased_short(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
-
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=-decimal.Decimal(100), mark_price=decimal.Decimal(10))
     position_inst.entry_price = decimal.Decimal(10)
     position_inst.update_average_entry_price(decimal.Decimal(10), decimal.Decimal(20))

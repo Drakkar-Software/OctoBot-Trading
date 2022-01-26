@@ -35,11 +35,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
 
         position_instance = order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(
             order, contract=order.exchange_manager.exchange.get_pair_future_contract(order.symbol))
-
-        try:
-            position_instance.update_from_order(order)
-        except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
-            self.logger.error(f"Failed to update from filled order : {order} ({e})")
+        position_instance.update_from_order(order)
 
     def update_portfolio_data_from_position_size_update(self,
                                                         position,
@@ -61,24 +57,27 @@ class FuturePortfolio(portfolio_class.Portfolio):
         # get real update quantity from position's contract leverage
         real_update_quantity = decimal.Decimal(size_update / pair_future_contract.current_leverage).copy_abs()
 
-        # When inverse contract, decrease a currency market equivalent quantity from currency balance
-        if pair_future_contract.is_inverse_contract():
-            order_margin_update_quantity = real_update_quantity / position.mark_price
-            self._update_future_portfolio_data(
-                position.currency,
-                wallet_value=realized_pnl_update,
-                position_margin_value=margin_update,
-                order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
+        try:
+            # When inverse contract, decrease a currency market equivalent quantity from currency balance
+            if pair_future_contract.is_inverse_contract():
+                order_margin_update_quantity = real_update_quantity / position.mark_price
+                self._update_future_portfolio_data(
+                    position.currency,
+                    wallet_value=realized_pnl_update,
+                    position_margin_value=margin_update,
+                    order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
 
-        # When non-inverse contract, decrease directly market quantity
-        else:
-            # decrease market quantity from market available balance
-            order_margin_update_quantity = real_update_quantity * position.mark_price
-            self._update_future_portfolio_data(
-                position.market,
-                wallet_value=realized_pnl_update,
-                position_margin_value=margin_update,
-                order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
+            # When non-inverse contract, decrease directly market quantity
+            else:
+                # decrease market quantity from market available balance
+                order_margin_update_quantity = real_update_quantity * position.mark_price
+                self._update_future_portfolio_data(
+                    position.market,
+                    wallet_value=realized_pnl_update,
+                    position_margin_value=margin_update,
+                    order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
+        except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
+            self.logger.error(f"Failed to update from position size update : {position} ({e})")
 
     def update_portfolio_available_from_order(self, order, is_new_order=True):
         """
