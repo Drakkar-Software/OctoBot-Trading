@@ -34,9 +34,10 @@ class SpotAsset(asset_class.Asset):
         if available == constants.ZERO and total == constants.ZERO:
             return False
 
-        self.available += self._ensure_update_validity(self.available, available)
-        self.total += self._ensure_update_validity(self.total, total)
-        return True
+        with self.update_or_restore():
+            self.available += self._ensure_update_validity(self.available, available)
+            self.total += self._ensure_update_validity(self.total, total)
+            return True
 
     def set(self, available, total):
         """
