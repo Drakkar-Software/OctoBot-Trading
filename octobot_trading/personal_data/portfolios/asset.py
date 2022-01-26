@@ -17,6 +17,7 @@ import contextlib
 import copy
 
 import octobot_commons.constants as common_constants
+import octobot_commons.logging as logging
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
@@ -115,5 +116,6 @@ class Asset:
         try:
             yield
         except errors.PortfolioNegativeValueError as negative_value_error:
+            logging.get_logger(self.__class__.__name__).warning("Restoring after PortfolioNegativeValueError...")
             self.restore(previous_asset)
             raise negative_value_error

@@ -33,36 +33,52 @@ class FuturePortfolio(portfolio_class.Portfolio):
         if order.filled_quantity == 0:
             return False
 
-        pair_future_contract = order.exchange_manager.exchange.get_pair_future_contract(order.symbol)
-        position_instance = order.exchange_manager.exchange_personal_data.positions_manager. \
-            get_order_position(order, contract=pair_future_contract)
+        position_instance = order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(
+            order, contract=order.exchange_manager.exchange.get_pair_future_contract(order.symbol))
 
         try:
-            update_size, has_increased_position_size = position_instance.update_from_order(order)
-            real_order_quantity = decimal.Decimal(update_size / pair_future_contract.current_leverage).copy_abs()
-
-            # When inverse contract, decrease a currency market equivalent quantity from currency balance
-            if pair_future_contract.is_inverse_contract():
-                order_margin_update_quantity = real_order_quantity / order.filled_price
-                fees_update_quantity = -order.get_total_fees(order.currency)
-                self._update_future_portfolio_data(
-                    order.currency,
-                    wallet_value=fees_update_quantity,
-                    position_margin_value=constants.ZERO,
-                    order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
-
-            # When non-inverse contract, decrease directly market quantity
-            else:
-                # decrease market quantity from market available balance
-                order_margin_update_quantity = real_order_quantity * order.filled_price
-                fees_update_quantity = -order.get_total_fees(order.market)
-                self._update_future_portfolio_data(
-                    order.market,
-                    wallet_value=fees_update_quantity,
-                    position_margin_value=constants.ZERO,
-                    order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
+            position_instance.update_from_order(order)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from filled order : {order} ({e})")
+
+    def update_portfolio_data_from_position_size_update(self,
+                                                        position,
+                                                        realized_pnl_update,
+                                                        size_update,
+                                                        margin_update,
+                                                        has_increased_position_size):
+        """
+        Update portfolio data from position size update
+        :param position: the position updated instance
+        :param realized_pnl_update: the position realised pnl update
+        :param size_update: the position size update
+        :param margin_update: the position margin update
+        :param has_increased_position_size: if the update increased position size
+        """
+        # when the update comes from a closed order, simultaneously update order and position margin
+        pair_future_contract = position.symbol_contract
+
+        # get real update quantity from position's contract leverage
+        real_update_quantity = decimal.Decimal(size_update / pair_future_contract.current_leverage).copy_abs()
+
+        # When inverse contract, decrease a currency market equivalent quantity from currency balance
+        if pair_future_contract.is_inverse_contract():
+            order_margin_update_quantity = real_update_quantity / position.mark_price
+            self._update_future_portfolio_data(
+                position.currency,
+                wallet_value=realized_pnl_update,
+                position_margin_value=margin_update,
+                order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
+
+        # When non-inverse contract, decrease directly market quantity
+        else:
+            # decrease market quantity from market available balance
+            order_margin_update_quantity = real_update_quantity * position.mark_price
+            self._update_future_portfolio_data(
+                position.market,
+                wallet_value=realized_pnl_update,
+                position_margin_value=margin_update,
+                order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
 
     def update_portfolio_available_from_order(self, order, is_new_order=True):
         """
@@ -135,33 +151,16 @@ class FuturePortfolio(portfolio_class.Portfolio):
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from funding : {position} ({e})")
 
-    def update_portfolio_from_pnl(self, position, realised_pnl_update=constants.ZERO):
+    def update_portfolio_from_pnl(self, position):
         """
         Updates the portfolio from a Position PNL update
         TODO: manage portfolio PNL update when using cross margin
         :param position: the updating position instance
-        :param realised_pnl_update: the position realised PNL update
         """
         if position.symbol_contract.is_isolated():
             self.get_currency_portfolio(
                 currency=position.currency if position.symbol_contract.is_inverse_contract() else position.market). \
                 set_unrealized_pnl(position.unrealised_pnl)
-            self.get_currency_portfolio(
-                currency=position.currency if position.symbol_contract.is_inverse_contract() else position.market). \
-                update_realised_pnl(realised_pnl_update)
-
-    def update_portfolio_from_margin(self, position, margin_update=constants.ZERO):
-        """
-        Updates the portfolio from a Position margin update
-        TODO: manage portfolio margin update when using cross margin
-        :param position: the updating position instance
-        :param margin_update: the position margin update
-        """
-        if position.symbol_contract.is_isolated():
-            self._update_future_portfolio_data(
-                position.currency if position.symbol_contract.is_inverse_contract() else position.market,
-                wallet_value=constants.ZERO,
-                position_margin_value=margin_update)
 
     def _update_future_portfolio_data(self, currency,
                                       wallet_value=constants.ZERO,
