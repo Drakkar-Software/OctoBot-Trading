@@ -13,11 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import contextlib
-import copy
 
 import octobot_commons.constants as common_constants
-import octobot_commons.logging as logging
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
@@ -106,16 +103,3 @@ class Asset:
         if new_value > constants.ZERO:
             return new_value
         return replacement_value
-
-    @contextlib.contextmanager
-    def update_or_restore(self):
-        """
-        Ensure update complete without raising PortfolioNegativeValueError else restore Asset instance's attributes
-        """
-        previous_asset = copy.copy(self)
-        try:
-            yield
-        except errors.PortfolioNegativeValueError as negative_value_error:
-            logging.get_logger(self.__class__.__name__).warning("Restoring after PortfolioNegativeValueError...")
-            self.restore(previous_asset)
-            raise negative_value_error
