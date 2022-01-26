@@ -94,14 +94,15 @@ class FutureAsset(asset_class.Asset):
                 and total == constants.ZERO and unrealized_pnl == constants.ZERO:
             return False
 
-        self.initial_margin += self._ensure_update_validity(self.initial_margin, initial_margin)
-        self.position_margin = self._ensure_not_negative(self.position_margin + position_margin)
-        self.order_margin = self._ensure_not_negative(self.order_margin + available)
-        self.unrealized_pnl += unrealized_pnl
-        self.wallet_balance += self._ensure_update_validity(self.wallet_balance, total)
-        self._update_available()
-        self._update_total()
-        return True
+        with self.update_or_restore():
+            self.initial_margin += self._ensure_update_validity(self.initial_margin, initial_margin)
+            self.position_margin = self._ensure_not_negative(self.position_margin + position_margin)
+            self.order_margin = self._ensure_not_negative(self.order_margin + available)
+            self.unrealized_pnl += unrealized_pnl
+            self.wallet_balance += self._ensure_update_validity(self.wallet_balance, total)
+            self._update_available()
+            self._update_total()
+            return True
 
     def set(self, total=constants.ZERO, available=None, initial_margin=constants.ZERO, position_margin=constants.ZERO,
             unrealized_pnl=constants.ZERO, order_margin=constants.ZERO, margin_balance=None):
@@ -121,20 +122,21 @@ class FutureAsset(asset_class.Asset):
                 and total == self.wallet_balance:
             return False
 
-        self.initial_margin = initial_margin
-        self.position_margin = position_margin
-        self.order_margin = order_margin
-        self.unrealized_pnl = unrealized_pnl
-        self.wallet_balance = total
-        if available is not None:
-            self.available = available
-        else:
-            self._update_available()
-        if margin_balance is not None:
-            self.total = margin_balance
-        else:
-            self._update_total()
-        return True
+        with self.update_or_restore():
+            self.initial_margin = initial_margin
+            self.position_margin = position_margin
+            self.order_margin = order_margin
+            self.unrealized_pnl = unrealized_pnl
+            self.wallet_balance = total
+            if available is not None:
+                self.available = available
+            else:
+                self._update_available()
+            if margin_balance is not None:
+                self.total = margin_balance
+            else:
+                self._update_total()
+            return True
 
     def set_unrealized_pnl(self, unrealized_pnl):
         """

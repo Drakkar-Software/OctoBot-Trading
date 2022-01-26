@@ -124,3 +124,25 @@ def test_reset():
     asset.reset()
     assert asset.available == asset.total == asset.initial_margin == asset.wallet_balance == asset.position_margin \
            == asset.order_margin == constants.ZERO
+
+
+def test_restore():
+    asset = future_asset.FutureAsset(ASSET_CURRENCY_NAME, total=constants.ONE_HUNDRED, available=constants.ONE_HUNDRED,
+                                     order_margin=constants.ZERO,
+                                     initial_margin=constants.ONE_HUNDRED, wallet_balance=constants.ONE_HUNDRED,
+                                     position_margin=constants.ZERO)
+    asset.update(total=-decimal.Decimal(50))
+    assert asset.total == decimal.Decimal(50)
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        asset.update(total=-decimal.Decimal(70))
+    assert asset.total == decimal.Decimal(50)
+
+    asset.update(position_margin=decimal.Decimal(2.5))
+    assert asset.position_margin == decimal.Decimal(2.5)
+    asset.update(position_margin=decimal.Decimal(2.5))
+    assert asset.position_margin == decimal.Decimal(5)
+    assert asset.available == decimal.Decimal(45)
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        asset.update(position_margin=decimal.Decimal(46))
+    assert asset.position_margin == decimal.Decimal(5)
+    assert asset.available == decimal.Decimal(45)
