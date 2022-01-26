@@ -280,8 +280,10 @@ class Position(util.Initializable):
         # set position entry price if necessary
         self._update_prices_if_necessary(order.filled_price)
 
-        # Updates position average entry price from order
-        self.update_average_entry_price(size_update, order.filled_price)
+        if self._is_update_increasing_size(size_update):
+            # Updates position average entry price from order
+            # Only when increasing position side
+            self.update_average_entry_price(size_update, order.filled_price)
 
         # update size and realised pnl
         has_increase_position_size = self._update_size(size_update, order)
