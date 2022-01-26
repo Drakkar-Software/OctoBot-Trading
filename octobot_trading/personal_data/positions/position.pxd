@@ -78,20 +78,26 @@ cdef class Position(util.Initializable):
     cdef object _update_size_from_margin(self, object margin_update)  # needs object to forward exceptions
     cdef void _update_quantity_or_size_if_necessary(self)
     cdef void _update_quantity(self)
-    cdef void _update_realized_pnl_from_order(self, object order)
-    cdef void _update_realized_pnl_from_size_update(self, object size_update, bint is_closing=*)
-    cdef void _update_initial_margin(self)
+    cdef object _update_realized_pnl_from_order(self, object order)
+    cdef object _update_realized_pnl_from_size_update(self, object size_update, bint is_closing=*)
+    cdef object _update_initial_margin(self)
     cdef object _calculates_size_update_from_filled_order(self, object order, object size_to_close)
     cdef bint _is_update_increasing_size(self, object size_update)
+    cdef bint _is_update_decreasing_size(self, object size_update)
     cdef bint _is_update_closing(self, object size_update)
-    cdef object _update_size(self, object update_size)  # needs object to forward exceptions
+    cdef object _update_size(self, object update_size, object realised_pnl_update=*)  # needs object to forward exceptions
     cdef void _check_and_update_size(self, object size_update)
     cdef void _update_margin(self)
     cdef void _reset_entry_price(self)
     cdef void _update_side(self)
+    cdef object _on_size_update(self,
+                                object size_update,
+                                object realised_pnl_update,
+                                object margin_update,
+                                bint is_update_increasing_position_size)  # needs object to forward exceptions
 
     cpdef bint is_order_increasing_size(self, object order)
-    cpdef object update_from_order(self, object order)  # returns tuple but needs object to forward exceptions
+    cpdef object update_from_order(self, object order)  # needs object to forward exceptions
     cpdef void update_value(self)
     cpdef object update_pnl(self)  # needs object to forward exceptions
     cpdef void update_average_entry_price(self, object update_size, object update_price)
@@ -119,8 +125,7 @@ cdef class Position(util.Initializable):
     cpdef bint is_idle(self)
     cpdef object get_quantity_to_close(self)
     cpdef object get_unrealised_pnl_percent(self)
-    cpdef object on_pnl_update(self, object realised_pnl_update=*)  # needs object to forward exceptions
-    cpdef object on_margin_update(self, object margin_update=*)  # needs object to forward exceptions
+    cpdef object on_pnl_update(self)  # needs object to forward exceptions
     cpdef str to_string(self)
     cpdef dict to_dict(self)
     cpdef void clear(self)
