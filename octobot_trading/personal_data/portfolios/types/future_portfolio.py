@@ -128,12 +128,14 @@ class FuturePortfolio(portfolio_class.Portfolio):
                 update_quantity = liquidated_quantity / position.mark_price
                 self._update_future_portfolio_data(position.currency,
                                                    position_margin_value=update_quantity,
-                                                   wallet_value=update_quantity)
+                                                   wallet_value=update_quantity,
+                                                   unrealized_pnl_value=-position.unrealised_pnl)
             else:
                 update_quantity = liquidated_quantity * position.mark_price
                 self._update_future_portfolio_data(position.market,
                                                    position_margin_value=update_quantity,
-                                                   wallet_value=update_quantity)
+                                                   wallet_value=update_quantity,
+                                                   unrealized_pnl_value=-position.unrealised_pnl)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update from liquidated position : {position} ({e})")
 
