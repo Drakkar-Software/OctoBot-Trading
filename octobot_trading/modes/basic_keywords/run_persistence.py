@@ -26,8 +26,8 @@ def set_plot_orders(ctx, value):
 async def store_orders(ctx, orders,
                        chart=trading_enums.PlotCharts.MAIN_CHART.value,
                        x_multiplier=1000,
-                       kind="markers",
-                       mode="lines"):
+                       mode="markers",
+                       kind="scattergl"):
     order_data = [
         {
             "x": order.creation_time * x_multiplier,
@@ -53,8 +53,8 @@ async def store_trade(ctx,
                       trade_dict,
                       chart=trading_enums.PlotCharts.MAIN_CHART.value,
                       x_multiplier=1000,
-                      kind="markers",
-                      mode="lines",
+                      kind="scattergl",
+                      mode="markers",
                       writer=None):
     tag = f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TAG.value]} " \
         if trade_dict[trading_enums.ExchangeConstantsOrderColumns.TAG.value] else ""
@@ -92,8 +92,8 @@ async def store_transactions(ctx,
                              transactions,
                              chart=trading_enums.PlotCharts.MAIN_CHART.value,
                              x_multiplier=1000,
-                             kind="markers",
-                             mode="lines",
+                             kind="scattergl",
+                             mode="markers",
                              y_data=None,
                              writer=None):
     y_data = y_data or [0] * len(transactions)
