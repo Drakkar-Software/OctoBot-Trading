@@ -13,9 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
 import decimal
+import copy
+
+import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 import octobot_trading.personal_data.positions.position_util as position_util
 import octobot_trading.personal_data.positions.states as positions_states
 import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
@@ -25,6 +30,9 @@ import octobot_trading.constants as constants
 
 class Position(util.Initializable):
     def __init__(self, trader, symbol_contract):
+        """
+        When adding a new "dynamic" attribute, please add it to self.restore()
+        """
         super().__init__()
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
@@ -197,17 +205,30 @@ class Position(util.Initializable):
         """
         await self._ensure_position_initialized()
 
-        if mark_price is not None:
-            self._update_mark_price(mark_price)
-        if update_margin is not None:
-            self._update_size_from_margin(update_margin)
-        if update_size is not None:
-            self._update_size(update_size)
+        try:
+            with self.update_or_restore():
+                if mark_price is not None:
+                    self._update_mark_price(mark_price)
+                if update_margin is not None:
+                    self._update_size_from_margin(update_margin)
+                if update_size is not None:
+                    self._update_size(update_size)
+            if not self.is_idle():
+                self._check_for_liquidation()
+            else:
+                await self.close()
+        except errors.LiquidationPriceReached:
+            await self._create_liquidation_state()
 
-        if not self.is_idle():
-            await self._check_for_liquidation()
-        else:
-            await self.close()
+    async def update_on_liquidation(self):
+        """
+        Update portfolio and position from a liquidation
+        """
+        size_update = self.get_quantity_to_close()
+        self.unrealised_pnl = -self.initial_margin
+        realised_pnl_update = self._update_realized_pnl_from_size_update(size_update, is_closing=True)
+        self._on_size_update(size_update, realised_pnl_update, self.unrealised_pnl, False)
+        await self.close()
 
     def _update_mark_price(self, mark_price):
         """
@@ -216,6 +237,7 @@ class Position(util.Initializable):
         """
         self.mark_price = mark_price
         self._update_prices_if_necessary(mark_price)
+        self._check_for_liquidation()
         if not self.is_idle() and self.exchange_manager.is_simulated:
             self.update_value()
             self.update_pnl()
@@ -430,9 +452,16 @@ class Position(util.Initializable):
 
     def update_pnl(self):
         """
-        Should call on_unrealised_pnl_update() when succeed
+        Update position unrealised pnl
         """
-        raise NotImplementedError("update_pnl not implemented")
+        try:
+            self.unrealised_pnl = self.get_unrealised_pnl(self.mark_price)
+            self.on_pnl_update()
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            self.unrealised_pnl = constants.ZERO
+
+    def get_unrealised_pnl(self, price):
+        raise NotImplementedError("get_unrealised_pnl not implemented")
 
     def get_margin_from_size(self, size):
         raise NotImplementedError("get_margin_from_size not implemented")
@@ -589,7 +618,7 @@ class Position(util.Initializable):
         """
         Triggers external calls when position size has been updated
         """
-        self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.\
+        self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio. \
             update_portfolio_data_from_position_size_update(self,
                                                             realised_pnl_update,
                                                             size_update,
@@ -647,18 +676,23 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
         }
 
-    async def _check_for_liquidation(self):
+    def _check_for_liquidation(self):
         """
         _check_for_liquidation defines rules for a position to be liquidated
         """
-        if self.is_short():
-            if self.mark_price >= self.liquidation_price > constants.ZERO:
-                self.status = enums.PositionStatus.LIQUIDATING
-                await positions_states.create_position_state(self)
-        if self.is_long():
-            if self.mark_price <= self.liquidation_price > constants.ZERO:
-                self.status = enums.PositionStatus.LIQUIDATING
-                await positions_states.create_position_state(self)
+        if (self.is_short()
+            and self.mark_price >= self.liquidation_price > constants.ZERO) or (
+            self.is_long()
+            and self.mark_price <= self.liquidation_price > constants.ZERO
+        ):
+            raise errors.LiquidationPriceReached
+
+    async def _create_liquidation_state(self):
+        """
+        create liquidation state
+        """
+        self.status = enums.PositionStatus.LIQUIDATING
+        await positions_states.create_position_state(self)
 
     def _reset_entry_price(self):
         """
@@ -736,3 +770,33 @@ class Position(util.Initializable):
             self.state.clear()
         self.trader = None
         self.exchange_manager = None
+
+    def restore(self, other_position):
+        """
+        Restore a position from another one
+        :param other_position: the other position instance
+        """
+        self.entry_price = other_position.entry_price
+        self.mark_price = other_position.mark_price
+        self.liquidation_price = other_position.liquidation_price
+        self.fee_to_close = other_position.fee_to_close
+        self.quantity = other_position.quantity
+        self.size = other_position.size
+        self.value = other_position.value
+        self.initial_margin = other_position.initial_margin
+        self.margin = other_position.margin
+        self.unrealised_pnl = other_position.unrealised_pnl
+        self.realised_pnl = other_position.realised_pnl
+
+    @contextlib.contextmanager
+    def update_or_restore(self):
+        """
+        Ensure update complete without raising PortfolioNegativeValueError else restore Position instance's attributes
+        """
+        previous_position = copy.copy(self)
+        try:
+            yield
+        except errors.PortfolioNegativeValueError:
+            logging.get_logger(self.get_logger_name()).warning("Restoring after PortfolioNegativeValueError...")
+            self.restore(previous_position)
+            raise

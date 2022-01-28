@@ -29,26 +29,23 @@ class InversePosition(position_class.Position):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.value = constants.ZERO
 
-    def update_pnl(self):
+    def get_unrealised_pnl(self, price):
         """
         LONG_PNL = CONTRACT_QUANTITY x [(1 / ENTRY_PRICE) - (1 / MARK_PRICE)]
         SHORT_PNL = CONTRACT_QUANTITY x [(1 / MARK_PRICE) - (1 / ENTRY_PRICE)]
+        :param price: the pnl calculation price
+        :return: the unrealised pnl
         """
-        try:
-            # ensure update validity
-            if self.mark_price <= constants.ZERO or self.entry_price <= constants.ZERO:
-                return
-            if self.is_long():
-                self.unrealised_pnl = self.size * ((constants.ONE / self.entry_price) -
-                                                   (constants.ONE / self.mark_price))
-            elif self.is_short():
-                self.unrealised_pnl = -self.size * ((constants.ONE / self.mark_price) -
-                                                    (constants.ONE / self.entry_price))
-            else:
-                self.unrealised_pnl = constants.ZERO
-            self.on_pnl_update()
-        except (decimal.DivisionByZero, decimal.InvalidOperation):
-            self.unrealised_pnl = constants.ZERO
+        # ensure update validity
+        if price <= constants.ZERO or self.entry_price <= constants.ZERO:
+            return constants.ZERO
+        if self.is_long():
+            return self.size * ((constants.ONE / self.entry_price) -
+                                (constants.ONE / price))
+        if self.is_short():
+            return -self.size * ((constants.ONE / price) -
+                                 (constants.ONE / self.entry_price))
+        return constants.ZERO
 
     def get_margin_from_size(self, size):
         """

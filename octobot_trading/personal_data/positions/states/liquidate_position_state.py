@@ -53,15 +53,11 @@ class LiquidatePositionState(position_state.PositionState):
         """
         logging.get_logger(self.position.get_logger_name()).warning(f"{self.position.position_id} is being liquidated")
 
-        # update portfolio with liquidated position
-        async with self.position.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-            await self.position.exchange_manager.exchange_personal_data.\
-                handle_portfolio_update_from_position(self.position)
-
         # notify position liquidated
         await self.position.exchange_manager.exchange_personal_data.handle_position_update_notification(self.position)
 
-        # reset position to initial state (open)
-        await self.position.close()
+        # update portfolio with liquidated position
+        async with self.position.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+            await self.position.update_on_liquidation()
 
         logging.get_logger(self.position.get_logger_name()).warning(f"{self.position.position_id} has been liquidated")

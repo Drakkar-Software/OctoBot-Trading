@@ -115,7 +115,7 @@ class Asset:
         previous_asset = copy.copy(self)
         try:
             yield
-        except errors.PortfolioNegativeValueError as negative_value_error:
+        except errors.PortfolioNegativeValueError:
             logging.get_logger(self.__class__.__name__).warning("Restoring after PortfolioNegativeValueError...")
             self.restore(previous_asset)
-            raise negative_value_error
+            raise

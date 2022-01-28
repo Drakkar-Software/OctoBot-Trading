@@ -1200,3 +1200,31 @@ async def test__update_realized_pnl_from_size_update_short(future_trader_simulat
     await position_inst.update(-position_size * decimal.Decimal(0.5))
     assert position_inst.realised_pnl == decimal.Decimal('29.00000000000000022204460492')  # = previous realised pnl
     assert len(tm.transactions) == 2
+
+
+async def test_update_position_when_overliquidated_position_with_long_position_inverse_contract(
+        future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(10))
+
+    position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    await position_inst.initialize()
+
+    # near all in position => size = 9999
+    await position_inst.update(update_size=decimal.Decimal(9999), mark_price=decimal.Decimal(100))
+    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
+
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('0.001')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == decimal.Decimal('9.999')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == constants.ZERO
+
+    await position_inst.update(mark_price=decimal.Decimal(3))
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('0.001')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('0.001')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == constants.ZERO

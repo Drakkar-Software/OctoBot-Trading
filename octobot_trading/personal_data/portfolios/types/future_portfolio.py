@@ -18,6 +18,7 @@ import decimal
 import octobot_trading.personal_data.portfolios.assets.future_asset as future_asset
 import octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 
 
 class FuturePortfolio(portfolio_class.Portfolio):
@@ -111,27 +112,6 @@ class FuturePortfolio(portfolio_class.Portfolio):
                                                    order_margin_value=real_order_quantity * order.origin_price)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update available from order : {order} ({e})")
-
-    def update_portfolio_from_liquidated_position(self, position):
-        """
-        Update portfolio from liquidated position
-        :param position: the liquidated position
-        """
-        try:
-            liquidated_quantity = -decimal.Decimal(
-                position.get_quantity_to_close() / position.symbol_contract.current_leverage).copy_abs()
-            if position.symbol_contract.is_inverse_contract():
-                update_quantity = liquidated_quantity / position.mark_price
-                self._update_future_portfolio_data(position.currency,
-                                                   position_margin_value=update_quantity,
-                                                   wallet_value=update_quantity)
-            else:
-                update_quantity = liquidated_quantity * position.mark_price
-                self._update_future_portfolio_data(position.market,
-                                                   position_margin_value=update_quantity,
-                                                   wallet_value=update_quantity)
-        except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
-            self.logger.error(f"Failed to update from liquidated position : {position} ({e})")
 
     def update_portfolio_from_funding(self, position, funding_rate):
         """
