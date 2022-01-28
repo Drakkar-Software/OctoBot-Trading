@@ -21,6 +21,7 @@ import pytest
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
@@ -30,6 +31,12 @@ from tests.test_utils.random_numbers import decimal_random_price, decimal_random
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
+
+
+FORTY = decimal.Decimal(40)
+TWENTY_FOUR = decimal.Decimal(24)
+TWENTY_FIVE = decimal.Decimal(25)
+TWELVE_DOT_FIVE = decimal.Decimal('12.5')
 
 
 async def test_update_value(future_trader_simulator_with_default_linear):
@@ -50,61 +57,207 @@ async def test_update_pnl_with_long_linear_position(future_trader_simulator_with
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    position_inst.entry_price = constants.ONE_HUNDRED
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+
+    # open long of 24 contracts at 40 usdt
+    await position_inst.update(update_size=TWENTY_FOUR, mark_price=FORTY)
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == constants.ZERO
-    await position_inst.update(update_size=constants.ONE_HUNDRED,
-                               mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
+    # add long of 1 contract at 80 usdt
+    await position_inst.update(update_size=constants.ONE,
+                               mark_price=decimal.Decimal(3) * FORTY)
     position_inst.update_pnl()
-    assert position_inst.unrealised_pnl == decimal.Decimal("20000")
+    # now have 25 contracts each now worth 120 usdt => 2000 in profit
+    assert position_inst.unrealised_pnl == decimal.Decimal("2000")
 
 
 async def test_update_pnl_with_short_linear_position(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    position_inst.entry_price = constants.ONE_HUNDRED
-    await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+
+    # open short of 24 contracts at 40 usdt
+    await position_inst.update(update_size=-TWENTY_FOUR, mark_price=FORTY)
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == constants.ZERO
-    await position_inst.update(update_size=-constants.ONE_HUNDRED,
-                               mark_price=constants.ONE_HUNDRED / decimal.Decimal(10))
+    # add short of 1 contract at 4 usdt
+    await position_inst.update(update_size=-constants.ONE,
+                               mark_price=FORTY / decimal.Decimal(10))
     position_inst.update_pnl()
-    assert position_inst.unrealised_pnl == decimal.Decimal("18000")
+    # now have 25 contracts each now worth 36 usdt (40 entry - 4 now) => 25 * 36 = 900 in profit
+    assert position_inst.unrealised_pnl == decimal.Decimal("900")
 
 
-async def test_update_pnl_with_loss_with_long_linear_position(future_trader_simulator_with_default_linear):
-    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
-
-    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
-    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    position_inst.entry_price = constants.ONE_HUNDRED
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    position_inst.update_pnl()
-    assert position_inst.unrealised_pnl == constants.ZERO
-    exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
-        "USDT").wallet_balance = decimal.Decimal(100000)  # TO prevent portfolio negative error
-    await position_inst.update(update_size=constants.ONE_HUNDRED,
-                               mark_price=constants.ONE_HUNDRED / decimal.Decimal(2.535485))
-    position_inst.update_pnl()
-    assert position_inst.unrealised_pnl == decimal.Decimal("-12111.96280001656484319345490")
-
-
-async def test_update_pnl_with_loss_with_short(future_trader_simulator_with_default_linear):
+async def test_update_pnl_with_loss_with_long_linear_position_inc_position(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    position_inst.entry_price = constants.ONE_HUNDRED
-    await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+
+    # open long of 24 contracts at 40 usdt
+    await position_inst.update(update_size=TWENTY_FOUR, mark_price=FORTY)
     position_inst.update_pnl()
     assert position_inst.unrealised_pnl == constants.ZERO
-    exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
-        "USDT").wallet_balance = decimal.Decimal(100000)  # TO prevent portfolio negative error
-    await position_inst.update(update_size=-constants.ONE_HUNDRED,
-                               mark_price=constants.ONE_HUNDRED * decimal.Decimal(1.0954))
+    # add long of 1 contract at 40 / 2.535485
+    await position_inst.update(update_size=constants.ONE,
+                               mark_price=FORTY / decimal.Decimal("2.535485"))
     position_inst.update_pnl()
-    assert position_inst.unrealised_pnl == decimal.Decimal("-1907.999999999998586019955840")
+    # now have 25 contracts each now worth 15.7760744 (40/2.535485) usdt => 25 * 40 - 25 * 15.7760744 in loss
+    assert position_inst.unrealised_pnl == decimal.Decimal("-605.5981400008282439059982608")
+
+
+async def test_update_pnl_with_loss_with_long_linear_position_red_position(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+
+    # open long of 24 contracts at 40 usdt
+    await position_inst.update(update_size=TWENTY_FOUR, mark_price=FORTY)
+    position_inst.update_pnl()
+    assert position_inst.unrealised_pnl == constants.ZERO
+    # reduce long of 1 contract at 40 / 2.535485
+    await position_inst.update(update_size=-constants.ONE,
+                               mark_price=FORTY / decimal.Decimal("2.535485"))
+    position_inst.update_pnl()
+    # now have 23 contracts each now worth 15.7760744 (40/2.535485) usdt => 23 * 40 - 23 * 15.7760744 in loss
+    assert position_inst.unrealised_pnl == decimal.Decimal("-557.1502888007619843935183999")
+
+
+async def test_update_pnl_with_loss_with_short_inc_position(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+
+    # open short of 24 contracts at 40 usdt
+    await position_inst.update(update_size=-TWENTY_FOUR, mark_price=FORTY)
+    position_inst.update_pnl()
+    assert position_inst.unrealised_pnl == constants.ZERO
+    # add short of 1 contract at 40 * 1.0954
+    await position_inst.update(update_size=-constants.ONE,
+                               mark_price=FORTY * decimal.Decimal("1.0954"))
+    position_inst.update_pnl()
+    # now have 25 contracts each now worth 43.816 (40 * 1.0954) usdt => 25 * 40 - 25 * 43.816 in loss
+    assert position_inst.unrealised_pnl == decimal.Decimal("-95.4")
+
+
+async def test_update_pnl_with_loss_with_short_red_position(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+
+    # open short of 24 contracts at 40 usdt
+    await position_inst.update(update_size=-TWENTY_FOUR, mark_price=FORTY)
+    position_inst.update_pnl()
+    assert position_inst.unrealised_pnl == constants.ZERO
+    # reduce short of 1 contract at 40 * 1.0954
+    await position_inst.update(update_size=constants.ONE,
+                               mark_price=FORTY * decimal.Decimal("1.0954"))
+    position_inst.update_pnl()
+    # now have 23 contracts each now worth 43.816 (40 * 1.0954) usdt => 23 * 40 - 23 * 43.816 in loss
+    assert position_inst.unrealised_pnl == decimal.Decimal("-87.768")
+
+
+async def test_update_pnl_with_loss_with_too_big_positions(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    portfolio = exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio
+
+    # open long of 100 contracts at 40 usdt: not enough funds
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=FORTY)
+    assert position_inst.unrealised_pnl == constants.ZERO
+    assert position_inst.realised_pnl == constants.ZERO
+    assert position_inst.initial_margin == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+
+    # open short of 100 contracts at 40 usdt: not enough funds
+    # TODO not working because FutureAsset#update uses self.position_margin = self._ensure_not_negative
+    # which cancels the negative margin here and prevents raising on available amount update, is that normal ?
+    with pytest.raises(errors.PortfolioNegativeValueError):
+        await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=FORTY)
+    assert position_inst.unrealised_pnl == constants.ZERO
+    assert position_inst.realised_pnl == constants.ZERO
+    assert position_inst.initial_margin == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
+    assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+
+
+async def test_update_pnl_with_loss_with_full_long_position(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    portfolio = exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio
+
+    # open long of 25 contracts at 40 usdt
+    await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
+    assert position_inst.unrealised_pnl == constants.ZERO
+    assert position_inst.realised_pnl == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('1000')
+    assert portfolio.get_currency_portfolio("USDT").available == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+
+    # reduce long of 1 contract at 40 * 1.0954
+    await position_inst.update(update_size=-constants.ONE,
+                               mark_price=FORTY * decimal.Decimal("1.0954"))
+
+    # now have 24 contracts each now worth 43.816 (40 * 1.0954) usdt => 40 - 43.816 in profit per contract
+    assert position_inst.unrealised_pnl == decimal.Decimal("91.584")
+    assert position_inst.realised_pnl == decimal.Decimal("3.816")
+    assert portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('960')
+    assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('43.816000')
+    assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1095.400000')
+
+    # reduce long of 24 contract at 40 - 2
+    await position_inst.update(update_size=-TWENTY_FOUR,
+                               mark_price=FORTY - decimal.Decimal(2))
+    # now have 24 contracts each now worth 38 (40 - 2) usdt => 40 - 38 in loss per contract
+    # position got reset
+    assert position_inst.unrealised_pnl == constants.ZERO
+    assert position_inst.realised_pnl == constants.ZERO
+    # position closed with 40 - 38 in loss per contract
+    assert portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('955.816')
+    assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('955.816000')
+
+
+async def test_update_pnl_with_loss_with_full_short_position(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    portfolio = exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio
+
+    # open short of 25 contracts at 40 usdt
+    await position_inst.update(update_size=-TWENTY_FIVE, mark_price=FORTY)
+    assert position_inst.unrealised_pnl == constants.ZERO
+    assert position_inst.realised_pnl == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('1000')
+    assert portfolio.get_currency_portfolio("USDT").available == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+
+    # reduce short of 1 contract at 40 * 1.0954
+    await position_inst.update(update_size=constants.ONE,
+                               mark_price=FORTY * decimal.Decimal("1.0954"))
+
+    # now have 24 contracts each now worth 43.816 (40 * 1.0954) usdt => 40 - 43.816 in loss per contract
+    assert position_inst.unrealised_pnl == decimal.Decimal("-91.584")
+    assert position_inst.realised_pnl == decimal.Decimal("-3.816")
+    assert portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('960')
+    assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('36.184')
+    assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('904.6')
+
+    # reduce short of 24 contract at 40 - 2
+    await position_inst.update(update_size=TWENTY_FOUR,
+                               mark_price=FORTY - decimal.Decimal(2))
+    # now have 24 contracts each now worth 38 (40 - 2) usdt => 40 - 38 in profit per contract
+    # position got reset
+    assert position_inst.unrealised_pnl == constants.ZERO
+    assert position_inst.realised_pnl == constants.ZERO
+    # position closed with 40 - 38 in profit per contract
+    assert portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
+    assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1044.184')
+    assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1044.184')
 
 
 async def test_update_initial_margin(future_trader_simulator_with_default_linear):
@@ -116,75 +269,75 @@ async def test_update_initial_margin(future_trader_simulator_with_default_linear
         await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
         position_inst._update_initial_margin()
         assert position_inst.initial_margin == constants.ZERO
-        await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+        await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
         position_inst._update_initial_margin()
-        assert position_inst.initial_margin == decimal.Decimal("10000")
+        assert position_inst.initial_margin == decimal.Decimal("1000")
         default_contract.set_current_leverage(constants.ONE_HUNDRED)
         position_inst._update_initial_margin()
-        assert position_inst.initial_margin == decimal.Decimal("100")
+        assert position_inst.initial_margin == decimal.Decimal("10")
 
 
 async def test_get_margin_from_size(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_margin_from_size(constants.ONE) == decimal.Decimal('100')
+    await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
+    assert position_inst.get_margin_from_size(constants.ONE) == decimal.Decimal('40')
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    assert position_inst.get_margin_from_size(constants.ONE) == constants.ONE
+    assert position_inst.get_margin_from_size(constants.ONE) == decimal.Decimal('0.4')
     default_contract.set_current_leverage(constants.ONE)
-    assert position_inst.get_margin_from_size(decimal.Decimal('0.01')) == constants.ONE
-    assert position_inst.get_margin_from_size(decimal.Decimal('0.1')) == decimal.Decimal('10')
-    assert position_inst.get_margin_from_size(decimal.Decimal('1')) == decimal.Decimal('100')
+    assert position_inst.get_margin_from_size(decimal.Decimal('0.01')) == decimal.Decimal('0.4')
+    assert position_inst.get_margin_from_size(decimal.Decimal('0.1')) == decimal.Decimal('4')
+    assert position_inst.get_margin_from_size(decimal.Decimal('1')) == decimal.Decimal('40')
 
 
 async def test_get_size_from_margin(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_size_from_margin(constants.ONE) == decimal.Decimal('0.01')
+    await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
+    assert position_inst.get_size_from_margin(constants.ONE) == decimal.Decimal('0.025')
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    assert position_inst.get_size_from_margin(constants.ONE) == constants.ONE
+    assert position_inst.get_size_from_margin(constants.ONE) == decimal.Decimal('2.5')
     default_contract.set_current_leverage(constants.ONE)
-    assert position_inst.get_size_from_margin(decimal.Decimal('0.01')) == decimal.Decimal('0.0001')
-    assert position_inst.get_size_from_margin(decimal.Decimal('0.1')) == decimal.Decimal('0.001')
-    assert position_inst.get_size_from_margin(decimal.Decimal('1')) == decimal.Decimal('0.01')
+    assert position_inst.get_size_from_margin(decimal.Decimal('0.01')) == decimal.Decimal('0.00025')
+    assert position_inst.get_size_from_margin(decimal.Decimal('0.1')) == decimal.Decimal('0.0025')
+    assert position_inst.get_size_from_margin(decimal.Decimal('1')) == decimal.Decimal('0.025')
 
 
 async def test_calculate_maintenance_margin(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
-    position_inst.update_from_raw(
-        {
-            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
-        }
-    )
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     assert position_inst.calculate_maintenance_margin() == constants.ZERO
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.calculate_maintenance_margin() == constants.ONE_HUNDRED
+    await position_inst.update(update_size=TWELVE_DOT_FIVE, mark_price=FORTY)
+    assert position_inst.calculate_maintenance_margin() == decimal.Decimal('5')
+    # TODO why changing this ? change position_inst.symbol_contract.maintenance_margin_rate instead ?
     exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_FUTURE_SYMBOL).funding_manager.funding_rate = decimal.Decimal(DEFAULT_FUTURE_FUNDING_RATE)
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.calculate_maintenance_margin() == decimal.Decimal('200')
+    await position_inst.update(update_size=TWELVE_DOT_FIVE, mark_price=FORTY)
+    assert position_inst.calculate_maintenance_margin() == decimal.Decimal('10')
 
 
 async def test_update_isolated_liquidation_price_with_long(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
-    exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_FUTURE_SYMBOL).funding_manager.funding_rate = decimal.Decimal(DEFAULT_FUTURE_FUNDING_RATE)
-
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
-    position_inst.symbol = DEFAULT_FUTURE_SYMBOL
-    position_inst.entry_price = constants.ONE_HUNDRED
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    # avoid default maintenance_margin_rate to change liquidation price
+    default_contract.maintenance_margin_rate = decimal.Decimal("0.2")
+
+    await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
     position_inst.update_isolated_liquidation_price()
-    assert position_inst.liquidation_price == constants.ONE
+    assert position_inst.liquidation_price == decimal.Decimal('8')
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    await position_inst.update(update_size=-constants.ONE_HUNDRED,
-                               mark_price=decimal.Decimal(1.2) * constants.ONE_HUNDRED)
+    position_inst.update_isolated_liquidation_price()
+    assert position_inst.liquidation_price == decimal.Decimal("47.60")
+    # sell whole position
+    await position_inst.update(update_size=-TWENTY_FIVE, mark_price=FORTY * decimal.Decimal(1.2))
     position_inst.update_isolated_liquidation_price()
     assert position_inst.liquidation_price == constants.ZERO
 
@@ -192,56 +345,50 @@ async def test_update_isolated_liquidation_price_with_long(future_trader_simulat
 async def test_update_isolated_liquidation_price_with_short(
         future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
-    exchange_manager_inst.exchange_symbols_data.get_exchange_symbol_data(
-        DEFAULT_FUTURE_SYMBOL).funding_manager.funding_rate = decimal.Decimal(DEFAULT_FUTURE_FUNDING_RATE)
-
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
-    position_inst.symbol = DEFAULT_FUTURE_SYMBOL
-    position_inst.entry_price = constants.ONE_HUNDRED
-    await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+    # avoid default maintenance_margin_rate to change liquidation price
+    default_contract.maintenance_margin_rate = decimal.Decimal("0.2")
+
+    await position_inst.update(update_size=-TWELVE_DOT_FIVE, mark_price=FORTY)
     position_inst.update_isolated_liquidation_price()
-    assert position_inst.liquidation_price == decimal.Decimal("199.0")
+    assert position_inst.liquidation_price == decimal.Decimal("72.0")
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    await position_inst.update(update_size=-constants.ONE_HUNDRED,
-                               mark_price=constants.ONE_HUNDRED / decimal.Decimal(10))
     position_inst.update_isolated_liquidation_price()
-    assert position_inst.liquidation_price == decimal.Decimal("100")
+    assert position_inst.liquidation_price == decimal.Decimal("32.40")
+    await position_inst.update(update_size=-TWELVE_DOT_FIVE, mark_price=FORTY / decimal.Decimal(10))
+    position_inst.update_isolated_liquidation_price()
+    assert position_inst.liquidation_price == decimal.Decimal("32.40")
 
 
 async def test_get_bankruptcy_price_with_long(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
-
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    position_inst.entry_price = constants.ONE_HUNDRED
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+
+    await position_inst.update(update_size=TWELVE_DOT_FIVE, mark_price=FORTY)
     assert position_inst.get_bankruptcy_price() == constants.ZERO
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == constants.ONE_HUNDRED
+    assert position_inst.get_bankruptcy_price(with_mark_price=True) == FORTY
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == decimal.Decimal("99.00")
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("100")
-    await position_inst.update(update_size=constants.ONE_HUNDRED,
-                               mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == decimal.Decimal("99.00")
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("200")
+    assert position_inst.get_bankruptcy_price() == decimal.Decimal("39.60")
+    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("40")
+    await position_inst.update(update_size=TWELVE_DOT_FIVE, mark_price=FORTY * decimal.Decimal(2))
+    assert position_inst.get_bankruptcy_price() == decimal.Decimal("39.60")
+    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("80")
 
 
 async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
-
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    position_inst.entry_price = constants.ONE_HUNDRED
-    await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == decimal.Decimal("200")
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("100")
+
+    await position_inst.update(update_size=-TWELVE_DOT_FIVE, mark_price=FORTY)
+    assert position_inst.get_bankruptcy_price() == decimal.Decimal("80")
+    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("40")
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == decimal.Decimal('101.00')
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal('100')
-    exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.get_currency_portfolio(
-        "USDT").wallet_balance = decimal.Decimal(10000)  # TO prevent portfolio negative error
-    await position_inst.update(update_size=constants.ONE_HUNDRED,
-                               mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
+    assert position_inst.get_bankruptcy_price() == decimal.Decimal('40.4')
+    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal('40')
+    await position_inst.update(update_size=TWELVE_DOT_FIVE, mark_price=FORTY * decimal.Decimal(2))
     assert position_inst.get_bankruptcy_price() == constants.ZERO
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == constants.ZERO
 
@@ -253,8 +400,8 @@ async def test_get_order_cost(future_trader_simulator_with_default_linear):
 
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     assert position_inst.get_order_cost() == constants.ZERO
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_order_cost() == decimal.Decimal("10020.000")
+    await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
+    assert position_inst.get_order_cost() == decimal.Decimal("1000.008")
 
 
 async def test_get_fee_to_open(future_trader_simulator_with_default_linear):
@@ -264,30 +411,27 @@ async def test_get_fee_to_open(future_trader_simulator_with_default_linear):
 
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     assert position_inst.get_fee_to_open() == constants.ZERO
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_fee_to_open() == decimal.Decimal("10.000")
+    await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
+    assert position_inst.get_fee_to_open() == decimal.Decimal("0.004")
 
 
 async def test_update_fee_to_close(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
-    position_inst.update_from_raw(
-        {
-            enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL
-        }
-    )
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     position_inst.update_fee_to_close()
     assert position_inst.fee_to_close == constants.ZERO
-    await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+    await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
     position_inst.update_fee_to_close()
-    assert position_inst.fee_to_close == decimal.Decimal("10")
+    assert position_inst.fee_to_close == decimal.Decimal("0.004")
 
 
 async def test_update_average_entry_price_increased_long(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(10))
     position_inst.entry_price = decimal.Decimal(10)
@@ -302,6 +446,7 @@ async def test_update_average_entry_price_increased_long(future_trader_simulator
 async def test_update_average_entry_price_increased_short(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=-decimal.Decimal(10), mark_price=decimal.Decimal(10))
     position_inst.entry_price = decimal.Decimal(10)
@@ -316,6 +461,7 @@ async def test_update_average_entry_price_increased_short(future_trader_simulato
 async def test_update_average_entry_price_decreased_long(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=decimal.Decimal(100), mark_price=decimal.Decimal(10))
     position_inst.entry_price = decimal.Decimal(10)
@@ -330,6 +476,7 @@ async def test_update_average_entry_price_decreased_long(future_trader_simulator
 async def test_update_average_entry_price_decreased_short(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
 
     await position_inst.update(update_size=-decimal.Decimal(100), mark_price=decimal.Decimal(10))
     position_inst.entry_price = decimal.Decimal(10)

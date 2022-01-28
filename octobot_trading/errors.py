@@ -102,3 +102,9 @@ class DuplicateTransactionIdError(Exception):
     """
     Raised when trying to add a new transaction with a duplicate id
     """
+
+
+class LiquidationPriceReached(Exception):
+    """
+    Raised when the liquidation price has been reach
+    """

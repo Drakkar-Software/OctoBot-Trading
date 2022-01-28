@@ -26,24 +26,21 @@ class LinearPosition(position_class.Position):
         """
         self.value = self.size * self.mark_price
 
-    def update_pnl(self):
+    def get_unrealised_pnl(self, price):
         """
         LONG_PNL = CONTRACT_QUANTITY x [MARK_PRICE - ENTRY_PRICE]
         SHORT_PNL = CONTRACT_QUANTITY x [ENTRY_PRICE - MARK_PRICE]
+        :param price: the pnl calculation price
+        :return: the unrealised pnl
         """
-        try:
-            # ensure update validity
-            if self.mark_price <= constants.ZERO or self.entry_price <= constants.ZERO:
-                return
-            if self.is_long():
-                self.unrealised_pnl = self.size * (self.mark_price - self.entry_price)
-            elif self.is_short():
-                self.unrealised_pnl = -self.size * (self.entry_price - self.mark_price)
-            else:
-                self.unrealised_pnl = constants.ZERO
-            self.on_pnl_update()
-        except (decimal.DivisionByZero, decimal.InvalidOperation):
-            self.unrealised_pnl = constants.ZERO
+        # ensure update validity
+        if price <= constants.ZERO or self.entry_price <= constants.ZERO:
+            return constants.ZERO
+        if self.is_long():
+            return self.size * (price - self.entry_price)
+        if self.is_short():
+            return -self.size * (self.entry_price - price)
+        return constants.ZERO
 
     def get_margin_from_size(self, size):
         """

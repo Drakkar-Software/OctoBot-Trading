@@ -129,4 +129,5 @@ cdef class Position(util.Initializable):
     cpdef str to_string(self)
     cpdef dict to_dict(self)
     cpdef void clear(self)
+    cpdef void restore(self, Position other_position)
     cpdef str get_logger_name(self)

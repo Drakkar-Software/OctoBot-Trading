@@ -299,6 +299,7 @@ class ExchangePersonalData(util.Initializable):
     async def handle_position_update_notification(self, position, is_updated=True):
         """
         Notify Positions channel for Position update
+        TODO send position dict
         :param position: the updated position
         :param is_updated: if the position has been updated
         """

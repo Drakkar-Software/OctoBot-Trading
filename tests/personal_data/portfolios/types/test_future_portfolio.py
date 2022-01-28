@@ -574,68 +574,6 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
 
 
-async def test_update_portfolio_from_liquidated_position_with_long_position_inverse_contract(
-        future_trader_simulator_with_default_inverse):
-    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
-    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
-    default_contract.set_current_leverage(decimal.Decimal(10))
-
-    position_inst = InversePosition(trader_inst, default_contract)
-    await position_inst.initialize()
-    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-
-    # all in position => size = 10000
-    await position_inst.update(update_size=decimal.Decimal(10000), mark_price=decimal.Decimal(100))
-    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
-
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
-
-    # all in position => available = 0
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('0')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
-
-    portfolio_manager.portfolio.update_portfolio_from_liquidated_position(position_inst)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
-
-    # BTC portfolio should be empty after liquidation
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('0')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('0')
-
-
-async def test_update_portfolio_from_liquidated_position_with_short_position_inverse_contract(
-        future_trader_simulator_with_default_inverse):
-    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
-    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
-    default_contract.set_current_leverage(decimal.Decimal(50))
-    trader_inst.exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, default_contract)
-
-    position_inst = InversePosition(trader_inst, default_contract)
-    await position_inst.initialize()
-    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    await position_inst.update(update_size=decimal.Decimal(-10000), mark_price=decimal.Decimal(100))
-
-    exchange_manager_inst.exchange_personal_data.positions_manager.upsert_position_instance(position_inst)
-
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('8')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
-
-    portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin = decimal.Decimal('100')
-    portfolio_manager.portfolio.get_currency_portfolio("BTC").wallet_balance = decimal.Decimal('10000')
-    portfolio_manager.portfolio.update_portfolio_from_liquidated_position(position_inst)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").wallet_balance == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('9900')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('9998')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == decimal.Decimal('98')
-    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").wallet_balance == decimal.Decimal('9998')
-
-
 async def test_update_portfolio_from_liquidated_position_with_orders_on_short_position_linear_contract(
         future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
@@ -700,8 +638,8 @@ async def test_update_portfolio_from_liquidated_position_with_orders_on_short_po
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == decimal.Decimal(str(855.0))
 
     await position_inst.update(mark_price=position_inst.liquidation_price)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('810.019')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('810.019')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('811.9')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('811.9')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
