@@ -30,8 +30,16 @@ cpdef transaction_types.BlockchainTransaction create_blockchain_transaction(obje
 cpdef transaction_types.RealisedPnlTransaction create_realised_pnl_transaction(object exchange_manager,
                                                                                str currency,
                                                                                str symbol,
+                                                                               object side,
                                                                                object realised_pnl=*,
-                                                                               bint is_closed_pnl=*)
+                                                                               bint is_closed_pnl=*,
+                                                                               object closed_quantity=*,
+                                                                               double first_entry_time=*,
+                                                                               object average_entry_price=*,
+                                                                               object average_exit_price=*,
+                                                                               object order_exit_price=*,
+                                                                               object leverage=*)
+
 cpdef transaction_types.FeeTransaction create_fee_transaction(object exchange_manager,
                                                               str currency,
                                                               str symbol,
