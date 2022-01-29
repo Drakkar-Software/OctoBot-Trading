@@ -35,6 +35,10 @@ class Asset:
                f"Available: {float(self.available)} | " \
                f"Total: {float(self.total)}"
 
+    def __repr__(self):
+        # __repr__ is called when a dict is turned into string (like in logs)
+        return str(self)
+
     def __eq__(self, other):
         raise NotImplementedError("__eq__ is not implemented")
 
