@@ -43,6 +43,7 @@ cdef class Position(util.Initializable):
     cdef public object liquidation_price
     cdef public object quantity
     cdef public object size
+    cdef public object already_reduced_size
     cdef public object value
     cdef public object margin
     cdef public object initial_margin
