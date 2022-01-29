@@ -60,6 +60,7 @@ class Position(util.Initializable):
         # Size
         self.quantity = constants.ZERO
         self.size = constants.ZERO
+        self.already_reduced_size = constants.ZERO
         self.value = constants.ZERO
         self.initial_margin = constants.ZERO
         self.margin = constants.ZERO
@@ -220,7 +221,9 @@ class Position(util.Initializable):
             else:
                 await self.close()
         except errors.LiquidationPriceReached:
-            self.update_average_exit_price(self.size, self.mark_price)
+            size_update = self.get_quantity_to_close()
+            self.update_average_exit_price(size_update, self.mark_price)
+            self.already_reduced_size += size_update
             await self._create_liquidation_state()
 
     async def update_on_liquidation(self):
@@ -313,6 +316,7 @@ class Position(util.Initializable):
             self.update_average_entry_price(size_update, order.filled_price)
         elif self._is_update_decreasing_size(size_update):
             self.update_average_exit_price(size_update, order.filled_price)
+            self.already_reduced_size += size_update
 
         # update size and realised pnl
         self._update_size(size_update, realised_pnl_update=realised_pnl_update)
@@ -772,6 +776,7 @@ class Position(util.Initializable):
         self.mark_price = constants.ZERO
         self.quantity = constants.ZERO
         self.size = constants.ZERO
+        self.already_reduced_size = constants.ZERO
         self.value = constants.ZERO
         self.initial_margin = constants.ZERO
         self.margin = constants.ZERO
@@ -808,6 +813,7 @@ class Position(util.Initializable):
         self.fee_to_close = other_position.fee_to_close
         self.quantity = other_position.quantity
         self.size = other_position.size
+        self.already_reduced_size = other_position.already_reduced_size
         self.value = other_position.value
         self.initial_margin = other_position.initial_margin
         self.margin = other_position.margin
