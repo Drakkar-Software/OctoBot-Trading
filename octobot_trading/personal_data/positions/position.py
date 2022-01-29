@@ -41,6 +41,7 @@ class Position(util.Initializable):
         self.logger_name = None
         self.position_id = None
         self.timestamp = 0
+        self.first_entry_time = 0
         self.symbol = None
         self.currency, self.market = None, None
         self.status = enums.PositionStatus.OPEN
@@ -51,6 +52,7 @@ class Position(util.Initializable):
 
         # Prices
         self.entry_price = constants.ZERO
+        self.exit_price = constants.ZERO
         self.mark_price = constants.ZERO
         self.liquidation_price = constants.ZERO
         self.fee_to_close = constants.ZERO
@@ -218,6 +220,7 @@ class Position(util.Initializable):
             else:
                 await self.close()
         except errors.LiquidationPriceReached:
+            self.update_average_exit_price(self.size, self.mark_price)
             await self._create_liquidation_state()
 
     async def update_on_liquidation(self):
@@ -305,7 +308,11 @@ class Position(util.Initializable):
 
         # Updates position average entry price from order only when increasing position side
         if self._is_update_increasing_size(size_update):
+            if self.size == constants.ZERO:
+                self.first_entry_time = self.exchange_manager.exchange.get_exchange_current_time()
             self.update_average_entry_price(size_update, order.filled_price)
+        elif self._is_update_decreasing_size(size_update):
+            self.update_average_exit_price(size_update, order.filled_price)
 
         # update size and realised pnl
         self._update_size(size_update, realised_pnl_update=realised_pnl_update)
@@ -386,7 +393,7 @@ class Position(util.Initializable):
         is_update_increasing_position_size = self._is_update_increasing_size(size_update)
         if self._is_update_decreasing_size(size_update):
             realised_pnl_update = self._update_realized_pnl_from_size_update(
-                size_update, is_closing=self._is_update_closing(size_update))
+                size_update, is_closing=self._is_update_closing(size_update), order_price=self.mark_price)
         self._check_and_update_size(size_update)
         self._update_quantity()
         self._update_side()
@@ -401,7 +408,7 @@ class Position(util.Initializable):
                              margin_update,
                              is_update_increasing_position_size)
 
-    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False):
+    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False, order_price=constants.ZERO):
         """
         Updates the position realized pnl from update size
         :param size_update: the position update size
@@ -412,8 +419,15 @@ class Position(util.Initializable):
             transaction_factory.create_realised_pnl_transaction(self.exchange_manager,
                                                                 self.get_currency(),
                                                                 self.symbol,
+                                                                self.side,
                                                                 realised_pnl=realised_pnl_update,
-                                                                is_closed_pnl=is_closing)
+                                                                is_closed_pnl=is_closing,
+                                                                closed_quantity=size_update,
+                                                                first_entry_time=self.first_entry_time,
+                                                                average_entry_price=self.entry_price,
+                                                                average_exit_price=self.exit_price,
+                                                                order_exit_price=order_price,
+                                                                leverage=self.symbol_contract.current_leverage)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             realised_pnl_update = constants.ZERO
         self.realised_pnl += realised_pnl_update
@@ -485,6 +499,9 @@ class Position(util.Initializable):
 
     def update_average_entry_price(self, update_size, update_price):
         raise NotImplementedError("get_average_entry_price not implemented")
+
+    def update_average_exit_price(self, update_size, update_price):
+        raise NotImplementedError("update_average_exit_price not implemented")
 
     def get_initial_margin_rate(self):
         """
@@ -707,16 +724,22 @@ class Position(util.Initializable):
         Only relevant when account is using one way position mode
         """
         if self.symbol_contract.is_one_way_position_mode() or self.side is enums.PositionSide.UNKNOWN:
+            changed_side = False
             if self.quantity >= constants.ZERO:
                 if self.side is not enums.PositionSide.LONG:
                     self.side = enums.PositionSide.LONG
-                    self._reset_entry_price()
+                    changed_side = True
             elif self.quantity < constants.ZERO:
                 if self.side is not enums.PositionSide.SHORT:
                     self.side = enums.PositionSide.SHORT
-                    self._reset_entry_price()
+                    changed_side = True
             else:
                 self.side = enums.PositionSide.UNKNOWN
+            if changed_side:
+                self._reset_entry_price()
+                self.exit_price = constants.ZERO
+                self.first_entry_time = self.exchange_manager.exchange.get_exchange_current_time()
+                logging.get_logger(self.get_logger_name()).info(f"Changed position side: now {self.side.name}")
 
     def __str__(self):
         return self.to_string()
@@ -745,6 +768,7 @@ class Position(util.Initializable):
         Reset position attributes
         """
         self.entry_price = constants.ZERO
+        self.exit_price = constants.ZERO
         self.mark_price = constants.ZERO
         self.quantity = constants.ZERO
         self.size = constants.ZERO
@@ -758,6 +782,7 @@ class Position(util.Initializable):
         self.unrealised_pnl = constants.ZERO
         self.realised_pnl = constants.ZERO
         self.creation_time = constants.ZERO
+        self.first_entry_time = 0
         self.on_pnl_update()  # notify portfolio to reset unrealized PNL
         if not self.is_open():
             await self.on_open()
@@ -777,6 +802,7 @@ class Position(util.Initializable):
         :param other_position: the other position instance
         """
         self.entry_price = other_position.entry_price
+        self.exit_price = other_position.exit_price
         self.mark_price = other_position.mark_price
         self.liquidation_price = other_position.liquidation_price
         self.fee_to_close = other_position.fee_to_close

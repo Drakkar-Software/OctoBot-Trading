@@ -38,6 +38,7 @@ cdef class Position(util.Initializable):
     cdef public positions_states.PositionState state
 
     cdef public object entry_price
+    cdef public object exit_price
     cdef public object mark_price
     cdef public object liquidation_price
     cdef public object quantity
@@ -50,6 +51,7 @@ cdef class Position(util.Initializable):
     cdef public object fee_to_close
 
     cdef public double timestamp
+    cdef public double first_entry_time
     cdef public double creation_time
     cdef public double canceled_time
     cdef public double executed_time
@@ -79,7 +81,7 @@ cdef class Position(util.Initializable):
     cdef void _update_quantity_or_size_if_necessary(self)
     cdef void _update_quantity(self)
     cdef object _update_realized_pnl_from_order(self, object order)
-    cdef object _update_realized_pnl_from_size_update(self, object size_update, bint is_closing=*)
+    cdef object _update_realized_pnl_from_size_update(self, object size_update, bint is_closing=*, object order_price=*)
     cdef object _update_initial_margin(self)
     cdef object _calculates_size_update_from_filled_order(self, object order, object size_to_close)
     cdef bint _is_update_increasing_size(self, object size_update)
@@ -101,6 +103,7 @@ cdef class Position(util.Initializable):
     cpdef void update_value(self)
     cpdef object update_pnl(self)  # needs object to forward exceptions
     cpdef void update_average_entry_price(self, object update_size, object update_price)
+    cpdef void update_average_exit_price(self, object update_size, object update_price)
     cpdef object get_margin_from_size(self, object size)
     cpdef object get_size_from_margin(self, object margin)
     cpdef object get_initial_margin_rate(self)
