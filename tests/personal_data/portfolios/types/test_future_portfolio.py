@@ -77,9 +77,6 @@ async def test_update_future_portfolio_from_order(
     # create a new position from order
     await fill_market_order(market_buy)
 
-    # update position mark price
-    await _update_position_mark_price(exchange_manager_inst, buy_price, DEFAULT_FUTURE_SYMBOL)
-
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(900))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == 0
@@ -219,9 +216,6 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
 
     # create position from order
     await fill_market_order(market_buy)
-
-    # update position mark price
-    await _update_position_mark_price(exchange_manager_inst, buy_price, DEFAULT_FUTURE_SYMBOL)
 
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(400.0))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000.0))
@@ -366,7 +360,6 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
 
     await fill_market_order(market_sell)
-    await _update_position_mark_price(exchange_manager_inst, sell_price, DEFAULT_FUTURE_SYMBOL)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('714.616')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.616')
 
@@ -419,6 +412,7 @@ async def test_update_portfolio_data_from_orders_with_max_long_size_linear_contr
     # so we need to disable fees for this test
     with mock.patch.object(market_buy, "get_total_fees", mock.Mock(return_value=0)):
         await fill_market_order(market_buy)
+    # change market price to sell order price
     await _update_position_mark_price(exchange_manager_inst, sell_order_price, DEFAULT_FUTURE_SYMBOL)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == constants.ZERO
 
@@ -436,7 +430,6 @@ async def test_update_portfolio_data_from_orders_with_max_long_size_linear_contr
 
     # Close long position with gains
     await fill_market_order(market_sell)
-    await _update_position_mark_price(exchange_manager_inst, buy_order_price, DEFAULT_FUTURE_SYMBOL)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('3000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('3000')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
@@ -484,6 +477,8 @@ async def test_update_portfolio_data_from_orders_with_max_short_size_linear_cont
     # so we need to disable fees for this test
     with mock.patch.object(market_sell, "get_total_fees", mock.Mock(return_value=0)):
         await fill_market_order(market_sell)
+
+    # update market price with buy price
     await _update_position_mark_price(exchange_manager_inst, buy_order_price, DEFAULT_FUTURE_SYMBOL)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('500')
@@ -500,7 +495,6 @@ async def test_update_portfolio_data_from_orders_with_max_short_size_linear_cont
 
     # Close long position with gains
     await fill_market_order(market_buy)
-    await _update_position_mark_price(exchange_manager_inst, buy_order_price, DEFAULT_FUTURE_SYMBOL)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('500')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('500')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
@@ -546,7 +540,6 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
 
     # Open short position
     await fill_market_order(market_sell)
-    await _update_position_mark_price(exchange_manager_inst, sell_order_price, DEFAULT_FUTURE_SYMBOL)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('874.9')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('999.9')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
@@ -560,7 +553,6 @@ async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_
 
     # Close short position with loss
     await fill_market_order(market_buy)
-    await _update_position_mark_price(exchange_manager_inst, buy_order_price, DEFAULT_FUTURE_SYMBOL)
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('894.9')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('924.9')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
@@ -780,7 +772,7 @@ async def test_update_portfolio_data_with_fees(future_trader_simulator_with_defa
                        price=sell_order_price)
 
     if not os.getenv('CYTHON_IGNORE'):
-        with mock.patch.object(market_sell, "get_total_fees", mock.Mock(return_value=5)):
+        with mock.patch.object(market_sell, "get_total_fees", mock.Mock(return_value=5)) as get_total_fees_mock:
             portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('975.0')
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
@@ -789,8 +781,9 @@ async def test_update_portfolio_data_with_fees(future_trader_simulator_with_defa
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
 
             # fill order with fees
+            get_total_fees_mock.assert_not_called()
             await fill_market_order(market_sell)
-            await _update_position_mark_price(exchange_manager_inst, sell_order_price, DEFAULT_FUTURE_SYMBOL)
+            assert get_total_fees_mock.call_count == 2  # once at fill, once to update position size
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('970.0')
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('995')
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
