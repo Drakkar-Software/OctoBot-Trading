@@ -152,19 +152,3 @@ class InversePosition(position_class.Position):
             """
             Nothing to do
             """
-
-    def update_average_exit_price(self, update_size, update_price):
-        """
-        Average exit price = total contract value in market / total quantity of contracts
-        Total contract value in market = [(Current position quantity * Current position exit price)
-                                          + (Update quantity * Update price)]
-        """
-        total_contract_value = self.size + update_size
-        if self.exit_price == constants.ZERO:
-            self.exit_price = update_price
-        else:
-            self.exit_price = ((self.size * self.exit_price + update_size * update_price) /
-                               (total_contract_value if total_contract_value != constants.ZERO else constants.ONE))
-        if self.exit_price < constants.ZERO:
-            self.exit_price = constants.ZERO
-
