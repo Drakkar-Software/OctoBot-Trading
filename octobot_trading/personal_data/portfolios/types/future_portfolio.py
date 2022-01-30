@@ -18,7 +18,6 @@ import decimal
 import octobot_trading.personal_data.portfolios.assets.future_asset as future_asset
 import octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 import octobot_trading.constants as constants
-import octobot_trading.errors as errors
 
 
 class FuturePortfolio(portfolio_class.Portfolio):
