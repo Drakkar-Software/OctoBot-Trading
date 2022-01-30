@@ -426,6 +426,7 @@ class Position(util.Initializable):
                                                                 self.side,
                                                                 realised_pnl=realised_pnl_update,
                                                                 is_closed_pnl=is_closing,
+                                                                cumulated_closed_quantity=self.already_reduced_size,
                                                                 closed_quantity=size_update,
                                                                 first_entry_time=self.first_entry_time,
                                                                 average_entry_price=self.entry_price,

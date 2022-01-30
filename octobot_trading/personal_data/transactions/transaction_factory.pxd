@@ -34,6 +34,7 @@ cpdef transaction_types.RealisedPnlTransaction create_realised_pnl_transaction(o
                                                                                object realised_pnl=*,
                                                                                bint is_closed_pnl=*,
                                                                                object closed_quantity=*,
+                                                                               object cumulated_closed_quantity=*,
                                                                                double first_entry_time=*,
                                                                                object average_entry_price=*,
                                                                                object average_exit_price=*,

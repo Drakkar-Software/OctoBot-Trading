@@ -20,6 +20,7 @@ cimport octobot_trading.personal_data.transactions.transaction as transaction
 cdef class RealisedPnlTransaction(transaction.Transaction):
     cdef readonly object realised_pnl
     cdef readonly object closed_quantity
+    cdef readonly object cumulated_closed_quantity
     cdef readonly double first_entry_time
     cdef readonly object average_entry_price
     cdef readonly object average_exit_price

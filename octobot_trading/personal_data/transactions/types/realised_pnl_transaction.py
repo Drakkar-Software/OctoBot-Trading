@@ -21,10 +21,11 @@ import octobot_trading.personal_data.transactions.transaction as transaction
 
 class RealisedPnlTransaction(transaction.Transaction):
     def __init__(self, exchange_name, creation_time, transaction_type, currency, symbol, realised_pnl, closed_quantity,
-                 first_entry_time, average_entry_price, average_exit_price, order_exit_price, leverage, side):
+                 cumulated_closed_quantity, first_entry_time, average_entry_price, average_exit_price, order_exit_price, leverage, side):
         super().__init__(exchange_name, creation_time, transaction_type, currency, symbol=symbol)
         self.realised_pnl = realised_pnl
         self.closed_quantity = closed_quantity
+        self.cumulated_closed_quantity = cumulated_closed_quantity
         self.first_entry_time = first_entry_time
         self.average_entry_price = average_entry_price
         self.average_exit_price = average_exit_price

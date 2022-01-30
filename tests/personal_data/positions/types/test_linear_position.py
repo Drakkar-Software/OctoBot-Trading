@@ -488,7 +488,7 @@ async def test_update_average_entry_price_decreased_short(future_trader_simulato
     assert position_inst.entry_price == decimal.Decimal("2733.582766439857403174603174")
 
 
-async def test_update_average_exit_price_long(future_trader_simulator_with_default_linear):
+async def test_update_average_exit_price_and_transactions_long(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
@@ -508,6 +508,9 @@ async def test_update_average_exit_price_long(future_trader_simulator_with_defau
     # size did not reduce, exit price is still not set
     assert position_inst.already_reduced_size == constants.ZERO
     assert position_inst.exit_price == constants.ZERO
+    # no created transaction
+    # since we don't use the filled order workflow, market_buy fees are ignored, no fee transaction is created
+    assert get_latest_transaction(exchange_manager_inst) is None
 
     # decrease position
     market_sell = personal_data.SellMarketOrder(trader_inst)
@@ -516,6 +519,7 @@ async def test_update_average_exit_price_long(future_trader_simulator_with_defau
                        quantity_filled=decimal.Decimal(str(5)),
                        filled_price=decimal.Decimal(str(35)))
     position_inst.update_from_order(market_sell)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-5"), decimal.Decimal("-5"))
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("-5")
@@ -529,6 +533,7 @@ async def test_update_average_exit_price_long(future_trader_simulator_with_defau
                        quantity_filled=decimal.Decimal(str(8)),
                        filled_price=decimal.Decimal(str(50)))
     position_inst.update_from_order(market_sell)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-8"), decimal.Decimal("-13"))
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("-13")
@@ -546,6 +551,8 @@ async def test_update_average_exit_price_long(future_trader_simulator_with_defau
     # size did not reduce, exit price is still 44.23076923076923076923076923
     assert position_inst.already_reduced_size == decimal.Decimal("-13")
     assert position_inst.exit_price == decimal.Decimal("44.23076923076923076923076923")
+    # same transaction as before
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-8"), decimal.Decimal("-13"))
 
     # decrease position again
     market_sell = personal_data.SellMarketOrder(trader_inst)
@@ -554,6 +561,7 @@ async def test_update_average_exit_price_long(future_trader_simulator_with_defau
                        quantity_filled=decimal.Decimal(str(6)),
                        filled_price=decimal.Decimal(str(80)))
     position_inst.update_from_order(market_sell)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-6"), decimal.Decimal("-19"))
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("-19")
@@ -562,6 +570,7 @@ async def test_update_average_exit_price_long(future_trader_simulator_with_defau
 
     # liquidate remaining 1 contract, also updates average exit price
     await position_inst.update(mark_price=decimal.Decimal("0.5"))
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-1"), decimal.Decimal("-20"))
 
     # position is closed, exit_price and already_reduced_size are reset
     assert position_inst.already_reduced_size == constants.ZERO
@@ -569,11 +578,10 @@ async def test_update_average_exit_price_long(future_trader_simulator_with_defau
 
     # latest transaction contains the average last exit price
     # contracts sold at 5 35 + 8 at 50 + 6 at 80 + 1 at 0.5: average is 52.8
-    transactions = exchange_manager_inst.exchange_personal_data.transactions_manager.transactions
-    assert list(transactions.values())[-1].average_exit_price == decimal.Decimal("52.775")
+    assert get_latest_transaction(exchange_manager_inst).average_exit_price == decimal.Decimal("52.775")
 
 
-async def test_update_average_exit_price_short(future_trader_simulator_with_default_linear):
+async def test_update_average_exit_price_and_transactions_short(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
@@ -589,6 +597,9 @@ async def test_update_average_exit_price_short(future_trader_simulator_with_defa
                        quantity_filled=decimal.Decimal(str(5)),
                        filled_price=decimal.Decimal(str(25)))
     position_inst.update_from_order(market_sell)
+    # no created transaction
+    # since we don't use the filled order workflow, market_buy fees are ignored, no fee transaction is created
+    assert get_latest_transaction(exchange_manager_inst) is None
 
     # size did not reduce, exit price is still not set
     assert position_inst.already_reduced_size == constants.ZERO
@@ -601,6 +612,7 @@ async def test_update_average_exit_price_short(future_trader_simulator_with_defa
                       quantity_filled=decimal.Decimal(str(5)),
                       filled_price=decimal.Decimal(str(20)))
     position_inst.update_from_order(market_buy)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("5"), decimal.Decimal("5"))
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("5")
@@ -614,6 +626,7 @@ async def test_update_average_exit_price_short(future_trader_simulator_with_defa
                       quantity_filled=decimal.Decimal(str(8)),
                       filled_price=decimal.Decimal(str(18)))
     position_inst.update_from_order(market_buy)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("8"), decimal.Decimal("13"))
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("13")
@@ -627,6 +640,8 @@ async def test_update_average_exit_price_short(future_trader_simulator_with_defa
                        quantity_filled=decimal.Decimal(str(5)),
                        filled_price=decimal.Decimal(str(19)))
     position_inst.update_from_order(market_sell)
+    # same transaction as before
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("8"), decimal.Decimal("13"))
 
     # size did not reduce, exit price is still 44.23076923076923076923076923
     assert position_inst.already_reduced_size == decimal.Decimal("13")
@@ -639,6 +654,7 @@ async def test_update_average_exit_price_short(future_trader_simulator_with_defa
                       quantity_filled=decimal.Decimal(str(6)),
                       filled_price=decimal.Decimal(str(17)))
     position_inst.update_from_order(market_buy)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("6"), decimal.Decimal("19"))
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("19")
@@ -647,6 +663,7 @@ async def test_update_average_exit_price_short(future_trader_simulator_with_defa
 
     # liquidate remaining 1 contract, also updates average exit price
     await position_inst.update(mark_price=decimal.Decimal("50"))
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("1"), decimal.Decimal("20"))
 
     # position is closed, exit_price and already_reduced_size are reset
     assert position_inst.already_reduced_size == constants.ZERO
@@ -654,5 +671,15 @@ async def test_update_average_exit_price_short(future_trader_simulator_with_defa
 
     # latest transaction contains the average last exit price
     # contracts sold at 5 35 + 8 at 50 + 6 at 80 + 1 at 50: average is 19.8
-    transactions = exchange_manager_inst.exchange_personal_data.transactions_manager.transactions
-    assert list(transactions.values())[-1].average_exit_price == decimal.Decimal("19.8")
+    assert get_latest_transaction(exchange_manager_inst).average_exit_price == decimal.Decimal("19.8")
+
+
+def check_created_transaction(exchange_manager, closed_quantity, cumulated_closed_quantity):
+    transaction = get_latest_transaction(exchange_manager)
+    assert transaction.closed_quantity == closed_quantity
+    assert transaction.cumulated_closed_quantity == cumulated_closed_quantity
+
+
+def get_latest_transaction(exchange_manager):
+    transactions = exchange_manager.exchange_personal_data.transactions_manager.transactions
+    return list(transactions.values())[-1] if transactions else None
