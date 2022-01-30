@@ -43,6 +43,8 @@ async def store_orders(ctx, orders,
             "side": order.side.value,
             "mode": mode,
             "color": "red" if order.side is trading_enums.TradeOrderSide.SELL else "blue",
+            "size": "10",
+            "shape": "arrow-bar-left" if order.side is trading_enums.TradeOrderSide.SELL else "arrow-bar-right"
         }
         for order in orders
     ]
@@ -55,9 +57,47 @@ async def store_trade(ctx,
                       x_multiplier=1000,
                       kind="scattergl",
                       mode="markers",
+                      exchange_manager=None,
                       writer=None):
+    exchange_manager = exchange_manager or ctx.exchange_manager
     tag = f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TAG.value]} " \
         if trade_dict[trading_enums.ExchangeConstantsOrderColumns.TAG.value] else ""
+    symbol = trade_dict[trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value]
+    trade_side = trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value]
+    if exchange_manager.is_future:
+        positions = exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions(symbol=symbol)
+        trading_side = next(iter(positions)).side
+        if trading_side is trading_enums.PositionSide.LONG:
+            if trade_side == trading_enums.TradeOrderSide.BUY.value:
+                color = "blue"
+                shape = "arrow-bar-right"
+            elif "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
+                color = "orange"
+                shape = "x"
+            else:
+                color = "magenta"
+                shape = "arrow-bar-left"
+        else:
+            if trade_side == trading_enums.TradeOrderSide.BUY.value:
+                color = "red"
+                shape = "arrow-bar-right"
+            elif "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
+                color = "orange"
+                shape = "x"
+            else:
+                color = "magenta"
+                shape = "arrow-bar-left"
+    else:
+        if trade_side == trading_enums.TradeOrderSide.BUY.value:
+            color = "blue"
+            shape = "arrow-bar-right"
+        elif "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
+            color = "orange"
+            shape = "x"
+        else:
+            color = "magenta"
+            shape = "arrow-bar-left"
+
     trade_data = {
         "x": trade_dict[trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] * x_multiplier,
         "text": f"{tag}{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]} "
@@ -75,8 +115,9 @@ async def store_trade(ctx,
         "kind": kind,
         "side": trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value],
         "mode": mode,
-        "color": "red" if trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value] ==
-        trading_enums.TradeOrderSide.SELL.value else "blue",
+        "shape": shape,
+        "color": color,
+        "size": "10",
         "fees_amount": float(trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value]
                              [trading_enums.ExchangeConstantsFeesColumns.COST.value] if
                              trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value] else 0),
@@ -84,7 +125,6 @@ async def store_trade(ctx,
             trading_enums.ExchangeConstantsFeesColumns.CURRENCY.value]
             if trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value] else "",
     }
-    writer = writer or ctx.trades_writer
     await writer.log(trading_enums.DBTables.TRADES.value, trade_data)
 
 
@@ -109,6 +149,19 @@ async def store_transactions(ctx,
             "funding_rate": float(transaction.funding_rate) if hasattr(transaction, "funding_rate") else None,
             "realised_pnl": float(transaction.realised_pnl) if hasattr(transaction, "realised_pnl") else None,
             "transaction_fee": transaction.realised_pnl if hasattr(transaction, "transaction_fee") else None,
+            "closed_quantity": float(transaction.closed_quantity) if hasattr(transaction, "closed_quantity") else None,
+            "cumulated_closed_quantity": float(transaction.cumulated_closed_quantity)
+            if hasattr(transaction, "cumulated_closed_quantity") else None,
+            "first_entry_time": float(transaction.first_entry_time) * x_multiplier
+            if hasattr(transaction, "first_entry_time") else None,
+            "average_entry_price": float(transaction.average_entry_price)
+            if hasattr(transaction, "average_entry_price") else None,
+            "average_exit_price": float(transaction.average_exit_price)
+            if hasattr(transaction, "average_exit_price") else None,
+            "order_exit_price": float(transaction.order_exit_price)
+            if hasattr(transaction, "order_exit_price") else None,
+            "leverage": float(transaction.leverage) if hasattr(transaction, "leverage") else None,
+            "side": transaction.side.value if hasattr(transaction, "side") else None,
             "y": y_data[index],
             "chart": chart,
             "kind": kind,
