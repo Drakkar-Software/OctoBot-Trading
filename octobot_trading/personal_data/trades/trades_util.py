@@ -15,21 +15,36 @@
 #  License along with this library.
 import octobot_trading.enums as trading_enums
 import octobot_trading.constants as constants
+import octobot_trading.personal_data as personal_data
+
+
+_LOSING_ORDER_TYPES = [
+    trading_enums.TradeOrderType.STOP_LOSS,
+    trading_enums.TradeOrderType.STOP_LOSS_LIMIT,
+]
 
 
 def compute_win_rate(exchange_manager):
-    losing_order_types = [
-        trading_enums.TradeOrderType.STOP_LOSS,
-        trading_enums.TradeOrderType.STOP_LOSS_LIMIT,
-    ]
     lost_trades_count = constants.ZERO
     won_trades_count = constants.ZERO
-    for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values():
-        if trade.status is trading_enums.OrderStatus.FILLED and trade.side is trading_enums.TradeOrderSide.SELL:
-            if trade.exchange_trade_type in losing_order_types:
-                lost_trades_count += constants.ONE
-            else:
-                won_trades_count += constants.ONE
+    if exchange_manager.is_future:
+        for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
+            if isinstance(transaction, personal_data.RealisedPnlTransaction) and transaction.is_closed_pnl():
+                if (transaction.side is trading_enums.PositionSide.SHORT and
+                        transaction.average_entry_price > transaction.average_exit_price) or (
+                    transaction.side is trading_enums.PositionSide.LONG and
+                        transaction.average_entry_price < transaction.average_exit_price
+                ):
+                    won_trades_count += constants.ONE
+                else:
+                    lost_trades_count += constants.ONE
+    else:
+        for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values():
+            if trade.status is trading_enums.OrderStatus.FILLED and trade.side is trading_enums.TradeOrderSide.SELL:
+                if trade.exchange_trade_type in _LOSING_ORDER_TYPES:
+                    lost_trades_count += constants.ONE
+                else:
+                    won_trades_count += constants.ONE
     total_counted_trades = won_trades_count + lost_trades_count
     if total_counted_trades > constants.ZERO:
         return won_trades_count / total_counted_trades

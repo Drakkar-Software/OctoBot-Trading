@@ -103,7 +103,8 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             old_trade: bool,
     ):
         if trade[trading_enums.ExchangeConstantsOrderColumns.STATUS.value] != trading_enums.OrderStatus.CANCELED.value:
-            await basic_keywords.store_trade(None, trade, writer=self.producers[0].trades_writer)
+            await basic_keywords.store_trade(None, trade, exchange_manager=self.exchange_manager,
+                                             writer=self.producers[0].trades_writer)
 
     async def _user_commands_callback(self, bot_id, subject, action, data) -> None:
         self.logger.debug(f"Received {action} command.")
