@@ -97,19 +97,6 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
-    async def handle_portfolio_update_from_position(self, position,
-                                                    require_exchange_update: bool = True,
-                                                    should_notify: bool = True) -> bool:
-        try:
-            changed: bool = await self.portfolio_manager.handle_balance_update_from_position(
-                position=position, require_exchange_update=require_exchange_update)
-            if should_notify:
-                await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
-            return changed
-        except AttributeError as e:
-            self.logger.exception(e, True, f"Failed to update balance : {e}")
-            return False
-
     async def handle_portfolio_update_from_funding(self, position, funding_rate,
                                                    require_exchange_update: bool = True,
                                                    should_notify: bool = True) -> bool:
