@@ -25,6 +25,7 @@ import octobot_trading.errors as errors
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
+from tests.personal_data import check_created_transaction, get_latest_transaction
 from tests.exchanges.traders import future_trader_simulator_with_default_linear, \
     DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE
 from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
@@ -537,7 +538,7 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("-13")
-    # contracts sold at 5 35 and 8 at 50: average is 44.23076923076923076923076923
+    # 5 contracts sold at 35 and 8 at 50: average is 44.23076923076923076923076923
     assert position_inst.exit_price == decimal.Decimal("44.23076923076923076923076923")
 
     # increase position again
@@ -565,7 +566,7 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("-19")
-    # contracts sold at 5 35 + 8 at 50 + 6 at 80: average is 55.52631578947368421052631579
+    # 5 contracts sold at 35 + 8 at 50 + 6 at 80: average is 55.52631578947368421052631579
     assert position_inst.exit_price == decimal.Decimal("55.52631578947368421052631579")
 
     # liquidate remaining 1 contract, also updates average exit price
@@ -577,7 +578,7 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
     assert position_inst.exit_price == constants.ZERO
 
     # latest transaction contains the average last exit price
-    # contracts sold at 5 35 + 8 at 50 + 6 at 80 + 1 at 0.5: average is 52.8
+    # 5 contracts sold at 35 + 8 at 50 + 6 at 80 + 1 at 0.5: average is 52.8
     assert get_latest_transaction(exchange_manager_inst).average_exit_price == decimal.Decimal("52.775")
 
 
@@ -630,7 +631,7 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("13")
-    # contracts sold at 5 20 and 8 at 18: average is 18.76923076923076923076923077
+    # 5 contracts sold at 20 and 8 at 18: average is 18.76923076923076923076923077
     assert position_inst.exit_price == decimal.Decimal("18.76923076923076923076923077")
 
     # increase position again
@@ -658,7 +659,7 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
 
     # size reduced, exit price is updated
     assert position_inst.already_reduced_size == decimal.Decimal("19")
-    # contracts sold at 5 20 + 8 at 18 + 6 at 17: average is 18.21052631578947368421052632
+    # 5 contracts sold at 20 + 8 at 18 + 6 at 17: average is 18.21052631578947368421052632
     assert position_inst.exit_price == decimal.Decimal("18.21052631578947368421052632")
 
     # liquidate remaining 1 contract, also updates average exit price
@@ -670,16 +671,5 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
     assert position_inst.exit_price == constants.ZERO
 
     # latest transaction contains the average last exit price
-    # contracts sold at 5 35 + 8 at 50 + 6 at 80 + 1 at 50: average is 19.8
+    # 5 contracts sold at 35 + 8 at 50 + 6 at 80 + 1 at 50: average is 19.8
     assert get_latest_transaction(exchange_manager_inst).average_exit_price == decimal.Decimal("19.8")
-
-
-def check_created_transaction(exchange_manager, closed_quantity, cumulated_closed_quantity):
-    transaction = get_latest_transaction(exchange_manager)
-    assert transaction.closed_quantity == closed_quantity
-    assert transaction.cumulated_closed_quantity == cumulated_closed_quantity
-
-
-def get_latest_transaction(exchange_manager):
-    transactions = exchange_manager.exchange_personal_data.transactions_manager.transactions
-    return list(transactions.values())[-1] if transactions else None
