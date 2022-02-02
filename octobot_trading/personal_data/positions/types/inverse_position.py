@@ -29,12 +29,12 @@ class InversePosition(position_class.Position):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.value = constants.ZERO
 
-    def get_unrealised_pnl(self, price):
+    def get_unrealized_pnl(self, price):
         """
         LONG_PNL = CONTRACT_QUANTITY x [(1 / ENTRY_PRICE) - (1 / MARK_PRICE)]
         SHORT_PNL = CONTRACT_QUANTITY x [(1 / MARK_PRICE) - (1 / ENTRY_PRICE)]
         :param price: the pnl calculation price
-        :return: the unrealised pnl
+        :return: the unrealized pnl
         """
         # ensure update validity
         if price <= constants.ZERO or self.entry_price <= constants.ZERO:

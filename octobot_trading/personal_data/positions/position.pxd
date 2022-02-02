@@ -47,7 +47,7 @@ cdef class Position(util.Initializable):
     cdef public object value
     cdef public object margin
     cdef public object initial_margin
-    cdef public object unrealised_pnl
+    cdef public object unrealized_pnl
     cdef public object realised_pnl
     cdef public object fee_to_close
 
@@ -69,7 +69,7 @@ cdef class Position(util.Initializable):
                       object size,
                       object value,
                       object initial_margin,
-                      object unrealised_pnl,
+                      object unrealized_pnl,
                       object realised_pnl,
                       object fee_to_close,
                       object status=*,
@@ -129,7 +129,7 @@ cdef class Position(util.Initializable):
     cpdef bint is_short(self)
     cpdef bint is_idle(self)
     cpdef object get_quantity_to_close(self)
-    cpdef object get_unrealised_pnl_percent(self)
+    cpdef object get_unrealized_pnl_percent(self)
     cpdef object on_pnl_update(self)  # needs object to forward exceptions
     cpdef str to_string(self)
     cpdef dict to_dict(self)

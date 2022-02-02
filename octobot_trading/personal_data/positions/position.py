@@ -65,7 +65,7 @@ class Position(util.Initializable):
         self.margin = constants.ZERO
 
         # PNL
-        self.unrealised_pnl = constants.ZERO
+        self.unrealized_pnl = constants.ZERO
         self.realised_pnl = constants.ZERO
 
         # original position attributes
@@ -117,7 +117,7 @@ class Position(util.Initializable):
     def _update(self, position_id, symbol, currency, market, timestamp,
                 entry_price, mark_price, liquidation_price,
                 quantity, size, value, initial_margin,
-                unrealised_pnl, realised_pnl, fee_to_close,
+                unrealized_pnl, realised_pnl, fee_to_close,
                 status=None, side=None):
         changed: bool = False
 
@@ -154,8 +154,8 @@ class Position(util.Initializable):
             self._update_margin()
             changed = True
 
-        if self._should_change(self.unrealised_pnl, unrealised_pnl):
-            self.unrealised_pnl = unrealised_pnl
+        if self._should_change(self.unrealized_pnl, unrealized_pnl):
+            self.unrealized_pnl = unrealized_pnl
             changed = True
 
         if self._should_change(self.realised_pnl, realised_pnl):
@@ -228,9 +228,9 @@ class Position(util.Initializable):
         Update portfolio and position from a liquidation
         """
         size_update = self.get_quantity_to_close()
-        self.unrealised_pnl = -self.initial_margin
+        self.unrealized_pnl = -self.initial_margin
         realised_pnl_update = self._update_realized_pnl_from_size_update(size_update, is_closing=True)
-        self._on_size_update(size_update, realised_pnl_update, self.unrealised_pnl, False)
+        self._on_size_update(size_update, realised_pnl_update, self.unrealized_pnl, False)
         await self.close()
 
     def _update_mark_price(self, mark_price):
@@ -415,7 +415,7 @@ class Position(util.Initializable):
         :param is_closing: True when the position will be closed after size update
         """
         try:
-            realised_pnl_update = -size_update / self.size * self.unrealised_pnl
+            realised_pnl_update = -size_update / self.size * self.unrealized_pnl
             transaction_factory.create_realised_pnl_transaction(self.exchange_manager,
                                                                 self.get_currency(),
                                                                 self.symbol,
@@ -470,10 +470,10 @@ class Position(util.Initializable):
         Update position unrealised pnl
         """
         try:
-            self.unrealised_pnl = self.get_unrealised_pnl(self.mark_price)
+            self.unrealized_pnl = self.get_unrealized_pnl(self.mark_price)
             self.on_pnl_update()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
-            self.unrealised_pnl = constants.ZERO
+            self.unrealized_pnl = constants.ZERO
 
     def _update_exit_data(self, size_update, price):
         """
@@ -485,8 +485,8 @@ class Position(util.Initializable):
             self.exit_price = constants.ZERO
         self.already_reduced_size += size_update
 
-    def get_unrealised_pnl(self, price):
-        raise NotImplementedError("get_unrealised_pnl not implemented")
+    def get_unrealized_pnl(self, price):
+        raise NotImplementedError("get_unrealized_pnl not implemented")
 
     def get_margin_from_size(self, size):
         raise NotImplementedError("get_margin_from_size not implemented")
@@ -623,12 +623,12 @@ class Position(util.Initializable):
         """
         return -self.size
 
-    def get_unrealised_pnl_percent(self):
+    def get_unrealized_pnl_percent(self):
         """
         :return: Unrealized P&L% = [ Position's unrealized P&L / Position Margin ] x 100%
         """
         try:
-            return (self.unrealised_pnl / self.margin) * constants.ONE_HUNDRED
+            return (self.unrealized_pnl / self.margin) * constants.ONE_HUNDRED
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
@@ -686,7 +686,7 @@ class Position(util.Initializable):
                                             constants.ZERO),
             position_id=str(raw_position.get(enums.ExchangeConstantsPositionColumns.ID.value, symbol)),
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
-            unrealised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value,
+            unrealized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value,
                                             constants.ZERO),
             realised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO),
             fee_to_close=raw_position.get(enums.ExchangeConstantsPositionColumns.CLOSING_FEE.value, constants.ZERO),
@@ -709,7 +709,7 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value: self.entry_price,
             enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
             enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
-            enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value: self.unrealised_pnl,
+            enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value: self.unrealized_pnl,
             enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
         }
 
@@ -770,8 +770,8 @@ class Position(util.Initializable):
                 f"Mark price : {round(self.mark_price, 10).normalize()} | "
                 f"Entry price : {round(self.entry_price, 10).normalize()} | "
                 f"Margin : {round(self.margin, 10).normalize()} {currency} | "
-                f"Unrealised PNL : {round(self.unrealised_pnl, 14).normalize()} {currency} "
-                f"({round(self.get_unrealised_pnl_percent(), 3)}%) | "
+                f"Unrealized PNL : {round(self.unrealized_pnl, 14).normalize()} {currency} "
+                f"({round(self.get_unrealized_pnl_percent(), 3)}%) | "
                 f"Liquidation price : {round(self.liquidation_price, 10).normalize()} | "
                 f"Realised PNL : {round(self.realised_pnl, 14).normalize()} {currency} "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} "
@@ -797,7 +797,7 @@ class Position(util.Initializable):
         self.fee_to_close = constants.ZERO
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
-        self.unrealised_pnl = constants.ZERO
+        self.unrealized_pnl = constants.ZERO
         self.realised_pnl = constants.ZERO
         self.creation_time = 0
         self.on_pnl_update()  # notify portfolio to reset unrealized PNL
@@ -829,7 +829,7 @@ class Position(util.Initializable):
         self.value = other_position.value
         self.initial_margin = other_position.initial_margin
         self.margin = other_position.margin
-        self.unrealised_pnl = other_position.unrealised_pnl
+        self.unrealized_pnl = other_position.unrealized_pnl
         self.realised_pnl = other_position.realised_pnl
 
     @contextlib.contextmanager

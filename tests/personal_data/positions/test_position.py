@@ -1141,7 +1141,7 @@ async def test__update_realized_pnl_from_size_update_long(btc_usdt_future_trader
     # reduce size by 20% --> 0.2
     await position_inst.update(-position_size * decimal.Decimal(0.2))  # = 0.2
     # = position_size / decimal.Decimal(2) * decimal.Decimal(0.8)
-    assert position_inst.unrealised_pnl == decimal.Decimal('3.999999999999999944488848768')
+    assert position_inst.unrealized_pnl == decimal.Decimal('3.999999999999999944488848768')
     # = position_size / decimal.Decimal(2) * decimal.Decimal(0.2)
     assert position_inst.realised_pnl == decimal.Decimal('1.000000000000000055511151232')
 
@@ -1154,7 +1154,7 @@ async def test__update_realized_pnl_from_size_update_long(btc_usdt_future_trader
     # reduce size by 50% --> 0.5
     await position_inst.update(-position_size * decimal.Decimal(0.5))
     # = position_size / decimal.Decimal(4) * decimal.Decimal(0.5)
-    assert position_inst.unrealised_pnl == decimal.Decimal('1.999999999999999944488848768')
+    assert position_inst.unrealized_pnl == decimal.Decimal('1.999999999999999944488848768')
     # = position_size / decimal.Decimal(4) * decimal.Decimal(0.5) + previous realised pnl
     assert position_inst.realised_pnl == decimal.Decimal('3.000000000000000055511151232')
 
@@ -1187,7 +1187,7 @@ async def test__update_realized_pnl_from_size_update_short(btc_usdt_future_trade
 
     # reduce size by 30% --> 0.3
     await position_inst.update(position_size * decimal.Decimal(0.3))  # = 0.3
-    assert position_inst.unrealised_pnl == decimal.Decimal('35.00000000000000055511151232')
+    assert position_inst.unrealized_pnl == decimal.Decimal('35.00000000000000055511151232')
     assert position_inst.realised_pnl == decimal.Decimal('14.99999999999999944488848768')
 
     assert len(tm.transactions) == 1
@@ -1198,7 +1198,7 @@ async def test__update_realized_pnl_from_size_update_short(btc_usdt_future_trade
 
     # reduce size by 40% --> 0.4
     await position_inst.update(position_size * decimal.Decimal(0.4))
-    assert position_inst.unrealised_pnl == decimal.Decimal('20.99999999999999977795539508')
+    assert position_inst.unrealized_pnl == decimal.Decimal('20.99999999999999977795539508')
     assert position_inst.realised_pnl == decimal.Decimal('29.00000000000000022204460492')
 
     assert len(tm.transactions) == 2
