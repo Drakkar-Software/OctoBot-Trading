@@ -23,6 +23,7 @@ import octobot_trading.enums as enums
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
+from tests.personal_data import check_created_transaction, get_latest_transaction
 from tests.exchanges.traders import future_trader_simulator_with_default_inverse, \
     DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE
 from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
@@ -237,35 +238,32 @@ async def test_get_order_cost(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_order_cost() == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_order_cost() == decimal.Decimal("1.003")
+    assert position_inst.get_order_cost() == decimal.Decimal("1.000012")
 
 
 async def test_get_fee_to_open(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_fee_to_open() == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_fee_to_open() == decimal.Decimal("0.001")
+    assert position_inst.get_fee_to_open() == decimal.Decimal("0.000004")
 
 
 async def test_update_fee_to_close(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
-    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
     position_inst.update_fee_to_close()
     assert position_inst.fee_to_close == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_fee_to_close()
-    assert position_inst.fee_to_close == decimal.Decimal("0.002")
+    assert position_inst.fee_to_close == decimal.Decimal("0.000008")
 
 
 async def test_update_average_entry_price_increased_long(future_trader_simulator_with_default_inverse):
@@ -322,3 +320,193 @@ async def test_update_average_entry_price_decreased_short(future_trader_simulato
     assert position_inst.entry_price == decimal.Decimal("7.205574131005542714808248993")
     position_inst.update_average_entry_price(decimal.Decimal(2), decimal.Decimal("0.0000000025428"))
     assert position_inst.entry_price == constants.ZERO
+
+
+async def test_update_average_exit_price_and_transactions_long(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+
+    await position_inst.update(update_size=decimal.Decimal(10), mark_price=decimal.Decimal(10))
+    # size did not reduce, exit price is not set
+    assert position_inst.exit_price == constants.ZERO
+
+    # increase position
+    market_buy = personal_data.BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      quantity_filled=decimal.Decimal(str(5)),
+                      filled_price=decimal.Decimal(str(25)))
+    position_inst.update_from_order(market_buy)
+
+    # size did not reduce, exit price is still not set
+    assert position_inst.already_reduced_size == constants.ZERO
+    assert position_inst.exit_price == constants.ZERO
+    # no created transaction
+    # since we don't use the filled order workflow, market_buy fees are ignored, no fee transaction is created
+    assert get_latest_transaction(exchange_manager_inst) is None
+
+    # decrease position
+    market_sell = personal_data.SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       quantity_filled=decimal.Decimal(str(5)),
+                       filled_price=decimal.Decimal(str(35)))
+    position_inst.update_from_order(market_sell)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-5"), decimal.Decimal("-5"))
+
+    # size reduced, exit price is updated
+    assert position_inst.already_reduced_size == decimal.Decimal("-5")
+    # contracts sold at 35
+    assert position_inst.exit_price == decimal.Decimal(str(35))
+
+    # decrease position again
+    market_sell = personal_data.SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       quantity_filled=decimal.Decimal(str(8)),
+                       filled_price=decimal.Decimal(str(50)))
+    position_inst.update_from_order(market_sell)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-8"), decimal.Decimal("-13"))
+
+    # size reduced, exit price is updated
+    assert position_inst.already_reduced_size == decimal.Decimal("-13")
+    # inverse position: average is average using contract value in BTC
+    # 5 contracts sold at 35 and 8 at 50: average is 42.92452830188679245283018867
+    assert position_inst.exit_price == decimal.Decimal("42.92452830188679245283018867")
+
+    # increase position again
+    market_buy = personal_data.BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      quantity_filled=decimal.Decimal(str(5)),
+                      filled_price=decimal.Decimal(str(75)))
+    position_inst.update_from_order(market_buy)
+
+    # size did not reduce, exit price is still 42.92452830188679245283018867
+    assert position_inst.already_reduced_size == decimal.Decimal("-13")
+    assert position_inst.exit_price == decimal.Decimal("42.92452830188679245283018867")
+    # same transaction as before
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-8"), decimal.Decimal("-13"))
+
+    # decrease position again
+    market_sell = personal_data.SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       quantity_filled=decimal.Decimal(str(6)),
+                       filled_price=decimal.Decimal(str(80)))
+    position_inst.update_from_order(market_sell)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-6"), decimal.Decimal("-19"))
+
+    # size reduced, exit price is updated
+    assert position_inst.already_reduced_size == decimal.Decimal("-19")
+    # 5 contracts sold at 35 + 8 at 50 + 6 at 80: average is 50.28355387523629489603024574
+    assert position_inst.exit_price == decimal.Decimal("50.28355387523629489603024574")
+
+    # liquidate remaining 1 contract, also updates average exit price
+    await position_inst.update(mark_price=decimal.Decimal("0.5"))
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("-1"), decimal.Decimal("-20"))
+
+    # position is closed, exit_price and already_reduced_size are reset
+    assert position_inst.already_reduced_size == constants.ZERO
+    assert position_inst.exit_price == constants.ZERO
+
+    # latest transaction contains the average last exit price
+    # 5 contracts sold at 35 + 8 at 50 + 6 at 80 + 1 at 0.5: average is 8.410934214478822469209972964
+    # TODO => seems weird but is logical when looking at the formula => this means the lower the price, the larger
+    #  its weight on the computation ?
+    assert get_latest_transaction(exchange_manager_inst).average_exit_price == decimal.Decimal("8.410934214478822469209972964")
+
+
+async def test_update_average_exit_price_and_transactions_short(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    position_inst = personal_data.InversePosition(trader_inst, default_contract)
+    position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
+
+    await position_inst.update(update_size=-decimal.Decimal(10), mark_price=decimal.Decimal(25))
+    # size did not reduce, exit price is not set
+    assert position_inst.exit_price == constants.ZERO
+
+    # increase position
+    market_sell = personal_data.SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       quantity_filled=decimal.Decimal(str(5)),
+                       filled_price=decimal.Decimal(str(25)))
+    position_inst.update_from_order(market_sell)
+    # no created transaction
+    # since we don't use the filled order workflow, market_buy fees are ignored, no fee transaction is created
+    assert get_latest_transaction(exchange_manager_inst) is None
+
+    # size did not reduce, exit price is still not set
+    assert position_inst.already_reduced_size == constants.ZERO
+    assert position_inst.exit_price == constants.ZERO
+
+    # decrease position
+    market_buy = personal_data.BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      quantity_filled=decimal.Decimal(str(5)),
+                      filled_price=decimal.Decimal(str(20)))
+    position_inst.update_from_order(market_buy)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("5"), decimal.Decimal("5"))
+
+    # size reduced, exit price is updated
+    assert position_inst.already_reduced_size == decimal.Decimal("5")
+    # contracts sold at 20
+    assert position_inst.exit_price == decimal.Decimal(str(20))
+
+    # decrease position again
+    market_buy = personal_data.BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      quantity_filled=decimal.Decimal(str(8)),
+                      filled_price=decimal.Decimal(str(18)))
+    position_inst.update_from_order(market_buy)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("8"), decimal.Decimal("13"))
+
+    # size reduced, exit price is updated
+    assert position_inst.already_reduced_size == decimal.Decimal("13")
+    # inverse position: average is average using contract value in BTC
+    # 5 contracts sold at 20 and 8 at 18: average is 18.72000000000000000000000000
+    assert position_inst.exit_price == decimal.Decimal("18.72000000000000000000000000")
+
+    # increase position again
+    market_sell = personal_data.SellMarketOrder(trader_inst)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       quantity_filled=decimal.Decimal(str(5)),
+                       filled_price=decimal.Decimal(str(19)))
+    position_inst.update_from_order(market_sell)
+    # same transaction as before
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("8"), decimal.Decimal("13"))
+
+    # size did not reduce, exit price is still 18.72000000000000000000000000
+    assert position_inst.already_reduced_size == decimal.Decimal("13")
+    assert position_inst.exit_price == decimal.Decimal("18.72000000000000000000000000")
+
+    # decrease position again
+    market_buy = personal_data.BuyMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      quantity_filled=decimal.Decimal(str(6)),
+                      filled_price=decimal.Decimal(str(17)))
+    position_inst.update_from_order(market_buy)
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("6"), decimal.Decimal("19"))
+
+    # size reduced, exit price is updated
+    assert position_inst.already_reduced_size == decimal.Decimal("19")
+    # 5 contracts sold at 20 + 8 at 18 + 6 at 17: average is 18.14040561622464898595943837
+    assert position_inst.exit_price == decimal.Decimal("18.14040561622464898595943837")
+
+    # liquidate remaining 1 contract, also updates average exit price
+    await position_inst.update(mark_price=decimal.Decimal("2050"))
+    check_created_transaction(exchange_manager_inst, decimal.Decimal("1"), decimal.Decimal("20"))
+
+    # position is closed, exit_price and already_reduced_size are reset
+    assert position_inst.already_reduced_size == constants.ZERO
+    assert position_inst.exit_price == constants.ZERO
+
+    # latest transaction contains the average last exit price
+    # 5 contracts sold at 35 + 8 at 50 + 6 at 80 + 1 at 2050: average is 19.08627464701953810180867781
+    assert get_latest_transaction(exchange_manager_inst).average_exit_price == decimal.Decimal("19.08627464701953810180867781")
