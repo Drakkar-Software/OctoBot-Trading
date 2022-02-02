@@ -26,12 +26,12 @@ class LinearPosition(position_class.Position):
         """
         self.value = self.size * self.mark_price
 
-    def get_unrealised_pnl(self, price):
+    def get_unrealized_pnl(self, price):
         """
         LONG_PNL = CONTRACT_QUANTITY x [MARK_PRICE - ENTRY_PRICE]
         SHORT_PNL = CONTRACT_QUANTITY x [ENTRY_PRICE - MARK_PRICE]
         :param price: the pnl calculation price
-        :return: the unrealised pnl
+        :return: the unrealized pnl
         """
         # ensure update validity
         if price <= constants.ZERO or self.entry_price <= constants.ZERO:

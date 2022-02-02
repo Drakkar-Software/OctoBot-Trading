@@ -138,7 +138,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
         if position.symbol_contract.is_isolated():
             self.get_currency_portfolio(
                 currency=position.currency if position.symbol_contract.is_inverse_contract() else position.market). \
-                set_unrealized_pnl(position.unrealised_pnl)
+                set_unrealized_pnl(position.unrealized_pnl)
 
     def _update_future_portfolio_data(self, currency,
                                       wallet_value=constants.ZERO,

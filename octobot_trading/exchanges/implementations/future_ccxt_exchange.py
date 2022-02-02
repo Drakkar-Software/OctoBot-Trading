@@ -229,7 +229,7 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
                 trading_enums.ExchangeConstantsPositionColumns.LEVERAGE.value:
                     decimal.Decimal(
                         f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.LEVERAGE.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.UNREALISED_PNL.value:
+                trading_enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value:
                     decimal.Decimal(
                         f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value, 0)}"),
                 trading_enums.ExchangeConstantsPositionColumns.REALISED_PNL.value:
