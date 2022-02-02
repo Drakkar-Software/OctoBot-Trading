@@ -17,3 +17,14 @@
 DEFAULT_ORDER_SYMBOL = "BTC/USDT"
 DEFAULT_SYMBOL_QUANTITY = 10
 DEFAULT_MARKET_QUANTITY = 1000
+
+
+def check_created_transaction(exchange_manager, closed_quantity, cumulated_closed_quantity):
+    transaction = get_latest_transaction(exchange_manager)
+    assert transaction.closed_quantity == closed_quantity
+    assert transaction.cumulated_closed_quantity == cumulated_closed_quantity
+
+
+def get_latest_transaction(exchange_manager):
+    transactions = exchange_manager.exchange_personal_data.transactions_manager.transactions
+    return list(transactions.values())[-1] if transactions else None

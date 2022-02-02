@@ -1215,7 +1215,6 @@ async def test__update_realized_pnl_from_size_update_short(btc_usdt_future_trade
 
 async def test_update_position_when_overliquidated_position_with_long_position_inverse_contract(
         btc_usdt_future_trader_simulator_with_default_inverse):
-    # todo
     config, exchange_manager_inst, trader_inst, default_contract, position_inst = btc_usdt_future_trader_simulator_with_default_inverse
     portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
     default_contract.set_current_leverage(decimal.Decimal(10))
