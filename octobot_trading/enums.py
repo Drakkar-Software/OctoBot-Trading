@@ -333,7 +333,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     MARK_PRICE = "mark_price"
     LIQUIDATION_PRICE = "liquidation_price"
     BANKRUPTCY_PRICE = "bankruptcy_price"
-    UNREALISED_PNL = "unrealised_pnl"
+    UNREALIZED_PNL = "unrealised_pnl"   # unrealised_pnl on Bybit api and unrealized_pnl on exchange UI
     REALISED_PNL = "realised_pnl"
     CLOSING_FEE = "closing_fee"
     QUANTITY = "quantity"
