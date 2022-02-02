@@ -297,8 +297,8 @@ class Position(util.Initializable):
         # Close position if order is closing position
         if order.close_position:
             # set position size to 0 to schedule position close at the next update
-            self._update_size(-self.size if self.is_long() else self.size, realised_pnl_update=realised_pnl_update)
-            return size_to_close, False
+            self._update_size(size_to_close, realised_pnl_update=realised_pnl_update)
+            return
 
         # Calculates position quantity update from order
         size_update = self._calculates_size_update_from_filled_order(order, size_to_close)
