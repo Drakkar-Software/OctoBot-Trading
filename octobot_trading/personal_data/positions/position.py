@@ -392,9 +392,9 @@ class Position(util.Initializable):
         margin_update = constants.ZERO
         is_update_increasing_position_size = self._is_update_increasing_size(size_update)
         if self._is_update_decreasing_size(size_update):
-            realised_pnl_update = self._update_realized_pnl_from_size_update(
+            realised_pnl_update += self._update_realized_pnl_from_size_update(
                 size_update, is_closing=self._is_update_closing(size_update),
-                update_price=self.mark_price, already_counted_realised_pnl_update=realised_pnl_update)
+                update_price=self.mark_price)
         self._check_and_update_size(size_update)
         self._update_quantity()
         self._update_side()
@@ -409,8 +409,7 @@ class Position(util.Initializable):
                              margin_update,
                              is_update_increasing_position_size)
 
-    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False, update_price=constants.ZERO,
-                                              already_counted_realised_pnl_update=constants.ZERO):
+    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False, update_price=constants.ZERO):
         """
         Updates the position realized pnl from update size
         :param size_update: the position update size
@@ -434,7 +433,7 @@ class Position(util.Initializable):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             realised_pnl_update = constants.ZERO
         self.realised_pnl += realised_pnl_update
-        return realised_pnl_update + already_counted_realised_pnl_update
+        return realised_pnl_update
 
     def _check_and_update_size(self, size_update):
         """
@@ -588,18 +587,6 @@ class Position(util.Initializable):
         """
         return self.get_fee_to_open(quantity=quantity, price=price) + \
             self.get_fee_to_close(quantity=quantity, price=price, side=side)
-
-    def get_max_order_quantity_for_price(self, available_quantity, price, side):
-        """
-        Returns the maximum order quantity for given total usable funds, price and side.
-        This amount is not the total usable funds as it also requires to keep the position's open order fees
-        as well as the position liquidation fees in portfolio.
-        :param available_quantity:
-        :param price:
-        :param side:
-        :return:
-        """
-        raise NotImplementedError("get_max_order_quantity_for_price not implemented")
 
     def get_two_way_taker_fee(self):
         """

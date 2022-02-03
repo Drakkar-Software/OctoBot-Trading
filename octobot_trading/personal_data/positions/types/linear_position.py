@@ -82,26 +82,6 @@ class LinearPosition(position_class.Position):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.liquidation_price = constants.ZERO
 
-    def get_max_order_quantity_for_price(self, available_quantity, price, side):
-        """
-        Returns the maximum order quantity in currency for given total usable funds, price and side.
-        This amount is not the total usable funds as it also requires to keep the position's open order fees
-        as well as the potential position liquidation fees in portfolio. Those fees are computed by
-        get_two_way_taker_fee_for_quantity_and_price
-        Note: this formula seems not to be 100% accurate based on Bybit UI comparison but is close enough to be
-        totally usable. See tests for differences
-        :param available_quantity:
-        :param price:
-        :param side:
-        :return:
-        """
-        return available_quantity / (
-            (
-                1 / self.symbol_contract.current_leverage +
-                self.get_two_way_taker_fee_for_quantity_and_price(constants.ONE, price, side) / price
-            ) * price
-        )
-
     def get_bankruptcy_price(self, with_mark_price=False, price=None, side=None):
         """
         :param with_mark_price: if price should be mark price instead of entry price

@@ -81,8 +81,7 @@ cdef class Position(util.Initializable):
     cdef void _update_quantity_or_size_if_necessary(self)
     cdef void _update_quantity(self)
     cdef object _update_realized_pnl_from_order(self, object order)
-    cdef object _update_realized_pnl_from_size_update(self, object size_update, bint is_closing=*,
-                                                      object update_price=*, object already_counted_realised_pnl_update=*)
+    cdef object _update_realized_pnl_from_size_update(self, object size_update, bint is_closing=*, object update_price=*)
     cdef object _update_initial_margin(self)
     cdef object _calculates_size_update_from_filled_order(self, object order, object size_to_close)
     cdef bint _is_update_increasing_size(self, object size_update)
@@ -119,7 +118,6 @@ cdef class Position(util.Initializable):
     cpdef object get_maker_fee(self)
     cpdef object get_taker_fee(self)
     cpdef object get_two_way_taker_fee_for_quantity_and_price(self, object quantity, object price, object side)
-    cpdef object get_max_order_quantity_for_price(self, object available_quantity, object price, object side)
     cpdef object get_two_way_taker_fee(self)
     cpdef object get_order_cost(self)
     cpdef object get_fee_to_open(self, object quantity=*, object price=*)
