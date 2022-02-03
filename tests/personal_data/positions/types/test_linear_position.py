@@ -27,7 +27,7 @@ from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
 from tests.personal_data import check_created_transaction, get_latest_transaction
 from tests.exchanges.traders import future_trader_simulator_with_default_linear, \
-    DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE
+    future_trader_simulator_with_default_inverse, DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE
 from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
 
 # All test coroutines will be treated as marked.
@@ -38,6 +38,12 @@ FORTY = decimal.Decimal(40)
 TWENTY_FOUR = decimal.Decimal(24)
 TWENTY_FIVE = decimal.Decimal(25)
 TWELVE_DOT_FIVE = decimal.Decimal('12.5')
+
+
+async def test_constructor(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    with pytest.raises(errors.InvalidPosition):
+        personal_data.LinearPosition(trader_inst, default_contract)
 
 
 async def test_update_value(future_trader_simulator_with_default_linear):
