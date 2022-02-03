@@ -292,12 +292,12 @@ class Position(util.Initializable):
         size_to_close = self.get_quantity_to_close()
 
         # Remove / add order fees from realized pnl
-        realised_pnl_update = self._update_realized_pnl_from_order(order)
+        realised_pnl_fees_update = self._update_realized_pnl_from_order(order)
 
         # Close position if order is closing position
         if order.close_position:
             # set position size to 0 to schedule position close at the next update
-            self._update_size(size_to_close, realised_pnl_update=realised_pnl_update)
+            self._update_size(size_to_close, realised_pnl_update=realised_pnl_fees_update)
             return
 
         # Calculates position quantity update from order
@@ -315,7 +315,7 @@ class Position(util.Initializable):
             self._update_exit_data(size_update, self.mark_price)
 
         # update size and realised pnl
-        self._update_size(size_update, realised_pnl_update=realised_pnl_update)
+        self._update_size(size_update, realised_pnl_update=realised_pnl_fees_update)
 
     def _update_realized_pnl_from_order(self, order):
         """
@@ -393,7 +393,8 @@ class Position(util.Initializable):
         is_update_increasing_position_size = self._is_update_increasing_size(size_update)
         if self._is_update_decreasing_size(size_update):
             realised_pnl_update = self._update_realized_pnl_from_size_update(
-                size_update, is_closing=self._is_update_closing(size_update), update_price=self.mark_price)
+                size_update, is_closing=self._is_update_closing(size_update),
+                update_price=self.mark_price, already_counted_realised_pnl_update=realised_pnl_update)
         self._check_and_update_size(size_update)
         self._update_quantity()
         self._update_side()
@@ -408,7 +409,8 @@ class Position(util.Initializable):
                              margin_update,
                              is_update_increasing_position_size)
 
-    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False, update_price=constants.ZERO):
+    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False, update_price=constants.ZERO,
+                                              already_counted_realised_pnl_update=constants.ZERO):
         """
         Updates the position realized pnl from update size
         :param size_update: the position update size
@@ -432,7 +434,7 @@ class Position(util.Initializable):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             realised_pnl_update = constants.ZERO
         self.realised_pnl += realised_pnl_update
-        return realised_pnl_update
+        return realised_pnl_update + already_counted_realised_pnl_update
 
     def _check_and_update_size(self, size_update):
         """
@@ -548,7 +550,7 @@ class Position(util.Initializable):
     def update_isolated_liquidation_price(self):
         raise NotImplementedError("update_isolated_liquidation_price not implemented")
 
-    def get_bankruptcy_price(self, with_mark_price=False):
+    def get_bankruptcy_price(self, with_mark_price=False, price=None, side=None):
         """
         The bankruptcy price refers to the price at which the initial margin of all positions is lost.
         :param with_mark_price: if price should be mark price instead of entry price
@@ -578,6 +580,27 @@ class Position(util.Initializable):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
+    def get_two_way_taker_fee_for_quantity_and_price(self, quantity, price, side):
+        """
+        # Fee to open = (Quantity of contracts * Order Price) x Taker fee
+        # Fee to close = (Quantity of contracts * Bankruptcy Price derived from Order Price) x Taker fee
+        :return: 2-way taker fee = fee to open + fee to close
+        """
+        return self.get_fee_to_open(quantity=quantity, price=price) + \
+            self.get_fee_to_close(quantity=quantity, price=price, side=side)
+
+    def get_max_order_quantity_for_price(self, available_quantity, price, side):
+        """
+        Returns the maximum order quantity for given total usable funds, price and side.
+        This amount is not the total usable funds as it also requires to keep the position's open order fees
+        as well as the position liquidation fees in portfolio.
+        :param available_quantity:
+        :param price:
+        :param side:
+        :return:
+        """
+        raise NotImplementedError("get_max_order_quantity_for_price not implemented")
+
     def get_two_way_taker_fee(self):
         """
         :return: 2-way taker fee = fee to open + fee to close
@@ -587,8 +610,11 @@ class Position(util.Initializable):
     def get_order_cost(self):
         raise NotImplementedError("get_order_cost not implemented")
 
-    def get_fee_to_open(self):
+    def get_fee_to_open(self, quantity=None, price=None):
         raise NotImplementedError("get_fee_to_open not implemented")
+
+    def get_fee_to_close(self, quantity=None, price=None, with_mark_price=False, side=None):
+        raise NotImplementedError("get_fee_to_close not implemented")
 
     def update_fee_to_close(self):
         raise NotImplementedError("update_fee_to_close not implemented")

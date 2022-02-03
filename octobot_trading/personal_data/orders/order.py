@@ -314,7 +314,7 @@ class Order(util.Initializable):
             symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
             fees = decimal.Decimal(f"{symbol_fees[self.taker_or_maker]}")
             if self.fees_currency_side is enums.FeesCurrencySide.CURRENCY:
-                value = self.filled_quantity * fees
+                value = self.filled_quantity / self.filled_price * fees
                 currency = self.currency
             else:
                 value = self.filled_quantity * self.filled_price * fees
