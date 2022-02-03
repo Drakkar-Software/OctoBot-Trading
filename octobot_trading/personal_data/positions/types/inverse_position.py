@@ -92,21 +92,23 @@ class InversePosition(position_class.Position):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.liquidation_price = constants.ZERO
 
-    def get_bankruptcy_price(self, with_mark_price=False, price=None, side=None):
+    def get_bankruptcy_price(self, price, side, with_mark_price=False):
         """
+        :param price: the price to compute bankruptcy from
+        :param side: the side of the position
         :param with_mark_price: if price should be mark price instead of entry price
         :return: Bankruptcy Price for
         Long position = (Entry Price x Leverage) / (Leverage + 1)
         Short position = (Entry Price x Leverage) / (Leverage - 1)
         """
         try:
-            if side is enums.PositionSide.LONG or (side is None and self.is_long()):
+            if side is enums.PositionSide.LONG:
                 return (self.mark_price if with_mark_price else
-                        (price or self.entry_price) * self.symbol_contract.current_leverage) \
+                        price * self.symbol_contract.current_leverage) \
                     / (self.symbol_contract.current_leverage + constants.ONE)
-            elif side is enums.PositionSide.SHORT or (side is None and self.is_short()):
+            elif side is enums.PositionSide.SHORT:
                 return (self.mark_price if with_mark_price else
-                        (price or self.entry_price) * self.symbol_contract.current_leverage) \
+                        price * self.symbol_contract.current_leverage) \
                     / (self.symbol_contract.current_leverage - constants.ONE)
             return constants.ZERO
         except (decimal.DivisionByZero, decimal.InvalidOperation):
@@ -118,23 +120,22 @@ class InversePosition(position_class.Position):
         """
         return self.initial_margin + self.get_two_way_taker_fee()
 
-    def get_fee_to_open(self, quantity=None, price=None):
+    def get_fee_to_open(self, quantity, price):
         """
         :return: Fee to open = (Quantity / Mark price ) x taker fee
         """
         try:
-            return ((quantity or self.size) / (price or self.mark_price)) * self.get_taker_fee()
+            return quantity / price * self.get_taker_fee()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
-    def get_fee_to_close(self, quantity=None, price=None, with_mark_price=False, side=None):
+    def get_fee_to_close(self, quantity, price, side, with_mark_price=False):
         """
         :return: Fee to open = (Quantity * Mark Price) x Taker fee
         """
         try:
-            return (quantity or self.size) / \
-                self.get_bankruptcy_price(with_mark_price=with_mark_price, price=price, side=side) * \
-                self.get_taker_fee()
+            return quantity / \
+                self.get_bankruptcy_price(price, side, with_mark_price=with_mark_price) * self.get_taker_fee()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
@@ -143,7 +144,7 @@ class InversePosition(position_class.Position):
         :return: Fee to close = (Quantity / Bankruptcy Price derived from mark price) x taker fee
         """
         try:
-            self.fee_to_close = self.get_fee_to_close(with_mark_price=True)
+            self.fee_to_close = self.get_fee_to_close(self.size, self.entry_price, self.side, with_mark_price=True)
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.fee_to_close = constants.ZERO
