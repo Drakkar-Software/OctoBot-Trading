@@ -28,3 +28,4 @@ cdef class FutureContract(margin_contract.MarginContract):
     cpdef bint is_perpetual_contract(self)
     cpdef bint is_one_way_position_mode(self)
     cpdef void set_position_mode(self, bint is_one_way=*, bint is_hedge=*)
+    cpdef object get_fees_currency_side(self)

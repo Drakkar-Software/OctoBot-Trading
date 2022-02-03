@@ -379,6 +379,12 @@ class FeePropertyColumns(enum.Enum):
     COST = "cost"  # fee amount
 
 
+class FeesCurrencySide(enum.Enum):
+    CURRENCY = "currency"
+    MARKET = "market"
+    UNDEFINED = "undefined"
+
+
 class AccountTypes(enum.Enum):
     CASH = "cash"
     MARGIN = "margin"
