@@ -213,19 +213,19 @@ async def test_get_bankruptcy_price_with_long(future_trader_simulator_with_defau
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == decimal.Decimal(50)
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal(50)
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side) == decimal.Decimal(50)
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side, with_mark_price=True) == decimal.Decimal(50)
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == decimal.Decimal("99.00990099009900990099009901")
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("0.9900990099009900990099009901")
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side) == decimal.Decimal("99.00990099009900990099009901")
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side, with_mark_price=True) == decimal.Decimal("0.9900990099009900990099009901")
     await position_inst.update(update_size=constants.ONE_HUNDRED,
                                mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == decimal.Decimal("99.00990099009900990099009901")
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("1.980198019801980198019801980")
-    assert position_inst.get_bankruptcy_price(with_mark_price=True, price=decimal.Decimal("1")) == \
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side) == decimal.Decimal("99.00990099009900990099009901")
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side, with_mark_price=True) == decimal.Decimal("1.980198019801980198019801980")
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side, with_mark_price=True) == \
            decimal.Decimal("1.980198019801980198019801980")
-    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("200")) == decimal.Decimal("198.0198019801980198019801980")
-    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("200"), side=enums.PositionSide.SHORT) \
+    assert position_inst.get_bankruptcy_price(decimal.Decimal("200"), position_inst.side) == decimal.Decimal("198.0198019801980198019801980")
+    assert position_inst.get_bankruptcy_price(decimal.Decimal("200"), enums.PositionSide.SHORT) \
         == decimal.Decimal("202.0202020202020202020202020")
 
 
@@ -235,23 +235,23 @@ async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_defa
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     position_inst.entry_price = constants.ONE_HUNDRED
     await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == constants.ZERO
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == constants.ZERO
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side) == constants.ZERO
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side, with_mark_price=True) == constants.ZERO
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == decimal.Decimal("101.0101010101010101010101010")
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("1.010101010101010101010101010")
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side) == decimal.Decimal("101.0101010101010101010101010")
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side, with_mark_price=True) == decimal.Decimal("1.010101010101010101010101010")
     await position_inst.update(update_size=constants.ONE_HUNDRED,
                                mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price() == constants.ZERO
-    assert position_inst.get_bankruptcy_price(with_mark_price=True) == constants.ZERO
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side) == constants.ZERO
+    assert position_inst.get_bankruptcy_price(position_inst.entry_price, position_inst.side, with_mark_price=True) == constants.ZERO
     default_contract.set_current_leverage(decimal.Decimal("7"))
     position_inst.entry_price = constants.ONE_HUNDRED
     await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_bankruptcy_price(with_mark_price=True, price=decimal.Decimal("20")) == \
+    assert position_inst.get_bankruptcy_price(decimal.Decimal("20"), position_inst.side, with_mark_price=True) == \
            decimal.Decimal("16.66666666666666666666666667")
-    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("100")) == \
+    assert position_inst.get_bankruptcy_price(decimal.Decimal("100"), position_inst.side) == \
            decimal.Decimal("116.6666666666666666666666667")
-    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("100"), side=enums.PositionSide.LONG) \
+    assert position_inst.get_bankruptcy_price(decimal.Decimal("100"), enums.PositionSide.LONG) \
         == decimal.Decimal("87.5")
 
 
@@ -270,13 +270,13 @@ async def test_get_fee_to_open(future_trader_simulator_with_default_inverse):
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_fee_to_open() == constants.ZERO
+    assert position_inst.get_fee_to_open(position_inst.size, position_inst.entry_price) == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_fee_to_open() == decimal.Decimal("0.000004")
-    assert position_inst.get_fee_to_open(quantity=decimal.Decimal(50)) == decimal.Decimal("0.000002")
-    assert position_inst.get_fee_to_open(price=decimal.Decimal(150)) == \
+    assert position_inst.get_fee_to_open(position_inst.size, position_inst.entry_price) == decimal.Decimal("0.000004")
+    assert position_inst.get_fee_to_open(decimal.Decimal(50), position_inst.entry_price) == decimal.Decimal("0.000002")
+    assert position_inst.get_fee_to_open(position_inst.size, decimal.Decimal(150)) == \
            decimal.Decimal("0.000002666666666666666666666666667")
-    assert position_inst.get_fee_to_open(quantity=decimal.Decimal(50), price=decimal.Decimal(150)) == \
+    assert position_inst.get_fee_to_open(decimal.Decimal(50), decimal.Decimal(150)) == \
            decimal.Decimal("0.000001333333333333333333333333333")
 
 

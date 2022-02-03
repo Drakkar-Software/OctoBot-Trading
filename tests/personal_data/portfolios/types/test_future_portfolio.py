@@ -1104,7 +1104,7 @@ async def test_update_portfolio_data_with_fees_long_position(future_trader_simul
     buy_order_price = decimal.Decimal('38497.5')
     sell_order_price = decimal.Decimal('38503')
     quantity = decimal.Decimal('0.01')
-    fees_per_order = decimal.Decimal('0.2887')
+    fees_per_order = decimal.Decimal('0.2887')  # 0.2887 = 0.5775 / 2
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=buy_order_price,
