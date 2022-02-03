@@ -86,6 +86,12 @@ class InvalidPositionSide(Exception):
     """
 
 
+class InvalidPosition(Exception):
+    """
+    Raised when an invalid position is created
+    """
+
+
 class ContractExistsError(Exception):
     """
     Raised when asking for a contract that doesn't exist
