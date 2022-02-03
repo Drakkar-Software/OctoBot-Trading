@@ -326,10 +326,11 @@ class Position(util.Initializable):
         Removes order's fees from realized pnl
         :param order: the realized pnl update
         """
-        if self.symbol_contract.is_inverse_contract():
-            realised_pnl_update = -order.get_total_fees(order.currency)
-        else:
-            realised_pnl_update = -order.get_total_fees(order.market)
+        fees_currency = order.currency if self.symbol_contract.is_inverse_contract() else order.market
+        realised_pnl_update = -order.get_total_fees(fees_currency)
+        transaction_factory.create_fee_transaction(self.exchange_manager, fees_currency, self.symbol,
+                                                   quantity=realised_pnl_update,
+                                                   order_id=order.order_id)
         self.realised_pnl += realised_pnl_update
         return realised_pnl_update
 

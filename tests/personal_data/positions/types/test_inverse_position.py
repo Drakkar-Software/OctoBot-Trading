@@ -391,9 +391,8 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
     # size did not reduce, exit price is still not set
     assert position_inst.already_reduced_size == constants.ZERO
     assert position_inst.exit_price == constants.ZERO
-    # no created transaction
-    # since we don't use the filled order workflow, market_buy fees are ignored, no fee transaction is created
-    assert get_latest_transaction(exchange_manager_inst) is None
+    # a new fee transaction is created
+    assert isinstance(get_latest_transaction(exchange_manager_inst), personal_data.FeeTransaction)
 
     # decrease position
     market_sell = personal_data.SellMarketOrder(trader_inst)
@@ -435,8 +434,8 @@ async def test_update_average_exit_price_and_transactions_long(future_trader_sim
     # size did not reduce, exit price is still 42.92452830188679245283018867
     assert position_inst.already_reduced_size == decimal.Decimal("-13")
     assert position_inst.exit_price == decimal.Decimal("42.92452830188679245283018867")
-    # same transaction as before
-    check_created_transaction(exchange_manager_inst, decimal.Decimal("-8"), decimal.Decimal("-13"))
+    # a new fee transaction is created
+    assert isinstance(get_latest_transaction(exchange_manager_inst), personal_data.FeeTransaction)
 
     # decrease position again
     market_sell = personal_data.SellMarketOrder(trader_inst)
@@ -483,9 +482,8 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
                        quantity_filled=decimal.Decimal(str(5)),
                        filled_price=decimal.Decimal(str(25)))
     position_inst.update_from_order(market_sell)
-    # no created transaction
-    # since we don't use the filled order workflow, market_buy fees are ignored, no fee transaction is created
-    assert get_latest_transaction(exchange_manager_inst) is None
+    # a new fee transaction is created
+    assert isinstance(get_latest_transaction(exchange_manager_inst), personal_data.FeeTransaction)
 
     # size did not reduce, exit price is still not set
     assert position_inst.already_reduced_size == constants.ZERO
@@ -527,8 +525,8 @@ async def test_update_average_exit_price_and_transactions_short(future_trader_si
                        quantity_filled=decimal.Decimal(str(5)),
                        filled_price=decimal.Decimal(str(19)))
     position_inst.update_from_order(market_sell)
-    # same transaction as before
-    check_created_transaction(exchange_manager_inst, decimal.Decimal("8"), decimal.Decimal("13"))
+    # a new fee transaction is created
+    assert isinstance(get_latest_transaction(exchange_manager_inst), personal_data.FeeTransaction)
 
     # size did not reduce, exit price is still 18.72000000000000000000000000
     assert position_inst.already_reduced_size == decimal.Decimal("13")
