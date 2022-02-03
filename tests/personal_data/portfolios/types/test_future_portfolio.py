@@ -251,10 +251,11 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     # Should restore available
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
     await fill_market_order(market_sell)
+    fees_1 = market_sell.get_total_fees(market_sell.market)
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(10)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(300))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(300)) - fees_1
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(10)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000)) - fees_1
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal(str(700.0))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
@@ -270,8 +271,11 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     # increase position size
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
     await fill_market_order(market_buy)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(200))
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
+    fees_2 = market_buy.get_total_fees(market_buy.market)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(200)) - fees_1 \
+           - fees_2
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000)) - fees_1 \
+           - fees_2
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal(str(800.0))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
@@ -287,10 +291,13 @@ async def test_update_portfolio_data_from_order_with_market_buy_long_linear_cont
     # decrease position size
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
     await fill_market_order(market_sell)
+    fees_3 = market_sell.get_total_fees(market_sell.market)
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(10)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(1000))- fees_1 \
+           - fees_2 - fees_3
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(10)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))- fees_1 \
+           - fees_2 - fees_3
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
@@ -374,7 +381,6 @@ async def test_update_portfolio_data_from_order_with_cancelled_and_filled_orders
 
 async def test_update_portfolio_data_from_orders_with_max_long_size_linear_contract(
         future_trader_simulator_with_default_linear):
-    # TODO same test with fees in orders
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
     default_contract.set_current_leverage(decimal.Decimal(2))
@@ -382,11 +388,26 @@ async def test_update_portfolio_data_from_orders_with_max_long_size_linear_contr
     # Test buy order
     market_buy = BuyMarketOrder(trader_inst)
     buy_order_price = decimal.Decimal(40)
+    leveraged_max_buy_quantity = LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        portfolio_manager.portfolio.get_currency_portfolio("USDT").available,
+        buy_order_price,
+        enums.PositionSide.LONG
+    )
+    assert 49 < leveraged_max_buy_quantity < 50   # with a x1 leverage, it would be 24 < max_buy_quantity < 25
+
+    max_buy_quantity = leveraged_max_buy_quantity / 2
+    # WARNING:
+    # Later on in this test, use max_buy_quantity only to avoid last digit rounding issues on later asserts
+    # that are due to the previous line's division by 2.
+    # This has no impact on trading (it's on the 24th digit) but is failing "==" tests
+    # rounding error example:
+    #   AssertionError: assert Decimal('2992.017946161515453639082751') == Decimal('2992.017946161515453639082752')
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=buy_order_price,
-                      quantity=decimal.Decimal(50),
-                      price=buy_order_price)
+                      quantity=max_buy_quantity * 2,    # x2 to apply leverage (restore leveraged_max_buy_quantity)
+                      price=buy_order_price,
+                      fees_currency_side=default_contract.get_fees_currency_side())
 
     # Test sell order
     market_sell = SellMarketOrder(trader_inst)
@@ -394,44 +415,67 @@ async def test_update_portfolio_data_from_orders_with_max_long_size_linear_contr
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        current_price=sell_order_price,
-                       quantity=decimal.Decimal(50),
-                       price=sell_order_price)
+                       quantity=max_buy_quantity * 2,   # x2 to apply leverage (restore leveraged_max_buy_quantity)
+                       price=sell_order_price,
+                       fees_currency_side=default_contract.get_fees_currency_side())
 
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') - \
+           max_buy_quantity * buy_order_price
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == max_buy_quantity * buy_order_price
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
 
-    if os.getenv('CYTHON_IGNORE'):
-        return
-
     # Open long position
-    # Mock fees because it's not possible to trade with money you don't have (full available + fees)
-    # so we need to disable fees for this test
-    with mock.patch.object(market_buy, "get_total_fees", mock.Mock(return_value=0)):
-        await fill_market_order(market_buy)
+    await fill_market_order(market_buy)
+    fees = market_buy.get_total_fees(market_buy.market)
+    assert fees > constants.ZERO
+
+    # warning here: due to issues on decimal.Decimal precision (22+th digit, no impact), keep real order in operations
+    # (the next line will fail if fees are at the end)
+    # error if in this order: decimal.Decimal('1000') - max_buy_quantity * buy_order_price - fees:
+    #   Decimal('2.1934197407776669990029909') != Decimal('2.193419740777666999002990899')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') - \
+           fees - max_buy_quantity * buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') - fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == \
+           max_buy_quantity * buy_order_price
+
     # change market price to sell order price
     await _update_position_mark_price(exchange_manager_inst, sell_order_price, DEFAULT_FUTURE_SYMBOL)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == constants.ZERO
-
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('3000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') - \
+           fees - max_buy_quantity * buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') - fees + \
+           max_buy_quantity * sell_order_price
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == decimal.Decimal('2000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == \
+           max_buy_quantity * buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == \
+           max_buy_quantity * (sell_order_price - buy_order_price) * 2
 
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('3000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') - \
+           fees - max_buy_quantity * buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') - fees + \
+           max_buy_quantity * sell_order_price
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == decimal.Decimal('2000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == \
+           max_buy_quantity * buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == \
+           max_buy_quantity * (sell_order_price - buy_order_price) * 2
 
     # Close long position with gains
     await fill_market_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('3000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('3000')
+    sell_fees = market_sell.get_total_fees(market_sell.market)
+    assert sell_fees > constants.ZERO
+
+    profits = (sell_order_price - buy_order_price) * max_buy_quantity * 2
+    paid_fees = fees + sell_fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') + profits - \
+           paid_fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') + profits - \
+           paid_fees
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
@@ -439,10 +483,33 @@ async def test_update_portfolio_data_from_orders_with_max_long_size_linear_contr
 
 async def test_update_portfolio_data_from_orders_with_max_short_size_linear_contract(
         future_trader_simulator_with_default_linear):
-    # TODO same test with fees in orders
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
     default_contract.set_current_leverage(decimal.Decimal(2))
+
+    # Test sell order
+    market_sell = SellMarketOrder(trader_inst)
+    sell_order_price = decimal.Decimal(40)
+    leveraged_max_sell_quantity = LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        portfolio_manager.portfolio.get_currency_portfolio("USDT").available,
+        sell_order_price,
+        enums.PositionSide.SHORT
+    )
+    assert 49 < leveraged_max_sell_quantity < 50   # with a x1 leverage, it would be 24 < max_buy_quantity < 25
+
+    max_sell_quantity = leveraged_max_sell_quantity / 2
+    # WARNING:
+    # Later on in this test, use max_buy_quantity only to avoid last digit rounding issues on later asserts
+    # that are due to the previous line's division by 2.
+    # This has no impact on trading (it's on the 24th digit) but is failing "==" tests
+    # rounding error example:
+    #   AssertionError: assert Decimal('2992.017946161515453639082751') == Decimal('2992.017946161515453639082752')
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=sell_order_price,
+                       quantity=max_sell_quantity * 2,    # x2 to apply leverage (restore leveraged_max_sell_quantity)
+                       price=sell_order_price,
+                       fees_currency_side=default_contract.get_fees_currency_side())
 
     # Test buy order
     market_buy = BuyMarketOrder(trader_inst)
@@ -450,55 +517,281 @@ async def test_update_portfolio_data_from_orders_with_max_short_size_linear_cont
     market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
                       symbol=DEFAULT_FUTURE_SYMBOL,
                       current_price=buy_order_price,
-                      quantity=decimal.Decimal(50),
-                      price=buy_order_price)
+                      quantity=max_sell_quantity * 2,    # x2 to apply leverage (restore leveraged_max_sell_quantity)
+                      price=buy_order_price,
+                      fees_currency_side=default_contract.get_fees_currency_side())
+
+    portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') - \
+           max_sell_quantity * sell_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == \
+           max_sell_quantity * sell_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
+
+    # Open short position
+    await fill_market_order(market_sell)
+    fees = market_sell.get_total_fees(market_sell.market)
+    assert fees > constants.ZERO
+
+    # warning here: due to issues on decimal.Decimal precision (25+th digit, no impact), keep real order in operations
+    # (the next line will fail if fees are at the end)
+    # error if in this order: decimal.Decimal('1000') - max_sell_quantity * sell_order_price - fees:
+    #   Decimal('4.1791044776119402985074627') != Decimal('4.179104477611940298507462726')
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') - \
+           fees - max_sell_quantity * sell_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') - fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == \
+           max_sell_quantity * sell_order_price
+
+    # change market price with buy price
+    await _update_position_mark_price(exchange_manager_inst, buy_order_price, DEFAULT_FUTURE_SYMBOL)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') - \
+           fees - max_sell_quantity * sell_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') - fees + \
+           max_sell_quantity * (sell_order_price - buy_order_price) * 2     # x2 for leverage
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == \
+           max_sell_quantity * sell_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == \
+           max_sell_quantity * (sell_order_price - buy_order_price) * 2
+
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') - \
+           fees - max_sell_quantity * sell_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') - fees + \
+           max_sell_quantity * (sell_order_price - buy_order_price) * 2     # x2 for leverage
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == \
+           max_sell_quantity * sell_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == \
+           max_sell_quantity * (sell_order_price - buy_order_price) * 2
+
+    # Close short position with gains
+    await fill_market_order(market_buy)
+    buy_fees = market_buy.get_total_fees(market_buy.market)
+    assert buy_fees > constants.ZERO
+
+    profits = (sell_order_price - buy_order_price) * max_sell_quantity * 2
+    paid_fees = fees + buy_fees
+
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') + profits - \
+           paid_fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') + profits - \
+           paid_fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
+
+
+async def test_update_portfolio_data_from_orders_with_max_long_size_inverse_contract(
+        future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(5))
+
+    # Test buy order
+    market_buy = BuyMarketOrder(trader_inst)
+    buy_order_price = decimal.Decimal(40)
+    leveraged_max_buy_quantity = InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        portfolio_manager.portfolio.get_currency_portfolio("BTC").available,
+        buy_order_price,
+        enums.PositionSide.LONG
+    )
+    assert 1978 < leveraged_max_buy_quantity < 1980   # with a x1 leverage, it would be ~ 390 < max_buy_quantity < 400
+
+    max_buy_quantity = leveraged_max_buy_quantity / 5
+    # WARNING:
+    # Later on in this test, use max_buy_quantity only to avoid last digit rounding issues on later asserts
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=buy_order_price,
+                      quantity=max_buy_quantity * 5,    # x2 to apply leverage (restore leveraged_max_buy_quantity)
+                      price=buy_order_price,
+                      fees_currency_side=default_contract.get_fees_currency_side())
+
+    # Test sell order
+    market_sell = SellMarketOrder(trader_inst)
+    sell_order_price = decimal.Decimal(80)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=sell_order_price,
+                       quantity=max_buy_quantity * 5,   # x2 to apply leverage (restore leveraged_max_buy_quantity)
+                       price=sell_order_price,
+                       fees_currency_side=default_contract.get_fees_currency_side())
+
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') - \
+           max_buy_quantity / buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == max_buy_quantity / buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == constants.ZERO
+
+    # Open long position
+    await fill_market_order(market_buy)
+    fees = market_buy.get_total_fees(market_buy.currency)
+    assert fees > constants.ZERO
+
+    # warning here: due to issues on decimal.Decimal precision (22+th digit, no impact), keep real order in operations
+    # (the next line will fail if fees are at the end)
+    # error if in this order: decimal.Decimal('10') - max_buy_quantity * buy_order_price - fees:
+    #   Decimal('0.089020771513353115727002969') != Decimal('0.08902077151335311572700296948')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') - \
+           fees - max_buy_quantity / buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') - fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == \
+           max_buy_quantity / buy_order_price
+
+    # change market price to sell order price
+    await _update_position_mark_price(exchange_manager_inst, sell_order_price, DEFAULT_FUTURE_SYMBOL)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') - \
+           fees - max_buy_quantity / buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') - fees + \
+           (max_buy_quantity / sell_order_price) * 5
+    # (equivalent to this statement)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') - fees + \
+           5 * max_buy_quantity * (1 / buy_order_price - 1 / sell_order_price)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == \
+           max_buy_quantity / buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == \
+           max_buy_quantity * (1 / buy_order_price - 1 / sell_order_price) * 5
+
+    portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') - \
+           fees - max_buy_quantity / buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') - fees + \
+           (max_buy_quantity / sell_order_price) * 5
+    # (equivalent to this statement)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') - fees + \
+           5 * max_buy_quantity * (1 / buy_order_price - 1 / sell_order_price)
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == \
+           max_buy_quantity / buy_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == \
+           max_buy_quantity * (1 / buy_order_price - 1 / sell_order_price) * 5
+
+    # Close long position with gains
+    await fill_market_order(market_sell)
+    sell_fees = market_sell.get_total_fees(market_sell.currency)
+    assert sell_fees > constants.ZERO
+
+    profits = (1 / buy_order_price - 1 / sell_order_price) * max_buy_quantity * 5
+    paid_fees = fees + sell_fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') + profits - \
+           paid_fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') + profits - \
+           paid_fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == constants.ZERO
+
+
+async def test_update_portfolio_data_from_orders_with_max_short_size_inverse_contract(
+        future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    default_contract.set_current_leverage(decimal.Decimal(3))
 
     # Test sell order
     market_sell = SellMarketOrder(trader_inst)
     sell_order_price = decimal.Decimal(40)
+    leveraged_max_sell_quantity = InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        portfolio_manager.portfolio.get_currency_portfolio("BTC").available,
+        sell_order_price,
+        enums.PositionSide.SHORT
+    )
+    assert 1190 < leveraged_max_sell_quantity < 1195   # with a x1 leverage, it would be 390 < max_buy_quantity < 400
+
+    max_sell_quantity = leveraged_max_sell_quantity / 3
+    # WARNING:
+    # Later on in this test, use max_buy_quantity only to avoid last digit rounding issues on later asserts
     market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
                        symbol=DEFAULT_FUTURE_SYMBOL,
                        current_price=sell_order_price,
-                       quantity=decimal.Decimal(50),
-                       price=sell_order_price)
+                       quantity=max_sell_quantity * 3,    # x3 to apply leverage (restore leveraged_max_sell_quantity)
+                       price=sell_order_price,
+                       fees_currency_side=default_contract.get_fees_currency_side())
+
+    # Test buy order
+    market_buy = BuyMarketOrder(trader_inst)
+    buy_order_price = decimal.Decimal(50)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=buy_order_price,
+                      quantity=max_sell_quantity * 3,    # x2 to apply leverage (restore leveraged_max_sell_quantity)
+                      price=buy_order_price,
+                      fees_currency_side=default_contract.get_fees_currency_side())
 
     portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') - \
+           max_sell_quantity / sell_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == \
+           max_sell_quantity / sell_order_price
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == constants.ZERO
 
-    if os.getenv('CYTHON_IGNORE'):
-        return
+    # Open short position
+    await fill_market_order(market_sell)
+    fees = market_sell.get_total_fees(market_sell.currency)
+    assert fees > constants.ZERO
 
-    # Open long position
-    # Mock fees because it's not possible to trade with money you don't have (full available + fees)
-    # so we need to disable fees for this test
-    with mock.patch.object(market_sell, "get_total_fees", mock.Mock(return_value=0)):
-        await fill_market_order(market_sell)
+    # warning here: due to issues on decimal.Decimal precision (25+th digit, no impact), keep real order in operations
+    # (the next line will fail if fees are at the end)
+    # error if in this order: decimal.Decimal('10') - (max_sell_quantity / sell_order_price) - fees:
+    #   Decimal('0.037810945273631840796019904') != Decimal('0.03781094527363184079601990290')
+    # a second rounding issue appears due to leverage computations: re-apply them to end up with the same value
+    # error if in this order: decimal.Decimal('10') - fees - (max_sell_quantity / sell_order_price):
+    #   Decimal('0.037810945273631840796019904') != Decimal('0.037810945273631840796019903')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') - \
+           fees - (max_sell_quantity / sell_order_price) * 3 / 3
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') - fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == \
+           max_sell_quantity / sell_order_price * 3 / 3
 
-    # update market price with buy price
+    # change market price with buy price
     await _update_position_mark_price(exchange_manager_inst, buy_order_price, DEFAULT_FUTURE_SYMBOL)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('500')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == decimal.Decimal('-500')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') - \
+           fees - max_sell_quantity / sell_order_price * 3 / 3
+    # error if in this order: decimal.Decimal('10') - fees - max_sell_quantity * (1 / buy_order_price - 1 / sell_order_price) * 3
+    # (need to keep execution operations oders):
+    #   Decimal('4.017910447761194029850746271') != Decimal('4.017910447761194029850746269')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') - fees + \
+           max_sell_quantity * 3 * (1 / buy_order_price - 1 / sell_order_price)   # x3 for leverage
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == \
+           max_sell_quantity / sell_order_price * 3 / 3
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == \
+           max_sell_quantity * 3 * (1 / buy_order_price - 1 / sell_order_price)
 
     portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('500')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('1000')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == decimal.Decimal('-500')
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') - \
+           fees - max_sell_quantity / sell_order_price * 3 / 3
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') - fees + \
+           max_sell_quantity * 3 * (1 / buy_order_price - 1 / sell_order_price)     # x3 for leverage
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == \
+           max_sell_quantity / sell_order_price * 3 / 3
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == \
+           max_sell_quantity * 3 * (1 / buy_order_price - 1 / sell_order_price)
 
-    # Close long position with gains
+    # Close short position with gains
     await fill_market_order(market_buy)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('500')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('500')
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
+    buy_fees = market_buy.get_total_fees(market_buy.currency)
+    assert buy_fees > constants.ZERO
+
+    # same as above, order matters here
+    profits = max_sell_quantity * 3 * (1 / buy_order_price - 1 / sell_order_price)
+    paid_fees = fees + buy_fees
+
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('10') + profits - \
+           paid_fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('10') + profits - \
+           paid_fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == constants.ZERO
 
 
 async def test_update_portfolio_data_from_order_with_huge_loss_on_filled_orders_linear_contract(
@@ -791,6 +1084,100 @@ async def test_update_portfolio_data_with_fees(future_trader_simulator_with_defa
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
 
 
+async def test_update_portfolio_data_with_fees_long_position(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
+    leverage = decimal.Decimal(2)
+    default_contract.set_current_leverage(leverage)
+
+    # data from real test on Bybit from 02.02.2020 using 2 market orders:
+    # entry price: 38497.5, exit price: 38503, quantity: 0.01, leverage: 2x, taker fees: 0.075%
+    # profits from position = +0.055, fees = -0.5775, displayed closed pnl = -0.5225
+    # Test buy order
+    market_buy = BuyMarketOrder(trader_inst)
+    market_sell = SellMarketOrder(trader_inst)
+    buy_order_price = decimal.Decimal('38497.5')
+    sell_order_price = decimal.Decimal('38503')
+    quantity = decimal.Decimal('0.01')
+    fees_per_order = decimal.Decimal('0.2887')
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=buy_order_price,
+                      quantity=quantity,
+                      price=buy_order_price)
+    market_sell.update(order_type=enums.TraderOrderType.SELL_MARKET,
+                       symbol=DEFAULT_FUTURE_SYMBOL,
+                       current_price=sell_order_price,
+                       quantity=quantity,
+                       price=sell_order_price)
+
+    if not os.getenv('CYTHON_IGNORE'):
+        with mock.patch.object(market_buy, "get_total_fees", mock.Mock(return_value=fees_per_order)) \
+                as get_total_fees_mock:
+
+            # create buy order
+            portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+            position = exchange_manager_inst.exchange_personal_data.positions_manager.get_symbol_positions()[0]
+            required_funds = buy_order_price * quantity / leverage
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') \
+                   - required_funds
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == required_funds
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
+            assert position.size == constants.ZERO
+
+            # fill order with fees
+            get_total_fees_mock.assert_not_called()
+            await fill_market_order(market_buy)
+            assert get_total_fees_mock.call_count == 2  # once at fill, once to update position size
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') \
+                   - required_funds - fees_per_order
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') \
+                   - fees_per_order
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == \
+                   required_funds
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
+            assert position.size == quantity
+            assert position.realised_pnl == -fees_per_order
+
+        with mock.patch.object(market_sell, "get_total_fees", mock.Mock(return_value=fees_per_order)) \
+                as get_total_fees_mock:
+
+            # create sell order
+            portfolio_manager.portfolio.update_portfolio_available(market_sell, True)
+            position = exchange_manager_inst.exchange_personal_data.positions_manager.get_symbol_positions()[0]
+            # reducing position: no change in available
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') \
+                   - required_funds - fees_per_order
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') \
+                   - fees_per_order
+            # reducing position: no change in order margin
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == \
+                   required_funds
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
+            assert position.size == quantity
+            assert position.realised_pnl == -fees_per_order
+
+            # fill order with fees
+            profits = (sell_order_price - buy_order_price) * quantity
+            total_pnl = - fees_per_order - fees_per_order + profits   # -0.5225
+            get_total_fees_mock.assert_not_called()
+            await fill_market_order(market_sell)
+            assert get_total_fees_mock.call_count == 2  # once at fill, once to update position size
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000') \
+                   + total_pnl
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000') \
+                   + total_pnl
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
+            assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
+            assert position.size == constants.ZERO
+            assert position.realised_pnl == total_pnl
+
+
 async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contract(
         future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
@@ -820,10 +1207,11 @@ async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contrac
 
     # fill order
     await fill_market_order(market_sell)
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal("1000")
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str("848.5"))
+    fees = market_sell.get_total_fees(market_sell.market)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal("1000") - fees
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str("848.5")) - fees
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
-    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal(str(151.5))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('151.5')
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal(str(10))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal(str(10))

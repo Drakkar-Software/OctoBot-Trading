@@ -376,6 +376,10 @@ async def test_get_bankruptcy_price_with_long(future_trader_simulator_with_defau
     await position_inst.update(update_size=TWELVE_DOT_FIVE, mark_price=FORTY * decimal.Decimal(2))
     assert position_inst.get_bankruptcy_price() == decimal.Decimal("39.60")
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("80")
+    assert position_inst.get_bankruptcy_price(with_mark_price=True, price=decimal.Decimal("1")) == decimal.Decimal("80")
+    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("100")) == decimal.Decimal("99")
+    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("100"), side=enums.PositionSide.SHORT) \
+        == decimal.Decimal("101")
 
 
 async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_default_linear):
@@ -392,6 +396,12 @@ async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_defa
     await position_inst.update(update_size=TWELVE_DOT_FIVE, mark_price=FORTY * decimal.Decimal(2))
     assert position_inst.get_bankruptcy_price() == constants.ZERO
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == constants.ZERO
+    default_contract.set_current_leverage(decimal.Decimal("2"))
+    await position_inst.update(update_size=-TWELVE_DOT_FIVE, mark_price=FORTY * decimal.Decimal(2))
+    assert position_inst.get_bankruptcy_price(with_mark_price=True, price=decimal.Decimal("1")) == decimal.Decimal("80")
+    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("100")) == decimal.Decimal("150")
+    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("100"), side=enums.PositionSide.LONG) \
+        == decimal.Decimal("50")
 
 
 async def test_get_order_cost(future_trader_simulator_with_default_linear):
@@ -414,6 +424,10 @@ async def test_get_fee_to_open(future_trader_simulator_with_default_linear):
     assert position_inst.get_fee_to_open() == constants.ZERO
     await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
     assert position_inst.get_fee_to_open() == decimal.Decimal("0.004")
+    assert position_inst.get_fee_to_open(quantity=decimal.Decimal(2)) == decimal.Decimal("0.000320")
+    assert position_inst.get_fee_to_open(price=decimal.Decimal(2)) == decimal.Decimal("0.0002")
+    assert position_inst.get_fee_to_open(quantity=decimal.Decimal(2), price=decimal.Decimal(2)) == \
+           decimal.Decimal("0.000016")
 
 
 async def test_update_fee_to_close(future_trader_simulator_with_default_linear):
@@ -427,6 +441,96 @@ async def test_update_fee_to_close(future_trader_simulator_with_default_linear):
     await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
     position_inst.update_fee_to_close()
     assert position_inst.fee_to_close == decimal.Decimal("0.004")
+
+
+def test_get_two_way_taker_fee_for_quantity_and_price(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    # no need to initialize the position
+    default_contract.set_current_leverage(decimal.Decimal("2"))
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("0.01"), decimal.Decimal("38497.5"), enums.PositionSide.LONG
+    ) == decimal.Decimal("0.5774625")     # open fees + closing fees in case of liquidation
+
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10"), constants.ONE_HUNDRED, enums.PositionSide.LONG
+    ) == constants.ONE + decimal.Decimal("0.5")     # open fees + closing fees in case of liquidation
+
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10"), decimal.Decimal("100"), enums.PositionSide.LONG
+    ) == constants.ONE + decimal.Decimal("0.99")     # open fees + closing fees in case of liquidation
+
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10"), decimal.Decimal("100"), enums.PositionSide.SHORT
+    ) == constants.ONE + decimal.Decimal("1.01")     # open fees + closing fees in case of liquidation
+
+
+def test_get_max_order_quantity_for_price_long(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    # no need to initialize the position
+    default_contract.set_current_leverage(constants.ONE)
+    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+    # max quantity would be 9961.7672 / 37000 = 0.269236951351,
+    # it is actually less to allow fees
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG
+    ) == decimal.Decimal('0.2689679833679833679833679834')
+    #  0.269 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+
+    default_contract.set_current_leverage(decimal.Decimal("2"))
+    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+    # max quantity would be 9961.7672 / 37000 * 2 = 0.538473902703,
+    # it is actually less to allow fees
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG
+    ) == decimal.Decimal('0.5368633127644094742798631134')
+    #  0.537 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
+    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+    # max quantity would be 9961.7672 / 37000 * 100 = 26.9236951351,
+    # it is actually less to allow fees (which are huge on 100x)
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG
+    ) == decimal.Decimal('22.45512521696007934540044632')
+    # no Bybit preview
+
+
+def test_get_max_order_quantity_for_price_short(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    # no need to initialize the position
+    # Differs from long due to the position closing fees at liquidation price which are higher (price is higher)
+    # Therefore to open the same position size, more funds are required than for longs
+    # (max quantity is lower than for longs)
+    default_contract.set_current_leverage(constants.ONE)
+    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+    # max quantity would be 9961.7672 / 37000 = 0.269236951351,
+    # it is actually less to allow fees
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT
+    ) == decimal.Decimal('0.2684316563822047371399315567')
+    #  0.269 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+
+    default_contract.set_current_leverage(decimal.Decimal("2"))
+    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+    # max quantity would be 9961.7672 / 37000 * 2 = 0.538473902703,
+    # it is actually less to allow fees
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT
+    ) == decimal.Decimal('0.5357949280623907489579131370')
+    #  0.536 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
+    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+    # max quantity would be 9961.7672 / 37000 * 100 = 26.9236951351,
+    # it is actually less to allow fees (which are huge on 100x)
+    assert personal_data.LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT
+    ) == decimal.Decimal('22.41773116997097013749803092')
+    # no Bybit preview
 
 
 async def test_update_average_entry_price_increased_long(future_trader_simulator_with_default_linear):

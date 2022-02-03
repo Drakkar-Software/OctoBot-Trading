@@ -215,6 +215,11 @@ async def test_get_bankruptcy_price_with_long(future_trader_simulator_with_defau
                                mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == decimal.Decimal("99.00990099009900990099009901")
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == decimal.Decimal("1.980198019801980198019801980")
+    assert position_inst.get_bankruptcy_price(with_mark_price=True, price=decimal.Decimal("1")) == \
+           decimal.Decimal("1.980198019801980198019801980")
+    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("200")) == decimal.Decimal("198.0198019801980198019801980")
+    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("200"), side=enums.PositionSide.SHORT) \
+        == decimal.Decimal("202.0202020202020202020202020")
 
 
 async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_default_inverse):
@@ -232,6 +237,15 @@ async def test_get_bankruptcy_price_with_short(future_trader_simulator_with_defa
                                mark_price=decimal.Decimal(2) * constants.ONE_HUNDRED)
     assert position_inst.get_bankruptcy_price() == constants.ZERO
     assert position_inst.get_bankruptcy_price(with_mark_price=True) == constants.ZERO
+    default_contract.set_current_leverage(decimal.Decimal("7"))
+    position_inst.entry_price = constants.ONE_HUNDRED
+    await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
+    assert position_inst.get_bankruptcy_price(with_mark_price=True, price=decimal.Decimal("20")) == \
+           decimal.Decimal("16.66666666666666666666666667")
+    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("100")) == \
+           decimal.Decimal("116.6666666666666666666666667")
+    assert position_inst.get_bankruptcy_price(price=decimal.Decimal("100"), side=enums.PositionSide.LONG) \
+        == decimal.Decimal("87.5")
 
 
 async def test_get_order_cost(future_trader_simulator_with_default_inverse):
@@ -252,6 +266,11 @@ async def test_get_fee_to_open(future_trader_simulator_with_default_inverse):
     assert position_inst.get_fee_to_open() == constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     assert position_inst.get_fee_to_open() == decimal.Decimal("0.000004")
+    assert position_inst.get_fee_to_open(quantity=decimal.Decimal(50)) == decimal.Decimal("0.000002")
+    assert position_inst.get_fee_to_open(price=decimal.Decimal(150)) == \
+           decimal.Decimal("0.000002666666666666666666666666667")
+    assert position_inst.get_fee_to_open(quantity=decimal.Decimal(50), price=decimal.Decimal(150)) == \
+           decimal.Decimal("0.000001333333333333333333333333333")
 
 
 async def test_update_fee_to_close(future_trader_simulator_with_default_inverse):
@@ -264,6 +283,96 @@ async def test_update_fee_to_close(future_trader_simulator_with_default_inverse)
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
     position_inst.update_fee_to_close()
     assert position_inst.fee_to_close == decimal.Decimal("0.000008")
+
+
+def test_get_two_way_taker_fee_for_quantity_and_price(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+
+    # no need to initialize the position
+    default_contract.set_current_leverage(decimal.Decimal("2"))
+    assert personal_data.InversePosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("400"), decimal.Decimal("37025.5"), enums.PositionSide.LONG
+    ) == decimal.Decimal("0.00002700841312068709402979027967")  # open fees + closing fees in case of liquidation
+
+    assert personal_data.InversePosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10"), constants.ONE_HUNDRED, enums.PositionSide.LONG
+    ) == decimal.Decimal("0.0001") + decimal.Decimal("0.00015")     # open fees + closing fees in case of liquidation
+
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
+    assert personal_data.InversePosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10"), decimal.Decimal("100"), enums.PositionSide.LONG
+    ) == decimal.Decimal("0.0001") + decimal.Decimal("0.000101")     # open fees + closing fees in case of liquidation
+
+    assert personal_data.InversePosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
+        decimal.Decimal("10"), decimal.Decimal("100"), enums.PositionSide.SHORT
+    ) == decimal.Decimal("0.0001") + decimal.Decimal("0.000099")     # open fees + closing fees in case of liquidation
+
+
+def test_get_max_order_quantity_for_price_long(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+
+    # no need to initialize the position
+    default_contract.set_current_leverage(constants.ONE)
+    # at price = 36000 and 1 btc in stock, if there were no fees,
+    # max quantity would be 1 * 36000 = 36000,
+    # it is actually less to allow fees
+    assert personal_data.InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG
+    ) == decimal.Decimal('35892.32303090727816550348953')
+    #  35918 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+
+    default_contract.set_current_leverage(decimal.Decimal("2"))
+    # at price = 36000 and 1 btc in stock, if there were no fees,
+    # max quantity would be 1 * 36000 * 2 = 72000,
+    # it is actually less to allow fees
+    assert personal_data.InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG
+    ) == decimal.Decimal('71641.79104477611940298507463')
+    #  71729 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
+    # at price = 36000 and 1 btc in stock, if there were no fees,
+    # max quantity would be 1 * 36000 * 100 = 3600000,
+    # it is actually less to allow fees (which are huge on 100x)
+    assert personal_data.InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG
+    ) == decimal.Decimal('2997502.081598667776852622814')
+    # no Bybit preview
+
+
+def test_get_max_order_quantity_for_price_short(future_trader_simulator_with_default_inverse):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
+
+    # no need to initialize the position
+    # Differs from long due to the position closing fees at liquidation price which are higher (price is higher)
+    # Therefore to open the same position size, less funds are required than for longs
+    # (max quantity is higher than for longs)
+    default_contract.set_current_leverage(constants.ONE)
+    # at price = 36000 and 1 btc in stock, if there were no fees,
+    # max quantity would be 1 * 36000 = 36000,
+    # it is actually less to allow fees
+    assert personal_data.InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT
+    ) == decimal.Decimal('35964.03596403596403596403596')
+    #  35972 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+
+    default_contract.set_current_leverage(decimal.Decimal("2"))
+    # at price = 36000 and 1 btc in stock, if there were no fees,
+    # max quantity would be 1 * 36000 * 2 = 72000,
+    # it is actually less to allow fees
+    assert personal_data.InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT
+    ) == decimal.Decimal('71784.64606181455633100697906')
+    #  71837 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+
+    default_contract.set_current_leverage(constants.ONE_HUNDRED)
+    # at price = 36000 and 1 btc in stock, if there were no fees,
+    # max quantity would be 1 * 36000 * 100 = 3600000,
+    # it is actually less to allow fees (which are huge on 100x)
+    assert personal_data.InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT
+    ) == decimal.Decimal('3002502.085070892410341951626')
+    # no Bybit preview
 
 
 async def test_update_average_entry_price_increased_long(future_trader_simulator_with_default_inverse):

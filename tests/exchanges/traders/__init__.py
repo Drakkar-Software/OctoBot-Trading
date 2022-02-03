@@ -66,7 +66,7 @@ async def margin_trader_simulator(margin_simulated_exchange_manager):
 
 
 DEFAULT_FUTURE_SYMBOL = "BTC/USDT"
-DEFAULT_FUTURE_FUNDING_RATE = decimal.Decimal(0.01)
+DEFAULT_FUTURE_FUNDING_RATE = decimal.Decimal('0.01')
 DEFAULT_FUTURE_SYMBOL_LEVERAGE = constants.ONE
 DEFAULT_FUTURE_SYMBOL_MAX_LEVERAGE = constants.ONE_HUNDRED
 DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE = enums.MarginType.ISOLATED
