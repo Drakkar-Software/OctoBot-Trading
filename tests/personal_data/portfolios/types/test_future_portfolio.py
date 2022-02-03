@@ -24,7 +24,7 @@ import octobot_trading.errors as errors
 import octobot_trading.enums as enums
 import octobot_trading.exchange_data.contracts as contracts
 from octobot_trading.personal_data import FuturePortfolio, BuyMarketOrder, SellMarketOrder, SellLimitOrder, \
-    StopLossOrder, LinearPosition, InversePosition
+    StopLossOrder, LinearPosition, InversePosition, get_max_order_quantity_for_price
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
@@ -388,7 +388,8 @@ async def test_update_portfolio_data_from_orders_with_max_long_size_linear_contr
     # Test buy order
     market_buy = BuyMarketOrder(trader_inst)
     buy_order_price = decimal.Decimal(40)
-    leveraged_max_buy_quantity = LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+    leveraged_max_buy_quantity = get_max_order_quantity_for_price(
+        LinearPosition(trader_inst, default_contract),
         portfolio_manager.portfolio.get_currency_portfolio("USDT").available,
         buy_order_price,
         enums.PositionSide.LONG
@@ -490,7 +491,9 @@ async def test_update_portfolio_data_from_orders_with_max_short_size_linear_cont
     # Test sell order
     market_sell = SellMarketOrder(trader_inst)
     sell_order_price = decimal.Decimal(40)
-    leveraged_max_sell_quantity = LinearPosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+
+    leveraged_max_sell_quantity = get_max_order_quantity_for_price(
+        LinearPosition(trader_inst, default_contract),
         portfolio_manager.portfolio.get_currency_portfolio("USDT").available,
         sell_order_price,
         enums.PositionSide.SHORT
@@ -593,7 +596,8 @@ async def test_update_portfolio_data_from_orders_with_max_long_size_inverse_cont
     # Test buy order
     market_buy = BuyMarketOrder(trader_inst)
     buy_order_price = decimal.Decimal(40)
-    leveraged_max_buy_quantity = InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+    leveraged_max_buy_quantity = get_max_order_quantity_for_price(
+        InversePosition(trader_inst, default_contract),
         portfolio_manager.portfolio.get_currency_portfolio("BTC").available,
         buy_order_price,
         enums.PositionSide.LONG
@@ -697,7 +701,8 @@ async def test_update_portfolio_data_from_orders_with_max_short_size_inverse_con
     # Test sell order
     market_sell = SellMarketOrder(trader_inst)
     sell_order_price = decimal.Decimal(40)
-    leveraged_max_sell_quantity = InversePosition(trader_inst, default_contract).get_max_order_quantity_for_price(
+    leveraged_max_sell_quantity = get_max_order_quantity_for_price(
+        InversePosition(trader_inst, default_contract),
         portfolio_manager.portfolio.get_currency_portfolio("BTC").available,
         sell_order_price,
         enums.PositionSide.SHORT
