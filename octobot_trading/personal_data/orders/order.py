@@ -71,6 +71,7 @@ class Order(util.Initializable):
         self.filled_quantity = constants.ZERO
         self.filled_price = constants.ZERO
         self.fee = None
+        self.fees_currency_side = enums.FeesCurrencySide.UNDEFINED
         self.total_cost = constants.ZERO
         self.order_profitability = constants.ZERO
         self.executed_time = 0
@@ -109,7 +110,8 @@ class Order(util.Initializable):
                current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None, linked_to=None, linked_portfolio=None,
-               order_type=None, reduce_only=False, close_position=False, position_side=None) -> bool:
+               order_type=None, reduce_only=False, close_position=False, position_side=None, fees_currency_side=None) \
+            -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -144,6 +146,9 @@ class Order(util.Initializable):
 
         if fee is not None and self.fee != fee:
             self.fee = fee
+
+        if fees_currency_side is not None and self.fees_currency_side != fees_currency_side:
+            self.fees_currency_side = fees_currency_side
 
         if current_price and self.created_last_price != current_price:
             self.created_last_price = current_price
@@ -299,12 +304,25 @@ class Order(util.Initializable):
         # nothing to do by default
 
     def get_computed_fee(self, forced_value=None):
-        computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type, self.filled_quantity,
-                                                                    self.filled_price, self.taker_or_maker)
+        if self.fees_currency_side is enums.FeesCurrencySide.UNDEFINED:
+            computed_fee = self.exchange_manager.exchange.get_trade_fee(self.symbol, self.order_type,
+                                                                        self.filled_quantity, self.filled_price,
+                                                                        self.taker_or_maker)
+            value = computed_fee[enums.FeePropertyColumns.COST.value]
+            currency = computed_fee[enums.FeePropertyColumns.CURRENCY.value]
+        else:
+            symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
+            fees = decimal.Decimal(f"{symbol_fees[self.taker_or_maker]}")
+            if self.fees_currency_side is enums.FeesCurrencySide.CURRENCY:
+                value = self.filled_quantity * fees
+                currency = self.currency
+            else:
+                value = self.filled_quantity * self.filled_price * fees
+                currency = self.market
         return {
             enums.FeePropertyColumns.COST.value:
-                forced_value if forced_value is not None else computed_fee[enums.FeePropertyColumns.COST.value],
-            enums.FeePropertyColumns.CURRENCY.value: computed_fee[enums.FeePropertyColumns.CURRENCY.value],
+                forced_value if forced_value is not None else value,
+            enums.FeePropertyColumns.CURRENCY.value: currency,
         }
 
     def get_profitability(self):
