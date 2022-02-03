@@ -49,6 +49,12 @@ class FutureContract(margin_contract.MarginContract):
         return self.contract_type in [enums.FutureContractType.INVERSE_EXPIRABLE,
                                       enums.FutureContractType.INVERSE_PERPETUAL]
 
+    def get_fees_currency_side(self):
+        """
+        :return: the force side to take fees from (ex: pay fees only in USDT on BTC/BTC positions)
+        """
+        return enums.FeesCurrencySide.CURRENCY if self.is_inverse_contract() else enums.FeesCurrencySide.MARKET
+
     def is_perpetual_contract(self):
         """
         Perpetual Contract is a contract without an expiry date
