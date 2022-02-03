@@ -313,12 +313,27 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         end_time = backtesting_api.get_backtesting_ending_time(self.exchange_manager.exchange.backtesting) \
             if trading_api.get_is_backtesting(self.exchange_manager) \
             else -1
+        exchange_type = "spot"
+        exchanges = [self.exchange_name]  # TODO multi exchange
+        future_contracts_by_exchange = {}
+        if self.exchange_manager.is_future:
+            exchange_type = "future"
+            future_contracts_by_exchange = {
+                self.exchange_name: {
+                    symbol: {
+                        "contract_type": contract.contract_type.value,
+                        "position_mode": contract.position_mode.value,
+                        "margin_type": contract.margin_type.value
+                    } for symbol, contract in self.exchange_manager.exchange.pair_contracts.items()
+                }
+            }
         return {
             trading_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config),
             trading_enums.DBRows.START_TIME.value: start_time,
             trading_enums.DBRows.END_TIME.value: end_time,
-            trading_enums.DBRows.TRADING_TYPE.value: "future" if self.exchange_manager.is_future else "spot",
-            trading_enums.DBRows.EXCHANGES.value: [self.exchange_name],  # TODO multi exchange
+            trading_enums.DBRows.TRADING_TYPE.value: exchange_type,
+            trading_enums.DBRows.EXCHANGES.value: exchanges,
+            trading_enums.DBRows.FUTURE_CONTRACTS.value: future_contracts_by_exchange,
         }
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
