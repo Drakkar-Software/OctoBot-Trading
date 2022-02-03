@@ -16,6 +16,7 @@
 import decimal
 
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position as position_class
 
 
@@ -81,26 +82,54 @@ class LinearPosition(position_class.Position):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.liquidation_price = constants.ZERO
 
-    def get_bankruptcy_price(self, with_mark_price=False):
+    def get_max_order_quantity_for_price(self, available_quantity, price, side):
+        """
+        Returns the maximum order quantity in currency for given total usable funds, price and side.
+        This amount is not the total usable funds as it also requires to keep the position's open order fees
+        as well as the potential position liquidation fees in portfolio. Those fees are computed by
+        get_two_way_taker_fee_for_quantity_and_price
+        Note: this formula seems not to be 100% accurate based on Bybit UI comparison but is close enough to be
+        totally usable. See tests for differences
+        :param available_quantity:
+        :param price:
+        :param side:
+        :return:
+        """
+        return available_quantity / (
+            (
+                1 / self.symbol_contract.current_leverage +
+                self.get_two_way_taker_fee_for_quantity_and_price(constants.ONE, price, side) / price
+            ) * price
+        )
+
+    def get_bankruptcy_price(self, with_mark_price=False, price=None, side=None):
         """
         :param with_mark_price: if price should be mark price instead of entry price
         :return: Bankruptcy Price
         Long position = Entry Price x (1 - Initial Margin Rate)
         Short position = Entry Price × (1 + Initial Margin Rate)
         """
-        if self.is_long():
-            return self.mark_price \
-                if with_mark_price else self.entry_price * (constants.ONE - self.get_initial_margin_rate())
-        elif self.is_short():
-            return self.mark_price \
-                if with_mark_price else self.entry_price * (constants.ONE + self.get_initial_margin_rate())
+        if side is enums.PositionSide.LONG or (side is None and self.is_long()):
+            return self.mark_price if with_mark_price else \
+                (price or self.entry_price) * (constants.ONE - self.get_initial_margin_rate())
+        elif side is enums.PositionSide.SHORT or (side is None and self.is_short()):
+            return self.mark_price if with_mark_price else \
+                (price or self.entry_price) * (constants.ONE + self.get_initial_margin_rate())
         return constants.ZERO
 
-    def get_fee_to_open(self):
+    def get_fee_to_open(self, quantity=None, price=None):
         """
         :return: Fee to open = (Quantity * Mark Price) x Taker fee
         """
-        return self.size * self.mark_price * self.get_taker_fee()
+        return (quantity or self.size) * (price or self.mark_price) * self.get_taker_fee()
+
+    def get_fee_to_close(self, quantity=None, price=None, with_mark_price=False, side=None):
+        """
+        :return: Fee to open = (Quantity * Mark Price) x Taker fee
+        """
+        return (quantity or self.size) * \
+            self.get_bankruptcy_price(with_mark_price=with_mark_price, price=price, side=side) * \
+            self.get_taker_fee()
 
     def get_order_cost(self):
         """
@@ -112,7 +141,7 @@ class LinearPosition(position_class.Position):
         """
         :return: Fee to close = (Quantity * Bankruptcy Price derived from mark price) x Taker fee
         """
-        self.fee_to_close = self.size * self.get_bankruptcy_price(with_mark_price=True) * self.get_taker_fee()
+        self.fee_to_close = self.get_fee_to_close(with_mark_price=True)
 
     def update_average_entry_price(self, update_size, update_price):
         """
