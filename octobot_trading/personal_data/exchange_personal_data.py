@@ -109,7 +109,7 @@ class ExchangePersonalData(util.Initializable):
                 await position.update(update_margin=-position.value * funding_rate)
                 changed = True
             transaction_factory.create_fee_transaction(self.exchange_manager, position.get_currency(), position.symbol,
-                                                       quantity=position.value * funding_rate,
+                                                       quantity=-abs(position.value) * funding_rate,
                                                        funding_rate=funding_rate)
             if should_notify:
                 await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
