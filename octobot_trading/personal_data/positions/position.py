@@ -552,9 +552,11 @@ class Position(util.Initializable):
     def update_isolated_liquidation_price(self):
         raise NotImplementedError("update_isolated_liquidation_price not implemented")
 
-    def get_bankruptcy_price(self, with_mark_price=False, price=None, side=None):
+    def get_bankruptcy_price(self, price, side, with_mark_price=False):
         """
         The bankruptcy price refers to the price at which the initial margin of all positions is lost.
+        :param price: the price to compute bankruptcy from
+        :param side: the side of the position
         :param with_mark_price: if price should be mark price instead of entry price
         :return: the bankruptcy price
         """
@@ -588,22 +590,21 @@ class Position(util.Initializable):
         # Fee to close = (Quantity of contracts * Bankruptcy Price derived from Order Price) x Taker fee
         :return: 2-way taker fee = fee to open + fee to close
         """
-        return self.get_fee_to_open(quantity=quantity, price=price) + \
-            self.get_fee_to_close(quantity=quantity, price=price, side=side)
+        return self.get_fee_to_open(quantity, price) + self.get_fee_to_close(quantity, price, side)
 
     def get_two_way_taker_fee(self):
         """
         :return: 2-way taker fee = fee to open + fee to close
         """
-        return self.get_fee_to_open() + self.fee_to_close
+        return self.get_fee_to_open(self.size, self.mark_price) + self.fee_to_close
 
     def get_order_cost(self):
         raise NotImplementedError("get_order_cost not implemented")
 
-    def get_fee_to_open(self, quantity=None, price=None):
+    def get_fee_to_open(self, quantity, price):
         raise NotImplementedError("get_fee_to_open not implemented")
 
-    def get_fee_to_close(self, quantity=None, price=None, with_mark_price=False, side=None):
+    def get_fee_to_close(self, quantity, price, side, with_mark_price=False):
         raise NotImplementedError("get_fee_to_close not implemented")
 
     def update_fee_to_close(self):
