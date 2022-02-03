@@ -179,3 +179,7 @@ class InversePosition(position_class.Position):
                                (total_contract_value if total_contract_value != constants.ZERO else constants.ONE))
         if self.exit_price < constants.ZERO:
             self.exit_price = constants.ZERO
+
+    @staticmethod
+    def is_inverse():
+        return True

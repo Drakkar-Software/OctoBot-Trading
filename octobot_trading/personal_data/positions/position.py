@@ -34,6 +34,9 @@ class Position(util.Initializable):
         When adding a new "dynamic" attribute, please add it to self.restore()
         """
         super().__init__()
+        if self.is_inverse() is not symbol_contract.is_inverse_contract():
+            raise errors.InvalidPosition(f"This position requires a "
+                                         f"{'inverse' if symbol_contract.is_inverse_contract else 'linear'} contract")
         self.trader = trader
         self.exchange_manager = trader.exchange_manager
         self.simulated = trader.simulate
@@ -605,6 +608,10 @@ class Position(util.Initializable):
 
     def update_fee_to_close(self):
         raise NotImplementedError("update_fee_to_close not implemented")
+
+    @staticmethod
+    def is_inverse():
+        raise NotImplementedError("is_inverse not implemented")
 
     def _update_margin(self):
         """

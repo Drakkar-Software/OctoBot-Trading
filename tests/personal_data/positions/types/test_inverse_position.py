@@ -20,16 +20,23 @@ import pytest
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
 from tests.personal_data import check_created_transaction, get_latest_transaction
 from tests.exchanges.traders import future_trader_simulator_with_default_inverse, \
-    DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE
+    future_trader_simulator_with_default_linear, DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE
 from tests.test_utils.random_numbers import decimal_random_price, decimal_random_quantity
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
+
+
+async def test_constructor(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    with pytest.raises(errors.InvalidPosition):
+        personal_data.InversePosition(trader_inst, default_contract)
 
 
 async def test_update_value(future_trader_simulator_with_default_inverse):
