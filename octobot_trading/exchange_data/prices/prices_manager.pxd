@@ -37,4 +37,4 @@ cdef class PricesManager(util.Initializable):
 
     cpdef bint set_mark_price(self, object mark_price, str mark_price_source)
 
-cpdef double calculate_mark_price_from_recent_trade_prices(list recent_trade_prices)
+cpdef object calculate_mark_price_from_recent_trade_prices(list recent_trade_prices)

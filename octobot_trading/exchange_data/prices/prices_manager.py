@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
 import octobot_commons.constants as commons_constants
 import octobot_commons.logging as logging
@@ -146,11 +147,12 @@ class PricesManager(util.Initializable):
         """
         Reset PricesManager attributes values
         """
-        self.mark_price = 0
+        self.mark_price = constants.ZERO
         self.mark_price_set_time = 0
         self.valid_price_received_event.clear()
         self.mark_price_from_sources = {}
 
 
 def calculate_mark_price_from_recent_trade_prices(recent_trade_prices):
-    return sum(recent_trade_prices) / len(recent_trade_prices) if recent_trade_prices else 0
+    return decimal.Decimal(sum(recent_trade_prices)) / decimal.Decimal(len(recent_trade_prices)) \
+        if recent_trade_prices else constants.ZERO

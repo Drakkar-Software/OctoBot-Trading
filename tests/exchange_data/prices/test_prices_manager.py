@@ -166,9 +166,9 @@ async def test_get_mark_price(prices_manager):
 
 
 async def test_calculate_mark_price_from_recent_trade_prices():
-    assert calculate_mark_price_from_recent_trade_prices([10, 5, 7]) == 7.333333333333333
-    assert calculate_mark_price_from_recent_trade_prices([10, 20]) == 15
-    assert calculate_mark_price_from_recent_trade_prices([]) == 0
+    assert calculate_mark_price_from_recent_trade_prices([10, 5, 7]) == decimal.Decimal('7.333333333333333333333333333')
+    assert calculate_mark_price_from_recent_trade_prices([10, 20]) == decimal.Decimal(15)
+    assert calculate_mark_price_from_recent_trade_prices([]) == decimal.Decimal(0)
 
 
 def check_event_is_set(prices_manager):
