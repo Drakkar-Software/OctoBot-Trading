@@ -121,7 +121,7 @@ class PortfolioManager(util.Initializable):
         """
         Handle a mark price update notification
         :param symbol: the update symbol
-        :param mark_price: the updated mark price in float
+        :param mark_price: the updated mark price in Decimal
         :return: True if profitability changed
         """
         return self.portfolio_profitability. \

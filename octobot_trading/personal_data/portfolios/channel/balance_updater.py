@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
 import octobot_commons.logging as logging
 
@@ -148,7 +149,7 @@ class BalanceProfitabilityUpdater(portfolios_channel.BalanceProfitabilityProduce
         exchange_id: str,
         cryptocurrency: str,
         symbol: str,
-        mark_price: float,
+        mark_price: decimal.Decimal,
     ) -> None:
         """
         Mark price channel consumer callback
