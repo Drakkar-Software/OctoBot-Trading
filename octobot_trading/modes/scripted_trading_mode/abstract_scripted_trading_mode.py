@@ -48,6 +48,7 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
     INITIALIZED_DB_BY_BOT_ID = {}
     SAVED_RUN_METADATA_DB_BY_BOT_ID = {}
     WRITER_IDENTIFIER_BY_BOT_ID = {}
+    INITIALIZED_TRADING_PAIR_BY_BOT_ID = {}
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
@@ -237,6 +238,30 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id].pop(writer_identifier)
         except KeyError:
             pass
+
+    def set_initialized_trading_pair_by_bot_id(self, symbol, time_frame, initialized):
+        try:
+            self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][self.exchange_manager.exchange_name][
+                symbol][time_frame] = initialized
+        except KeyError:
+            if self.bot_id not in self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID:
+                self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id] = {}
+            if self.exchange_manager.exchange_name not in \
+                    self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id]:
+                self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][self.exchange_manager.exchange_name] = {}
+            if symbol not in \
+                    self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][self.exchange_manager.exchange_name]:
+                self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][
+                    self.exchange_manager.exchange_name][symbol] = {}
+            if time_frame not in \
+                    self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][self.exchange_manager.exchange_name][
+                        symbol]:
+                self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][self.exchange_manager.exchange_name][
+                    symbol][time_frame] = initialized
+
+    def get_initialized_trading_pair_by_bot_id(self, symbol, time_frame):
+        return self.__class__.INITIALIZED_TRADING_PAIR_BY_BOT_ID[self.bot_id][self.exchange_manager.exchange_name][
+                symbol][time_frame]
 
 
 class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProducer):
