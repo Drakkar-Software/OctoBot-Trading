@@ -398,6 +398,28 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             self.exchange_name,
             self.traded_pair
         ))
+        await self._trigger_initialization_call()
+
+    async def _trigger_initialization_call(self):
+        # initialization call is a special call that does not trigger trades and allows the script
+        # to be run at least once in order to initialize its configuration
+        if self.exchange_manager.is_backtesting:
+            # not necessary in backtesting
+            return
+
+        # fake an evaluator call
+        cryptocurrency, symbol, time_frame, trigger_time = self._get_initialization_call_args()
+        await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
+                               commons_enums.ActivationTopics.EVALUATORS.value, trigger_time, init_call=True)
+
+    def _get_initialization_call_args(self):
+        currency = next(iter(self.exchange_manager.exchange_config.traded_cryptocurrencies))
+        symbol = self.exchange_manager.exchange_config.traded_cryptocurrencies[currency][0]
+        time_frame = self.exchange_manager.exchange_config.traded_time_frames[0]
+        current_time = self.exchange_manager.exchange.get_exchange_current_time()
+        trigger_time = current_time - current_time \
+            % (commons_enums.TimeFramesMinutes[time_frame] * commons_constants.MINUTE_TO_SECONDS)
+        return currency, symbol, time_frame.value, trigger_time
 
     async def ohlcv_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
                              time_frame: str, candle: dict):
@@ -436,11 +458,11 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     async def call_script(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame: str,
                           trigger_source: str, trigger_cache_timestamp: float,
-                          candle: dict = None, kline: dict = None):
+                          candle: dict = None, kline: dict = None, init_call: bool = False):
         context = self.get_context(matrix_id, cryptocurrency, symbol, time_frame, trigger_source,
-                                   trigger_cache_timestamp, candle, kline)
+                                   trigger_cache_timestamp, candle, kline, init_call)
         self.last_call_by_timeframe[time_frame] = \
-            (matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp, candle, kline)
+            (matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp, candle, kline, init_call)
         context.matrix_id = matrix_id
         context.cryptocurrency = cryptocurrency
         context.symbol = symbol
@@ -469,8 +491,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             self.symbol_writer.set_initialized_flags(initialized, (time_frame,))
 
     def get_context(self, matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
-                    candle, kline):
-        return context_management.Context(
+                    candle, kline, init_call=False):
+        context = context_management.Context(
             self.trading_mode,
             self.exchange_manager,
             self.exchange_manager.trader,
@@ -493,6 +515,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             None,
             None,
         )
+        context.enable_trading = not init_call
+        return context
 
     async def _reset_run_data(self, context):
         await basic_keywords.clear_run_data(self.run_data_writer)
@@ -504,7 +528,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         if should_clear_inputs:
             await basic_keywords.clear_user_inputs(self.run_data_writer)
         await self._register_required_user_inputs(
-            self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None))
+            self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None, True))
 
     async def _register_required_user_inputs(self, context):
         if context.exchange_manager.is_future:
