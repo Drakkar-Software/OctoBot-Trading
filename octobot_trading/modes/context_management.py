@@ -85,6 +85,8 @@ class Context:
         self.cache_manager = databases.CacheManager(database_adaptor=databases.TinyDBAdaptor)
         self.just_created_orders = []
 
+        self.enable_trading = True
+
         # nested calls management
         self.config_name = None
         self.top_level_tentacle = tentacle
