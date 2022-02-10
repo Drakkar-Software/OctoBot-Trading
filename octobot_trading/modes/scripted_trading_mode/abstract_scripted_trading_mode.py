@@ -341,7 +341,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         exchange_type = "spot"
         exchanges = [self.exchange_name]  # TODO multi exchange
         future_contracts_by_exchange = {}
-        if self.exchange_manager.is_future:
+        if self.exchange_manager.is_future and hasattr(self.exchange_manager.exchange, "pair_contracts"):
             exchange_type = "future"
             future_contracts_by_exchange = {
                 self.exchange_name: {
