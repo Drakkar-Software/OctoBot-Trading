@@ -115,26 +115,36 @@ def test_get_fees_for_currency():
 def test_get_max_order_quantity_for_price_long_linear(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    # no need to initialize the position
-    default_contract.set_current_leverage(constants.ONE)
-    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
-    # max quantity would be 9961.7672 / 37000 = 0.269236951351,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG
-    ) == decimal.Decimal('0.2689679833679833679833679834')
-    #  0.269 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+    # # no need to initialize the position
+    # default_contract.set_current_leverage(constants.ONE)
+    # # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+    # # max quantity would be 9961.7672 / 37000 = 0.269236951351,
+    # # it is actually less to allow fees
+    # assert personal_data.get_max_order_quantity_for_price(
+    #     personal_data.LinearPosition(trader_inst, default_contract),
+    #     decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+    # ) == decimal.Decimal('0.2691220289714122077599295436')
+    # #  0.269 on Bybit UI
+    #
+    # default_contract.set_current_leverage(decimal.Decimal("2"))
+    # # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+    # # max quantity would be 9961.7672 / 37000 * 2 = 0.538473902703,
+    # # it is actually less to allow fees
+    # assert personal_data.get_max_order_quantity_for_price(
+    #     personal_data.LinearPosition(trader_inst, default_contract),
+    #     decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+    # ) == decimal.Decimal('0.5377704408287537383530732771')
+    # #  0.537 on Bybit UI
 
-    default_contract.set_current_leverage(decimal.Decimal("2"))
-    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
-    # max quantity would be 9961.7672 / 37000 * 2 = 0.538473902703,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG
-    ) == decimal.Decimal('0.5368633127644094742798631134')
-    #  0.537 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
+    # default_contract.set_current_leverage(decimal.Decimal("10"))
+    # # at price = 44018 and 9961.7672 USDT in stock, if there were no fees,
+    # # max quantity would be 9961.7672 / 44018 * 10 = 2.26311218138,
+    # # it is actually less to allow fees
+    # assert personal_data.get_max_order_quantity_for_price(
+    #     personal_data.LinearPosition(trader_inst, default_contract),
+    #     decimal.Decimal("9961.7672"), decimal.Decimal("44018"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+    # ) == decimal.Decimal('2.246042260202803100994214157')
+    # #  2.232 on Bybit UI    # TODO figure out the difference
 
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
     # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
@@ -142,9 +152,9 @@ def test_get_max_order_quantity_for_price_long_linear(future_trader_simulator_wi
     # it is actually less to allow fees (which are huge on 100x)
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG
-    ) == decimal.Decimal('22.45512521696007934540044632')
-    # no Bybit preview
+        decimal.Decimal("9961.7672"), decimal.Decimal("44000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+    ) == decimal.Decimal('19.94539455242946269110945597')
+    # 19.6 on Bybit UI
 
 
 def test_get_max_order_quantity_for_price_short_linear(future_trader_simulator_with_default_linear):
@@ -160,7 +170,7 @@ def test_get_max_order_quantity_for_price_short_linear(future_trader_simulator_w
     # it is actually less to allow fees
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT
+        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('0.2684316563822047371399315567')
     #  0.269 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
 
@@ -170,7 +180,7 @@ def test_get_max_order_quantity_for_price_short_linear(future_trader_simulator_w
     # it is actually less to allow fees
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT
+        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('0.5357949280623907489579131370')
     #  0.536 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
 
@@ -180,7 +190,7 @@ def test_get_max_order_quantity_for_price_short_linear(future_trader_simulator_w
     # it is actually less to allow fees (which are huge on 100x)
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT
+        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('22.41773116997097013749803092')
     # no Bybit preview
 
@@ -195,7 +205,7 @@ def test_get_max_order_quantity_for_price_long_inverse(future_trader_simulator_w
     # it is actually less to allow fees
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('35892.32303090727816550348953')
     #  35918 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
 
@@ -205,7 +215,7 @@ def test_get_max_order_quantity_for_price_long_inverse(future_trader_simulator_w
     # it is actually less to allow fees
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('71641.79104477611940298507463')
     #  71729 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
 
@@ -215,7 +225,7 @@ def test_get_max_order_quantity_for_price_long_inverse(future_trader_simulator_w
     # it is actually less to allow fees (which are huge on 100x)
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('2997502.081598667776852622814')
     # no Bybit preview
 
@@ -233,7 +243,7 @@ def test_get_max_order_quantity_for_price_short_inverse(future_trader_simulator_
     # it is actually less to allow fees
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('35964.03596403596403596403596')
     #  35972 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
 
@@ -243,7 +253,7 @@ def test_get_max_order_quantity_for_price_short_inverse(future_trader_simulator_
     # it is actually less to allow fees
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('71784.64606181455633100697906')
     #  71837 on Bybit UI, TODO figure out the formula, this one seems not 100% accurate
 
@@ -253,6 +263,6 @@ def test_get_max_order_quantity_for_price_short_inverse(future_trader_simulator_
     # it is actually less to allow fees (which are huge on 100x)
     assert personal_data.get_max_order_quantity_for_price(
         personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT
+        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('3002502.085070892410341951626')
     # no Bybit preview

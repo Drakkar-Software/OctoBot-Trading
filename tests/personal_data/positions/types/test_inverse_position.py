@@ -270,13 +270,16 @@ async def test_get_fee_to_open(future_trader_simulator_with_default_inverse):
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_fee_to_open(position_inst.size, position_inst.entry_price) == constants.ZERO
+    assert position_inst.get_fee_to_open(position_inst.size, position_inst.entry_price, position_inst.symbol) == \
+           constants.ZERO
     await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=constants.ONE_HUNDRED)
-    assert position_inst.get_fee_to_open(position_inst.size, position_inst.entry_price) == decimal.Decimal("0.000004")
-    assert position_inst.get_fee_to_open(decimal.Decimal(50), position_inst.entry_price) == decimal.Decimal("0.000002")
-    assert position_inst.get_fee_to_open(position_inst.size, decimal.Decimal(150)) == \
+    assert position_inst.get_fee_to_open(position_inst.size, position_inst.entry_price, position_inst.symbol) == \
+           decimal.Decimal("0.000004")
+    assert position_inst.get_fee_to_open(decimal.Decimal(50), position_inst.entry_price, position_inst.symbol) == \
+           decimal.Decimal("0.000002")
+    assert position_inst.get_fee_to_open(position_inst.size, decimal.Decimal(150), position_inst.symbol) == \
            decimal.Decimal("0.000002666666666666666666666666667")
-    assert position_inst.get_fee_to_open(decimal.Decimal(50), decimal.Decimal(150)) == \
+    assert position_inst.get_fee_to_open(decimal.Decimal(50), decimal.Decimal(150), position_inst.symbol) == \
            decimal.Decimal("0.000001333333333333333333333333333")
 
 

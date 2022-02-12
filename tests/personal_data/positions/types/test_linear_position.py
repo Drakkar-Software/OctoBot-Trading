@@ -426,7 +426,7 @@ async def test_get_order_cost(future_trader_simulator_with_default_linear):
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     assert position_inst.get_order_cost() == constants.ZERO
     await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
-    assert position_inst.get_order_cost() == decimal.Decimal("1000.008")
+    assert position_inst.get_order_cost() == decimal.Decimal("1000.8")
 
 
 async def test_get_fee_to_open(future_trader_simulator_with_default_linear):
@@ -437,11 +437,11 @@ async def test_get_fee_to_open(future_trader_simulator_with_default_linear):
     await position_inst.update(update_size=constants.ZERO, mark_price=constants.ZERO)
     assert position_inst.get_fee_to_open(constants.ZERO, constants.ZERO) == constants.ZERO
     await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
-    assert position_inst.get_fee_to_open(TWENTY_FIVE, FORTY) == decimal.Decimal("0.004")
-    assert position_inst.get_fee_to_open(decimal.Decimal(2), FORTY) == decimal.Decimal("0.000320")
-    assert position_inst.get_fee_to_open(TWENTY_FIVE, decimal.Decimal(2)) == decimal.Decimal("0.0002")
+    assert position_inst.get_fee_to_open(TWENTY_FIVE, FORTY) == decimal.Decimal("0.4")
+    assert position_inst.get_fee_to_open(decimal.Decimal(2), FORTY) == decimal.Decimal("0.0320")
+    assert position_inst.get_fee_to_open(TWENTY_FIVE, decimal.Decimal(2)) == decimal.Decimal("0.02")
     assert position_inst.get_fee_to_open(decimal.Decimal(2), decimal.Decimal(2)) == \
-           decimal.Decimal("0.000016")
+           decimal.Decimal("0.0016")
 
 
 async def test_update_fee_to_close(future_trader_simulator_with_default_linear):
@@ -454,7 +454,7 @@ async def test_update_fee_to_close(future_trader_simulator_with_default_linear):
     assert position_inst.fee_to_close == constants.ZERO
     await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
     position_inst.update_fee_to_close()
-    assert position_inst.fee_to_close == decimal.Decimal("0.004")
+    assert position_inst.fee_to_close == decimal.Decimal("0.4")
 
 
 def test_get_two_way_taker_fee_for_quantity_and_price(future_trader_simulator_with_default_linear):
@@ -463,20 +463,21 @@ def test_get_two_way_taker_fee_for_quantity_and_price(future_trader_simulator_wi
     # no need to initialize the position
     default_contract.set_current_leverage(decimal.Decimal("2"))
     assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
-        decimal.Decimal("0.01"), decimal.Decimal("38497.5"), enums.PositionSide.LONG
-    ) == decimal.Decimal("0.5774625")     # open fees + closing fees in case of liquidation
+        decimal.Decimal("0.01"), decimal.Decimal("38497.5"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+    ) == decimal.Decimal("0.23098500")     # open fees + closing fees in case of liquidation
+    # TODO take leverage into account
 
     assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
-        decimal.Decimal("10"), constants.ONE_HUNDRED, enums.PositionSide.LONG
+        decimal.Decimal("10"), constants.ONE_HUNDRED, enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
     ) == constants.ONE + decimal.Decimal("0.5")     # open fees + closing fees in case of liquidation
 
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
     assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
-        decimal.Decimal("10"), decimal.Decimal("100"), enums.PositionSide.LONG
+        decimal.Decimal("10"), decimal.Decimal("100"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
     ) == constants.ONE + decimal.Decimal("0.99")     # open fees + closing fees in case of liquidation
 
     assert personal_data.LinearPosition(trader_inst, default_contract).get_two_way_taker_fee_for_quantity_and_price(
-        decimal.Decimal("10"), decimal.Decimal("100"), enums.PositionSide.SHORT
+        decimal.Decimal("10"), decimal.Decimal("100"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
     ) == constants.ONE + decimal.Decimal("1.01")     # open fees + closing fees in case of liquidation
 
 

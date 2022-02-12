@@ -125,7 +125,7 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None)
     return currency_available, market_available, market_quantity, mark_price, symbol_market
 
 
-def get_max_order_quantity_for_price(position, available_quantity, price, side):
+def get_max_order_quantity_for_price(position, available_quantity, price, side, symbol):
     """
     Returns the maximum order quantity in market or currency for given total usable funds, price and side.
     This amount is not the total usable funds as it also requires to keep the position's open order fees
@@ -137,9 +137,12 @@ def get_max_order_quantity_for_price(position, available_quantity, price, side):
     :param available_quantity: the maximum amount of currency/market to allocate to the position
     :param price: the target entry price of the position
     :param side: the side of the position
+    :param side: the symbol of the position
     :return: the computed leveraged maximum entry quantity
     """
-    two_way_fees = position.get_two_way_taker_fee_for_quantity_and_price(constants.ONE, price, side)
+    # use position.symbol_contract.current_leverage as quantity to simulate a 1 unit quantity (x leverage)
+    two_way_fees = position.get_two_way_taker_fee_for_quantity_and_price(position.symbol_contract.current_leverage,
+                                                                         price, side, symbol)
     if position.symbol_contract.is_inverse_contract():
         # Returns the maximum order quantity in market.
         return available_quantity * price / (
@@ -147,8 +150,8 @@ def get_max_order_quantity_for_price(position, available_quantity, price, side):
         )
     # Returns the maximum order quantity in currency.
     return available_quantity / (
-        (1 / position.symbol_contract.current_leverage + two_way_fees / price) * price
-    )
+        (1 + two_way_fees / price) * price
+    ) * position.symbol_contract.current_leverage
 
 
 def total_fees_from_order_dict(order_dict, currency):
