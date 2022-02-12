@@ -99,17 +99,18 @@ class LinearPosition(position_class.Position):
                 price * (constants.ONE + self.get_initial_margin_rate())
         return constants.ZERO
 
-    def get_fee_to_open(self, quantity, price):
+    def get_fee_to_open(self, quantity, price, symbol):
         """
         :return: Fee to open = (Quantity * Mark Price) x Taker fee
         """
-        return quantity * price * self.get_taker_fee()
+        return quantity * price * self.get_taker_fee(symbol)
 
-    def get_fee_to_close(self, quantity, price, side, with_mark_price=False):
+    def get_fee_to_close(self, quantity, price, side, symbol, with_mark_price=False):
         """
         :return: Fee to open = (Quantity * Mark Price) x Taker fee
         """
-        return quantity * self.get_bankruptcy_price(price, side, with_mark_price=with_mark_price) * self.get_taker_fee()
+        return quantity * self.get_bankruptcy_price(price, side, with_mark_price=with_mark_price) * \
+            self.get_taker_fee(symbol)
 
     def get_order_cost(self):
         """
@@ -121,7 +122,8 @@ class LinearPosition(position_class.Position):
         """
         :return: Fee to close = (Quantity * Bankruptcy Price derived from mark price) x Taker fee
         """
-        self.fee_to_close = self.get_fee_to_close(self.size, self.entry_price, self.side, with_mark_price=True)
+        self.fee_to_close = self.get_fee_to_close(self.size, self.entry_price, self.side, self.symbol,
+                                                  with_mark_price=True)
 
     def update_average_entry_price(self, update_size, update_price):
         """

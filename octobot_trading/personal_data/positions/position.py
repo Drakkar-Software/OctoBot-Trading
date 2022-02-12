@@ -563,49 +563,49 @@ class Position(util.Initializable):
         """
         raise NotImplementedError("get_bankruptcy_price not implemented")
 
-    def get_maker_fee(self):
+    def get_maker_fee(self, symbol):
         """
         :return: Position maker fee
         """
         try:
-            symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
+            symbol_fees = self.exchange_manager.exchange.get_fees(symbol)
             return decimal.Decimal(
-                f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value]}") / constants.ONE_HUNDRED
+                f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value]}")
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
-    def get_taker_fee(self):
+    def get_taker_fee(self, symbol):
         """
         :return: Position taker fee
         """
         try:
-            symbol_fees = self.exchange_manager.exchange.get_fees(self.symbol)
+            symbol_fees = self.exchange_manager.exchange.get_fees(symbol)
             return decimal.Decimal(
-                f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value]}") / constants.ONE_HUNDRED
+                f"{symbol_fees[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value]}")
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
-    def get_two_way_taker_fee_for_quantity_and_price(self, quantity, price, side):
+    def get_two_way_taker_fee_for_quantity_and_price(self, quantity, price, side, symbol):
         """
         # Fee to open = (Quantity of contracts * Order Price) x Taker fee
         # Fee to close = (Quantity of contracts * Bankruptcy Price derived from Order Price) x Taker fee
         :return: 2-way taker fee = fee to open + fee to close
         """
-        return self.get_fee_to_open(quantity, price) + self.get_fee_to_close(quantity, price, side)
+        return self.get_fee_to_open(quantity, price, symbol) + self.get_fee_to_close(quantity, price, side, symbol)
 
     def get_two_way_taker_fee(self):
         """
         :return: 2-way taker fee = fee to open + fee to close
         """
-        return self.get_fee_to_open(self.size, self.mark_price) + self.fee_to_close
+        return self.get_fee_to_open(self.size, self.mark_price, self.symbol) + self.fee_to_close
 
     def get_order_cost(self):
         raise NotImplementedError("get_order_cost not implemented")
 
-    def get_fee_to_open(self, quantity, price):
+    def get_fee_to_open(self, quantity, price, symbol):
         raise NotImplementedError("get_fee_to_open not implemented")
 
-    def get_fee_to_close(self, quantity, price, side, with_mark_price=False):
+    def get_fee_to_close(self, quantity, price, side, symbol, with_mark_price=False):
         raise NotImplementedError("get_fee_to_close not implemented")
 
     def update_fee_to_close(self):
