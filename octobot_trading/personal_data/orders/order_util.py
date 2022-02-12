@@ -131,10 +131,8 @@ def get_max_order_quantity_for_price(position, available_quantity, price, side, 
     This amount is not the total usable funds as it also requires to keep the position's open order fees
     as well as the potential position liquidation fees in portfolio. Those fees are computed by
     get_two_way_taker_fee_for_quantity_and_price
-    Note: this formula seems not to be 100% accurate based on Bybit UI comparison but is close enough to be
-    totally usable. See tests for differences
     :param position: the position to compute quantity for
-    :param available_quantity: the maximum amount of currency/market to allocate to the position
+    :param available_quantity: the maximum leveraged amount of currency/market to allocate to the position
     :param price: the target entry price of the position
     :param side: the side of the position
     :param side: the symbol of the position
@@ -145,13 +143,11 @@ def get_max_order_quantity_for_price(position, available_quantity, price, side, 
                                                                          price, side, symbol)
     if position.symbol_contract.is_inverse_contract():
         # Returns the maximum order quantity in market.
-        return available_quantity * price / (
-            1 / position.symbol_contract.current_leverage + two_way_fees * price
-        )
+        return position.symbol_contract.current_leverage * available_quantity / \
+            (two_way_fees + constants.ONE / price)
     # Returns the maximum order quantity in currency.
-    return available_quantity / (
-        (1 + two_way_fees / price) * price
-    ) * position.symbol_contract.current_leverage
+    return position.symbol_contract.current_leverage * available_quantity / \
+        (two_way_fees + price)
 
 
 def total_fees_from_order_dict(order_dict, currency):
