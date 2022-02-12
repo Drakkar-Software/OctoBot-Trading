@@ -120,22 +120,22 @@ class InversePosition(position_class.Position):
         """
         return self.initial_margin + self.get_two_way_taker_fee()
 
-    def get_fee_to_open(self, quantity, price):
+    def get_fee_to_open(self, quantity, price, symbol):
         """
         :return: Fee to open = (Quantity / Mark price ) x taker fee
         """
         try:
-            return quantity / price * self.get_taker_fee()
+            return quantity / price * self.get_taker_fee(symbol)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
-    def get_fee_to_close(self, quantity, price, side, with_mark_price=False):
+    def get_fee_to_close(self, quantity, price, side, symbol, with_mark_price=False):
         """
         :return: Fee to open = (Quantity * Mark Price) x Taker fee
         """
         try:
             return quantity / \
-                self.get_bankruptcy_price(price, side, with_mark_price=with_mark_price) * self.get_taker_fee()
+                self.get_bankruptcy_price(price, side, with_mark_price=with_mark_price) * self.get_taker_fee(symbol)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
@@ -144,7 +144,8 @@ class InversePosition(position_class.Position):
         :return: Fee to close = (Quantity / Bankruptcy Price derived from mark price) x taker fee
         """
         try:
-            self.fee_to_close = self.get_fee_to_close(self.size, self.entry_price, self.side, with_mark_price=True)
+            self.fee_to_close = self.get_fee_to_close(self.size, self.entry_price, self.side, self.symbol,
+                                                      with_mark_price=True)
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.fee_to_close = constants.ZERO
