@@ -559,7 +559,6 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         await basic_keywords.store_transactions(
             None,
             self.exchange_manager.exchange_personal_data.transactions_manager.transactions.values(),
-            chart=None,
             writer=self.transactions_writer
         )
 
