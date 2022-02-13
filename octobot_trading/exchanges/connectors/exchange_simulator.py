@@ -146,25 +146,29 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
 
         if commons_constants.CONFIG_SIMULATOR in self.config and \
                 commons_constants.CONFIG_SIMULATOR_FEES in self.config[commons_constants.CONFIG_SIMULATOR]:
-            if commons_constants.CONFIG_SIMULATOR_FEES_MAKER in \
-                    self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES]:
-                result_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value] = \
-                    self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES][
-                        commons_constants.CONFIG_SIMULATOR_FEES_MAKER]
-
-            if commons_constants.CONFIG_SIMULATOR_FEES_MAKER in self.config[commons_constants.CONFIG_SIMULATOR][
-                commons_constants.CONFIG_SIMULATOR_FEES]:
-                result_fees[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value] = \
-                    self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES][
-                        commons_constants.CONFIG_SIMULATOR_FEES_TAKER]
-
-            if commons_constants.CONFIG_SIMULATOR_FEES_WITHDRAW in self.config[commons_constants.CONFIG_SIMULATOR][
-                commons_constants.CONFIG_SIMULATOR_FEES]:
-                result_fees[enums.ExchangeConstantsMarketPropertyColumns.FEE.value] = \
-                    self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES][
-                        commons_constants.CONFIG_SIMULATOR_FEES_WITHDRAW]
+            self._read_fees_from_config(result_fees)
 
         return result_fees
+
+    def _read_fees_from_config(self, result_fees):
+        # in configuration, fees are in %, convert them to decimal
+        if commons_constants.CONFIG_SIMULATOR_FEES_MAKER in \
+                self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES]:
+            result_fees[enums.ExchangeConstantsMarketPropertyColumns.MAKER.value] = \
+                self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES][
+                    commons_constants.CONFIG_SIMULATOR_FEES_MAKER] / 100
+
+        if commons_constants.CONFIG_SIMULATOR_FEES_MAKER in self.config[commons_constants.CONFIG_SIMULATOR][
+           commons_constants.CONFIG_SIMULATOR_FEES]:
+            result_fees[enums.ExchangeConstantsMarketPropertyColumns.TAKER.value] = \
+                self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES][
+                    commons_constants.CONFIG_SIMULATOR_FEES_TAKER] / 100
+
+        if commons_constants.CONFIG_SIMULATOR_FEES_WITHDRAW in self.config[commons_constants.CONFIG_SIMULATOR][
+           commons_constants.CONFIG_SIMULATOR_FEES]:
+            result_fees[enums.ExchangeConstantsMarketPropertyColumns.FEE.value] = \
+                self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_SIMULATOR_FEES][
+                    commons_constants.CONFIG_SIMULATOR_FEES_WITHDRAW] / 100
 
     # returns {
     #     'type': takerOrMaker,
@@ -176,7 +180,7 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
         if not taker_or_maker:
             taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
         symbol_fees = self.get_fees(symbol)
-        rate = symbol_fees[taker_or_maker] / 100  # /100 because rate in used in %
+        rate = symbol_fees[taker_or_maker]
         currency, market = symbol_util.split_symbol(symbol)
         fee_currency = currency
 

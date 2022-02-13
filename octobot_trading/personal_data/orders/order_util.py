@@ -132,7 +132,7 @@ def get_max_order_quantity_for_price(position, available_quantity, price, side, 
     as well as the potential position liquidation fees in portfolio. Those fees are computed by
     get_two_way_taker_fee_for_quantity_and_price
     :param position: the position to compute quantity for
-    :param available_quantity: the maximum leveraged amount of currency/market to allocate to the position
+    :param available_quantity: the maximum amount of currency/market to allocate to the position (without leverage)
     :param price: the target entry price of the position
     :param side: the side of the position
     :param side: the symbol of the position

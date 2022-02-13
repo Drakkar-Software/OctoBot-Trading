@@ -30,6 +30,8 @@ cdef class ExchangeSimulator(abstract_exchange.AbstractExchange):
     cpdef list get_available_time_frames(self)
     cpdef list get_time_frames(self, object importer)
 
+    cdef void _read_fees_from_config(self, dict result_fees)
+
 # Should be cythonized with cython 3.0
 # cpdef set handles_real_data_for_updater(str channel_type, list available_data_types)
 
