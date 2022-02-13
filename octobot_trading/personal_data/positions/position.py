@@ -236,14 +236,15 @@ class Position(util.Initializable):
         self._on_size_update(size_update, realised_pnl_update, self.unrealized_pnl, False)
         await self.close()
 
-    def _update_mark_price(self, mark_price):
+    def _update_mark_price(self, mark_price, check_liquidation=True):
         """
         Updates position mark_price and triggers size related attributes update
         :param mark_price: the update mark_price
         """
         self.mark_price = mark_price
         self._update_prices_if_necessary(mark_price)
-        self._check_for_liquidation()
+        if check_liquidation:
+            self._check_for_liquidation()
         if not self.is_idle() and self.exchange_manager.is_simulated:
             self.update_value()
             self.update_pnl()
@@ -289,7 +290,8 @@ class Position(util.Initializable):
         :return: the updated quantity, True if the order increased position size
         """
         # consider the order filled price as the current reference price for pnl computation
-        self._update_mark_price(order.filled_price)
+        # do not check liquidation as our position might be closed by this order
+        self._update_mark_price(order.filled_price, check_liquidation=False)
 
         # get size to close to check if closing
         size_to_close = self.get_quantity_to_close()
