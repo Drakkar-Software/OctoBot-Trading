@@ -21,8 +21,9 @@ import octobot_trading.modes.basic_keywords.user_inputs as user_inputs
 async def user_select_leverage(
         ctx,
         def_val=1,
+        order=None,
         name="leverage"):
-    selected_leverage = await user_inputs.user_input(ctx, name, "int", def_val)
+    selected_leverage = await user_inputs.user_input(ctx, name, "int", def_val, order=order)
     if ctx.exchange_manager.is_future:
         side = None
         # TODO remove this try when bybit tentacle is up
