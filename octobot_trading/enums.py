@@ -524,6 +524,7 @@ class BacktestingMetadata(enum.Enum):
     TRADES = "trades"
     TIMESTAMP = "timestamp"
     NAME = "name"
+    LEVERAGE = "leverage"
     OPTIMIZATION_CAMPAIGN = "optimization campaign"
     USER_INPUTS = "user inputs"
     BACKTESTING_FILES = "backtesting files"
