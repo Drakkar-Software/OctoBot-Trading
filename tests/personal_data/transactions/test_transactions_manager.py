@@ -57,7 +57,8 @@ async def test_insert_transaction_instance(backtesting_trader):
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,
         leverage=constants.ONE,
-        side=enums.PositionSide.SHORT)
+        side=enums.PositionSide.SHORT,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     transaction.set_transaction_id(t_id)
     transaction_2 = transaction_types.BlockchainTransaction(
         exchange_name=exchange_manager.exchange_name,
@@ -117,7 +118,8 @@ async def test_get_transaction(backtesting_trader):
         average_entry_price=constants.ONE,
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,
-        leverage=constants.ONE)
+        leverage=constants.ONE,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     transaction_2 = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
@@ -132,7 +134,8 @@ async def test_get_transaction(backtesting_trader):
         average_entry_price=constants.ONE,
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,
-        leverage=constants.ONE)
+        leverage=constants.ONE,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction)
 
     # succeed to return transaction instance
@@ -176,7 +179,8 @@ async def test_update_transaction_id(backtesting_trader):
         average_entry_price=constants.ONE,
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,
-        leverage=constants.ONE)
+        leverage=constants.ONE,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     transaction.set_transaction_id(t_id)
     transaction_2 = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
@@ -192,7 +196,8 @@ async def test_update_transaction_id(backtesting_trader):
         average_entry_price=constants.ONE,
         average_exit_price=constants.ONE,
         order_exit_price=constants.ONE,
-        leverage=constants.ONE)
+        leverage=constants.ONE,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     transaction_2.set_transaction_id(t_id_2)
 
     # Add transaction instances to TransactionsManager.transactions

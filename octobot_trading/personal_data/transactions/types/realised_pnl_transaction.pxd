@@ -26,6 +26,7 @@ cdef class RealisedPnlTransaction(transaction.Transaction):
     cdef readonly object average_exit_price
     cdef readonly object order_exit_price
     cdef readonly object leverage
+    cdef readonly object trigger_source
     cdef readonly object side
 
     cpdef bint is_closed_pnl(self)

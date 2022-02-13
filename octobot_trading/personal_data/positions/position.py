@@ -21,6 +21,7 @@ import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
+import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.positions.position_util as position_util
 import octobot_trading.personal_data.positions.states as positions_states
 import octobot_trading.personal_data.transactions.transaction_factory as transaction_factory
@@ -232,7 +233,9 @@ class Position(util.Initializable):
         """
         size_update = self.get_quantity_to_close()
         self.unrealized_pnl = -self.initial_margin
-        realised_pnl_update = self._update_realized_pnl_from_size_update(size_update, is_closing=True)
+        realised_pnl_update = self._update_realized_pnl_from_size_update(
+            size_update, is_closing=True, update_price=self.mark_price,
+            trigger_source=enums.PNLTransactionSource.LIQUIDATION)
         self._on_size_update(size_update, realised_pnl_update, self.unrealized_pnl, False)
         await self.close()
 
@@ -299,10 +302,14 @@ class Position(util.Initializable):
         # Remove / add order fees from realized pnl
         realised_pnl_fees_update = self._update_realized_pnl_from_order(order)
 
+        trigger_source = order_util.get_pnl_transaction_source_from_order(order)
+
         # Close position if order is closing position
         if order.close_position:
             # set position size to 0 to schedule position close at the next update
-            self._update_size(size_to_close, realised_pnl_update=realised_pnl_fees_update)
+            self._update_size(size_to_close,
+                              realised_pnl_update=realised_pnl_fees_update,
+                              trigger_source=trigger_source)
             return
 
         # Calculates position quantity update from order
@@ -320,7 +327,7 @@ class Position(util.Initializable):
             self._update_exit_data(size_update, self.mark_price)
 
         # update size and realised pnl
-        self._update_size(size_update, realised_pnl_update=realised_pnl_fees_update)
+        self._update_size(size_update, realised_pnl_update=realised_pnl_fees_update, trigger_source=trigger_source)
 
     def _update_realized_pnl_from_order(self, order):
         """
@@ -388,7 +395,8 @@ class Position(util.Initializable):
             return self.size + size_update <= constants.ZERO
         return self.size + size_update >= constants.ZERO
 
-    def _update_size(self, size_update, realised_pnl_update=constants.ZERO):
+    def _update_size(self, size_update, realised_pnl_update=constants.ZERO,
+                     trigger_source=enums.PNLTransactionSource.UNKNOWN):
         """
         Updates position size and triggers size related attributes update
         :param size_update: the size quantity
@@ -400,7 +408,7 @@ class Position(util.Initializable):
         if self._is_update_decreasing_size(size_update):
             realised_pnl_update += self._update_realized_pnl_from_size_update(
                 size_update, is_closing=self._is_update_closing(size_update),
-                update_price=self.mark_price)
+                update_price=self.mark_price, trigger_source=trigger_source)
         self._check_and_update_size(size_update)
         self._update_quantity()
         self._update_side()
@@ -415,7 +423,8 @@ class Position(util.Initializable):
                              margin_update,
                              is_update_increasing_position_size)
 
-    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False, update_price=constants.ZERO):
+    def _update_realized_pnl_from_size_update(self, size_update, is_closing=False, update_price=constants.ZERO,
+                                              trigger_source=enums.PNLTransactionSource.UNKNOWN):
         """
         Updates the position realized pnl from update size
         :param size_update: the position update size
@@ -435,7 +444,8 @@ class Position(util.Initializable):
                                                                 average_entry_price=self.entry_price,
                                                                 average_exit_price=self.exit_price,
                                                                 order_exit_price=update_price,
-                                                                leverage=self.symbol_contract.current_leverage)
+                                                                leverage=self.symbol_contract.current_leverage,
+                                                                trigger_source=trigger_source)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             realised_pnl_update = constants.ZERO
         self.realised_pnl += realised_pnl_update
