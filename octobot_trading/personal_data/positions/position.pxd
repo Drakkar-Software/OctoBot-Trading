@@ -75,7 +75,7 @@ cdef class Position(util.Initializable):
                       object status=*,
                       object side=*)
     cdef bint _should_change(self, object original_value, object new_value)
-    cdef void _update_mark_price(self, object mark_price)
+    cdef void _update_mark_price(self, object mark_price, bint check_liquidation=*)
     cdef void _update_prices_if_necessary(self, object mark_price)
     cdef object _update_size_from_margin(self, object margin_update)  # needs object to forward exceptions
     cdef void _update_quantity_or_size_if_necessary(self)
