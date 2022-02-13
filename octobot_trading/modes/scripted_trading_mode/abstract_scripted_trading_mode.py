@@ -296,6 +296,9 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                     formatted_user_inputs[user_input["tentacle"]] = {
                         user_input["name"]: user_input["value"]
                     }
+        leverage = 0
+        if self.exchange_manager.is_future and hasattr(self.exchange_manager.exchange, "get_pair_future_contract"):
+            leverage = float(self.exchange_manager.exchange.get_pair_future_contract(symbols[0]).current_leverage)
         trades = trading_api.get_trade_history(self.exchange_manager)
         entries = [
             trade
@@ -326,6 +329,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             trading_enums.BacktestingMetadata.TRADES.value: len(trades),
             trading_enums.BacktestingMetadata.TIMESTAMP.value: self.trading_mode.timestamp,
             trading_enums.BacktestingMetadata.NAME.value: self.trading_mode.script_name,
+            trading_enums.BacktestingMetadata.LEVERAGE.value: leverage,
             trading_enums.BacktestingMetadata.USER_INPUTS.value: formatted_user_inputs,
             trading_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(
                 self.exchange_manager)
