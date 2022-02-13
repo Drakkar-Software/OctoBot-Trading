@@ -177,3 +177,16 @@ def parse_order_status(raw_order):
 
 def parse_is_cancelled(raw_order):
     return parse_order_status(raw_order) in {enums.OrderStatus.CANCELED, enums.OrderStatus.CLOSED}
+
+
+def get_pnl_transaction_source_from_order(order):
+    if order.order_type in [enums.TraderOrderType.SELL_MARKET, enums.TraderOrderType.BUY_MARKET,
+                            enums.TraderOrderType.TAKE_PROFIT]:
+        return enums.PNLTransactionSource.MARKET_ORDER
+    if order.order_type in [enums.TraderOrderType.SELL_LIMIT, enums.TraderOrderType.BUY_LIMIT,
+                            enums.TraderOrderType.TAKE_PROFIT_LIMIT]:
+        return enums.PNLTransactionSource.LIMIT_ORDER
+    if order.order_type in [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.STOP_LOSS_LIMIT,
+                            enums.TraderOrderType.TRAILING_STOP, enums.TraderOrderType.TRAILING_STOP_LIMIT]:
+        return enums.PNLTransactionSource.STOP_ORDER
+    return enums.PNLTransactionSource.UNKNOWN

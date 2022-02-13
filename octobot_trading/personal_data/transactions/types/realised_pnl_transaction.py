@@ -22,7 +22,7 @@ import octobot_trading.personal_data.transactions.transaction as transaction
 class RealisedPnlTransaction(transaction.Transaction):
     def __init__(self, exchange_name, creation_time, transaction_type, currency, symbol, realised_pnl, closed_quantity,
                  cumulated_closed_quantity, first_entry_time, average_entry_price, average_exit_price, order_exit_price,
-                 leverage, side):
+                 leverage, trigger_source, side):
         super().__init__(exchange_name, creation_time, transaction_type, currency, symbol=symbol)
         self.realised_pnl = realised_pnl
         self.closed_quantity = closed_quantity
@@ -32,6 +32,7 @@ class RealisedPnlTransaction(transaction.Transaction):
         self.average_exit_price = average_exit_price
         self.order_exit_price = order_exit_price
         self.leverage = leverage
+        self.trigger_source = trigger_source
         self.side = side
         self.transaction_id = f"{self.exchange_name}" \
                               f"-{str(uuid.uuid4())[:4]}" \

@@ -74,6 +74,7 @@ from octobot_trading.personal_data.orders.order_util cimport (
     parse_raw_fees,
     parse_order_status,
     parse_is_cancelled,
+    get_pnl_transaction_source_from_order,
 )
 from octobot_trading.personal_data.orders.order_adapter cimport (
     adapt_price,
@@ -102,6 +103,7 @@ __all__ = [
     "parse_raw_fees",
     "parse_order_status",
     "parse_is_cancelled",
+    "get_pnl_transaction_source_from_order",
     "OrderState",
     "OrdersUpdater",
     "adapt_price",
