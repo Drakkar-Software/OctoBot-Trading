@@ -161,6 +161,7 @@ async def store_transactions(ctx,
             "order_exit_price": float(transaction.order_exit_price)
             if hasattr(transaction, "order_exit_price") else None,
             "leverage": float(transaction.leverage) if hasattr(transaction, "leverage") else None,
+            "trigger_source": transaction.trigger_source.value if hasattr(transaction, "trigger_source") else None,
             "side": transaction.side.value if hasattr(transaction, "side") else None,
             "y": y_data[index],
             "chart": chart,
