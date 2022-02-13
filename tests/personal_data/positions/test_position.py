@@ -1218,6 +1218,7 @@ async def test_update_position_when_overliquidated_position_with_long_position_i
     config, exchange_manager_inst, trader_inst, default_contract, position_inst = btc_usdt_future_trader_simulator_with_default_inverse
     portfolio_manager = exchange_manager_inst.exchange_personal_data.portfolio_manager
     default_contract.set_current_leverage(decimal.Decimal(10))
+    tm = exchange_manager_inst.exchange_personal_data.transactions_manager
 
     position_inst = personal_data.InversePosition(trader_inst, default_contract)
     position_inst.update_from_raw({enums.ExchangeConstantsPositionColumns.SYMBOL.value: DEFAULT_FUTURE_SYMBOL})
@@ -1233,9 +1234,16 @@ async def test_update_position_when_overliquidated_position_with_long_position_i
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == decimal.Decimal('9.999')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == constants.ZERO
 
+    assert len(tm.transactions) == 0
+
     await position_inst.update(mark_price=decimal.Decimal(3))
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").available == decimal.Decimal('0.001')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").total == decimal.Decimal('0.001')
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").order_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").position_margin == constants.ZERO
     assert portfolio_manager.portfolio.get_currency_portfolio("BTC").unrealized_pnl == constants.ZERO
+
+    assert len(tm.transactions) == 1
+    transaction = next(iter(tm.transactions.values()))
+    assert transaction.realised_pnl == decimal.Decimal("-9.999")
+    assert transaction.trigger_source is enums.PNLTransactionSource.LIQUIDATION

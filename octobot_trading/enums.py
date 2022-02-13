@@ -119,6 +119,14 @@ class TransactionType(enum.Enum):
     TRANSFER = "transfer"
 
 
+class PNLTransactionSource(enum.Enum):
+    MARKET_ORDER = "market_order"
+    LIMIT_ORDER = "limit_order"
+    STOP_ORDER = "stop_order"
+    LIQUIDATION = "liquidation"
+    UNKNOWN = "unknown"
+
+
 class TraderOrderType(enum.Enum):
     BUY_MARKET = "buy_market"
     BUY_LIMIT = "buy_limit"

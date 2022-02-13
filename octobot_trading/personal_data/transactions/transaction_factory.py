@@ -50,7 +50,8 @@ def create_realised_pnl_transaction(exchange_manager, currency, symbol, side,
                                     average_entry_price=constants.ZERO,
                                     average_exit_price=constants.ZERO,
                                     order_exit_price=constants.ZERO,
-                                    leverage=constants.ZERO):
+                                    leverage=constants.ZERO,
+                                    trigger_source=enums.PNLTransactionSource.UNKNOWN):
     realised_pnl_transaction = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
@@ -66,6 +67,7 @@ def create_realised_pnl_transaction(exchange_manager, currency, symbol, side,
         average_exit_price=average_exit_price,
         order_exit_price=order_exit_price,
         leverage=leverage,
+        trigger_source=trigger_source,
         side=side)
     _insert_transaction_instance(exchange_manager, realised_pnl_transaction)
     return realised_pnl_transaction

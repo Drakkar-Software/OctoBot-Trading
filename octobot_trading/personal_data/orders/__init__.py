@@ -70,6 +70,7 @@ from octobot_trading.personal_data.orders.order_util import (
     parse_order_status,
     parse_is_cancelled,
     get_pre_order_data,
+    get_pnl_transaction_source_from_order,
 )
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
@@ -113,6 +114,7 @@ __all__ = [
     "parse_order_status",
     "parse_is_cancelled",
     "get_pre_order_data",
+    "get_pnl_transaction_source_from_order",
     "OrderState",
     "OrdersUpdater",
     "adapt_price",

@@ -39,7 +39,8 @@ cpdef transaction_types.RealisedPnlTransaction create_realised_pnl_transaction(o
                                                                                object average_entry_price=*,
                                                                                object average_exit_price=*,
                                                                                object order_exit_price=*,
-                                                                               object leverage=*)
+                                                                               object leverage=*,
+                                                                               object trigger_source=*)
 
 cpdef transaction_types.FeeTransaction create_fee_transaction(object exchange_manager,
                                                               str currency,
