@@ -119,6 +119,14 @@ class TransactionType(enum.Enum):
     TRANSFER = "transfer"
 
 
+class PNLTransactionSource(enum.Enum):
+    MARKET_ORDER = "market_order"
+    LIMIT_ORDER = "limit_order"
+    STOP_ORDER = "stop_order"
+    LIQUIDATION = "liquidation"
+    UNKNOWN = "unknown"
+
+
 class TraderOrderType(enum.Enum):
     BUY_MARKET = "buy_market"
     BUY_LIMIT = "buy_limit"
@@ -334,7 +342,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     MARK_PRICE = "mark_price"
     LIQUIDATION_PRICE = "liquidation_price"
     BANKRUPTCY_PRICE = "bankruptcy_price"
-    UNREALISED_PNL = "unrealised_pnl"
+    UNREALIZED_PNL = "unrealised_pnl"   # unrealised_pnl on Bybit api and unrealized_pnl on exchange UI
     REALISED_PNL = "realised_pnl"
     CLOSING_FEE = "closing_fee"
     QUANTITY = "quantity"
@@ -378,6 +386,12 @@ class FeePropertyColumns(enum.Enum):
     CURRENCY = "currency"  # currency the fee is paid in
     RATE = "rate"  # multiplier applied to compute fee
     COST = "cost"  # fee amount
+
+
+class FeesCurrencySide(enum.Enum):
+    CURRENCY = "currency"
+    MARKET = "market"
+    UNDEFINED = "undefined"
 
 
 class AccountTypes(enum.Enum):

@@ -33,38 +33,51 @@ class FuturePortfolio(portfolio_class.Portfolio):
         if order.filled_quantity == 0:
             return False
 
-        pair_future_contract = order.exchange_manager.exchange.get_pair_future_contract(order.symbol)
-        position_instance = order.exchange_manager.exchange_personal_data.positions_manager. \
-            get_order_position(order, contract=pair_future_contract)
+        position_instance = order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(
+            order, contract=order.exchange_manager.exchange.get_pair_future_contract(order.symbol))
+        position_instance.update_from_order(order)
+
+    def update_portfolio_data_from_position_size_update(self,
+                                                        position,
+                                                        realized_pnl_update,
+                                                        size_update,
+                                                        margin_update,
+                                                        has_increased_position_size):
+        """
+        Update portfolio data from position size update
+        :param position: the position updated instance
+        :param realized_pnl_update: the position realised pnl update
+        :param size_update: the position size update
+        :param margin_update: the position margin update
+        :param has_increased_position_size: if the update increased position size
+        """
+        # when the update comes from a closed order, simultaneously update order and position margin
+        pair_future_contract = position.symbol_contract
+
+        # get real update quantity from position's contract leverage
+        real_update_quantity = decimal.Decimal(size_update / pair_future_contract.current_leverage).copy_abs()
 
         try:
-            update_size, has_increased_position_size = position_instance.update_from_order(order)
-            real_order_quantity = decimal.Decimal(update_size / pair_future_contract.current_leverage).copy_abs()
-
             # When inverse contract, decrease a currency market equivalent quantity from currency balance
             if pair_future_contract.is_inverse_contract():
-                total_update_quantity = real_order_quantity / order.filled_price
-                fees_update_quantity = -order.get_total_fees(order.currency)
+                order_margin_update_quantity = real_update_quantity / position.mark_price
                 self._update_future_portfolio_data(
-                    order.currency,
-                    wallet_value=fees_update_quantity,
-                    order_margin_value=-total_update_quantity if has_increased_position_size else constants.ZERO,
-                    position_margin_value=total_update_quantity
-                    if has_increased_position_size else -total_update_quantity)
+                    position.currency,
+                    wallet_value=realized_pnl_update,
+                    position_margin_value=margin_update,
+                    order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
 
             # When non-inverse contract, decrease directly market quantity
             else:
                 # decrease market quantity from market available balance
-                total_update_quantity = real_order_quantity * order.filled_price
-                fees_update_quantity = -order.get_total_fees(order.market)
+                order_margin_update_quantity = real_update_quantity * position.mark_price
                 self._update_future_portfolio_data(
-                    order.market,
-                    wallet_value=fees_update_quantity,
-                    order_margin_value=-total_update_quantity if has_increased_position_size else constants.ZERO,
-                    position_margin_value=total_update_quantity
-                    if has_increased_position_size else -total_update_quantity)
+                    position.market,
+                    wallet_value=realized_pnl_update,
+                    position_margin_value=margin_update,
+                    order_margin_value=-order_margin_update_quantity if has_increased_position_size else constants.ZERO)
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
-            self.logger.error(f"Failed to update from filled order : {order} ({e})")
+            self.logger.error(f"Failed to update from position size update : {position} ({e})")
 
     def update_portfolio_available_from_order(self, order, is_new_order=True):
         """
@@ -99,27 +112,6 @@ class FuturePortfolio(portfolio_class.Portfolio):
         except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
             self.logger.error(f"Failed to update available from order : {order} ({e})")
 
-    def update_portfolio_from_liquidated_position(self, position):
-        """
-        Update portfolio from liquidated position
-        :param position: the liquidated position
-        """
-        try:
-            liquidated_quantity = -decimal.Decimal(
-                position.get_quantity_to_close() / position.symbol_contract.current_leverage).copy_abs()
-            if position.symbol_contract.is_inverse_contract():
-                update_quantity = liquidated_quantity / position.mark_price
-                self._update_future_portfolio_data(position.currency,
-                                                   position_margin_value=update_quantity,
-                                                   wallet_value=update_quantity)
-            else:
-                update_quantity = liquidated_quantity * position.mark_price
-                self._update_future_portfolio_data(position.market,
-                                                   position_margin_value=update_quantity,
-                                                   wallet_value=update_quantity)
-        except (decimal.DivisionByZero, decimal.InvalidOperation) as e:
-            self.logger.error(f"Failed to update from liquidated position : {position} ({e})")
-
     def update_portfolio_from_funding(self, position, funding_rate):
         """
         Update portfolio from funding
@@ -141,12 +133,12 @@ class FuturePortfolio(portfolio_class.Portfolio):
         """
         Updates the portfolio from a Position PNL update
         TODO: manage portfolio PNL update when using cross margin
-        :param position: position: the position instance with the new PNL
+        :param position: the updating position instance
         """
         if position.symbol_contract.is_isolated():
             self.get_currency_portfolio(
                 currency=position.currency if position.symbol_contract.is_inverse_contract() else position.market). \
-                set_unrealized_pnl(position.unrealised_pnl)
+                set_unrealized_pnl(position.unrealized_pnl)
 
     def _update_future_portfolio_data(self, currency,
                                       wallet_value=constants.ZERO,

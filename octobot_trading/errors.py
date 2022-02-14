@@ -86,6 +86,12 @@ class InvalidPositionSide(Exception):
     """
 
 
+class InvalidPosition(Exception):
+    """
+    Raised when an invalid position is created
+    """
+
+
 class ContractExistsError(Exception):
     """
     Raised when asking for a contract that doesn't exist
@@ -101,6 +107,12 @@ class TooManyOpenPositionError(Exception):
 class DuplicateTransactionIdError(Exception):
     """
     Raised when trying to add a new transaction with a duplicate id
+    """
+
+
+class LiquidationPriceReached(Exception):
+    """
+    Raised when the liquidation price has been reach
     """
 
 

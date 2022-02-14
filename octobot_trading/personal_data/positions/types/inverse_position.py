@@ -16,6 +16,7 @@
 import decimal
 
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position as position_class
 
 
@@ -29,26 +30,23 @@ class InversePosition(position_class.Position):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.value = constants.ZERO
 
-    def update_pnl(self):
+    def get_unrealized_pnl(self, price):
         """
         LONG_PNL = CONTRACT_QUANTITY x [(1 / ENTRY_PRICE) - (1 / MARK_PRICE)]
         SHORT_PNL = CONTRACT_QUANTITY x [(1 / MARK_PRICE) - (1 / ENTRY_PRICE)]
+        :param price: the pnl calculation price
+        :return: the unrealized pnl
         """
-        try:
-            # ensure update validity
-            if self.mark_price <= constants.ZERO or self.entry_price <= constants.ZERO:
-                return
-            if self.is_long():
-                self.unrealised_pnl = self.size * ((constants.ONE / self.entry_price) -
-                                                   (constants.ONE / self.mark_price))
-            elif self.is_short():
-                self.unrealised_pnl = -self.size * ((constants.ONE / self.mark_price) -
-                                                    (constants.ONE / self.entry_price))
-            else:
-                self.unrealised_pnl = constants.ZERO
-            self.on_pnl_update()
-        except (decimal.DivisionByZero, decimal.InvalidOperation):
-            self.unrealised_pnl = constants.ZERO
+        # ensure update validity
+        if price <= constants.ZERO or self.entry_price <= constants.ZERO:
+            return constants.ZERO
+        if self.is_long():
+            return self.size * ((constants.ONE / self.entry_price) -
+                                (constants.ONE / price))
+        if self.is_short():
+            return -self.size * ((constants.ONE / price) -
+                                 (constants.ONE / self.entry_price))
+        return constants.ZERO
 
     def get_margin_from_size(self, size):
         """
@@ -94,22 +92,24 @@ class InversePosition(position_class.Position):
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.liquidation_price = constants.ZERO
 
-    def get_bankruptcy_price(self, with_mark_price=False):
+    def get_bankruptcy_price(self, price, side, with_mark_price=False):
         """
+        :param price: the price to compute bankruptcy from
+        :param side: the side of the position
         :param with_mark_price: if price should be mark price instead of entry price
         :return: Bankruptcy Price for
         Long position = (Entry Price x Leverage) / (Leverage + 1)
         Short position = (Entry Price x Leverage) / (Leverage - 1)
         """
         try:
-            if self.is_long():
-                return (self.mark_price
-                        if with_mark_price else self.entry_price * self.symbol_contract.current_leverage) \
-                       / (self.symbol_contract.current_leverage + constants.ONE)
-            elif self.is_short():
-                return (self.mark_price
-                        if with_mark_price else self.entry_price * self.symbol_contract.current_leverage) \
-                       / (self.symbol_contract.current_leverage - constants.ONE)
+            if side is enums.PositionSide.LONG:
+                return (self.mark_price if with_mark_price else
+                        price * self.symbol_contract.current_leverage) \
+                    / (self.symbol_contract.current_leverage + constants.ONE)
+            elif side is enums.PositionSide.SHORT:
+                return (self.mark_price if with_mark_price else
+                        price * self.symbol_contract.current_leverage) \
+                    / (self.symbol_contract.current_leverage - constants.ONE)
             return constants.ZERO
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
@@ -120,12 +120,22 @@ class InversePosition(position_class.Position):
         """
         return self.initial_margin + self.get_two_way_taker_fee()
 
-    def get_fee_to_open(self):
+    def get_fee_to_open(self, quantity, price, symbol):
         """
         :return: Fee to open = (Quantity / Mark price ) x taker fee
         """
         try:
-            return (self.size / self.mark_price) * self.get_taker_fee()
+            return quantity / price * self.get_taker_fee(symbol)
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            return constants.ZERO
+
+    def get_fee_to_close(self, quantity, price, side, symbol, with_mark_price=False):
+        """
+        :return: Fee to open = (Quantity * Mark Price) x Taker fee
+        """
+        try:
+            return quantity / \
+                self.get_bankruptcy_price(price, side, with_mark_price=with_mark_price) * self.get_taker_fee(symbol)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             return constants.ZERO
 
@@ -134,7 +144,8 @@ class InversePosition(position_class.Position):
         :return: Fee to close = (Quantity / Bankruptcy Price derived from mark price) x taker fee
         """
         try:
-            self.fee_to_close = (self.size / self.get_bankruptcy_price(with_mark_price=True)) * self.get_taker_fee()
+            self.fee_to_close = self.get_fee_to_close(self.size, self.entry_price, self.side, self.symbol,
+                                                      with_mark_price=True)
             self._update_margin()
         except (decimal.DivisionByZero, decimal.InvalidOperation):
             self.fee_to_close = constants.ZERO
@@ -155,3 +166,22 @@ class InversePosition(position_class.Position):
             """
             Nothing to do
             """
+
+    def update_average_exit_price(self, update_size, update_price):
+        """
+        Average exit price = total quantity of contracts / total contract value in currency
+        Total contract value in currency = [(Current position quantity / Current position entry price)
+                                            + (Update quantity / Update price)]
+        """
+        if self.exit_price == constants.ZERO:
+            self.exit_price = update_price
+        else:
+            total_contract_value = self.already_reduced_size / self.exit_price + update_size / update_price
+            self.exit_price = ((self.already_reduced_size + update_size) /
+                               (total_contract_value if total_contract_value != constants.ZERO else constants.ONE))
+        if self.exit_price < constants.ZERO:
+            self.exit_price = constants.ZERO
+
+    @staticmethod
+    def is_inverse():
+        return True

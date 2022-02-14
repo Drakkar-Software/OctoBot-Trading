@@ -58,7 +58,7 @@ FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm
 TESTED_EXCHANGES = ["binance", "ftx", "okex", "gateio", "huobi", "ascendex", "kucoin", "coinbasepro"]
 SIMULATOR_TESTED_EXCHANGES = ["bybit"]
 
-CONFIG_DEFAULT_FEES = 0.1
+CONFIG_DEFAULT_FEES = 0.001
 CONFIG_DEFAULT_SIMULATOR_FEES = 0
 
 DEFAULT_SYMBOL_LEVERAGE = ONE

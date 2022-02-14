@@ -64,14 +64,33 @@ async def test_create_blockchain_transaction(backtesting_trader):
 
 async def test_create_realised_pnl_transaction(backtesting_trader):
     _, exchange_manager, _ = backtesting_trader
-    transaction = transaction_factory.create_realised_pnl_transaction(exchange_manager,
-                                                                      currency=TRANSACTION_CURRENCY,
-                                                                      symbol=TRANSACTION_SYMBOL,
-                                                                      realised_pnl=decimal.Decimal(0.1))
+    transaction = transaction_factory.create_realised_pnl_transaction(
+        exchange_manager,
+        currency=TRANSACTION_CURRENCY,
+        symbol=TRANSACTION_SYMBOL,
+        side=enums.PositionSide.LONG,
+        realised_pnl=decimal.Decimal(0.1),
+        closed_quantity=decimal.Decimal(1),
+        cumulated_closed_quantity=decimal.Decimal(2),
+        first_entry_time=decimal.Decimal(3),
+        average_entry_price=decimal.Decimal(4),
+        average_exit_price=decimal.Decimal(5),
+        order_exit_price=decimal.Decimal(6),
+        leverage=decimal.Decimal(7),
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     assert transaction.currency == TRANSACTION_CURRENCY
     assert transaction.symbol == TRANSACTION_SYMBOL
     assert transaction.realised_pnl == decimal.Decimal(0.1)
+    assert transaction.side is enums.PositionSide.LONG
+    assert transaction.closed_quantity == decimal.Decimal(1)
+    assert transaction.cumulated_closed_quantity == decimal.Decimal(2)
+    assert transaction.first_entry_time == decimal.Decimal(3)
+    assert transaction.average_entry_price == decimal.Decimal(4)
+    assert transaction.average_exit_price == decimal.Decimal(5)
+    assert transaction.order_exit_price == decimal.Decimal(6)
+    assert transaction.leverage == decimal.Decimal(7)
     assert transaction.creation_time <= time.time()
+    assert transaction.trigger_source is enums.PNLTransactionSource.LIMIT_ORDER
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 1
 
 

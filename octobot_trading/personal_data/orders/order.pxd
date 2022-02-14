@@ -67,6 +67,7 @@ cdef class Order(util.Initializable):
     cdef public double executed_time
 
     cdef public dict fee # Dict[str, Union[str, decimal.Decimal]]
+    cdef public object fees_currency_side   # trading_enums.FeesCurrencySide
 
     cdef list last_prices
     cdef public list linked_orders
@@ -94,6 +95,7 @@ cdef class Order(util.Initializable):
             object reduce_only=*,
             bint close_position=*,
             object position_side=*,
+            object fees_currency_side=*,
             object allow_self_managed=*,
             object one_cancels_the_other=*,
             str tag=*)

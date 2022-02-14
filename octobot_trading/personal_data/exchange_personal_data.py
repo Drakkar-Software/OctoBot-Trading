@@ -97,19 +97,6 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
 
-    async def handle_portfolio_update_from_position(self, position,
-                                                    require_exchange_update: bool = True,
-                                                    should_notify: bool = True) -> bool:
-        try:
-            changed: bool = await self.portfolio_manager.handle_balance_update_from_position(
-                position=position, require_exchange_update=require_exchange_update)
-            if should_notify:
-                await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
-            return changed
-        except AttributeError as e:
-            self.logger.exception(e, True, f"Failed to update balance : {e}")
-            return False
-
     async def handle_portfolio_update_from_funding(self, position, funding_rate,
                                                    require_exchange_update: bool = True,
                                                    should_notify: bool = True) -> bool:
@@ -118,11 +105,11 @@ class ExchangePersonalData(util.Initializable):
                 changed = await self.portfolio_manager.handle_balance_update_from_funding(
                     position=position, funding_rate=funding_rate, require_exchange_update=require_exchange_update)
             except errors.PortfolioNegativeValueError:
-                self.logger.warning(True, "Not enough available balance to handle funding. Reducing position margin...")
-                await position.update(update_margin=position.value * funding_rate)
+                self.logger.warning("Not enough available balance to handle funding. Reducing position margin...")
+                await position.update(update_margin=-position.value * funding_rate)
                 changed = True
             transaction_factory.create_fee_transaction(self.exchange_manager, position.get_currency(), position.symbol,
-                                                       quantity=position.value * funding_rate,
+                                                       quantity=-abs(position.value) * funding_rate,
                                                        funding_rate=funding_rate)
             if should_notify:
                 await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
@@ -299,6 +286,7 @@ class ExchangePersonalData(util.Initializable):
     async def handle_position_update_notification(self, position, is_updated=True):
         """
         Notify Positions channel for Position update
+        TODO send position dict
         :param position: the updated position
         :param is_updated: if the position has been updated
         """

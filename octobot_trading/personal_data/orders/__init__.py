@@ -63,6 +63,7 @@ from octobot_trading.personal_data.orders.order_util import (
     is_valid,
     get_min_max_amounts,
     check_cost,
+    get_max_order_quantity_for_price,
     total_fees_from_order_dict,
     get_fees_for_currency,
     parse_raw_fees,
@@ -70,6 +71,7 @@ from octobot_trading.personal_data.orders.order_util import (
     parse_is_cancelled,
     get_up_to_date_price,
     get_pre_order_data,
+    get_pnl_transaction_source_from_order,
 )
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
@@ -106,6 +108,7 @@ __all__ = [
     "is_valid",
     "get_min_max_amounts",
     "check_cost",
+    "get_max_order_quantity_for_price",
     "total_fees_from_order_dict",
     "get_fees_for_currency",
     "parse_raw_fees",
@@ -113,6 +116,7 @@ __all__ = [
     "parse_is_cancelled",
     "get_up_to_date_price",
     "get_pre_order_data",
+    "get_pnl_transaction_source_from_order",
     "OrderState",
     "OrdersUpdater",
     "adapt_price",

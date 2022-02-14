@@ -17,6 +17,7 @@ import contextlib
 import copy
 
 import octobot_commons.constants as common_constants
+import octobot_commons.logging as logging
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
@@ -33,6 +34,10 @@ class Asset:
         return f"{self.__class__.__name__}: {self.name} | " \
                f"Available: {float(self.available)} | " \
                f"Total: {float(self.total)}"
+
+    def __repr__(self):
+        # __repr__ is called when a dict is turned into string (like in logs)
+        return str(self)
 
     def __eq__(self, other):
         raise NotImplementedError("__eq__ is not implemented")
@@ -114,6 +119,7 @@ class Asset:
         previous_asset = copy.copy(self)
         try:
             yield
-        except errors.PortfolioNegativeValueError as negative_value_error:
+        except errors.PortfolioNegativeValueError:
+            logging.get_logger(self.__class__.__name__).warning("Restoring after PortfolioNegativeValueError...")
             self.restore(previous_asset)
-            raise negative_value_error
+            raise

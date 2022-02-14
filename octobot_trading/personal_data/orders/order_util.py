@@ -140,6 +140,31 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
     return currency_available, market_available, market_quantity, mark_price, symbol_market
 
 
+def get_max_order_quantity_for_price(position, available_quantity, price, side, symbol):
+    """
+    Returns the maximum order quantity in market or currency for given total usable funds, price and side.
+    This amount is not the total usable funds as it also requires to keep the position's open order fees
+    as well as the potential position liquidation fees in portfolio. Those fees are computed by
+    get_two_way_taker_fee_for_quantity_and_price
+    :param position: the position to compute quantity for
+    :param available_quantity: the maximum amount of currency/market to allocate to the position (without leverage)
+    :param price: the target entry price of the position
+    :param side: the side of the position
+    :param side: the symbol of the position
+    :return: the computed leveraged maximum entry quantity
+    """
+    # use position.symbol_contract.current_leverage as quantity to simulate a 1 unit quantity (x leverage)
+    two_way_fees = position.get_two_way_taker_fee_for_quantity_and_price(position.symbol_contract.current_leverage,
+                                                                         price, side, symbol)
+    if position.symbol_contract.is_inverse_contract():
+        # Returns the maximum order quantity in market.
+        return position.symbol_contract.current_leverage * available_quantity / \
+            (two_way_fees + constants.ONE / price)
+    # Returns the maximum order quantity in currency.
+    return position.symbol_contract.current_leverage * available_quantity / \
+        (two_way_fees + price)
+
+
 def total_fees_from_order_dict(order_dict, currency):
     return get_fees_for_currency(order_dict[enums.ExchangeConstantsOrderColumns.FEE.value], currency)
 
@@ -167,3 +192,16 @@ def parse_order_status(raw_order):
 
 def parse_is_cancelled(raw_order):
     return parse_order_status(raw_order) in {enums.OrderStatus.CANCELED, enums.OrderStatus.CLOSED}
+
+
+def get_pnl_transaction_source_from_order(order):
+    if order.order_type in [enums.TraderOrderType.SELL_MARKET, enums.TraderOrderType.BUY_MARKET,
+                            enums.TraderOrderType.TAKE_PROFIT]:
+        return enums.PNLTransactionSource.MARKET_ORDER
+    if order.order_type in [enums.TraderOrderType.SELL_LIMIT, enums.TraderOrderType.BUY_LIMIT,
+                            enums.TraderOrderType.TAKE_PROFIT_LIMIT]:
+        return enums.PNLTransactionSource.LIMIT_ORDER
+    if order.order_type in [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.STOP_LOSS_LIMIT,
+                            enums.TraderOrderType.TRAILING_STOP, enums.TraderOrderType.TRAILING_STOP_LIMIT]:
+        return enums.PNLTransactionSource.STOP_ORDER
+    return enums.PNLTransactionSource.UNKNOWN

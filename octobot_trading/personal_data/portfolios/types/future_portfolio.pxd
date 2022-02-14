@@ -17,9 +17,13 @@
 cimport octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 
 cdef class FuturePortfolio(portfolio_class.Portfolio):
-    cpdef object update_portfolio_from_liquidated_position(self, object position)  # needs object to forward exceptions
     cpdef object update_portfolio_from_funding(self, object position, object funding_rate)  # needs object to forward exceptions
     cpdef object update_portfolio_from_pnl(self, object position)  # needs object to forward exceptions
+    cpdef object update_portfolio_data_from_position_size_update(self, object position,
+                                                                 object realized_pnl_update,
+                                                                 object size_update,
+                                                                 object margin_update,
+                                                                 bint has_increased_position_size)  # needs object to forward exceptions
 
     # needs object to forward exceptions
     cdef object _update_future_portfolio_data(self, str currency,

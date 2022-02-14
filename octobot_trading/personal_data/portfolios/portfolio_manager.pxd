@@ -45,4 +45,3 @@ cdef class PortfolioManager(util.Initializable):
     cdef void _reset_portfolio(self)
     cdef void _set_starting_simulated_portfolio(self)
     cdef bint _refresh_simulated_trader_portfolio_from_order(self, object order)
-    cdef bint _refresh_simulated_trader_portfolio_from_position(self, object position)

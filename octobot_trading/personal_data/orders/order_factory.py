@@ -55,14 +55,16 @@ def create_order_instance(
     timestamp=0,
     linked_portfolio=None,
     side=None,
+    fees_currency_side=None,
     allow_self_managed=True,
     one_cancels_the_other=None,
     tag=None,
     reduce_only=False,
 ):
-    order = create_order_from_type(trader=trader,
-                                   order_type=order_type,
-                                   side=side
+    order = create_order_from_type(
+        trader=trader,
+        order_type=order_type,
+        side=side
     )
     order.update(
         order_type=order_type,
@@ -81,10 +83,10 @@ def create_order_instance(
         total_cost=total_cost,
         linked_to=linked_to,
         linked_portfolio=linked_portfolio,
+        fees_currency_side=fees_currency_side,
         allow_self_managed=allow_self_managed,
         one_cancels_the_other=one_cancels_the_other,
         tag=tag,
         reduce_only=reduce_only,
     )
-
     return order

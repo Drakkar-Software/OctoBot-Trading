@@ -49,7 +49,16 @@ async def test_insert_transaction_instance(backtesting_trader):
         transaction_type=enums.TransactionType.REALISED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
-        realised_pnl=constants.ZERO)
+        realised_pnl=constants.ZERO,
+        closed_quantity=constants.ONE,
+        cumulated_closed_quantity=constants.ONE,
+        first_entry_time=constants.ONE,
+        average_entry_price=constants.ONE,
+        average_exit_price=constants.ONE,
+        order_exit_price=constants.ONE,
+        leverage=constants.ONE,
+        side=enums.PositionSide.SHORT,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     transaction.set_transaction_id(t_id)
     transaction_2 = transaction_types.BlockchainTransaction(
         exchange_name=exchange_manager.exchange_name,
@@ -101,14 +110,32 @@ async def test_get_transaction(backtesting_trader):
         transaction_type=enums.TransactionType.REALISED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
-        realised_pnl=constants.ZERO)
+        side=enums.PositionSide.BOTH,
+        realised_pnl=constants.ZERO,
+        closed_quantity=constants.ONE,
+        cumulated_closed_quantity=constants.ONE,
+        first_entry_time=constants.ONE,
+        average_entry_price=constants.ONE,
+        average_exit_price=constants.ONE,
+        order_exit_price=constants.ONE,
+        leverage=constants.ONE,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     transaction_2 = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
         transaction_type=enums.TransactionType.REALISED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
-        realised_pnl=constants.ZERO)
+        side=enums.PositionSide.LONG,
+        realised_pnl=constants.ZERO,
+        closed_quantity=constants.ONE,
+        cumulated_closed_quantity=constants.ONE,
+        first_entry_time=constants.ONE,
+        average_entry_price=constants.ONE,
+        average_exit_price=constants.ONE,
+        order_exit_price=constants.ONE,
+        leverage=constants.ONE,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     exchange_manager.exchange_personal_data.transactions_manager.insert_transaction_instance(transaction)
 
     # succeed to return transaction instance
@@ -144,7 +171,16 @@ async def test_update_transaction_id(backtesting_trader):
         transaction_type=enums.TransactionType.REALISED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
-        realised_pnl=constants.ZERO)
+        side=enums.PositionSide.BOTH,
+        realised_pnl=constants.ZERO,
+        closed_quantity=constants.ONE,
+        cumulated_closed_quantity=constants.ONE,
+        first_entry_time=constants.ONE,
+        average_entry_price=constants.ONE,
+        average_exit_price=constants.ONE,
+        order_exit_price=constants.ONE,
+        leverage=constants.ONE,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     transaction.set_transaction_id(t_id)
     transaction_2 = transaction_types.RealisedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
@@ -152,7 +188,16 @@ async def test_update_transaction_id(backtesting_trader):
         transaction_type=enums.TransactionType.REALISED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
-        realised_pnl=constants.ZERO)
+        side=enums.PositionSide.SHORT,
+        realised_pnl=constants.ZERO,
+        closed_quantity=constants.ONE,
+        cumulated_closed_quantity=constants.ONE,
+        first_entry_time=constants.ONE,
+        average_entry_price=constants.ONE,
+        average_exit_price=constants.ONE,
+        order_exit_price=constants.ONE,
+        leverage=constants.ONE,
+        trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     transaction_2.set_transaction_id(t_id_2)
 
     # Add transaction instances to TransactionsManager.transactions
@@ -166,7 +211,8 @@ async def test_update_transaction_id(backtesting_trader):
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 2
     assert transaction.transaction_id == t_id_3
     assert list(exchange_manager.exchange_personal_data.transactions_manager.transactions.values())[-1] is transaction
-    assert list(exchange_manager.exchange_personal_data.transactions_manager.transactions.values())[-1].transaction_id == t_id_3
+    assert list(exchange_manager.exchange_personal_data.transactions_manager.transactions.values())[-1].transaction_id \
+           == t_id_3
 
     # ensure that the first transaction_id doesn't exist anymore
     with pytest.raises(KeyError):
