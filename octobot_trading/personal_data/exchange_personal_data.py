@@ -225,11 +225,13 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update order : {e}")
             return False
 
-    async def handle_trade_update(self, symbol, trade_id, trade, should_notify: bool = True):
+    async def handle_trade_update(self, symbol, trade_id, trade,
+                                  is_old_trade: bool = False, should_notify: bool = True):
         try:
             changed: bool = self.trades_manager.upsert_trade(trade_id, trade)
-            if should_notify:
-                await self.handle_trade_update_notification(trade, is_old_trade=False)
+            if changed and should_notify:
+                updated_trade = self.trades_manager.get_trade(trade_id)
+                await self.handle_trade_update_notification(updated_trade, is_old_trade=is_old_trade)
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update trade : {e}")

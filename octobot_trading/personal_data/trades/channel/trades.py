@@ -36,18 +36,12 @@ class TradesProducer(exchanges_channel.ExchangeChannelProducer):
                         self.channel.get_filtered_consumers(symbol=symbol):
                     trade_id: str = trade[enums.ExchangeConstantsOrderColumns.ID.value]
 
-                    added: bool = await self.channel.exchange_manager.exchange_personal_data.handle_trade_update(
+                    await self.channel.exchange_manager.exchange_personal_data.handle_trade_update(
                         symbol,
                         trade_id,
                         trade,
-                        should_notify=False)
-
-                    if added:
-                        await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
-                                        get_pair_cryptocurrency(symbol),
-                                        symbol=symbol,
-                                        trade=trade,
-                                        old_trade=old_trade)
+                        is_old_trade=old_trade,
+                        should_notify=True)
         except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:
