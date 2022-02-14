@@ -103,7 +103,8 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             trade: dict,
             old_trade: bool,
     ):
-        if trade[trading_enums.ExchangeConstantsOrderColumns.STATUS.value] != trading_enums.OrderStatus.CANCELED.value:
+        if trade[trading_enums.ExchangeConstantsOrderColumns.STATUS.value] != trading_enums.OrderStatus.CANCELED.value \
+                and self.producers[0].trades_writer:
             await basic_keywords.store_trade(None, trade, exchange_manager=self.exchange_manager,
                                              writer=self.producers[0].trades_writer)
 
