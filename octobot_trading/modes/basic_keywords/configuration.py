@@ -16,6 +16,7 @@
 import decimal
 
 import octobot_trading.modes.basic_keywords.user_inputs as user_inputs
+import octobot_trading.errors as errors
 
 
 async def user_select_leverage(
@@ -29,6 +30,12 @@ async def user_select_leverage(
         # TODO remove this try when bybit tentacle is up
         try:
             await ctx.exchange_manager.trader.set_leverage(ctx.symbol, side, decimal.Decimal(str(selected_leverage)))
+        except errors.ContractExistsError as e:
+            ctx.logger.debug(str(e))
+        except NotImplementedError as e:
+            ctx.logger.exception(e, True, str(e))
         except AttributeError:
             ctx.logger.warning("TODO: rebase tentacles when bybit exchange is up")
+        except Exception as e:
+            ctx.logger.exception(e, True, str(e))
     return selected_leverage

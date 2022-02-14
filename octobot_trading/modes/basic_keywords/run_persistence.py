@@ -64,30 +64,33 @@ async def store_trade(ctx,
         if trade_dict[trading_enums.ExchangeConstantsOrderColumns.TAG.value] else ""
     symbol = trade_dict[trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value]
     trade_side = trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value]
+    is_using_positions = False
     if exchange_manager.is_future:
         positions = exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions(symbol=symbol)
-        trading_side = next(iter(positions)).side
-        if trading_side is trading_enums.PositionSide.LONG:
-            if trade_side == trading_enums.TradeOrderSide.BUY.value:
-                color = "blue"
-                shape = "arrow-bar-right"
-            elif "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
-                color = "orange"
-                shape = "x"
+        if positions:
+            is_using_positions = True
+            trading_side = next(iter(positions)).side
+            if trading_side is trading_enums.PositionSide.LONG:
+                if trade_side == trading_enums.TradeOrderSide.BUY.value:
+                    color = "blue"
+                    shape = "arrow-bar-right"
+                elif "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
+                    color = "orange"
+                    shape = "x"
+                else:
+                    color = "magenta"
+                    shape = "arrow-bar-left"
             else:
-                color = "magenta"
-                shape = "arrow-bar-left"
-        else:
-            if trade_side == trading_enums.TradeOrderSide.BUY.value:
-                color = "red"
-                shape = "arrow-bar-right"
-            elif "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
-                color = "orange"
-                shape = "x"
-            else:
-                color = "magenta"
-                shape = "arrow-bar-left"
-    else:
+                if trade_side == trading_enums.TradeOrderSide.BUY.value:
+                    color = "red"
+                    shape = "arrow-bar-right"
+                elif "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
+                    color = "orange"
+                    shape = "x"
+                else:
+                    color = "magenta"
+                    shape = "arrow-bar-left"
+    if not is_using_positions:
         if trade_side == trading_enums.TradeOrderSide.BUY.value:
             color = "blue"
             shape = "arrow-bar-right"
