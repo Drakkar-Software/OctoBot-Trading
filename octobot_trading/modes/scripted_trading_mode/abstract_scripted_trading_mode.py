@@ -402,9 +402,10 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             self.exchange_name,
             self.traded_pair
         ))
-        await self._trigger_initialization_call()
+        if not self.exchange_manager.is_backtesting:
+            asyncio.create_task(self._schedule_initialization_call())
 
-    async def _trigger_initialization_call(self):
+    async def _schedule_initialization_call(self):
         # initialization call is a special call that does not trigger trades and allows the script
         # to be run at least once in order to initialize its configuration
         if self.exchange_manager.is_backtesting:
@@ -413,8 +414,24 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
         # fake an evaluator call
         cryptocurrency, symbol, time_frame, trigger_time = self._get_initialization_call_args()
+        # wait for symbol data to be initialized
+        await self._wait_for_symbol_init(symbol, time_frame, 10)
         await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
                                commons_enums.ActivationTopics.EVALUATORS.value, trigger_time, init_call=True)
+
+    async def _wait_for_symbol_init(self, symbol, time_frame, timeout):
+        # warning: should never be called in backtesting
+        tf = commons_enums.TimeFrames(time_frame)
+        t0 = time.time()
+        while time.time() - t0 < timeout:
+            try:
+                _ = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol, allow_creation=False) \
+                    .symbol_candles[tf]
+                return True
+            except KeyError:
+                # no symbol data initialized, keep waiting
+                await asyncio.sleep(0.2)
+        return False
 
     def _get_initialization_call_args(self):
         currency = next(iter(self.exchange_manager.exchange_config.traded_cryptocurrencies))
