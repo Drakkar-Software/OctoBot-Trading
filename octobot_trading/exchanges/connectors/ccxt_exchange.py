@@ -374,8 +374,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_funding_rate_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
         return await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit)
 
-    async def set_symbol_leverage(self, symbol: str, leverage: int):
-        return await self.client.set_leverage(leverage=leverage, symbol=symbol)
+    async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
+        return await self.client.set_leverage(leverage=float(leverage), symbol=symbol, params=kwargs)
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):
         return await self.client.set_margin_mode(symbol=symbol,

@@ -190,8 +190,8 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     async def get_funding_rate_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
         return await self.connector.get_funding_rate_history(symbol=symbol, limit=limit, **kwargs)
 
-    async def set_symbol_leverage(self, symbol: str, leverage: int):
-        return await self.connector.set_symbol_leverage(leverage=leverage, symbol=symbol)
+    async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
+        return await self.connector.set_symbol_leverage(leverage=leverage, symbol=symbol, **kwargs)
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):
         return await self.connector.set_symbol_margin_type(symbol=symbol, isolated=isolated)
