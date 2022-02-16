@@ -73,6 +73,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         # This trading mode is now responsible for managing their cache
         self.called_nested_evaluators = set()
 
+        # True when this trading mode is waken up only after full candles close
+        self.is_triggered_after_candle_close = False
+
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
     def get_current_state(self) -> tuple:
