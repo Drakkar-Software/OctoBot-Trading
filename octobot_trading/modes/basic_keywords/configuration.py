@@ -25,17 +25,23 @@ async def user_select_leverage(
         order=None,
         name="leverage"):
     selected_leverage = await user_inputs.user_input(ctx, name, "int", def_val, order=order)
+    # TODO restore when ready to trade event is done (set_leverage is done in scripts anyway)
+    # if ctx.exchange_manager.is_future:
+    #     await set_leverage(ctx, selected_leverage)
+    return selected_leverage
+
+
+async def set_leverage(ctx, leverage):
     if ctx.exchange_manager.is_future:
         side = None
-        # TODO remove this try when bybit tentacle is up
         try:
-            await ctx.exchange_manager.trader.set_leverage(ctx.symbol, side, decimal.Decimal(str(selected_leverage)))
+            await ctx.exchange_manager.trader.set_leverage(ctx.symbol, side, decimal.Decimal(str(leverage)))
         except errors.ContractExistsError as e:
             ctx.logger.debug(str(e))
         except NotImplementedError as e:
             ctx.logger.exception(e, True, str(e))
         except AttributeError:
+            # TODO remove this except when bybit tentacle is up
             ctx.logger.warning("TODO: rebase tentacles when bybit exchange is up")
         except Exception as e:
             ctx.logger.exception(e, True, str(e))
-    return selected_leverage
