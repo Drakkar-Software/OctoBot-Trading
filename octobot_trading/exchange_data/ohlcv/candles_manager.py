@@ -104,6 +104,24 @@ class CandlesManager(util.Initializable):
             enums.PriceIndexes.IND_PRICE_TIME.value: self.get_symbol_time_candles(limit)
         }
 
+    def get_candles(self, limit=-1):
+        candles_size = self.close_candles_index if limit == -1 else limit
+        candles = [[]] * candles_size
+        iter_range = range(self.close_candles_index) if limit == -1 \
+            else range(self.close_candles_index-limit, self.close_candles_index)
+        candles_index = 0
+        for index in iter_range:
+            candle = [0] * len(enums.PriceIndexes)
+            candle[enums.PriceIndexes.IND_PRICE_CLOSE.value] = self.close_candles[index]
+            candle[enums.PriceIndexes.IND_PRICE_OPEN.value] = self.open_candles[index]
+            candle[enums.PriceIndexes.IND_PRICE_HIGH.value] = self.high_candles[index]
+            candle[enums.PriceIndexes.IND_PRICE_LOW.value] = self.low_candles[index]
+            candle[enums.PriceIndexes.IND_PRICE_VOL.value] = self.volume_candles[index]
+            candle[enums.PriceIndexes.IND_PRICE_TIME.value] = self.time_candles[index]
+            candles[candles_index] = candle
+            candles_index += 1
+        return candles
+
     def replace_all_candles(self, all_candles_data):
         self._reset_candles()
         self._set_all_candles(all_candles_data)
