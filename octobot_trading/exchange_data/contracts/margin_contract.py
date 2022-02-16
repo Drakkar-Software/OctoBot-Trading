@@ -45,7 +45,7 @@ class MarginContract:
         :param new_leverage: the leverage value to check
         :return: True if valid
         """
-        return 0 < new_leverage <= self.maximum_leverage
+        return 0 < new_leverage if self.maximum_leverage is None else 0 < new_leverage <= self.maximum_leverage
 
     def set_current_leverage(self, new_leverage):
         """

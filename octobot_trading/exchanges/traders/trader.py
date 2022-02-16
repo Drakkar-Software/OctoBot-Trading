@@ -351,9 +351,10 @@ class Trader(util.Initializable):
         if not contract.check_leverage_update(leverage):
             raise errors.InvalidLeverageValue(f"Trying to update leverage with {leverage} "
                                               f"but maximal value is {contract.maximum_leverage}")
-        if not self.simulate:
-            await self.exchange_manager.exchange.set_symbol_leverage(
-                symbol=symbol,
+        if contract.current_leverage != leverage:
+            if not self.simulate:
+                await self.exchange_manager.exchange.set_symbol_leverage(
+                    symbol=symbol,
                 leverage=leverage
             )
         contract.set_current_leverage(leverage)
