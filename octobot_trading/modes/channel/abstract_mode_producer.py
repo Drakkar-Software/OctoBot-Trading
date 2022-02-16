@@ -145,6 +145,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                     self.evaluator_consumers.append(
                         (consumer, registration_topic)
                     )
+                    self.trading_mode.is_triggered_after_candle_close = False
                 except (KeyError, ImportError):
                     self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
             else:
@@ -159,6 +160,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 self.trading_consumers.append(
                     (consumer, registration_topic)
                 )
+                if registration_topic == channels_name.OctoBotTradingChannelsName.OHLCV_CHANNEL.value:
+                    self.trading_mode.is_triggered_after_candle_close = True
 
     def get_callback(self, chan_name):
         return {
