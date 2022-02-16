@@ -455,9 +455,13 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
     async def ohlcv_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
                              time_frame: str, candle: dict, init_call: bool = False):
         with self.trading_mode_trigger():
+            # add a full candle to time to get the real time
+            trigger_time = candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] + \
+                           commons_enums.TimeFramesMinutes[commons_enums.TimeFrames(time_frame)] * \
+                           commons_constants.MINUTE_TO_SECONDS
             await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
                                    commons_enums.ActivationTopics.FULL_CANDLES.value,
-                                   candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
+                                   trigger_time,
                                    candle=candle,
                                    init_call=init_call)
 
