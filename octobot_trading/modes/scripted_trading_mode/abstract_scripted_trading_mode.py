@@ -413,12 +413,14 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             # not necessary in backtesting
             return
 
-        # fake an evaluator call
-        cryptocurrency, symbol, time_frame, trigger_time = self._get_initialization_call_args()
+        # fake an full candle call
+        cryptocurrency, symbol, time_frame = self._get_initialization_call_args()
         # wait for symbol data to be initialized
-        await self._wait_for_symbol_init(symbol, time_frame, 10)
-        await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
-                               commons_enums.ActivationTopics.EVALUATORS.value, trigger_time, init_call=True)
+        candle = await self._wait_for_symbol_init(symbol, time_frame, 30)
+        if candle is None:
+            self.logger.error(f"Can't initialize trading script: {symbol} {time_frame} candles are not fetched")
+        await self.ohlcv_callback(self.exchange_name, self.exchange_manager.id, cryptocurrency, symbol, time_frame,
+                                  candle, init_call=True)
 
     async def _wait_for_symbol_init(self, symbol, time_frame, timeout):
         # warning: should never be called in backtesting
@@ -426,30 +428,38 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         t0 = time.time()
         while time.time() - t0 < timeout:
             try:
-                _ = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol, allow_creation=False) \
+                candles_manager = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+                    symbol,
+                    allow_creation=False) \
                     .symbol_candles[tf]
-                return True
+                candle_data = candles_manager.get_candles(5)
+                current_time = self.exchange_manager.exchange.get_exchange_current_time()
+                time_frame_sec = commons_enums.TimeFramesMinutes[tf] * commons_constants.MINUTE_TO_SECONDS
+                last_full_candle_time = current_time - current_time % time_frame_sec - time_frame_sec
+                for candle in reversed(candle_data):
+                    if candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] == last_full_candle_time:
+                        return candle
+                # return the candle right before the last (last being in construction)
+                return candle_data[-2]
             except KeyError:
                 # no symbol data initialized, keep waiting
                 await asyncio.sleep(0.2)
-        return False
+        return None
 
     def _get_initialization_call_args(self):
         currency = next(iter(self.exchange_manager.exchange_config.traded_cryptocurrencies))
         symbol = self.exchange_manager.exchange_config.traded_cryptocurrencies[currency][0]
         time_frame = self.exchange_manager.exchange_config.traded_time_frames[0]
-        current_time = self.exchange_manager.exchange.get_exchange_current_time()
-        trigger_time = current_time - current_time \
-            % (commons_enums.TimeFramesMinutes[time_frame] * commons_constants.MINUTE_TO_SECONDS)
-        return currency, symbol, time_frame.value, trigger_time
+        return currency, symbol, time_frame.value
 
     async def ohlcv_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
-                             time_frame: str, candle: dict):
+                             time_frame: str, candle: dict, init_call: bool = False):
         with self.trading_mode_trigger():
             await self.call_script(self.matrix_id, cryptocurrency, symbol, time_frame,
                                    commons_enums.ActivationTopics.FULL_CANDLES.value,
                                    candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value],
-                                   candle=candle)
+                                   candle=candle,
+                                   init_call=init_call)
 
     async def kline_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
                              time_frame, kline: dict):
