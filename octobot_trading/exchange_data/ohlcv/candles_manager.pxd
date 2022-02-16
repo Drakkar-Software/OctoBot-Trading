@@ -48,6 +48,7 @@ cdef class CandlesManager(util.Initializable):
     cpdef np.ndarray get_symbol_volume_candles(self, int limit=*)
 
     cpdef dict get_symbol_prices(self, object limit=*)
+    cpdef list get_candles(self, object limit=*)
     cpdef void add_old_and_new_candles(self, list candles_data)
     cpdef void add_new_candle(self, list new_candle_data)
     cpdef void replace_all_candles(self, list all_candles_data)
