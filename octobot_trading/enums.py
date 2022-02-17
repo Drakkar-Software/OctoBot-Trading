@@ -442,6 +442,11 @@ class MarginType(enum.Enum):
     ISOLATED = "isolated"
 
 
+class TakeProfitStopLossMode(enum.Enum):
+    FULL = "Full"
+    PARTIAL = "Partial"
+
+
 class FutureContractType(enum.Enum):
     INVERSE_PERPETUAL = "inverse_perpetual"
     LINEAR_PERPETUAL = "linear_perpetual"

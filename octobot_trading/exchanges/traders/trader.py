@@ -356,8 +356,22 @@ class Trader(util.Initializable):
                 await self.exchange_manager.exchange.set_symbol_leverage(
                     symbol=symbol,
                 leverage=leverage
-            )
-        contract.set_current_leverage(leverage)
+                )
+            contract.set_current_leverage(leverage)
+
+    async def set_symbol_take_profit_stop_loss_mode(self, symbol, new_mode: enums.TakeProfitStopLossMode):
+        """
+        Updates the take profit and stop loss mode for the given symbol
+        Raises NotImplementedError if the endpoint is not implemented on exchange
+        :param symbol: the symbol to update
+        :param new_mode: the take_profit_stop_loss_mode value
+        """
+        contract = self.exchange_manager.exchange.get_pair_future_contract(symbol)
+        if contract.take_profit_stop_loss_mode != new_mode:
+            if not self.simulate:
+                await self.exchange_manager.exchange.set_symbol_partial_take_profit_stop_loss(
+                    symbol, contract.is_inverse_contract(), new_mode)
+            contract.take_profit_stop_loss_mode = new_mode
 
     async def set_margin_type(self, symbol, side, margin_type):
         """
