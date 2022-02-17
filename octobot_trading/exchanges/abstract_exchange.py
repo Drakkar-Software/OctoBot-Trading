@@ -273,6 +273,14 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("create_order is not implemented")
 
+    def get_order_additional_params(self, order) -> dict:
+        """
+        Returns a dict with exchange specific additional parameters to set before sending the order
+        :param order: the order instance wrapping orders details
+        :return: the params dict
+        """
+        return {}
+
     def is_supported_order_type(self, order_type):
         """
         Check if the order type is supported by the current exchange instance
