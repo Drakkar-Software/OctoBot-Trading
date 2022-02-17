@@ -78,13 +78,14 @@ class Trader(util.Initializable):
     Orders
     """
 
-    async def create_order(self, order, portfolio: object = None, loaded: bool = False):
+    async def create_order(self, order, portfolio: object = None, loaded: bool = False, params: dict = None):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
         notifies order channel. Handles linked orders.
         :param order: Order to create
         :param portfolio: Portfolio to update (default is this exchange's portfolio)
         :param loaded: True if this order is fetched from an exchange only and therefore not created by this OctoBot
+        :param params: Additional parameters to give to the order upon creation (used in real trading only)
         :return: The crated order instance
         """
         if portfolio is None:
@@ -103,7 +104,8 @@ class Trader(util.Initializable):
             self.logger.debug(f"Order loaded : {new_order.to_string()} ")
         else:
             try:
-                new_order = await self._create_new_order(new_order, portfolio)
+                params = params or {}
+                new_order = await self._create_new_order(new_order, portfolio, params)
                 self.logger.debug(f"Order creation : {new_order.to_string()} ")
             except TypeError as e:
                 self.logger.error(f"Fail to create not loaded order : {e}")
@@ -129,16 +131,19 @@ class Trader(util.Initializable):
                                                                     price=price,
                                                                     linked_portfolio=linked_portfolio))
 
-    async def _create_new_order(self, new_order: object, portfolio) -> object:
+    async def _create_new_order(self, new_order: object, portfolio, params: dict) -> object:
         """
         Creates an exchange managed order, it might be a simulated or a real order. Then updates the portfolio.
         """
         if not self.simulate and not new_order.is_self_managed():
+            order_params = self.exchange_manager.exchange.get_order_additional_params(new_order)
+            order_params.update(params)
             created_order = await self.exchange_manager.exchange.create_order(new_order.order_type,
                                                                               new_order.symbol,
                                                                               new_order.origin_quantity,
                                                                               new_order.origin_price,
-                                                                              new_order.origin_stop_price)
+                                                                              new_order.origin_stop_price,
+                                                                              params=order_params)
 
             self.logger.info(f"Created order on {self.exchange_manager.exchange_name}: {created_order}")
 
@@ -355,7 +360,7 @@ class Trader(util.Initializable):
             if not self.simulate:
                 await self.exchange_manager.exchange.set_symbol_leverage(
                     symbol=symbol,
-                leverage=leverage
+                    leverage=leverage
                 )
             contract.set_current_leverage(leverage)
 
