@@ -161,23 +161,23 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
 
-    async def _create_market_stop_loss_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+    async def _create_market_stop_loss_order(self, symbol, quantity, price, params=None) -> dict:
+        raise NotImplementedError("_create_market_stop_loss_order is not implemented")
 
     async def _create_limit_stop_loss_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+        raise NotImplementedError("_create_limit_stop_loss_order is not implemented")
 
     async def _create_market_take_profit_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+        raise NotImplementedError("_create_market_take_profit_order is not implemented")
 
     async def _create_limit_take_profit_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+        raise NotImplementedError("_create_limit_take_profit_order is not implemented")
 
     async def _create_market_trailing_stop_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+        raise NotImplementedError("_create_market_trailing_stop_order is not implemented")
 
     async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+        raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()
