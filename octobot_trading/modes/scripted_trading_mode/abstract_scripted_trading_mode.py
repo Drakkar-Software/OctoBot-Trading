@@ -416,6 +416,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         # fake an full candle call
         cryptocurrency, symbol, time_frame = self._get_initialization_call_args()
         # wait for symbol data to be initialized
+        # TODO use trading ready event when done
         candle = await self._wait_for_symbol_init(symbol, time_frame, 30)
         if candle is None:
             self.logger.error(f"Can't initialize trading script: {symbol} {time_frame} candles are not fetched")
@@ -428,6 +429,9 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         t0 = time.time()
         while time.time() - t0 < timeout:
             try:
+                if self.exchange_manager.is_future:
+                    # wait for contracts to be loaded
+                    _ = self.exchange_manager.exchange.pair_contracts[symbol]
                 candles_manager = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
                     symbol,
                     allow_creation=False) \

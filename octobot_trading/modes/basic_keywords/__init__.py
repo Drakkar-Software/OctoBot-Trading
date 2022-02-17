@@ -24,6 +24,8 @@ from octobot_trading.modes.basic_keywords.user_inputs import (
 
 from octobot_trading.modes.basic_keywords.configuration import (
     user_select_leverage,
+    set_leverage,
+    set_partial_take_profit_stop_loss,
 )
 
 from octobot_trading.modes.basic_keywords.run_persistence import (
@@ -47,6 +49,8 @@ __all__ = [
     "get_user_inputs",
     "clear_user_inputs",
     "user_select_leverage",
+    "set_leverage",
+    "set_partial_take_profit_stop_loss",
     "set_plot_orders",
     "store_orders",
     "store_trade",
