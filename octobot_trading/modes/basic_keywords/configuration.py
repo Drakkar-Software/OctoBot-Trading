@@ -16,6 +16,7 @@
 import decimal
 
 import octobot_trading.modes.basic_keywords.user_inputs as user_inputs
+import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 
 
@@ -45,3 +46,9 @@ async def set_leverage(ctx, leverage):
             ctx.logger.warning("TODO: rebase tentacles when bybit exchange is up")
         except Exception as e:
             ctx.logger.exception(e, True, str(e))
+
+
+async def set_partial_take_profit_stop_loss(ctx, tp_sl_mode=enums.TakeProfitStopLossMode.PARTIAL.value):
+    await ctx.exchange_manager.trader.set_symbol_take_profit_stop_loss_mode(
+        ctx.symbol, enums.TakeProfitStopLossMode(tp_sl_mode)
+    )
