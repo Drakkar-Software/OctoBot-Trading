@@ -199,6 +199,11 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     async def set_symbol_position_mode(self, symbol: str, one_way: bool):
         return await self.connector.set_symbol_position_mode(symbol=symbol, one_way=one_way)
 
+    async def set_symbol_partial_take_profit_stop_loss(self, symbol: str, inverse: bool,
+                                                       tp_sl_mode: trading_enums.TakeProfitStopLossMode):
+        return await self.connector.set_symbol_partial_take_profit_stop_loss(symbol=symbol, inverse=inverse,
+                                                                             tp_sl_mode=tp_sl_mode)
+
     def _get_pair_market_type(self, pair):
         return self.connector.client.safe_string(
             self.connector.client.safe_value(self.connector.client.options, 'marketTypes', {}), pair, None)
