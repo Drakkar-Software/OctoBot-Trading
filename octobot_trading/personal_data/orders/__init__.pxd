@@ -91,6 +91,10 @@ from octobot_trading.personal_data.orders.order_factory cimport (
     create_order_from_type,
     create_order_instance,
 )
+from octobot_trading.personal_data.orders import wrapped_order
+from octobot_trading.personal_data.orders.wrapped_order import (
+    WrappedOrder,
+)
 
 __all__ = [
     "Order",
@@ -138,4 +142,5 @@ __all__ = [
     "TakeProfitLimitOrder",
     "TrailingStopOrder",
     "TrailingStopLimitOrder",
+    "WrappedOrder",
 ]

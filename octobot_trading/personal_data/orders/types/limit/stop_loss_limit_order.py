@@ -29,6 +29,7 @@ class StopLossLimitOrder(limit_order.LimitOrder):
 
     async def on_filled(self):
         await limit_order.LimitOrder.on_filled(self)
+        # TODO replace with chained order ?
         await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
                                                   if self.side is enums.TradeOrderSide.SELL
                                                   else enums.TraderOrderType.BUY_MARKET,

@@ -33,6 +33,12 @@ class TradingModeIncompatibility(Exception):
     """
 
 
+class OrderCreationError(Exception):
+    """
+    Raised upon a failed order creation
+    """
+
+
 class NotSupported(Exception):
     """
     Raised when an exchange doesn't support the endpoint

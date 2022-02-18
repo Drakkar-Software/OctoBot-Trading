@@ -84,6 +84,9 @@ class Order(util.Initializable):
         self.linked_to = None
         self.linked_orders = []
 
+        # set when this order is replaced by an exchange created order upon creation
+        self.replaced_by = None
+
         # order state is initialized in initialize_impl()
         self.state = None
 
@@ -96,6 +99,13 @@ class Order(util.Initializable):
 
         # the associated position side (should be BOTH for One-way Mode ; LONG or SHORT for Hedge Mode)
         self.position_side = None
+
+        # other orders (as WrappedOrders) that should be created when this order is filled
+        self.chained_orders = []
+        # order that triggered this order creation (when created as a chained order)
+        self.triggered_by = None
+        # True when this order is to be opened as a chained order and has not been open yet
+        self.is_waiting_for_chained_trigger = False
 
     @classmethod
     def get_name(cls):
@@ -220,6 +230,15 @@ class Order(util.Initializable):
         if not self.is_closed():
             await self.update_order_status()
 
+    def add_chained_order(self, chained_order):
+        """
+        chained_order will be assigned with the actually created order when this order will be filled
+        :param chained_order: WrappedOrder to be added to this order's chained orders
+        :return: the given chained order
+        """
+        self.chained_orders.append(chained_order)
+        return chained_order
+
     async def update_order_status(self, force_refresh=False):
         """
         Update_order_status will define the rules for a simulated order to be filled / canceled
@@ -301,7 +320,16 @@ class Order(util.Initializable):
         """
         Filling complete callback
         """
-        # nothing to do by default
+        await self._trigger_chained_orders()
+
+    async def _trigger_chained_orders(self):
+        logger = logging.get_logger(self.get_logger_name())
+        for index, wrapped_order in enumerate(self.chained_orders):
+            if wrapped_order.should_be_created():
+                logger.debug(f"Creating chained order {index + 1}/{len(self.chained_orders)}")
+                await wrapped_order.create_order()
+            else:
+                logger.debug(f"Skipping cancelled chained order {index + 1}/{len(self.chained_orders)}")
 
     def get_computed_fee(self, forced_value=None):
         if self.fees_currency_side is enums.FeesCurrencySide.UNDEFINED:
@@ -462,6 +490,7 @@ class Order(util.Initializable):
         self.linked_to = None
         self.linked_portfolio = None
         self.linked_orders = []
+        self.chained_orders = []
 
     def is_cleared(self):
         return self.exchange_manager is None

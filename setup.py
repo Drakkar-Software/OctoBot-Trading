@@ -95,6 +95,7 @@ packages_list = [
     "octobot_trading.personal_data.orders.order_state",
     "octobot_trading.personal_data.orders.order_util",
     "octobot_trading.personal_data.orders.order_factory",
+    "octobot_trading.personal_data.orders.wrapped_order",
     "octobot_trading.personal_data.orders.states.fill_order_state",
     "octobot_trading.personal_data.orders.states.cancel_order_state",
     "octobot_trading.personal_data.orders.states.close_order_state",

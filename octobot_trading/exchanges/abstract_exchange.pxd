@@ -85,3 +85,4 @@ cdef class AbstractExchange(util.Initializable):
                                         object price, object stop_price)
     cpdef void handle_token_error(self, object error)
     cpdef bint is_supported_order_type(self, object order_type)
+    cpdef bint supports_bundled_order_on_order_creation(self, object base_order, object bundled_order_type)
