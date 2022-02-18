@@ -39,6 +39,7 @@ cdef class CCXTExchange(abstract_exchange.AbstractExchange):
     cpdef void add_options(self, dict options_dict)
     cpdef dict get_ccxt_client_login_options(self)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)
+    cpdef dict get_bundled_order_parameters(self, object stop_loss_price=*, object take_profit_price=*)
 
     cdef void _unauthenticated_exchange_fallback(self, object err)
     cdef object _get_unauthenticated_exchange(self)

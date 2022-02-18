@@ -36,6 +36,7 @@ from octobot_trading.personal_data.orders cimport (
     TakeProfitLimitOrder,
     TrailingStopOrder,
     TrailingStopLimitOrder,
+    WrappedOrder,
 )
 from octobot_trading.personal_data cimport portfolios
 from octobot_trading.personal_data.portfolios cimport (
@@ -136,6 +137,7 @@ __all__ = [
     "TakeProfitLimitOrder",
     "TrailingStopOrder",
     "TrailingStopLimitOrder",
+    "WrappedOrder",
     "PositionsProducer",
     "PositionsChannel",
     "BalanceUpdaterSimulator",
