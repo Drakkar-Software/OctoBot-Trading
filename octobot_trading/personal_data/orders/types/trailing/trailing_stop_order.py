@@ -139,6 +139,7 @@ class TrailingStopOrder(order_class.Order):
         Create an artificial when trailing stop is filled
         """
         await order_class.Order.on_filled(self)
+        # TODO replace with chained order ?
         await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
                                                   if self.side is enums.TradeOrderSide.SELL
                                                   else enums.TraderOrderType.BUY_MARKET,

@@ -388,6 +388,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                                        tp_sl_mode: enums.TakeProfitStopLossMode):
         raise NotImplementedError("set_symbol_partial_take_profit_stop_loss is not implemented")
 
+    def get_bundled_order_parameters(self, stop_loss_price=None, take_profit_price=None) -> dict:
+        return self.connector.get_bundled_order_parameters(stop_loss_price=stop_loss_price,
+                                                           take_profit_price=take_profit_price)
+
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         fees = self.client.calculate_fee(symbol=symbol,
                                          type=order_type,
