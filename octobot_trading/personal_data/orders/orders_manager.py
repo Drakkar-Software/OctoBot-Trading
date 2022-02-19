@@ -55,10 +55,12 @@ class OrdersManager(util.Initializable):
     def get_order(self, order_id):
         return self.orders[order_id]
 
-    async def upsert_order_from_raw(self, order_id, raw_order) -> bool:
+    async def upsert_order_from_raw(self, order_id, raw_order, is_from_exchange) -> bool:
         if not self.has_order(order_id):
             self.logger.debug(f"Creating new order from exchange data: {raw_order}")
             new_order = order_factory.create_order_instance_from_raw(self.trader, raw_order)
+            if is_from_exchange:
+                new_order.is_synchronized_with_exchange = True
             self.orders[order_id] = new_order
             await new_order.initialize(is_from_exchange_data=True)
             self._check_orders_size()
