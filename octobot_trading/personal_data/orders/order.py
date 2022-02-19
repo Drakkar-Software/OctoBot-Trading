@@ -227,12 +227,14 @@ class Order(util.Initializable):
         Initialize order status update tasks
         """
         await orders_states.create_order_state(self, **kwargs)
+        self.is_initialized = True
         if not self.is_closed():
             await self.update_order_status()
 
     def add_chained_order(self, chained_order):
         """
         chained_order will be assigned with the actually created order when this order will be filled
+        warning: add_chained_order is not checking if the order should be created instantly (if self is filled).
         :param chained_order: WrappedOrder to be added to this order's chained orders
         :return: the given chained order
         """
@@ -252,7 +254,8 @@ class Order(util.Initializable):
         return order_util.get_fees_for_currency(self.fee, currency)
 
     def is_open(self):
-        return self.state is None or self.state.is_open()
+        # also check is_initialized to avoid considering uncreated orders as open
+        return self.is_initialized and (self.state is None or self.state.is_open())
 
     def is_filled(self):
         return self.state.is_filled() or (self.state.is_closed() and self.status is enums.OrderStatus.FILLED)
