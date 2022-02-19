@@ -378,7 +378,8 @@ class Order(util.Initializable):
         return self.exchange_manager.exchange.get_exchange_current_time()
 
     def is_self_managed(self):
-        return not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
+        return not self.is_synchronized_with_exchange and \
+               not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
 
     def is_long(self):
         return self.side is enums.TradeOrderSide.BUY
@@ -395,7 +396,10 @@ class Order(util.Initializable):
             except KeyError:
                 logging.get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
-        price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0
+        price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0.0
+        if price == 0.0 and raw_order.get(enums.ExchangeConstantsOrderColumns.STOP_PRICE.value, None):
+            # parse stop price when available
+            price = raw_order[enums.ExchangeConstantsOrderColumns.STOP_PRICE.value]
         filled_price = decimal.Decimal(str(price))
         # set average price with real average price if available, use filled_price otherwise
         average_price = decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value, 0.0)
@@ -415,7 +419,7 @@ class Order(util.Initializable):
             total_cost=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value, 0.0) or 0.0)),
             fee=order_util.parse_raw_fees(raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value, None)),
             timestamp=raw_order.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value, None),
-            reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False),
+            reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False)
         )
 
     def consider_as_filled(self):
