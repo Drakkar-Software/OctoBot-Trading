@@ -219,7 +219,7 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
                 trading_enums.ExchangeConstantsPositionColumns.SIDE.value:
                     self.parse_position_side(
                         position_dict.get(trading_enums.ExchangePositionCCXTColumns.SIDE.value,
-                                          trading_enums.PositionSide.UNKNOWN.value)),
+                                          trading_enums.PositionSide.UNKNOWN.value), None),
                 trading_enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value:
                     position_dict.get(trading_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None),
                 trading_enums.ExchangeConstantsPositionColumns.QUANTITY.value:
