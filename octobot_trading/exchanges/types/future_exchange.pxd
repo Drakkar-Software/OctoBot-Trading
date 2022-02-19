@@ -41,4 +41,4 @@ cdef class FutureExchange(abstract_exchange.AbstractExchange):
     cpdef dict parse_mark_price(self, dict mark_price_dict, bint from_ticker=*)
     cpdef dict parse_liquidation(self, dict liquidation_dict)
     cpdef object parse_position_status(self, str status)
-    cpdef object parse_position_side(self, str side)
+    cpdef object parse_position_side(self, str side, object mode)
