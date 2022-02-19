@@ -151,7 +151,8 @@ class ExchangePersonalData(util.Initializable):
 
     async def handle_order_update_from_raw(self, order_id, raw_order,
                                            is_new_order: bool = False,
-                                           should_notify: bool = True) -> bool:
+                                           should_notify: bool = True,
+                                           is_from_exchange=True) -> bool:
         # Orders can sometimes be out of sync between different exchange endpoints (ex: binance order API vs
         # open_orders API which is slower).
         # Always check if this order has not already been closed previously (most likely during the last
@@ -161,7 +162,7 @@ class ExchangePersonalData(util.Initializable):
                               f"(received raw order: {raw_order})")
         else:
             try:
-                changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order)
+                changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order, is_from_exchange)
 
                 if changed:
                     updated_order = self.orders_manager.get_order(order_id)

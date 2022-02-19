@@ -331,6 +331,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     ORDER = "order"
     TAKERORMAKER = "takerOrMaker"
     REDUCE_ONLY = "reduceOnly"
+    STOP_PRICE = "stopPrice"
 
 
 class ExchangeConstantsPositionColumns(enum.Enum):
