@@ -162,9 +162,17 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
 
                         # if we're trying to refresh the current candle => useless
                         if last_candle_timestamp == current_candle_timestamp:
-                            should_sleep_time = self._ensure_correct_sleep_time(
-                                should_sleep_time + time_frame_sleep + self.OHLCV_REFRESH_TIME_THRESHOLD,
-                                time_frame_sleep)
+                            if should_sleep_time < 0:
+                                # up to date candle is not yet available on exchange: retry in a few seconds
+                                should_sleep_time = self._ensure_correct_sleep_time(
+                                    self.OHLCV_REFRESH_TIME_THRESHOLD,
+                                    time_frame_sleep
+                                )
+                            else:
+                                should_sleep_time = self._ensure_correct_sleep_time(
+                                    should_sleep_time + time_frame_sleep + self.OHLCV_REFRESH_TIME_THRESHOLD,
+                                    time_frame_sleep
+                                )
                         else:
                             # A fresh candle happened
                             last_candle_timestamp = current_candle_timestamp
