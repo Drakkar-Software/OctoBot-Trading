@@ -150,6 +150,8 @@ class Trader(util.Initializable):
                                                                               new_order.origin_quantity,
                                                                               new_order.origin_price,
                                                                               new_order.origin_stop_price,
+                                                                              new_order.side,
+                                                                              new_order.created_last_price,
                                                                               params=order_params)
 
             self.logger.info(f"Created order on {self.exchange_manager.exchange_name}: {created_order}")
