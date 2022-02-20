@@ -62,9 +62,12 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
-                           params: dict = None, **kwargs: dict) -> typing.Optional[dict]:
+                           side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
+                           params: dict = None, **kwargs: dict) \
+            -> typing.Optional[dict]:
         try:
-            created_order = await self._create_order_with_retry(order_type, symbol, quantity, price, params)
+            created_order = await self._create_order_with_retry(order_type, symbol, quantity,
+                                                                price, side, current_price, params)
             # some exchanges are not returning the full order details on creation: fetch it if necessary
             if created_order and not self._ensure_order_details_completeness(created_order):
                 if ecoc.ID.value in created_order:
@@ -90,16 +93,19 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return None
 
     async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
-                                       price: decimal.Decimal, params) -> dict:
+                                       price: decimal.Decimal, side: enums.TradeOrderSide,
+                                       current_price: decimal.Decimal, params) -> dict:
         try:
-            return await self._create_specific_order(order_type, symbol, quantity, price=price, params=params)
+            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
+                                                     current_price=current_price, params=params)
         except (ccxt.InvalidOrder, ccxt.BadRequest) as e:
             # can be raised when exchange precision/limits rules change
             self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
                               f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
             await self.connector.client.load_markets(reload=True)
             # retry order creation with updated markets (ccxt will use the updated market values)
-            return await self._create_specific_order(order_type, symbol, quantity, price=price, params=params)
+            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
+                                                     current_price=current_price, params=params)
 
     def _ensure_order_details_completeness(self, order, order_required_fields=None, order_non_empty_fields=None):
         if order_required_fields is None:
@@ -111,10 +117,13 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             all(order[key] for key in order_non_empty_fields)
 
     async def _create_specific_order(self, order_type, symbol, quantity: decimal.Decimal, price: decimal.Decimal = None,
+                                     side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
                                      params=None) -> dict:
         created_order = None
         float_quantity = float(quantity)
         float_price = float(price)
+        float_current_price = float(current_price)
+        side = None if side is None else side.value
         params = {} if params is None else params
         params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
         if order_type == enums.TraderOrderType.BUY_MARKET:
@@ -131,22 +140,23 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
                                                                 params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS:
             created_order = await self._create_market_stop_loss_order(symbol, float_quantity, price=float_price,
+                                                                      side=side, current_price=float_current_price,
                                                                       params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
             created_order = await self._create_limit_stop_loss_order(symbol, float_quantity, price=float_price,
-                                                                     params=params)
+                                                                     side=side, params=params)
         elif order_type == enums.TraderOrderType.TAKE_PROFIT:
             created_order = await self._create_market_take_profit_order(symbol, float_quantity, price=float_price,
-                                                                        params=params)
+                                                                        side=side, params=params)
         elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
             created_order = await self._create_limit_take_profit_order(symbol, float_quantity, price=float_price,
-                                                                       params=params)
+                                                                       side=side, params=params)
         elif order_type == enums.TraderOrderType.TRAILING_STOP:
             created_order = await self._create_market_trailing_stop_order(symbol, float_quantity, price=float_price,
-                                                                          params=params)
+                                                                          side=side, params=params)
         elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
             created_order = await self._create_limit_trailing_stop_order(symbol, float_quantity, price=float_price,
-                                                                         params=params)
+                                                                         side=side, params=params)
         return created_order
 
     async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
@@ -161,22 +171,22 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
 
-    async def _create_market_stop_loss_order(self, symbol, quantity, price, params=None) -> dict:
+    async def _create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
         raise NotImplementedError("_create_market_stop_loss_order is not implemented")
 
-    async def _create_limit_stop_loss_order(self, symbol, quantity, price=None, params=None) -> dict:
+    async def _create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_limit_stop_loss_order is not implemented")
 
-    async def _create_market_take_profit_order(self, symbol, quantity, price=None, params=None) -> dict:
+    async def _create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_market_take_profit_order is not implemented")
 
-    async def _create_limit_take_profit_order(self, symbol, quantity, price=None, params=None) -> dict:
+    async def _create_limit_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_limit_take_profit_order is not implemented")
 
-    async def _create_market_trailing_stop_order(self, symbol, quantity, price=None, params=None) -> dict:
+    async def _create_market_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_market_trailing_stop_order is not implemented")
 
-    async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, params=None) -> dict:
+    async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
 
     def get_exchange_current_time(self):
