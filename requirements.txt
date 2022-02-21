@@ -14,7 +14,7 @@ ccxt==1.69.52 # always ensure real exchanges tests are passing before changing t
 cryptography # Never specify a version (managed by https://github.com/Drakkar-Software/OctoBot-PyPi-Linux-Deployer)
 
 # Websocket requirements
-websockets==10.1
+websockets==10.2
 cryptofeed==2.1.2
 
 # OrderBook requirement
