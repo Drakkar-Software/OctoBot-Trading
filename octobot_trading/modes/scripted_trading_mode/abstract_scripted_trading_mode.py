@@ -512,6 +512,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             if not self.run_data_writer.are_data_initialized and not \
                     self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
                 await self._reset_run_data(context)
+            await self._pre_script_call(context)
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
             raise
@@ -569,6 +570,9 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             await basic_keywords.clear_user_inputs(self.run_data_writer)
         await self._register_required_user_inputs(
             self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None, True))
+
+    async def _pre_script_call(self, context):
+        await basic_keywords.set_leverage(context, await basic_keywords.user_select_leverage(context))
 
     async def _register_required_user_inputs(self, context):
         if context.exchange_manager.is_future:
