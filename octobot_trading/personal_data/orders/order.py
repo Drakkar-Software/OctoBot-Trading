@@ -404,9 +404,9 @@ class Order(util.Initializable):
                 logging.get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
         price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0.0
-        if price == 0.0 and raw_order.get(enums.ExchangeConstantsOrderColumns.STOP_PRICE.value, None):
+        if stop_price := raw_order.get(enums.ExchangeConstantsOrderColumns.STOP_PRICE.value, None):
             # parse stop price when available
-            price = raw_order[enums.ExchangeConstantsOrderColumns.STOP_PRICE.value]
+            price = stop_price
         filled_price = decimal.Decimal(str(price))
         # set average price with real average price if available, use filled_price otherwise
         average_price = decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value, 0.0)

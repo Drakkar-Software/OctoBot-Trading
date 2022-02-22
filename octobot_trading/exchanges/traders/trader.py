@@ -163,12 +163,13 @@ class Trader(util.Initializable):
                     async with order.state.refresh_operation():
                         order_params = self.exchange_manager.exchange.get_order_additional_params(order)
                         order_params.update(params or {})
+                        # fill in every param as some exchange rely on re-creating the order altogether
                         edited_order = await self.exchange_manager.exchange.edit_order(
                             order.order_id,
                             order.order_type,
                             order.symbol,
-                            quantity=edited_quantity,
-                            price=edited_price,
+                            quantity=order.origin_quantity if edited_quantity is None else edited_quantity,
+                            price=order.origin_price if edited_price is None else edited_price,
                             stop_price=edited_stop_price,
                             side=order.side,
                             current_price=edited_current_price,

@@ -73,15 +73,15 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return None
 
     async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
-                         quantity: decimal.Decimal = None, price: decimal.Decimal = None,
+                         quantity: decimal.Decimal, price: decimal.Decimal,
                          stop_price: decimal.Decimal = None, side: enums.TradeOrderSide = None,
                          current_price: decimal.Decimal = None,
                          params: dict = None):
         # Note: on most exchange, this implementation will just replace the order by cancelling the one
         # which id is given and create a new one
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
-            float_quantity = None if quantity is None else float(quantity)
-            float_price = None if price is None else float(price)
+            float_quantity = float(quantity)
+            float_price = float(price)
             float_stop_price = None if stop_price is None else float(stop_price)
             float_current_price = None if current_price is None else float(current_price)
             side = None if side is None else side.value
@@ -94,12 +94,15 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return None
 
     async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
-                          quantity: float = None, price: float = None, stop_price: float = None, side: str = None,
+                          quantity: float, price: float, stop_price: float = None, side: str = None,
                           current_price: float = None, params: dict = None):
         ccxt_order_type = self._get_ccxt_order_type(order_type)
-        return await self.connector.client.edit_order(order_id, symbol, type=ccxt_order_type, side=side,
-                                                      amount=quantity, price=price,
-                                                      params=params)
+        if ccxt_order_type == enums.TradeOrderType.MARKET.value:
+            # can't set price in market orders
+            price = None
+        # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
+        return await self.connector.client.edit_order(order_id, symbol, ccxt_order_type, side,
+                                                      quantity, price, params)
 
     @contextlib.asynccontextmanager
     async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
@@ -230,11 +233,11 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         if order_type in (enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT,
                           enums.TraderOrderType.STOP_LOSS_LIMIT, enums.TraderOrderType.TAKE_PROFIT_LIMIT,
                           enums.TraderOrderType.TRAILING_STOP_LIMIT):
-            return "limit"
+            return enums.TradeOrderType.LIMIT.value
         if order_type in (enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET,
                           enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT,
                           enums.TraderOrderType.TRAILING_STOP):
-            return "market"
+            return enums.TradeOrderType.MARKET.value
         raise RuntimeError(f"Unknown order type: {order_type}")
 
     def get_exchange_current_time(self):
