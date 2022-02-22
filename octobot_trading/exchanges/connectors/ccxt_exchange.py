@@ -292,7 +292,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if self.client.has['fetchOrder']:
             try:
                 with self.error_describer():
-                    return await self.client.fetch_order(order_id, symbol, params=kwargs)
+                    params = kwargs.pop("params", {})
+                    return await self.client.fetch_order(order_id, symbol, params=params, **kwargs)
                 # self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order) TODO
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)

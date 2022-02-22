@@ -69,7 +69,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
             created_order = await self._create_order_with_retry(order_type, symbol, quantity,
                                                                 price, side, current_price, params)
-            return await self._verify_order(created_order, symbol, price)
+            return await self._verify_order(created_order, order_type, symbol, price)
         return None
 
     async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
@@ -80,25 +80,25 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         # Note: on most exchange, this implementation will just replace the order by cancelling the one
         # which id is given and create a new one
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
-            edited_order = await self._edit_order(order_id, order_type, symbol, quantity=quantity, price=price,
-                                                  stop_price=stop_price, side=side, current_price=current_price,
-                                                  params=params)
-            return await self._verify_order(edited_order, symbol, price)
+            float_quantity = None if quantity is None else float(quantity)
+            float_price = None if price is None else float(price)
+            float_stop_price = None if stop_price is None else float(stop_price)
+            float_current_price = None if current_price is None else float(current_price)
+            side = None if side is None else side.value
+            params = {} if params is None else params
+            params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
+            edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
+                                                  price=float_price, stop_price=float_stop_price, side=side,
+                                                  current_price=float_current_price, params=params)
+            return await self._verify_order(edited_order, order_type, symbol, price)
         return None
 
     async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
-                          quantity: decimal.Decimal = None, price: decimal.Decimal = None,
-                          stop_price: decimal.Decimal = None, side: enums.TradeOrderSide = None,
-                          current_price: decimal.Decimal = None,
-                          params: dict = None):
-        float_quantity = None if quantity is None else float(quantity)
-        float_price = None if price is None else float(price)
-        side = None if side is None else side.value
-        params = {} if params is None else params
-        params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
-        order_type = self._get_ccxt_order_type(order_type)
-        return await self.connector.client.edit_order(order_id, symbol, type=order_type, side=side,
-                                                      amount=float_quantity, price=float_price,
+                          quantity: float = None, price: float = None, stop_price: float = None, side: str = None,
+                          current_price: float = None, params: dict = None):
+        ccxt_order_type = self._get_ccxt_order_type(order_type)
+        return await self.connector.client.edit_order(order_id, symbol, type=ccxt_order_type, side=side,
+                                                      amount=quantity, price=price,
                                                       params=params)
 
     @contextlib.asynccontextmanager
@@ -115,11 +115,13 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
 
-    async def _verify_order(self, created_order, symbol, price):
+    async def _verify_order(self, created_order, order_type, symbol, price, params=None):
         # some exchanges are not returning the full order details on creation: fetch it if necessary
         if created_order and not self._ensure_order_details_completeness(created_order):
             if ecoc.ID.value in created_order:
-                created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value], symbol)
+                params = params or {}
+                created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value], symbol,
+                                                                               params=params)
 
         # on some exchange, market order are not not including price, add it manually to ensure uniformity
         if created_order[ecoc.PRICE.value] is None and price is not None:
