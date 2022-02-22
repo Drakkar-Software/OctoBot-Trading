@@ -87,6 +87,7 @@ class ExchangePersonalData(util.Initializable):
                 await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
 
                 if self.exchange_manager.is_future:
+                    # should this be done only "if should_notify" ?
                     await self.handle_position_instance_update(
                         order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(order),
                         should_notify=True)

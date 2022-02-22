@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
 import decimal
 import typing
 
@@ -63,24 +64,47 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
                            side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
-                           params: dict = None, **kwargs: dict) \
+                           params: dict = None) \
             -> typing.Optional[dict]:
-        try:
+        async with self._order_operation(order_type, symbol, quantity, price, stop_price):
             created_order = await self._create_order_with_retry(order_type, symbol, quantity,
                                                                 price, side, current_price, params)
-            # some exchanges are not returning the full order details on creation: fetch it if necessary
-            if created_order and not self._ensure_order_details_completeness(created_order):
-                if ecoc.ID.value in created_order:
-                    order_symbol = created_order[ecoc.SYMBOL.value] if ecoc.SYMBOL.value in created_order else None
-                    created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value],
-                                                                                   order_symbol, **kwargs)
+            return await self._verify_order(created_order, symbol, price)
+        return None
 
-            # on some exchange, market order are not not including price, add it manually to ensure uniformity
-            if created_order[ecoc.PRICE.value] is None and price is not None:
-                created_order[ecoc.PRICE.value] = float(price)
+    async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+                         quantity: decimal.Decimal = None, price: decimal.Decimal = None,
+                         stop_price: decimal.Decimal = None, side: enums.TradeOrderSide = None,
+                         current_price: decimal.Decimal = None,
+                         params: dict = None):
+        # Note: on most exchange, this implementation will just replace the order by cancelling the one
+        # which id is given and create a new one
+        async with self._order_operation(order_type, symbol, quantity, price, stop_price):
+            edited_order = await self._edit_order(order_id, order_type, symbol, quantity=quantity, price=price,
+                                                  stop_price=stop_price, side=side, current_price=current_price,
+                                                  params=params)
+            return await self._verify_order(edited_order, symbol, price)
+        return None
 
-            return self.clean_order(created_order)
+    async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+                          quantity: decimal.Decimal = None, price: decimal.Decimal = None,
+                          stop_price: decimal.Decimal = None, side: enums.TradeOrderSide = None,
+                          current_price: decimal.Decimal = None,
+                          params: dict = None):
+        float_quantity = None if quantity is None else float(quantity)
+        float_price = None if price is None else float(price)
+        side = None if side is None else side.value
+        params = {} if params is None else params
+        params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
+        order_type = self._get_ccxt_order_type(order_type)
+        return await self.connector.client.edit_order(order_id, symbol, type=order_type, side=side,
+                                                      amount=float_quantity, price=float_price,
+                                                      params=params)
 
+    @contextlib.asynccontextmanager
+    async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
+        try:
+            yield
         except ccxt.InsufficientFunds as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(str(e))
@@ -90,7 +114,18 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         except Exception as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
-        return None
+
+    async def _verify_order(self, created_order, symbol, price):
+        # some exchanges are not returning the full order details on creation: fetch it if necessary
+        if created_order and not self._ensure_order_details_completeness(created_order):
+            if ecoc.ID.value in created_order:
+                created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value], symbol)
+
+        # on some exchange, market order are not not including price, add it manually to ensure uniformity
+        if created_order[ecoc.PRICE.value] is None and price is not None:
+            created_order[ecoc.PRICE.value] = float(price)
+
+        return self.clean_order(created_order)
 
     async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
                                        price: decimal.Decimal, side: enums.TradeOrderSide,
@@ -188,6 +223,17 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
+
+    def _get_ccxt_order_type(self, order_type: enums.TraderOrderType):
+        if order_type in (enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT,
+                          enums.TraderOrderType.STOP_LOSS_LIMIT, enums.TraderOrderType.TAKE_PROFIT_LIMIT,
+                          enums.TraderOrderType.TRAILING_STOP_LIMIT):
+            return "limit"
+        if order_type in (enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET,
+                          enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT,
+                          enums.TraderOrderType.TRAILING_STOP):
+            return "market"
+        raise RuntimeError(f"Unknown order type: {order_type}")
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()

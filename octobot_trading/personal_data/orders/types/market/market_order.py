@@ -35,3 +35,7 @@ class MarketOrder(order_class.Order):
         self.filled_quantity = self.origin_quantity
         self.total_cost = self.filled_price * self.filled_quantity
         order_class.Order.on_fill_actions(self)
+
+    def can_be_edited(self):
+        # instantly filled orders can't be edited
+        return False
