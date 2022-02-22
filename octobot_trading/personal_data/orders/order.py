@@ -269,6 +269,10 @@ class Order(util.Initializable):
     def is_refreshing(self):
         return self.state is not None and self.state.is_refreshing()
 
+    def can_be_edited(self):
+        # orders that are not yet open or already open can be edited
+        return self.state is None or (self.state.is_open() and not self.is_refreshing())
+
     def get_position_side(self, future_contract):
         """
         :param future_contract: the associated future contract

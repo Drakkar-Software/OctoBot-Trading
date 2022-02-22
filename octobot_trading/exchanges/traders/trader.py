@@ -137,9 +137,75 @@ class Trader(util.Initializable):
                                                                     price=price,
                                                                     linked_portfolio=linked_portfolio))
 
+    async def edit_order(self, order: object,
+                         edited_quantity: decimal.Decimal = None,
+                         edited_price: decimal.Decimal = None,
+                         edited_stop_price: decimal.Decimal = None,
+                         edited_current_price: decimal.Decimal = None,
+                         params: dict = None) -> bool:
+        """
+        Edits an order, might be a simulated or a real order.
+        Fields that can be edited are:
+            quantity, price, stop_price and current_price
+        Portfolio is updated within this call
+        :return: True when an order field got updated
+        """
+        changed = False
+        previous_order_id = order.order_id
+        try:
+            async with order.lock:
+                # now that we got the lock, ensure we can edit the order
+                if not order.can_be_edited():
+                    raise RuntimeError(f"Order can't be edited, order: {order}")
+                if not self.simulate and not order.is_self_managed() and order.state is not None:
+                    # careful here: make sure we are not editing an order on exchange that is being updated
+                    # somewhere else
+                    async with order.state.refresh_operation():
+                        order_params = self.exchange_manager.exchange.get_order_additional_params(order)
+                        order_params.update(params or {})
+                        edited_order = await self.exchange_manager.exchange.edit_order(
+                            order.order_id,
+                            order.order_type,
+                            order.symbol,
+                            quantity=edited_quantity,
+                            price=edited_price,
+                            stop_price=edited_stop_price,
+                            side=order.side,
+                            current_price=edited_current_price,
+                            params=order_params
+                        )
+                        self.logger.info(f"Edited order on {self.exchange_manager.exchange_name}: {edited_order}")
+                        # apply new values from returned order (even order id might have changed)
+                        changed = order.update_from_raw(edited_order)
+                        # update portfolio from exchange
+                        await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
+                else:
+                    # consider order as cancelled to release portfolio amounts
+                    self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
+                        order, is_new_order=False
+                    )
+                    changed = order.update(
+                        order.symbol,
+                        quantity=edited_quantity,
+                        price=edited_price,
+                        stop_price=edited_stop_price,
+                        current_price=edited_current_price,
+                    )
+                    # consider order as new order to lock portfolio amounts
+                    self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
+                        order, is_new_order=True
+                    )
+            return changed
+        finally:
+            if previous_order_id != order.order_id:
+                # order id changed: update orders_manager to keep consistency
+                self.exchange_manager.exchange_personal_data.orders_manager.update_order_id_key(previous_order_id,
+                                                                                                order)
+
     async def _create_new_order(self, new_order: object, portfolio, params: dict) -> object:
         """
-        Creates an exchange managed order, it might be a simulated or a real order. Then updates the portfolio.
+        Creates an exchange managed order, it might be a simulated or a real order.
+        Portfolio will be updated by the create order state after order will be initialized
         """
         updated_order = new_order
         if not self.simulate and not new_order.is_self_managed():

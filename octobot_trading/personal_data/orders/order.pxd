@@ -111,6 +111,7 @@ cdef class Order(util.Initializable):
     cpdef bint is_long(self)
     cpdef bint is_short(self)
     cpdef bint is_refreshing(self)
+    cpdef bint can_be_edited(self)
     cpdef object get_position_side(self, object future_contract)
     cpdef void on_fill_actions(self)
     cpdef dict get_computed_fee(self, object forced_value=*)
