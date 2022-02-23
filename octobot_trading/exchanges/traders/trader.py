@@ -200,8 +200,7 @@ class Trader(util.Initializable):
         finally:
             if previous_order_id != order.order_id:
                 # order id changed: update orders_manager to keep consistency
-                self.exchange_manager.exchange_personal_data.orders_manager.update_order_id_key(previous_order_id,
-                                                                                                order)
+                self.exchange_manager.exchange_personal_data.orders_manager.replace_order(previous_order_id, order)
 
     async def _create_new_order(self, new_order: object, portfolio, params: dict) -> object:
         """
@@ -225,7 +224,6 @@ class Trader(util.Initializable):
 
             # get real order from exchange
             updated_order = order_factory.create_order_instance_from_raw(self, created_order, force_open=True)
-            new_order.replaced_by = updated_order
 
             # rebind local elements to new order instance
             updated_order.linked_portfolio = portfolio

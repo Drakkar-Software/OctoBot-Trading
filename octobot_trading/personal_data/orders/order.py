@@ -84,9 +84,6 @@ class Order(util.Initializable):
         self.linked_to = None
         self.linked_orders = []
 
-        # set when this order is replaced by an exchange created order upon creation
-        self.replaced_by = None
-
         # order state is initialized in initialize_impl()
         self.state = None
 
@@ -236,10 +233,8 @@ class Order(util.Initializable):
         chained_order will be assigned with the actually created order when this order will be filled
         warning: add_chained_order is not checking if the order should be created instantly (if self is filled).
         :param chained_order: WrappedOrder to be added to this order's chained orders
-        :return: the given chained order
         """
         self.chained_orders.append(chained_order)
-        return chained_order
 
     async def update_order_status(self, force_refresh=False):
         """

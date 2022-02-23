@@ -70,7 +70,6 @@ cdef class Order(util.Initializable):
     cdef list last_prices
     cdef public list linked_orders
     cdef public list chained_orders # List[personal_data.WrappedOrder]
-    cdef public object replaced_by # Order
     cdef public object triggered_by # Order
     cdef public bint is_waiting_for_chained_trigger
 
@@ -125,7 +124,7 @@ cdef class Order(util.Initializable):
     cpdef void clear(self)
     cpdef bint is_to_be_maintained(self)
     cpdef str get_logger_name(self)
-    cpdef object add_chained_order(self, object chained_order)
+    cpdef void add_chained_order(self, object chained_order)
 
 cdef object _get_sell_and_buy_types(object order_type)
 cdef object _infer_order_type_from_maker_or_taker(dict raw_order, object side)
