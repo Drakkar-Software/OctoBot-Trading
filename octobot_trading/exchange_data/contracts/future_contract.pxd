@@ -23,7 +23,8 @@ cdef class FutureContract(margin_contract.MarginContract):
     cdef public object maintenance_margin_rate
 
     cdef readonly double minimum_tick_size
-    cdef readonly object take_profit_stop_loss_mode
+
+    cdef public object take_profit_stop_loss_mode
 
     cpdef bint is_inverse_contract(self)
     cpdef bint is_perpetual_contract(self)

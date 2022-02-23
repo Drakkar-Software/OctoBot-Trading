@@ -95,7 +95,7 @@ class OrdersManager(util.Initializable):
                                 f"{order.symbol}: {order.origin_quantity} at {order.origin_price} "
                                 f"(id: {order.order_id})")
 
-    def update_order_id_key(self, previous_id, order):
+    def replace_order(self, previous_id, order):
         if self.has_order(previous_id):
             self.orders.pop(previous_id, None)
         self.orders[order.order_id] = order
