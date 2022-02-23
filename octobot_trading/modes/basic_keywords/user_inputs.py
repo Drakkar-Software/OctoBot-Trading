@@ -15,7 +15,6 @@
 #  License along with this library.
 
 import octobot_trading.enums as trading_enums
-import octobot_trading.modes.abstract_trading_mode as abstract_trading_mode
 
 
 async def user_input(
