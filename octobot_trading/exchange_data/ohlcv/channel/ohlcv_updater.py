@@ -157,28 +157,10 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                         last_candle: list = []
 
                     if last_candle and len(candles) > 1:
-                        current_candle_timestamp: float = last_candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
-                        should_sleep_time: float = current_candle_timestamp + time_frame_sleep - time.time()
-
-                        # if we're trying to refresh the current candle => useless
-                        if last_candle_timestamp == current_candle_timestamp:
-                            if should_sleep_time < 0:
-                                # up to date candle is not yet available on exchange: retry in a few seconds
-                                should_sleep_time = self._ensure_correct_sleep_time(
-                                    self.OHLCV_REFRESH_TIME_THRESHOLD,
-                                    time_frame_sleep
-                                )
-                            else:
-                                should_sleep_time = self._ensure_correct_sleep_time(
-                                    should_sleep_time + time_frame_sleep + self.OHLCV_REFRESH_TIME_THRESHOLD,
-                                    time_frame_sleep
-                                )
-                        else:
-                            # A fresh candle happened
-                            last_candle_timestamp = current_candle_timestamp
-                            await self._push_complete_candles(time_frame, pair, candles)
-
-                        await asyncio.sleep(self._ensure_correct_sleep_time(should_sleep_time, time_frame_sleep))
+                        last_candle_timestamp, sleep_time = await self._refresh_current_candle(
+                            time_frame, pair, candles, last_candle, last_candle_timestamp, time_frame_sleep
+                        )
+                        await asyncio.sleep(self._ensure_correct_sleep_time(sleep_time, time_frame_sleep))
                     else:
                         # not enough candles: retry soon
                         self.logger.debug(f"Missing candles in request results for {pair} on {time_frame}, refreshing "
@@ -196,6 +178,30 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             except Exception as e:
                 self.logger.exception(e, True, f"Failed to update ohlcv data for {pair} on {time_frame} : {e}")
                 await asyncio.sleep(self.OHLCV_ON_ERROR_TIME)
+
+    async def _refresh_current_candle(self, time_frame, pair, candles, last_candle,
+                                      last_candle_timestamp, time_frame_sleep):
+        current_candle_timestamp: float = last_candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
+        should_sleep_time: float = current_candle_timestamp + time_frame_sleep - time.time()
+
+        # if we're trying to refresh the current candle => useless
+        if last_candle_timestamp == current_candle_timestamp:
+            if should_sleep_time < 0:
+                # up to date candle is not yet available on exchange: retry in a few seconds
+                should_sleep_time = self._ensure_correct_sleep_time(
+                    self.OHLCV_REFRESH_TIME_THRESHOLD,
+                    time_frame_sleep
+                )
+            else:
+                should_sleep_time = self._ensure_correct_sleep_time(
+                    should_sleep_time + time_frame_sleep + self.OHLCV_REFRESH_TIME_THRESHOLD,
+                    time_frame_sleep
+                )
+        else:
+            # A fresh candle happened
+            last_candle_timestamp = current_candle_timestamp
+            await self._push_complete_candles(time_frame, pair, candles)
+        return last_candle_timestamp, should_sleep_time
 
     def _ensure_correct_sleep_time(self, sleep_time_candidate, time_frame_sleep):
         if sleep_time_candidate < OHLCVUpdater.OHLCV_MIN_REFRESH_TIME:

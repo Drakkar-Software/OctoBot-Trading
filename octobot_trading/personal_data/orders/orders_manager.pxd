@@ -39,7 +39,7 @@ cdef class OrdersManager(util.Initializable):
     cpdef bint upsert_order_instance(self, order_class.Order order)
     cpdef bint has_order(self, str order_id)
     cpdef void remove_order_instance(self, order_class.Order order)
-    cpdef void update_order_id_key(self, str previous_id, order_class.Order order)
+    cpdef void replace_order(self, str previous_id, order_class.Order order)
     cpdef list get_all_orders(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_open_orders(self, str symbol=*, int since=*, int limit=*)
     cpdef list get_closed_orders(self, str symbol=*, int since=*, int limit=*)

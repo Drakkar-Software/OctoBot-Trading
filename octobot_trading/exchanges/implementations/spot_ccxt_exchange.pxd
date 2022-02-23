@@ -18,5 +18,3 @@ cimport octobot_trading.exchanges.types as exchanges_types
 
 cdef class SpotCCXTExchange(exchanges_types.SpotExchange):
     cpdef str get_default_type(self)
-
-    cdef str _get_ccxt_order_type(self, object order_type)

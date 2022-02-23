@@ -376,7 +376,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         return await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit)
 
     async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
-        return await self.client.set_leverage(leverage=float(leverage), symbol=symbol, params=kwargs)
+        return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):
         return await self.client.set_margin_mode(symbol=symbol,
@@ -392,6 +392,17 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     def get_bundled_order_parameters(self, stop_loss_price=None, take_profit_price=None) -> dict:
         return self.connector.get_bundled_order_parameters(stop_loss_price=stop_loss_price,
                                                            take_profit_price=take_profit_price)
+
+    def get_ccxt_order_type(self, order_type: enums.TraderOrderType):
+        if order_type in (enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT,
+                          enums.TraderOrderType.STOP_LOSS_LIMIT, enums.TraderOrderType.TAKE_PROFIT_LIMIT,
+                          enums.TraderOrderType.TRAILING_STOP_LIMIT):
+            return enums.TradeOrderType.LIMIT.value
+        if order_type in (enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET,
+                          enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT,
+                          enums.TraderOrderType.TRAILING_STOP):
+            return enums.TradeOrderType.MARKET.value
+        raise RuntimeError(f"Unknown order type: {order_type}")
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         fees = self.client.calculate_fee(symbol=symbol,

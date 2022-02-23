@@ -96,7 +96,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
                           quantity: float, price: float, stop_price: float = None, side: str = None,
                           current_price: float = None, params: dict = None):
-        ccxt_order_type = self._get_ccxt_order_type(order_type)
+        ccxt_order_type = self.connector.get_ccxt_order_type(order_type)
         if ccxt_order_type == enums.TradeOrderType.MARKET.value:
             # can't set price in market orders
             price = None
@@ -228,17 +228,6 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
-
-    def _get_ccxt_order_type(self, order_type: enums.TraderOrderType):
-        if order_type in (enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT,
-                          enums.TraderOrderType.STOP_LOSS_LIMIT, enums.TraderOrderType.TAKE_PROFIT_LIMIT,
-                          enums.TraderOrderType.TRAILING_STOP_LIMIT):
-            return enums.TradeOrderType.LIMIT.value
-        if order_type in (enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET,
-                          enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT,
-                          enums.TraderOrderType.TRAILING_STOP):
-            return enums.TradeOrderType.MARKET.value
-        raise RuntimeError(f"Unknown order type: {order_type}")
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()
