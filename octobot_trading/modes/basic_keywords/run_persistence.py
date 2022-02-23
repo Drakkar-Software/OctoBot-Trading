@@ -65,6 +65,7 @@ async def store_trade(ctx,
     symbol = trade_dict[trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value]
     trade_side = trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value]
     is_using_positions = False
+    color = shape = None
     if exchange_manager.is_future:
         positions = exchange_manager.exchange_personal_data.positions_manager.get_symbol_positions(symbol=symbol)
         if positions:
@@ -126,7 +127,7 @@ async def store_trade(ctx,
                              trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value] else 0),
         "fees_currency": trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value][
             trading_enums.ExchangeConstantsFeesColumns.CURRENCY.value]
-            if trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value] else "",
+        if trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value] else "",
     }
     await writer.log(trading_enums.DBTables.TRADES.value, trade_data)
 
