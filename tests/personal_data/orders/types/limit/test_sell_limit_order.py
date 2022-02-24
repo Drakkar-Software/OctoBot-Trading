@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 
 import pytest
 
@@ -58,5 +59,56 @@ async def test_sell_limit_order_trigger(sell_limit_order):
     price_events_manager.handle_recent_trades([decimal_random_recent_trade(price=order_price,
                                                                            timestamp=sell_limit_order.timestamp)])
 
+    await wait_asyncio_next_cycle()
+    assert sell_limit_order.is_filled()
+
+
+async def test_sell_limit_order_on_origin_price_change(sell_limit_order):
+    order_price = decimal.Decimal(100)
+    sell_limit_order.update(
+        price=order_price,
+        quantity=decimal_random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY),
+        symbol=DEFAULT_ORDER_SYMBOL,
+        order_type=TraderOrderType.SELL_LIMIT,
+    )
+    sell_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
+    await sell_limit_order.initialize()
+    sell_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+        sell_limit_order
+    )
+    price_events_manager = sell_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+        DEFAULT_ORDER_SYMBOL).price_events_manager
+    price_events_manager.handle_recent_trades(
+        [decimal_random_recent_trade(price=decimal_random_price(max_value=order_price - trading_constants.ONE),
+                                     timestamp=sell_limit_order.timestamp)])
+    await wait_asyncio_next_cycle()
+    assert not sell_limit_order.is_filled()
+
+    # do not update order price
+    order_price = decimal.Decimal(10)
+    sell_limit_order.update(
+        symbol=sell_limit_order.symbol,
+        quantity=decimal_random_quantity(max_value=DEFAULT_SYMBOL_QUANTITY)
+    )
+    price_events_manager.handle_recent_trades(
+        [decimal_random_recent_trade(price=decimal_random_price(max_value=order_price - trading_constants.ONE),
+                                     timestamp=sell_limit_order.timestamp)])
+    # order is still not triggered by this price
+    await wait_asyncio_next_cycle()
+    assert not sell_limit_order.is_filled()
+
+    # update order price
+    order_price = decimal.Decimal(10)
+    sell_limit_order.update(
+        symbol=sell_limit_order.symbol,
+        price=order_price
+    )
+    price_events_manager.handle_recent_trades([
+        decimal_random_recent_trade(
+            price=decimal.Decimal(20),
+            timestamp=sell_limit_order.exchange_manager.exchange.get_exchange_current_time()
+        )
+    ])
+    # order is now triggered by the new price
     await wait_asyncio_next_cycle()
     assert sell_limit_order.is_filled()
