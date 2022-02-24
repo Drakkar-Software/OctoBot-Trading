@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import mock
 import pytest
 import decimal
 
@@ -252,3 +253,46 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.canceled_time == 0
     assert order_inst.executed_time == 1637579281.377
     assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
+
+
+async def test_trigger_chained_orders(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order = personal_data.Order(trader_inst)
+    # does nothing
+    await base_order.on_filled()
+
+    # with chained orders
+    order_mock_1 = mock.Mock()
+    order_mock_1.should_be_created = mock.Mock(return_value=True)
+    order_mock_1.create_as_chained_order = mock.AsyncMock()
+    order_mock_2 = mock.Mock()
+    order_mock_2.should_be_created = mock.Mock(return_value=False)
+    order_mock_2.create_as_chained_order = mock.AsyncMock()
+
+    base_order.add_chained_order(order_mock_1)
+    base_order.add_chained_order(order_mock_2)
+
+    # triggers chained orders
+    await base_order.on_filled()
+    order_mock_1.should_be_created.assert_called_once()
+    order_mock_1.create_as_chained_order.assert_called_once()
+    order_mock_2.should_be_created.assert_called_once()
+    order_mock_2.create_as_chained_order.assert_not_called()
+
+
+async def test_create_as_chained_order(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order = personal_data.BuyLimitOrder(trader_inst)
+    base_order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                      symbol="BTC/USDT",
+                      current_price=decimal.Decimal("70"),
+                      quantity=decimal.Decimal("10"),
+                      price=decimal.Decimal("70"))
+    base_order.is_waiting_for_chained_trigger = True
+
+    await base_order.create_as_chained_order()
+    assert base_order.is_waiting_for_chained_trigger is False
+    assert base_order.created is True
+    assert base_order.is_initialized is True

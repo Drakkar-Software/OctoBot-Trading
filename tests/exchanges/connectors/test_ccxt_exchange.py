@@ -17,6 +17,7 @@
 import mock
 
 import octobot_trading.exchanges.connectors as exchange_connectors
+import octobot_trading.enums as enums
 import pytest
 
 from tests.exchanges import exchange_manager
@@ -101,3 +102,22 @@ async def test_initialize_impl(exchange_manager):
             "2h",
             "4h",
         }
+
+
+async def test_set_symbol_partial_take_profit_stop_loss(exchange_manager):
+    ccxt_exchange = exchange_connectors.CCXTExchange(exchange_manager.config, exchange_manager)
+    with pytest.raises(NotImplementedError):
+        await ccxt_exchange.set_symbol_partial_take_profit_stop_loss("BTC/USDT", False,
+                                                                     enums.TakeProfitStopLossMode.PARTIAL)
+
+
+async def test_get_ccxt_order_type(exchange_manager):
+    ccxt_exchange = exchange_connectors.CCXTExchange(exchange_manager.config, exchange_manager)
+    with pytest.raises(RuntimeError):
+        ccxt_exchange.get_ccxt_order_type(None)
+    with pytest.raises(RuntimeError):
+        ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.UNKNOWN)
+    assert ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.BUY_LIMIT) == enums.TradeOrderType.LIMIT.value
+    assert ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.STOP_LOSS_LIMIT) == enums.TradeOrderType.LIMIT.value
+    assert ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.TRAILING_STOP) == enums.TradeOrderType.MARKET.value
+    assert ccxt_exchange.get_ccxt_order_type(enums.TraderOrderType.SELL_MARKET) == enums.TradeOrderType.MARKET.value
