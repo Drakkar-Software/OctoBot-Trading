@@ -178,7 +178,7 @@ class Trader(util.Initializable):
                     changed = order.update(
                         order.symbol,
                         quantity=edited_quantity,
-                        price=edited_price,
+                        price=edited_stop_price if edited_price is None else edited_price,
                         stop_price=edited_stop_price,
                         current_price=edited_current_price,
                     )
