@@ -101,6 +101,7 @@ cdef class Order(util.Initializable):
 
     cdef void _update_type_from_raw(self, dict raw_order)
     cdef void _update_taker_maker(self)
+    cdef object _on_origin_price_change(self, object previous_price, object price_time)
 
     cpdef str to_string(self)
     cpdef add_linked_order(self, Order order)
