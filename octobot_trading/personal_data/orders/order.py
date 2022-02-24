@@ -448,7 +448,9 @@ class Order(util.Initializable):
                 logging.get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
 
         price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0.0
-        if stop_price := raw_order.get(enums.ExchangeConstantsOrderColumns.STOP_PRICE.value, None):
+        # TODO replace with := when cython will be supporting it
+        stop_price = raw_order.get(enums.ExchangeConstantsOrderColumns.STOP_PRICE.value, None)
+        if stop_price is not None:
             # parse stop price when available
             price = stop_price
         filled_price = decimal.Decimal(str(price))
