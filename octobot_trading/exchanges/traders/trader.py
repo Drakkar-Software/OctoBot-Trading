@@ -21,7 +21,6 @@ import octobot_commons.constants
 
 import octobot_trading.personal_data.orders.order_factory as order_factory
 import octobot_trading.personal_data.orders.order_util as order_util
-import octobot_trading.personal_data.orders.wrapped_order as wrapped_order
 import octobot_trading.personal_data.orders.decimal_order_adapter as decimal_order_adapter
 import octobot_trading.personal_data.trades.trade_factory as trade_factory
 import octobot_trading.enums as enums
@@ -79,20 +78,15 @@ class Trader(util.Initializable):
     Orders
     """
 
-    async def create_order(self, order, portfolio: object = None, loaded: bool = False, triggered_by=None,
-                           params: dict = None):
+    async def create_order(self, order, loaded: bool = False, params: dict = None):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
         notifies order channel. Handles linked orders.
         :param order: Order to create
-        :param portfolio: Portfolio to update (default is this exchange's portfolio)
         :param loaded: True if this order is fetched from an exchange only and therefore not created by this OctoBot
-        :param triggered_by: the order that is responsible for triggering this order's creation as chained order
         :param params: Additional parameters to give to the order upon creation (used in real trading only)
         :return: The crated order instance
         """
-        if portfolio is None:
-            portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
 
         linked_order: object = None
         new_order: object = order
@@ -102,16 +96,13 @@ class Trader(util.Initializable):
             new_order.linked_to.add_linked_order(new_order)
             linked_order = new_order.linked_to
 
-        if triggered_by is not None:
-            new_order.triggered_by = triggered_by
-
         if loaded:
             new_order.is_from_this_octobot = False
             self.logger.debug(f"Order loaded : {new_order.to_string()} ")
         else:
             try:
                 params = params or {}
-                new_order = await self._create_new_order(new_order, portfolio, params)
+                new_order = await self._create_new_order(new_order, params)
                 self.logger.debug(f"Order creation : {new_order.to_string()} ")
             except TypeError as e:
                 self.logger.error(f"Fail to create not loaded order : {e}")
@@ -124,7 +115,7 @@ class Trader(util.Initializable):
         await new_order.initialize()
         return new_order
 
-    async def create_artificial_order(self, order_type, symbol, current_price, quantity, price, linked_portfolio):
+    async def create_artificial_order(self, order_type, symbol, current_price, quantity, price):
         """
         Creates an OctoBot managed order (managed orders example: stop loss that is not published on the exchange and
         that is maintained internally).
@@ -134,8 +125,7 @@ class Trader(util.Initializable):
                                                                     symbol=symbol,
                                                                     current_price=current_price,
                                                                     quantity=quantity,
-                                                                    price=price,
-                                                                    linked_portfolio=linked_portfolio))
+                                                                    price=price))
 
     async def edit_order(self, order: object,
                          edited_quantity: decimal.Decimal = None,
@@ -202,7 +192,7 @@ class Trader(util.Initializable):
                 # order id changed: update orders_manager to keep consistency
                 self.exchange_manager.exchange_personal_data.orders_manager.replace_order(previous_order_id, order)
 
-    async def _create_new_order(self, new_order: object, portfolio, params: dict) -> object:
+    async def _create_new_order(self, new_order: object, params: dict) -> object:
         """
         Creates an exchange managed order, it might be a simulated or a real order.
         Portfolio will be updated by the create order state after order will be initialized
@@ -226,13 +216,16 @@ class Trader(util.Initializable):
             updated_order = order_factory.create_order_instance_from_raw(self, created_order, force_open=True)
 
             # rebind local elements to new order instance
-            updated_order.linked_portfolio = portfolio
             updated_order.one_cancels_the_other = new_order.one_cancels_the_other
             updated_order.tag = new_order.tag
             updated_order.chained_orders = new_order.chained_orders
             for chained_order in new_order.chained_orders:
                 chained_order.triggered_by = updated_order
             updated_order.triggered_by = new_order.triggered_by
+            updated_order.has_been_bundled = new_order.has_been_bundled
+            updated_order.exchange_creation_params = new_order.exchange_creation_params
+            updated_order.is_waiting_for_chained_trigger = new_order.is_waiting_for_chained_trigger
+            updated_order.created = True
         return updated_order
 
     def bundle_chained_order_with_uncreated_order(self, order, chained_order, **kwargs):
@@ -245,10 +238,10 @@ class Trader(util.Initializable):
         :return: parameters with chained order details if supported
         """
         params = {}
-        exchange_side_creation = self.exchange_manager.exchange.supports_bundled_order_on_order_creation(
+        is_bundled = self.exchange_manager.exchange.supports_bundled_order_on_order_creation(
             order, chained_order.order_type
         )
-        if exchange_side_creation:
+        if is_bundled:
             if chained_order.order_type is enums.TraderOrderType.STOP_LOSS:
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
                     stop_loss_price=chained_order.origin_price
@@ -258,10 +251,8 @@ class Trader(util.Initializable):
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
                     take_profit_price=chained_order.origin_price
                 ))
-        order.add_chained_order(wrapped_order.WrappedOrder(chained_order, order,
-                                                           to_be_fetched_only=exchange_side_creation,
-                                                           is_waiting_for_chained_trigger=True,
-                                                           **kwargs))
+        chained_order.set_as_chained_order(order, is_bundled, {}, **kwargs)
+        order.add_chained_order(chained_order)
         return params
 
     async def cancel_order(self, order: object, ignored_order: object = None) -> bool:
@@ -381,8 +372,7 @@ class Trader(util.Initializable):
                                                                     quantity=order_quantity,
                                                                     price=order_price)
                 created_orders.append(
-                    await self.create_order(current_order,
-                                            self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio))
+                    await self.create_order(current_order))
         return created_orders
 
     async def sell_all(self, currencies_to_sell=None, timeout=None):
@@ -454,8 +444,7 @@ class Trader(util.Initializable):
                                                                     price=limit_price
                                                                     if limit_price is not None else order_price)
                 created_orders.append(
-                    await self.create_order(current_order,
-                                            self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio))
+                    await self.create_order(current_order))
         return created_orders
 
     async def set_leverage(self, symbol, side, leverage):

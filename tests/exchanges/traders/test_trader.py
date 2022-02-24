@@ -170,6 +170,7 @@ class TestTrader:
                          current_price=decimal.Decimal("70"),
                          quantity=decimal.Decimal("10"),
                          price=decimal.Decimal("70"))
+        limit_buy.created = True
 
         # 1. cancel order: success
         assert await trader_inst.cancel_order(limit_buy) is True
@@ -447,7 +448,7 @@ class TestTrader:
                                           quantity=decimal.Decimal("2"),
                                           price=decimal.Decimal("4"))
 
-        await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
+        await trader_inst.create_order(limit_buy)
 
         assert not trades_manager.trades
 
@@ -479,7 +480,7 @@ class TestTrader:
                                            price=decimal.Decimal("4"),
                                            side=TradeOrderSide.SELL)
 
-        await trader_inst.create_order(stop_order, portfolio_manager.portfolio)
+        await trader_inst.create_order(stop_order)
 
         assert not trades_manager.trades
 
@@ -511,7 +512,7 @@ class TestTrader:
                                            price=decimal.Decimal("4"),
                                            side=TradeOrderSide.BUY)
 
-        await trader_inst.create_order(stop_order, portfolio_manager.portfolio)
+        await trader_inst.create_order(stop_order)
 
         assert not trades_manager.trades
 
@@ -542,7 +543,7 @@ class TestTrader:
                                           quantity=decimal.Decimal("2"),
                                           price=decimal.Decimal("4"))
 
-        await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
+        await trader_inst.create_order(limit_buy)
 
         # Test second buy order
         second_limit_buy = create_order_instance(trader=trader_inst,
@@ -552,7 +553,7 @@ class TestTrader:
                                                  quantity=decimal.Decimal("1.5"),
                                                  price=decimal.Decimal("1"))
 
-        await trader_inst.create_order(second_limit_buy, portfolio_manager.portfolio)
+        await trader_inst.create_order(second_limit_buy)
 
         assert not trades_manager.trades
 
@@ -599,7 +600,7 @@ class TestTrader:
                                           quantity=decimal.Decimal("10"),
                                           price=decimal.Decimal("0.1"))
 
-        await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
+        await trader_inst.create_order(limit_buy)
 
         limit_buy.filled_price = limit_buy.origin_price
         limit_buy.filled_quantity = limit_buy.origin_quantity
