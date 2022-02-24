@@ -157,7 +157,10 @@ class Order(util.Initializable):
             self.executed_time = self.timestamp
 
         if price and self.origin_price != price:
+            previous_price = self.origin_price
             self.origin_price = price
+            self._on_origin_price_change(previous_price,
+                                         self.exchange_manager.exchange.get_exchange_current_time())
             changed = True
 
         if fee is not None and self.fee != fee:
@@ -233,6 +236,14 @@ class Order(util.Initializable):
         self.created = True
         if not self.is_closed():
             await self.update_order_status()
+
+    def _on_origin_price_change(self, previous_price, price_time):
+        """
+        Called when origin price just changed.
+        Override if necessary
+        :param previous_price: the previous origin_price
+        :param price_time: time starting from when the price should be considered
+        """
 
     def add_chained_order(self, chained_order):
         """

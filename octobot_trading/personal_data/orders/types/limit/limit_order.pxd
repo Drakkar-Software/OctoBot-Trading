@@ -21,3 +21,9 @@ cdef class LimitOrder(order_class.Order):
     cdef object wait_for_hit_event_task # object is asyncio.Task
 
     cdef bint trigger_above
+
+    # return object to allow exception raising
+    cdef object _create_hit_event(self, object price_time)
+    cdef object _create_hit_task(self)
+    cdef object _reset_events(self, object price_time)
+    cdef object _clear_event_and_tasks(self)
