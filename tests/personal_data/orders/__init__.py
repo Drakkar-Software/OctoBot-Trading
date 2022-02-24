@@ -33,73 +33,79 @@ async def order_simulator(trader_simulator):
     return config, trader_inst, exchange_manager, Order(trader_inst)
 
 
+def created_order(order_type, *args, **kwargs):
+    order = order_type(*args, **kwargs)
+    order.created = True
+    return order
+
+
 @pytest.fixture()
 def buy_limit_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return BuyLimitOrder(trader_instance)
+    return created_order(BuyLimitOrder, trader_instance)
 
 
 @pytest.fixture()
 def sell_limit_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return SellLimitOrder(trader_instance)
+    return created_order(SellLimitOrder, trader_instance)
 
 
 @pytest.fixture()
 def buy_market_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return BuyMarketOrder(trader_instance)
+    return created_order(BuyMarketOrder, trader_instance)
 
 
 @pytest.fixture()
 def sell_market_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return SellMarketOrder(trader_instance)
+    return created_order(SellMarketOrder, trader_instance)
 
 
 @pytest.fixture()
 def stop_loss_sell_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return StopLossOrder(trader_instance, side=TradeOrderSide.SELL)
+    return created_order(StopLossOrder, trader_instance, side=TradeOrderSide.SELL)
 
 
 @pytest.fixture()
 def stop_loss_buy_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return StopLossOrder(trader_instance, side=TradeOrderSide.BUY)
+    return created_order(StopLossOrder, trader_instance, side=TradeOrderSide.BUY)
 
 
 @pytest.fixture()
 def stop_loss_limit_order(event_loop, simulated_trader):
     _, exchange_manager, trader_instance = simulated_trader
-    return StopLossLimitOrder(trader_instance)
+    return created_order(StopLossLimitOrder, trader_instance)
 
 
 @pytest.fixture()
 def take_profit_sell_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return TakeProfitOrder(trader_instance, side=TradeOrderSide.SELL)
+    return created_order(TakeProfitOrder, trader_instance, side=TradeOrderSide.SELL)
 
 
 @pytest.fixture()
 def take_profit_buy_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return TakeProfitOrder(trader_instance, side=TradeOrderSide.BUY)
+    return created_order(TakeProfitOrder, trader_instance, side=TradeOrderSide.BUY)
 
 
 @pytest.fixture()
 def take_profit_limit_order(event_loop, simulated_trader):
     _, exchange_manager, trader_instance = simulated_trader
-    return TakeProfitLimitOrder(trader_instance)
+    return created_order(TakeProfitLimitOrder, trader_instance)
 
 
 @pytest.fixture()
 def trailing_stop_order(event_loop, simulated_trader):
     _, _, trader_instance = simulated_trader
-    return TrailingStopOrder(trader_instance)
+    return created_order(TrailingStopOrder, trader_instance)
 
 
 @pytest.fixture()
 def trailing_stop_limit_order(event_loop, simulated_trader):
     _, exchange_manager, trader_instance = simulated_trader
-    return TrailingStopLimitOrder(trader_instance)
+    return created_order(TrailingStopLimitOrder, trader_instance)

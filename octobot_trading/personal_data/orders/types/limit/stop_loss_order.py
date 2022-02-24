@@ -30,5 +30,4 @@ class StopLossOrder(limit_order.LimitOrder):
                                                       if self.side is enums.TradeOrderSide.SELL
                                                       else enums.TraderOrderType.BUY_MARKET,
                                                       self.symbol, self.origin_stop_price,
-                                                      self.origin_quantity, self.origin_stop_price,
-                                                      self.linked_portfolio)
+                                                      self.origin_quantity, self.origin_stop_price)

@@ -52,7 +52,6 @@ def create_order_instance(trader,
                           quantity_filled=constants.ZERO,
                           total_cost=constants.ZERO,
                           timestamp=0,
-                          linked_portfolio=None,
                           side=None,
                           fees_currency_side=None):
     order = create_order_from_type(trader=trader,
@@ -74,7 +73,6 @@ def create_order_instance(trader,
                  fee=None,
                  total_cost=total_cost,
                  linked_to=linked_to,
-                 linked_portfolio=linked_portfolio,
                  fees_currency_side=fees_currency_side)
 
     return order

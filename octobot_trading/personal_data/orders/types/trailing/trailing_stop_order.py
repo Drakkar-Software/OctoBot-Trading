@@ -144,8 +144,7 @@ class TrailingStopOrder(order_class.Order):
                                                   if self.side is enums.TradeOrderSide.SELL
                                                   else enums.TraderOrderType.BUY_MARKET,
                                                   self.symbol, self.origin_stop_price,
-                                                  self.origin_quantity, self.origin_stop_price,
-                                                  self.linked_portfolio)
+                                                  self.origin_quantity, self.origin_stop_price)
 
     def _clear_event_and_tasks(self):
         """

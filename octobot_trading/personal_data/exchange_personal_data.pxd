@@ -37,7 +37,6 @@ cdef class ExchangePersonalData(util.Initializable):
     cdef public positions_manager.PositionsManager positions_manager
     cdef public transactions_manager.TransactionsManager transactions_manager
 
-    cpdef object get_order_portfolio(self, order_class.Order order)
     cpdef void clear(self)
 
     cdef bint _is_out_of_sync_order(self, str order_id)

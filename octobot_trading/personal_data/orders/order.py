@@ -48,6 +48,8 @@ class Order(util.Initializable):
         self.logger_name = None
         self.order_id = trader.parse_order_id(None)
         self.status = enums.OrderStatus.OPEN
+        # set to True when this order is really opened (during initialization)
+        self.created = False
         self.symbol = None
         self.currency = None
         self.market = None
@@ -80,7 +82,6 @@ class Order(util.Initializable):
         self.canceled_time = 0
 
         # linked objects attributes
-        self.linked_portfolio = None
         self.linked_to = None
         self.linked_orders = []
 
@@ -97,12 +98,20 @@ class Order(util.Initializable):
         # the associated position side (should be BOTH for One-way Mode ; LONG or SHORT for Hedge Mode)
         self.position_side = None
 
-        # other orders (as WrappedOrders) that should be created when this order is filled
+        # Chained orders attributes
+        # other orders (as any Order) that should be created when this order is filled
         self.chained_orders = []
         # order that triggered this order creation (when created as a chained order)
         self.triggered_by = None
+        # True when this order has been created directly by the exchange (usually as stop loss / take profit
+        # when passed as parameter alongside another order)
+        self.has_been_bundled = False
         # True when this order is to be opened as a chained order and has not been open yet
         self.is_waiting_for_chained_trigger = False
+        # params give to the exchange request when this order is created
+        self.exchange_creation_params = {}
+        # kwargs given to trader.create_order() when this order should be created later on
+        self.trader_creation_kwargs = {}
 
     @classmethod
     def get_name(cls):
@@ -116,7 +125,7 @@ class Order(util.Initializable):
     def update(self, symbol, order_id="", status=enums.OrderStatus.OPEN,
                current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
-               fee=None, total_cost=constants.ZERO, timestamp=None, linked_to=None, linked_portfolio=None,
+               fee=None, total_cost=constants.ZERO, timestamp=None, linked_to=None,
                order_type=None, reduce_only=False, close_position=False, position_side=None, fees_currency_side=None) \
             -> bool:
         changed: bool = False
@@ -196,9 +205,6 @@ class Order(util.Initializable):
         if linked_to:
             self.linked_to = linked_to
 
-        if linked_portfolio:
-            self.linked_portfolio = linked_portfolio
-
         if order_type:
             self.order_type = order_type
             if self.exchange_order_type is None:
@@ -224,7 +230,7 @@ class Order(util.Initializable):
         Initialize order status update tasks
         """
         await orders_states.create_order_state(self, **kwargs)
-        self.is_initialized = True
+        self.created = True
         if not self.is_closed():
             await self.update_order_status()
 
@@ -250,7 +256,7 @@ class Order(util.Initializable):
 
     def is_open(self):
         # also check is_initialized to avoid considering uncreated orders as open
-        return self.is_initialized and (self.state is None or self.state.is_open())
+        return self.created and (self.state is None or self.state.is_open())
 
     def is_filled(self):
         return self.state.is_filled() or (self.state.is_closed() and self.status is enums.OrderStatus.FILLED)
@@ -326,12 +332,44 @@ class Order(util.Initializable):
 
     async def _trigger_chained_orders(self):
         logger = logging.get_logger(self.get_logger_name())
-        for index, wrapped_order in enumerate(self.chained_orders):
-            if wrapped_order.should_be_created():
+        for index, order in enumerate(self.chained_orders):
+            if order.should_be_created():
                 logger.debug(f"Creating chained order {index + 1}/{len(self.chained_orders)}")
-                await wrapped_order.create_order()
+                await order.create_as_chained_order()
             else:
                 logger.debug(f"Skipping cancelled chained order {index + 1}/{len(self.chained_orders)}")
+
+    async def create_as_chained_order(self):
+        try:
+            self.is_waiting_for_chained_trigger = False
+            if not self.trader.simulate and self.has_been_bundled:
+                # exchange should have created it already, it will automatically be fetched at the next update
+                # TODO: check if we need to really fetch it through updater etc
+                #  (issue is that we don't have an id yet so we can't just fetch this order in particular)
+                pass
+            else:
+                await self.trader.create_order(
+                    self,
+                    loaded=False,
+                    params=self.exchange_creation_params,
+                    **self.trader_creation_kwargs
+                )
+        finally:
+            # set created now to consider creation failures as created as well (the caller can always retry later on)
+            self.created = True
+
+    def set_as_chained_order(self, triggered_by, has_been_bundled, exchange_creation_params, **trader_creation_kwargs):
+        if triggered_by is self:
+            raise errors.ConflictingOrdersError("Impossible to chain an order to itself")
+        self.triggered_by = triggered_by
+        self.has_been_bundled = has_been_bundled
+        self.exchange_creation_params = exchange_creation_params
+        self.trader_creation_kwargs = trader_creation_kwargs
+        self.is_waiting_for_chained_trigger = True
+        self.created = False
+
+    def should_be_created(self):
+        return not self.created and self.is_waiting_for_chained_trigger
 
     def get_computed_fee(self, forced_value=None):
         if self.fees_currency_side is enums.FeesCurrencySide.UNDEFINED:
@@ -494,7 +532,6 @@ class Order(util.Initializable):
         self.trader = None
         self.exchange_manager = None
         self.linked_to = None
-        self.linked_portfolio = None
         self.linked_orders = []
         self.chained_orders = []
 
@@ -502,7 +539,10 @@ class Order(util.Initializable):
         return self.exchange_manager is None
 
     def to_string(self):
+        chained_order = "" if self.triggered_by is None else \
+            "triggered chained order | " if self.created else "untriggered chained order | "
         return (f"{self.symbol} | "
+                f"{chained_order}"
                 f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
                 f"Price : {str(self.origin_price)} | "
                 f"Quantity : {str(self.origin_quantity)} | "
