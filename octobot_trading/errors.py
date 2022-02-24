@@ -120,3 +120,9 @@ class LiquidationPriceReached(Exception):
     """
     Raised when the liquidation price has been reach
     """
+
+
+class ConflictingOrdersError(Exception):
+    """
+    Raised when an order is that would create an order conflict is created
+    """

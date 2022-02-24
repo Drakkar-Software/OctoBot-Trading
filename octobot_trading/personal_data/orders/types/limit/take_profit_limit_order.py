@@ -36,5 +36,4 @@ class TakeProfitLimitOrder(limit_order.LimitOrder):
                                                   self.origin_quantity,
                                                   self.limit_price
                                                   if self.limit_price != self.UNINITIALIZED_LIMIT_PRICE else
-                                                  self.origin_stop_price,
-                                                  self.linked_portfolio)
+                                                  self.origin_stop_price)

@@ -21,7 +21,6 @@ In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 cimport octobot_trading.util as util
 cimport octobot_trading.personal_data.orders.order_state as orders_states
-cimport octobot_trading.personal_data.portfolios.portfolio as portfolios
 
 cdef class Order(util.Initializable):
     cdef public object trader
@@ -33,7 +32,6 @@ cdef class Order(util.Initializable):
     cdef public object lock # Lock
 
     cdef public Order linked_to
-    cdef public portfolios.Portfolio linked_portfolio
     cdef public orders_states.OrderState state
 
     cdef public bint is_synchronized_with_exchange
@@ -42,6 +40,7 @@ cdef class Order(util.Initializable):
     cdef public bint reduce_only
     cdef public bint close_position
 
+    cdef public bint created
     cdef public str symbol
     cdef public str currency
     cdef public str market
@@ -69,9 +68,13 @@ cdef class Order(util.Initializable):
 
     cdef list last_prices
     cdef public list linked_orders
-    cdef public list chained_orders # List[personal_data.WrappedOrder]
+    cdef public list chained_orders # List[Order]
     cdef public object triggered_by # Order
+    cdef public bint has_been_bundled
     cdef public bint is_waiting_for_chained_trigger
+    cdef public dict exchange_creation_params
+    cdef public dict trader_creation_kwargs
+
 
     cdef public object exchange_order_type # raw exchange order type, used to create order dict
 
@@ -90,7 +93,6 @@ cdef class Order(util.Initializable):
             object total_cost=*,
             object timestamp=*,
             object linked_to=*,
-            object linked_portfolio=*,
             object order_type=*,
             bint reduce_only=*,
             bint close_position=*,
@@ -125,6 +127,7 @@ cdef class Order(util.Initializable):
     cpdef bint is_to_be_maintained(self)
     cpdef str get_logger_name(self)
     cpdef void add_chained_order(self, object chained_order)
+    cpdef bint should_be_created(self)
 
 cdef object _get_sell_and_buy_types(object order_type)
 cdef object _infer_order_type_from_maker_or_taker(dict raw_order, object side)

@@ -17,10 +17,12 @@ from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 
 
 async def fill_limit_or_stop_order(limit_or_stop_order):
+    limit_or_stop_order.created = True
     await limit_or_stop_order.on_fill()
     await wait_asyncio_next_cycle()
 
 
 async def fill_market_order(market_order):
+    market_order.created = True
     await market_order.on_fill()
     await wait_asyncio_next_cycle()

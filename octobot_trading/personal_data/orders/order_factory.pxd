@@ -41,6 +41,5 @@ cpdef object create_order_instance(object trader,
                                    object quantity_filled= *,
                                    object total_cost= *,
                                    double timestamp= *,
-                                   object linked_portfolio= *,
                                    object side= *,
                                    object fees_currency_side=*)

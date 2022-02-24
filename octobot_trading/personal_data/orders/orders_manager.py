@@ -61,6 +61,7 @@ class OrdersManager(util.Initializable):
             new_order = order_factory.create_order_instance_from_raw(self.trader, raw_order)
             if is_from_exchange:
                 new_order.is_synchronized_with_exchange = True
+                new_order.created = True
             self.orders[order_id] = new_order
             await new_order.initialize(is_from_exchange_data=True)
             self._check_orders_size()

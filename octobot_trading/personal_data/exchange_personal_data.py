@@ -304,9 +304,6 @@ class ExchangePersonalData(util.Initializable):
         except ValueError as e:
             self.logger.error(f"Failed to send position update notification : {e}")
 
-    def get_order_portfolio(self, order):
-        return order.linked_portfolio if order.linked_portfolio is not None else self.portfolio_manager.portfolio
-
     def clear(self):
         if self.portfolio_manager is not None:
             self.portfolio_manager.clear()
