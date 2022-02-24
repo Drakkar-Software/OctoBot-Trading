@@ -97,12 +97,13 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
                           quantity: float, price: float, stop_price: float = None, side: str = None,
                           current_price: float = None, params: dict = None):
         ccxt_order_type = self.connector.get_ccxt_order_type(order_type)
+        price_to_use = price
         if ccxt_order_type == enums.TradeOrderType.MARKET.value:
             # can't set price in market orders
-            price = None
+            price_to_use = None
         # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
         return await self.connector.client.edit_order(order_id, symbol, ccxt_order_type, side,
-                                                      quantity, price, params)
+                                                      quantity, price_to_use, params)
 
     @contextlib.asynccontextmanager
     async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
