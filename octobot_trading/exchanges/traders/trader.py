@@ -140,13 +140,13 @@ class Trader(util.Initializable):
         Portfolio is updated within this call
         :return: True when an order field got updated
         """
+        if not order.can_be_edited():
+            raise RuntimeError(f"Order can't be edited, order: {order}")
         changed = False
         previous_order_id = order.order_id
         try:
             async with order.lock:
                 # now that we got the lock, ensure we can edit the order
-                if not order.can_be_edited():
-                    raise RuntimeError(f"Order can't be edited, order: {order}")
                 if not self.simulate and not order.is_self_managed() and order.state is not None:
                     # careful here: make sure we are not editing an order on exchange that is being updated
                     # somewhere else

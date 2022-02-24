@@ -541,7 +541,8 @@ class Order(util.Initializable):
         }
 
     def clear(self):
-        self.state.clear()
+        if self.state is not None:
+            self.state.clear()
         self.trader = None
         self.exchange_manager = None
         self.linked_to = None
