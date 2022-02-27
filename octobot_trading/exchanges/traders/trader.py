@@ -141,7 +141,7 @@ class Trader(util.Initializable):
         :return: True when an order field got updated
         """
         if not order.can_be_edited():
-            raise RuntimeError(f"Order can't be edited, order: {order}")
+            raise errors.OrderEditError(f"Order can't be edited, order: {order}")
         changed = False
         previous_order_id = order.order_id
         try:
@@ -479,7 +479,7 @@ class Trader(util.Initializable):
             if not self.simulate:
                 await self.exchange_manager.exchange.set_symbol_partial_take_profit_stop_loss(
                     symbol, contract.is_inverse_contract(), new_mode)
-            contract.take_profit_stop_loss_mode = new_mode
+            contract.set_take_profit_stop_loss_mode(new_mode)
 
     async def set_margin_type(self, symbol, side, margin_type):
         """

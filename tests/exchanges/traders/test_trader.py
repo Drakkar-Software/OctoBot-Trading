@@ -23,7 +23,7 @@ import time
 from mock import AsyncMock, patch, Mock
 from octobot_commons import asyncio_tools
 
-from octobot_trading.errors import TooManyOpenPositionError, InvalidLeverageValue
+from octobot_trading.errors import TooManyOpenPositionError, InvalidLeverageValue, OrderEditError
 from octobot_trading.personal_data import LinearPosition
 import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
@@ -878,7 +878,7 @@ class TestTrader:
                           current_price=decimal.Decimal("70"),
                           quantity=decimal.Decimal("10"),
                           price=decimal.Decimal("70"))
-        with pytest.raises(RuntimeError):
+        with pytest.raises(OrderEditError):
             # market orders can't be edited
             await trader_inst.edit_order(market_buy, edited_price=decimal.Decimal("100"))
         assert market_buy.origin_quantity == decimal.Decimal("10")

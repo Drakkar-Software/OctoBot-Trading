@@ -80,3 +80,6 @@ class FutureContract(margin_contract.MarginContract):
         :param is_hedge: should be True if the position mode is hedge
         """
         self.position_mode = enums.PositionMode.ONE_WAY if is_one_way and not is_hedge else enums.PositionMode.HEDGE
+
+    def set_take_profit_stop_loss_mode(self, take_profit_stop_loss_mode):
+        self.take_profit_stop_loss_mode = take_profit_stop_loss_mode
