@@ -37,6 +37,7 @@ from octobot_trading.personal_data.orders.order_factory import create_order_inst
 from octobot_trading.personal_data.orders import BuyLimitOrder, BuyMarketOrder, SellLimitOrder, StopLossOrder
 from octobot_trading.personal_data.orders.types.market.sell_market_order import SellMarketOrder
 import octobot_trading.personal_data.portfolios.assets as portfolio_assets
+import octobot_trading.personal_data.orders.groups as order_groups
 from octobot_trading.exchanges.traders.trader import Trader
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
@@ -629,7 +630,7 @@ class TestTrader:
 
         await self.stop(exchange_manager)
 
-    async def test_close_filled_order_with_linked_orders(self):
+    async def test_close_filled_order_with_oco_orders(self):
         config, exchange_manager, trader_inst = await self.init_default()
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
         trades_manager = exchange_manager.exchange_personal_data.trades_manager
@@ -658,8 +659,9 @@ class TestTrader:
                          quantity=decimal.Decimal("10"),
                          price=decimal.Decimal("60"))
 
-        stop_loss.linked_orders = [limit_sell]
-        limit_sell.linked_orders = [stop_loss]
+        oco_group = orders_manager.create_group(order_groups.OneCancelsTheOtherOrderGroup)
+        stop_loss.add_to_order_group(oco_group)
+        limit_sell.add_to_order_group(oco_group)
 
         await trader_inst.create_order(market_buy)
         await trader_inst.create_order(stop_loss)
@@ -855,7 +857,7 @@ class TestTrader:
 
         assert order_to_test.order_type == TraderOrderType.SELL_LIMIT
         assert order_to_test.status == OrderStatus.OPEN
-        assert order_to_test.linked_to is None
+        assert order_to_test.order_group is None
         assert order_to_test.origin_stop_price == constants.ZERO
         assert order_to_test.origin_quantity == decimal.Decimal("1564.7216721637")
         assert order_to_test.origin_price == decimal.Decimal("10254.4515")

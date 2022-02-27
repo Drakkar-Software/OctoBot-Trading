@@ -132,3 +132,15 @@ class ConflictingOrdersError(Exception):
     """
     Raised when an order is that would create an order conflict is created
     """
+
+
+class OrderGroupTriggerArgumentError(Exception):
+    """
+    Raised when an order triggered with invalid arguments
+    """
+
+
+class ConflictingOrderGroupError(Exception):
+    """
+    Raised when creating a group with an existing name
+    """
