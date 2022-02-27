@@ -346,28 +346,9 @@ class Order(util.Initializable):
         for index, order in enumerate(self.chained_orders):
             if order.should_be_created():
                 logger.debug(f"Creating chained order {index + 1}/{len(self.chained_orders)}")
-                await order.create_as_chained_order()
+                await order_util.create_as_chained_order(order)
             else:
                 logger.debug(f"Skipping cancelled chained order {index + 1}/{len(self.chained_orders)}")
-
-    async def create_as_chained_order(self):
-        try:
-            self.is_waiting_for_chained_trigger = False
-            if not self.trader.simulate and self.has_been_bundled:
-                # exchange should have created it already, it will automatically be fetched at the next update
-                # TODO: check if we need to really fetch it through updater etc
-                #  (issue is that we don't have an id yet so we can't just fetch this order in particular)
-                pass
-            else:
-                await self.trader.create_order(
-                    self,
-                    loaded=False,
-                    params=self.exchange_creation_params,
-                    **self.trader_creation_kwargs
-                )
-        finally:
-            # set created now to consider creation failures as created as well (the caller can always retry later on)
-            self.created = True
 
     def set_as_chained_order(self, triggered_by, has_been_bundled, exchange_creation_params, **trader_creation_kwargs):
         if triggered_by is self:

@@ -24,10 +24,11 @@ cdef class FutureContract(margin_contract.MarginContract):
 
     cdef readonly double minimum_tick_size
 
-    cdef public object take_profit_stop_loss_mode
+    cdef readonly object take_profit_stop_loss_mode
 
     cpdef bint is_inverse_contract(self)
     cpdef bint is_perpetual_contract(self)
     cpdef bint is_one_way_position_mode(self)
     cpdef void set_position_mode(self, bint is_one_way=*, bint is_hedge=*)
+    cpdef void set_take_profit_stop_loss_mode(self, object set_take_profit_stop_loss_mode)
     cpdef object get_fees_currency_side(self)

@@ -15,14 +15,16 @@
 #  License along with this library.
 import decimal
 
+import pytest
+
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
 
 from tests import event_loop
-from tests.exchanges import future_simulated_exchange_manager
+from tests.exchanges import future_simulated_exchange_manager, simulated_exchange_manager
 from tests.exchanges.traders import future_trader_simulator_with_default_linear, \
-    future_trader_simulator_with_default_inverse, DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE
+    future_trader_simulator_with_default_inverse, DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE, trader_simulator
 
 
 def test_get_min_max_amounts():
@@ -286,3 +288,21 @@ def test_get_max_order_quantity_for_price_short_inverse(future_trader_simulator_
         personal_data.InversePosition(trader_inst, default_contract),
         constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('3334568.358651352352723230826')
+
+
+@pytest.mark.asyncio
+async def test_create_as_chained_order(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order = personal_data.BuyLimitOrder(trader_inst)
+    base_order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                      symbol="BTC/USDT",
+                      current_price=decimal.Decimal("70"),
+                      quantity=decimal.Decimal("10"),
+                      price=decimal.Decimal("70"))
+    base_order.is_waiting_for_chained_trigger = True
+
+    await personal_data.create_as_chained_order(base_order)
+    assert base_order.is_waiting_for_chained_trigger is False
+    assert base_order.created is True
+    assert base_order.is_initialized is True
