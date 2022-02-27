@@ -18,6 +18,14 @@ from octobot_trading.personal_data.orders import order_state
 from octobot_trading.personal_data.orders.order_state import (
     OrderState,
 )
+from octobot_trading.personal_data.orders import order_group
+from octobot_trading.personal_data.orders.order_group import (
+    OrderGroup,
+)
+from octobot_trading.personal_data.orders import groups
+from octobot_trading.personal_data.orders.groups import (
+    OneCancelsTheOtherOrderGroup,
+)
 from octobot_trading.personal_data.orders import order
 from octobot_trading.personal_data.orders.order import (
     Order,
@@ -118,6 +126,8 @@ __all__ = [
     "get_pnl_transaction_source_from_order",
     "create_as_chained_order",
     "OrderState",
+    "OrderGroup",
+    "OneCancelsTheOtherOrderGroup",
     "OrdersUpdater",
     "adapt_price",
     "decimal_adapt_price",

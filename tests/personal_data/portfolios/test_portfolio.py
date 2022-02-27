@@ -28,6 +28,7 @@ from octobot_trading.personal_data.orders import SellLimitOrder
 from octobot_trading.personal_data.orders import StopLossOrder
 from octobot_trading.personal_data.orders import BuyMarketOrder
 from octobot_trading.personal_data.orders.types.market.sell_market_order import SellMarketOrder
+import octobot_trading.personal_data.orders.groups as order_groups
 from tests.test_utils.order_util import fill_market_order, fill_limit_or_stop_order
 
 from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
@@ -229,8 +230,10 @@ async def test_update_portfolio_with_filled_orders(backtesting_trader):
                      quantity=decimal.Decimal(str(4.2)),
                      price=decimal.Decimal(str(80)))
 
-    limit_sell.add_linked_order(stop_loss)
-    stop_loss.add_linked_order(limit_sell)
+    oco_group = exchange_manager.exchange_personal_data.orders_manager\
+        .create_group(order_groups.OneCancelsTheOtherOrderGroup)
+    limit_sell.add_to_order_group(oco_group)
+    stop_loss.add_to_order_group(oco_group)
 
     # Test buy order
     limit_buy = BuyLimitOrder(trader)

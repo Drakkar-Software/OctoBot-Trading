@@ -87,14 +87,7 @@ class Trader(util.Initializable):
         :param params: Additional parameters to give to the order upon creation (used in real trading only)
         :return: The crated order instance
         """
-
-        linked_order: object = None
         new_order: object = order
-
-        # if this order is linked to another (ex : a sell limit order with a stop loss order)
-        if new_order.linked_to is not None:
-            new_order.linked_to.add_linked_order(new_order)
-            linked_order = new_order.linked_to
 
         if loaded:
             new_order.is_from_this_octobot = False
@@ -107,10 +100,6 @@ class Trader(util.Initializable):
             except TypeError as e:
                 self.logger.error(f"Fail to create not loaded order : {e}")
                 return None
-
-        # if this order is linked to another
-        if linked_order is not None:
-            new_order.linked_orders.append(linked_order)
 
         await new_order.initialize()
         return new_order
@@ -216,6 +205,8 @@ class Trader(util.Initializable):
             updated_order = order_factory.create_order_instance_from_raw(self, created_order, force_open=True)
 
             # rebind local elements to new order instance
+            if new_order.order_group:
+                updated_order.add_to_order_group(new_order.order_group)
             updated_order.one_cancels_the_other = new_order.one_cancels_the_other
             updated_order.tag = new_order.tag
             updated_order.chained_orders = new_order.chained_orders

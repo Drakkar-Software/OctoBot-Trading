@@ -84,6 +84,7 @@ class Order(util.Initializable):
         # linked objects attributes
         self.linked_to = None
         self.linked_orders = []
+        self.order_group = None
 
         # order state is initialized in initialize_impl()
         self.state = None
@@ -261,6 +262,9 @@ class Order(util.Initializable):
 
     def add_linked_order(self, order):
         self.linked_orders.append(order)
+
+    def add_to_order_group(self, order_group):
+        self.order_group = order_group
 
     def get_total_fees(self, currency):
         return order_util.get_fees_for_currency(self.fee, currency)

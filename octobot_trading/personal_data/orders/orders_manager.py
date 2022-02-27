@@ -14,13 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import collections
-
+import uuid
 import typing
 
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
 import octobot_trading.util as util
+import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.order as order_class
 import octobot_trading.personal_data.orders.order_factory as order_factory
 
@@ -34,6 +35,7 @@ class OrdersManager(util.Initializable):
         self.trader = trader
         self.orders_initialized = False  # TODO
         self.orders = collections.OrderedDict()
+        self.order_groups = {}
         # if this the orders manager completed the initial exchange orders sync phase (only on real trader)
         self.are_exchange_orders_initialized = self.trader.simulate
 
@@ -54,6 +56,45 @@ class OrdersManager(util.Initializable):
 
     def get_order(self, order_id):
         return self.orders[order_id]
+
+    def get_order_from_group(self, group_name):
+        return tuple(
+            order
+            for order in self.orders.values()
+            if order.order_group is not None and order.order_group.name == group_name
+        )
+
+    def get_or_create_group(self, group_type, group_name):
+        """
+        Should be used to manage long lasting groups that are meant to be re-used
+        :param group_type: the OrderGroup class of the group
+        :param group_name: the name to identify the group
+        :return: the retrieved / created group
+        """
+        try:
+            group = self.order_groups[group_name]
+            if isinstance(group, group_type):
+                return group
+            raise errors.ConflictingOrderGroupError(f"The order group named {group_name} is of "
+                                                    f"type: {group.__class__.__name__} instead of  {group_type}")
+        except KeyError:
+            return self.create_group(group_type, group_name)
+
+    def create_group(self, group_type, group_name=None):
+        """
+        Should be used to create temporary groups binding localized orders, where this group can be
+        created once and directly associated to each order
+        :param group_type:
+        :param group_name:
+        :return:
+        """
+        group_name = group_name or str(uuid.uuid4())
+        if group_name in self.order_groups:
+            raise errors.ConflictingOrderGroupError(f"Can't create a new order group named '{group_name}': "
+                                                    f"one with this name already exists")
+        group = group_type(group_name, self)
+        self.order_groups[group_name] = group
+        return group
 
     async def upsert_order_from_raw(self, order_id, raw_order, is_from_exchange) -> bool:
         if not self.has_order(order_id):
@@ -106,6 +147,7 @@ class OrdersManager(util.Initializable):
     def _reset_orders(self):
         self.orders_initialized = False
         self.orders = collections.OrderedDict()
+        self.order_groups = {}
 
     def _check_orders_size(self):
         if self.MAX_ORDERS_COUNT and len(self.orders) > self.MAX_ORDERS_COUNT:
