@@ -39,6 +39,12 @@ class OrderCreationError(Exception):
     """
 
 
+class OrderEditError(Exception):
+    """
+    Raised upon a failed order edition
+    """
+
+
 class NotSupported(Exception):
     """
     Raised when an exchange doesn't support the endpoint
