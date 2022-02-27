@@ -69,6 +69,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self.evaluator_consumers = []
         self.trading_consumers = []
 
+        self.time_frame_filter = None
+
         # Define trading modes default consumer priority level
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
@@ -113,15 +115,15 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         symbol_filter = self.trading_mode.symbol \
             if self.trading_mode.symbol is not None and not self.is_symbol_wildcard() \
             else common_constants.CONFIG_WILDCARD
-        time_frame_filter = self.trading_mode.time_frame \
+        self.time_frame_filter = self.trading_mode.time_frame \
             if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard() \
             else [tf.value
                   for tf in self.exchange_manager.exchange_config.available_required_time_frames
                   if tf.value in trigger_time_frames or
                   trigger_time_frames == common_constants.CONFIG_WILDCARD]
         if trigger_time_frames != common_constants.CONFIG_WILDCARD and \
-           len(time_frame_filter) < len(trigger_time_frames):
-            missing_time_frames = [tf for tf in trigger_time_frames if tf not in time_frame_filter]
+           len(self.time_frame_filter) < len(trigger_time_frames):
+            missing_time_frames = [tf for tf in trigger_time_frames if tf not in self.time_frame_filter]
             self.logger.error(f"Missing timeframe to satisfy {trigger_time_frames} required time frames. "
                               f"Please activate those timeframes {missing_time_frames}")
         self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
@@ -139,7 +141,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                         symbol=symbol_filter,
                         evaluator_type=evaluators_enums.EvaluatorMatrixTypes.STRATEGIES.value,
                         exchange_name=self.exchange_name,
-                        time_frame=time_frame_filter,
+                        # no time_frame filter to allow receiving updates from strategies without timeframes in wildcard
+                        time_frame=None if self.is_time_frame_wildcard() else self.time_frame_filter,
                         supervised=self.exchange_manager.is_backtesting
                     )
                     self.evaluator_consumers.append(
@@ -155,7 +158,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                     priority_level=self.priority_level,
                     cryptocurrency=currency_filter,
                     symbol=symbol_filter,
-                    time_frame=time_frame_filter
+                    time_frame=self.time_frame_filter
                 )
                 self.trading_consumers.append(
                     (consumer, registration_topic)
@@ -238,8 +241,9 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         :param symbol: the symbol
         :param time_frame: the time frame
         """
-        await self.finalize(exchange_name=exchange_name, matrix_id=matrix_id, cryptocurrency=cryptocurrency,
-                            symbol=symbol, time_frame=time_frame)
+        if time_frame is None or time_frame in self.time_frame_filter:
+            await self.finalize(exchange_name=exchange_name, matrix_id=matrix_id, cryptocurrency=cryptocurrency,
+                                symbol=symbol, time_frame=time_frame)
 
     async def finalize(self, exchange_name: str,
                        matrix_id: str,
