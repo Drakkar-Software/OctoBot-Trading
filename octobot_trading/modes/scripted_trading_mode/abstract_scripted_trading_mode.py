@@ -324,6 +324,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                 self.exchange_manager.exchange.backtesting),
             trading_enums.BacktestingMetadata.END_TIME.value: backtesting_api.get_backtesting_ending_time(
                 self.exchange_manager.exchange.backtesting),
+            trading_enums.BacktestingMetadata.DURATION.value: round(backtesting_api.get_backtesting_duration(
+                self.exchange_manager.exchange.backtesting), 3),
             trading_enums.BacktestingMetadata.ENTRIES.value: len(entries),
             trading_enums.BacktestingMetadata.WINS.value: wins,
             trading_enums.BacktestingMetadata.LOSES.value: len(entries) - wins,

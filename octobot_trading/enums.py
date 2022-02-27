@@ -518,6 +518,7 @@ class BacktestingMetadata(enum.Enum):
     TIME_FRAMES = "time frames"
     START_TIME = "start time"
     END_TIME = "end time"
+    DURATION = "duration"
     ENTRIES = "entries"
     WINS = "wins"
     LOSES = "loses"
