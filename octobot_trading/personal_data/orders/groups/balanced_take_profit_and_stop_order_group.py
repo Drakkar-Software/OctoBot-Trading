@@ -74,6 +74,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
 
     async def enable(self, enabled):
         # disable when creating order sequentially (and therefore pause balancing)
+        # setting enabled to True will trigger an order balance
         await super().enable(enabled)
         if enabled:
             await self._balance_orders(None, None)

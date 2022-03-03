@@ -95,10 +95,10 @@ async def test_can_create_order(btps_group):
     with mock.patch.object(btps_group, "_get_balance", mock.Mock(return_value={
             btps_group.TAKE_PROFIT: balance_take_profit,
             btps_group.STOP: balance_stop
-        })) as _balance_orders_mock:
+        })) as _get_balance_mock:
         # 0 size order
         assert btps_group.can_create_order(enums.TraderOrderType.STOP_LOSS, decimal.Decimal(0)) is True
-        _balance_orders_mock.assert_called_once_with(None, None)
+        _get_balance_mock.assert_called_once_with(None, None)
         # no order, no imbalance
         assert btps_group.can_create_order(enums.TraderOrderType.STOP_LOSS, decimal.Decimal(1)) is False
         balance_take_profit.orders = [order_1, order_2]
@@ -124,7 +124,7 @@ async def test_balance_orders(btps_group):
     with mock.patch.object(btps_group, "_get_balance", mock.Mock(return_value={
             btps_group.TAKE_PROFIT: balance_take_profit,
             btps_group.STOP: balance_stop
-        })) as _balance_orders_mock, \
+        })) as _get_balance_mock, \
         mock.patch.object(balance_take_profit, "get_actions_to_balance",
                           mock.Mock(return_value={
                               btps_group.UPDATE: [
@@ -152,7 +152,7 @@ async def test_balance_orders(btps_group):
         # 1. not enabled
         btps_group.enabled = False
         await btps_group._balance_orders(order_1, ["ignored_orders"])
-        _balance_orders_mock.assert_not_called()
+        _get_balance_mock.assert_not_called()
         balance_take_profit_get_actions_to_balance_mock.assert_not_called()
         balance_stop_get_actions_to_balance_mock.assert_not_called()
         get_balance_mock.assert_not_called()
@@ -162,7 +162,7 @@ async def test_balance_orders(btps_group):
         # 2. enabled
         btps_group.enabled = True
         await btps_group._balance_orders(order_1, ["ignored_orders"])
-        _balance_orders_mock.assert_called_once_with(order_1, ["ignored_orders"])
+        _get_balance_mock.assert_called_once_with(order_1, ["ignored_orders"])
         balance_take_profit_get_actions_to_balance_mock.assert_called_once_with(constants.ZERO)
         balance_stop_get_actions_to_balance_mock.assert_called_once_with(constants.ZERO)
         assert get_balance_mock.call_count == 2
