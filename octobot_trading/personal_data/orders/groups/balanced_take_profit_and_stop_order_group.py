@@ -104,8 +104,8 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
 
     def _get_balance(self, closed_order, ignored_orders):
         balance = {
-            self.TAKE_PROFIT: BalancedTakeProfitAndStopOrderGroup._SideBalance(),
-            self.STOP: BalancedTakeProfitAndStopOrderGroup._SideBalance()
+            self.TAKE_PROFIT: _SideBalance(),
+            self.STOP: _SideBalance()
         }
         for order in self.get_group_open_orders():
             if order is not closed_order \
@@ -117,47 +117,48 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                     balance[self.TAKE_PROFIT].add_order(order)
         return balance
 
-    class _SideBalance:
-        def __init__(self):
-            self.orders = []
 
-        def add_order(self, order):
-            self.orders.append(order)
-            # orders are sorted according to their distance from their last created price: the further the earlier in
-            # the list
-            # warning: not working with negative prices
-            self.orders = sorted(self.orders, key=lambda o: -abs(o.origin_price-o.created_last_price))
+class _SideBalance:
+    def __init__(self):
+        self.orders = []
 
-        def get_actions_to_balance(self, target_balance):
-            actions = {
-                BalancedTakeProfitAndStopOrderGroup.CANCEL: [],
-                BalancedTakeProfitAndStopOrderGroup.UPDATE: [],
-            }
-            balance = self.get_balance()
-            if target_balance < constants.ZERO:
-                target_balance = abs(target_balance)
-            if balance <= target_balance:
-                # only reducing the current balance is possible
-                return actions
-            to_be_reduced_amount = constants.ZERO
-            remaining_orders = list(self.orders)
-            while remaining_orders and balance - to_be_reduced_amount > target_balance:
-                order_quantity = remaining_orders[0].origin_quantity
-                if balance - to_be_reduced_amount - order_quantity >= target_balance:
-                    # cancel order and keep reducing
-                    actions[BalancedTakeProfitAndStopOrderGroup.CANCEL].append(remaining_orders.pop(0))
-                    to_be_reduced_amount += order_quantity
-                else:
-                    # update order and stop reducing
-                    actions[BalancedTakeProfitAndStopOrderGroup.UPDATE].append({
-                        BalancedTakeProfitAndStopOrderGroup.ORDER: remaining_orders.pop(0),
-                        BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY:
-                            target_balance - (balance - to_be_reduced_amount - order_quantity)
-                    })
-                    break
+    def add_order(self, order):
+        self.orders.append(order)
+        # orders are sorted according to their distance from their last created price: the further the earlier in
+        # the list
+        # warning: not working with negative prices
+        self.orders = sorted(self.orders, key=lambda o: -abs(o.origin_price-o.created_last_price))
+
+    def get_actions_to_balance(self, target_balance):
+        actions = {
+            BalancedTakeProfitAndStopOrderGroup.CANCEL: [],
+            BalancedTakeProfitAndStopOrderGroup.UPDATE: [],
+        }
+        balance = self.get_balance()
+        if target_balance < constants.ZERO:
+            target_balance = abs(target_balance)
+        if balance <= target_balance:
+            # only reducing the current balance is possible
             return actions
+        to_be_reduced_amount = constants.ZERO
+        remaining_orders = list(self.orders)
+        while remaining_orders and balance - to_be_reduced_amount > target_balance:
+            order_quantity = remaining_orders[0].origin_quantity
+            if balance - to_be_reduced_amount - order_quantity >= target_balance:
+                # cancel order and keep reducing
+                actions[BalancedTakeProfitAndStopOrderGroup.CANCEL].append(remaining_orders.pop(0))
+                to_be_reduced_amount += order_quantity
+            else:
+                # update order and stop reducing
+                actions[BalancedTakeProfitAndStopOrderGroup.UPDATE].append({
+                    BalancedTakeProfitAndStopOrderGroup.ORDER: remaining_orders.pop(0),
+                    BalancedTakeProfitAndStopOrderGroup.UPDATED_QUANTITY:
+                        target_balance - (balance - to_be_reduced_amount - order_quantity)
+                })
+                break
+        return actions
 
-        def get_balance(self):
-            if self.orders:
-                return sum(order.origin_quantity for order in self.orders)
-            return constants.ZERO
+    def get_balance(self):
+        if self.orders:
+            return sum(order.origin_quantity for order in self.orders)
+        return constants.ZERO
