@@ -35,7 +35,7 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
         if not self.enabled:
             return
         for order in self.get_group_open_orders():
-            if order is not filled_order:
+            if order is not filled_order and order.is_open():
                 await order.trader.cancel_order(order, ignored_order=filled_order)
 
     async def on_cancel(self, cancelled_order, ignored_orders=None):
