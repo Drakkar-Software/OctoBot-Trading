@@ -81,9 +81,6 @@ class Order(util.Initializable):
         # canceled order attributes
         self.canceled_time = 0
 
-        # linked objects attributes
-        self.linked_to = None
-        self.linked_orders = []
         self.order_group = None
 
         # order state is initialized in initialize_impl()
@@ -126,7 +123,7 @@ class Order(util.Initializable):
     def update(self, symbol, order_id="", status=enums.OrderStatus.OPEN,
                current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
-               fee=None, total_cost=constants.ZERO, timestamp=None, linked_to=None,
+               fee=None, total_cost=constants.ZERO, timestamp=None,
                order_type=None, reduce_only=False, close_position=False, position_side=None, fees_currency_side=None,
                group=None) -> bool:
         changed: bool = False
@@ -206,9 +203,6 @@ class Order(util.Initializable):
                 self.filled_quantity = quantity_filled
                 changed = True
 
-        if linked_to:
-            self.linked_to = linked_to
-
         if order_type:
             self.order_type = order_type
             if self.exchange_order_type is None:
@@ -263,9 +257,6 @@ class Order(util.Initializable):
         Update_order_status will define the rules for a simulated order to be filled / canceled
         """
         raise NotImplementedError("Update_order_status not implemented")
-
-    def add_linked_order(self, order):
-        self.linked_orders.append(order)
 
     def add_to_order_group(self, order_group):
         self.order_group = order_group
@@ -534,8 +525,6 @@ class Order(util.Initializable):
             self.state.clear()
         self.trader = None
         self.exchange_manager = None
-        self.linked_to = None
-        self.linked_orders = []
         self.trader_creation_kwargs = {}
 
     def is_cleared(self):
