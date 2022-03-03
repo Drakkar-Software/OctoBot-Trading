@@ -76,14 +76,6 @@ class FillOrderState(order_state.OrderState):
             # set executed time
             self.order.executed_time = self.order.generate_executed_time()
 
-            # Cancel linked orders
-            # for linked_order in self.order.linked_orders:
-            #     await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
-
-            # Trigger order group
-            if self.order.order_group:
-                await self.order.order_group.on_fill(self.order)
-
             # compute trading fees
             try:
                 if self.order.exchange_manager is not None:
@@ -91,9 +83,9 @@ class FillOrderState(order_state.OrderState):
             except KeyError:
                 self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
-            # # Cancel linked orders
-            # for linked_order in self.order.linked_orders:
-            #     await self.order.trader.cancel_order(linked_order, ignored_order=self.order)
+            # Trigger order group
+            if self.order.order_group:
+                await self.order.order_group.on_fill(self.order)
 
             # update portfolio with filled order and position if any
             async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:

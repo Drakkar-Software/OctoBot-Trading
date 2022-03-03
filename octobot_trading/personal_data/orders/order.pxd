@@ -31,7 +31,6 @@ cdef class Order(util.Initializable):
     cdef public object order_type # TraderOrderType
     cdef public object lock # Lock
 
-    cdef public Order linked_to
     cdef public orders_states.OrderState state
 
     cdef public bint is_synchronized_with_exchange
@@ -58,6 +57,8 @@ cdef class Order(util.Initializable):
     cdef public object order_profitability
     cdef public object position_side
 
+    cdef public object order_group
+
     cdef public double timestamp
     cdef public double creation_time
     cdef public double canceled_time
@@ -67,7 +68,6 @@ cdef class Order(util.Initializable):
     cdef public object fees_currency_side   # trading_enums.FeesCurrencySide
 
     cdef list last_prices
-    cdef public list linked_orders
     cdef public list chained_orders # List[Order]
     cdef public object triggered_by # Order
     cdef public bint has_been_bundled
@@ -92,7 +92,6 @@ cdef class Order(util.Initializable):
             dict fee=*,
             object total_cost=*,
             object timestamp=*,
-            object linked_to=*,
             object order_type=*,
             bint reduce_only=*,
             bint close_position=*,
@@ -104,7 +103,6 @@ cdef class Order(util.Initializable):
     cdef object _on_origin_price_change(self, object previous_price, object price_time)
 
     cpdef str to_string(self)
-    cpdef add_linked_order(self, Order order)
     cpdef object get_total_fees(self, str currency)
     cpdef bint is_open(self)
     cpdef bint is_filled(self)
@@ -129,6 +127,7 @@ cdef class Order(util.Initializable):
     cpdef str get_logger_name(self)
     cpdef void add_chained_order(self, object chained_order)
     cpdef bint should_be_created(self)
+    cpdef void add_to_order_group(self, object order_group)
 
 cdef object _get_sell_and_buy_types(object order_type)
 cdef object _infer_order_type_from_maker_or_taker(dict raw_order, object side)

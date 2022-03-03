@@ -81,7 +81,7 @@ class Trader(util.Initializable):
     async def create_order(self, order, loaded: bool = False, params: dict = None):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
-        notifies order channel. Handles linked orders.
+        notifies order channel.
         :param order: Order to create
         :param loaded: True if this order is fetched from an exchange only and therefore not created by this OctoBot
         :param params: Additional parameters to give to the order upon creation (used in real trading only)
@@ -250,10 +250,10 @@ class Trader(util.Initializable):
 
     async def cancel_order(self, order: object, ignored_order: object = None) -> bool:
         """
-        Cancels the given order and its linked orders, and updates the portfolio, publish in order channel
+        Cancels the given order and updates the portfolio, publish in order channel
         if order is from a real exchange.
         :param order: Order to cancel
-        :param ignored_order: Order not to cancel if found in linked orders recursive cancels (ex: avoid cancelling
+        :param ignored_order: Order not to cancel if found in groupped orders recursive cancels (ex: avoid cancelling
         a filled order)
         :return: None
         """

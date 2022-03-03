@@ -153,7 +153,7 @@ class State(util.Initializable):
     async def terminate(self) -> None:
         """
         Implement the state ending process
-        Can be portfolio updates, fees request, linked order cancellation, Trade creation etc...
+        Can be portfolio updates, fees request, orders group updates, Trade creation etc...
         """
         raise NotImplementedError("terminate not implemented")
 
