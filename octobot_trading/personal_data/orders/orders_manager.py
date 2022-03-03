@@ -147,6 +147,8 @@ class OrdersManager(util.Initializable):
     def _reset_orders(self):
         self.orders_initialized = False
         self.orders = collections.OrderedDict()
+        for group in self.order_groups.values():
+            group.clear()
         self.order_groups = {}
 
     def _check_orders_size(self):

@@ -45,6 +45,9 @@ class OrderGroup:
     def get_group_open_orders(self):
         return self.orders_manager.get_order_from_group(self.name)
 
+    def clear(self):
+        self.orders_manager = None
+
     def __str__(self):
         return f"{self.__class__.__name__} #{self.name}"
 
