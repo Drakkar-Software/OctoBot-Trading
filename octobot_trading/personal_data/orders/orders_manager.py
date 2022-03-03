@@ -58,11 +58,11 @@ class OrdersManager(util.Initializable):
         return self.orders[order_id]
 
     def get_order_from_group(self, group_name):
-        return tuple(
+        return [
             order
             for order in self.orders.values()
             if order.order_group is not None and order.order_group.name == group_name
-        )
+        ]
 
     def get_or_create_group(self, group_type, group_name):
         """

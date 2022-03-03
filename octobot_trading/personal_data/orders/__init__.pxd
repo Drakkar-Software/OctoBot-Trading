@@ -18,6 +18,10 @@ from octobot_trading.personal_data.orders cimport order_state
 from octobot_trading.personal_data.orders.order_state cimport (
     OrderState,
 )
+from octobot_trading.personal_data.orders cimport order_group
+from octobot_trading.personal_data.orders.order_group cimport (
+    OrderGroup,
+)
 from octobot_trading.personal_data.orders cimport order
 from octobot_trading.personal_data.orders.order cimport (
     Order,
@@ -54,6 +58,12 @@ from octobot_trading.personal_data.orders.states cimport (
     CancelOrderState,
     OpenOrderState,
     FillOrderState,
+)
+
+from octobot_trading.personal_data.orders cimport groups
+from octobot_trading.personal_data.orders.groups cimport (
+    BalancedTakeProfitAndStopOrderGroup,
+    OneCancelsTheOtherOrderGroup,
 )
 
 from octobot_trading.personal_data.orders cimport channel
@@ -107,6 +117,9 @@ __all__ = [
     "get_pnl_transaction_source_from_order",
     "is_stop_order",
     "OrderState",
+    "OrderGroup",
+    "BalancedTakeProfitAndStopOrderGroup",
+    "OneCancelsTheOtherOrderGroup",
     "OrdersUpdater",
     "adapt_price",
     "adapt_quantity",

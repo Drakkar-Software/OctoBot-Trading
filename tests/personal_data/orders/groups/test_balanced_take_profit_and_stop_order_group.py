@@ -18,6 +18,8 @@ import mock
 import pytest
 
 import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders.groups.balanced_take_profit_and_stop_order_group as \
+    balanced_take_profit_and_stop_order_group
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_util as order_util
@@ -37,7 +39,7 @@ def btps_group(backtesting_exchange_manager):
 
 @pytest.fixture
 def side_balance():
-    return personal_data.BalancedTakeProfitAndStopOrderGroup._SideBalance()
+    return balanced_take_profit_and_stop_order_group._SideBalance()
 
 
 def order_mock(**kwargs):
@@ -88,8 +90,8 @@ async def test_can_create_order(btps_group):
     order_1 = order_mock(origin_quantity=decimal.Decimal(1))
     order_2 = order_mock(origin_quantity=decimal.Decimal(5))
     order_3 = order_mock(origin_quantity=decimal.Decimal(10))
-    balance_take_profit = personal_data.BalancedTakeProfitAndStopOrderGroup._SideBalance()
-    balance_stop = personal_data.BalancedTakeProfitAndStopOrderGroup._SideBalance()
+    balance_take_profit = balanced_take_profit_and_stop_order_group._SideBalance()
+    balance_stop = balanced_take_profit_and_stop_order_group._SideBalance()
     with mock.patch.object(btps_group, "_get_balance", mock.Mock(return_value={
             btps_group.TAKE_PROFIT: balance_take_profit,
             btps_group.STOP: balance_stop
@@ -114,10 +116,10 @@ async def test_balance_orders(btps_group):
     order_1 = order_mock(origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(2))
     order_2 = order_mock(origin_price=decimal.Decimal(5), created_last_price=decimal.Decimal(3))
     order_3 = order_mock(origin_price=decimal.Decimal(10), created_last_price=decimal.Decimal(11))
-    balance_take_profit = personal_data.BalancedTakeProfitAndStopOrderGroup._SideBalance()
+    balance_take_profit = balanced_take_profit_and_stop_order_group._SideBalance()
     balance_take_profit.add_order(order_1)
     balance_take_profit.add_order(order_2)
-    balance_stop = personal_data.BalancedTakeProfitAndStopOrderGroup._SideBalance()
+    balance_stop = balanced_take_profit_and_stop_order_group._SideBalance()
     balance_stop.add_order(order_3)
     with mock.patch.object(btps_group, "_get_balance", mock.Mock(return_value={
             btps_group.TAKE_PROFIT: balance_take_profit,
@@ -143,7 +145,7 @@ async def test_balance_orders(btps_group):
                               ],
                               btps_group.CANCEL: []
                           })) as balance_stop_get_actions_to_balance_mock, \
-        mock.patch.object(personal_data.BalancedTakeProfitAndStopOrderGroup._SideBalance, "get_balance",
+        mock.patch.object(balanced_take_profit_and_stop_order_group._SideBalance, "get_balance",
                           mock.Mock(return_value=constants.ZERO)) as get_balance_mock:
         base_balancing_order = ["existing_order"]
         btps_group.balancing_orders = base_balancing_order
