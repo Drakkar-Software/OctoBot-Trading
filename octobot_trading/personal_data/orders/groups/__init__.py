@@ -14,11 +14,17 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.personal_data.orders.groups import balanced_take_profit_and_stop_order_group
+from octobot_trading.personal_data.orders.groups.balanced_take_profit_and_stop_order_group import (
+    BalancedTakeProfitAndStopOrderGroup,
+)
+
 from octobot_trading.personal_data.orders.groups import one_cancels_the_other_order_group
 from octobot_trading.personal_data.orders.groups.one_cancels_the_other_order_group import (
     OneCancelsTheOtherOrderGroup,
 )
 
 __all__ = [
+    "BalancedTakeProfitAndStopOrderGroup",
     "OneCancelsTheOtherOrderGroup",
 ]

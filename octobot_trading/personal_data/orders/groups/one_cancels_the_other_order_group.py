@@ -32,6 +32,8 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
         :param filled_order: the filled order
         :param ignored_orders: orders that should be ignored
         """
+        if not self.enabled:
+            return
         for order in self.get_group_open_orders():
             if order is not filled_order:
                 await order.trader.cancel_order(order, ignored_order=filled_order)
@@ -44,6 +46,8 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
         :param cancelled_order: the cancelled order
         :param ignored_orders: orders that should be ignored
         """
+        if not self.enabled:
+            return
         if ignored_orders and len(ignored_orders) > 1:
             raise errors.OrderGroupTriggerArgumentError(f"ignored_orders supports at most 1 argument "
                                                         f"for {self.__class__.__name__}")

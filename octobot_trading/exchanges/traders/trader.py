@@ -154,8 +154,9 @@ class Trader(util.Initializable):
                             current_price=edited_current_price,
                             params=order_params
                         )
-                        self.logger.info(f"Edited order on {self.exchange_manager.exchange_name}: {edited_order}")
                         # apply new values from returned order (even order id might have changed)
+                        self.logger.debug(f"Successful order edit on {self.exchange_manager.exchange_name}: "
+                                          f"{edited_order}")
                         changed = order.update_from_raw(edited_order)
                         # update portfolio from exchange
                         await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
@@ -175,6 +176,7 @@ class Trader(util.Initializable):
                     self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
                         order, is_new_order=True
                     )
+                self.logger.info(f"Edited order: {order}")
             return changed
         finally:
             if previous_order_id != order.order_id:
