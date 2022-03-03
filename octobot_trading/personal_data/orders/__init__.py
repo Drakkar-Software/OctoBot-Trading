@@ -24,6 +24,7 @@ from octobot_trading.personal_data.orders.order_group import (
 )
 from octobot_trading.personal_data.orders import groups
 from octobot_trading.personal_data.orders.groups import (
+    BalancedTakeProfitAndStopOrderGroup,
     OneCancelsTheOtherOrderGroup,
 )
 from octobot_trading.personal_data.orders import order
@@ -79,6 +80,7 @@ from octobot_trading.personal_data.orders.order_util import (
     parse_is_cancelled,
     get_pre_order_data,
     get_pnl_transaction_source_from_order,
+    is_stop_order,
     create_as_chained_order,
 )
 from octobot_trading.personal_data.orders import order_adapter
@@ -127,6 +129,7 @@ __all__ = [
     "create_as_chained_order",
     "OrderState",
     "OrderGroup",
+    "BalancedTakeProfitAndStopOrderGroup",
     "OneCancelsTheOtherOrderGroup",
     "OrdersUpdater",
     "adapt_price",

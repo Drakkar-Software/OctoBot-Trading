@@ -19,6 +19,7 @@ class OrderGroup:
     def __init__(self, name, orders_manager):
         self.name = name
         self.orders_manager = orders_manager
+        self.enabled = True
 
     async def on_fill(self, filled_order, ignored_orders=None):
         """
@@ -37,6 +38,9 @@ class OrderGroup:
         :param cancelled_order: the cancelled order
         :param ignored_orders: orders that should be ignored
         """
+
+    async def enable(self, enabled):
+        self.enabled = enabled
 
     def get_group_open_orders(self):
         return self.orders_manager.get_order_from_group(self.name)

@@ -186,10 +186,14 @@ def get_pnl_transaction_source_from_order(order):
     if order.order_type in [enums.TraderOrderType.SELL_LIMIT, enums.TraderOrderType.BUY_LIMIT,
                             enums.TraderOrderType.TAKE_PROFIT_LIMIT]:
         return enums.PNLTransactionSource.LIMIT_ORDER
-    if order.order_type in [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.STOP_LOSS_LIMIT,
-                            enums.TraderOrderType.TRAILING_STOP, enums.TraderOrderType.TRAILING_STOP_LIMIT]:
+    if is_stop_order(order.order_type):
         return enums.PNLTransactionSource.STOP_ORDER
     return enums.PNLTransactionSource.UNKNOWN
+
+
+def is_stop_order(order_type):
+    return order_type in [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.STOP_LOSS_LIMIT,
+                          enums.TraderOrderType.TRAILING_STOP, enums.TraderOrderType.TRAILING_STOP_LIMIT]
 
 
 async def create_as_chained_order(order):
