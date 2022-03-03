@@ -201,6 +201,8 @@ async def create_as_chained_order(order):
             #  (issue is that we don't have an id yet so we can't just fetch this order in particular)
             pass
         else:
+            # set created now to consider creation failures as created as well (the caller can always retry later on)
+            order.created = True
             await order.trader.create_order(
                 order,
                 loaded=False,
@@ -208,5 +210,4 @@ async def create_as_chained_order(order):
                 **order.trader_creation_kwargs
             )
     finally:
-        # set created now to consider creation failures as created as well (the caller can always retry later on)
         order.created = True

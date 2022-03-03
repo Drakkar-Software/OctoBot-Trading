@@ -53,11 +53,11 @@ def create_order_instance(trader,
                           total_cost=constants.ZERO,
                           timestamp=0,
                           side=None,
-                          fees_currency_side=None):
+                          fees_currency_side=None,
+                          group=None,):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
-                                   side=side
-    )
+                                   side=side)
     order.update(order_type=order_type,
                  symbol=symbol,
                  current_price=current_price,
@@ -73,6 +73,7 @@ def create_order_instance(trader,
                  fee=None,
                  total_cost=total_cost,
                  linked_to=linked_to,
-                 fees_currency_side=fees_currency_side)
+                 fees_currency_side=fees_currency_side,
+                 group=group)
 
     return order
