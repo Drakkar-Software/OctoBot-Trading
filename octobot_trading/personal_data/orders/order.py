@@ -127,8 +127,8 @@ class Order(util.Initializable):
                current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None, linked_to=None,
-               order_type=None, reduce_only=False, close_position=False, position_side=None, fees_currency_side=None) \
-            -> bool:
+               order_type=None, reduce_only=False, close_position=False, position_side=None, fees_currency_side=None,
+               group=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -227,6 +227,10 @@ class Order(util.Initializable):
 
         self.reduce_only = reduce_only
         self.close_position = close_position
+
+        if group is not None:
+            self.add_to_order_group(group)
+
         return changed
 
     async def initialize_impl(self, **kwargs):
@@ -532,7 +536,7 @@ class Order(util.Initializable):
         self.exchange_manager = None
         self.linked_to = None
         self.linked_orders = []
-        self.chained_orders = []
+        self.trader_creation_kwargs = {}
 
     def is_cleared(self):
         return self.exchange_manager is None

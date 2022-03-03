@@ -40,3 +40,11 @@ class OrderGroup:
 
     def get_group_open_orders(self):
         return self.orders_manager.get_order_from_group(self.name)
+
+    def __str__(self):
+        return f"{self.__class__.__name__} #{self.name}"
+
+    def __eq__(self, other):
+        return self.__class__ is other.__class__ and \
+               self.orders_manager is other.orders_manager \
+               and self.name == other.name
