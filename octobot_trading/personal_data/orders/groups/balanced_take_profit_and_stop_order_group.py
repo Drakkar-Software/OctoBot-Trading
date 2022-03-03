@@ -124,8 +124,7 @@ class _SideBalance:
 
     def add_order(self, order):
         self.orders.append(order)
-        # orders are sorted according to their distance from their last created price: the further the earlier in
-        # the list
+        # orders are sorted according to their distance from their last created price: the further the earlier in list
         # warning: not working with negative prices
         self.orders = sorted(self.orders, key=lambda o: -abs(o.origin_price-o.created_last_price))
 

@@ -31,11 +31,6 @@ class CancelOrderState(order_state.OrderState):
             self.state = enums.OrderStates.CANCELED
             self.order.status = enums.OrderStatus.CANCELED
 
-        # always cancel this order first to avoid infinite loop followed by deadlock
-        # for linked_order in self.order.linked_orders:
-        #     if linked_order is not ignored_order and linked_order.is_open():
-        #         await self.order.trader.cancel_order(linked_order, ignored_order=ignored_order)
-
         if self.order.order_group:
             await self.order.order_group.on_cancel(self.order, ignored_orders=[ignored_order])
 

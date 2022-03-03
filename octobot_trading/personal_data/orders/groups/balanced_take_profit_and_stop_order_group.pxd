@@ -17,4 +17,6 @@
 cimport octobot_trading.personal_data.orders.order_group as order_group
 
 cdef class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
+    cdef public list balancing_orders
+
     cpdef bint can_create_order(self, object order_type, object quantity)
