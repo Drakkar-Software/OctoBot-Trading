@@ -53,125 +53,112 @@ def order_mock(**kwargs):
 
 async def test_on_fill(btps_group):
     order = order_mock()
-    with mock.patch.object(btps_group, "_balance_orders", mock.AsyncMock()) as _balance_orders_mock:
+    # mock btps_group.orders_manager instead of btps_group._balance_orders to allow cythonized class tests
+    with mock.patch.object(btps_group.orders_manager, "get_order_from_group", mock.Mock(return_value=[])) \
+            as get_order_from_group_mock:
         await btps_group.on_fill(order)
-        _balance_orders_mock.assert_called_once_with(order, None)
-        _balance_orders_mock.reset_mock()
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
 
         await btps_group.on_fill(order, ["hi", "ho"])
-        _balance_orders_mock.assert_called_once_with(order, ["hi", "ho"])
-        _balance_orders_mock.reset_mock()
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
 
 
 async def test_on_cancel(btps_group):
     order = order_mock()
-    with mock.patch.object(btps_group, "_balance_orders", mock.AsyncMock()) as _balance_orders_mock:
+    with mock.patch.object(btps_group.orders_manager, "get_order_from_group", mock.Mock(return_value=[])) \
+            as get_order_from_group_mock:
         await btps_group.on_cancel(order)
-        _balance_orders_mock.assert_called_once_with(order, None)
-        _balance_orders_mock.reset_mock()
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
 
         await btps_group.on_cancel(order, ["hi", "ho"])
-        _balance_orders_mock.assert_called_once_with(order, ["hi", "ho"])
-        _balance_orders_mock.reset_mock()
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
 
 
 async def test_enable(btps_group):
-    with mock.patch.object(btps_group, "_balance_orders", mock.AsyncMock()) as _balance_orders_mock:
+    with mock.patch.object(btps_group.orders_manager, "get_order_from_group", mock.Mock(return_value=[])) \
+            as get_order_from_group_mock:
         await btps_group.enable(False)
-        _balance_orders_mock.assert_not_called()
+        get_order_from_group_mock.assert_not_called()
         await btps_group.enable(True)
-        _balance_orders_mock.assert_called_once_with(None, None)
-        _balance_orders_mock.reset_mock()
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
         await btps_group.enable(True)
-        _balance_orders_mock.assert_called_once_with(None, None)
+        get_order_from_group_mock.assert_called_once()
 
 
 async def test_can_create_order(btps_group):
-    order_1 = order_mock(origin_quantity=decimal.Decimal(1))
-    order_2 = order_mock(origin_quantity=decimal.Decimal(5))
-    order_3 = order_mock(origin_quantity=decimal.Decimal(10))
-    balance_take_profit = balanced_take_profit_and_stop_order_group._SideBalance()
-    balance_stop = balanced_take_profit_and_stop_order_group._SideBalance()
-    with mock.patch.object(btps_group, "_get_balance", mock.Mock(return_value={
-            btps_group.TAKE_PROFIT: balance_take_profit,
-            btps_group.STOP: balance_stop
-        })) as _get_balance_mock:
+    order_1 = order_mock(origin_quantity=decimal.Decimal(1), order_type=enums.TraderOrderType.SELL_LIMIT,
+                         origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(2))
+    order_2 = order_mock(origin_quantity=decimal.Decimal(5), order_type=enums.TraderOrderType.BUY_MARKET,
+                         origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(2))
+    order_3 = order_mock(origin_quantity=decimal.Decimal(10), order_type=enums.TraderOrderType.TRAILING_STOP,
+                         origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(2))
+    with mock.patch.object(btps_group.orders_manager, "get_order_from_group",
+                           mock.Mock(return_value=[])) as get_order_from_group_mock:
         # 0 size order
         assert btps_group.can_create_order(enums.TraderOrderType.STOP_LOSS, decimal.Decimal(0)) is True
-        _get_balance_mock.assert_called_once_with(None, None)
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
         # no order, no imbalance
         assert btps_group.can_create_order(enums.TraderOrderType.STOP_LOSS, decimal.Decimal(1)) is False
-        balance_take_profit.orders = [order_1, order_2]
-        balance_stop.orders = [order_3]
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
+    with mock.patch.object(btps_group.orders_manager, "get_order_from_group",
+                           mock.Mock(return_value=[order_1, order_2, order_3])) as get_order_from_group_mock:
         # enough imbalance
         assert btps_group.can_create_order(enums.TraderOrderType.SELL_LIMIT, decimal.Decimal(1)) is True
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
         assert btps_group.can_create_order(enums.TraderOrderType.SELL_LIMIT, decimal.Decimal(4)) is True
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
 
         # not enough
         assert btps_group.can_create_order(enums.TraderOrderType.SELL_LIMIT, decimal.Decimal("4.000001")) is False
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
         assert btps_group.can_create_order(enums.TraderOrderType.STOP_LOSS, decimal.Decimal("0.00001")) is False
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
 
 
 async def test_balance_orders(btps_group):
-    order_1 = order_mock(origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(2))
-    order_2 = order_mock(origin_price=decimal.Decimal(5), created_last_price=decimal.Decimal(3))
-    order_3 = order_mock(origin_price=decimal.Decimal(10), created_last_price=decimal.Decimal(11))
-    balance_take_profit = balanced_take_profit_and_stop_order_group._SideBalance()
-    balance_take_profit.add_order(order_1)
-    balance_take_profit.add_order(order_2)
-    balance_stop = balanced_take_profit_and_stop_order_group._SideBalance()
-    balance_stop.add_order(order_3)
-    with mock.patch.object(btps_group, "_get_balance", mock.Mock(return_value={
-            btps_group.TAKE_PROFIT: balance_take_profit,
-            btps_group.STOP: balance_stop
-        })) as _get_balance_mock, \
-        mock.patch.object(balance_take_profit, "get_actions_to_balance",
-                          mock.Mock(return_value={
-                              btps_group.UPDATE: [
-                                  {
-                                      btps_group.UPDATED_QUANTITY: decimal.Decimal(1),
-                                      btps_group.ORDER: order_1,
-                                  }
-                              ],
-                              btps_group.CANCEL: [order_3]
-                          })) as balance_take_profit_get_actions_to_balance_mock, \
-        mock.patch.object(balance_stop, "get_actions_to_balance",
-                          mock.Mock(return_value={
-                              btps_group.UPDATE: [
-                                  {
-                                      btps_group.UPDATED_QUANTITY: decimal.Decimal(3),
-                                      btps_group.ORDER: order_2,
-                                  }
-                              ],
-                              btps_group.CANCEL: []
-                          })) as balance_stop_get_actions_to_balance_mock, \
-        mock.patch.object(balanced_take_profit_and_stop_order_group._SideBalance, "get_balance",
-                          mock.Mock(return_value=constants.ZERO)) as get_balance_mock:
+    order_1 = order_mock(origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(10),
+                         order_type=enums.TraderOrderType.SELL_LIMIT, origin_quantity=decimal.Decimal("1.5"))
+    order_2 = order_mock(origin_price=decimal.Decimal(5), created_last_price=decimal.Decimal(3),
+                         order_type=enums.TraderOrderType.SELL_LIMIT, origin_quantity=decimal.Decimal("11"))
+    order_3 = order_mock(origin_price=decimal.Decimal(10), created_last_price=decimal.Decimal(11),
+                         order_type=enums.TraderOrderType.STOP_LOSS, origin_quantity=decimal.Decimal("10"))
+    order_4 = order_mock(origin_price=decimal.Decimal(42), created_last_price=decimal.Decimal(2),
+                         order_type=enums.TraderOrderType.STOP_LOSS, origin_quantity=decimal.Decimal("20"))
+    with mock.patch.object(btps_group.orders_manager, "get_order_from_group",
+                           mock.Mock(return_value=[order_1, order_2, order_3, order_4])) as get_order_from_group_mock:
         base_balancing_order = ["existing_order"]
         btps_group.balancing_orders = base_balancing_order
         # 1. not enabled
         btps_group.enabled = False
         await btps_group._balance_orders(order_1, ["ignored_orders"])
-        _get_balance_mock.assert_not_called()
-        balance_take_profit_get_actions_to_balance_mock.assert_not_called()
-        balance_stop_get_actions_to_balance_mock.assert_not_called()
-        get_balance_mock.assert_not_called()
+        get_order_from_group_mock.assert_not_called()
         assert btps_group.balancing_orders == ["existing_order"]
         assert btps_group.balancing_orders is base_balancing_order
 
         # 2. enabled
         btps_group.enabled = True
-        await btps_group._balance_orders(order_1, ["ignored_orders"])
-        _get_balance_mock.assert_called_once_with(order_1, ["ignored_orders"])
-        balance_take_profit_get_actions_to_balance_mock.assert_called_once_with(constants.ZERO)
-        balance_stop_get_actions_to_balance_mock.assert_called_once_with(constants.ZERO)
-        assert get_balance_mock.call_count == 2
-        order_1.trader.edit_order.assert_called_once_with(order_1, edited_quantity=decimal.Decimal(1))
-        order_1.trader.cancel_order.assert_not_called()
-        order_2.trader.edit_order.assert_called_once_with(order_2, edited_quantity=decimal.Decimal(3))
+        await btps_group._balance_orders(order_4, ["ignored_orders"])
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
+        order_1.trader.edit_order.assert_not_called()
+        order_1.trader.cancel_order.assert_called_once_with(order_1, ignored_order=order_4)
+        order_2.trader.edit_order.assert_called_once_with(order_2, edited_quantity=decimal.Decimal(10))
         order_2.trader.cancel_order.assert_not_called()
         order_3.trader.edit_order.assert_not_called()
-        order_3.trader.cancel_order.assert_called_once_with(order_3, ignored_order=order_1)
+        order_3.trader.cancel_order.assert_not_called()
+        order_4.trader.edit_order.assert_not_called()
+        order_4.trader.cancel_order.assert_not_called()
         assert btps_group.balancing_orders == ["existing_order"]
         assert btps_group.balancing_orders is not base_balancing_order  # changed list during orders registration
 
@@ -182,38 +169,38 @@ async def test_get_balance(btps_group):
     order_2 = order_mock(order_type="order_type", origin_price=decimal.Decimal(1),
                          created_last_price=decimal.Decimal(2))
     with mock.patch.object(order_util, "is_stop_order", mock.Mock(return_value=False)) as is_stop_order_mock:
-        with mock.patch.object(btps_group, "get_group_open_orders", mock.Mock(return_value=[])) \
-             as get_group_open_orders_mock:
+        with mock.patch.object(btps_group.orders_manager, "get_order_from_group", mock.Mock(return_value=[])) \
+             as get_order_from_group_mock:
             balance = btps_group._get_balance(order_1, None)
             assert balance[btps_group.TAKE_PROFIT].orders == []
             assert balance[btps_group.STOP].orders == []
-            get_group_open_orders_mock.assert_called_once()
+            get_order_from_group_mock.assert_called_once()
             is_stop_order_mock.assert_not_called()
 
-        with mock.patch.object(btps_group, "get_group_open_orders", mock.Mock(return_value=[order_1, order_2])) \
-             as get_group_open_orders_mock:
+        with mock.patch.object(btps_group.orders_manager, "get_order_from_group", mock.Mock(return_value=[order_1, order_2])) \
+             as get_order_from_group_mock:
             balance = btps_group._get_balance(order_1, None)
             assert balance[btps_group.TAKE_PROFIT].orders == [order_2]
             assert balance[btps_group.STOP].orders == []
-            get_group_open_orders_mock.assert_called_once()
+            get_order_from_group_mock.assert_called_once()
             is_stop_order_mock.assert_called_once_with("order_type")
             is_stop_order_mock.reset_mock()
 
-        with mock.patch.object(btps_group, "get_group_open_orders", mock.Mock(return_value=[order_1, order_2])) \
-             as get_group_open_orders_mock:
+        with mock.patch.object(btps_group.orders_manager, "get_order_from_group",
+                               mock.Mock(return_value=[order_1, order_2])) as get_order_from_group_mock:
             balance = btps_group._get_balance(order_1, [order_2])
             assert balance[btps_group.TAKE_PROFIT].orders == []
             assert balance[btps_group.STOP].orders == []
-            get_group_open_orders_mock.assert_called_once()
+            get_order_from_group_mock.assert_called_once()
             is_stop_order_mock.assert_not_called()
 
     with mock.patch.object(order_util, "is_stop_order", mock.Mock(return_value=True)) as is_stop_order_mock:
-        with mock.patch.object(btps_group, "get_group_open_orders", mock.Mock(return_value=[order_1, order_2])) \
-             as get_group_open_orders_mock:
+        with mock.patch.object(btps_group.orders_manager, "get_order_from_group",
+                               mock.Mock(return_value=[order_1, order_2])) as get_order_from_group_mock:
             balance = btps_group._get_balance(order_1, None)
             assert balance[btps_group.TAKE_PROFIT].orders == []
             assert balance[btps_group.STOP].orders == [order_2]
-            get_group_open_orders_mock.assert_called_once()
+            get_order_from_group_mock.assert_called_once()
             is_stop_order_mock.assert_called_once_with("order_type")
             is_stop_order_mock.reset_mock()
 
