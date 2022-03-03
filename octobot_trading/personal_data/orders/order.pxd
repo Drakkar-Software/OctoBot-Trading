@@ -97,8 +97,8 @@ cdef class Order(util.Initializable):
             bint reduce_only=*,
             bint close_position=*,
             object position_side=*,
-            object fees_currency_side=*)
-
+            object fees_currency_side=*,
+            object group=*)
     cdef void _update_type_from_raw(self, dict raw_order)
     cdef void _update_taker_maker(self)
     cdef object _on_origin_price_change(self, object previous_price, object price_time)
