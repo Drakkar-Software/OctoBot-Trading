@@ -72,6 +72,19 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
             return balance[self.STOP].get_balance() + quantity <= balance[self.TAKE_PROFIT].get_balance()
         return balance[self.TAKE_PROFIT].get_balance() + quantity <= balance[self.STOP].get_balance()
 
+    def get_max_order_quantity(self, order_type):
+        """
+        Returns The maximum order quantity to reach the order side's balance
+        :param order_type: order type to create
+        :return: the balancing quantity
+        """
+        balance = self._get_balance(None, None)
+        if order_util.is_stop_order(order_type):
+            max_quantity = balance[self.TAKE_PROFIT].get_balance() - balance[self.STOP].get_balance()
+        else:
+            max_quantity = balance[self.STOP].get_balance() - balance[self.TAKE_PROFIT].get_balance()
+        return max_quantity if max_quantity > constants.ZERO else constants.ZERO
+
     async def enable(self, enabled):
         # disable when creating order sequentially (and therefore pause balancing)
         # setting enabled to True will trigger an order balance

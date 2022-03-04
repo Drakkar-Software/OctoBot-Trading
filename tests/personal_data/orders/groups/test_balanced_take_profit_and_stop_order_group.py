@@ -126,6 +126,30 @@ async def test_can_create_order(btps_group):
         get_order_from_group_mock.reset_mock()
 
 
+async def test_get_max_order_quantity(btps_group):
+    order_1 = order_mock(origin_quantity=decimal.Decimal(1), order_type=enums.TraderOrderType.SELL_LIMIT,
+                         origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(2))
+    order_2 = order_mock(origin_quantity=decimal.Decimal(5), order_type=enums.TraderOrderType.BUY_MARKET,
+                         origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(2))
+    order_3 = order_mock(origin_quantity=decimal.Decimal(10), order_type=enums.TraderOrderType.TRAILING_STOP,
+                         origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(2))
+    with mock.patch.object(btps_group.orders_manager, "get_order_from_group",
+                           mock.Mock(return_value=[])) as get_order_from_group_mock:
+        # no order, no imbalance
+        assert btps_group.get_max_order_quantity(enums.TraderOrderType.STOP_LOSS) == constants.ZERO
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
+    with mock.patch.object(btps_group.orders_manager, "get_order_from_group",
+                           mock.Mock(return_value=[order_1, order_2, order_3])) as get_order_from_group_mock:
+        # imbalance
+        assert btps_group.get_max_order_quantity(enums.TraderOrderType.SELL_LIMIT) == decimal.Decimal(4)
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
+        assert btps_group.get_max_order_quantity(enums.TraderOrderType.STOP_LOSS) == constants.ZERO
+        get_order_from_group_mock.assert_called_once()
+        get_order_from_group_mock.reset_mock()
+
+
 async def test_balance_orders(btps_group):
     order_1 = order_mock(origin_price=decimal.Decimal(1), created_last_price=decimal.Decimal(10),
                          order_type=enums.TraderOrderType.SELL_LIMIT, origin_quantity=decimal.Decimal("1.5"))
