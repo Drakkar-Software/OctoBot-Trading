@@ -20,3 +20,4 @@ cdef class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
     cdef public list balancing_orders
 
     cpdef bint can_create_order(self, object order_type, object quantity)
+    cpdef object get_max_order_quantity(self, object order_type)
