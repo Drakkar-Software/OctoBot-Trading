@@ -57,6 +57,22 @@ async def test_decimal_adapt_price():
     assert personal_data.decimal_adapt_price(symbol_market,
                                              decimal.Decimal(str(1251.0000014576121234854513))) == decimal.Decimal(
         str(1251.00000145))
+    assert personal_data.decimal_adapt_price(symbol_market,
+                                             decimal.Decimal(str(1251.0000014576121234854513)),
+                                             True) == decimal.Decimal(
+        str(1251.00000145))
+    assert personal_data.decimal_adapt_price(symbol_market,
+                                             decimal.Decimal(str(1251.0000014576121234854513)),
+                                             False) == decimal.Decimal(
+        str(1251.00000146))
+    assert personal_data.decimal_adapt_price(symbol_market,
+                                             decimal.Decimal(str(1251.000001451)),
+                                             True) == decimal.Decimal(
+        str(1251.00000145))
+    assert personal_data.decimal_adapt_price(symbol_market,
+                                             decimal.Decimal(str(1251.000001451)),
+                                             False) == decimal.Decimal(
+        str(1251.00000146))
 
 
 async def test_decimal_check_and_adapt_order_details_if_necessary():
@@ -386,6 +402,14 @@ async def test_adapt_quantity():
     assert personal_data.decimal_adapt_quantity(symbol_market,
                                                 decimal.Decimal(str(1251.0000014576121234854513))) == decimal.Decimal(
         str(1251.0000))
+    assert personal_data.decimal_adapt_quantity(symbol_market,
+                                                decimal.Decimal(str(1251.0000014576121234854513)),
+                                                True) == decimal.Decimal(
+        str(1251.0000))
+    assert personal_data.decimal_adapt_quantity(symbol_market,
+                                                decimal.Decimal(str(1251.0000014576121234854513)),
+                                                False) == decimal.Decimal(
+        str(1251.0001))
 
     # will use default (0)
     symbol_market = {Ecmsc.PRECISION.value: {}}
@@ -404,6 +428,10 @@ async def test_adapt_quantity():
 
 
 async def test_decimal_trunc_with_n_decimal_digits():
+    assert personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal(1.00000000001), 10) == decimal.Decimal(1)
+    assert personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal("1.01"), 1, True) == decimal.Decimal(1)
+    assert personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal("1.01"), 1, False) \
+        == decimal.Decimal("1.1")
     assert float(personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal(1.00000000001), 10)) == 1
     assert float(personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal(1.00000000001), 11)) == 1.00000000001
     assert float(personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal(578.000145000156), 3)) == 578
