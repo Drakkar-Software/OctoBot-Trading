@@ -22,25 +22,26 @@ import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
-def decimal_adapt_price(symbol_market, price):
+def decimal_adapt_price(symbol_market, price, truncate=True):
     maximal_price_digits = symbol_market[Ecmsc.PRECISION.value].get(
                                                 Ecmsc.PRECISION_PRICE.value,
                                                 constants.CURRENCY_DEFAULT_MAX_PRICE_DIGITS)
-    return decimal_trunc_with_n_decimal_digits(price, maximal_price_digits)
+    return decimal_trunc_with_n_decimal_digits(price, maximal_price_digits, truncate)
 
 
-def decimal_adapt_quantity(symbol_market, quantity):
+def decimal_adapt_quantity(symbol_market, quantity, truncate=True):
     maximal_volume_digits = symbol_market[Ecmsc.PRECISION.value].get(
                                                  Ecmsc.PRECISION_AMOUNT.value, 0)
-    return decimal_trunc_with_n_decimal_digits(quantity, maximal_volume_digits)
+    return decimal_trunc_with_n_decimal_digits(quantity, maximal_volume_digits, truncate)
 
 
-def decimal_trunc_with_n_decimal_digits(value, digits):  # TODO migrate to commons
+def decimal_trunc_with_n_decimal_digits(value, digits, truncate=True):  # TODO migrate to commons
     try:
         # decimal.Decimal can add unnecessary complexity in numbers, only use it when necessary
         if len(str(value).split(".")[-1]) > digits:
             if digits > constants.ZERO:
-                return value.quantize(decimal.Decimal(f".{'0' * int(digits)}"), rounding=decimal.ROUND_DOWN)
+                return value.quantize(decimal.Decimal(f".{'0' * int(digits)}"),
+                                      rounding=decimal.ROUND_DOWN if truncate else decimal.ROUND_UP)
             else:
                 return value // constants.ONE
         return value
@@ -115,13 +116,15 @@ def decimal_split_orders(total_order_price, max_cost, valid_quantity, max_quanti
                                                              quantity, price, symbol_market)
 
 
-def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, fixed_symbol_data=False):
+def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_market, fixed_symbol_data=False,
+                                                       truncate=True):
     """
     Checks if order attributes are valid and try to fix it if not
     :param quantity:
     :param price:
     :param symbol_market:
     :param fixed_symbol_data:
+    :param truncate:
     :return:
     """
     if quantity.is_nan() or price.is_nan() or price == constants.ZERO:
@@ -142,8 +145,8 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
             max_quantity = decimal.Decimal(str(limit_amount.get(Ecmsc.LIMITS_AMOUNT_MAX.value, math.nan)))
 
         # adapt digits if necessary
-        valid_quantity = decimal_adapt_quantity(symbol_market, quantity)
-        valid_price = decimal_adapt_price(symbol_market, price)
+        valid_quantity = decimal_adapt_quantity(symbol_market, quantity, truncate)
+        valid_price = decimal_adapt_price(symbol_market, price, truncate)
 
         total_order_price = valid_quantity * valid_price
 
@@ -199,7 +202,7 @@ def decimal_check_and_adapt_order_details_if_necessary(quantity, price, symbol_m
         # case 2: try fixing data from exchanges
         fixed_data = exchanges.ExchangeMarketStatusFixer(symbol_market, float(price)).market_status
         return decimal_check_and_adapt_order_details_if_necessary(quantity, price, fixed_data,
-                                                                  fixed_symbol_data=True)
+                                                                  fixed_symbol_data=True, truncate=truncate)
     else:
         # impossible to check if order is valid: refuse it
         return []
