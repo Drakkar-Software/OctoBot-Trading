@@ -82,7 +82,7 @@ class Order(util.Initializable):
 
         # canceled order attributes
         self.canceled_time = 0
-        self.one_cancels_the_other = False
+
         self.order_group = None
 
         # order state is initialized in initialize_impl()

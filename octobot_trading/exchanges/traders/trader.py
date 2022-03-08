@@ -215,7 +215,6 @@ class Trader(util.Initializable):
             if new_order.order_group:
                 updated_order.add_to_order_group(new_order.order_group)
             updated_order.allow_self_managed = allow_self_managed
-            updated_order.one_cancels_the_other = new_order.one_cancels_the_other
             updated_order.tag = new_order.tag
             updated_order.chained_orders = new_order.chained_orders
             for chained_order in new_order.chained_orders:
