@@ -21,7 +21,6 @@ In simulation it will also define rules to be filled / canceled
 It is also use to store creation & fill values of the order """
 cimport octobot_trading.util as util
 cimport octobot_trading.personal_data.orders.order_state as orders_states
-cimport octobot_trading.personal_data.portfolios.portfolio as portfolios
 
 cdef class Order(util.Initializable):
     cdef public object trader
@@ -32,8 +31,6 @@ cdef class Order(util.Initializable):
     cdef public object order_type # TraderOrderType
     cdef public object lock # Lock
 
-    cdef public Order linked_to
-    cdef public portfolios.Portfolio linked_portfolio
     cdef public orders_states.OrderState state
 
     cdef public bint is_synchronized_with_exchange
@@ -43,6 +40,7 @@ cdef class Order(util.Initializable):
     cdef public bint reduce_only
     cdef public bint close_position
 
+    cdef public bint created
     cdef public str symbol
     cdef public str currency
     cdef public str market
@@ -61,6 +59,8 @@ cdef class Order(util.Initializable):
     cdef public object order_profitability
     cdef public object position_side
 
+    cdef public object order_group
+
     cdef public double timestamp
     cdef public double creation_time
     cdef public double canceled_time
@@ -70,8 +70,13 @@ cdef class Order(util.Initializable):
     cdef public object fees_currency_side   # trading_enums.FeesCurrencySide
 
     cdef list last_prices
-    cdef public list linked_orders
-    cdef public bint one_cancels_the_other
+    cdef public list chained_orders # List[Order]
+    cdef public object triggered_by # Order
+    cdef public bint has_been_bundled
+    cdef public bint is_waiting_for_chained_trigger
+    cdef public dict exchange_creation_params
+    cdef public dict trader_creation_kwargs
+
 
     cdef public object exchange_order_type # raw exchange order type, used to create order dict
 
@@ -89,21 +94,17 @@ cdef class Order(util.Initializable):
             dict fee=*,
             object total_cost=*,
             object timestamp=*,
-            object linked_to=*,
-            object linked_portfolio=*,
             object order_type=*,
             object reduce_only=*,
             bint close_position=*,
             object position_side=*,
             object fees_currency_side=*,
-            object allow_self_managed=*,
-            object one_cancels_the_other=*,
-            str tag=*)
+            object group=*)
     cdef void _update_type_from_raw(self, dict raw_order)
     cdef void _update_taker_maker(self)
+    cdef object _on_origin_price_change(self, object previous_price, object price_time)
 
     cpdef str to_string(self)
-    cpdef add_linked_order(self, Order order)
     cpdef object get_total_fees(self, str currency)
     cpdef bint is_open(self)
     cpdef bint is_filled(self)
@@ -112,6 +113,7 @@ cdef class Order(util.Initializable):
     cpdef bint is_long(self)
     cpdef bint is_short(self)
     cpdef bint is_refreshing(self)
+    cpdef bint can_be_edited(self)
     cpdef object get_position_side(self, object future_contract)
     cpdef void on_fill_actions(self)
     cpdef dict get_computed_fee(self, object forced_value=*)
@@ -126,6 +128,9 @@ cdef class Order(util.Initializable):
     cpdef void clear(self)
     cpdef bint is_to_be_maintained(self)
     cpdef str get_logger_name(self)
+    cpdef void add_chained_order(self, object chained_order)
+    cpdef bint should_be_created(self)
+    cpdef void add_to_order_group(self, object order_group)
 
 cdef object _get_sell_and_buy_types(object order_type)
 cdef object _infer_order_type_from_maker_or_taker(dict raw_order, object side)

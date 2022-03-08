@@ -331,6 +331,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     ORDER = "order"
     TAKERORMAKER = "takerOrMaker"
     REDUCE_ONLY = "reduceOnly"
+    STOP_PRICE = "stopPrice"
     TAG = "tag"
 
 
@@ -441,6 +442,11 @@ class RestExchangePairsRefreshMaxThresholds(enum.Enum):
 class MarginType(enum.Enum):
     CROSS = "cross"
     ISOLATED = "isolated"
+
+
+class TakeProfitStopLossMode(enum.Enum):
+    FULL = "Full"
+    PARTIAL = "Partial"
 
 
 class FutureContractType(enum.Enum):

@@ -33,6 +33,18 @@ class TradingModeIncompatibility(Exception):
     """
 
 
+class OrderCreationError(Exception):
+    """
+    Raised upon a failed order creation
+    """
+
+
+class OrderEditError(Exception):
+    """
+    Raised upon a failed order edition
+    """
+
+
 class NotSupported(Exception):
     """
     Raised when an exchange doesn't support the endpoint
@@ -116,6 +128,24 @@ class LiquidationPriceReached(Exception):
     """
 
 
+class ConflictingOrdersError(Exception):
+    """
+    Raised when an order is that would create an order conflict is created
+    """
+
+
+class OrderGroupTriggerArgumentError(Exception):
+    """
+    Raised when an order triggered with invalid arguments
+    """
+
+
+class ConflictingOrderGroupError(Exception):
+    """
+    Raised when creating a group with an existing name
+    """
+
+
 class UnreachableExchange(Exception):
     """
     Raised when an exchange cant be reached (likely when it's offline)
@@ -125,10 +155,4 @@ class UnreachableExchange(Exception):
 class InvalidArgumentError(Exception):
     """
     Raised when a keyword is called with invalid arguments
-    """
-
-
-class ConflictingOrdersError(Exception):
-    """
-    Raised when an order is that would create an order conflict is created
     """

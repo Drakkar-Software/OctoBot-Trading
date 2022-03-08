@@ -285,11 +285,14 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         except ValueError:
             return ValueError("Could not parse position status")
 
-    def parse_position_side(self, side):
+    def parse_position_side(self, side, mode):
         """
         :param side: the raw side
+        :param mode: the parsed mode
         :return: the uniformized PositionSide instance from the raw side
         """
+        if mode is octobot_trading.enums.PositionMode.ONE_WAY:
+            return octobot_trading.enums.PositionSide.BOTH
         return octobot_trading.enums.PositionSide.LONG \
             if side == self.LONG_STR else octobot_trading.enums.PositionSide.SHORT
 

@@ -38,6 +38,12 @@ class AbstractExchange(util.Initializable):
                           enums.TraderOrderType.TRAILING_STOP,
                           enums.TraderOrderType.TRAILING_STOP_LIMIT]
 
+    # order that can be bundled together to create them all in one request
+    # format: dict of bundled types by base order type
+    # ex: SUPPORTED_BUNDLED_ORDERS[enums.TraderOrderType.BUY_MARKET] = \
+    # [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT]
+    # can be override locally to match exchange support
+    SUPPORTED_BUNDLED_ORDERS = {}
     ACCOUNTS = {}
 
     def __init__(self, config, exchange_manager):
@@ -274,6 +280,39 @@ class AbstractExchange(util.Initializable):
         :return: the created order dict
         """
         raise NotImplementedError("create_order is not implemented")
+
+    def get_order_additional_params(self, order) -> dict:
+        """
+        Returns a dict with exchange specific additional parameters to set before sending the order
+        :param order: the order instance wrapping orders details
+        :return: the params dict
+        """
+        return {}
+
+    def supports_bundled_order_on_order_creation(self, base_order, bundled_order_type) -> bool:
+        """
+        Returns True when this exchange supports orders created upon other orders fill (ex: a stop loss created at
+        the same time as a buy order)
+        :param base_order: the first order of the combo
+        :param bundled_order_type: the type of the order that we try to bundle with base_order
+        :return: True if an order of type tied_order_type can be pushed alongside base_order to the exchange
+        in one request
+        """
+        try:
+            return bundled_order_type in self.SUPPORTED_BUNDLED_ORDERS[base_order.order_type]
+        except KeyError:
+            return False
+
+    def get_bundled_order_parameters(self, stop_loss_price=None, take_profit_price=None) -> dict:
+        """
+        Returns True when this exchange supports orders created upon other orders fill (ex: a stop loss created at
+        the same time as a buy order)
+        :param stop_loss_price: the bundled order stop_loss price
+        :param take_profit_price: the bundled order take_profit price
+        :return: A dict with the necessary parameters to create the bundled order on exchange alongside the
+        base order in one request
+        """
+        raise NotImplementedError("get_bundled_order_parameters is not implemented")
 
     def is_supported_order_type(self, order_type):
         """

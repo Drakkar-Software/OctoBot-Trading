@@ -27,6 +27,7 @@ cdef class OrdersManager(util.Initializable):
     cdef exchanges.Trader trader
 
     cdef public object orders
+    cdef public dict order_groups
     cdef public bint are_exchange_orders_initialized
 
     cdef void _reset_orders(self)
@@ -39,7 +40,10 @@ cdef class OrdersManager(util.Initializable):
     cpdef bint upsert_order_instance(self, order_class.Order order)
     cpdef bint has_order(self, str order_id)
     cpdef void remove_order_instance(self, order_class.Order order)
+    cpdef void replace_order(self, str previous_id, order_class.Order order)
     cpdef list get_all_orders(self, str symbol=*, int since=*, int limit=*, str tag=*)
     cpdef list get_open_orders(self, str symbol=*, int since=*, int limit=*, str tag=*)
     cpdef list get_closed_orders(self, str symbol=*, int since=*, int limit=*, str tag=*)
+    cpdef list get_order_from_group(self, str group_name)
+    cpdef object get_or_create_group(self, object group_type, str group_name)
     cpdef void clear(self)

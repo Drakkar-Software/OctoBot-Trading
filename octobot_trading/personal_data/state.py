@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import contextlib
 
 import octobot_commons.logging as logging
 
@@ -127,15 +128,20 @@ class State(util.Initializable):
         if self.is_refreshing():
             self.log_event_message(enums.StatesMessages.ALREADY_SYNCHRONIZING)
         else:
-            previous_state = self.state
-            async with self.lock:
-                self.state = enums.States.REFRESHING
-            try:
+            async with self.refresh_operation():
                 await self._synchronize_with_exchange(force_synchronization=force_synchronization)
-            finally:
-                async with self.lock:
-                    if self.state is enums.States.REFRESHING:
-                        self.state = previous_state
+
+    @contextlib.asynccontextmanager
+    async def refresh_operation(self):
+        previous_state = self.state
+        async with self.lock:
+            self.state = enums.States.REFRESHING
+        try:
+            yield
+        finally:
+            async with self.lock:
+                if self.state is enums.States.REFRESHING:
+                    self.state = previous_state
 
     async def _synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
         """
@@ -147,7 +153,7 @@ class State(util.Initializable):
     async def terminate(self) -> None:
         """
         Implement the state ending process
-        Can be portfolio updates, fees request, linked order cancellation, Trade creation etc...
+        Can be portfolio updates, fees request, orders group updates, Trade creation etc...
         """
         raise NotImplementedError("terminate not implemented")
 

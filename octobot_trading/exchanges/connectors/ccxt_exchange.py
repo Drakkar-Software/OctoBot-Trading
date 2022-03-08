@@ -292,7 +292,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if self.client.has['fetchOrder']:
             try:
                 with self.error_describer():
-                    return await self.client.fetch_order(order_id, symbol, params=kwargs)
+                    params = kwargs.pop("params", {})
+                    return await self.client.fetch_order(order_id, symbol, params=params, **kwargs)
                 # self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order) TODO
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
@@ -348,7 +349,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             with self.error_describer():
                 cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, **kwargs)
             try:
-                cancelled_order = await self.get_order(order_id, symbol=symbol, **kwargs)
+                cancelled_order = await self.get_order(order_id, symbol=symbol)
                 return cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order)
             except ccxt.OrderNotFound:
                 # Order is not found: it has successfully been cancelled (some exchanges don't allow to
@@ -374,8 +375,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_funding_rate_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
         return await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit)
 
-    async def set_symbol_leverage(self, symbol: str, leverage: int):
-        return await self.client.set_leverage(leverage=leverage, symbol=symbol)
+    async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
+        return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)
 
     async def set_symbol_margin_type(self, symbol: str, isolated: bool):
         return await self.client.set_margin_mode(symbol=symbol,
@@ -383,6 +384,25 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def set_symbol_position_mode(self, symbol: str, one_way: bool):
         return await self.client.set_position_mode(self, hedged=not one_way, symbol=symbol)
+
+    async def set_symbol_partial_take_profit_stop_loss(self, symbol: str, inverse: bool,
+                                                       tp_sl_mode: enums.TakeProfitStopLossMode):
+        raise NotImplementedError("set_symbol_partial_take_profit_stop_loss is not implemented")
+
+    def get_bundled_order_parameters(self, stop_loss_price=None, take_profit_price=None) -> dict:
+        return self.connector.get_bundled_order_parameters(stop_loss_price=stop_loss_price,
+                                                           take_profit_price=take_profit_price)
+
+    def get_ccxt_order_type(self, order_type: enums.TraderOrderType):
+        if order_type in (enums.TraderOrderType.BUY_LIMIT, enums.TraderOrderType.SELL_LIMIT,
+                          enums.TraderOrderType.STOP_LOSS_LIMIT, enums.TraderOrderType.TAKE_PROFIT_LIMIT,
+                          enums.TraderOrderType.TRAILING_STOP_LIMIT):
+            return enums.TradeOrderType.LIMIT.value
+        if order_type in (enums.TraderOrderType.BUY_MARKET, enums.TraderOrderType.SELL_MARKET,
+                          enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT,
+                          enums.TraderOrderType.TRAILING_STOP):
+            return enums.TradeOrderType.MARKET.value
+        raise RuntimeError(f"Unknown order type: {order_type}")
 
     def get_trade_fee(self, symbol, order_type, quantity, price, taker_or_maker):
         fees = self.client.calculate_fee(symbol=symbol,

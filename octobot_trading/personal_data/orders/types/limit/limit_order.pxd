@@ -23,3 +23,9 @@ cdef class LimitOrder(order_class.Order):
     cdef bint trigger_above
 
     cpdef str _filled_maker_or_taker(self)
+
+    # return object to allow exception raising
+    cdef object _create_hit_event(self, object price_time)
+    cdef object _create_hit_task(self)
+    cdef object _reset_events(self, object price_time)
+    cdef object _clear_event_and_tasks(self)

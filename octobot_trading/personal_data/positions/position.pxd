@@ -72,8 +72,7 @@ cdef class Position(util.Initializable):
                       object unrealized_pnl,
                       object realised_pnl,
                       object fee_to_close,
-                      object status=*,
-                      object side=*)
+                      object status=*)
     cdef bint _should_change(self, object original_value, object new_value)
     cdef void _update_mark_price(self, object mark_price, bint check_liquidation=*)
     cdef void _update_prices_if_necessary(self, object mark_price)

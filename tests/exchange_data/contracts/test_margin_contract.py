@@ -46,6 +46,15 @@ async def test_set_current_leverage():
     contract = contracts.MarginContract(
         pair=DEFAULT_SYMBOL,
         margin_type=enums.MarginType.ISOLATED,
+        maximum_leverage=None,
+        current_leverage=decimal.Decimal(10))
+    assert contract.current_leverage == decimal.Decimal(10)
+    assert contract.maximum_leverage is None
+    contract.set_current_leverage(decimal.Decimal(50))
+    assert contract.current_leverage == decimal.Decimal(50)
+    contract = contracts.MarginContract(
+        pair=DEFAULT_SYMBOL,
+        margin_type=enums.MarginType.ISOLATED,
         maximum_leverage=decimal.Decimal(100),
         current_leverage=decimal.Decimal(10))
     assert contract.current_leverage == decimal.Decimal(10)

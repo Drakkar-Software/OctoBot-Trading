@@ -16,6 +16,7 @@
 import asyncio
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.personal_data.orders.order as order_class
 
 
@@ -37,12 +38,40 @@ class LimitOrder(order_class.Order):
                 await self.on_fill(force_fill=True)
                 return
             # otherwise create a price event waiter
-            self.limit_price_hit_event = self.exchange_manager.exchange_symbols_data.\
-                get_exchange_symbol_data(self.symbol).price_events_manager.\
-                add_event(self.origin_price, self.creation_time, self.trigger_above)
+            self._create_hit_event(self.creation_time)
 
         if self.wait_for_hit_event_task is None and self.limit_price_hit_event is not None:
-            self.wait_for_hit_event_task = asyncio.create_task(self.wait_for_price_hit())
+            self._create_hit_task()
+
+    def _on_origin_price_change(self, previous_price, price_time):
+        if previous_price is not constants.ZERO:
+            # no need to reset events if previous price was 0 (unset)
+            self._reset_events(price_time)
+
+    def _create_hit_event(self, price_time):
+        self.limit_price_hit_event = self.exchange_manager.exchange_symbols_data.\
+            get_exchange_symbol_data(self.symbol).price_events_manager.\
+            add_event(self.origin_price, price_time, self.trigger_above)
+
+    def _create_hit_task(self):
+        self.wait_for_hit_event_task = asyncio.create_task(self.wait_for_price_hit())
+
+    def _reset_events(self, price_time):
+        """
+        Reset events and tasks
+        """
+        self._clear_event_and_tasks()
+        self._create_hit_event(price_time)
+        self._create_hit_task()
+
+    def _clear_event_and_tasks(self):
+        if self.wait_for_hit_event_task is not None:
+            if not self.limit_price_hit_event.is_set():
+                self.wait_for_hit_event_task.cancel()
+            self.wait_for_hit_event_task = None
+        if self.limit_price_hit_event is not None:
+            self.exchange_manager.exchange_symbols_data. \
+                get_exchange_symbol_data(self.symbol).price_events_manager.remove_event(self.limit_price_hit_event)
 
     async def wait_for_price_hit(self):
         await asyncio.wait_for(self.limit_price_hit_event.wait(), timeout=None)
@@ -59,11 +88,5 @@ class LimitOrder(order_class.Order):
         order_class.Order.on_fill_actions(self)
 
     def clear(self):
-        if self.wait_for_hit_event_task is not None:
-            if not self.limit_price_hit_event.is_set():
-                self.wait_for_hit_event_task.cancel()
-            self.wait_for_hit_event_task = None
-        if self.limit_price_hit_event is not None:
-            self.exchange_manager.exchange_symbols_data. \
-                get_exchange_symbol_data(self.symbol).price_events_manager.remove_event(self.limit_price_hit_event)
+        self._clear_event_and_tasks()
         order_class.Order.clear(self)

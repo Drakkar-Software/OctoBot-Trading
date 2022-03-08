@@ -13,16 +13,20 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
+
+from octobot_trading.personal_data.orders.groups cimport balanced_take_profit_and_stop_order_group
+from octobot_trading.personal_data.orders.groups.balanced_take_profit_and_stop_order_group cimport (
+    BalancedTakeProfitAndStopOrderGroup
+)
 
 
-async def fill_limit_or_stop_order(limit_or_stop_order):
-    limit_or_stop_order.created = True
-    await limit_or_stop_order.on_fill()
-    await wait_asyncio_next_cycle()
+from octobot_trading.personal_data.orders.groups cimport one_cancels_the_other_order_group
+from octobot_trading.personal_data.orders.groups.one_cancels_the_other_order_group cimport (
+    OneCancelsTheOtherOrderGroup
+)
 
 
-async def fill_market_order(market_order):
-    market_order.created = True
-    await market_order.on_fill()
-    await wait_asyncio_next_cycle()
+__all__ = [
+    "BalancedTakeProfitAndStopOrderGroup",
+    "OneCancelsTheOtherOrderGroup",
+]

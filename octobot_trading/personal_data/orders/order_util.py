@@ -201,7 +201,32 @@ def get_pnl_transaction_source_from_order(order):
     if order.order_type in [enums.TraderOrderType.SELL_LIMIT, enums.TraderOrderType.BUY_LIMIT,
                             enums.TraderOrderType.TAKE_PROFIT_LIMIT]:
         return enums.PNLTransactionSource.LIMIT_ORDER
-    if order.order_type in [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.STOP_LOSS_LIMIT,
-                            enums.TraderOrderType.TRAILING_STOP, enums.TraderOrderType.TRAILING_STOP_LIMIT]:
+    if is_stop_order(order.order_type):
         return enums.PNLTransactionSource.STOP_ORDER
     return enums.PNLTransactionSource.UNKNOWN
+
+
+def is_stop_order(order_type):
+    return order_type in [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.STOP_LOSS_LIMIT,
+                          enums.TraderOrderType.TRAILING_STOP, enums.TraderOrderType.TRAILING_STOP_LIMIT]
+
+
+async def create_as_chained_order(order):
+    try:
+        order.is_waiting_for_chained_trigger = False
+        if not order.trader.simulate and order.has_been_bundled:
+            # exchange should have created it already, it will automatically be fetched at the next update
+            # TODO: check if we need to really fetch it through updater etc
+            #  (issue is that we don't have an id yet so we can't just fetch this order in particular)
+            pass
+        else:
+            # set created now to consider creation failures as created as well (the caller can always retry later on)
+            order.created = True
+            await order.trader.create_order(
+                order,
+                loaded=False,
+                params=order.exchange_creation_params,
+                **order.trader_creation_kwargs
+            )
+    finally:
+        order.created = True

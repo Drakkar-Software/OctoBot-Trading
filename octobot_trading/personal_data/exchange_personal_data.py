@@ -87,6 +87,7 @@ class ExchangePersonalData(util.Initializable):
                 await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
 
                 if self.exchange_manager.is_future:
+                    # should this be done only "if should_notify" ?
                     await self.handle_position_instance_update(
                         order.exchange_manager.exchange_personal_data.positions_manager.get_order_position(order),
                         should_notify=True)
@@ -151,7 +152,8 @@ class ExchangePersonalData(util.Initializable):
 
     async def handle_order_update_from_raw(self, order_id, raw_order,
                                            is_new_order: bool = False,
-                                           should_notify: bool = True) -> bool:
+                                           should_notify: bool = True,
+                                           is_from_exchange=True) -> bool:
         # Orders can sometimes be out of sync between different exchange endpoints (ex: binance order API vs
         # open_orders API which is slower).
         # Always check if this order has not already been closed previously (most likely during the last
@@ -161,7 +163,7 @@ class ExchangePersonalData(util.Initializable):
                               f"(received raw order: {raw_order})")
         else:
             try:
-                changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order)
+                changed: bool = await self.orders_manager.upsert_order_from_raw(order_id, raw_order, is_from_exchange)
 
                 if changed:
                     updated_order = self.orders_manager.get_order(order_id)
@@ -225,11 +227,13 @@ class ExchangePersonalData(util.Initializable):
             self.logger.exception(e, True, f"Failed to update order : {e}")
             return False
 
-    async def handle_trade_update(self, symbol, trade_id, trade, should_notify: bool = True):
+    async def handle_trade_update(self, symbol, trade_id, trade,
+                                  is_old_trade: bool = False, should_notify: bool = True):
         try:
             changed: bool = self.trades_manager.upsert_trade(trade_id, trade)
-            if should_notify:
-                await self.handle_trade_update_notification(trade, is_old_trade=False)
+            if changed and should_notify:
+                updated_trade = self.trades_manager.get_trade(trade_id)
+                await self.handle_trade_update_notification(updated_trade, is_old_trade=is_old_trade)
             return changed
         except Exception as e:
             self.logger.exception(e, True, f"Failed to update trade : {e}")
@@ -299,9 +303,6 @@ class ExchangePersonalData(util.Initializable):
                       is_updated=is_updated)
         except ValueError as e:
             self.logger.error(f"Failed to send position update notification : {e}")
-
-    def get_order_portfolio(self, order):
-        return order.linked_portfolio if order.linked_portfolio is not None else self.portfolio_manager.portfolio
 
     def clear(self):
         if self.portfolio_manager is not None:

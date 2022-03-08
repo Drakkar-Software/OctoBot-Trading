@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import mock
 import pytest
 import decimal
 
@@ -20,6 +21,7 @@ import octobot_trading.errors as errors
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
+import octobot_trading.personal_data.orders.order_util as order_util
 
 from tests import event_loop
 from tests.exchanges import exchange_manager, simulated_exchange_manager
@@ -261,3 +263,27 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.canceled_time == 0
     assert order_inst.executed_time == 1637579281.377
     assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
+
+
+async def test_trigger_chained_orders(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order = personal_data.Order(trader_inst)
+    # does nothing
+    await base_order.on_filled()
+
+    # with chained orders
+    order_mock_1 = mock.Mock()
+    order_mock_1.should_be_created = mock.Mock(return_value=True)
+    order_mock_2 = mock.Mock()
+    order_mock_2.should_be_created = mock.Mock(return_value=False)
+    with mock.patch.object(order_util, "create_as_chained_order", mock.AsyncMock()) as create_as_chained_order_mock:
+
+        base_order.add_chained_order(order_mock_1)
+        base_order.add_chained_order(order_mock_2)
+
+        # triggers chained orders
+        await base_order.on_filled()
+        order_mock_1.should_be_created.assert_called_once()
+        order_mock_2.should_be_created.assert_called_once()
+        create_as_chained_order_mock.assert_called_once_with(order_mock_1)

@@ -20,6 +20,7 @@ from octobot_trading.enums import TraderOrderType
 from tests.personal_data import DEFAULT_SYMBOL_QUANTITY, DEFAULT_ORDER_SYMBOL
 from tests.test_utils.random_numbers import decimal_random_price, random_price, decimal_random_quantity, \
     random_recent_trade
+import octobot_trading.personal_data.orders.groups as order_groups
 
 from tests import event_loop
 from tests.exchanges import simulated_trader, simulated_exchange_manager
@@ -43,11 +44,12 @@ async def test_stop_loss_and_limit(stop_loss_sell_order, sell_limit_order):
         price=stop_order_price,
         quantity=quantity,
         symbol=DEFAULT_ORDER_SYMBOL,
-        order_type=TraderOrderType.STOP_LOSS,
-        linked_to=sell_limit_order
+        order_type=TraderOrderType.STOP_LOSS
     )
-    stop_loss_sell_order.linked_orders.append(sell_limit_order)
-    sell_limit_order.linked_orders.append(stop_loss_sell_order)
+    oco_group = stop_loss_sell_order.exchange_manager.exchange_personal_data.orders_manager\
+        .create_group(order_groups.OneCancelsTheOtherOrderGroup)
+    stop_loss_sell_order.add_to_order_group(oco_group)
+    sell_limit_order.add_to_order_group(oco_group)
     stop_loss_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
     # initialize stop loss first
     await stop_loss_sell_order.initialize()
@@ -86,11 +88,12 @@ async def test_limit_and_stop_loss(stop_loss_sell_order, sell_limit_order):
         price=stop_order_price,
         quantity=quantity,
         symbol=DEFAULT_ORDER_SYMBOL,
-        order_type=TraderOrderType.STOP_LOSS,
-        linked_to=sell_limit_order
+        order_type=TraderOrderType.STOP_LOSS
     )
-    stop_loss_sell_order.linked_orders.append(sell_limit_order)
-    sell_limit_order.linked_orders.append(stop_loss_sell_order)
+    oco_group = stop_loss_sell_order.exchange_manager.exchange_personal_data.orders_manager\
+        .create_group(order_groups.OneCancelsTheOtherOrderGroup)
+    stop_loss_sell_order.add_to_order_group(oco_group)
+    sell_limit_order.add_to_order_group(oco_group)
     stop_loss_sell_order.exchange_manager.is_backtesting = True  # force update_order_status
     # initialize limit order first
     await sell_limit_order.initialize()

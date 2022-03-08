@@ -1,3 +1,4 @@
+# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -13,16 +14,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
+cimport octobot_trading.personal_data.orders.order_group as order_group
 
+cdef class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
+    cdef public list balancing_orders
 
-async def fill_limit_or_stop_order(limit_or_stop_order):
-    limit_or_stop_order.created = True
-    await limit_or_stop_order.on_fill()
-    await wait_asyncio_next_cycle()
-
-
-async def fill_market_order(market_order):
-    market_order.created = True
-    await market_order.on_fill()
-    await wait_asyncio_next_cycle()
+    cpdef bint can_create_order(self, object order_type, object quantity)
+    cpdef object get_max_order_quantity(self, object order_type)

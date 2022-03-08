@@ -115,14 +115,14 @@ class Position(util.Initializable):
         await self.state.initialize(forced=force_liquidate)
 
     def _should_change(self, original_value, new_value):
-        if new_value and original_value != new_value:
+        if new_value is not None and original_value != new_value:
             return True
 
     def _update(self, position_id, symbol, currency, market, timestamp,
                 entry_price, mark_price, liquidation_price,
                 quantity, size, value, initial_margin,
                 unrealized_pnl, realised_pnl, fee_to_close,
-                status=None, side=None):
+                status=None):
         changed: bool = False
 
         if self._should_change(self.position_id, position_id):
@@ -185,9 +185,6 @@ class Position(util.Initializable):
 
         if self._should_change(self.status.value, status):
             self.status = enums.PositionStatus(status)
-
-        if self._should_change(self.side.value, side):
-            self.side = enums.PositionSide(side)
 
         self._update_side()
         self._update_quantity_or_size_if_necessary()
@@ -705,6 +702,7 @@ class Position(util.Initializable):
     def update_from_raw(self, raw_position):
         symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
         currency, market = self.exchange_manager.get_exchange_quote_and_base(symbol)
+        # side is managed locally, do not parse it
         return self._update(
             symbol=symbol,
             currency=currency,
@@ -724,8 +722,7 @@ class Position(util.Initializable):
                                             constants.ZERO),
             realised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO),
             fee_to_close=raw_position.get(enums.ExchangeConstantsPositionColumns.CLOSING_FEE.value, constants.ZERO),
-            status=position_util.parse_position_status(raw_position),
-            side=raw_position.get(enums.ExchangeConstantsPositionColumns.SIDE.value, None)
+            status=position_util.parse_position_status(raw_position)
         )
 
     def to_dict(self):

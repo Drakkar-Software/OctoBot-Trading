@@ -53,7 +53,7 @@ ONE_HUNDRED = decimal.Decimal(100)
 NaN = decimal.Decimal("nan")
 
 FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm", "bitcoincom",
-                            "bitfinex", "bitfinex2", "bitmex", "idex"]
+                                 "bitfinex", "bitfinex2", "bitmex", "idex", "bybit"]
 
 TESTED_EXCHANGES = ["binance", "ftx", "okex", "gateio", "huobi", "ascendex", "kucoin", "coinbasepro"]
 SIMULATOR_TESTED_EXCHANGES = ["bybit"]

@@ -23,19 +23,21 @@ import time
 from mock import AsyncMock, patch, Mock
 from octobot_commons import asyncio_tools
 
-from octobot_trading.errors import TooManyOpenPositionError, InvalidLeverageValue
+from octobot_trading.errors import TooManyOpenPositionError, InvalidLeverageValue, OrderEditError
 from octobot_trading.personal_data import LinearPosition
 import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
+from octobot_commons.symbol_util import split_symbol
 from octobot_trading.personal_data.orders import Order
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, FeePropertyColumns, \
-    ExchangeConstantsPositionColumns, PositionMode, MarginType
+    ExchangeConstantsPositionColumns, PositionMode, MarginType, TakeProfitStopLossMode
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance, create_order_instance_from_raw
 from octobot_trading.personal_data.orders import BuyLimitOrder, BuyMarketOrder, SellLimitOrder, StopLossOrder
 from octobot_trading.personal_data.orders.types.market.sell_market_order import SellMarketOrder
 import octobot_trading.personal_data.portfolios.assets as portfolio_assets
+import octobot_trading.personal_data.orders.groups as order_groups
 from octobot_trading.exchanges.traders.trader import Trader
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
@@ -170,6 +172,7 @@ class TestTrader:
                          current_price=decimal.Decimal("70"),
                          quantity=decimal.Decimal("10"),
                          price=decimal.Decimal("70"))
+        limit_buy.created = True
 
         # 1. cancel order: success
         assert await trader_inst.cancel_order(limit_buy) is True
@@ -447,7 +450,7 @@ class TestTrader:
                                           quantity=decimal.Decimal("2"),
                                           price=decimal.Decimal("4"))
 
-        await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
+        await trader_inst.create_order(limit_buy)
 
         assert not trades_manager.trades
 
@@ -479,7 +482,7 @@ class TestTrader:
                                            price=decimal.Decimal("4"),
                                            side=TradeOrderSide.SELL)
 
-        await trader_inst.create_order(stop_order, portfolio_manager.portfolio)
+        await trader_inst.create_order(stop_order)
 
         assert not trades_manager.trades
 
@@ -511,7 +514,7 @@ class TestTrader:
                                            price=decimal.Decimal("4"),
                                            side=TradeOrderSide.BUY)
 
-        await trader_inst.create_order(stop_order, portfolio_manager.portfolio)
+        await trader_inst.create_order(stop_order)
 
         assert not trades_manager.trades
 
@@ -542,7 +545,7 @@ class TestTrader:
                                           quantity=decimal.Decimal("2"),
                                           price=decimal.Decimal("4"))
 
-        await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
+        await trader_inst.create_order(limit_buy)
 
         # Test second buy order
         second_limit_buy = create_order_instance(trader=trader_inst,
@@ -552,7 +555,7 @@ class TestTrader:
                                                  quantity=decimal.Decimal("1.5"),
                                                  price=decimal.Decimal("1"))
 
-        await trader_inst.create_order(second_limit_buy, portfolio_manager.portfolio)
+        await trader_inst.create_order(second_limit_buy)
 
         assert not trades_manager.trades
 
@@ -599,7 +602,7 @@ class TestTrader:
                                           quantity=decimal.Decimal("10"),
                                           price=decimal.Decimal("0.1"))
 
-        await trader_inst.create_order(limit_buy, portfolio_manager.portfolio)
+        await trader_inst.create_order(limit_buy)
 
         limit_buy.filled_price = limit_buy.origin_price
         limit_buy.filled_quantity = limit_buy.origin_quantity
@@ -627,7 +630,7 @@ class TestTrader:
 
         await self.stop(exchange_manager)
 
-    async def test_close_filled_order_with_linked_orders(self):
+    async def test_close_filled_order_with_oco_orders(self):
         config, exchange_manager, trader_inst = await self.init_default()
         orders_manager = exchange_manager.exchange_personal_data.orders_manager
         trades_manager = exchange_manager.exchange_personal_data.trades_manager
@@ -656,8 +659,9 @@ class TestTrader:
                          quantity=decimal.Decimal("10"),
                          price=decimal.Decimal("60"))
 
-        stop_loss.linked_orders = [limit_sell]
-        limit_sell.linked_orders = [stop_loss]
+        oco_group = orders_manager.create_group(order_groups.OneCancelsTheOtherOrderGroup)
+        stop_loss.add_to_order_group(oco_group)
+        limit_sell.add_to_order_group(oco_group)
 
         await trader_inst.create_order(market_buy)
         await trader_inst.create_order(stop_loss)
@@ -853,13 +857,101 @@ class TestTrader:
 
         assert order_to_test.order_type == TraderOrderType.SELL_LIMIT
         assert order_to_test.status == OrderStatus.OPEN
-        assert order_to_test.linked_to is None
+        assert order_to_test.order_group is None
         assert order_to_test.origin_stop_price == constants.ZERO
         assert order_to_test.origin_quantity == decimal.Decimal("1564.7216721637")
         assert order_to_test.origin_price == decimal.Decimal("10254.4515")
         assert order_to_test.filled_quantity == decimal.Decimal("15.15467")
         assert order_to_test.creation_time != constants.ZERO
         assert order_to_test.order_id == "1546541123"
+
+        await self.stop(exchange_manager)
+
+    async def test_edit_order(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+        portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
+        currency, market = split_symbol(self.DEFAULT_SYMBOL)
+        assert portfolio_manager.portfolio.portfolio[currency].available == decimal.Decimal(10)
+        assert portfolio_manager.portfolio.portfolio[market].available == decimal.Decimal(1000)
+
+        market_buy = BuyMarketOrder(trader_inst)
+        market_buy.update(order_type=TraderOrderType.BUY_MARKET,
+                          symbol=self.DEFAULT_SYMBOL,
+                          current_price=decimal.Decimal("70"),
+                          quantity=decimal.Decimal("10"),
+                          price=decimal.Decimal("70"))
+        with pytest.raises(OrderEditError):
+            # market orders can't be edited
+            await trader_inst.edit_order(market_buy, edited_price=decimal.Decimal("100"))
+        assert market_buy.origin_quantity == decimal.Decimal("10")
+        assert market_buy.origin_price == decimal.Decimal("70")
+        assert market_buy.origin_stop_price == decimal.Decimal("0")
+        assert market_buy.created_last_price == decimal.Decimal("70")
+
+        limit_buy = BuyLimitOrder(trader_inst)
+        limit_buy.update(order_type=TraderOrderType.BUY_LIMIT,
+                         symbol=self.DEFAULT_SYMBOL,
+                         current_price=decimal.Decimal("70"),
+                         quantity=decimal.Decimal("10"),
+                         price=decimal.Decimal("70"))
+        assert portfolio_manager.portfolio.portfolio[currency].available == decimal.Decimal(10)
+        assert portfolio_manager.portfolio.portfolio[market].available == decimal.Decimal(1000)
+        exchange_manager.exchange_personal_data.portfolio_manager.portfolio.update_portfolio_available(
+            limit_buy, is_new_order=True
+        )
+        assert portfolio_manager.portfolio.portfolio[currency].available == decimal.Decimal(10)
+        assert portfolio_manager.portfolio.portfolio[market].available == decimal.Decimal(300)
+        await trader_inst.edit_order(
+            limit_buy,
+            edited_quantity=decimal.Decimal("4"),
+            edited_price=decimal.Decimal("42"),
+            edited_stop_price=decimal.Decimal("424"),
+            edited_current_price=decimal.Decimal("4242"),
+        )
+        assert limit_buy.origin_quantity == decimal.Decimal("4")
+        assert limit_buy.origin_price == decimal.Decimal("42")
+        assert limit_buy.origin_stop_price == decimal.Decimal("424")
+        assert limit_buy.created_last_price == decimal.Decimal("4242")
+        # also updated portfolio
+        assert portfolio_manager.portfolio.portfolio[currency].available == decimal.Decimal(10)
+        assert portfolio_manager.portfolio.portfolio[market].available == decimal.Decimal(832)
+        limit_buy.clear()
+
+        await self.stop(exchange_manager)
+
+    async def test_bundle_chained_order_with_uncreated_order(self):
+        _, exchange_manager, trader_inst = await self.init_default()
+
+        base_order = BuyLimitOrder(trader_inst)
+        chained_order = SellLimitOrder(trader_inst)
+        chained_order.created = True
+
+        # without bundle support
+        assert trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, kw1=1, kw2="hello") \
+               == {}
+        # bundled chained_order to base_order
+        assert chained_order in base_order.chained_orders
+        assert chained_order.triggered_by is base_order
+        assert chained_order.has_been_bundled is False
+        assert chained_order.exchange_creation_params == {}
+        assert chained_order.trader_creation_kwargs == {"kw1": 1, "kw2": "hello"}
+        assert chained_order.is_waiting_for_chained_trigger is True
+        assert chained_order.created is False
+
+        base_order = BuyLimitOrder(trader_inst)
+        chained_order = StopLossOrder(trader_inst)
+        # with bundle support
+        exchange_manager.exchange.SUPPORTED_BUNDLED_ORDERS[base_order.order_type] = [chained_order.order_type]
+        assert trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, kw1=1, kw2="hello") \
+               == {}
+        # bundled chained_order to base_order
+        assert chained_order in base_order.chained_orders
+        assert chained_order.triggered_by is base_order
+        assert chained_order.has_been_bundled is True
+        assert chained_order.exchange_creation_params == {}
+        assert chained_order.trader_creation_kwargs == {"kw1": 1, "kw2": "hello"}
+        assert chained_order.is_waiting_for_chained_trigger is True
+        assert chained_order.created is False
 
         await self.stop(exchange_manager)
 
@@ -905,14 +997,26 @@ async def test_set_leverage(future_trader_simulator_with_default_linear):
 
     await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(10))
     assert contract.current_leverage == decimal.Decimal(10)
-    await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(10))
-    assert contract.current_leverage == decimal.Decimal(10)
+    await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(12))
+    assert contract.current_leverage == decimal.Decimal(12)
     await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(10))
     assert contract.current_leverage == decimal.Decimal(10)
 
     assert contract.maximum_leverage == decimal.Decimal(100)
     with pytest.raises(InvalidLeverageValue):
         await trader_inst.set_leverage(DEFAULT_FUTURE_SYMBOL, None, decimal.Decimal(200))
+
+
+async def test_set_symbol_take_profit_stop_loss_mode(future_trader_simulator_with_default_linear):
+    _, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+
+    contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, contract)
+    assert contract.take_profit_stop_loss_mode is None
+    await trader_inst.set_symbol_take_profit_stop_loss_mode(DEFAULT_FUTURE_SYMBOL, TakeProfitStopLossMode.PARTIAL)
+    assert contract.take_profit_stop_loss_mode is TakeProfitStopLossMode.PARTIAL
+    await trader_inst.set_symbol_take_profit_stop_loss_mode(DEFAULT_FUTURE_SYMBOL, TakeProfitStopLossMode.FULL)
+    assert contract.take_profit_stop_loss_mode is TakeProfitStopLossMode.FULL
 
 
 async def test_set_margin_type(future_trader_simulator_with_default_linear):

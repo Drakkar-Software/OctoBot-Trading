@@ -31,10 +31,8 @@ class CancelOrderState(order_state.OrderState):
             self.state = enums.OrderStates.CANCELED
             self.order.status = enums.OrderStatus.CANCELED
 
-        # always cancel this order first to avoid infinite loop followed by deadlock
-        for linked_order in self.order.linked_orders:
-            if linked_order is not ignored_order and linked_order.is_open():
-                await self.order.trader.cancel_order(linked_order, ignored_order=ignored_order)
+        if self.order.order_group:
+            await self.order.order_group.on_cancel(self.order, ignored_orders=[ignored_order])
 
         await super().initialize_impl()
 
@@ -76,7 +74,7 @@ class CancelOrderState(order_state.OrderState):
             self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()
 
             # update portfolio after close
-            async with self.order.exchange_manager.exchange_personal_data.get_order_portfolio(self.order).lock:
+            async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
                 await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order,
                                                                                                             False)
 

@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
 import decimal
 import typing
 
@@ -62,22 +63,52 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
                            price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
-                           params: dict = None, **kwargs: dict) -> typing.Optional[dict]:
+                           side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
+                           params: dict = None) \
+            -> typing.Optional[dict]:
+        async with self._order_operation(order_type, symbol, quantity, price, stop_price):
+            created_order = await self._create_order_with_retry(order_type, symbol, quantity,
+                                                                price, side, current_price, params)
+            return await self._verify_order(created_order, order_type, symbol, price)
+        return None
+
+    async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+                         quantity: decimal.Decimal, price: decimal.Decimal,
+                         stop_price: decimal.Decimal = None, side: enums.TradeOrderSide = None,
+                         current_price: decimal.Decimal = None,
+                         params: dict = None):
+        # Note: on most exchange, this implementation will just replace the order by cancelling the one
+        # which id is given and create a new one
+        async with self._order_operation(order_type, symbol, quantity, price, stop_price):
+            float_quantity = float(quantity)
+            float_price = float(price)
+            float_stop_price = None if stop_price is None else float(stop_price)
+            float_current_price = None if current_price is None else float(current_price)
+            side = None if side is None else side.value
+            params = {} if params is None else params
+            params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
+            edited_order = await self._edit_order(order_id, order_type, symbol, quantity=float_quantity,
+                                                  price=float_price, stop_price=float_stop_price, side=side,
+                                                  current_price=float_current_price, params=params)
+            return await self._verify_order(edited_order, order_type, symbol, price)
+        return None
+
+    async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
+                          quantity: float, price: float, stop_price: float = None, side: str = None,
+                          current_price: float = None, params: dict = None):
+        ccxt_order_type = self.connector.get_ccxt_order_type(order_type)
+        price_to_use = price
+        if ccxt_order_type == enums.TradeOrderType.MARKET.value:
+            # can't set price in market orders
+            price_to_use = None
+        # do not use keyword arguments here as default ccxt edit order is passing *args (and not **kwargs)
+        return await self.connector.client.edit_order(order_id, symbol, ccxt_order_type, side,
+                                                      quantity, price_to_use, params)
+
+    @contextlib.asynccontextmanager
+    async def _order_operation(self, order_type, symbol, quantity, price, stop_price):
         try:
-            created_order = await self._create_order_with_retry(order_type, symbol, quantity, price, params)
-            # some exchanges are not returning the full order details on creation: fetch it if necessary
-            if created_order and not self._ensure_order_details_completeness(created_order):
-                if ecoc.ID.value in created_order:
-                    order_symbol = created_order[ecoc.SYMBOL.value] if ecoc.SYMBOL.value in created_order else None
-                    created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value],
-                                                                                   order_symbol, **kwargs)
-
-            # on some exchange, market order are not not including price, add it manually to ensure uniformity
-            if created_order[ecoc.PRICE.value] is None and price is not None:
-                created_order[ecoc.PRICE.value] = float(price)
-
-            return self.clean_order(created_order)
-
+            yield
         except ccxt.InsufficientFunds as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.warning(str(e))
@@ -87,19 +118,35 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         except Exception as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
             self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
-        return None
+
+    async def _verify_order(self, created_order, order_type, symbol, price, params=None):
+        # some exchanges are not returning the full order details on creation: fetch it if necessary
+        if created_order and not self._ensure_order_details_completeness(created_order):
+            if ecoc.ID.value in created_order:
+                params = params or {}
+                created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value], symbol,
+                                                                               params=params)
+
+        # on some exchange, market order are not not including price, add it manually to ensure uniformity
+        if created_order[ecoc.PRICE.value] is None and price is not None:
+            created_order[ecoc.PRICE.value] = float(price)
+
+        return self.clean_order(created_order)
 
     async def _create_order_with_retry(self, order_type, symbol, quantity: decimal.Decimal,
-                                       price: decimal.Decimal, params) -> dict:
+                                       price: decimal.Decimal, side: enums.TradeOrderSide,
+                                       current_price: decimal.Decimal, params) -> dict:
         try:
-            return await self._create_specific_order(order_type, symbol, quantity, price=price, params=params)
+            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
+                                                     current_price=current_price, params=params)
         except (ccxt.InvalidOrder, ccxt.BadRequest) as e:
             # can be raised when exchange precision/limits rules change
             self.logger.debug(f"Failed to create order ({e}) : order_type: {order_type}, symbol: {symbol}. "
                               f"This might be due to an update on {self.name} market rules. Fetching updated rules.")
             await self.connector.client.load_markets(reload=True)
             # retry order creation with updated markets (ccxt will use the updated market values)
-            return await self._create_specific_order(order_type, symbol, quantity, price=price, params=params)
+            return await self._create_specific_order(order_type, symbol, quantity, price=price, side=side,
+                                                     current_price=current_price, params=params)
 
     def _ensure_order_details_completeness(self, order, order_required_fields=None, order_non_empty_fields=None):
         if order_required_fields is None:
@@ -111,10 +158,13 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             all(order[key] for key in order_non_empty_fields)
 
     async def _create_specific_order(self, order_type, symbol, quantity: decimal.Decimal, price: decimal.Decimal = None,
+                                     side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
                                      params=None) -> dict:
         created_order = None
         float_quantity = float(quantity)
         float_price = float(price)
+        float_current_price = float(current_price)
+        side = None if side is None else side.value
         params = {} if params is None else params
         params.update(self.exchange_manager.exchange_backend.get_orders_parameters(None))
         if order_type == enums.TraderOrderType.BUY_MARKET:
@@ -131,22 +181,23 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
                                                                 params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS:
             created_order = await self._create_market_stop_loss_order(symbol, float_quantity, price=float_price,
+                                                                      side=side, current_price=float_current_price,
                                                                       params=params)
         elif order_type == enums.TraderOrderType.STOP_LOSS_LIMIT:
             created_order = await self._create_limit_stop_loss_order(symbol, float_quantity, price=float_price,
-                                                                     params=params)
+                                                                     side=side, params=params)
         elif order_type == enums.TraderOrderType.TAKE_PROFIT:
             created_order = await self._create_market_take_profit_order(symbol, float_quantity, price=float_price,
-                                                                        params=params)
+                                                                        side=side, params=params)
         elif order_type == enums.TraderOrderType.TAKE_PROFIT_LIMIT:
             created_order = await self._create_limit_take_profit_order(symbol, float_quantity, price=float_price,
-                                                                       params=params)
+                                                                       side=side, params=params)
         elif order_type == enums.TraderOrderType.TRAILING_STOP:
             created_order = await self._create_market_trailing_stop_order(symbol, float_quantity, price=float_price,
-                                                                          params=params)
+                                                                          side=side, params=params)
         elif order_type == enums.TraderOrderType.TRAILING_STOP_LIMIT:
             created_order = await self._create_limit_trailing_stop_order(symbol, float_quantity, price=float_price,
-                                                                         params=params)
+                                                                         side=side, params=params)
         return created_order
 
     async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
@@ -161,23 +212,23 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
 
-    async def _create_market_stop_loss_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+    async def _create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
+        raise NotImplementedError("_create_market_stop_loss_order is not implemented")
 
-    async def _create_limit_stop_loss_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+    async def _create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("_create_limit_stop_loss_order is not implemented")
 
-    async def _create_market_take_profit_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+    async def _create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("_create_market_take_profit_order is not implemented")
 
-    async def _create_limit_take_profit_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+    async def _create_limit_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("_create_limit_take_profit_order is not implemented")
 
-    async def _create_market_trailing_stop_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+    async def _create_market_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("_create_market_trailing_stop_order is not implemented")
 
-    async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return None
+    async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
 
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()
