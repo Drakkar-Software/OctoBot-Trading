@@ -232,6 +232,10 @@ def is_valid_account(exchange_manager) -> bool:
     return exchange_manager.is_valid_account
 
 
+def get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_time):
+    return exchanges.get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_time)
+
+
 def cancel_ccxt_throttle_task():
     for task in asyncio.all_tasks():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise

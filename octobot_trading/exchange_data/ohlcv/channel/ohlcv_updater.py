@@ -20,10 +20,10 @@ import time
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 
-import octobot_backtesting.api as backtesting_api
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
 import octobot_trading.exchange_data.ohlcv.channel.ohlcv as ohlcv_channel
+import octobot_trading.exchanges as exchanges
 
 
 class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
@@ -102,8 +102,8 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
             # add 1 to historical_candles_count_limit to fetch the required count (otherwise one is missing)
             start_time = end_time - (historical_candles_count_limit + 1) * tf_seconds * 1000
             candles = []
-            async for new_candles in backtesting_api.historical_ohlcv_collector(self.channel.exchange_manager, pair,
-                                                                                time_frame, start_time, end_time):
+            async for new_candles in exchanges.get_historical_ohlcv(self.channel.exchange_manager, pair,
+                                                                    time_frame, start_time, end_time):
                 candles += new_candles
             return candles
         candles: list = await self.channel.exchange_manager.exchange \

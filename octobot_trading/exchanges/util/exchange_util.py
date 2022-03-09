@@ -17,6 +17,7 @@ import trading_backend
 
 import octobot_commons.logging as logging
 import octobot_commons.constants as common_constants
+import octobot_commons.enums as common_enums
 import octobot_commons.tentacles_management as tentacles_management
 
 import octobot_tentacles_manager.api as api
@@ -153,3 +154,28 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
         local_exchange_manager.exchange.connector.logger.disable(True)
         await local_exchange_manager.exchange.stop()
         local_exchange_manager.exchange.connector.logger.disable(False)
+
+
+async def get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_time):
+    """
+    Async generator, use as follows:
+        async for candles in get_historical_ohlcv(exchange_manager, pair, time_frame, start_time, end_time):
+            # candles stuff
+    """
+    reached_max = False
+    while start_time < end_time and not reached_max:
+        candles = await exchange_manager.exchange.get_symbol_prices(symbol, time_frame, since=int(start_time))
+        if candles:
+            start_time = candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value]
+            while start_time > end_time and candles:
+                start_time = candles.pop(-1)[common_enums.PriceIndexes.IND_PRICE_TIME.value]
+                reached_max = True
+            if candles:
+                exchange_manager.exchange.uniformize_candles_if_necessary(candles)
+                yield candles
+                # avoid fetching the last element twice
+                start_time += 1
+            else:
+                reached_max = True
+        else:
+            reached_max = True
