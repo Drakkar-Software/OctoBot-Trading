@@ -473,7 +473,7 @@ class Context:
     @contextlib.asynccontextmanager
     async def backtesting_results(self, with_lock=False, cache_size=None, database_adaptor=databases.TinyDBAdaptor):
         display = commons_display.display_translator_factory()
-        database_manager = databases.DatabaseManager(
+        run_dbs_identifier = databases.RunDatabasesIdentifier(
             self.trading_mode.__class__,
             self.optimization_campaign_name or optimization_campaign.OptimizationCampaign.get_campaign_name(),
             database_adaptor=database_adaptor,
@@ -481,10 +481,10 @@ class Context:
             optimizer_id=self.optimizer_id,
             context=self
         )
-        if not database_manager.exchange_base_identifier_exists(self.exchange_name):
+        if not run_dbs_identifier.exchange_base_identifier_exists(self.exchange_name):
             raise common_errors.MissingExchangeDataError(
                 f"No data for {self.exchange_name}. This run might have happened on other exchange(s)"
             )
-        async with databases.MetaDatabase.database(database_manager, with_lock=with_lock,
+        async with databases.MetaDatabase.database(run_dbs_identifier, with_lock=with_lock,
                                                    cache_size=cache_size) as meta_db:
             yield meta_db, display
