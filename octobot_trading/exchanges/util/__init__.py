@@ -28,6 +28,7 @@ from octobot_trading.exchanges.util.exchange_util import (
     log_time_sync_error,
     get_partners_explanation_message,
     is_compatible_account,
+    get_historical_ohlcv,
 )
 from octobot_trading.exchanges.util import websockets_util
 from octobot_trading.exchanges.util.websockets_util import (
@@ -47,6 +48,7 @@ __all__ = [
     "log_time_sync_error",
     "get_partners_explanation_message",
     "is_compatible_account",
+    "get_historical_ohlcv",
     "force_disable_web_socket",
     "check_web_socket_config",
     "search_websocket_class",
