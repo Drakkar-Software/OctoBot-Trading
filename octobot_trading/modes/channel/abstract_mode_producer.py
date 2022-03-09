@@ -74,7 +74,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         # Define trading modes default consumer priority level
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
-        self.database_manager = None
+        self.run_dbs_identifier = None
         self.run_data_writer = self.orders_writer = self.trades_writer = self.transactions_writer = self.symbol_writer \
             = None
 
@@ -220,11 +220,11 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self.consumers = []
 
     async def ohlcv_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
-                              time_frame: str, candle: dict):
+                             time_frame: str, candle: dict):
         self.logger.error(f"ohlcv_callback is registered but not implemented")
 
     async def kline_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
-                              time_frame, kline: dict):
+                             time_frame, kline: dict):
         self.logger.error(f"kline_callback is registered but not implemented")
 
     async def matrix_callback(self, matrix_id, evaluator_name, evaluator_type,
