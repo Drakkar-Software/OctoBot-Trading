@@ -214,14 +214,14 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
 
     @classmethod
     async def _generate_new_backtesting_id(cls, tentacles_setup_config):
-        db_manager = databases.DatabaseManager(
+        run_dbs_identifier = databases.RunDatabasesIdentifier(
             cls,
             optimization_campaign.OptimizationCampaign.get_campaign_name(tentacles_setup_config)
         )
-        db_manager.backtesting_id = await db_manager.generate_new_backtesting_id()
+        run_dbs_identifier.backtesting_id = await run_dbs_identifier.generate_new_backtesting_id()
         # initialize to lock the backtesting id
-        await db_manager.initialize()
-        return db_manager.backtesting_id
+        await run_dbs_identifier.initialize()
+        return run_dbs_identifier.backtesting_id
 
     def get_writer(self, writer_identifier):
         try:
@@ -310,7 +310,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         wins = round(win_rate * len(entries) / 100)
         return {
             trading_enums.BacktestingMetadata.OPTIMIZATION_CAMPAIGN.value:
-                self.database_manager.optimization_campaign_name,
+                self.run_dbs_identifier.optimization_campaign_name,
             trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(
                 self.trading_mode.bot_id),
             trading_enums.BacktestingMetadata.GAINS.value: round(float(profitability), 8),
@@ -380,7 +380,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             self.trading_mode.bot_id, self.trading_mode.config, generate_if_not_found=True,
             tentacles_setup_config=self.trading_mode.exchange_manager.tentacles_setup_config) \
             if self.exchange_manager.is_backtesting else None
-        self.database_manager = databases.DatabaseManager(
+        self.run_dbs_identifier = databases.RunDatabasesIdentifier(
             self.trading_mode.__class__,
             optimization_campaign.OptimizationCampaign.get_campaign_name(
                 self.trading_mode.exchange_manager.tentacles_setup_config
@@ -388,20 +388,20 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             backtesting_id=backtesting_id,
             optimizer_id=self.trading_mode.get_optimizer_id()
         )
-        await self.database_manager.initialize(self.exchange_name)
-        self.run_data_writer = self.trading_mode.get_writer(self.database_manager.get_run_data_db_identifier())
+        await self.run_dbs_identifier.initialize(self.exchange_name)
+        self.run_data_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_run_data_db_identifier())
         # refresh user inputs
         await self.init_user_inputs(True)
-        self.orders_writer = self.trading_mode.get_writer(self.database_manager.get_orders_db_identifier(
+        self.orders_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_orders_db_identifier(
             self.exchange_name
         ))
-        self.trades_writer = self.trading_mode.get_writer(self.database_manager.get_trades_db_identifier(
+        self.trades_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_trades_db_identifier(
             self.exchange_name
         ))
-        self.transactions_writer = self.trading_mode.get_writer(self.database_manager.get_transactions_db_identifier(
+        self.transactions_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_transactions_db_identifier(
             self.exchange_name
         ))
-        self.symbol_writer = self.trading_mode.get_writer(self.database_manager.get_symbol_db_identifier(
+        self.symbol_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_symbol_db_identifier(
             self.exchange_name,
             self.traded_pair
         ))
@@ -593,7 +593,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     @contextlib.asynccontextmanager
     async def get_metadata_writer(self, with_lock):
-        async with databases.DBWriter.database(self.database_manager.get_backtesting_metadata_identifier(),
+        async with databases.DBWriter.database(self.run_dbs_identifier.get_backtesting_metadata_identifier(),
                                                with_lock=with_lock) as writer:
             yield writer
 
