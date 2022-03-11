@@ -124,7 +124,7 @@ class Order(util.Initializable):
                current_price=constants.ZERO, quantity=constants.ZERO, price=constants.ZERO, stop_price=constants.ZERO,
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None,
-               order_type=None, reduce_only=False, close_position=False, position_side=None, fees_currency_side=None,
+               order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
                group=None) -> bool:
         changed: bool = False
 
@@ -219,8 +219,11 @@ class Order(util.Initializable):
         if position_side:
             self.position_side = position_side
 
-        self.reduce_only = reduce_only
-        self.close_position = close_position
+        if reduce_only is not None:
+            self.reduce_only = reduce_only
+
+        if close_position is not None:
+            self.close_position = close_position
 
         if group is not None:
             self.add_to_order_group(group)
