@@ -73,8 +73,13 @@ async def store_trade(ctx,
             trading_side = next(iter(positions)).side
             if trading_side is trading_enums.PositionSide.LONG:
                 if trade_side == trading_enums.TradeOrderSide.BUY.value:
-                    color = "blue"
-                    shape = "arrow-bar-right"
+                    if "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
+                        # tmp fix for shorts
+                        color = "orange"
+                        shape = "x"
+                    else:
+                        color = "blue"
+                        shape = "arrow-bar-right"
                 elif "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
                     color = "orange"
                     shape = "x"
@@ -82,14 +87,14 @@ async def store_trade(ctx,
                     color = "magenta"
                     shape = "arrow-bar-left"
             else:
-                if trade_side == trading_enums.TradeOrderSide.BUY.value:
+                if trade_side == trading_enums.TradeOrderSide.SELL.value:
                     color = "red"
                     shape = "arrow-bar-right"
                 elif "stop_loss" in trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]:
                     color = "orange"
                     shape = "x"
                 else:
-                    color = "magenta"
+                    color = "green"
                     shape = "arrow-bar-left"
     if not is_using_positions:
         if trade_side == trading_enums.TradeOrderSide.BUY.value:
