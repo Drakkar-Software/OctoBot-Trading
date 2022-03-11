@@ -115,6 +115,8 @@ from octobot_trading.personal_data.portfolios import (
     parse_decimal_portfolio,
     parse_decimal_config_portfolio,
     portfolio_to_float,
+    HistoricalAssetValue,
+    HistoricalPortfolioValueManager,
 )
 from octobot_trading.personal_data import positions
 from octobot_trading.personal_data.positions import (
@@ -292,6 +294,8 @@ __all__ = [
     "parse_decimal_portfolio",
     "parse_decimal_config_portfolio",
     "portfolio_to_float",
+    "HistoricalAssetValue",
+    "HistoricalPortfolioValueManager",
     "PositionsUpdaterSimulator",
     "Position",
     "LinearPosition",

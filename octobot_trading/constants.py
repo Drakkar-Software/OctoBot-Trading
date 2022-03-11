@@ -16,6 +16,7 @@
 import decimal
 
 import octobot_trading.enums as enums
+import octobot_commons.enums as commons_enums
 
 # Strings
 CURRENT_PORTFOLIO_STRING = "Current Portfolio :"
@@ -88,6 +89,9 @@ ORDERS_CHANNEL = "Orders"
 BALANCE_CHANNEL = "Balance"
 BALANCE_PROFITABILITY_CHANNEL = "BalanceProfitability"
 POSITIONS_CHANNEL = "Positions"
+
+# History
+DEFAULT_SAVED_HISTORICAL_TIMEFRAMES = [commons_enums.TimeFrames.ONE_DAY]
 
 # 946742400 is 01/01/2000, if trade time is lower, there is an issue.
 MINIMUM_VAL_TRADE_TIME = 946688400
