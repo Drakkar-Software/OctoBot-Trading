@@ -36,6 +36,7 @@ class PortfolioManager(util.Initializable):
         self.portfolio = None
         self.portfolio_profitability = None
         self.portfolio_value_holder = None
+        self.historical_portfolio_value_manager = None
         self.reference_market = None
 
     async def initialize_impl(self):
@@ -43,6 +44,7 @@ class PortfolioManager(util.Initializable):
         Reset the portfolio instance
         """
         self._reset_portfolio()
+        await self.historical_portfolio_value_manager.initialize()
 
     def handle_balance_update(self, balance, is_diff_update=False):
         """
@@ -94,6 +96,34 @@ class PortfolioManager(util.Initializable):
         """
         return self.portfolio_profitability.update_profitability()
 
+    def get_portfolio_historical_values(self, currency, time_frame, from_timestamp, to_timestamp):
+        historical_values = self.historical_portfolio_value_manager.get_historical_values(
+            currency, time_frame, from_timestamp, to_timestamp
+        )
+        # add/update current portfolio value
+        current_historical_time = self.historical_portfolio_value_manager.convert_to_historical_timestamp(
+            self.exchange_manager.exchange.get_exchange_current_time()
+        )
+        historical_values[current_historical_time] = self.portfolio_value_holder.portfolio_current_value
+        return historical_values
+
+    async def update_historical_portfolio_values(self):
+        if not self.portfolio_value_holder.current_crypto_currencies_values or \
+           self.portfolio_value_holder.initializing_symbol_prices:
+            # initializing symbol prices, impossible to get an accurate portfolio value for now
+            return
+        try:
+            # in backtesting, save at the end of the backtesting when calling stop
+            await self.historical_portfolio_value_manager.on_new_value(
+                self.exchange_manager.exchange.get_exchange_current_time(),
+                {
+                    self.reference_market: self.portfolio_value_holder.portfolio_current_value
+                },
+                save_changes=not self.exchange_manager.is_backtesting
+            )
+        except Exception as e:
+            self.logger.exception(e, True, f"Error when saving historical portfolio: {e}")
+
     def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """
         Called before PortfolioProfitability's portfolio profitability recalculation
@@ -131,6 +161,7 @@ class PortfolioManager(util.Initializable):
 
         self.reference_market = util.get_reference_market(self.config)
         self.portfolio_value_holder = personal_data.PortfolioValueHolder(self)
+        self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
         self.portfolio_profitability = personal_data.PortfolioProfitability(self)
 
     def _refresh_simulated_trader_portfolio_from_order(self, order):
@@ -168,9 +199,14 @@ class PortfolioManager(util.Initializable):
         )
         self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
 
+    async def stop(self):
+        if self.historical_portfolio_value_manager is not None:
+            await self.historical_portfolio_value_manager.stop()
+
     def clear(self):
         """
         Clear portfolio manager objects
         """
         self.portfolio_profitability = None
         self.portfolio_value_holder = None
+        self.historical_portfolio_value_manager = None

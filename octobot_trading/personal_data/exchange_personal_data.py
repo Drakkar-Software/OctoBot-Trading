@@ -139,6 +139,8 @@ class ExchangePersonalData(util.Initializable):
 
             if mark_price is not None and symbol is not None:
                 self.portfolio_manager.handle_mark_price_update(symbol=symbol, mark_price=mark_price)
+                # update historical portfolio value after mark price update
+                await self.portfolio_manager.update_historical_portfolio_values()
 
             if should_notify:
                 await exchange_channel.get_chan(constants.BALANCE_PROFITABILITY_CHANNEL,
@@ -303,6 +305,10 @@ class ExchangePersonalData(util.Initializable):
                       is_updated=is_updated)
         except ValueError as e:
             self.logger.error(f"Failed to send position update notification : {e}")
+
+    async def stop(self):
+        await self.portfolio_manager.stop()
+        self.clear()
 
     def clear(self):
         if self.portfolio_manager is not None:
