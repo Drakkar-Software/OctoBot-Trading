@@ -15,6 +15,7 @@
 #  License along with this library.
 import asyncio
 import decimal
+import contextlib
 
 import octobot_commons.symbol_util as symbol_util
 import octobot_commons.constants as commons_constants
@@ -230,3 +231,31 @@ async def create_as_chained_order(order):
             )
     finally:
         order.created = True
+
+
+@contextlib.asynccontextmanager
+async def ensure_orders_relevancy(order=None, position=None):
+    exchange_manager = order.exchange_manager if position is None else position.exchange_manager
+    # part used in futures trading only
+    if exchange_manager.exchange_personal_data.positions_manager.positions:
+        position = position or exchange_manager.exchange_personal_data.positions_manager.get_order_position(order)
+        pre_update_position_side = position.side
+        pre_update_position_size = position.size
+        yield
+        if position.side != pre_update_position_side or \
+           (position.size is constants.ZERO and pre_update_position_size is not constants.ZERO):
+            # when position side is changing or size is going back to 0, associated reduce only orders must be closed
+            await _update_reduce_only_orders_on_position_reset(exchange_manager, position.symbol)
+    else:
+        # as a context manager, yield is mandatory
+        yield
+
+
+async def _update_reduce_only_orders_on_position_reset(exchange_manager, symbol):
+    for order in list(exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol)):
+        # reduce only order are automatically cancelled on exchanges, only cancel simulated orders
+        if (exchange_manager.is_trader_simulated or order.is_self_managed()) \
+                and order.is_open() and order.reduce_only:
+            await order.trader.cancel_order(order)
+            if order.order_group:
+                await order.order_group.on_cancel(order)

@@ -96,7 +96,7 @@ cdef class Order(util.Initializable):
             object timestamp=*,
             object order_type=*,
             object reduce_only=*,
-            bint close_position=*,
+            object close_position=*,
             object position_side=*,
             object fees_currency_side=*,
             object group=*)
