@@ -103,7 +103,7 @@ class ExchangeManager(util.Initializable):
                                                         should_warn=warning_on_missing_elements)
             self.exchange.exchange_manager = None
         if self.exchange_personal_data is not None:
-            self.exchange_personal_data.clear()
+            await self.exchange_personal_data.stop()
         self.exchange_config = None
         self.exchange_personal_data = None
         self.exchange_symbols_data = None
