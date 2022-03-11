@@ -15,8 +15,7 @@
 #  License along with this library.
 import async_channel.channels as channels
 
-import octobot_backtesting.errors as errors
-
+import octobot_commons.errors as commons_errors
 import octobot_commons.channels_name as channels_name
 
 import octobot_trading.exchange_data.order_book.channel.order_book_updater as order_book_updater
@@ -46,7 +45,7 @@ class OrderBookUpdaterSimulator(order_book_updater.OrderBookUpdater):
                 if order_book_data[0] > self.last_timestamp_pushed:
                     self.last_timestamp_pushed = order_book_data[0]
                     await self.push(pair, order_book_data[-1], order_book_data[-2])
-        except errors.DataBaseNotExists as e:
+        except commons_errors.DatabaseNotFoundError as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()
