@@ -15,8 +15,7 @@
 #  License along with this library.
 import async_channel.channels as channels
 
-import octobot_backtesting.errors as errors
-
+import octobot_commons.errors as commons_errors
 import octobot_commons.channels_name as channels_name
 
 import octobot_trading.exchange_data.kline.channel.kline_updater as kline_updater
@@ -48,7 +47,7 @@ class KlineUpdaterSimulator(kline_updater.KlineUpdater):
                     if kline_data and kline_data[0][0] > self.last_timestamp_pushed:
                         self.last_timestamp_pushed = kline_data[0][0]
                         await self.push(time_frame, pair, kline_data[0][-1])
-        except errors.DataBaseNotExists as e:
+        except commons_errors.DatabaseNotFoundError as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()

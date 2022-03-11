@@ -14,11 +14,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_backtesting.api as api
-import octobot_backtesting.errors as errors
 
+import octobot_commons.errors as commons_errors
 import octobot_commons.constants as constants
 import octobot_commons.enums as enums
-import octobot_commons.time_frame_manager as time_frame_manager
 
 import octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater as ohlcv_updater
 import octobot_trading.util as util
@@ -101,7 +100,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                             pushed_data = True
             self.channel.exchange_manager.exchange.is_unreachable = not pushed_data
 
-        except errors.DataBaseNotExists as e:
+        except commons_errors.DatabaseNotFoundError as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()
