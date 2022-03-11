@@ -126,6 +126,8 @@ from octobot_trading.api.trader import (
 )
 from octobot_trading.api.portfolio import (
     get_portfolio,
+    get_portfolio_historical_values,
+    reset_portfolio_historical_values,
     get_portfolio_currency,
     get_origin_portfolio,
     refresh_real_trader_portfolio,
@@ -248,6 +250,8 @@ __all__ = [
     "sell_all_everything_for_reference_market",
     "sell_currency_for_reference_market",
     "get_portfolio",
+    "get_portfolio_historical_values",
+    "reset_portfolio_historical_values",
     "get_portfolio_currency",
     "get_origin_portfolio",
     "refresh_real_trader_portfolio",

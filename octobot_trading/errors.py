@@ -156,3 +156,9 @@ class InvalidArgumentError(Exception):
     """
     Raised when a keyword is called with invalid arguments
     """
+
+
+class MissingPriceDataError(Exception):
+    """
+    Raised when a price info is missing
+    """

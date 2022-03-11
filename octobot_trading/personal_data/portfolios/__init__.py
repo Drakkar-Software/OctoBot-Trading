@@ -41,6 +41,8 @@ from octobot_trading.personal_data.portfolios import portfolio_manager
 from octobot_trading.personal_data.portfolios import portfolio_value_holder
 from octobot_trading.personal_data.portfolios import types
 from octobot_trading.personal_data.portfolios import portfolio_util
+from octobot_trading.personal_data.portfolios import history
+
 
 from octobot_trading.personal_data.portfolios.portfolio_factory import (
     create_portfolio_from_exchange_manager,
@@ -72,6 +74,10 @@ from octobot_trading.personal_data.portfolios.portfolio_util import (
     parse_decimal_config_portfolio,
     portfolio_to_float,
 )
+from octobot_trading.personal_data.portfolios.history import (
+    HistoricalAssetValue,
+    HistoricalPortfolioValueManager,
+)
 
 __all__ = [
     "BalanceUpdaterSimulator",
@@ -98,4 +104,6 @@ __all__ = [
     "parse_decimal_portfolio",
     "parse_decimal_config_portfolio",
     "portfolio_to_float",
+    "HistoricalAssetValue",
+    "HistoricalPortfolioValueManager",
 ]

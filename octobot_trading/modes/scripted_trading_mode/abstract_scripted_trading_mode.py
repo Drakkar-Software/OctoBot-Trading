@@ -24,7 +24,6 @@ import octobot_commons.enums as commons_enums
 import octobot_commons.errors as commons_errors
 import octobot_commons.constants as commons_constants
 import octobot_commons.channels_name as channels_name
-import octobot_commons.optimization_campaign as optimization_campaign
 import async_channel.channels as channels
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.api as trading_api
@@ -35,6 +34,7 @@ import octobot_trading.modes.basic_keywords as basic_keywords
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.errors as errors
+import octobot_trading.util as util
 import octobot_trading.personal_data as personal_data
 import octobot_backtesting.api as backtesting_api
 import octobot_tentacles_manager.api as tentacles_manager_api
@@ -194,34 +194,12 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
                 await self.close_caches(reset_cache_db_ids=True)
                 await producer.call_script(*call_args)
 
-    def get_optimizer_id(self):
-        return self.config.get(commons_constants.CONFIG_OPTIMIZER_ID)
-
     @classmethod
-    async def get_backtesting_id(cls, bot_id, config=None, generate_if_not_found=False, tentacles_setup_config=None):
+    async def get_backtesting_id(cls, bot_id):
         try:
             return cls.BACKTESTING_ID_BY_BOT_ID[bot_id]
         except KeyError:
-            if generate_if_not_found:
-                try:
-                    backtesting_id = config.get(commons_constants.CONFIG_BACKTESTING_ID) \
-                                     or await cls._generate_new_backtesting_id(tentacles_setup_config)
-                    cls.BACKTESTING_ID_BY_BOT_ID[bot_id] = backtesting_id
-                    return backtesting_id
-                except AttributeError:
-                    raise RuntimeError("config is required when a backtesting_id is not registered with a bot id")
             raise RuntimeError(f"No backtesting id for bot_id: {bot_id}")
-
-    @classmethod
-    async def _generate_new_backtesting_id(cls, tentacles_setup_config):
-        run_dbs_identifier = databases.RunDatabasesIdentifier(
-            cls,
-            optimization_campaign.OptimizationCampaign.get_campaign_name(tentacles_setup_config)
-        )
-        run_dbs_identifier.backtesting_id = await run_dbs_identifier.generate_new_backtesting_id()
-        # initialize to lock the backtesting id
-        await run_dbs_identifier.initialize()
-        return run_dbs_identifier.backtesting_id
 
     def get_writer(self, writer_identifier):
         try:
@@ -376,18 +354,12 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     async def start(self) -> None:
         await super().start()
-        backtesting_id = await self.trading_mode.get_backtesting_id(
-            self.trading_mode.bot_id, self.trading_mode.config, generate_if_not_found=True,
-            tentacles_setup_config=self.trading_mode.exchange_manager.tentacles_setup_config) \
-            if self.exchange_manager.is_backtesting else None
-        self.run_dbs_identifier = databases.RunDatabasesIdentifier(
-            self.trading_mode.__class__,
-            optimization_campaign.OptimizationCampaign.get_campaign_name(
-                self.trading_mode.exchange_manager.tentacles_setup_config
-            ),
-            backtesting_id=backtesting_id,
-            optimizer_id=self.trading_mode.get_optimizer_id()
+        self.run_dbs_identifier = util.get_run_databases_identifier(
+            self.exchange_manager, trading_mode_class=self.trading_mode.__class__
         )
+        # register backtesting id
+        self.trading_mode.__class__.BACKTESTING_ID_BY_BOT_ID[self.trading_mode.bot_id] = \
+            self.run_dbs_identifier.backtesting_id
         await self.run_dbs_identifier.initialize(self.exchange_name)
         self.run_data_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_run_data_db_identifier())
         # refresh user inputs
