@@ -511,6 +511,7 @@ class BacktestingMetadata(enum.Enum):
     END_PORTFOLIO = "end portfolio"
     START_PORTFOLIO = "start portfolio"
     WIN_RATE = "% win rate"
+    DRAW_DOWN = "% draw down"
     SYMBOLS = "symbols"
     TIME_FRAMES = "time frames"
     START_TIME = "start time"
