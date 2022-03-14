@@ -73,6 +73,7 @@ from octobot_trading.personal_data.portfolios.portfolio_util import (
     parse_decimal_portfolio,
     parse_decimal_config_portfolio,
     portfolio_to_float,
+    get_draw_down,
 )
 from octobot_trading.personal_data.portfolios.history import (
     HistoricalAssetValue,
@@ -104,6 +105,7 @@ __all__ = [
     "parse_decimal_portfolio",
     "parse_decimal_config_portfolio",
     "portfolio_to_float",
+    "get_draw_down",
     "HistoricalAssetValue",
     "HistoricalPortfolioValueManager",
 ]
