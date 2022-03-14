@@ -49,6 +49,7 @@ async def set_leverage(ctx, leverage):
 
 
 async def set_partial_take_profit_stop_loss(ctx, tp_sl_mode=enums.TakeProfitStopLossMode.PARTIAL.value):
-    await ctx.exchange_manager.trader.set_symbol_take_profit_stop_loss_mode(
-        ctx.symbol, enums.TakeProfitStopLossMode(tp_sl_mode)
-    )
+    if ctx.exchange_manager.is_future:
+        await ctx.exchange_manager.trader.set_symbol_take_profit_stop_loss_mode(
+            ctx.symbol, enums.TakeProfitStopLossMode(tp_sl_mode)
+        )
