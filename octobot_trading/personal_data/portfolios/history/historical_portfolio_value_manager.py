@@ -33,7 +33,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
     """
     TABLE_NAME = "historical_portfolio_value"
     DATA_SOURCE_KEY = "data_source"
-    DATA_VERSION_KEY = "data_source"
+    DATA_VERSION_KEY = "data_version"
     DEFAULT_DATA_SOURCE = "portfolio_value_holder"  # for later versions: consolidate data with transaction history
     DEFAULT_DATA_VERSION = 1
     MIN_TIME_FRAME_RELEVANCY_SECONDS = 29   # less than 30s to support 1m time frames
@@ -79,12 +79,12 @@ class HistoricalPortfolioValueManager(util.Initializable):
     async def on_new_values(self, value_by_currency_by_timestamp, force_update=False, save_changes=True):
         changed = False
         for timestamp, value_by_currency in value_by_currency_by_timestamp.items():
-            if await self.on_new_value(timestamp, value_by_currency, force_update=force_update, save_changes=False):
-                changed = True
+            changed |= await self.on_new_value(timestamp, value_by_currency,
+                                               force_update=force_update, save_changes=False)
         if changed and save_changes:
             await self.save_historical_portfolio_value()
 
-    def get_historical_values(self, currency, time_frame, from_timestamp, to_timestamp):
+    def get_historical_values(self, currency, time_frame, from_timestamp=0, to_timestamp=None):
         """
         Returns a dict with timestamps and their associated portfolio historical value. Does not include the current
         portfolio value
@@ -93,7 +93,6 @@ class HistoricalPortfolioValueManager(util.Initializable):
         :param from_timestamp: selected time window start time
         :param to_timestamp: selected time window end time
         """
-        from_timestamp = from_timestamp or 0
         to_timestamp = to_timestamp or self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
         time_frame_seconds = commons_enums.TimeFramesMinutes[time_frame] * commons_constants.MINUTE_TO_SECONDS
         relevant_historical_values = (
@@ -122,15 +121,13 @@ class HistoricalPortfolioValueManager(util.Initializable):
         changed = False
         for timestamp in timestamps:
             try:
-                if self.get_historical_value(timestamp).update(value_by_currency):
-                    changed = True
+                changed |= self.get_historical_value(timestamp).update(value_by_currency)
             except KeyError:
                 self.historical_portfolio_value[timestamp] = \
                     historical_asset_value.HistoricalAssetValue(timestamp, value_by_currency)
                 changed = True
-        if changed:
-            if save_changes:
-                await self.save_historical_portfolio_value()
+        if changed and save_changes:
+            await self.save_historical_portfolio_value()
         return changed
 
     async def save_historical_portfolio_value(self):
@@ -200,9 +197,10 @@ class HistoricalPortfolioValueManager(util.Initializable):
         return False
 
     def _get_value_in_currency(self, historical_value, currency):
-        if currency in historical_value:
+        try:
             return historical_value.get(currency)
-        return self._convert_historical_value(historical_value, currency)
+        except KeyError:
+            return self._convert_historical_value(historical_value, currency)
 
     def _convert_historical_value(self, historical_value, target_currency):
         # TODO try to get a more accurate historical value into target_currency currency using price history
