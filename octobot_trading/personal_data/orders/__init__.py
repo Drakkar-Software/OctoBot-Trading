@@ -82,6 +82,7 @@ from octobot_trading.personal_data.orders.order_util import (
     get_pnl_transaction_source_from_order,
     is_stop_order,
     create_as_chained_order,
+    ensure_orders_relevancy,
 )
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
@@ -127,6 +128,7 @@ __all__ = [
     "get_pre_order_data",
     "get_pnl_transaction_source_from_order",
     "create_as_chained_order",
+    "ensure_orders_relevancy",
     "OrderState",
     "OrderGroup",
     "BalancedTakeProfitAndStopOrderGroup",

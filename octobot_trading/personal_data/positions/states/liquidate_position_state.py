@@ -17,6 +17,7 @@ import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.positions.position_state as position_state
+import octobot_trading.personal_data.orders.order_util as order_util
 
 
 class LiquidatePositionState(position_state.PositionState):
@@ -56,8 +57,9 @@ class LiquidatePositionState(position_state.PositionState):
         # notify position liquidated
         await self.position.exchange_manager.exchange_personal_data.handle_position_update_notification(self.position)
 
-        # update portfolio with liquidated position
-        async with self.position.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-            await self.position.update_on_liquidation()
+        async with order_util.ensure_orders_relevancy(position=self.position):
+            # update portfolio with liquidated position
+            async with self.position.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+                await self.position.update_on_liquidation()
 
         logging.get_logger(self.position.get_logger_name()).warning(f"{self.position.position_id} has been liquidated")
