@@ -48,6 +48,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
         await self.resume()
 
     async def handle_timestamp(self, timestamp, **kwargs):
+        # TODO split
         try:
             pushed_data = False
             for pair in self.traded_pairs:

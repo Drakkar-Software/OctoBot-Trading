@@ -44,6 +44,7 @@ class Order(util.Initializable):
         self.is_synchronized_with_exchange = False
         self.is_from_this_octobot = True
         self.simulated = trader.simulate
+        # TODO move into trading config "allow_artificial_orders" => stored into trader
         self.allow_self_managed = True
 
         self.logger_name = None

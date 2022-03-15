@@ -29,6 +29,7 @@ import octobot_trading.modes as modes
 import octobot_tentacles_manager.api as tentacles_manager_api
 
 
+# TODO : move into scripted_lib alongside basic_keywords
 class Context:
     def __init__(
         self,

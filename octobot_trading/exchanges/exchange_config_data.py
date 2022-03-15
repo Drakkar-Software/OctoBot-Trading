@@ -68,6 +68,7 @@ class ExchangeConfig(util.Initializable):
         self._set_config_time_frame()
 
     def set_historical_settings(self):
+        # TODO default value as const
         self.required_historical_candles_count = self.config.get(constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT, -1)
 
     def get_shortest_time_frame(self):

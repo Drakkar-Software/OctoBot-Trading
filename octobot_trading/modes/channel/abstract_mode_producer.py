@@ -75,6 +75,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
         self.run_dbs_identifier = None
+        # todo move in storage/database_provider singleton
         self.run_data_writer = self.orders_writer = self.trades_writer = self.transactions_writer = self.symbol_writer \
             = None
 
