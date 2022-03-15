@@ -240,18 +240,19 @@ async def ensure_orders_relevancy(order=None, position=None):
     if exchange_manager.exchange_personal_data.positions_manager.positions:
         position = position or exchange_manager.exchange_personal_data.positions_manager.get_order_position(order)
         pre_update_position_side = position.side
-        pre_update_position_size = position.size
+        is_pre_update_position_idle = position.is_idle()
         yield
-        if position.side != pre_update_position_side or \
-           (position.size is constants.ZERO and pre_update_position_size is not constants.ZERO):
-            # when position side is changing or size is going back to 0, associated reduce only orders must be closed
-            await _update_reduce_only_orders_on_position_reset(exchange_manager, position.symbol)
+        if not is_pre_update_position_idle and \
+           (position.side != pre_update_position_side or position.is_idle()):
+            # when position side is changing (from a non-idle position) or is going back to idle,
+            # then associated reduce only orders must be closed
+            await _cancel_reduce_only_orders_on_position_reset(exchange_manager, position.symbol)
     else:
         # as a context manager, yield is mandatory
         yield
 
 
-async def _update_reduce_only_orders_on_position_reset(exchange_manager, symbol):
+async def _cancel_reduce_only_orders_on_position_reset(exchange_manager, symbol):
     for order in list(exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol)):
         # reduce only order are automatically cancelled on exchanges, only cancel simulated orders
         if (exchange_manager.is_trader_simulated or order.is_self_managed()) \
