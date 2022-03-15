@@ -98,9 +98,10 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         historical_candles_count_limit = self._get_historical_candles_count()
         if historical_candles_count_limit > constants.DEFAULT_CANDLE_HISTORY_SIZE:
             tf_seconds = common_enums.TimeFramesMinutes[time_frame] * common_constants.MINUTE_TO_SECONDS
-            end_time = time.time() * 1000
+            end_time = time.time() * common_constants.MSECONDS_TO_SECONDS
             # add 1 to historical_candles_count_limit to fetch the required count (otherwise one is missing)
-            start_time = end_time - (historical_candles_count_limit + 1) * tf_seconds * 1000
+            start_time = end_time - (historical_candles_count_limit + 1) * tf_seconds * \
+                common_constants.MSECONDS_TO_SECONDS
             candles = []
             async for new_candles in exchanges.get_historical_ohlcv(self.channel.exchange_manager, pair,
                                                                     time_frame, start_time, end_time):
