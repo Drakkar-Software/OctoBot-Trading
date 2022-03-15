@@ -15,6 +15,7 @@
 #  License along with this library.
 import decimal
 
+import mock
 import pytest
 
 import octobot_trading.enums as enums
@@ -306,3 +307,53 @@ async def test_create_as_chained_order(trader_simulator):
     assert base_order.is_waiting_for_chained_trigger is False
     assert base_order.created is True
     assert base_order.is_initialized is True
+
+
+@pytest.mark.asyncio
+async def test_ensure_orders_relevancy_without_positions(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    order_mock = mock.Mock(exchange_manager=exchange_manager_inst, symbol="BTC/USD")
+    exchange_manager_inst.exchange_personal_data.positions_manager.positions = {}
+    # without positions: doing nothing
+    async with personal_data.ensure_orders_relevancy(order=order_mock):
+        pass
+    # nothing happened
+
+
+@pytest.mark.asyncio
+async def test_ensure_orders_relevancy_with_positions(future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
+    position = personal_data.LinearPosition(trader_inst, default_contract)
+    position.symbol = DEFAULT_FUTURE_SYMBOL
+    order_mock = mock.Mock(exchange_manager=exchange_manager_inst, symbol=DEFAULT_FUTURE_SYMBOL)
+    trader_mock = mock.Mock(cancel_order=mock.AsyncMock())
+    group_mock = mock.Mock(on_cancel=mock.AsyncMock())
+    to_cancel_order_mock = mock.Mock(trader=trader_mock, order_group=group_mock, status=enums.OrderStatus.OPEN,
+                                     is_open=mock.Mock(return_value=True), reduce_only=True,
+                                     symbol=DEFAULT_FUTURE_SYMBOL)
+    # with positions
+    exchange_manager_inst.exchange_personal_data.positions_manager.positions = {"BTC/USDT": position}
+    exchange_manager_inst.exchange_personal_data.orders_manager.orders = {"id": to_cancel_order_mock}
+    async with personal_data.ensure_orders_relevancy(order=order_mock):
+        # no change
+        pass
+    trader_mock.cancel_order.assert_not_called()
+    # with order parameter
+    async with personal_data.ensure_orders_relevancy(order=order_mock):
+        # changing side
+        position.side = "other_side"
+    trader_mock.cancel_order.assert_not_called()
+    # don't canceled order as position was idle (same situation as open a short from a 0 quantity position,
+    # which is considered as long)
+    async with personal_data.ensure_orders_relevancy(position=position):
+        # changing side
+        position.side = "other_other_side"
+    trader_mock.cancel_order.assert_not_called()
+    # with a non-0 quantity position
+    position.quantity = decimal.Decimal("2")
+    # with position parameter
+    async with personal_data.ensure_orders_relevancy(position=position):
+        # changing side
+        position.side = "other_side"
+    # canceled order
+    trader_mock.cancel_order.assert_called_once_with(to_cancel_order_mock)

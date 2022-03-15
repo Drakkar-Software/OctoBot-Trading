@@ -16,6 +16,7 @@
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_state as order_state
+import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.personal_data.orders.states.order_state_factory as order_state_factory
 
 
@@ -83,21 +84,22 @@ class FillOrderState(order_state.OrderState):
             except KeyError:
                 self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
-            # Trigger order group
-            if self.order.order_group:
-                await self.order.order_group.on_fill(self.order)
+            async with order_util.ensure_orders_relevancy(order=self.order):
+                # Trigger order group
+                if self.order.order_group:
+                    await self.order.order_group.on_fill(self.order)
 
-            # update portfolio with filled order and position if any
-            async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
-                await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(
-                    self.order)
+                # update portfolio with filled order and position if any
+                async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+                    await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(
+                        self.order)
 
-            # notify order filled
-            await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(
-                self.order, False)
+                # notify order filled
+                await self.order.exchange_manager.exchange_personal_data.handle_order_update_notification(
+                    self.order, False)
 
-            # call order on_filled callback
-            await self.order.on_filled()
+                # call order on_filled callback
+                await self.order.on_filled()
 
             # set close state
             await self.order.on_close(force_close=True)  # TODO force ?
