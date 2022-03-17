@@ -28,15 +28,18 @@ cdef class OrdersManager(util.Initializable):
 
     cdef public object orders
     cdef public dict order_groups
+    cdef public list pending_bundled_orders
     cdef public bint are_exchange_orders_initialized
 
     cdef void _reset_orders(self)
     cdef void _check_orders_size(self)
     cdef void _remove_oldest_orders(self, int nb_to_remove)
     cdef list _select_orders(self, object state=*, str symbol=*, int since=*, int limit=*)
+    cdef bint _check_pending_orders(self, object order)
 
     cpdef order_class.Order get_order(self, str order_id)
     cpdef bint upsert_order_instance(self, order_class.Order order)
+    cpdef void register_pending_bundled_order(self, object pending_order)
     cpdef bint has_order(self, str order_id)
     cpdef void remove_order_instance(self, order_class.Order order)
     cpdef void replace_order(self, str previous_id, order_class.Order order)

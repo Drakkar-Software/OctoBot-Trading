@@ -86,6 +86,8 @@ from octobot_trading.personal_data.orders.order_util cimport (
     parse_is_cancelled,
     get_pnl_transaction_source_from_order,
     is_stop_order,
+    is_associated_pending_order,
+    apply_pending_order,
 )
 from octobot_trading.personal_data.orders.order_adapter cimport (
     adapt_price,
@@ -116,6 +118,8 @@ __all__ = [
     "parse_is_cancelled",
     "get_pnl_transaction_source_from_order",
     "is_stop_order",
+    "is_associated_pending_order",
+    "apply_pending_order",
     "OrderState",
     "OrderGroup",
     "BalancedTakeProfitAndStopOrderGroup",
