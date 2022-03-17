@@ -135,8 +135,8 @@ class OrdersManager(util.Initializable):
 
     def upsert_order_instance(self, order) -> bool:
         if not self.has_order(order.order_id):
-            self.orders[order.order_id] = order
             self._check_pending_order(order)
+            self.orders[order.order_id] = order
             self._check_orders_size()
             return True
         # TODO

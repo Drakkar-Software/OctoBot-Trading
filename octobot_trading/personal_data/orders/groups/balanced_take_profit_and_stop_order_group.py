@@ -98,6 +98,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         locally_balancing_orders = []
         logger = logging.get_logger(self.__class__.__name__)
         try:
+            updated_orders = False
             balance = self._get_balance(closed_order, ignored_orders)
             locally_balancing_orders = balance[self.TAKE_PROFIT].orders + balance[self.STOP].orders
             self.balancing_orders += locally_balancing_orders
@@ -106,12 +107,16 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
             for order in take_profit_actions[self.CANCEL] + stop_actions[self.CANCEL]:
                 logger.debug(f"Cancelling order to keep balance, order: {order}")
                 await order.trader.cancel_order(order, ignored_order=closed_order)
+                updated_orders = True
             for update_data in take_profit_actions[self.UPDATE] + stop_actions[self.UPDATE]:
                 logger.debug(f"Updating order side to {update_data[self.UPDATED_QUANTITY]} to keep balance, "
                              f"order: {update_data[self.ORDER]}")
                 await update_data[self.ORDER].trader.edit_order(
                     update_data[self.ORDER],
                     edited_quantity=update_data[self.UPDATED_QUANTITY])
+                updated_orders = True
+            if not updated_orders:
+                logger.debug("Nothing to update, orders are already evenly balanced")
         except Exception as e:
             logger.exception(e, True, f"Error when balancing orders: {e}")
         finally:
