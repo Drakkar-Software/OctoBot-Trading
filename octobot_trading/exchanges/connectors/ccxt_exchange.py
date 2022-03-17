@@ -297,8 +297,6 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 # self.exchange_manager.exchange_personal_data.upsert_order(order_id, updated_order) TODO
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
-                # self.exchange_manager.exchange_personal_data().
-                # update_order_attribute(order_id, ecoc.STATUS.value, OrderStatus.CANCELED.value) TODO
                 pass
         else:
             # When fetch_order is not supported, uses get_open_orders and extract order id
