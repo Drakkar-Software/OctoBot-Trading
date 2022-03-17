@@ -702,6 +702,7 @@ class Position(util.Initializable):
     def update_from_raw(self, raw_position):
         symbol = str(raw_position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None))
         currency, market = self.exchange_manager.get_exchange_quote_and_base(symbol)
+        size = raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO)
         # side is managed locally, do not parse it
         return self._update(
             symbol=symbol,
@@ -711,8 +712,8 @@ class Position(util.Initializable):
             mark_price=raw_position.get(enums.ExchangeConstantsPositionColumns.MARK_PRICE.value, constants.ZERO),
             liquidation_price=raw_position.get(enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value,
                                                constants.ZERO),
-            quantity=raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, constants.ZERO),
-            size=raw_position.get(enums.ExchangeConstantsPositionColumns.SIZE.value, constants.ZERO),
+            quantity=raw_position.get(enums.ExchangeConstantsPositionColumns.QUANTITY.value, size),
+            size=size,
             value=raw_position.get(enums.ExchangeConstantsPositionColumns.NOTIONAL.value, constants.ZERO),
             initial_margin=raw_position.get(enums.ExchangeConstantsPositionColumns.INITIAL_MARGIN.value,
                                             constants.ZERO),
