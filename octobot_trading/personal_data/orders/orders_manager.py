@@ -42,9 +42,6 @@ class OrdersManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_orders()
 
-    def update_order_attribute(self, order_id, key, value):
-        self.orders[order_id][key] = value
-
     def get_all_orders(self, symbol=None, since=-1, limit=-1):
         return self._select_orders(None, symbol=symbol, since=since, limit=limit)
 
