@@ -91,7 +91,7 @@ def check_cost(total_order_price, min_cost):
     """
     if total_order_price < min_cost:
         if min_cost is None:
-            logging.get_logger().error("Invalid min_cost from exchange")
+            logging.get_logger("order_util").error("Invalid min_cost from exchange")
         return False
     return True
 
@@ -201,10 +201,11 @@ async def create_as_chained_order(order):
     try:
         order.is_waiting_for_chained_trigger = False
         if not order.trader.simulate and order.has_been_bundled:
-            # exchange should have created it already, it will automatically be fetched at the next update
-            # TODO: check if we need to really fetch it through updater etc
-            #  (issue is that we don't have an id yet so we can't just fetch this order in particular)
-            pass
+            # exchange should have created it already, it is either already fetched or
+            # will automatically be fetched at the next update
+            if not _apply_pending_order_on_existing_orders(order):
+                # register it as pending bundled order for it to be found and updated when fetched
+                order.exchange_manager.exchange_personal_data.orders_manager.register_pending_bundled_order(order)
         else:
             # set created now to consider creation failures as created as well (the caller can always retry later on)
             order.created = True
@@ -216,6 +217,28 @@ async def create_as_chained_order(order):
             )
     finally:
         order.created = True
+
+
+def is_associated_pending_order(fetched_order, pending_order):
+    return fetched_order.symbol == pending_order.symbol and \
+        fetched_order.origin_quantity == pending_order.origin_quantity and \
+        fetched_order.origin_price == pending_order.origin_price and \
+        fetched_order.__class__ is pending_order.__class__ and \
+        fetched_order.trader is pending_order.trader
+
+
+def apply_pending_order(order, pending_order):
+    order.order_group = pending_order.order_group
+    logging.get_logger("order_util").debug(f"Applied pending order: {pending_order} on {order}")
+
+
+def _apply_pending_order_on_existing_orders(pending_order):
+    for order in pending_order.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
+            symbol=pending_order.symbol):
+        if is_associated_pending_order(order, pending_order) and order.order_group is None:
+            apply_pending_order(order, pending_order)
+            return True
+    return False
 
 
 @contextlib.asynccontextmanager
