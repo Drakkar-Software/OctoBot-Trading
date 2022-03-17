@@ -24,6 +24,7 @@ import octobot_trading.util as util
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.order as order_class
 import octobot_trading.personal_data.orders.order_factory as order_factory
+import octobot_trading.personal_data.orders.order_util as order_util
 
 
 class OrdersManager(util.Initializable):
@@ -36,12 +37,16 @@ class OrdersManager(util.Initializable):
         self.orders_initialized = False  # TODO
         self.orders = collections.OrderedDict()
         self.order_groups = {}
+        # orders that are expected from exchange but have not yet been fetched: will be removed when fetched
+        self.pending_bundled_orders = []
         # if this the orders manager completed the initial exchange orders sync phase (only on real trader)
         self.are_exchange_orders_initialized = self.trader.simulate
 
     async def initialize_impl(self):
         self._reset_orders()
 
+    def get_all_orders(self, symbol=None, since=-1, limit=-1):
+        return self._select_orders(None, symbol=symbol, since=since, limit=limit)
     def update_order_attribute(self, order_id, key, value):
         self.orders[order_id][key] = value
 
@@ -103,11 +108,23 @@ class OrdersManager(util.Initializable):
             if is_from_exchange:
                 new_order.is_synchronized_with_exchange = True
                 new_order.created = True
+                self._check_pending_order(new_order)
             self.orders[order_id] = new_order
             await new_order.initialize(is_from_exchange_data=True)
             self._check_orders_size()
             return True
         return await _update_order_from_raw(self.orders[order_id], raw_order)
+
+    def register_pending_bundled_order(self, pending_order):
+        self.pending_bundled_orders.append(pending_order)
+
+    def _check_pending_order(self, order):
+        for index, pending_order in enumerate(self.pending_bundled_orders):
+            if order_util.is_associated_pending_order(order, pending_order):
+                order_util.apply_pending_order(order, pending_order)
+                self.pending_bundled_orders.pop(index)
+                return True
+        return False
 
     async def upsert_order_close_from_raw(self, order_id, raw_order) -> typing.Optional[order_class.Order]:
         if self.has_order(order_id):
@@ -119,6 +136,7 @@ class OrdersManager(util.Initializable):
     def upsert_order_instance(self, order) -> bool:
         if not self.has_order(order.order_id):
             self.orders[order.order_id] = order
+            self._check_pending_order(order)
             self._check_orders_size()
             return True
         # TODO
