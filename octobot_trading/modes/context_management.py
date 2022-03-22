@@ -23,10 +23,11 @@ import octobot_commons.errors as common_errors
 import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
 import octobot_commons.optimization_campaign as optimization_campaign
-import octobot_commons.tentacles_management as tentacles_management
+import octobot_commons.event_tree as event_tree
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
 import octobot_tentacles_manager.api as tentacles_manager_api
+import octobot_tentacles_manager.models as tentacles_manager_models
 
 
 # TODO : move into scripted_lib alongside basic_keywords
@@ -94,7 +95,7 @@ class Context:
         self.is_nested_tentacle = False
         self.nested_depth = 0
         self.nested_config_names = []
-        self.tentacles_requirements = tentacles_management.TentacleRequirements(self.tentacle, self.config_name)
+        self.tentacles_requirements = tentacles_manager_models.TentacleRequirementsTree(self.tentacle, self.config_name)
         self.parent_tentacles_requirements = None
         self.optimization_campaign_name = optimization_campaign_name
 
@@ -209,7 +210,7 @@ class Context:
                 await context.get_cache().flush()
 
     def add_tentacle_requirement_from_nested_context(self, tentacle, config_name) \
-            -> (bool, tentacles_management.TentacleRequirements):
+            -> (bool, tentacles_manager_models.TentacleRequirementsTree):
         """
         Used to add a requirement to a tentacle that has been triggered. Allows initialise its cache.
         Updates self.tentacles_requirements and self.parent_tentacles_requirements
@@ -220,12 +221,12 @@ class Context:
         # self.tentacles_requirements might be None during the 1st nested call as it is retrieved from
         # the parent context. At 1st call, it has not yet been initialized
         if self.tentacles_requirements is None:
-            self.tentacles_requirements = tentacles_management.TentacleRequirements(tentacle, config_name)
+            self.tentacles_requirements = tentacles_manager_models.TentacleRequirementsTree(tentacle, config_name)
         return self.parent_tentacles_requirements.add_requirement(self.tentacles_requirements), \
             self.tentacles_requirements
 
     def add_referenced_tentacle_requirement(self, tentacle_class, config_name) \
-            -> (bool, tentacles_management.TentacleRequirements):
+            -> (bool, tentacles_manager_models.TentacleRequirementsTree):
         """
         Used to add a requirement to a tentacle that was already triggered. Does not allow to initialise its cache.
         Only updates self.tentacles_requirements.
@@ -237,7 +238,7 @@ class Context:
         :param config_name: its configuration name
         :return True if the requirement was not already registered and the created requirement
         """
-        requirement = tentacles_management.TentacleRequirements(None, config_name, tentacle_class=tentacle_class)
+        requirement = tentacles_manager_models.TentacleRequirementsTree(None, config_name, tentacle_class=tentacle_class)
         return self.tentacles_requirements.add_requirement(requirement), requirement
 
     def _get_adapted_trigger_timestamp(self, tentacle_class, base_trigger_timestamp, config_name):
@@ -263,7 +264,7 @@ class Context:
                 self.time_frame,
                 config_name or self.config_name
             )
-        except KeyError:
+        except event_tree.NodeExistsError:
             return None
 
     async def ensure_tentacle_cache_requirements(self, tentacle_class, config_name):
