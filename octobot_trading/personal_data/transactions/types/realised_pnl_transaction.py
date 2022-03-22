@@ -35,7 +35,7 @@ class RealisedPnlTransaction(transaction.Transaction):
         self.trigger_source = trigger_source
         self.side = side
         self.transaction_id = f"{self.exchange_name}" \
-                              f"-{str(uuid.uuid4())[:4]}" \
+                              f"-{str(uuid.uuid4())}" \
                               f"-{self.symbol}" \
                               f"-{str(self.creation_time)}" \
                               f"{'-closed' if self.is_closed_pnl() else ''}"
