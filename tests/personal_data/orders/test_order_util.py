@@ -304,5 +304,4 @@ async def test_create_as_chained_order(trader_simulator):
 
     await personal_data.create_as_chained_order(base_order)
     assert base_order.is_waiting_for_chained_trigger is False
-    assert base_order.created is True
     assert base_order.is_initialized is True

@@ -172,7 +172,7 @@ class TestTrader:
                          current_price=decimal.Decimal("70"),
                          quantity=decimal.Decimal("10"),
                          price=decimal.Decimal("70"))
-        limit_buy.created = True
+        assert limit_buy.is_created()
 
         # 1. cancel order: success
         assert await trader_inst.cancel_order(limit_buy) is True
@@ -924,10 +924,10 @@ class TestTrader:
 
         base_order = BuyLimitOrder(trader_inst)
         chained_order = SellLimitOrder(trader_inst)
-        chained_order.created = True
+        assert base_order.is_created()
 
         # without bundle support
-        assert trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, kw1=1, kw2="hello") \
+        assert await trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, kw1=1, kw2="hello") \
                == {}
         # bundled chained_order to base_order
         assert chained_order in base_order.chained_orders
@@ -936,13 +936,13 @@ class TestTrader:
         assert chained_order.exchange_creation_params == {}
         assert chained_order.trader_creation_kwargs == {"kw1": 1, "kw2": "hello"}
         assert chained_order.is_waiting_for_chained_trigger is True
-        assert chained_order.created is False
+        assert chained_order.is_created() is False
 
         base_order = BuyLimitOrder(trader_inst)
         chained_order = StopLossOrder(trader_inst)
         # with bundle support
         exchange_manager.exchange.SUPPORTED_BUNDLED_ORDERS[base_order.order_type] = [chained_order.order_type]
-        assert trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, kw1=1, kw2="hello") \
+        assert await trader_inst.bundle_chained_order_with_uncreated_order(base_order, chained_order, kw1=1, kw2="hello") \
                == {}
         # bundled chained_order to base_order
         assert chained_order in base_order.chained_orders
@@ -951,7 +951,7 @@ class TestTrader:
         assert chained_order.exchange_creation_params == {}
         assert chained_order.trader_creation_kwargs == {"kw1": 1, "kw2": "hello"}
         assert chained_order.is_waiting_for_chained_trigger is True
-        assert chained_order.created is False
+        assert chained_order.is_created() is False
 
         await self.stop(exchange_manager)
 

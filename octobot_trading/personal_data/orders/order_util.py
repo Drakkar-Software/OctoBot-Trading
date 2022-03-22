@@ -213,46 +213,47 @@ def is_stop_order(order_type):
 
 
 async def create_as_chained_order(order):
-    try:
-        order.is_waiting_for_chained_trigger = False
-        if not order.trader.simulate and order.has_been_bundled:
-            # exchange should have created it already, it is either already fetched or
-            # will automatically be fetched at the next update
-            if not _apply_pending_order_on_existing_orders(order):
-                # register it as pending bundled order for it to be found and update when fetched
-                order.exchange_manager.exchange_personal_data.orders_manager.register_pending_bundled_order(order)
-        else:
-            # set created now to consider creation failures as created as well (the caller can always retry later on)
-            order.created = True
-            await order.trader.create_order(
-                order,
-                loaded=False,
-                params=order.exchange_creation_params,
-                **order.trader_creation_kwargs
-            )
-    finally:
-        order.created = True
+    order.is_waiting_for_chained_trigger = False
+    if not order.trader.simulate and order.has_been_bundled:
+        # exchange should have created it already, it is either already fetched or
+        # will automatically be fetched at the next update
+        if not await _apply_pending_order_on_existing_orders(order):
+            # register it as pending creation order for it to be found and update when fetched
+            order.exchange_manager.exchange_personal_data.orders_manager.register_pending_creation_order(order)
+    else:
+        # set created now to consider creation failures as created as well (the caller can always retry later on)
+        order.status = enums.OrderStatus.OPEN
+        # set uninitialized to allow second initialization from create_order
+        order.is_initialized = False
+        await order.trader.create_order(
+            order,
+            loaded=False,
+            params=order.exchange_creation_params,
+            **order.trader_creation_kwargs
+        )
 
 
-def is_associated_pending_order(fetched_order, pending_order):
-    return fetched_order.symbol == pending_order.symbol and \
-        fetched_order.origin_quantity == pending_order.origin_quantity and \
-        fetched_order.origin_price == pending_order.origin_price and \
-        fetched_order.__class__ is pending_order.__class__ and \
-        fetched_order.trader is pending_order.trader
+def is_associated_pending_order(pending_order, created_order):
+    return created_order.symbol == pending_order.symbol and \
+           created_order.origin_quantity == pending_order.origin_quantity and \
+           created_order.origin_price == pending_order.origin_price and \
+           created_order.__class__ is pending_order.__class__ and \
+           created_order.trader is pending_order.trader
 
 
-def apply_pending_order(order, pending_order):
-    order.order_group = pending_order.order_group
-    order.tag = pending_order.tag
-    logging.get_logger("order_util").debug(f"Applied pending order: {pending_order} on {order}")
+async def apply_pending_order_from_created_order(pending_order, created_order):
+    await pending_order.update_from_order(created_order)
+    logging.get_logger("order_util").debug(f"Updated pending order: {pending_order} using {created_order}")
 
 
-def _apply_pending_order_on_existing_orders(pending_order):
-    for order in pending_order.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
+async def _apply_pending_order_on_existing_orders(pending_order):
+    for created_order in pending_order.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
             symbol=pending_order.symbol):
-        if is_associated_pending_order(order, pending_order) and order.order_group is None:
-            apply_pending_order(order, pending_order)
+        if is_associated_pending_order(pending_order, created_order) and created_order.order_group is None:
+            await apply_pending_order_from_created_order(pending_order, created_order)
+            pending_order.exchange_manager.exchange_personal_data.orders_manager.replace_order(pending_order.order_id,
+                                                                                               pending_order)
+            created_order.clear()
             return True
     return False
 

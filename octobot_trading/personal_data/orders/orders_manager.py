@@ -38,7 +38,7 @@ class OrdersManager(util.Initializable):
         self.orders = collections.OrderedDict()
         self.order_groups = {}
         # orders that are expected from exchange but have not yet been fetched: will be removed when fetched
-        self.pending_bundled_orders = []
+        self.pending_creation_orders = []
         # if this the orders manager completed the initial exchange orders sync phase (only on real trader)
         self.are_exchange_orders_initialized = self.trader.simulate
 
@@ -105,26 +105,39 @@ class OrdersManager(util.Initializable):
         if not self.has_order(order_id):
             self.logger.debug(f"Creating new order from exchange data: {raw_order}")
             new_order = order_factory.create_order_instance_from_raw(self.trader, raw_order)
+            # replace new_order by previously created pending_order if any relevant pending_order
+            new_order = await self.get_and_update_pending_order(new_order) or new_order
             if is_from_exchange:
                 new_order.is_synchronized_with_exchange = True
-                new_order.created = True
-                self._check_pending_order(new_order)
             self.orders[order_id] = new_order
             await new_order.initialize(is_from_exchange_data=True)
             self._check_orders_size()
             return True
         return await _update_order_from_raw(self.orders[order_id], raw_order)
 
-    def register_pending_bundled_order(self, pending_order):
-        self.pending_bundled_orders.append(pending_order)
+    def register_pending_creation_order(self, pending_order):
+        if self.trader.simulate:
+            self.logger.error(f"Called register_pending_creation_order on an simulated trader, "
+                              f"this should not happen. Order: {pending_order}")
+        self.pending_creation_orders.append(pending_order)
 
-    def _check_pending_order(self, order):
-        for index, pending_order in enumerate(self.pending_bundled_orders):
-            if order_util.is_associated_pending_order(order, pending_order):
-                order_util.apply_pending_order(order, pending_order)
-                self.pending_bundled_orders.pop(index)
-                return True
-        return False
+    async def get_and_update_pending_order(self, created_order):
+        pending_order = self._get_pending_order(created_order, True)
+        # TODO refactor to := when cython will support it
+        if pending_order is None:
+            return None
+        await order_util.apply_pending_order_from_created_order(pending_order, created_order)
+        pending_order.is_initialized = False
+        created_order.clear()
+        return pending_order
+
+    def _get_pending_order(self, created_order, should_pop):
+        for index, pending_order in enumerate(self.pending_creation_orders):
+            if order_util.is_associated_pending_order(pending_order, created_order):
+                if should_pop:
+                    self.pending_creation_orders.pop(index)
+                return pending_order
+        return None
 
     async def upsert_order_close_from_raw(self, order_id, raw_order) -> typing.Optional[order_class.Order]:
         if self.has_order(order_id):
@@ -133,9 +146,13 @@ class OrdersManager(util.Initializable):
             return order
         return None
 
-    def upsert_order_instance(self, order) -> bool:
+    async def upsert_order_instance(self, order) -> bool:
         if not self.has_order(order.order_id):
-            self._check_pending_order(order)
+            # this should not consume pending orders
+            if self._get_pending_order(order, False):
+                self.logger.error(f"Called upsert_order_instance on an order that fits a pending order, "
+                                  f"this should not happen. Order: {order}")
+            order = await self.get_and_update_pending_order(order) or order
             self.orders[order.order_id] = order
             self._check_orders_size()
             return True

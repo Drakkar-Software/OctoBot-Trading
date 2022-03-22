@@ -105,6 +105,7 @@ class Trader(util.Initializable):
         if pre_init_callback is not None:
             await pre_init_callback(new_order)
 
+        # force initialize to always create open state
         await new_order.initialize()
         return new_order
 
@@ -223,10 +224,9 @@ class Trader(util.Initializable):
             updated_order.has_been_bundled = new_order.has_been_bundled
             updated_order.exchange_creation_params = new_order.exchange_creation_params
             updated_order.is_waiting_for_chained_trigger = new_order.is_waiting_for_chained_trigger
-            updated_order.created = True
         return updated_order
 
-    def bundle_chained_order_with_uncreated_order(self, order, chained_order, **kwargs):
+    async def bundle_chained_order_with_uncreated_order(self, order, chained_order, **kwargs):
         """
         Creates and bundles an order as a chained order to the given order.
         When supported and in real trading, return the stop loss parameters to be given when
@@ -249,7 +249,7 @@ class Trader(util.Initializable):
                 params.update(self.exchange_manager.exchange.get_bundled_order_parameters(
                     take_profit_price=chained_order.origin_price
                 ))
-        chained_order.set_as_chained_order(order, is_bundled, {}, **kwargs)
+        await chained_order.set_as_chained_order(order, is_bundled, {}, **kwargs)
         order.add_chained_order(chained_order)
         return params
 
