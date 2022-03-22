@@ -48,8 +48,6 @@ class Order(util.Initializable):
         self.logger_name = None
         self.order_id = trader.parse_order_id(None)
         self.status = enums.OrderStatus.OPEN
-        # set to True when this order is really opened (during initialization)
-        self.created = False
         self.symbol = None
         self.currency = None
         self.market = None
@@ -235,8 +233,7 @@ class Order(util.Initializable):
         Initialize order status update tasks
         """
         await orders_states.create_order_state(self, **kwargs)
-        self.created = True
-        if not self.is_closed():
+        if self.is_created() and not self.is_closed():
             await self.update_order_status()
 
     def _on_origin_price_change(self, previous_price, price_time):
@@ -267,9 +264,12 @@ class Order(util.Initializable):
     def get_total_fees(self, currency):
         return order_util.get_fees_for_currency(self.fee, currency)
 
+    def is_created(self):
+        return self.state is None or self.state.is_created()
+
     def is_open(self):
         # also check is_initialized to avoid considering uncreated orders as open
-        return self.created and (self.state is None or self.state.is_open())
+        return self.state is None or self.state.is_open()
 
     def is_filled(self):
         return self.state.is_filled() or (self.state.is_closed() and self.status is enums.OrderStatus.FILLED)
@@ -304,6 +304,11 @@ class Order(util.Initializable):
             yield
         except errors.InvalidOrderState as exc:
             logging.get_logger(self.get_logger_name()).exception(exc, True, f"Error when creating order state: {exc}")
+
+    async def on_pending_creation(self, is_from_exchange_data=False):
+        with self.order_state_creation():
+            self.state = orders_states.PendingCreationOrderState(self, is_from_exchange_data=is_from_exchange_data)
+            await self.state.initialize()
 
     async def on_open(self, force_open=False, is_from_exchange_data=False):
         with self.order_state_creation():
@@ -352,7 +357,8 @@ class Order(util.Initializable):
             else:
                 logger.debug(f"Skipping cancelled chained order {index + 1}/{len(self.chained_orders)}")
 
-    def set_as_chained_order(self, triggered_by, has_been_bundled, exchange_creation_params, **trader_creation_kwargs):
+    async def set_as_chained_order(self, triggered_by, has_been_bundled, exchange_creation_params,
+                                   **trader_creation_kwargs):
         if triggered_by is self:
             raise errors.ConflictingOrdersError("Impossible to chain an order to itself")
         self.triggered_by = triggered_by
@@ -360,10 +366,11 @@ class Order(util.Initializable):
         self.exchange_creation_params = exchange_creation_params
         self.trader_creation_kwargs = trader_creation_kwargs
         self.is_waiting_for_chained_trigger = True
-        self.created = False
+        self.status = enums.OrderStatus.PENDING_CREATION
+        await self.initialize()
 
     def should_be_created(self):
-        return not self.created and self.is_waiting_for_chained_trigger
+        return not self.is_created() and self.is_waiting_for_chained_trigger
 
     def get_computed_fee(self, forced_value=None):
         if self.fees_currency_side is enums.FeesCurrencySide.UNDEFINED:
@@ -458,6 +465,32 @@ class Order(util.Initializable):
             reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False)
         )
 
+    async def update_from_order(self, other_order):
+        self.is_synchronized_with_exchange = other_order.is_synchronized_with_exchange
+        self.is_from_this_octobot = other_order.is_from_this_octobot
+
+        self.order_id = other_order.order_id
+        self.status = other_order.status
+
+        self.filled_quantity = other_order.filled_quantity
+        self.filled_price = other_order.filled_price
+        self.fee = other_order.fee
+        self.fees_currency_side = other_order.fees_currency_side
+        self.total_cost = other_order.total_cost
+        self.order_profitability = other_order.order_profitability
+        self.executed_time = other_order.executed_time
+
+        self.canceled_time = other_order.canceled_time
+
+        self.reduce_only = other_order.reduce_only
+
+        self.position_side = other_order.position_side
+
+        self.is_waiting_for_chained_trigger = other_order.is_waiting_for_chained_trigger
+
+        if other_order.state is not None:
+            await other_order.state.replace_order(self)
+
     def consider_as_filled(self):
         self.status = enums.OrderStatus.FILLED
         if self.executed_time == 0:
@@ -535,7 +568,7 @@ class Order(util.Initializable):
 
     def to_string(self):
         chained_order = "" if self.triggered_by is None else \
-            "triggered chained order | " if self.created else "untriggered chained order | "
+            "triggered chained order | " if self.is_created() else "untriggered chained order | "
         return (f"{self.symbol} | "
                 f"{chained_order}"
                 f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "

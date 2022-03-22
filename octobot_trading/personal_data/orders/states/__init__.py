@@ -23,6 +23,7 @@ from octobot_trading.personal_data.orders.states import close_order_state
 from octobot_trading.personal_data.orders.states import cancel_order_state
 from octobot_trading.personal_data.orders.states import open_order_state
 from octobot_trading.personal_data.orders.states import fill_order_state
+from octobot_trading.personal_data.orders.states import pending_creation_order_state
 
 from octobot_trading.personal_data.orders.states.close_order_state import (
     CloseOrderState,
@@ -36,6 +37,9 @@ from octobot_trading.personal_data.orders.states.open_order_state import (
 from octobot_trading.personal_data.orders.states.fill_order_state import (
     FillOrderState,
 )
+from octobot_trading.personal_data.orders.states.pending_creation_order_state import (
+    PendingCreationOrderState,
+)
 
 __all__ = [
     "CloseOrderState",
@@ -43,4 +47,5 @@ __all__ = [
     "OpenOrderState",
     "create_order_state",
     "FillOrderState",
+    "PendingCreationOrderState",
 ]

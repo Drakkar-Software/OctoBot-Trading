@@ -19,6 +19,7 @@ cimport octobot_trading.personal_data.state as state_class
 cdef class OrderState(state_class.State):
     cdef public object order  # instance of Order
 
+    cpdef bint is_created(self)
     cpdef bint is_open(self)
     cpdef bint is_filled(self)
     cpdef bint is_canceled(self)

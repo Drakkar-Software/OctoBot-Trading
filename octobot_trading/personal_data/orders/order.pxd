@@ -104,6 +104,7 @@ cdef class Order(util.Initializable):
 
     cpdef str to_string(self)
     cpdef object get_total_fees(self, str currency)
+    cpdef bint is_created(self)
     cpdef bint is_open(self)
     cpdef bint is_filled(self)
     cpdef bint is_cancelled(self)
