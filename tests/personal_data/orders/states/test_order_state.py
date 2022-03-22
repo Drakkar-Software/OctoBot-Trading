@@ -76,3 +76,21 @@ async def test_update_calls_nothing_when_refreshing(buy_limit_order):
         await state.update()
         order_state_synchronize_mock.assert_not_called()
         order_state_terminate_mock.assert_not_called()
+
+
+async def test_is_created(buy_limit_order):
+    buy_limit_order.order_type = enums.TraderOrderType.BUY_LIMIT
+    state = octobot_trading.personal_data.OrderState(buy_limit_order, True)
+    assert state.is_created() is True
+
+
+async def test_replace_order(buy_limit_order, stop_loss_limit_order):
+    buy_limit_order.order_type = enums.TraderOrderType.BUY_LIMIT
+    state = octobot_trading.personal_data.OrderState(buy_limit_order, True)
+    buy_limit_order.state = state
+    assert state.order is buy_limit_order
+    assert buy_limit_order.state is state
+    await state.replace_order(stop_loss_limit_order)
+    assert state.order is stop_loss_limit_order
+    assert stop_loss_limit_order.state is state
+    assert buy_limit_order.state is None

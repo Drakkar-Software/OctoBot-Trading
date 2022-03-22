@@ -35,7 +35,6 @@ async def order_simulator(trader_simulator):
 
 def created_order(order_type, *args, **kwargs):
     order = order_type(*args, **kwargs)
-    order.created = True
     return order
 
 

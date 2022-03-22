@@ -292,7 +292,7 @@ def test_get_max_order_quantity_for_price_short_inverse(future_trader_simulator_
 
 
 @pytest.mark.asyncio
-async def test_create_as_chained_order(trader_simulator):
+async def test_create_as_chained_order_regular_order(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
 
     base_order = personal_data.BuyLimitOrder(trader_inst)
@@ -302,11 +302,101 @@ async def test_create_as_chained_order(trader_simulator):
                       quantity=decimal.Decimal("10"),
                       price=decimal.Decimal("70"))
     base_order.is_waiting_for_chained_trigger = True
+    # base_order.state is None since no state has been associated to it (not initiliazed)
+    assert base_order.state is None
+    assert base_order.is_initialized is False
 
     await personal_data.create_as_chained_order(base_order)
     assert base_order.is_waiting_for_chained_trigger is False
-    assert base_order.created is True
+    assert base_order.is_created() is True
     assert base_order.is_initialized is True
+    assert isinstance(base_order.state, personal_data.OpenOrderState)
+
+
+@pytest.mark.asyncio
+async def test_create_as_chained_order_bundled_order_no_open_order(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order = personal_data.BuyLimitOrder(trader_inst)
+    base_order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                      symbol="BTC/USDT",
+                      current_price=decimal.Decimal("70"),
+                      quantity=decimal.Decimal("10"),
+                      price=decimal.Decimal("70"))
+    base_order.has_been_bundled = True
+    # base_order.state is None since no state has been associated to it (not initiliazed)
+    assert base_order.state is None
+    assert base_order.is_initialized is False
+
+    #no order in order_manager, register as pending order
+    assert not exchange_manager_inst.exchange_personal_data.orders_manager.orders
+    assert not exchange_manager_inst.exchange_personal_data.orders_manager.pending_creation_orders
+
+    # simulate real trader
+    trader_inst.simulate = False
+    await personal_data.create_as_chained_order(base_order)
+    # did not add it to orders
+    assert not exchange_manager_inst.exchange_personal_data.orders_manager.orders
+    assert exchange_manager_inst.exchange_personal_data.orders_manager.pending_creation_orders == [base_order]
+
+    assert base_order.is_waiting_for_chained_trigger is False
+    # still not initialized
+    assert base_order.is_initialized is False
+
+
+@pytest.mark.asyncio
+async def test_create_as_chained_order_bundled_order_no_open_order(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    open_order_1 = personal_data.SellLimitOrder(trader_inst)
+    open_order_2 = personal_data.BuyLimitOrder(trader_inst)
+    open_order_1.update(order_type=enums.TraderOrderType.SELL_LIMIT,
+                        order_id="open_order_1_id",
+                        symbol="BTC/USDT",
+                        current_price=decimal.Decimal("70"),
+                        quantity=decimal.Decimal("10"),
+                        price=decimal.Decimal("70"))
+    open_order_2.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                        order_id="open_order_2_id",
+                        symbol="BTC/USDT",
+                        current_price=decimal.Decimal("70"),
+                        quantity=decimal.Decimal("10"),
+                        price=decimal.Decimal("70"),
+                        reduce_only=True)
+    await exchange_manager_inst.exchange_personal_data.orders_manager.upsert_order_instance(open_order_1)
+    await exchange_manager_inst.exchange_personal_data.orders_manager.upsert_order_instance(open_order_2)
+    assert not exchange_manager_inst.exchange_personal_data.orders_manager.pending_creation_orders
+    assert exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders() == [
+        open_order_1, open_order_2
+    ]
+
+    base_order = personal_data.BuyLimitOrder(trader_inst)
+    base_order.update(order_type=enums.TraderOrderType.BUY_LIMIT,
+                      order_id="base_order_id",
+                      symbol="BTC/USDT",
+                      current_price=decimal.Decimal("55"),
+                      quantity=decimal.Decimal("10"),
+                      price=decimal.Decimal("70"),
+                      reduce_only=False)
+    base_order.has_been_bundled = True
+
+    # simulate real trader
+    trader_inst.simulate = False
+    await personal_data.create_as_chained_order(base_order)
+    registered_orders = exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders()
+    assert len(registered_orders) == 2
+    assert registered_orders[0] is open_order_1
+    inserted_pending_order = exchange_manager_inst.exchange_personal_data.orders_manager.get_all_orders()[1]
+    assert inserted_pending_order is base_order
+    assert inserted_pending_order.reduce_only is True  # inserted_pending_order got preserved and updated
+    # did not add it to orders
+    assert not exchange_manager_inst.exchange_personal_data.orders_manager.pending_creation_orders
+
+    assert base_order.is_waiting_for_chained_trigger is False
+    # still not initialized
+    assert base_order.is_initialized is False
+    # open_order_2 got cleared
+    assert open_order_2.exchange_manager is None
 
 
 @pytest.mark.asyncio

@@ -41,7 +41,7 @@ async def test_take_profit_limit_order_trigger(take_profit_limit_order):
     )
     take_profit_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
     await take_profit_limit_order.initialize()
-    take_profit_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+    await take_profit_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
         take_profit_limit_order
     )
     price_events_manager = take_profit_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(

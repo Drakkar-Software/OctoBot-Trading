@@ -50,6 +50,7 @@ class EvaluatorStates(enum.Enum):
 
 
 class OrderStatus(enum.Enum):
+    PENDING_CREATION = "pending_creation"
     OPEN = "open"
     PARTIALLY_FILLED = "partially_filled"
     FILLED = "filled"
@@ -62,6 +63,7 @@ class OrderStatus(enum.Enum):
 
 
 class States(enum.Enum):
+    PENDING_CREATION = "pending_creation"
     OPENING = "opening"
     OPEN = "open"
     CLOSING = "closing"
@@ -71,6 +73,7 @@ class States(enum.Enum):
 
 
 class StatesMessages(enum.Enum):
+    PENDING_CREATION = "pending creation"
     SYNCHRONIZING = "synchronizing"
     ALREADY_SYNCHRONIZING = "synchronizing"
     SYNCHRONIZING_ERROR = "synchronizing_error"

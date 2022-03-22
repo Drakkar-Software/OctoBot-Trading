@@ -42,7 +42,7 @@ async def test_stop_loss_limit_order_trigger(stop_loss_limit_order):
     )
     stop_loss_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
     await stop_loss_limit_order.initialize()
-    stop_loss_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+    await stop_loss_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
         stop_loss_limit_order
     )
     price_events_manager = stop_loss_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(

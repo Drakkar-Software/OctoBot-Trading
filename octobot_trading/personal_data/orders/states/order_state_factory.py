@@ -21,6 +21,9 @@ async def create_order_state(order, is_from_exchange_data=False, ignore_states=N
     if ignore_states is None:
         ignore_states = []
 
+    if order.status is enums.OrderStatus.PENDING_CREATION \
+       and enums.States.PENDING_CREATION not in ignore_states:
+        await order.on_pending_creation()
     if order.status is enums.OrderStatus.OPEN and enums.States.OPEN not in ignore_states:
         await order.on_open(force_open=False, is_from_exchange_data=is_from_exchange_data)
     elif order.status in constants.FILL_ORDER_STATUS_SCOPE \
