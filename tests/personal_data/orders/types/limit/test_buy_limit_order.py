@@ -40,7 +40,7 @@ async def test_buy_limit_order_trigger(buy_limit_order):
     )
     buy_limit_order.exchange_manager.is_backtesting = True  # force update_order_status
     await buy_limit_order.initialize()
-    buy_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
+    await buy_limit_order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(
         buy_limit_order
     )
     price_events_manager = buy_limit_order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(

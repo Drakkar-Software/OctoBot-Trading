@@ -24,6 +24,12 @@ from tests.personal_data.orders import buy_limit_order
 pytestmark = pytest.mark.asyncio
 
 
+async def test_create_order_state_pending_creation(buy_limit_order):
+    buy_limit_order.status = OrderStatus.PENDING_CREATION
+    await create_order_state(buy_limit_order)
+    assert buy_limit_order.state.state is States.PENDING_CREATION
+
+
 async def test_create_order_state_open(buy_limit_order):
     buy_limit_order.status = OrderStatus.OPEN
     await create_order_state(buy_limit_order)

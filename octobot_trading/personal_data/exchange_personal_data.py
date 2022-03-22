@@ -184,7 +184,7 @@ class ExchangePersonalData(util.Initializable):
 
     async def handle_order_instance_update(self, order, is_new_order: bool = False, should_notify: bool = True):
         try:
-            changed: bool = self.orders_manager.upsert_order_instance(order)
+            changed: bool = await self.orders_manager.upsert_order_instance(order)
 
             if changed:
                 asyncio.create_task(order.state.on_refresh_successful())

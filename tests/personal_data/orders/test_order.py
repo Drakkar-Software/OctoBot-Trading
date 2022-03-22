@@ -256,6 +256,26 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
 
 
+async def test_set_as_chained_order(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order = personal_data.Order(trader_inst)
+
+    with pytest.raises(errors.ConflictingOrdersError):
+        await base_order.set_as_chained_order(base_order, True, {})
+    assert base_order.triggered_by is None
+    assert base_order.has_been_bundled is False
+    assert base_order.status is enums.OrderStatus.OPEN
+    assert base_order.state is None
+
+    chained_order = personal_data.Order(trader_inst)
+    await chained_order.set_as_chained_order(base_order, True, {})
+    assert chained_order.triggered_by is base_order
+    assert chained_order.has_been_bundled is True
+    assert chained_order.status is enums.OrderStatus.PENDING_CREATION
+    assert isinstance(chained_order.state, personal_data.PendingCreationOrderState)
+
+
 async def test_trigger_chained_orders(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
 
@@ -278,3 +298,38 @@ async def test_trigger_chained_orders(trader_simulator):
         order_mock_1.should_be_created.assert_called_once()
         order_mock_2.should_be_created.assert_called_once()
         create_as_chained_order_mock.assert_called_once_with(order_mock_1)
+
+
+async def test_update_from_order(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+
+    base_order_1 = personal_data.Order(trader_inst)
+    base_order_1.order_id = "1"
+    base_order_1.status = enums.OrderStatus.OPEN
+    base_order_1.filled_price = decimal.Decimal("2")
+
+    base_order_2 = personal_data.Order(trader_inst)
+    base_order_2.order_id = "2"
+    base_order_2.status = enums.OrderStatus.CLOSED
+    base_order_2.filled_price = decimal.Decimal("3")
+
+    # no state
+    await base_order_1.update_from_order(base_order_2)
+    assert base_order_1.order_id == "2"
+    assert base_order_1.status == enums.OrderStatus.CLOSED
+    assert base_order_1.filled_price == decimal.Decimal("3")
+
+    # with state
+    state_1 = personal_data.OpenOrderState(base_order_1, False)
+    state_2 = personal_data.OpenOrderState(base_order_2, False)
+    base_order_1.state = state_1
+    base_order_2.state = state_2
+    base_order_2.order_id = "3"
+    base_order_2.status = enums.OrderStatus.CANCELED
+    base_order_2.filled_price = decimal.Decimal("4")
+    await base_order_1.update_from_order(base_order_2)
+    assert base_order_1.order_id == "3"
+    assert base_order_1.status == enums.OrderStatus.CANCELED
+    assert base_order_1.filled_price == decimal.Decimal("4")
+    assert base_order_1.state is state_2
+    assert base_order_1.state.order is base_order_1

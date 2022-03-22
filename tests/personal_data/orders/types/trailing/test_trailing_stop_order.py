@@ -164,7 +164,7 @@ async def initialize_trailing_stop(order, side=TradeOrderSide.SELL) -> Tuple[
     await order.initialize()
     price_events_manager = order.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
         DEFAULT_ORDER_SYMBOL).price_events_manager
-    order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order)
+    await order.exchange_manager.exchange_personal_data.orders_manager.upsert_order_instance(order)
     return order, order_price, price_events_manager
 
 

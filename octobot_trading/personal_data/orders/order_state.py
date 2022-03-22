@@ -34,6 +34,12 @@ class OrderState(state_class.State):
         # related order
         self.order = order
 
+    def is_created(self) -> bool:
+        """
+        :return: True if the Order is created
+        """
+        return True
+
     def is_open(self) -> bool:
         """
         :return: True if the Order is considered as open
@@ -76,6 +82,12 @@ class OrderState(state_class.State):
         :return: True when the order type is supported by the exchange
         """
         return self.order.is_self_managed()
+
+    async def replace_order(self, new_order):
+        async with self.refresh_operation():
+            self.order.state = None
+            self.order = new_order
+            self.order.state = self
 
     async def _synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
         """

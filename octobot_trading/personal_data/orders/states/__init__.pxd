@@ -29,6 +29,11 @@ from octobot_trading.personal_data.orders.states.open_order_state cimport (
     OpenOrderState
 )
 
+from octobot_trading.personal_data.orders.states cimport pending_creation_order_state
+from octobot_trading.personal_data.orders.states.pending_creation_order_state cimport (
+    PendingCreationOrderState
+)
+
 from octobot_trading.personal_data.orders.states cimport fill_order_state
 from octobot_trading.personal_data.orders.states.fill_order_state cimport (
     FillOrderState
@@ -39,5 +44,6 @@ __all__ = [
     "CloseOrderState",
     "CancelOrderState",
     "OpenOrderState",
+    "PendingCreationOrderState",
     "FillOrderState",
 ]
