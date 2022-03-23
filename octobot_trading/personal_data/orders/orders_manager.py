@@ -126,8 +126,7 @@ class OrdersManager(util.Initializable):
         # TODO refactor to := when cython will support it
         if pending_order is None:
             return None
-        await order_util.apply_pending_order_from_created_order(pending_order, created_order)
-        pending_order.is_initialized = False
+        await order_util.apply_pending_order_from_created_order(pending_order, created_order, True)
         created_order.clear()
         return pending_order
 
