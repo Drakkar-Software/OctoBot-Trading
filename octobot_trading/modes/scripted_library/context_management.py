@@ -81,7 +81,7 @@ class Context:
         self._flush_cache_when_necessary = not exchange_manager.is_backtesting if exchange_manager else False
         self.backtesting_id = backtesting_id
         self.optimizer_id = optimizer_id
-        self.allow_self_managed_orders = False
+        self.allow_artificial_orders = False
         self.plot_orders = False
         self.cache_manager = databases.CacheManager(database_adaptor=databases.TinyDBAdaptor)
         self.just_created_orders = []
