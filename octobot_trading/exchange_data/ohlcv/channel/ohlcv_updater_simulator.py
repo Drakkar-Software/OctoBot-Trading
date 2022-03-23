@@ -66,30 +66,7 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                                         if self.future_candle_time_frame is time_frame else 0)
                     )
                     if ohlcv_data:
-                        if time_frame is self.future_candle_time_frame:
-                            # There should always be at least 2 candles in read data, otherwise this means that
-                            # the exchange was down for some time. Consider it unreachable
-                            self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) < 2
-                        has_future_candle = False
-                        if self.future_candle_time_frame is time_frame:
-                            if ohlcv_data[-1][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
-                                # register future candle
-                                self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = \
-                                    ohlcv_data[-1][-1]
-                                # do not push future candle
-                                has_future_candle = True
-                            else:
-                                # if no future candle available
-                                # (end of backtesting of missing data: reset future candle)
-                                self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = None
-                        if not has_future_candle or len(ohlcv_data) > 1:
-                            # push current candle(s)
-                            candles = ohlcv_data[:-1] if has_future_candle else ohlcv_data
-                            await self.push(time_frame,
-                                            pair,
-                                            [ohlcv[-1] for ohlcv in candles],
-                                            partial=True)
-                            pushed_data = True
+                        pushed_data = await self._handle_ohlcv_data(ohlcv_data, time_frame, pair, timestamp)
                     elif self.require_last_init_candles_pairs_push:
                         # triggered on first iteration to initialize large candles that might be pushed much later
                         # otherwise but are required to complete TA evaluation
@@ -112,6 +89,33 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
         finally:
             self.last_timestamp_pushed = timestamp
             self.require_last_init_candles_pairs_push = False
+
+    async def _handle_ohlcv_data(self, ohlcv_data, time_frame, pair, timestamp):
+        if time_frame is self.future_candle_time_frame:
+            # There should always be at least 2 candles in read data, otherwise this means that
+            # the exchange was down for some time. Consider it unreachable
+            self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) < 2
+        has_future_candle = False
+        if self.future_candle_time_frame is time_frame:
+            if ohlcv_data[-1][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
+                # register future candle
+                self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = \
+                    ohlcv_data[-1][-1]
+                # do not push future candle
+                has_future_candle = True
+            else:
+                # if no future candle available
+                # (end of backtesting of missing data: reset future candle)
+                self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = None
+        if not has_future_candle or len(ohlcv_data) > 1:
+            # push current candle(s)
+            candles = ohlcv_data[:-1] if has_future_candle else ohlcv_data
+            await self.push(time_frame,
+                            pair,
+                            [ohlcv[-1] for ohlcv in candles],
+                            partial=True)
+            return True
+        return False
 
     async def pause(self):
         await util.pause_time_consumer(self)
