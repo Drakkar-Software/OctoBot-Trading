@@ -44,7 +44,7 @@ class Context:
         signal_symbol,
         time_frame,
         logger,
-        trading_mode,
+        trading_mode_class,
         trigger_cache_timestamp,
         trigger_source,
         trigger_value,
@@ -75,7 +75,7 @@ class Context:
         self.symbol_writer = storage.RunDatabasesProvider.instance().get_symbol_db(bot_id, self.exchange_name,
                                                                                    self.symbol) \
             if bot_id else None
-        self.trading_mode = trading_mode
+        self.trading_mode_class = trading_mode_class
         self.trigger_cache_timestamp = trigger_cache_timestamp
         self.trigger_source = trigger_source
         self.trigger_value = trigger_value
@@ -144,7 +144,7 @@ class Context:
                 await self._reset_cache()
 
     @staticmethod
-    def minimal(trading_mode, logger, exchange_name, traded_pair,
+    def minimal(trading_mode_class, logger, exchange_name, traded_pair,
                 backtesting_id, optimizer_id, optimization_campaign_name):
         return Context(
             None,
@@ -157,7 +157,7 @@ class Context:
             None,
             None,
             logger,
-            trading_mode,
+            trading_mode_class,
             None,
             None,
             None,
@@ -179,7 +179,7 @@ class Context:
             self.signal_symbol,
             self.time_frame,
             self.logger,
-            self.trading_mode,
+            self.trading_mode_class,
             self.trigger_cache_timestamp,
             self.trigger_source,
             self.trigger_value,
@@ -479,7 +479,7 @@ class Context:
     async def backtesting_results(self, with_lock=False, cache_size=None, database_adaptor=databases.TinyDBAdaptor):
         display = commons_display.display_translator_factory()
         run_dbs_identifier = databases.RunDatabasesIdentifier(
-            self.trading_mode.__class__,
+            self.trading_mode_class,
             self.optimization_campaign_name or optimization_campaign.OptimizationCampaign.get_campaign_name(),
             database_adaptor=database_adaptor,
             backtesting_id=self.backtesting_id,
