@@ -25,6 +25,9 @@ import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_m
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
+LOGGER_NAME = "order_util"
+
+
 def is_valid(element, key):
     """
     Checks is the element is valid with the market status fixer
@@ -91,7 +94,7 @@ def check_cost(total_order_price, min_cost):
     """
     if total_order_price < min_cost:
         if min_cost is None:
-            logging.get_logger("order_util").error("Invalid min_cost from exchange")
+            logging.get_logger(LOGGER_NAME).error("Invalid min_cost from exchange")
         return False
     return True
 
@@ -228,16 +231,18 @@ def is_associated_pending_order(pending_order, created_order):
            created_order.trader is pending_order.trader
 
 
-async def apply_pending_order_from_created_order(pending_order, created_order):
+async def apply_pending_order_from_created_order(pending_order, created_order, to_be_initialized):
     await pending_order.update_from_order(created_order)
-    logging.get_logger("order_util").debug(f"Updated pending order: {pending_order} using {created_order}")
+    if to_be_initialized:
+        pending_order.is_initialized = False
+    logging.get_logger(LOGGER_NAME).debug(f"Updated pending order: {pending_order} using {created_order}")
 
 
 async def _apply_pending_order_on_existing_orders(pending_order):
     for created_order in pending_order.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(
             symbol=pending_order.symbol):
         if is_associated_pending_order(pending_order, created_order) and created_order.order_group is None:
-            await apply_pending_order_from_created_order(pending_order, created_order)
+            await apply_pending_order_from_created_order(pending_order, created_order, False)
             pending_order.exchange_manager.exchange_personal_data.orders_manager.replace_order(created_order.order_id,
                                                                                                pending_order)
             created_order.clear()
