@@ -36,8 +36,8 @@ from octobot_trading.modes.scripted_trading_mode import (
     AbstractScriptedTradingModeProducer,
 )
 
-from octobot_trading.modes import context_management
-from octobot_trading.modes.context_management import (
+from octobot_trading.modes import scripted_library
+from octobot_trading.modes.scripted_library import (
     Context,
 )
 

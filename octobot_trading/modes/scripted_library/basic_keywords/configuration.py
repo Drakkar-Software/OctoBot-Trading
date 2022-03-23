@@ -15,7 +15,7 @@
 #  License along with this library.
 import decimal
 
-import octobot_trading.modes.basic_keywords.user_inputs as user_inputs
+import octobot_trading.modes.scripted_library.basic_keywords.user_inputs as user_inputs
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 

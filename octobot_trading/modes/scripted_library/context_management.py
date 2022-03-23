@@ -30,7 +30,6 @@ import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.models as tentacles_manager_models
 
 
-# TODO : move into scripted_lib alongside basic_keywords
 class Context:
     def __init__(
         self,
