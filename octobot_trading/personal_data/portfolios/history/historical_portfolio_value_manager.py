@@ -19,6 +19,7 @@ import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.constants as commons_constants
 import octobot_commons.enums as commons_enums
+import octobot_commons.errors as commons_errors
 import octobot_commons.symbol_util as symbol_util
 
 import octobot_trading.util as util
@@ -45,7 +46,6 @@ class HistoricalPortfolioValueManager(util.Initializable):
         self.portfolio_manager = portfolio_manager
         self.logger = logging.get_logger(f"{self.__class__.__name__}"
                                          f"[{self.portfolio_manager.exchange_manager.exchange_name}]")
-        self.run_dbs_identifier = util.get_run_databases_identifier(self.portfolio_manager.exchange_manager)
         self._portfolio_type_suffix = self._get_portfolio_type_suffix()
         self.saved_time_frames = self.portfolio_manager.exchange_manager.config.get(
             commons_constants.CONFIG_SAVED_HISTORICAL_TIMEFRAMES,
@@ -55,6 +55,12 @@ class HistoricalPortfolioValueManager(util.Initializable):
         self.version = version or self.__class__.DEFAULT_DATA_VERSION
 
         self.historical_portfolio_value = sortedcontainers.SortedDict()
+        try:
+            self.run_dbs_identifier = util.get_run_databases_identifier(self.portfolio_manager.exchange_manager)
+        except commons_errors.ConfigTradingError:
+            # can't save data without an activated trading mode
+            self.run_dbs_identifier = None
+
 
     async def initialize_impl(self):
         """
@@ -131,6 +137,8 @@ class HistoricalPortfolioValueManager(util.Initializable):
         return changed
 
     async def save_historical_portfolio_value(self):
+        if self.run_dbs_identifier is None:
+            return
         async with databases.DBWriter.database(self.run_dbs_identifier.get_historical_portfolio_value_db_identifier(
                 self.portfolio_manager.exchange_manager.exchange_name, self._portfolio_type_suffix
         )) as writer:
@@ -143,6 +151,8 @@ class HistoricalPortfolioValueManager(util.Initializable):
             )
 
     async def _reload_historical_portfolio_value(self):
+        if self.run_dbs_identifier is None:
+            return
         await self.run_dbs_identifier.initialize(
             exchange=self.portfolio_manager.exchange_manager.exchange_name, from_global_history=True
         )
