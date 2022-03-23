@@ -307,7 +307,8 @@ class ExchangePersonalData(util.Initializable):
             self.logger.error(f"Failed to send position update notification : {e}")
 
     async def stop(self):
-        await self.portfolio_manager.stop()
+        if self.portfolio_manager is not None:
+            await self.portfolio_manager.stop()
         self.clear()
 
     def clear(self):
