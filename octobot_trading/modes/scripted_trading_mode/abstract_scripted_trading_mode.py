@@ -35,6 +35,7 @@ import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.errors as errors
 import octobot_trading.util as util
+import octobot_trading.storage as storage
 import octobot_trading.personal_data as personal_data
 import octobot_backtesting.api as backtesting_api
 import octobot_tentacles_manager.api as tentacles_manager_api
@@ -47,7 +48,6 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
     BACKTESTING_ID_BY_BOT_ID = {}
     INITIALIZED_DB_BY_BOT_ID = {}
     SAVED_RUN_METADATA_DB_BY_BOT_ID = {}
-    WRITER_IDENTIFIER_BY_BOT_ID = {}
     INITIALIZED_TRADING_PAIR_BY_BOT_ID = {}
 
     def __init__(self, config, exchange_manager):
@@ -103,10 +103,9 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             trade: dict,
             old_trade: bool,
     ):
-        if trade[trading_enums.ExchangeConstantsOrderColumns.STATUS.value] != trading_enums.OrderStatus.CANCELED.value \
-                and self.producers[0].trades_writer:
-            await basic_keywords.store_trade(None, trade, exchange_manager=self.exchange_manager,
-                                             writer=self.producers[0].trades_writer)
+        if trade[trading_enums.ExchangeConstantsOrderColumns.STATUS.value] != trading_enums.OrderStatus.CANCELED.value:
+            db = storage.RunDatabasesProvider.instance().get_trades_db(self.bot_id, self.exchange_manager.exchange_name)
+            await basic_keywords.store_trade(None, trade, exchange_manager=self.exchange_manager, writer=db)
 
     async def _user_commands_callback(self, bot_id, subject, action, data) -> None:
         self.logger.debug(f"Received {action} command.")
@@ -125,26 +124,32 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             await self.clear_simulated_transactions_cache()
 
     async def clear_simulated_orders_cache(self):
-        for producer in self.producers:
-            await basic_keywords.clear_orders_cache(producer.orders_writer)
+        await basic_keywords.clear_orders_cache(
+            storage.RunDatabasesProvider.instance().get_orders_db(self.bot_id, self.exchange_manager.exchange_name)
+        )
 
     async def clear_simulated_trades_cache(self):
-        for producer in self.producers:
-            await basic_keywords.clear_trades_cache(producer.trades_writer)
+        await basic_keywords.clear_trades_cache(
+            storage.RunDatabasesProvider.instance().get_trades_db(self.bot_id, self.exchange_manager.exchange_name)
+        )
 
     async def clear_simulated_transactions_cache(self):
-        for producer in self.producers:
-            await basic_keywords.clear_transactions_cache(producer.transactions_cache)
+        await basic_keywords.clear_trades_cache(
+            storage.RunDatabasesProvider.instance().get_transactions_db(self.bot_id, self.exchange_manager.exchange_name)
+        )
 
     async def clear_all_cache(self):
-
         for tentacle_name in [self.get_name()] + [evaluator.get_name() for evaluator in
                                                   self.called_nested_evaluators]:
             await databases.CacheManager().clear_cache(tentacle_name)
 
     async def clear_plotting_cache(self):
         for producer in self.producers:
-            await basic_keywords.clear_all_tables(producer.symbol_writer)
+            await basic_keywords.clear_all_tables(
+                storage.RunDatabasesProvider.instance().get_symbol_db(self.bot_id,
+                                                                      self.exchange_manager.exchange_name,
+                                                                      self.symbol)
+            )
 
     @classmethod
     async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id, optimization_campaign):
@@ -185,11 +190,15 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         await self.clear_plotting_cache()
         for producer in self.producers:
             for time_frame, call_args in producer.last_call_by_timeframe.items():
-                await basic_keywords.clear_user_inputs(producer.run_data_writer)
+                run_db = storage.RunDatabasesProvider.instance().get_run_db(self.bot_id)
+                await basic_keywords.clear_user_inputs(run_db)
                 await producer.init_user_inputs(False)
-                producer.run_data_writer.set_initialized_flags(False, (time_frame, ))
+                run_db.set_initialized_flags(False, (time_frame, ))
                 last_call_timestamp = call_args[3]
-                producer.symbol_writer.set_initialized_flags(False, (last_call_timestamp,))
+                symbol_db = storage.RunDatabasesProvider.instance().get_symbol_db(self.bot_id,
+                                                                                  self.exchange_manager.exchange_name,
+                                                                                  self.symbol)
+                symbol_db.set_initialized_flags(False, (last_call_timestamp,))
                 self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
                 await self.close_caches(reset_cache_db_ids=True)
                 await producer.call_script(*call_args)
@@ -200,23 +209,6 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             return cls.BACKTESTING_ID_BY_BOT_ID[bot_id]
         except KeyError:
             raise RuntimeError(f"No backtesting id for bot_id: {bot_id}")
-
-    def get_writer(self, writer_identifier):
-        try:
-            return self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id][writer_identifier]
-        except KeyError:
-            if self.bot_id not in self.__class__.WRITER_IDENTIFIER_BY_BOT_ID:
-                self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id] = {}
-            writer = databases.DBWriterReader(writer_identifier)
-            self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id][writer_identifier] = writer
-            return writer
-
-    async def close_writer(self, writer_identifier):
-        try:
-            await self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id][writer_identifier].close()
-            self.__class__.WRITER_IDENTIFIER_BY_BOT_ID[self.bot_id].pop(writer_identifier)
-        except KeyError:
-            pass
 
     def set_initialized_trading_pair_by_bot_id(self, symbol, time_frame, initialized):
         try:
@@ -364,22 +356,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         self.trading_mode.__class__.BACKTESTING_ID_BY_BOT_ID[self.trading_mode.bot_id] = \
             self.run_dbs_identifier.backtesting_id
         await self.run_dbs_identifier.initialize(self.exchange_name)
-        self.run_data_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_run_data_db_identifier())
         # refresh user inputs
         await self.init_user_inputs(True)
-        self.orders_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_orders_db_identifier(
-            self.exchange_name
-        ))
-        self.trades_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_trades_db_identifier(
-            self.exchange_name
-        ))
-        self.transactions_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_transactions_db_identifier(
-            self.exchange_name
-        ))
-        self.symbol_writer = self.trading_mode.get_writer(self.run_dbs_identifier.get_symbol_db_identifier(
-            self.exchange_name,
-            self.traded_pair
-        ))
         if not self.exchange_manager.is_backtesting:
             asyncio.create_task(self._schedule_initialization_call())
 
@@ -485,8 +463,9 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         context.symbol = symbol
         context.time_frame = time_frame
         initialized = True
+        run_data_writer = storage.RunDatabasesProvider.instance().get_run_db(self.trading_mode.bot_id)
         try:
-            if not self.run_data_writer.are_data_initialized and not \
+            if not run_data_writer.are_data_initialized and not \
                     self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
                 await self._reset_run_data(context)
             await self._pre_script_call(context)
@@ -495,18 +474,21 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             raise
         except (commons_errors.MissingDataError, commons_errors.ExecutionAborted) as e:
             self.logger.debug(f"Script execution aborted: {e}")
-            initialized = self.run_data_writer.are_data_initialized
+            initialized = run_data_writer.are_data_initialized
         except Exception as e:
             self.logger.exception(e, True, f"Error when running script: {e}")
         finally:
             if not self.exchange_manager.is_backtesting:
                 # update db after each run only in live mode
                 for writer in self.writers():
-                    await writer.flush()
+                    if writer:
+                        await writer.flush()
                 if context.has_cache(context.symbol, context.time_frame):
                     await context.get_cache().flush()
-            self.run_data_writer.set_initialized_flags(initialized)
-            self.symbol_writer.set_initialized_flags(initialized, (time_frame,))
+            run_data_writer.set_initialized_flags(initialized)
+            storage.RunDatabasesProvider.instance().get_symbol_db(self.trading_mode.bot_id,
+                                                                  self.exchange_name, symbol)\
+                .set_initialized_flags(initialized, (time_frame,))
 
     def get_context(self, matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
                     candle, kline, init_call=False):
@@ -521,11 +503,6 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             symbol,
             time_frame,
             self.logger,
-            self.run_data_writer,
-            self.orders_writer,
-            self.trades_writer,
-            self.transactions_writer,
-            self.symbol_writer,
             self.trading_mode,
             trigger_cache_timestamp,
             trigger_source,
@@ -537,14 +514,17 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         return context
 
     async def _reset_run_data(self, context):
-        await basic_keywords.clear_run_data(self.run_data_writer)
-        await basic_keywords.save_metadata(self.run_data_writer, await self.get_live_metadata())
-        await basic_keywords.save_portfolio(self.run_data_writer, context)
+        run_data_writer = storage.RunDatabasesProvider.instance().get_run_db(self.trading_mode.bot_id)
+        await basic_keywords.clear_run_data(run_data_writer)
+        await basic_keywords.save_metadata(run_data_writer, await self.get_live_metadata())
+        await basic_keywords.save_portfolio(run_data_writer, context)
         self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID[self.trading_mode.bot_id] = True
 
     async def init_user_inputs(self, should_clear_inputs):
         if should_clear_inputs:
-            await basic_keywords.clear_user_inputs(self.run_data_writer)
+            await basic_keywords.clear_user_inputs(
+                storage.RunDatabasesProvider.instance().get_run_db(self.trading_mode.bot_id)
+            )
         await self._register_required_user_inputs(
             self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None, True))
 
@@ -576,7 +556,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         await basic_keywords.store_transactions(
             None,
             self.exchange_manager.exchange_personal_data.transactions_manager.transactions.values(),
-            writer=self.transactions_writer
+            writer=storage.RunDatabasesProvider.instance().get_transactions_db(self.trading_mode.bot_id,
+                                                                               self.exchange_name)
         )
 
     async def stop(self) -> None:
@@ -584,10 +565,10 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         Stop trading mode channels subscriptions
         """
         if not self.are_metadata_saved and self.exchange_manager is not None and self.exchange_manager.is_backtesting:
-            await self.run_data_writer.flush()
-            user_inputs = await basic_keywords.get_user_inputs(self.run_data_writer)
+            run_data_writer = storage.RunDatabasesProvider.instance().get_run_db(self.trading_mode.bot_id)
+            await run_data_writer.flush()
+            user_inputs = await basic_keywords.get_user_inputs(run_data_writer)
             await self._save_transactions()
-            await asyncio.gather(*(self.trading_mode.close_writer(writer.get_db_path()) for writer in self.writers()))
             if not self.trading_mode.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.trading_mode.bot_id, False):
                 try:
                     self.trading_mode.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.trading_mode.bot_id] = True

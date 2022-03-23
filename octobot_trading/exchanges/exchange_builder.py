@@ -68,6 +68,9 @@ class ExchangeBuilder:
             if self.exchange_manager.trader is not None:
                 await self._build_trader()
 
+            # initialize run databases
+            self.exchange_manager.init_run_databases(self._bot_id)
+
             # create trading modes
             await self._build_trading_modes_if_required(trading_mode_class)
 

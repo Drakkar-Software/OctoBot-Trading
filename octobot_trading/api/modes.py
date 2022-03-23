@@ -21,10 +21,6 @@ def get_trading_modes(exchange_manager) -> list:
     return exchange_manager.trading_modes
 
 
-def get_trading_mode_writers(trading_mode):
-    return trading_mode.producers[0].writers()
-
-
 def get_trading_mode_symbol(trading_mode) -> list:
     return trading_mode.symbol
 

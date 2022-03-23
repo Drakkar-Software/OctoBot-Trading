@@ -26,6 +26,7 @@ import octobot_commons.optimization_campaign as optimization_campaign
 import octobot_commons.event_tree as event_tree
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
+import octobot_trading.storage as storage
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.models as tentacles_manager_models
 
@@ -43,11 +44,6 @@ class Context:
         signal_symbol,
         time_frame,
         logger,
-        run_data_writer,
-        orders_writer,
-        trades_writer,
-        transaction_writer,
-        symbol_writer,
         trading_mode,
         trigger_cache_timestamp,
         trigger_source,
@@ -66,11 +62,19 @@ class Context:
         self.signal_symbol = signal_symbol
         self.time_frame = time_frame
         self.logger = logger
-        self.run_data_writer = run_data_writer
-        self.orders_writer = orders_writer
-        self.trades_writer = trades_writer
-        self.transaction_writer = transaction_writer
-        self.symbol_writer = symbol_writer
+        bot_id = exchange_manager.get_bot_id() if exchange_manager and exchange_manager.trading_modes else None
+        self.run_data_writer = storage.RunDatabasesProvider.instance().get_run_db(bot_id) \
+            if bot_id else None
+        self.orders_writer = storage.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \
+            if bot_id else None
+        self.trades_writer = storage.RunDatabasesProvider.instance().get_trades_db(bot_id, self.exchange_name) \
+            if bot_id else None
+        self.transaction_writer = storage.RunDatabasesProvider.instance().get_transactions_db(bot_id,
+                                                                                              self.exchange_name) \
+            if bot_id else None
+        self.symbol_writer = storage.RunDatabasesProvider.instance().get_symbol_db(bot_id, self.exchange_name,
+                                                                                   self.symbol) \
+            if bot_id else None
         self.trading_mode = trading_mode
         self.trigger_cache_timestamp = trigger_cache_timestamp
         self.trigger_source = trigger_source
@@ -153,11 +157,6 @@ class Context:
             None,
             None,
             logger,
-            None,
-            None,
-            None,
-            None,
-            None,
             trading_mode,
             None,
             None,
@@ -180,11 +179,6 @@ class Context:
             self.signal_symbol,
             self.time_frame,
             self.logger,
-            self.run_data_writer,
-            self.orders_writer,
-            self.trades_writer,
-            self.transaction_writer,
-            self.symbol_writer,
             self.trading_mode,
             self.trigger_cache_timestamp,
             self.trigger_source,

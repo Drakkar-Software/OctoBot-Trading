@@ -47,6 +47,7 @@ packages_list = [
     "octobot_trading.octobot_channel_consumer",
     "octobot_trading.util.initializable",
     "octobot_trading.util.config_util",
+    "octobot_trading.storage.run_databases_provider",
     "octobot_trading.exchange_data.exchange_symbols_data",
     "octobot_trading.exchange_data.exchange_symbol_data",
     "octobot_trading.exchange_data.ticker.ticker_manager",
