@@ -153,8 +153,8 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await databases.CacheManager().close_cache(
                 tentacle_name,
                 self.exchange_manager.exchange_name,
-                None if self.get_is_symbol_wildcard() else self.symbol,
-                None if self.get_is_time_frame_wildcard() else self.time_frame,
+                common_constants.UNPROVIDED_CACHE_IDENTIFIER if self.get_is_symbol_wildcard() else self.symbol,
+                common_constants.UNPROVIDED_CACHE_IDENTIFIER if self.get_is_time_frame_wildcard() else self.time_frame,
                 reset_cache_db_ids=reset_cache_db_ids
             )
 
