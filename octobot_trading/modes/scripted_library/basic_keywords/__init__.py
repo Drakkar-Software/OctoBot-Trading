@@ -19,6 +19,7 @@ from octobot_trading.modes.scripted_library.basic_keywords.user_inputs import (
     save_user_input,
     get_user_inputs,
     clear_user_inputs,
+    get_activation_topics,
 )
 
 from octobot_trading.modes.scripted_library.basic_keywords.configuration import (
@@ -48,6 +49,7 @@ __all__ = [
     "save_user_input",
     "get_user_inputs",
     "clear_user_inputs",
+    "get_activation_topics",
     "user_select_leverage",
     "set_leverage",
     "set_partial_take_profit_stop_loss",

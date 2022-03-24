@@ -584,10 +584,11 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             commons_enums.ActivationTopics.FULL_CANDLES.value,
             commons_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value
         ]
-        await basic_keywords.user_input(context, commons_constants.CONFIG_ACTIVATION_TOPICS, "options",
-                                        commons_enums.ActivationTopics.EVALUATORS.value,
-                                        options=activation_topic_values,
-                                        show_in_optimizer=False, show_in_summary=False, order=1000)
+        await basic_keywords.get_activation_topics(
+            context,
+            commons_enums.ActivationTopics.EVALUATORS.value,
+            activation_topic_values
+        )
 
     @contextlib.asynccontextmanager
     async def get_metadata_writer(self, with_lock):
