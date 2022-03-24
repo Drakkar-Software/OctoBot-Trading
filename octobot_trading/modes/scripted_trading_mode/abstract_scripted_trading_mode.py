@@ -188,17 +188,16 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
 
     async def start_over_database(self):
         await self.clear_plotting_cache()
+        symbol_db = storage.RunDatabasesProvider.instance().get_symbol_db(self.bot_id,
+                                                                          self.exchange_manager.exchange_name,
+                                                                          self.symbol)
+        symbol_db.set_initialized_flags(False)
         for producer in self.producers:
             for time_frame, call_args in producer.last_call_by_timeframe.items():
                 run_db = storage.RunDatabasesProvider.instance().get_run_db(self.bot_id)
                 await basic_keywords.clear_user_inputs(run_db)
                 await producer.init_user_inputs(False)
                 run_db.set_initialized_flags(False, (time_frame, ))
-                last_call_timestamp = call_args[3]
-                symbol_db = storage.RunDatabasesProvider.instance().get_symbol_db(self.bot_id,
-                                                                                  self.exchange_manager.exchange_name,
-                                                                                  self.symbol)
-                symbol_db.set_initialized_flags(False, (last_call_timestamp,))
                 self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
                 await self.close_caches(reset_cache_db_ids=True)
                 await producer.call_script(*call_args)
