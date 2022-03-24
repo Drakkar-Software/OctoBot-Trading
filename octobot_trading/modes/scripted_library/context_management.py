@@ -24,6 +24,7 @@ import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
 import octobot_commons.optimization_campaign as optimization_campaign
 import octobot_commons.event_tree as event_tree
+import octobot_evaluators.evaluators as evaluators
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
 import octobot_trading.storage as storage
@@ -273,8 +274,11 @@ class Context:
                 self.get_tentacle_config_elements(tentacle_class, config_name, None)
             # use already registered requirement to access its configuration (config might be updated during script run)
             registered_requirement = self.get_cache_registered_requirements(tentacle_class.get_name(), config_name)
-            requirement.tentacle = tentacle_class.factory_with_local_config(tentacles_setup_config,
-                                                                            registered_requirement.tentacle_config)
+            requirement.tentacle = evaluators.create_temporary_evaluator_with_local_config(
+                tentacle_class,
+                tentacles_setup_config,
+                registered_requirement.tentacle_config
+            )
             await self._reset_cache()
 
     @staticmethod
