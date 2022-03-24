@@ -142,7 +142,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                         evaluator_type=evaluators_enums.EvaluatorMatrixTypes.STRATEGIES.value,
                         exchange_name=self.exchange_name,
                         # no time_frame filter to allow receiving updates from strategies without timeframes in wildcard
-                        time_frame=None if self.is_time_frame_wildcard() else self.time_frame_filter,
+                        time_frame=common_constants.CONFIG_WILDCARD if self.is_time_frame_wildcard()
+                        else self.time_frame_filter,
                         supervised=self.exchange_manager.is_backtesting
                     )
                     self.evaluator_consumers.append(
