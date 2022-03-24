@@ -15,6 +15,7 @@
 #  License along with this library.
 
 import octobot_trading.enums as trading_enums
+import octobot_commons.constants as commons_constants
 
 
 async def user_input(
@@ -117,3 +118,12 @@ async def get_user_inputs(reader):
 
 async def clear_user_inputs(writer):
     await writer.delete(trading_enums.DBTables.INPUTS.value, None)
+
+
+async def get_activation_topics(context, default_value, options):
+    return await user_input(
+        context, commons_constants.CONFIG_ACTIVATION_TOPICS, "options",
+        default_value,
+        options=options,
+        show_in_optimizer=False, show_in_summary=False, order=1000
+    )
