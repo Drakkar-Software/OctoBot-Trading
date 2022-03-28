@@ -17,10 +17,11 @@ import octobot_commons.databases as databases
 import octobot_commons.optimization_campaign as optimization_campaign
 import octobot_commons.constants as commons_constants
 
-import octobot_trading.modes as modes
-
 
 def get_run_databases_identifier(exchange_manager, trading_mode_class=None):
+    # avoid importing octobot_trading.modes directly to prevent circular imports
+    import octobot_trading.modes as modes
+
     return databases.RunDatabasesIdentifier(
         trading_mode_class or modes.get_activated_trading_mode(exchange_manager.tentacles_setup_config),
         optimization_campaign.OptimizationCampaign.get_campaign_name(exchange_manager.tentacles_setup_config),
