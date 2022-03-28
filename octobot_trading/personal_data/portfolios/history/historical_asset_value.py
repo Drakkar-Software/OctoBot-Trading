@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import copy
 
 
 class HistoricalAssetValue:
@@ -25,7 +26,7 @@ class HistoricalAssetValue:
 
     def __init__(self, timestamp, value_by_currency):
         self._timestamp = timestamp
-        self._value_by_currency = value_by_currency
+        self._value_by_currency = copy.copy(value_by_currency)
 
     def __contains__(self, item):
         return item in self._value_by_currency
