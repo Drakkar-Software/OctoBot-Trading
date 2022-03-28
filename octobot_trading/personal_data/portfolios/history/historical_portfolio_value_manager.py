@@ -38,8 +38,10 @@ class HistoricalPortfolioValueManager(util.Initializable):
     DEFAULT_DATA_SOURCE = "portfolio_value_holder"  # for later versions: consolidate data with transaction history
     DEFAULT_DATA_VERSION = 1
     MIN_TIME_FRAME_RELEVANCY_SECONDS = 29   # less than 30s to support 1m time frames
-    TIME_FRAME_RELEVANCY_TIME_RATIO = 0.1   # allow for 10% error in timestamp rounding (only used after the ideal
-    # time passed to avoid using past data: use future data at worse)
+    TIME_FRAME_RELEVANCY_TIME_RATIO = 0.45   # allow for 45% error in timestamp rounding (only used after the ideal
+    # time passed to avoid using past data: use future data at worse). use high value to still take value if users
+    # start it in the 1st part of the day for example
+    MAX_HISTORY_SIZE = 250000
 
     def __init__(self, portfolio_manager, data_source=None, version=None):
         super().__init__()
@@ -54,6 +56,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
         self.data_source = data_source or self.__class__.DEFAULT_DATA_SOURCE
         self.version = version or self.__class__.DEFAULT_DATA_VERSION
 
+        self.max_history_size = self.__class__.MAX_HISTORY_SIZE
         self.historical_portfolio_value = sortedcontainers.SortedDict()
         try:
             self.run_dbs_identifier = util.get_run_databases_identifier(self.portfolio_manager.exchange_manager)
@@ -61,24 +64,26 @@ class HistoricalPortfolioValueManager(util.Initializable):
             # can't save data without an activated trading mode
             self.run_dbs_identifier = None
 
-
     async def initialize_impl(self):
         """
         Reset the portfolio instance
         """
         await self._reload_historical_portfolio_value()
 
-    async def on_new_value(self, timestamp, value_by_currency, force_update=False, save_changes=True):
+    async def on_new_value(self, timestamp, value_by_currency, force_update=False, save_changes=True,
+                           include_past_data=False):
         """
         Updates the historical value only if the current timestamp or currency is missing, unless force_update is True
         :param timestamp: timestamp associated to the current portfolio value. Will be adapted for each timeframe
         :param value_by_currency: dict of currency and values
         :param force_update: when True, even if timestamp is already associated to a value, the value is still updated
         :param save_changes: when True, updates the database via save_historical_portfolio_value()
+        :param include_past_data: when True, also save data from past time periods using their closest relevant
+        timestamp
         :return: True if something changed
         """
         if relevant_timestamps := self._get_relevant_timestamps(timestamp, value_by_currency.keys(),
-                                                                self.saved_time_frames, force_update):
+                                                                self.saved_time_frames, force_update, include_past_data):
             return await self._upsert_value(relevant_timestamps, value_by_currency, save_changes)
         return False
 
@@ -86,9 +91,11 @@ class HistoricalPortfolioValueManager(util.Initializable):
         changed = False
         for timestamp, value_by_currency in value_by_currency_by_timestamp.items():
             changed |= await self.on_new_value(timestamp, value_by_currency,
-                                               force_update=force_update, save_changes=False)
+                                               force_update=force_update, save_changes=False,
+                                               include_past_data=True)
         if changed and save_changes:
             await self.save_historical_portfolio_value()
+        return changed
 
     def get_historical_values(self, currency, time_frame, from_timestamp=0, to_timestamp=None):
         """
@@ -129,12 +136,18 @@ class HistoricalPortfolioValueManager(util.Initializable):
             try:
                 changed |= self.get_historical_value(timestamp).update(value_by_currency)
             except KeyError:
-                self.historical_portfolio_value[timestamp] = \
-                    historical_asset_value.HistoricalAssetValue(timestamp, value_by_currency)
+                self._add_historical_portfolio_value(timestamp, value_by_currency)
                 changed = True
         if changed and save_changes:
             await self.save_historical_portfolio_value()
         return changed
+
+    def _add_historical_portfolio_value(self, timestamp, value_by_currency):
+        if len(self.historical_portfolio_value) >= self.max_history_size:
+            # remove the oldest element
+            self.historical_portfolio_value.popitem(0)
+        self.historical_portfolio_value[timestamp] = \
+            historical_asset_value.HistoricalAssetValue(timestamp, value_by_currency)
 
     async def save_historical_portfolio_value(self):
         if self.run_dbs_identifier is None:
@@ -159,11 +172,14 @@ class HistoricalPortfolioValueManager(util.Initializable):
         async with databases.DBReader.database(self.run_dbs_identifier.get_historical_portfolio_value_db_identifier(
                 self.portfolio_manager.exchange_manager.exchange_name, self._portfolio_type_suffix
         )) as reader:
-            self.historical_portfolio_value = sortedcontainers.SortedDict({
-                element[historical_asset_value.HistoricalAssetValue.TIMESTAMP_KEY]:
-                    historical_asset_value.HistoricalAssetValue.from_dict(element)
-                for element in await reader.all(self.TABLE_NAME)
-            })
+            self._load_historical_values(await reader.all(self.TABLE_NAME))
+
+    def _load_historical_values(self, dict_values):
+        self.historical_portfolio_value = sortedcontainers.SortedDict({
+            element[historical_asset_value.HistoricalAssetValue.TIMESTAMP_KEY]:
+                historical_asset_value.HistoricalAssetValue.from_dict(element)
+            for element in dict_values
+        })
 
     def _is_historical_timestamp_relevant(self, timestamp, time_frame_seconds, from_timestamp, to_timestamp):
         return self._is_timestamp_relevant(timestamp, time_frame_seconds) and \
@@ -179,21 +195,23 @@ class HistoricalPortfolioValueManager(util.Initializable):
                 commons_enums.TimeFramesMinutes[time_frame] * commons_constants.MINUTE_TO_SECONDS
         ))
 
-    def _get_relevant_timestamps(self, timestamp, currencies, time_frames, force_update):
-        relevant_timestamps = []
+    def _get_relevant_timestamps(self, timestamp, currencies, time_frames, force_update, include_past_data):
+        relevant_timestamps = set()
         current_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
         for time_frame in time_frames:
             # allowed times are [local time frame t0: local time frame t0 + allowed lag]
-            time_frame_allowed_window_start = self.convert_to_historical_timestamp(current_time, time_frame)
+            time_frame_allowed_window_start = self.convert_to_historical_timestamp(
+                timestamp if include_past_data else current_time,
+                time_frame)
             if self._should_update_timestamp(currencies, time_frame_allowed_window_start, force_update):
                 # allow time window if time_frame_allowed_window_start not in self.historical_portfolio_value
                 # or when force_update
                 time_frame_seconds = commons_enums.TimeFramesMinutes[time_frame] * commons_constants.MINUTE_TO_SECONDS
                 time_frame_allowed_window_end = time_frame_allowed_window_start + \
-                    max(time_frame_seconds * (1 + self.TIME_FRAME_RELEVANCY_TIME_RATIO),
-                        time_frame_seconds + self.MIN_TIME_FRAME_RELEVANCY_SECONDS)
+                    max(time_frame_seconds * self.TIME_FRAME_RELEVANCY_TIME_RATIO,
+                        self.MIN_TIME_FRAME_RELEVANCY_SECONDS)
                 if time_frame_allowed_window_start <= timestamp <= time_frame_allowed_window_end:
-                    relevant_timestamps.append(time_frame_allowed_window_start)
+                    relevant_timestamps.add(time_frame_allowed_window_start)
         return relevant_timestamps
 
     def _should_update_timestamp(self, currencies, time_frame_allowed_window_start, force_update):
