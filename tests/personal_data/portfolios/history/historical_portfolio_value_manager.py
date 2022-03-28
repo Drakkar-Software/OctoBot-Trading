@@ -17,6 +17,7 @@ import pytest
 import mock
 import os
 import sortedcontainers
+import decimal
 
 import octobot_commons.enums as commons_enums
 import octobot_trading.personal_data as personal_data
@@ -169,8 +170,8 @@ async def test_on_new_value_with_max_size_reached(historical_portfolio_value_man
     historical_portfolio_value_manager.portfolio_manager.exchange_manager.exchange.connector.backtesting.\
         time_manager.current_timestamp = exchange_time
     value_by_currency = {
-        "BTC": 1,
-        "USD": 3000
+        "BTC": decimal.Decimal(1),
+        "USD": decimal.Decimal(3000)
     }
     # new timestamp early enough in the day, add it
     assert await historical_portfolio_value_manager.on_new_value(timestamp, value_by_currency,
@@ -180,8 +181,8 @@ async def test_on_new_value_with_max_size_reached(historical_portfolio_value_man
     new_day_timestamp = 1648512000
     timestamp_new_day = new_day_timestamp + 1
     value_by_currency_2 = {
-        "BTC": 11,
-        "USD": 30003
+        "BTC": decimal.Decimal(11),
+        "USD": decimal.Decimal(30003)
     }
     new_day_exchange_time = new_day_timestamp + 3001
     historical_portfolio_value_manager.portfolio_manager.exchange_manager.exchange.connector.backtesting.\
@@ -191,16 +192,28 @@ async def test_on_new_value_with_max_size_reached(historical_portfolio_value_man
                                                                  save_changes=False) is True
     assert list(historical_portfolio_value_manager.historical_portfolio_value.keys()) == [day_timestamp,
                                                                                           new_day_timestamp]
+    float_value_by_currency = {
+        "BTC": 1,
+        "USD": 3000
+    }
+    float_value_by_currency_2 = {
+        "BTC": 11,
+        "USD": 30003
+    }
     _check_historical_value(list(historical_portfolio_value_manager.historical_portfolio_value.values())[0],
-                            day_timestamp, value_by_currency)
+                            day_timestamp, float_value_by_currency)
     _check_historical_value(list(historical_portfolio_value_manager.historical_portfolio_value.values())[1],
-                            new_day_timestamp, value_by_currency_2)
+                            new_day_timestamp, float_value_by_currency_2)
 
     other_new_day_timestamp = 1648598400  # Wednesday 30 March 2022 00:00:00 UTC
     other_timestamp_new_day = other_new_day_timestamp + 1
     value_by_currency_3 = {
-        "BTC": 111,
-        "USD": 300033
+        "BTC": decimal.Decimal("111.111"),
+        "USD": decimal.Decimal("300033.111")
+    }
+    float_value_by_currency_3 = {
+        "BTC": 111.111,
+        "USD": 300033.111
     }
     new_day_exchange_time = other_new_day_timestamp + 3001
     historical_portfolio_value_manager.portfolio_manager.exchange_manager.exchange.connector.backtesting.\
@@ -211,9 +224,9 @@ async def test_on_new_value_with_max_size_reached(historical_portfolio_value_man
     assert list(historical_portfolio_value_manager.historical_portfolio_value.keys()) == [new_day_timestamp,
                                                                                           other_new_day_timestamp]
     _check_historical_value(list(historical_portfolio_value_manager.historical_portfolio_value.values())[0],
-                            new_day_timestamp, value_by_currency_2)
+                            new_day_timestamp, float_value_by_currency_2)
     _check_historical_value(list(historical_portfolio_value_manager.historical_portfolio_value.values())[1],
-                            other_new_day_timestamp, value_by_currency_3)
+                            other_new_day_timestamp, float_value_by_currency_3)
 
 
 async def test_on_new_value_multiple_time_frames(historical_portfolio_value_manager):
