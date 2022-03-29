@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -10,18 +9,18 @@
 #  This library is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General License for more details.
+#  Lesser General Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
 
-cdef class HistoricalAssetValue:
-    cdef readonly double _timestamp
-    cdef readonly dict _value_by_currency
 
-    cpdef object get(self, str currency)
-    cpdef void set(self, str currency, object value)
-    cpdef bint update(self, dict value_by_currency)
-    cpdef object get_currencies(self)
-    cpdef double get_timestamp(self)
-    cpdef dict to_dict(self)
+def create_historical_asset_value_from_dict(historical_asset_class, asset_dict):
+    return historical_asset_class(
+        asset_dict[historical_asset_class.TIMESTAMP_KEY],
+        {
+            currency: decimal.Decimal(f"{value}")
+            for currency, value in asset_dict[historical_asset_class.VALUES_KEY].items()
+        }
+    )
