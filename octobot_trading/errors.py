@@ -145,6 +145,7 @@ class ConflictingOrderGroupError(Exception):
     Raised when creating a group with an existing name
     """
 
+
 class MissingPriceDataError(Exception):
     """
     Raised when a price info is missing
