@@ -35,6 +35,7 @@ class ExchangeManager(util.Initializable):
     def __init__(self, config, exchange_class_string):
         super().__init__()
         self.id = str(uuid.uuid4())
+        self.bot_id = None
         self.config = config
         self.tentacles_setup_config = None
         self.exchange_class_string = exchange_class_string
@@ -112,9 +113,8 @@ class ExchangeManager(util.Initializable):
         # TODO if in the future we will be closing initialized exchanges without
         #  stopping the bot instance, do not close these
         if self.trading_modes:
-            bot_id = self.get_bot_id()
-            if storage.RunDatabasesProvider.instance().has_bot_id(bot_id):
-                await storage.RunDatabasesProvider.instance().close(bot_id)
+            if storage.RunDatabasesProvider.instance().has_bot_id(self.bot_id):
+                await storage.RunDatabasesProvider.instance().close(self.bot_id)
 
         self.exchange_config = None
         self.exchange_personal_data = None
@@ -123,14 +123,11 @@ class ExchangeManager(util.Initializable):
         self.trading_modes = []
         self.backtesting = None
 
-    def init_run_databases(self, bot_id):
+    def init_run_databases(self):
         # only one run database per bot
-        if not storage.RunDatabasesProvider.instance().has_bot_id(bot_id):
+        if not storage.RunDatabasesProvider.instance().has_bot_id(self.bot_id):
             run_dbs_identifier = util.get_run_databases_identifier(self)
-            storage.RunDatabasesProvider.instance().add_bot_id(bot_id, run_dbs_identifier)
-
-    def get_bot_id(self):
-        return self.trading_modes[0].bot_id
+            storage.RunDatabasesProvider.instance().add_bot_id(self.bot_id, run_dbs_identifier)
 
     async def register_trader(self, trader):
         self.trader = trader

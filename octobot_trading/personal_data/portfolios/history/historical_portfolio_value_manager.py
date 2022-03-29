@@ -25,7 +25,9 @@ import octobot_commons.symbol_util as symbol_util
 import octobot_trading.util as util
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
+import octobot_trading.storage as storage
 import octobot_trading.personal_data.portfolios.history.historical_asset_value as historical_asset_value
+import octobot_trading.personal_data.portfolios.history.historical_asset_value_factory as historical_asset_value_factory
 
 
 class HistoricalPortfolioValueManager(util.Initializable):
@@ -59,8 +61,10 @@ class HistoricalPortfolioValueManager(util.Initializable):
         self.max_history_size = self.__class__.MAX_HISTORY_SIZE
         self.historical_portfolio_value = sortedcontainers.SortedDict()
         try:
-            self.run_dbs_identifier = util.get_run_databases_identifier(self.portfolio_manager.exchange_manager)
-        except commons_errors.ConfigTradingError:
+            self.run_dbs_identifier = storage.RunDatabasesProvider.instance().get_run_databases_identifier(
+                self.portfolio_manager.exchange_manager.bot_id
+            )
+        except KeyError:
             # can't save data without an activated trading mode
             self.run_dbs_identifier = None
 
@@ -119,7 +123,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
                 historical_values[historical_value.get_timestamp()] = \
                     self._get_value_in_currency(historical_value, currency)
             except errors.MissingPriceDataError as e:
-                # do not add missing historical values*
+                # do not add missing historical values
                 self.logger.debug(f"Missing price data when computing historical portfolio value: {e}")
         return historical_values
 
@@ -178,7 +182,9 @@ class HistoricalPortfolioValueManager(util.Initializable):
     def _load_historical_values(self, dict_values):
         self.historical_portfolio_value = sortedcontainers.SortedDict({
             element[historical_asset_value.HistoricalAssetValue.TIMESTAMP_KEY]:
-                historical_asset_value.HistoricalAssetValue.from_dict(element)
+                historical_asset_value_factory.create_historical_asset_value_from_dict(
+                    historical_asset_value.HistoricalAssetValue, element
+                )
             for element in dict_values
         })
 

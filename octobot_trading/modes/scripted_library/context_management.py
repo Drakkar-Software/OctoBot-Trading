@@ -63,7 +63,7 @@ class Context:
         self.signal_symbol = signal_symbol
         self.time_frame = time_frame
         self.logger = logger
-        bot_id = exchange_manager.get_bot_id() if exchange_manager and exchange_manager.trading_modes else None
+        bot_id = exchange_manager.bot_id if exchange_manager else None
         self.run_data_writer = storage.RunDatabasesProvider.instance().get_run_db(bot_id) \
             if bot_id else None
         self.orders_writer = storage.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \

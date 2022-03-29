@@ -23,6 +23,7 @@ cimport octobot_trading.util as util
 
 cdef class ExchangeManager(util.Initializable):
     cdef public str id
+    cdef public str bot_id
     cdef public str exchange_class_string
     cdef public str exchange_name
 
@@ -86,4 +87,4 @@ cdef class ExchangeManager(util.Initializable):
     cpdef bint should_decrypt_token(self, object logger)
     cpdef object get_symbol_data(self, str symbol)
     cpdef void init_run_databases(self, str bot_id)
-    cpdef str get_bot_id(self)
+    

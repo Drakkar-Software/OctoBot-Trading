@@ -348,8 +348,9 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     async def start(self) -> None:
         await super().start()
-        self.run_dbs_identifier = util.get_run_databases_identifier(
-            self.exchange_manager, trading_mode_class=self.trading_mode.__class__
+
+        self.run_dbs_identifier = storage.RunDatabasesProvider.instance().get_run_databases_identifier(
+            self.trading_mode.bot_id
         )
         # register backtesting id
         self.trading_mode.__class__.BACKTESTING_ID_BY_BOT_ID[self.trading_mode.bot_id] = \

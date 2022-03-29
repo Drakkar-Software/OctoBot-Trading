@@ -29,6 +29,9 @@ class RunDatabasesProvider(singleton.Singleton):
     def has_bot_id(self, bot_id):
         return bot_id in self.run_databases
 
+    def get_run_databases_identifier(self, bot_id):
+        return self.run_databases[bot_id].run_dbs_identifier
+
     def get_run_db(self, bot_id):
         return self.run_databases[bot_id].get_run_db()
 

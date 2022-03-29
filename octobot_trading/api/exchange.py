@@ -237,7 +237,7 @@ def get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_t
 
 
 def get_bot_id(exchange_manager):
-    return exchange_manager.get_bot_id()
+    return exchange_manager.bot_id
 
 
 def cancel_ccxt_throttle_task():
