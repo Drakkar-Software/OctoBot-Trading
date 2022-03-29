@@ -243,11 +243,11 @@ class HistoricalPortfolioValueManager(util.Initializable):
         # asset might also have changed in price since the time it was recorded)
         for currency in historical_value.get_currencies():
             for pair, price in self.portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair.items():
-                base, quote = symbol_util.split_symbol(pair)
-                if base == currency:
-                    return historical_value.get(currency) * price
-                if quote == currency:
-                    return historical_value.get(currency) / price
+                base_and_quote = symbol_util.split_symbol(pair)
+                if all(element in base_and_quote for element in (currency, target_currency)):
+                    return self.portfolio_manager.portfolio_value_holder.convert_currency_value_using_last_prices(
+                        historical_value.get(currency), currency, target_currency
+                    )
         raise errors.MissingPriceDataError(f"no price data to evaluate {historical_value} on {target_currency}")
 
     def _get_metadata(self):

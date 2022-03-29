@@ -158,6 +158,7 @@ class InvalidArgumentError(Exception):
     """
 
 
+
 class MissingPriceDataError(Exception):
     """
     Raised when a price info is missing

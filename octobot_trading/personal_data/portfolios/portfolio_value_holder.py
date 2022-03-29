@@ -20,6 +20,7 @@ import octobot_commons.logging as logging
 import octobot_commons.symbol_util as symbol_util
 
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 
 
 class PortfolioValueHolder:
@@ -223,26 +224,36 @@ class PortfolioValueHolder:
         It will try to create the symbol that fit with the exchange logic.
         :return: the value found of this currency quantity, if not found returns 0.
         """
-        symbol = symbol_util.merge_currencies(currency, self.portfolio_manager.reference_market)
-        reversed_symbol = symbol_util.merge_currencies(self.portfolio_manager.reference_market, currency)
-
         try:
-            if self.portfolio_manager.exchange_manager.symbol_exists(symbol):
-                return self.last_prices_by_trading_pair[symbol] * quantity
-
-            if self.portfolio_manager.exchange_manager.symbol_exists(reversed_symbol) and \
-                    self.last_prices_by_trading_pair[reversed_symbol] != constants.ZERO:
-                return quantity / self.last_prices_by_trading_pair[reversed_symbol]
-
-            if currency not in self.missing_currency_data_in_exchange:
+            return self.convert_currency_value_using_last_prices(quantity, currency,
+                                                                 self.portfolio_manager.reference_market)
+        except errors.MissingPriceDataError as missing_data_exception:
+            symbol = symbol_util.merge_currencies(currency, self.portfolio_manager.reference_market)
+            reversed_symbol = symbol_util.merge_currencies(self.portfolio_manager.reference_market, currency)
+            if not any(self.portfolio_manager.exchange_manager.symbol_exists(s) for s in (symbol, reversed_symbol)) \
+               and currency not in self.missing_currency_data_in_exchange:
                 self._inform_no_matching_symbol(currency)
                 self.missing_currency_data_in_exchange.add(currency)
-        except KeyError as missing_data_exception:
             if not self.portfolio_manager.exchange_manager.is_backtesting:
                 self._try_to_ask_ticker_missing_symbol_data(currency, symbol, reversed_symbol)
                 if raise_error:
                     raise missing_data_exception
         return constants.ZERO
+
+    def convert_currency_value_using_last_prices(self, quantity, current_currency, target_currency):
+        try:
+            symbol = symbol_util.merge_currencies(current_currency, target_currency)
+            if self.last_prices_by_trading_pair[symbol] is not constants.ZERO:
+                return quantity * self.last_prices_by_trading_pair[symbol]
+        except KeyError:
+            pass
+        try:
+            reversed_symbol = symbol_util.merge_currencies(target_currency, current_currency)
+            if self.last_prices_by_trading_pair[reversed_symbol] is not constants.ZERO:
+                return quantity / self.last_prices_by_trading_pair[reversed_symbol]
+        except KeyError:
+            pass
+        raise errors.MissingPriceDataError(f"no price data to evaluate {current_currency} price in {target_currency}")
 
     def _try_to_ask_ticker_missing_symbol_data(self, currency, symbol, reversed_symbol):
         """
@@ -251,6 +262,7 @@ class PortfolioValueHolder:
         :param currency: the concerned currency
         :param symbol: the symbol to add
         :param reversed_symbol: the reversed symbol to add
+        :return: True when the required symbol or reversed_symbol exist on exchange and has been requested.
         """
         symbols_to_add = []
         if self.portfolio_manager.exchange_manager.symbol_exists(symbol):
@@ -261,6 +273,7 @@ class PortfolioValueHolder:
         if symbols_to_add:
             self._ask_ticker_data_for_currency(symbols_to_add)
             self.initializing_symbol_prices.add(currency)
+        return bool(symbols_to_add)
 
     def _ask_ticker_data_for_currency(self, symbols_to_add):
         """
@@ -325,7 +338,7 @@ class PortfolioValueHolder:
                     currency_to_evaluate = market
                     evaluated_pair_values[market] = self._evaluate_value(market, constants.ONE)
                     evaluated_currencies.add(market)
-            except KeyError:
+            except errors.MissingPriceDataError:
                 missing_tickers.add(currency_to_evaluate)
 
     def _evaluate_portfolio_currencies_values(self,
@@ -348,7 +361,7 @@ class PortfolioValueHolder:
                         currency, portfolio, ignore_missing_currency_data):
                     evaluated_pair_values[currency] = self._evaluate_value(currency, constants.ONE)
                     evaluated_currencies.add(currency)
-            except KeyError:
+            except errors.MissingPriceDataError:
                 missing_tickers.add(currency)
 
     def _evaluate_portfolio_value(self, portfolio, currencies_values=None):
