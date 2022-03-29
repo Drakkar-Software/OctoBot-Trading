@@ -15,13 +15,5 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-cdef class HistoricalAssetValue:
-    cdef readonly double _timestamp
-    cdef readonly dict _value_by_currency
 
-    cpdef object get(self, str currency)
-    cpdef void set(self, str currency, object value)
-    cpdef bint update(self, dict value_by_currency)
-    cpdef object get_currencies(self)
-    cpdef double get_timestamp(self)
-    cpdef dict to_dict(self)
+cpdef object create_historical_asset_value_from_dict(object historical_asset_class, dict asset_dict)

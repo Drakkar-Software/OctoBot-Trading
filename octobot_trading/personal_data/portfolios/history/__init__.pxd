@@ -13,19 +13,18 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
 from octobot_trading.personal_data.portfolios.history import historical_asset_value_factory
-from octobot_trading.personal_data.portfolios.history.historical_asset_value_factory import (
+from octobot_trading.personal_data.portfolios.history.historical_asset_value_factory cimport (
     create_historical_asset_value_from_dict,
 )
 
 from octobot_trading.personal_data.portfolios.history import historical_asset_value
-from octobot_trading.personal_data.portfolios.history.historical_asset_value import (
+from octobot_trading.personal_data.portfolios.history.historical_asset_value cimport (
     HistoricalAssetValue,
 )
 
 from octobot_trading.personal_data.portfolios.history import historical_portfolio_value_manager
-from octobot_trading.personal_data.portfolios.history.historical_portfolio_value_manager import (
+from octobot_trading.personal_data.portfolios.history.historical_portfolio_value_manager cimport (
     HistoricalPortfolioValueManager,
 )
 

@@ -55,13 +55,3 @@ class HistoricalAssetValue:
             self.TIMESTAMP_KEY: self._timestamp,
             self.VALUES_KEY: {currency: float(value) for currency, value in self._value_by_currency.items()}
         }
-
-    @classmethod
-    def from_dict(cls, asset_dict):
-        return HistoricalAssetValue(
-            asset_dict[cls.TIMESTAMP_KEY],
-            {
-                currency: decimal.Decimal(f"{value}")
-                for currency, value in asset_dict[cls.VALUES_KEY].items()
-            }
-        )
