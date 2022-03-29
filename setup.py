@@ -194,6 +194,7 @@ packages_list = [
     "octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange",
     # "octobot_trading.exchanges.implementations.default_spot_ccxt_exchange",
     "octobot_trading.exchange_channel",
+    "octobot_trading.storage.run_databases_provider",
 ]
 
 ext_modules = [
