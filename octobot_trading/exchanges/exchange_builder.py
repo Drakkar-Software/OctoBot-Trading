@@ -51,13 +51,17 @@ class ExchangeBuilder:
 
     async def _build_exchange_manager(self):
         trading_mode_class = None
+        self.exchange_manager.tentacles_setup_config = self._tentacles_setup_config
+        self.exchange_manager.community_authenticator = self._community_authenticator
+        self.exchange_manager.bot_id = self._bot_id
+
         if self._is_using_trading_modes:
             trading_mode_class = modes.get_activated_trading_mode(self._tentacles_setup_config)
             # handle exchange related requirements if the activated trading mode has any
             self._register_trading_modes_requirements(trading_mode_class, self._tentacles_setup_config)
 
-        self.exchange_manager.tentacles_setup_config = self._tentacles_setup_config
-        self.exchange_manager.community_authenticator = self._community_authenticator
+            # initialize run databases
+            self.exchange_manager.init_run_databases()
         await self.exchange_manager.initialize()
 
         # initialize exchange for trading if not collecting
