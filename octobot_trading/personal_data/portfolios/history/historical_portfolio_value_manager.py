@@ -86,8 +86,10 @@ class HistoricalPortfolioValueManager(util.Initializable):
         timestamp
         :return: True if something changed
         """
-        if relevant_timestamps := self._get_relevant_timestamps(timestamp, value_by_currency.keys(),
-                                                                self.saved_time_frames, force_update, include_past_data):
+        # TODO replace by := when cython will support it
+        relevant_timestamps = self._get_relevant_timestamps(timestamp, value_by_currency.keys(),
+                                                            self.saved_time_frames, force_update, include_past_data)
+        if relevant_timestamps:
             return await self._upsert_value(relevant_timestamps, value_by_currency, save_changes)
         return False
 
@@ -112,11 +114,11 @@ class HistoricalPortfolioValueManager(util.Initializable):
         """
         to_timestamp = to_timestamp or self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
         time_frame_seconds = commons_enums.TimeFramesMinutes[time_frame] * commons_constants.MINUTE_TO_SECONDS
-        relevant_historical_values = (
+        relevant_historical_values = [
             value
             for timestamp, value in self.historical_portfolio_value.items()
             if self._is_historical_timestamp_relevant(timestamp, time_frame_seconds, from_timestamp, to_timestamp)
-        )
+        ]
         historical_values = {}
         for historical_value in relevant_historical_values:
             try:
@@ -243,7 +245,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
         for currency in historical_value.get_currencies():
             for pair, price in self.portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair.items():
                 base_and_quote = symbol_util.split_symbol(pair)
-                if all(element in base_and_quote for element in (currency, target_currency)):
+                if currency in base_and_quote and target_currency in base_and_quote:
                     return self.portfolio_manager.portfolio_value_holder.convert_currency_value_using_last_prices(
                         historical_value.get(currency), currency, target_currency
                     )
