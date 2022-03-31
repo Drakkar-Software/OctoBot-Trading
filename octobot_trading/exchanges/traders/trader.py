@@ -448,6 +448,17 @@ class Trader(util.Initializable):
                     await self.create_order(current_order))
         return created_orders
 
+    async def withdraw(self, amount, currency):
+        """
+        Removes the given amount from the portfolio. Only works in simulated portfolios
+        :param amount: the amount to withdraw
+        :param currency: the currency to withdraw
+        """
+        async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+            await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(amount, currency)
+
+
+
     async def set_leverage(self, symbol, side, leverage):
         """
         Updates the symbol contract leverage

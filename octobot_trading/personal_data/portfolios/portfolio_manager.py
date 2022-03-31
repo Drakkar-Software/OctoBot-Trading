@@ -89,12 +89,28 @@ class PortfolioManager(util.Initializable):
             return await self._refresh_real_trader_portfolio()
         return False
 
+    async def handle_balance_update_from_withdrawal(self, amount, currency) -> bool:
+        """
+        Handle a balance update from a withdrawal update
+        :param amount: the amount to withdraw
+        :param currency: the currency to withdraw
+        :return: True if the portfolio was updated
+        """
+        if self.trader.is_enabled:
+            if self.trader.simulate:
+                self.portfolio.update_portfolio_from_withdrawal(amount, currency)
+                return True
+            # do not withdraw on real trading
+            raise errors.PortfolioOperationError("withdraw is not supported in real trading")
+        return False
+
     def handle_balance_updated(self):
         """
         Handle balance update notification
         :return: True if profitability changed
         """
         return self.portfolio_profitability.update_profitability()
+
 
     def get_portfolio_historical_values(self, currency, time_frame, from_timestamp, to_timestamp):
         historical_values = self.historical_portfolio_value_manager.get_historical_values(

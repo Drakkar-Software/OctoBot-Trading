@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import uuid
 
 import octobot_commons.logging as logging
 
@@ -118,6 +119,17 @@ class ExchangePersonalData(util.Initializable):
         except AttributeError as e:
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
+
+    async def handle_portfolio_update_from_withdrawal(self, amount, currency, should_notify: bool = True) -> bool:
+        changed = await self.portfolio_manager.handle_balance_update_from_withdrawal(amount, currency)
+        transaction_factory.create_blockchain_transaction(
+            self.exchange_manager, is_deposit=False, currency=currency, quantity=amount,
+            blockchain_type="SIMULATED_WITHDRAWAL",
+            blockchain_transaction_id=str(uuid.uuid4())
+        )
+        if should_notify:
+            await self.handle_portfolio_update_notification(self.portfolio_manager.portfolio.portfolio)
+        return changed
 
     async def handle_portfolio_update_notification(self, balance):
         """

@@ -69,6 +69,12 @@ class PortfolioNegativeValueError(Exception):
     """
 
 
+class PortfolioOperationError(Exception):
+    """
+    Raised when an invalid portfolio operation is asked for
+    """
+
+
 class MissingOrderException(Exception):
     """
     Raised when an order is missing
@@ -156,7 +162,6 @@ class InvalidArgumentError(Exception):
     """
     Raised when a keyword is called with invalid arguments
     """
-
 
 
 class MissingPriceDataError(Exception):
