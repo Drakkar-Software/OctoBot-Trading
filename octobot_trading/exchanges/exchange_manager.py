@@ -26,6 +26,7 @@ import octobot_trading.exchange_data as exchange_data
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
+import octobot_trading.storage as storage
 
 
 class ExchangeManager(util.Initializable):

@@ -26,5 +26,4 @@ cdef class RunDatabasesProvider(singleton.Singleton):
     cpdef object get_trades_db(self, str bot_id, str exchange=*)
     cpdef object get_transactions_db(self, str bot_id, str exchange=*)
     cpdef object get_backtesting_metadata_db(self, str bot_id)
-    cpdef object get_symbol_db(self, str bot_id, str exchange, str exchange)
-    cpdef object get_backtesting_metadata_db(self, str bot_id, str exchange, str symbol)
+    cpdef object get_symbol_db(self, str bot_id, str exchange, str symbol)
