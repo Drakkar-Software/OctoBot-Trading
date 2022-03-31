@@ -98,6 +98,7 @@ cdef class Order(util.Initializable):
             object close_position=*,
             object position_side=*,
             object fees_currency_side=*,
+            object tag=*,
             object group=*)
     cdef void _update_type_from_raw(self, dict raw_order)
     cdef void _update_taker_maker(self)

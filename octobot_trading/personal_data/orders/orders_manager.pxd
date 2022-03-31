@@ -35,7 +35,6 @@ cdef class OrdersManager(util.Initializable):
     cdef void _remove_oldest_orders(self, int nb_to_remove)
     cdef list _select_orders(self, object state=*, str symbol=*, int since=*, int limit=*, str tag=*)
 
-    cpdef void update_order_attribute(self, str order_id, str key, object value)
     cpdef order_class.Order get_order(self, str order_id)
     cpdef bint upsert_order_instance(self, order_class.Order order)
     cpdef bint has_order(self, str order_id)

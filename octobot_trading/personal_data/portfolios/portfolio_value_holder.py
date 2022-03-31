@@ -273,7 +273,6 @@ class PortfolioValueHolder:
         if symbols_to_add:
             self._ask_ticker_data_for_currency(symbols_to_add)
             self.initializing_symbol_prices.add(currency)
-        return bool(symbols_to_add)
 
     def _ask_ticker_data_for_currency(self, symbols_to_add):
         """
