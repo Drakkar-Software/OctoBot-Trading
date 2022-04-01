@@ -61,7 +61,7 @@ class TestHuobiRealExchangeTester(RealExchangeTester):
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) == 1000
+        assert len(symbol_prices) == 150
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -85,9 +85,9 @@ class TestHuobiRealExchangeTester(RealExchangeTester):
 
     async def test_get_order_book(self):
         order_book = await self.get_order_book()
-        assert len(order_book[Ecobic.ASKS.value]) == 150
+        assert len(order_book[Ecobic.ASKS.value]) == 5
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
-        assert len(order_book[Ecobic.BIDS.value]) == 150
+        assert len(order_book[Ecobic.BIDS.value]) == 5
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
