@@ -116,9 +116,9 @@ class RealExchangeTester:
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
             return await exchange_manager.exchange.get_price_ticker(self.SYMBOL)
 
-    async def get_all_currencies_price_ticker(self):
+    async def get_all_currencies_price_ticker(self, **kwargs):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
-            return await exchange_manager.exchange.get_all_currencies_price_ticker()
+            return await exchange_manager.exchange.get_all_currencies_price_ticker(**kwargs)
 
     def get_allowed_time_delta(self):
         return TimeFramesMinutes[self.TIME_FRAME] * MINUTE_TO_SECONDS * MSECONDS_TO_SECONDS * 1.3

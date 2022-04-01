@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
+
 import pytest
 
 from octobot_commons.enums import TimeFrames, PriceIndexes

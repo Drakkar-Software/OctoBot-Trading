@@ -280,7 +280,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         try:
             with self.error_describer():
-                self.all_currencies_price_ticker = await self.client.fetch_tickers(params=kwargs)
+                symbols = kwargs.pop("symbols", None)
+                self.all_currencies_price_ticker = await self.client.fetch_tickers(symbols, params=kwargs)
             return self.all_currencies_price_ticker
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
