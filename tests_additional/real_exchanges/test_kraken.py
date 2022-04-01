@@ -111,7 +111,8 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
         self._check_ticker(ticker, self.SYMBOL, check_content=True)
 
     async def test_get_all_currencies_price_ticker(self):
-        tickers = await self.get_all_currencies_price_ticker()
+        # get_all_currencies_price_ticker kraken fetchTickers() requires a symbols argument, an array of symbols
+        tickers = await self.get_all_currencies_price_ticker(symbols=[self.SYMBOL, self.SYMBOL_2])
         for symbol, ticker in tickers.items():
             self._check_ticker(ticker, symbol)
 
