@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import typing
+import decimal
 
 import octobot_commons.constants
 import octobot_commons.enums as common_enums
@@ -265,8 +266,11 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("cancel_order is not implemented")
 
-    async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: float,
-                           price: float = None, stop_price=None, params: dict = None, **kwargs: dict) -> dict:
+    async def create_order(self, order_type: enums.TraderOrderType, symbol: str, quantity: decimal.Decimal,
+                           price: decimal.Decimal = None, stop_price: decimal.Decimal = None,
+                           side: enums.TradeOrderSide = None, current_price: decimal.Decimal = None,
+                           params: dict = None) \
+            -> typing.Optional[dict]:
         """
         Create a order on the exchange
         :param order_type: the order type
@@ -274,6 +278,8 @@ class AbstractExchange(util.Initializable):
         :param quantity: the order quantity
         :param price: the order price
         :param stop_price: the order stop price
+        :param side: the order side
+        :param current_price: the symbol current price
         :param params: the order request params
         :return: the created order dict
         """
