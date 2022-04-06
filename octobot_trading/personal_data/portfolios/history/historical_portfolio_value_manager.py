@@ -19,7 +19,6 @@ import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.constants as commons_constants
 import octobot_commons.enums as commons_enums
-import octobot_commons.errors as commons_errors
 import octobot_commons.symbol_util as symbol_util
 
 import octobot_trading.util as util
@@ -162,7 +161,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
                 self.portfolio_manager.exchange_manager.exchange_name, self._portfolio_type_suffix
         )) as writer:
             # replace the whole table to ensure consistency
-            await writer.upsert(commons_constants.METADATA, self._get_metadata(), None, uuid=1)
+            await writer.upsert(commons_enums.RunDatabases.METADATA, self._get_metadata(), None, uuid=1)
             await writer.replace_all(
                 self.TABLE_NAME,
                 [historical_asset.to_dict() for historical_asset in self.historical_portfolio_value.values()],
@@ -243,7 +242,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
         # last chance: try to get any usable value from portfolio value holder (not accurate since used the intermediary
         # asset might also have changed in price since the time it was recorded)
         for currency in historical_value.get_currencies():
-            for pair, price in self.portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair.items():
+            for pair in self.portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair:
                 base_and_quote = symbol_util.split_symbol(pair)
                 if currency in base_and_quote and target_currency in base_and_quote:
                     return self.portfolio_manager.portfolio_value_holder.convert_currency_value_using_last_prices(

@@ -17,6 +17,7 @@
 cimport octobot_trading.personal_data.portfolios.portfolio as portfolio_class
 cimport octobot_trading.personal_data.portfolios.portfolio_profitability as portfolio_profitability
 cimport octobot_trading.personal_data.portfolios.portfolio_value_holder as portfolio_value_holder
+cimport octobot_trading.personal_data.portfolios.history as portfolio_history
 cimport octobot_trading.exchanges as exchanges
 cimport octobot_trading.util as util
 
@@ -34,6 +35,7 @@ cdef class PortfolioManager(util.Initializable):
     cdef public portfolio_profitability.PortfolioProfitability portfolio_profitability
     cdef public portfolio_value_holder.PortfolioValueHolder portfolio_value_holder
     cdef public portfolio_class.Portfolio portfolio
+    cdef public portfolio_history.HistoricalPortfolioValueManager historical_portfolio_value_manager
 
     cpdef object handle_balance_updated(self)
     cpdef bint handle_balance_update(self, dict balance, bint is_diff_update=*)

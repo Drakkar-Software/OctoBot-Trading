@@ -23,6 +23,7 @@ from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.modes.channel.abstract_mode_consumer import AbstractTradingModeConsumer
 from octobot_trading.enums import EvaluatorStates
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.modes import AbstractTradingMode
 import octobot_trading.personal_data.portfolios.assets as portfolio_assets
@@ -158,7 +159,7 @@ async def test_get_holdings_ratio():
     exchange_manager.is_backtesting = False
     # force add symbol in exchange symbols
     exchange_manager.client_symbols.append("ETH/BTC")
-    with pytest.raises(KeyError):
+    with pytest.raises(errors.MissingPriceDataError):
         ratio = consumer.get_holdings_ratio("ETH")
     # let channel register proceed
     await wait_asyncio_next_cycle()
