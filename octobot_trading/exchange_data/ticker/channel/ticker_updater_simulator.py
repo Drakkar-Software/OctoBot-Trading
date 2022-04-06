@@ -17,11 +17,11 @@
 import async_channel.channels as channels
 
 import octobot_backtesting.api as api
-import octobot_backtesting.errors as errors
 import octobot_backtesting.enums as backtesting_enums
 
 import octobot_commons.enums as common_enums
 import octobot_commons.channels_name as channels_name
+import octobot_commons.errors as errors
 
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
@@ -56,7 +56,7 @@ class TickerUpdaterSimulator(ticker_updater.TickerUpdater):
                 if ticker_data[0] > self.last_timestamp_pushed:
                     self.last_timestamp_pushed = ticker_data[0]
                     await self.push(pair, ticker_data[-1])
-        except errors.DataBaseNotExists as e:
+        except errors.DatabaseNotFoundError as e:
             self.logger.warning(f"Not enough data : {e}")
             await self.pause()
             await self.stop()

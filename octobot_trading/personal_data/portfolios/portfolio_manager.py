@@ -102,7 +102,7 @@ class PortfolioManager(util.Initializable):
         )
         # add/update current portfolio value
         current_historical_time = self.historical_portfolio_value_manager.convert_to_historical_timestamp(
-            self.exchange_manager.exchange.get_exchange_current_time()
+            self.exchange_manager.exchange.get_exchange_current_time(), time_frame
         )
         historical_values[current_historical_time] = self.portfolio_value_holder.portfolio_current_value
         return historical_values
