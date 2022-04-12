@@ -574,3 +574,55 @@ class DBRows(enum.Enum):
     END_TIME = "end_time"
     TRADING_TYPE = "trading_type"
     SYMBOLS = "symbols"
+
+
+class TradingSignalAttrs(enum.Enum):
+    STRATEGY = "strategy"
+    EXCHANGE = "exchange"
+    EXCHANGE_TYPE = "exchange_type"
+    SYMBOL = "symbol"
+    DESCRIPTION = "description"
+    STATE = "state"
+    ORDERS = "orders"
+
+
+class TradingSignalExchangeTypes(enum.Enum):
+    SPOT = "spot"
+    FUTURE = "future"
+    MARGIN = "margin"
+    UNKNOWN = "unknown"
+
+
+class TradingSignalOrdersAttrs(enum.Enum):
+    ACTION = "action"
+    SIDE = "side"
+    TYPE = "type"
+    QUANTITY = "quantity"
+    UPDATED_QUANTITY = "updated_quantity"
+    LIMIT_PRICE = "limit_price"
+    UPDATED_LIMIT_PRICE = "updated_limit_price"
+    STOP_PRICE = "stop_price"
+    UPDATED_STOP_PRICE = "updated_stop_price"
+    REDUCE_ONLY = "reduce_only"
+    POST_ONLY = "post_only"
+    GROUP_ID = "group_id"
+    GROUP_TYPE = "group_type"
+    TAG = "tag"
+    LOCAL_ID = "local_id"
+    BUNDLED_WITH = "bundled_with"
+    CHAINED_TO = "chained_to"
+
+
+class TradingSignalOrdersActions(enum.Enum):
+    CREATE = "create"
+    EDIT = "edit"
+    CANCEL = "cancel"
+
+
+class TradingSignalOrderTypes(enum.Enum):
+    MARKET = "market"
+    LIMIT = "limit"
+    TRAILING = "trailing"
+    TRAILING_LIMIT = "trailing_limit"
+    STOP = "stop"
+    STOP_LIMIT = "stop_limit"
