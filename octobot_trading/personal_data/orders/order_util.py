@@ -144,6 +144,49 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
     return currency_available, market_available, market_quantity, mark_price, symbol_market
 
 
+def get_futures_max_order_size(exchange_manager, symbol, side, current_price, reduce_only,
+                               current_symbol_holding, market_quantity):
+    # use position margin when trading futures and reducing the position
+    current_position = exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(
+        symbol,
+        enums.PositionSide.BOTH
+    )
+    # ensure max position order size is taken into account
+    new_position_side = current_position.side
+    if new_position_side is enums.PositionSide.UNKNOWN:
+        new_position_side = enums.PositionSide.LONG if side == enums.TradeOrderSide.BUY \
+            else enums.PositionSide.LONG
+
+    # TODO check inverse
+    position_size_in_currency = (current_position.size / current_price
+                                 if current_position.symbol_contract.is_inverse_contract()
+                                 else current_position.size)
+    if side == enums.TradeOrderSide.SELL and current_position.is_long():
+        # can also sell the position size in long
+        current_symbol_holding = position_size_in_currency if reduce_only \
+            else current_symbol_holding + position_size_in_currency
+    elif side == enums.TradeOrderSide.BUY and current_position.is_short():
+        # can also buy the position size in short
+        market_quantity = abs(position_size_in_currency) if reduce_only \
+            else market_quantity + abs(position_size_in_currency)
+    if (new_position_side is enums.PositionSide.LONG and side == enums.TradeOrderSide.BUY) \
+            or (new_position_side is enums.PositionSide.SHORT and
+                side == enums.TradeOrderSide.SELL):
+        # TODO check inverse
+        quantity = market_quantity if current_position.symbol_contract.is_inverse_contract() \
+            else market_quantity * current_price
+        unleveraged_quantity = quantity / current_position.symbol_contract.current_leverage
+        max_position_increased_order_quantity = get_max_order_quantity_for_price(
+            current_position, unleveraged_quantity, current_price, new_position_side, symbol
+        )
+        # increasing position: always use the same currency
+        if current_position.symbol_contract.is_inverse_contract():
+            # TODO check
+            return current_symbol_holding
+        return max_position_increased_order_quantity, True
+    return market_quantity if side == enums.TradeOrderSide.BUY else current_symbol_holding, False
+
+
 def get_max_order_quantity_for_price(position, available_quantity, price, side, symbol):
     """
     Returns the maximum order quantity in market or currency for given total usable funds, price and side.
