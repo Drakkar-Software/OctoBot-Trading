@@ -28,6 +28,7 @@ import octobot_commons.event_tree as event_tree
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
 import octobot_trading.storage as storage
+import octobot_trading.signals as trading_signals
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.models as tentacles_manager_models
 
@@ -103,6 +104,20 @@ class Context(databases.CacheClient):
         self.tentacles_requirements = tentacles_manager_models.TentacleRequirementsTree(self.tentacle, self.config_name)
         self.parent_tentacles_requirements = None
         self.optimization_campaign_name = optimization_campaign_name
+        self.signal_builder = None
+
+    def get_signal_builder(self):
+        if self.signal_builder is None:
+            self.signal_builder = trading_signals.SignalBuilder(
+                self.tentacle.trading_config["trading_strategy"],
+                self.exchange_manager.exchange_name,
+                trading_signals.get_signal_exchange_type(self.exchange_manager).value,
+                self.symbol,
+                None,
+                None,
+                []
+            )
+        return self.signal_builder
 
     @contextlib.contextmanager
     def adapted_trigger_timestamp(self, tentacle_class, config_name):
