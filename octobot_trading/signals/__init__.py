@@ -30,6 +30,7 @@ from octobot_trading.signals.trading_signal_factory import (
 from octobot_trading.signals import util
 from octobot_trading.signals.util import (
     get_signal_exchange_type,
+    create_order_signal_description,
 )
 from octobot_trading.signals import trading_signals_emitter
 from octobot_trading.signals.trading_signals_emitter import (
@@ -50,6 +51,7 @@ __all__ = [
     "SignalBuilder",
     "create_trading_signal",
     "get_signal_exchange_type",
+    "create_order_signal_description",
     "emit_remote_trading_signal",
     "RemoteTradingSignalsChannel",
     "RemoteTradingSignalChannelProducer",

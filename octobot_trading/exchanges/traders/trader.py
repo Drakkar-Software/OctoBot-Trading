@@ -224,6 +224,7 @@ class Trader(util.Initializable):
             updated_order.has_been_bundled = new_order.has_been_bundled
             updated_order.exchange_creation_params = new_order.exchange_creation_params
             updated_order.is_waiting_for_chained_trigger = new_order.is_waiting_for_chained_trigger
+            updated_order.set_shared_signal_order_id(new_order.shared_signal_order_id)
         return updated_order
 
     async def bundle_chained_order_with_uncreated_order(self, order, chained_order, **kwargs):
@@ -308,22 +309,27 @@ class Trader(util.Initializable):
         except KeyError:
             return False
 
-    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None) -> bool:
+    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None) -> (bool, list):
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
         :param symbol: The symbol to cancel all orders on
         :param cancel_loaded_orders: When True, also cancels loaded orders (order that are not from this bot instance)
         :param side: When set, only cancels orders from this side
-        :return: True if all orders got cancelled, False if an error occurred
+        :return: (True, orders): True if all orders got cancelled, False if an error occurred and the list of
+        cancelled orders
         """
         all_cancelled = True
+        cancelled_orders = []
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if order.symbol == symbol and \
                     (side is None or order.side is side) and \
                     not order.is_cancelled() and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
-                all_cancelled = await self.cancel_order(order) and all_cancelled
-        return all_cancelled
+                cancelled = await self.cancel_order(order)
+                if cancelled:
+                    cancelled_orders.append(order)
+                all_cancelled = cancelled and all_cancelled
+        return all_cancelled, cancelled_orders
 
     async def cancel_all_open_orders_with_currency(self, currency) -> bool:
         """
@@ -336,7 +342,7 @@ class Trader(util.Initializable):
         symbols = util.get_pairs(self.config, currency, enabled_only=True)
         if symbols:
             for symbol in symbols:
-                all_cancelled = await self.cancel_open_orders(symbol) and all_cancelled
+                all_cancelled = (await self.cancel_open_orders(symbol))[0] and all_cancelled
         return all_cancelled
 
     async def cancel_all_open_orders(self) -> bool:

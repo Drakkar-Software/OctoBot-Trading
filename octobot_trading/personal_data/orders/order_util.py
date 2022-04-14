@@ -335,3 +335,12 @@ async def _cancel_reduce_only_orders_on_position_reset(exchange_manager, symbol)
             await order.trader.cancel_order(order)
             if order.order_group:
                 await order.order_group.on_cancel(order)
+
+
+def get_order_type_from_class(searched_order_class):
+    # prevent circular import
+    import octobot_trading.personal_data as personal_data
+    for order_type, order_class in personal_data.TraderOrderTypeClasses.items():
+        if order_class is searched_order_class:
+            return order_type
+    raise KeyError(f"{searched_order_class} not found")

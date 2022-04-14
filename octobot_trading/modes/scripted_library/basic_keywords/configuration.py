@@ -15,6 +15,7 @@
 #  License along with this library.
 import decimal
 
+import octobot_commons.constants as constants
 import octobot_trading.modes.scripted_library.basic_keywords.user_inputs as user_inputs
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
@@ -25,11 +26,14 @@ async def user_select_leverage(
         def_val=1,
         order=None,
         name="leverage"):
-    selected_leverage = await user_inputs.user_input(ctx, name, "int", def_val, order=order)
-    # TODO restore when ready to trade event is done (set_leverage is done in scripts anyway)
-    # if ctx.exchange_manager.is_future:
-    #     await set_leverage(ctx, selected_leverage)
-    return selected_leverage
+    return await user_inputs.user_input(ctx, name, "int", def_val, order=order)
+
+
+async def user_select_emit_trading_signals(ctx, strategy_slug, def_val=False):
+    await user_inputs.user_input(ctx, constants.CONFIG_TRADING_SIGNALS_STRATEGY, "text", strategy_slug,
+                                 show_in_summary=False, show_in_optimizer=False)
+    return await user_inputs.user_input(ctx, "emit_trading_signals", "boolean", def_val,
+                                        show_in_summary=False, show_in_optimizer=False)
 
 
 async def set_leverage(ctx, leverage):
