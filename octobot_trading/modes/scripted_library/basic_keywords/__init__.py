@@ -24,8 +24,14 @@ from octobot_trading.modes.scripted_library.basic_keywords.user_inputs import (
 
 from octobot_trading.modes.scripted_library.basic_keywords.configuration import (
     user_select_leverage,
+    user_select_emit_trading_signals,
     set_leverage,
     set_partial_take_profit_stop_loss,
+)
+
+from octobot_trading.modes.scripted_library.basic_keywords.trading_signals import (
+    is_emitting_trading_signals,
+    emit_trading_signals,
 )
 
 
@@ -51,6 +57,9 @@ __all__ = [
     "clear_user_inputs",
     "get_activation_topics",
     "user_select_leverage",
+    "user_select_emit_trading_signals",
+    "is_emitting_trading_signals",
+    "emit_trading_signals",
     "set_leverage",
     "set_partial_take_profit_stop_loss",
     "set_plot_orders",
