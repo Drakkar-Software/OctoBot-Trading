@@ -29,8 +29,8 @@ import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.api as trading_api
 import octobot_trading.modes.abstract_trading_mode as abstract_trading_mode
 import octobot_trading.modes.channel as modes_channel
-import octobot_trading.modes.scripted_library.context_management as context_management
-import octobot_trading.modes.scripted_library.basic_keywords as basic_keywords
+import octobot_trading.modes.script_keywords.context_management as context_management
+import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.errors as errors

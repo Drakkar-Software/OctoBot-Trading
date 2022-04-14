@@ -32,19 +32,23 @@ class SignalBuilder:
         self.signal = None
         self.reset()
 
-    def add_created_order(self, order):
+    def add_created_order(self, order, target_amount=None, target_position=None):
+        if target_amount is None and target_position is None:
+            raise trading_errors.InvalidArgumentError("target_amount or target_position has to be provided")
         if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.CREATE):
             self.orders.append(signal_util.create_order_signal_description(
                 order,
-                trading_enums.TradingSignalOrdersActions.CREATE)
-            )
+                trading_enums.TradingSignalOrdersActions.CREATE,
+                target_amount=target_amount,
+                target_position=target_position
+            ))
 
     def add_order_to_group(self, order):
         if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP):
             self.orders.append(signal_util.create_order_signal_description(
                 order,
-                trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP)
-            )
+                trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP
+            ))
 
     def add_edited_order(
             self, order,
@@ -63,27 +67,29 @@ class SignalBuilder:
         ):
             self.orders.append(signal_util.create_order_signal_description(
                 order,
-                trading_enums.TradingSignalOrdersActions.EDIT),
+                trading_enums.TradingSignalOrdersActions.EDIT,
                 updated_quantity=updated_quantity,
                 updated_limit_price=updated_limit_price,
                 updated_stop_price=updated_stop_price,
                 updated_current_price=updated_current_price
-            )
+            ))
 
     def add_cancelled_order(self, order):
         if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.CANCEL):
             self.orders.append(signal_util.create_order_signal_description(
                 order,
-                trading_enums.TradingSignalOrdersActions.CANCEL)
-            )
+                trading_enums.TradingSignalOrdersActions.CANCEL
+            ))
 
     def _update_pending_orders(
-            self, order,
-            action,
-            updated_quantity=trading_constants.ZERO,
-            updated_limit_price=trading_constants.ZERO,
-            updated_stop_price=trading_constants.ZERO,
-            updated_current_price=trading_constants.ZERO
+        self, order,
+        action,
+        target_amount=None,
+        target_position=None,
+        updated_quantity=trading_constants.ZERO,
+        updated_limit_price=trading_constants.ZERO,
+        updated_stop_price=trading_constants.ZERO,
+        updated_current_price=trading_constants.ZERO
     ):
         try:
             index, order_description = self.get_order_description_from_local_orders(order)
@@ -91,7 +97,9 @@ class SignalBuilder:
                 # replace order
                 self.orders[index] = signal_util.create_order_signal_description(
                     order,
-                    trading_enums.TradingSignalOrdersActions.CREATE
+                    trading_enums.TradingSignalOrdersActions.CREATE,
+                    target_amount=target_amount,
+                    target_position=target_position
                 )
             if action is trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP:
                 # update order group
@@ -100,7 +108,7 @@ class SignalBuilder:
                     order.order_group.__class__.__name__
             elif action is trading_enums.TradingSignalOrdersActions.EDIT:
                 # avoid editing order that are not yet created
-                order_description[trading_enums.TradingSignalOrdersAttrs.QUANTITY.value] = \
+                order_description[trading_enums.TradingSignalOrdersAttrs.AMOUNT.value] = \
                     float(updated_quantity)
                 order_description[trading_enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value] = \
                     float(updated_limit_price)
