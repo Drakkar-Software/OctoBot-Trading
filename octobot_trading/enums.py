@@ -603,18 +603,21 @@ class TradingSignalOrdersAttrs(enum.Enum):
     UPDATED_LIMIT_PRICE = "updated_limit_price"
     STOP_PRICE = "stop_price"
     UPDATED_STOP_PRICE = "updated_stop_price"
+    CURRENT_PRICE = "current"
+    UPDATED_CURRENT_PRICE = "updated_current_price"
     REDUCE_ONLY = "reduce_only"
     POST_ONLY = "post_only"
     GROUP_ID = "group_id"
     GROUP_TYPE = "group_type"
     TAG = "tag"
-    LOCAL_ID = "local_id"
+    SHARED_SIGNAL_ORDER_ID = "shared_signal_order_id"
     BUNDLED_WITH = "bundled_with"
     CHAINED_TO = "chained_to"
 
 
 class TradingSignalOrdersActions(enum.Enum):
     CREATE = "create"
+    ADD_TO_GROUP = "add_to_group"
     EDIT = "edit"
     CANCEL = "cancel"
 

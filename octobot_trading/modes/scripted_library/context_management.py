@@ -106,10 +106,10 @@ class Context(databases.CacheClient):
         self.optimization_campaign_name = optimization_campaign_name
         self.signal_builder = None
 
-    def get_signal_builder(self):
+    def get_signal_builder(self) -> trading_signals.SignalBuilder:
         if self.signal_builder is None:
             self.signal_builder = trading_signals.SignalBuilder(
-                self.tentacle.trading_config["trading_strategy"],
+                self.tentacle.trading_config[common_constants.CONFIG_TRADING_SIGNALS_STRATEGY],
                 self.exchange_manager.exchange_name,
                 trading_signals.get_signal_exchange_type(self.exchange_manager).value,
                 self.symbol,
@@ -118,6 +118,23 @@ class Context(databases.CacheClient):
                 []
             )
         return self.signal_builder
+
+    def is_trading_signal_emitter(self):
+        try:
+            return self.tentacle.is_trading_signal_emitter()
+        except AttributeError:
+            return False
+
+    async def emit_signal(self):
+        if self.signal_builder is None or not self.is_trading_signal_emitter() or self.exchange_manager.is_backtesting:
+            return
+        self.logger.debug(f"Emitting trading signal for {self.signal_builder.strategy}: {self.signal_builder.signal}")
+        await trading_signals.emit_remote_trading_signal(
+            self.signal_builder.signal,
+            self.signal_builder.strategy,
+            self.exchange_manager
+        )
+        self.signal_builder.reset()
 
     @contextlib.contextmanager
     def adapted_trigger_timestamp(self, tentacle_class, config_name):
