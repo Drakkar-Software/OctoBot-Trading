@@ -17,6 +17,7 @@ import asyncio
 import typing
 import contextlib
 import decimal
+import uuid
 
 import octobot_commons.logging as logging
 
@@ -47,6 +48,7 @@ class Order(util.Initializable):
 
         self.logger_name = None
         self.order_id = trader.parse_order_id(None)
+        self.shared_signal_order_id = str(uuid.uuid4())
         self.status = enums.OrderStatus.OPEN
         self.symbol = None
         self.currency = None
@@ -247,6 +249,12 @@ class Order(util.Initializable):
         :param previous_price: the previous origin_price
         :param price_time: time starting from when the price should be considered
         """
+
+    def set_shared_signal_order_id(self, shared_signal_order_id):
+        """
+        Updates the local shared_signal_order_id. Should only be called on orders originated from trading signals
+        """
+        self.shared_signal_order_id = shared_signal_order_id
 
     def add_chained_order(self, chained_order):
         """

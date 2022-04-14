@@ -168,3 +168,9 @@ class InvalidArgumentError(Exception):
     """
     Raised when a keyword is called with invalid arguments
     """
+
+
+class OrderDescriptionNotFoundError(Exception):
+    """
+    Raised when an order description is not found
+    """

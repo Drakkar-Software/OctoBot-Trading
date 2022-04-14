@@ -105,6 +105,15 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         return True
 
+    def is_trading_signal_emitter(self) -> bool:
+        """
+        :return: True if the mode should be emitting trading signals
+        """
+        try:
+            return self.trading_config[common_constants.CONFIG_EMIT_TRADING_SIGNALS]
+        except KeyError:
+            return False
+
     @classmethod
     def get_is_trading_on_exchange(cls, exchange_name,
                                    tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration) -> bool:

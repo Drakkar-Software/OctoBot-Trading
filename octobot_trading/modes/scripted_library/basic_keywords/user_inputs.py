@@ -33,6 +33,11 @@ async def user_input(
     order=None,
     flush_if_necessary=False
 ):
+    """
+    Set and return a user input value.
+    Types are: int, float, boolean, options, multiple-options, text
+    :return:
+    """
     tentacle_type_str = "trading_mode" if hasattr(ctx.tentacle, "trading_config") else "evaluator"
     config = ctx.tentacle.trading_config if tentacle_type_str == "trading_mode" else ctx.tentacle.specific_config
     try:
