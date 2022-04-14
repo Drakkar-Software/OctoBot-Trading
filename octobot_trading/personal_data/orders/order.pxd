@@ -48,6 +48,8 @@ cdef class Order(util.Initializable):
     cdef public str logger_name
     cdef public str tag
 
+    cdef readonly str shared_signal_order_id
+
     cdef public object origin_price
     cdef public object origin_stop_price
     cdef public object origin_quantity

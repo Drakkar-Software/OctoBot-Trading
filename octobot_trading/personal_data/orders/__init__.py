@@ -87,6 +87,7 @@ from octobot_trading.personal_data.orders.order_util import (
     is_associated_pending_order,
     apply_pending_order_from_created_order,
     ensure_orders_relevancy,
+    get_order_type_from_class,
 )
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
@@ -135,6 +136,7 @@ __all__ = [
     "get_pnl_transaction_source_from_order",
     "create_as_chained_order",
     "ensure_orders_relevancy",
+    "get_order_type_from_class",
     "is_associated_pending_order",
     "apply_pending_order_from_created_order",
     "OrderState",

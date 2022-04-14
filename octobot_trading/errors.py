@@ -168,3 +168,9 @@ class MissingPriceDataError(Exception):
     """
     Raised when a price info is missing
     """
+
+
+class OrderDescriptionNotFoundError(Exception):
+    """
+    Raised when an order description is not found
+    """

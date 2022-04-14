@@ -306,7 +306,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         cancel_loaded_orders = self.get_should_cancel_loaded_orders()
 
         if self.exchange_manager.trader.is_enabled:
-            return await self.exchange_manager.trader.cancel_open_orders(symbol, cancel_loaded_orders)
+            return (await self.exchange_manager.trader.cancel_open_orders(symbol, cancel_loaded_orders))[0]
         return True
 
     def writers(self):
