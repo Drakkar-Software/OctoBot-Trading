@@ -56,9 +56,8 @@ from octobot_trading.personal_data.portfolios.assets cimport (
     SpotAsset,
 )
 from octobot_trading.personal_data.portfolios cimport portfolio_util
-from octobot_trading.personal_data.portfolios.portfolio_util import (
+from octobot_trading.personal_data.portfolios.portfolio_util cimport (
     parse_decimal_portfolio,
-    parse_decimal_config_portfolio,
     portfolio_to_float,
 )
 from octobot_trading.personal_data.portfolios cimport history
