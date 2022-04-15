@@ -20,9 +20,9 @@ cimport octobot_trading.util as util
 cimport octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 
 cdef class HistoricalPortfolioValueManager(util.Initializable):
-    cdef object logger
+    cdef public object logger
 
-    cdef portfolio_manager.PortfolioManager portfolio_manager
+    cdef public portfolio_manager.PortfolioManager portfolio_manager
 
     cdef public str _portfolio_type_suffix
     cdef public list saved_time_frames
@@ -37,7 +37,7 @@ cdef class HistoricalPortfolioValueManager(util.Initializable):
 
     cdef void _add_historical_portfolio_value(self, double timestamp, dict value_by_currency)
     cdef bint _is_historical_timestamp_relevant(self, double timestamp, object time_frame_seconds, object from_timestamp, object to_timestamp)
-    cdef set _get_relevant_timestamps(self, double timestamp, str currencies, list time_frames, bint force_update, bint include_past_data)
+    cdef set _get_relevant_timestamps(self, double timestamp, object currencies, list time_frames, bint force_update, bint include_past_data)
     cdef bint _should_update_timestamp(self, object currencies, object time_frame_allowed_window_start, bint force_update)
     cdef object _get_value_in_currency(self, object historical_value, str currency)
     cdef object _convert_historical_value(self, object historical_value, str target_currency)
