@@ -37,7 +37,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
     DATA_SOURCE_KEY = "data_source"
     DATA_VERSION_KEY = "data_version"
     DEFAULT_DATA_SOURCE = "portfolio_value_holder"  # for later versions: consolidate data with transaction history
-    DEFAULT_DATA_VERSION = 1
+    DEFAULT_DATA_VERSION = "1.0.0"
     MIN_TIME_FRAME_RELEVANCY_SECONDS = 29   # less than 30s to support 1m time frames
     TIME_FRAME_RELEVANCY_TIME_RATIO = 0.45   # allow for 45% error in timestamp rounding (only used after the ideal
     # time passed to avoid using past data: use future data at worse). use high value to still take value if users
