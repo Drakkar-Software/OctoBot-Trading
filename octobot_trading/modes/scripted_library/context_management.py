@@ -421,9 +421,15 @@ class Context(databases.CacheClient):
             context=self
         )
         if not run_dbs_identifier.exchange_base_identifier_exists(self.exchange_name):
-            raise common_errors.MissingExchangeDataError(
-                f"No data for {self.exchange_name}. This run might have happened on other exchange(s)"
-            )
+            single_exchange = run_dbs_identifier.get_single_existing_exchange()
+            if single_exchange is None:
+                # no single exchange with data
+                raise common_errors.MissingExchangeDataError(
+                    f"No data for {self.exchange_name}. This run might have happened on other exchange(s)"
+                )
+            else:
+                # retarget run_dbs_identifier to use single_exchange instead
+                self.exchange_name = single_exchange
         async with databases.MetaDatabase.database(run_dbs_identifier, with_lock=with_lock,
                                                    cache_size=cache_size) as meta_db:
             yield meta_db, display

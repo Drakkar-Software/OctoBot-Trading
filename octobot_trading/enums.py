@@ -532,6 +532,7 @@ class BacktestingMetadata(enum.Enum):
     BACKTESTING_FILES = "backtesting files"
     CHILDREN = "children"
     OPTIMIZER_ID = "optimizer id"
+    EXCHANGE = "exchange"
 
 
 class PlotCharts(enum.Enum):
