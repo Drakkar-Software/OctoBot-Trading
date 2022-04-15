@@ -306,7 +306,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             trading_enums.BacktestingMetadata.LEVERAGE.value: leverage,
             trading_enums.BacktestingMetadata.USER_INPUTS.value: formatted_user_inputs,
             trading_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(
-                self.exchange_manager)
+                self.exchange_manager),
+            trading_enums.BacktestingMetadata.EXCHANGE.value: self.exchange_name
         }
 
     async def get_live_metadata(self):
@@ -337,6 +338,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             trading_enums.DBRows.TRADING_TYPE.value: exchange_type,
             trading_enums.DBRows.EXCHANGES.value: exchanges,
             trading_enums.DBRows.FUTURE_CONTRACTS.value: future_contracts_by_exchange,
+            trading_enums.DBRows.SYMBOLS.value: self.exchange_manager.exchange_config.traded_symbol_pairs,
         }
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
