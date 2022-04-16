@@ -14,10 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_commons.enums as commons_enums
+import octobot_commons.authentication as authentication
 
 
-async def emit_remote_trading_signal(signal, product_slug, exchange_manager):
-    await exchange_manager.community_authenticator.send(
+async def emit_remote_trading_signal(signal, product_slug):
+    await authentication.Authenticator.instance().send(
         signal.to_dict(),
         commons_enums.CommunityChannelTypes.SIGNAL.value,
         product_slug
