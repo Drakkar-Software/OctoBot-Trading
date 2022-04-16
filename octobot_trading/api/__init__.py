@@ -164,6 +164,7 @@ from octobot_trading.api.positions import (
 from octobot_trading.api.storage import (
     get_run_db,
     get_symbol_db,
+    close_bot_storage,
 )
 
 __all__ = [
@@ -284,4 +285,5 @@ __all__ = [
     "get_positions",
     "get_run_db",
     "get_symbol_db",
+    "close_bot_storage",
 ]
