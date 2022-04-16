@@ -131,8 +131,7 @@ class Context(databases.CacheClient):
         self.logger.debug(f"Emitting trading signal for {self.signal_builder.strategy}: {self.signal_builder.signal}")
         await trading_signals.emit_remote_trading_signal(
             self.signal_builder.signal,
-            self.signal_builder.strategy,
-            self.exchange_manager
+            self.signal_builder.strategy
         )
         self.signal_builder.reset()
 
