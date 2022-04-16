@@ -23,6 +23,7 @@ from octobot_trading.api import trader
 from octobot_trading.api import portfolio
 from octobot_trading.api import profitability
 from octobot_trading.api import orders
+from octobot_trading.api import storage
 
 from octobot_trading.api.symbol_data import (
     get_symbol_data,
@@ -149,6 +150,9 @@ from octobot_trading.api.orders import (
 from octobot_trading.api.positions import (
     get_positions,
 )
+from octobot_trading.api.storage import (
+    close_bot_storage,
+)
 
 __all__ = [
     "get_symbol_data",
@@ -255,4 +259,5 @@ __all__ = [
     "cancel_all_open_orders_with_currency",
     "cancel_order_with_id",
     "get_positions",
+    "close_bot_storage",
 ]

@@ -26,7 +26,6 @@ import octobot_trading.exchange_data as exchange_data
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
-import octobot_trading.storage as storage
 
 
 class ExchangeManager(util.Initializable):
@@ -106,12 +105,6 @@ class ExchangeManager(util.Initializable):
             self.exchange.exchange_manager = None
         if self.exchange_personal_data is not None:
             await self.exchange_personal_data.stop()
-        # close run databases
-        # TODO if in the future we will be closing initialized exchanges without
-        #  stopping the bot instance, do not close these
-        if self.trading_modes:
-            if storage.RunDatabasesProvider.instance().has_bot_id(self.bot_id):
-                await storage.RunDatabasesProvider.instance().close(self.bot_id)
 
         self.exchange_config = None
         self.exchange_personal_data = None
@@ -119,12 +112,6 @@ class ExchangeManager(util.Initializable):
         self.trader = None
         self.trading_modes = []
         self.backtesting = None
-
-    def init_run_databases(self):
-        # only one run database per bot
-        if not storage.RunDatabasesProvider.instance().has_bot_id(self.bot_id):
-            run_dbs_identifier = util.get_run_databases_identifier(self)
-            storage.RunDatabasesProvider.instance().add_bot_id(self.bot_id, run_dbs_identifier)
 
     async def register_trader(self, trader):
         self.trader = trader
