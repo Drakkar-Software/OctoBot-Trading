@@ -16,13 +16,15 @@
 import octobot_commons.singleton as singleton
 import octobot_commons.databases as databases
 import octobot_commons.errors as errors
+import octobot_trading.util as util
 
 
 class RunDatabasesProvider(singleton.Singleton):
     def __init__(self):
         self.run_databases = {}
 
-    def add_bot_id(self, bot_id, run_dbs_identifier, with_lock=False, cache_size=None):
+    def add_bot_id(self, bot_id, config, tentacles_setup_config, with_lock=False, cache_size=None):
+        run_dbs_identifier = util.get_run_databases_identifier(config, tentacles_setup_config)
         self.run_databases[bot_id] = databases.MetaDatabase(run_dbs_identifier, with_lock=with_lock,
                                                             cache_size=cache_size)
 
