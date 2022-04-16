@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_commons.channels_name as channels_names
+import octobot_commons.authentication as authentication
 import async_channel.util as channel_creator
 import async_channel.channels as channels
 import octobot_trading.signals.channel.remote_trading_signal as remote_trading_signal
@@ -30,7 +31,7 @@ async def create_remote_trading_signal_channel_if_missing(exchange_manager) -> \
         # also create the associated producer
         producer = signal_producer.RemoteTradingSignalProducer(
             channel,
-            exchange_manager.community_authenticator,
+            authentication.Authenticator.instance(),
             exchange_manager.bot_id
         )
         await channel.register_producer(producer)
