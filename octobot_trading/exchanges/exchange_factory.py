@@ -17,6 +17,7 @@ import asyncio
 
 import trading_backend
 
+import octobot_commons.authentication as authentication
 import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
 
@@ -88,7 +89,7 @@ async def _initialize_exchange_backend(exchange_manager):
     if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated() \
             and not exchange_manager.is_trader_simulated:
         try:
-            if await _is_supporting(exchange_manager):
+            if await _is_supporting_octobot():
                 exchange_manager.is_valid_account = True
                 return True
             exchange_manager.is_valid_account, message = await exchange_manager.exchange_backend.is_valid_account()
@@ -111,14 +112,13 @@ async def _initialize_exchange_backend(exchange_manager):
                                              "actively supporting the project !")
 
 
-async def _is_supporting(exchange_manager) -> bool:
-    if exchange_manager.community_authenticator is None:
-        return False
+async def _is_supporting_octobot() -> bool:
     try:
-        if not exchange_manager.community_authenticator.is_initialized():
+        authenticator = authentication.Authenticator.instance()
+        if not authenticator.is_initialized():
             initialization_timeout = 5
-            await exchange_manager.community_authenticator.await_initialization(initialization_timeout)
-        if exchange_manager.community_authenticator.supports.is_supporting():
+            await authenticator.await_initialization(initialization_timeout)
+        if authenticator.supports.is_supporting():
             return True
     except asyncio.TimeoutError:
         pass

@@ -20,7 +20,6 @@ cdef class ExchangeBuilder:
     cdef object logger
     cdef public exchanges.ExchangeManager exchange_manager
     cdef object _tentacles_setup_config
-    cdef object _community_authenticator
 
     cdef dict config
 
@@ -42,7 +41,6 @@ cdef class ExchangeBuilder:
     cpdef ExchangeBuilder is_exchange_only(self)
     cpdef ExchangeBuilder is_ignoring_config(self)
     cpdef ExchangeBuilder use_tentacles_setup_config(self, object tentacles_setup_config)
-    cpdef ExchangeBuilder use_community_authenticator(self, object authenticator)
     cpdef ExchangeBuilder set_bot_id(self, str bot_id)
     cpdef ExchangeBuilder disable_trading_mode(self)
     cpdef ExchangeBuilder has_matrix(self, str matrix_id)

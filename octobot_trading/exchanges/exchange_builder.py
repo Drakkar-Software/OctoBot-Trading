@@ -37,7 +37,6 @@ class ExchangeBuilder:
         self._bot_id: str = None
 
         self._tentacles_setup_config = None
-        self._community_authenticator = None
 
     async def build(self):
         """
@@ -54,7 +53,6 @@ class ExchangeBuilder:
     async def _build_exchange_manager(self):
         trading_mode_class = None
         self.exchange_manager.tentacles_setup_config = self._tentacles_setup_config
-        self.exchange_manager.community_authenticator = self._community_authenticator
         self.exchange_manager.bot_id = self._bot_id
 
         if self._is_using_trading_modes:
@@ -182,10 +180,6 @@ class ExchangeBuilder:
 
     def use_tentacles_setup_config(self, tentacles_setup_config):
         self._tentacles_setup_config = tentacles_setup_config
-        return self
-
-    def use_community_authenticator(self, authenticator):
-        self._community_authenticator = authenticator
         return self
 
     def set_bot_id(self, bot_id):
