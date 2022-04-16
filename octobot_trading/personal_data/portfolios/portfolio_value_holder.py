@@ -15,6 +15,7 @@
 #  License along with this library.
 import asyncio
 import copy
+import decimal
 
 import octobot_commons.logging as logging
 import octobot_commons.symbol_util as symbol_util
@@ -249,8 +250,9 @@ class PortfolioValueHolder:
             pass
         try:
             reversed_symbol = symbol_util.merge_currencies(target_currency, current_currency)
-            if self.last_prices_by_trading_pair[reversed_symbol] is not constants.ZERO:
-                return quantity / self.last_prices_by_trading_pair[reversed_symbol]
+            return quantity / self.last_prices_by_trading_pair[reversed_symbol]
+        except decimal.DivisionByZero:
+            pass
         except KeyError:
             pass
         raise errors.MissingPriceDataError(f"no price data to evaluate {current_currency} price in {target_currency}")
