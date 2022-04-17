@@ -430,8 +430,8 @@ class Context(databases.CacheClient):
             optimizer_id=self.optimizer_id,
             context=self
         )
-        if not run_dbs_identifier.exchange_base_identifier_exists(self.exchange_name):
-            single_exchange = run_dbs_identifier.get_single_existing_exchange()
+        if not await run_dbs_identifier.exchange_base_identifier_exists(self.exchange_name):
+            single_exchange = await run_dbs_identifier.get_single_existing_exchange()
             if single_exchange is None:
                 # no single exchange with data
                 raise common_errors.MissingExchangeDataError(
