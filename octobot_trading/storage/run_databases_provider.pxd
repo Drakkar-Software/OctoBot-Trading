@@ -19,7 +19,7 @@ cimport octobot_commons.singleton as singleton
 cdef class RunDatabasesProvider(singleton.Singleton):
     cdef public dict run_databases
 
-    cpdef void add_bot_id(self, str bot_id, object run_dbs_identifier, bint with_lock=*, object cache_size=*)
+    cpdef void add_bot_id(self, str bot_id, dict config, object tentacles_setup_config, bint with_lock=*, object cache_size=*)
     cpdef bint has_bot_id(self, str bot_id)
     cpdef object get_run_db(self, str bot_id)
     cpdef object get_orders_db(self, str bot_id, str exchange=*)

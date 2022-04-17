@@ -58,6 +58,7 @@ cdef class PortfolioValueHolder:
     cdef void _try_to_ask_ticker_missing_symbol_data(self, str currency, str symbol, str reversed_symbol)
     cdef void _ask_ticker_data_for_currency(self, list symbols_to_add)
     cdef void _inform_no_matching_symbol(self, str currency)
+    cdef object _has_price_data(self, str symbol) # return object to propagate exceptions
     cdef _evaluate_config_crypto_currencies_and_portfolio_values(self,
                                                                 dict portfolio,
                                                                 bint ignore_missing_currency_data=*)

@@ -244,7 +244,7 @@ class PortfolioValueHolder:
     def convert_currency_value_using_last_prices(self, quantity, current_currency, target_currency):
         try:
             symbol = symbol_util.merge_currencies(current_currency, target_currency)
-            if self.last_prices_by_trading_pair[symbol] is not constants.ZERO:
+            if self._has_price_data(symbol):
                 return quantity * self.last_prices_by_trading_pair[symbol]
         except KeyError:
             pass
@@ -256,6 +256,9 @@ class PortfolioValueHolder:
         except KeyError:
             pass
         raise errors.MissingPriceDataError(f"no price data to evaluate {current_currency} price in {target_currency}")
+
+    def _has_price_data(self, symbol):
+        return self.last_prices_by_trading_pair[symbol] is not constants.ZERO
 
     def _try_to_ask_ticker_missing_symbol_data(self, currency, symbol, reversed_symbol):
         """
