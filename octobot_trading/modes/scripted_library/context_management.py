@@ -42,12 +42,7 @@ class Context:
         signal_symbol,
         time_frame,
         logger,
-        run_data_writer,
-        orders_writer,
-        trades_writer,
-        transaction_writer,
-        symbol_writer,
-        trading_mode,
+        trading_mode_class,
         trigger_cache_timestamp,
         trigger_source,
         trigger_value,
@@ -65,12 +60,20 @@ class Context:
         self.signal_symbol = signal_symbol
         self.time_frame = time_frame
         self.logger = logger
-        self.run_data_writer = run_data_writer
-        self.orders_writer = orders_writer
-        self.trades_writer = trades_writer
-        self.transaction_writer = transaction_writer
-        self.symbol_writer = symbol_writer
-        self.trading_mode = trading_mode
+        bot_id = exchange_manager.get_bot_id() if exchange_manager and exchange_manager.trading_modes else None
+        self.run_data_writer = storage.RunDatabasesProvider.instance().get_run_db(bot_id) \
+            if bot_id else None
+        self.orders_writer = storage.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \
+            if bot_id else None
+        self.trades_writer = storage.RunDatabasesProvider.instance().get_trades_db(bot_id, self.exchange_name) \
+            if bot_id else None
+        self.transaction_writer = storage.RunDatabasesProvider.instance().get_transactions_db(bot_id,
+                                                                                              self.exchange_name) \
+            if bot_id else None
+        self.symbol_writer = storage.RunDatabasesProvider.instance().get_symbol_db(bot_id, self.exchange_name,
+                                                                                   self.symbol) \
+            if bot_id else None
+        self.trading_mode_class = trading_mode_class
         self.trigger_cache_timestamp = trigger_cache_timestamp
         self.trigger_source = trigger_source
         self.trigger_value = trigger_value
@@ -139,7 +142,7 @@ class Context:
                 await self._reset_cache()
 
     @staticmethod
-    def minimal(trading_mode, logger, exchange_name, traded_pair,
+    def minimal(trading_mode_class, logger, exchange_name, traded_pair,
                 backtesting_id, optimizer_id, optimization_campaign_name):
         return Context(
             None,
@@ -152,12 +155,7 @@ class Context:
             None,
             None,
             logger,
-            None,
-            None,
-            None,
-            None,
-            None,
-            trading_mode,
+            trading_mode_class,
             None,
             None,
             None,
@@ -179,12 +177,7 @@ class Context:
             self.signal_symbol,
             self.time_frame,
             self.logger,
-            self.run_data_writer,
-            self.orders_writer,
-            self.trades_writer,
-            self.transaction_writer,
-            self.symbol_writer,
-            self.trading_mode,
+            self.trading_mode_class,
             self.trigger_cache_timestamp,
             self.trigger_source,
             self.trigger_value,
@@ -475,7 +468,7 @@ class Context:
     async def backtesting_results(self, with_lock=False, cache_size=None, database_adaptor=databases.TinyDBAdaptor):
         display = commons_display.display_translator_factory()
         run_dbs_identifier = databases.RunDatabasesIdentifier(
-            self.trading_mode.__class__,
+            self.trading_mode_class,
             self.optimization_campaign_name or optimization_campaign.OptimizationCampaign.get_campaign_name(),
             database_adaptor=database_adaptor,
             backtesting_id=self.backtesting_id,
