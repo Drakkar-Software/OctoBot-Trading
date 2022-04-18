@@ -47,6 +47,7 @@ class EvaluatorStates(enum.Enum):
     LONG = "LONG"
     VERY_LONG = "VERY_LONG"
     NEUTRAL = "NEUTRAL"
+    UNKNOWN = None
 
 
 class OrderStatus(enum.Enum):
@@ -598,6 +599,8 @@ class TradingSignalOrdersAttrs(enum.Enum):
     SIDE = "side"
     TYPE = "type"
     QUANTITY = "quantity"
+    TARGET_AMOUNT = "target_amount"
+    TARGET_POSITION = "target_position"
     UPDATED_QUANTITY = "updated_quantity"
     LIMIT_PRICE = "limit_price"
     UPDATED_LIMIT_PRICE = "updated_limit_price"
