@@ -23,6 +23,7 @@ cdef class Trader(util.Initializable):
     cdef dict config
 
     cdef public object risk
+    cdef public bint allow_artificial_orders
 
     cdef public str trader_type_str
 

@@ -44,7 +44,6 @@ class Order(util.Initializable):
         self.is_synchronized_with_exchange = False
         self.is_from_this_octobot = True
         self.simulated = trader.simulate
-        self.allow_self_managed = True
 
         self.logger_name = None
         self.order_id = trader.parse_order_id(None)
@@ -125,8 +124,7 @@ class Order(util.Initializable):
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None,
                order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
-               group=None,
-               allow_self_managed=None, tag=None) -> bool:
+               tag=None, group=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -428,9 +426,9 @@ class Order(util.Initializable):
         return not self.is_self_managed()
 
     def is_self_managed(self):
-        return not self.is_synchronized_with_exchange and \
+        return self.trader.allow_artificial_orders and \
+               not self.is_synchronized_with_exchange and \
                not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
-        return self.allow_self_managed and not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
 
     def is_long(self):
         return self.side is enums.TradeOrderSide.BUY

@@ -44,6 +44,8 @@ class Trader(util.Initializable):
                           [octobot_commons.constants.CONFIG_TRADER_RISK])))
         except KeyError:
             self.set_risk(octobot_trading.constants.ZERO)
+        self.allow_artificial_orders = self.config.get(octobot_commons.constants.CONFIG_TRADER_ALLOW_ARTIFICIAL_ORDERS,
+                                                       True)
 
         # logging
         self.trader_type_str = octobot_trading.constants.REAL_TRADER_STR
@@ -212,7 +214,6 @@ class Trader(util.Initializable):
             # rebind local elements to new order instance
             if new_order.order_group:
                 updated_order.add_to_order_group(new_order.order_group)
-            updated_order.allow_self_managed = new_order.allow_self_managed
             updated_order.tag = new_order.tag
             updated_order.chained_orders = new_order.chained_orders
             for chained_order in new_order.chained_orders:

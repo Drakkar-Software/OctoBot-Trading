@@ -54,9 +54,8 @@ def create_order_instance(trader,
                           side=None,
                           fees_currency_side=None,
                           group=None,
-                          allow_self_managed=True,
-                          reduce_only=False,
-                          tag=None):
+                          tag=None,
+                          reduce_only=None,):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
                                    side=side)
@@ -76,8 +75,6 @@ def create_order_instance(trader,
                  total_cost=total_cost,
                  fees_currency_side=fees_currency_side,
                  group=group,
-                 allow_self_managed=allow_self_managed,
-                 reduce_only=reduce_only,
-                 tag=tag)
-
+                 tag=tag,
+                 reduce_only=reduce_only)
     return order
