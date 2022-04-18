@@ -26,6 +26,7 @@ import octobot_trading.enums as enums
 import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
+import octobot_trading.storage as storage
 import octobot_trading.errors as errors
 
 
@@ -75,8 +76,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
         self.run_dbs_identifier = None
-        self.run_data_writer = self.orders_writer = self.trades_writer = self.transactions_writer = self.symbol_writer \
-            = None
+        self.symbol = None
 
     def is_cryptocurrency_wildcard(self):
         """
@@ -310,5 +310,10 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         return True
 
     def writers(self):
-        return self.run_data_writer, self.orders_writer, self.trades_writer, \
-               self.transactions_writer, self.symbol_writer
+        provider = storage.RunDatabasesProvider.instance()
+        return provider.get_run_db(self.trading_mode.bot_id), \
+            provider.get_orders_db(self.trading_mode.bot_id, self.exchange_name), \
+            provider.get_trades_db(self.trading_mode.bot_id, self.exchange_name), \
+            provider.get_transactions_db(self.trading_mode.bot_id, self.exchange_name), \
+            provider.get_symbol_db(self.trading_mode.bot_id, self.exchange_name, self.trading_mode.symbol) \
+                if self.trading_mode.symbol else None

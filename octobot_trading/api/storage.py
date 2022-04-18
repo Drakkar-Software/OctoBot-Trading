@@ -22,6 +22,14 @@ def init_bot_storage(bot_id, config, tentacles_setup_config):
         storage.RunDatabasesProvider.instance().add_bot_id(bot_id, config, tentacles_setup_config)
 
 
+def get_run_db(bot_id):
+    return storage.RunDatabasesProvider.instance().get_run_db(bot_id)
+
+
+def get_symbol_db(bot_id, exchange, symbol):
+    return storage.RunDatabasesProvider.instance().get_symbol_db(bot_id, exchange, symbol)
+
+
 async def close_bot_storage(bot_id):
     if storage.RunDatabasesProvider.instance().has_bot_id(bot_id):
         await storage.RunDatabasesProvider.instance().close(bot_id)

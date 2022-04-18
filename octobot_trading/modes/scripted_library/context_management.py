@@ -25,6 +25,7 @@ import octobot_commons.display as commons_display
 import octobot_commons.optimization_campaign as optimization_campaign
 import octobot_commons.event_tree as event_tree
 import octobot_evaluators.evaluators as evaluators
+import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
 import octobot_trading.storage as storage
 import octobot_tentacles_manager.api as tentacles_manager_api
@@ -67,7 +68,7 @@ class Context(databases.CacheClient):
         self.cryptocurrency = cryptocurrency
         self.signal_symbol = signal_symbol
         self.logger = logger
-        bot_id = exchange_manager.get_bot_id() if exchange_manager and exchange_manager.trading_modes else None
+        bot_id = exchange_manager.bot_id if exchange_manager else None
         self.run_data_writer = storage.RunDatabasesProvider.instance().get_run_db(bot_id) \
             if bot_id else None
         self.orders_writer = storage.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \
@@ -357,7 +358,7 @@ class Context(databases.CacheClient):
                                 bound_to_backtesting_time=True,
                                 ignore_requirement=False) -> list:
         """
-        Get a value for the current cache
+        Get a value for the current cache within the current backtesting boundaries
         :param value_key: identifier of the value
         :param cache_key: timestamp to use in order to look for a value
         :param limit: the maximum number elements to select (no limit by default)
@@ -368,8 +369,19 @@ class Context(databases.CacheClient):
         :return: the cached values
         """
         try:
-            return await self.get_cache(tentacle_name=tentacle_name, config_name=config_name)\
-                .get_values(cache_key or self.trigger_cache_timestamp, name=value_key, limit=limit)
+            min_timestamp = 0
+            max_timestamp = cache_key or self.trigger_cache_timestamp
+            if bound_to_backtesting_time and self.exchange_manager.is_backtesting:
+                min_timestamp = backtesting_api.get_backtesting_starting_time(
+                    self.exchange_manager.exchange.backtesting)
+                max_timestamp = min(cache_key or self.trigger_cache_timestamp,
+                                    backtesting_api.get_backtesting_ending_time(
+                                        self.exchange_manager.exchange.backtesting))
+
+            return await self.get_cache(tentacle_name=tentacle_name, config_name=config_name) \
+                .get_values(max_timestamp, name=value_key, limit=limit,
+                            min_timestamp=min_timestamp)
+
         except common_errors.NoCacheValue:
             return []
         finally:
