@@ -39,6 +39,7 @@ from octobot_trading.personal_data.orders import (
     ensure_orders_relevancy,
     is_associated_pending_order,
     apply_pending_order_from_created_order,
+    get_up_to_date_price,
     get_pre_order_data,
     OrderState,
     OrderGroup,
@@ -148,6 +149,7 @@ from octobot_trading.personal_data.trades import (
     create_trade_instance,
     TradesUpdater,
     Trade,
+    compute_win_rate,
 )
 from octobot_trading.personal_data import transactions
 from octobot_trading.personal_data.transactions import (
@@ -220,6 +222,7 @@ __all__ = [
     "ensure_orders_relevancy",
     "is_associated_pending_order",
     "apply_pending_order_from_created_order",
+    "get_up_to_date_price",
     "get_pre_order_data",
     "OrderState",
     "OrderGroup",
@@ -320,6 +323,7 @@ __all__ = [
     "create_trade_instance",
     "TradesUpdater",
     "Trade",
+    "compute_win_rate",
     "ExchangePersonalData",
     "AUTHENTICATED_UPDATER_PRODUCERS",
     "AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS",

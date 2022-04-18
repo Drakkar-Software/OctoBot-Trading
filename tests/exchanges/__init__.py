@@ -137,10 +137,13 @@ DEFAULT_BACKTESTING_TF = TimeFrames.ONE_HOUR
 
 
 @pytest.fixture
-async def backtesting_config():
+async def backtesting_config(request):
     config = load_test_config()
     config[CONFIG_BACKTESTING] = {}
     config[CONFIG_BACKTESTING][commons_constants.CONFIG_ENABLED_OPTION] = True
+    if hasattr(request, "param"):
+        ref_market = request.param
+        config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_REFERENCE_MARKET] = ref_market
     return config
 
 

@@ -51,6 +51,7 @@ class Trade:
         self.trade_profitability = constants.ZERO
         self.total_cost = constants.ZERO
         self.reduce_only = False
+        self.tag = None
 
         # raw exchange trade type, used to create trade dict
         self.exchange_trade_type = None
@@ -78,6 +79,7 @@ class Trade:
         self.symbol = order.symbol
         self.is_closing_order = order.status in self.CLOSING_TRADE_ORDER_STATUS
         self.reduce_only = order.reduce_only
+        self.tag = order.tag
 
     def get_time(self):
         return self.executed_time if self.status is not enums.OrderStatus.CANCELED else self.canceled_time
@@ -98,5 +100,6 @@ class Trade:
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
             enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value: self.taker_or_maker,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
-            enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only
+            enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
+            enums.ExchangeConstantsOrderColumns.TAG.value: self.tag
         }

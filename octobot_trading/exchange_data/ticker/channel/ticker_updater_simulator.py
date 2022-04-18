@@ -20,6 +20,7 @@ import octobot_backtesting.api as api
 import octobot_backtesting.enums as backtesting_enums
 
 import octobot_commons.enums as common_enums
+import octobot_commons.constants as common_constants
 import octobot_commons.channels_name as channels_name
 import octobot_commons.errors as errors
 
@@ -40,7 +41,10 @@ class TickerUpdaterSimulator(ticker_updater.TickerUpdater):
         self.last_timestamp_pushed_by_symbol = {}
         self.time_consumer = None
         # Only generate tickers from the shortest handled time frame
-        self.ticker_time_frame = self.channel.exchange_manager.exchange_config.get_shortest_time_frame().value
+        shortest_time_frame = self.channel.exchange_manager.exchange_config.get_shortest_time_frame()
+        self.ticker_time_frame = shortest_time_frame.value
+        self.ticker_time_frame_seconds = common_enums.TimeFramesMinutes[shortest_time_frame] * \
+            common_constants.MINUTE_TO_SECONDS
 
     async def start(self):
         await self.resume()
@@ -67,9 +71,10 @@ class TickerUpdaterSimulator(ticker_updater.TickerUpdater):
                                           cryptocurrency: str, symbol: str, time_frame, candle):
         if self.ticker_time_frame == time_frame and candle:
             last_candle_timestamp = candle[common_enums.PriceIndexes.IND_PRICE_TIME.value]
-            if last_candle_timestamp > self.last_timestamp_pushed_by_symbol[symbol]:
-                self.last_timestamp_pushed_by_symbol[symbol] = last_candle_timestamp
-                ticker = self._generate_ticker_from_candle(candle, symbol, last_candle_timestamp)
+            ticker_timestamp = last_candle_timestamp + self.ticker_time_frame_seconds
+            if ticker_timestamp > self.last_timestamp_pushed_by_symbol[symbol]:
+                self.last_timestamp_pushed_by_symbol[symbol] = ticker_timestamp
+                ticker = self._generate_ticker_from_candle(candle, symbol, ticker_timestamp)
                 await self.push(symbol, ticker)
 
     @staticmethod

@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_commons.logging as logging
+import octobot_commons.constants as commons_constants
 
 import octobot_trading.errors as errors
 import octobot_trading.modes as modes
@@ -87,6 +88,11 @@ class ExchangeBuilder:
     def _register_trading_modes_requirements(self, trading_mode_class, tentacles_setup_config):
         self.exchange_manager.is_trading = trading_mode_class.get_is_trading_on_exchange(self.exchange_name,
                                                                                          tentacles_setup_config)
+        # take trading modes candles requirements into account if any
+        self.config[commons_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT] = max(
+            self.config[commons_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT],
+            trading_mode_class.get_required_candles_count(tentacles_setup_config)
+        )
 
     async def _build_trading_modes_if_required(self, trading_mode_class):
         if self._is_using_trading_modes:

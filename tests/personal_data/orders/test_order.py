@@ -100,15 +100,24 @@ async def test_update(trader):
     assert order_inst.side is None
     assert order_inst.status == enums.OrderStatus.OPEN
     assert order_inst.filled_quantity != order_inst.origin_quantity
+    assert order_inst.allow_self_managed is True
+    assert order_inst.tag is None
+    assert order_inst.one_cancels_the_other is False
 
     order_inst.update(order_type=enums.TraderOrderType.STOP_LOSS_LIMIT,
                       symbol="ETH/BTC",
                       quantity=0.1,
                       quantity_filled=5.2,
                       price=0.12,
-                      stop_price=0.9)
+                      stop_price=0.9,
+                      allow_self_managed=False,
+                      tag="tag",
+                      one_cancels_the_other=True)
     assert order_inst.origin_stop_price == 0.9
     assert order_inst.origin_price == 0.12
+    assert order_inst.allow_self_managed is False
+    assert order_inst.tag == "tag"
+    assert order_inst.one_cancels_the_other is True
 
 
 async def test_simulated_update(trader_simulator):

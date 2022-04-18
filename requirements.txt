@@ -19,3 +19,6 @@ cryptofeed==2.1.2
 
 # OrderBook requirement
 sortedcontainers==2.4.0
+
+# Scripting requirements
+tinydb==4.5.2

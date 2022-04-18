@@ -1,4 +1,3 @@
-# cython: language_level=3
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -14,17 +13,21 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-cimport octobot_trading.exchange_data.ohlcv.channel.ohlcv as ohlcv_channel
+import decimal
+
+import octobot_trading.modes.basic_keywords.user_inputs as user_inputs
 
 
-cdef class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
-    cdef list tasks
-
-    cdef bint is_initialized
-    cdef dict initialized_candles_by_tf_by_symbol
-
-    cdef list _get_traded_pairs(self)
-    cdef list _get_time_frames(self)
-    cdef int _get_historical_candles_count(self)
-    cdef double _ensure_correct_sleep_time(self, double sleep_time_candidate, double time_frame_sleep)
-    cdef void _set_initialized(self, str pair, object time_frame, bint initialized)
+async def user_select_leverage(
+        ctx,
+        def_val=1,
+        name="leverage"):
+    selected_leverage = await user_inputs.user_input(ctx, name, "int", def_val)
+    if ctx.exchange_manager.is_future:
+        side = None
+        # TODO remove this try when bybit tentacle is up
+        try:
+            await ctx.exchange_manager.trader.set_leverage(ctx.symbol, side, decimal.Decimal(str(selected_leverage)))
+        except AttributeError:
+            ctx.logger.warning("TODO: rebase tentacles when bybit exchange is up")
+    return selected_leverage

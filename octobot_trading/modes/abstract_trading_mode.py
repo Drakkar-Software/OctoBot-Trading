@@ -17,6 +17,7 @@ import abc
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
+import octobot_commons.databases as databases
 import octobot_commons.tentacles_management as abstract_tentacle
 
 import async_channel.constants as channel_constants
@@ -67,6 +68,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # producers is the list of consumers created by this trading mode
         self.consumers = []
+
+        # Other evaluators that might have been called by this trading mode.
+        # This trading mode is now responsible for managing their cache
+        self.called_nested_evaluators = set()
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -137,7 +142,18 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await producer.stop()
         for consumer in self.consumers:
             await consumer.stop()
+        await self.close_caches()
         self.exchange_manager = None
+
+    async def close_caches(self, reset_cache_db_ids=False):
+        for tentacle_name in [self.get_name()] + [evaluator.get_name() for evaluator in self.called_nested_evaluators]:
+            await databases.CacheManager().close_cache(
+                tentacle_name,
+                self.exchange_manager.exchange_name,
+                None if self.get_is_symbol_wildcard() else self.symbol,
+                None if self.get_is_time_frame_wildcard() else self.time_frame,
+                reset_cache_db_ids=reset_cache_db_ids
+            )
 
     async def create_producers(self) -> list:
         """
@@ -233,3 +249,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         if constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT in config:
             min_strategies_count = config[constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT]
         return min_strategies_count
+
+    @classmethod
+    def get_required_candles_count(cls, tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration):
+        return tentacles_manager_api.get_tentacle_config(tentacles_setup_config, cls).get(
+            common_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT,
+            -1
+        )

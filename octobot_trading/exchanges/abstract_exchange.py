@@ -65,6 +65,8 @@ class AbstractExchange(util.Initializable):
         self.allowed_time_lag = octobot_trading.constants.DEFAULT_EXCHANGE_TIME_LAG
         self.current_account = enums.AccountTypes.CASH
 
+        self.is_unreachable = False
+
     async def initialize_impl(self):
         """
         Contains the exchange initialization code
