@@ -37,6 +37,14 @@ class FuturePortfolio(portfolio_class.Portfolio):
             order, contract=order.exchange_manager.exchange.get_pair_future_contract(order.symbol))
         position_instance.update_from_order(order)
 
+    def update_portfolio_data_from_withdrawal(self, amount, currency):
+        """
+        Call update_portfolio_data for order currency and market
+        :param amount: the withdrawal amount
+        :param currency: the withdrawal currency
+        """
+        self._update_future_portfolio_data(currency, wallet_value=-amount)
+
     def update_portfolio_data_from_position_size_update(self,
                                                         position,
                                                         realized_pnl_update,

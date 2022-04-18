@@ -33,15 +33,18 @@ cdef class Portfolio:
     # cpdef object update_portfolio_from_balance(self, dict balance, bint force_replace=*) can't be cythonized for now
     cpdef object get_currency_portfolio(self, str currency)
     cpdef object update_portfolio_from_filled_order(self, order_class.Order order)
+    cpdef object update_portfolio_from_withdrawal(self, object amount, str currency)
     cpdef object update_portfolio_available(self, order_class.Order order, bint is_new_order= *)
     # cpdef dict get_portfolio_from_amount_dict(self, dict amount_dict) can't be cythonized for now
     cpdef void reset_portfolio_available(self, str reset_currency= *, object reset_quantity= *)
     cpdef void log_portfolio_update_from_order(self, order_class.Order order)
+    cpdef void log_portfolio_update_from_withdrawal(self, object amount, str currency)
 
     # abstract methods
     # return object to ensure PortfolioNegativeValueError forwarding
     cpdef object update_portfolio_data_from_order(self, order_class.Order order)
     cpdef object update_portfolio_available_from_order(self, order_class.Order order, bint is_new_order=*)
+    cpdef object update_portfolio_data_from_withdrawal(self, object amount, str currency)
     cpdef object create_currency_asset(self, str currency, object available=*, object total=*)
 
     # private methods

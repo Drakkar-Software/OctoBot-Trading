@@ -124,9 +124,9 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
 
     currency, market = symbol_util.split_symbol(symbol)
     portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio
-    currency_available = portfolio .get_currency_portfolio(currency).available \
+    currency_available = portfolio.get_currency_portfolio(currency).available \
         if portfolio_type == commons_constants.PORTFOLIO_AVAILABLE else portfolio.get_currency_portfolio(currency).total
-    market_available = portfolio .get_currency_portfolio(market).available \
+    market_available = portfolio.get_currency_portfolio(market).available \
         if portfolio_type == commons_constants.PORTFOLIO_AVAILABLE else portfolio.get_currency_portfolio(market).total
 
     if exchange_manager.is_future:

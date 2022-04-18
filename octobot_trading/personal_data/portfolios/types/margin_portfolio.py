@@ -25,5 +25,8 @@ class MarginPortfolio(portfolio_class.Portfolio):
     def update_portfolio_data_from_order(self, order):
         pass  # TODO
 
+    def update_portfolio_data_from_withdrawal(self, amount, currency):
+        pass  # TODO
+
     def update_portfolio_available_from_order(self, order, is_new_order=True):
         pass  # TODO
