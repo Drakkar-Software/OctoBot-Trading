@@ -90,6 +90,11 @@ class PricesManager(util.Initializable):
         self._ensure_price_validity()
         if not self.valid_price_received_event.is_set():
             try:
+                self.exchange_manager.ensure_reachability()
+                if self.exchange_manager.is_backtesting:
+                    # should never happen in backtesting: mark price is either available
+                    # or exchange should be unreachable
+                    raise asyncio.TimeoutError()
                 await asyncio.wait_for(self.valid_price_received_event.wait(), timeout)
             except asyncio.TimeoutError:
                 self.logger.warning("Timeout when waiting for current market price. This probably means that too many "

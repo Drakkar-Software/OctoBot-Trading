@@ -29,6 +29,15 @@ class LimitOrder(order_class.Order):
 
     async def update_order_status(self, force_refresh=False):
         if self.limit_price_hit_event is None:
+            # first check if the order can be filled instantly
+            # TODO test
+            if self.exchange_manager.is_backtesting and \
+                    self.exchange_manager.exchange_symbols_data.\
+                    get_exchange_symbol_data(self.symbol).price_events_manager.\
+                    is_triggered_by_last_recent_trades(self.origin_price, self.creation_time, self.trigger_above):
+                await self.on_fill(force_fill=True)
+                return
+            # otherwise create a price event waiter
             self._create_hit_event(self.creation_time)
 
         if self.wait_for_hit_event_task is None and self.limit_price_hit_event is not None:

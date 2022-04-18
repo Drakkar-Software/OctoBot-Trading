@@ -23,6 +23,10 @@ import octobot_trading.constants as constants
 LOGGER = logging.get_logger(constants.API_LOGGER_TAG)
 
 
+def get_trader(exchange_manager):
+    return exchange_manager.trader
+
+
 def has_trader(exchange_manager):
     return exchange_manager.trader is not None
 

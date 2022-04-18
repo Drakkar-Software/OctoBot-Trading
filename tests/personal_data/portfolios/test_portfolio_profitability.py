@@ -55,7 +55,7 @@ async def test_simple_handle_balance_update(backtesting_trader):
     portfolio_manager.portfolio.update_portfolio_from_balance({
         'BTC': {'available': 20, 'total': 20},
         'USDT': {'available': 1000, 'total': 1000}
-    }, exchange_manager)
+    }, True)
     portfolio_manager.handle_balance_updated()
     assert portfolio_profitability.profitability == 10
     assert portfolio_profitability.profitability_percent == 100

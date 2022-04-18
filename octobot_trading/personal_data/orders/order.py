@@ -44,6 +44,7 @@ class Order(util.Initializable):
         self.is_synchronized_with_exchange = False
         self.is_from_this_octobot = True
         self.simulated = trader.simulate
+        self.allow_self_managed = True
 
         self.logger_name = None
         self.order_id = trader.parse_order_id(None)
@@ -54,6 +55,7 @@ class Order(util.Initializable):
         self.taker_or_maker = None
         self.timestamp = 0
         self.side = side
+        self.tag = None
 
         # original order attributes
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
@@ -80,6 +82,7 @@ class Order(util.Initializable):
         self.canceled_time = 0
 
         self.order_group = None
+        self.one_cancels_the_other = False
 
         # order state is initialized in initialize_impl()
         self.state = None
@@ -123,7 +126,8 @@ class Order(util.Initializable):
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None,
                order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
-               group=None) -> bool:
+               group=None,
+               allow_self_managed=None, one_cancels_the_other=None, tag=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -225,6 +229,12 @@ class Order(util.Initializable):
 
         if group is not None:
             self.add_to_order_group(group)
+
+        if one_cancels_the_other is not None:
+            self.one_cancels_the_other = one_cancels_the_other
+
+        if tag is not None:
+            self.tag = tag
 
         return changed
 
@@ -418,9 +428,13 @@ class Order(util.Initializable):
     def generate_executed_time(self):
         return self.exchange_manager.exchange.get_exchange_current_time()
 
+    def is_counted_in_available_funds(self):
+        return not self.is_self_managed()
+
     def is_self_managed(self):
         return not self.is_synchronized_with_exchange and \
                not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
+        return self.allow_self_managed and not self.exchange_manager.exchange.is_supported_order_type(self.order_type)
 
     def is_long(self):
         return self.side is enums.TradeOrderSide.BUY
@@ -553,7 +567,8 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
             enums.ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
-            enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only
+            enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,
+            enums.ExchangeConstantsOrderColumns.TAG.value: self.tag
         }
 
     def clear(self):
@@ -569,13 +584,14 @@ class Order(util.Initializable):
     def to_string(self):
         chained_order = "" if self.triggered_by is None else \
             "triggered chained order | " if self.is_created() else "untriggered chained order | "
+        tag = f" | tag: {self.tag}" if self.tag else ""
         return (f"{self.symbol} | "
                 f"{chained_order}"
                 f"{self.order_type.name if self.order_type is not None else 'Unknown'} | "
                 f"Price : {str(self.origin_price)} | "
                 f"Quantity : {str(self.origin_quantity)} | "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} | "
-                f"id : {self.order_id}")
+                f"id : {self.order_id}{tag}")
 
     def __str__(self):
         return self.to_string()

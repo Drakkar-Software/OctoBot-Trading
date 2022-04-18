@@ -30,6 +30,17 @@ from octobot_trading.modes.abstract_trading_mode import (
     AbstractTradingMode,
 )
 
+from octobot_trading.modes import scripted_trading_mode
+from octobot_trading.modes.scripted_trading_mode import (
+    AbstractScriptedTradingMode,
+    AbstractScriptedTradingModeProducer,
+)
+
+from octobot_trading.modes import context_management
+from octobot_trading.modes.context_management import (
+    Context,
+)
+
 from octobot_trading.modes import mode_config
 from octobot_trading.modes.mode_config import (
     get_activated_trading_mode,
@@ -48,6 +59,9 @@ __all__ = [
     "AbstractTradingModeProducer",
     "AbstractTradingMode",
     "AbstractTradingModeConsumer",
+    "AbstractScriptedTradingMode",
+    "AbstractScriptedTradingModeProducer",
+    "Context",
     "check_factor",
     "create_trading_modes",
     "create_trading_mode",

@@ -78,13 +78,14 @@ class Trader(util.Initializable):
     Orders
     """
 
-    async def create_order(self, order, loaded: bool = False, params: dict = None):
+    async def create_order(self, order, loaded: bool = False, params: dict = None, pre_init_callback=None):
         """
         Create a new order from an OrderFactory created order, update portfolio, registers order in order manager and
         notifies order channel.
         :param order: Order to create
         :param loaded: True if this order is fetched from an exchange only and therefore not created by this OctoBot
         :param params: Additional parameters to give to the order upon creation (used in real trading only)
+        :param pre_init_callback: A callback function that will be called just before initializing the order
         :return: The crated order instance
         """
         new_order: object = order
@@ -101,6 +102,8 @@ class Trader(util.Initializable):
                 self.logger.error(f"Fail to create not loaded order : {e}")
                 return None
 
+        if pre_init_callback is not None:
+            await pre_init_callback(new_order)
         await new_order.initialize()
         return new_order
 
@@ -216,6 +219,9 @@ class Trader(util.Initializable):
             updated_order.has_been_bundled = new_order.has_been_bundled
             updated_order.exchange_creation_params = new_order.exchange_creation_params
             updated_order.is_waiting_for_chained_trigger = new_order.is_waiting_for_chained_trigger
+            updated_order.one_cancels_the_other = new_order.allow_self_managed
+            updated_order.one_cancels_the_other = new_order.one_cancels_the_other
+            updated_order.tag = new_order.tag
         return updated_order
 
     async def bundle_chained_order_with_uncreated_order(self, order, chained_order, **kwargs):
@@ -300,16 +306,19 @@ class Trader(util.Initializable):
         except KeyError:
             return False
 
-    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True) -> bool:
+    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None) -> bool:
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
         :param symbol: The symbol to cancel all orders on
         :param cancel_loaded_orders: When True, also cancels loaded orders (order that are not from this bot instance)
+        :param side: When set, only cancels orders from this side
         :return: True if all orders got cancelled, False if an error occurred
         """
         all_cancelled = True
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
-            if (order.symbol == symbol and not order.is_cancelled()) and \
+            if order.symbol == symbol and \
+                    (side is None or order.side is side) and \
+                    not order.is_cancelled() and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
                 all_cancelled = await self.cancel_order(order) and all_cancelled
         return all_cancelled

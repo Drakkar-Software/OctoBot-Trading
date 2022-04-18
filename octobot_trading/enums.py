@@ -335,6 +335,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     TAKERORMAKER = "takerOrMaker"
     REDUCE_ONLY = "reduceOnly"
     STOP_PRICE = "stopPrice"
+    TAG = "tag"
 
 
 class ExchangeConstantsPositionColumns(enum.Enum):
@@ -466,3 +467,98 @@ class SubAccountColumns(enum.Enum):
 class ExchangeWrapperLibs(enum.Enum):
     ASYNC_CCXT = "async_ccxt"
     CCXT = "ccxt"
+
+
+class PlotAttributes(enum.Enum):
+    KIND = "kind"
+    X = "x"
+    Y = "y"
+    OPEN = "open"
+    HIGH = "high"
+    LOW = "low"
+    CLOSE = "close"
+    VOLUME = "volume"
+    TITLE = "title"
+    TEXT = "text"
+    SUB_ELEMENTS = "sub_elements"
+    ELEMENTS = "elements"
+    NAME = "name"
+    DATA = "data"
+    X_TYPE = "x_type"
+    Y_TYPE = "y_type"
+    MODE = "mode"
+    OWN_XAXIS = "own_xaxis"
+    OWN_YAXIS = "own_yaxis"
+    SIDE = "side"
+    VALUE = "value"
+    CONFIG = "config"
+    SCHEMA = "schema"
+    TENTACLE = "tentacle"
+    TENTACLE_TYPE = "tentacle_type"
+    COLUMNS = "columns"
+    ROWS = "rows"
+    SEARCHES = "searches"
+    IS_HIDDEN = "is_hidden"
+    TYPE = "type"
+    COLOR = "color"
+    HTML = "html"
+    SIZE = "size"
+    SYMBOL = "symbol"
+
+
+class BacktestingMetadata(enum.Enum):
+    ID = "id"
+    GAINS = "gains"
+    PERCENT_GAINS = "% gains"
+    END_PORTFOLIO = "end portfolio"
+    START_PORTFOLIO = "start portfolio"
+    WIN_RATE = "% win rate"
+    SYMBOLS = "symbols"
+    TIME_FRAMES = "time frames"
+    START_TIME = "start time"
+    END_TIME = "end time"
+    TRADES = "trades"
+    TIMESTAMP = "timestamp"
+    NAME = "name"
+    USER_INPUTS = "user inputs"
+    BACKTESTING_FILES = "backtesting files"
+    CHILDREN = "children"
+    OPTIMIZER_ID = "optimizer id"
+
+
+class PlotCharts(enum.Enum):
+    MAIN_CHART = "main-chart"
+    SUB_CHART = "sub-chart"
+
+
+class DisplayedElementTypes(enum.Enum):
+    CHART = "chart"
+    INPUT = "input"
+    TABLE = "table"
+    VALUE = "value"
+
+
+class DBTables(enum.Enum):
+    METADATA = "metadata"
+    INPUTS = "inputs"
+    PORTFOLIO = "portfolio"
+    ORDERS = "all_orders"
+    TRADES = "all_trades"
+    CANDLES = "candles"
+    CANDLES_SOURCE = "candles_source"
+    CACHE_SOURCE = "cache_source"
+    SYMBOL = "symbol"
+    FEES_AMOUNT = "fees_amount"
+    FEES_CURRENCY = "fees_currency"
+
+
+class DBRows(enum.Enum):
+    REFERENCE_MARKET = "ref_market"
+    EXCHANGE = "exchange"
+    EXCHANGES = "exchanges"
+    PAIR = "pair"
+    TIME_FRAME = "time_frame"
+    VALUE = "value"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    SYMBOLS = "symbols"

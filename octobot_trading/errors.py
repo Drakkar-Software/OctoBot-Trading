@@ -150,3 +150,15 @@ class MissingPriceDataError(Exception):
     """
     Raised when a price info is missing
     """
+
+
+class UnreachableExchange(Exception):
+    """
+    Raised when an exchange cant be reached (likely when it's offline)
+    """
+
+
+class InvalidArgumentError(Exception):
+    """
+    Raised when a keyword is called with invalid arguments
+    """

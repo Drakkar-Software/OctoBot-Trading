@@ -40,7 +40,7 @@ async def test_get_current_crypto_currencies_values(backtesting_trader):
         'NANO': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
         'XLM': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()},
         'USDT': {'available': decimal_random_quantity(), 'total': decimal_random_quantity()}
-    }, exchange_manager)
+    }, True)
     portfolio_manager.handle_balance_updated()
 
     assert portfolio_value_holder.get_current_crypto_currencies_values() == {
@@ -117,7 +117,7 @@ async def test_get_current_holdings_values(backtesting_trader):
         'ETH': {'available': decimal.Decimal("100"), 'total': decimal.Decimal("100")},
         'XRP': {'available': decimal.Decimal("10000"), 'total': decimal.Decimal("10000")},
         'USDT': {'available': decimal.Decimal("1000"), 'total': decimal.Decimal("1000")}
-    }, exchange_manager)
+    }, True)
     portfolio_manager.handle_balance_updated()
     assert portfolio_value_holder.get_current_holdings_values() == {
         'BTC': decimal.Decimal("10"),

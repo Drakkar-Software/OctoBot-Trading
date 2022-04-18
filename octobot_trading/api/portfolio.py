@@ -16,6 +16,7 @@
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants
 import octobot_trading.personal_data as personal_data
+import octobot_commons.constants
 
 
 def get_portfolio(exchange_manager, as_decimal=True) -> dict:
@@ -57,3 +58,11 @@ async def refresh_real_trader_portfolio(exchange_manager) -> bool:
     return await exchange_channel.get_chan(octobot_trading.constants.BALANCE_CHANNEL, exchange_manager.id). \
         get_internal_producer(). \
         refresh_real_trader_portfolio(True)
+
+
+def get_portfolio_amounts(portfolio,
+                          portfolio_type=octobot_commons.constants.PORTFOLIO_TOTAL):
+    return {
+        currency: values[portfolio_type]
+        for currency, values in portfolio.items()
+    }
