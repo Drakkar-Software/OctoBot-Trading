@@ -16,6 +16,12 @@
 import octobot_trading.storage as storage
 
 
+def init_bot_storage(bot_id, config, tentacles_setup_config):
+    if not storage.RunDatabasesProvider.instance().has_bot_id(bot_id):
+        # only one run database per bot id
+        storage.RunDatabasesProvider.instance().add_bot_id(bot_id, config, tentacles_setup_config)
+
+
 def get_run_db(bot_id):
     return storage.RunDatabasesProvider.instance().get_run_db(bot_id)
 

@@ -21,7 +21,6 @@ import octobot_trading.errors as errors
 import octobot_trading.modes as modes
 import octobot_trading.exchanges as exchanges
 import octobot_trading.util as util
-import octobot_trading.storage as storage
 
 
 class ExchangeBuilder:
@@ -59,9 +58,6 @@ class ExchangeBuilder:
             trading_mode_class = modes.get_activated_trading_mode(self._tentacles_setup_config)
             # handle exchange related requirements if the activated trading mode has any
             self._register_trading_modes_requirements(trading_mode_class, self._tentacles_setup_config)
-
-            # initialize run databases
-            self._init_bot_storage()
         await self.exchange_manager.initialize()
 
         # initialize exchange for trading if not collecting
@@ -76,11 +72,6 @@ class ExchangeBuilder:
 
         # add to global exchanges
         exchanges.Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
-
-    def _init_bot_storage(self):
-        if not storage.RunDatabasesProvider.instance().has_bot_id(self._bot_id):
-            # only one run database per bot id
-            storage.RunDatabasesProvider.instance().add_bot_id(self._bot_id, self.config, self._tentacles_setup_config)
 
     async def _build_trader(self):
         try:
