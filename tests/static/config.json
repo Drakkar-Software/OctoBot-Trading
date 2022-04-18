@@ -11,7 +11,7 @@
       "api-secret": "",
       "web-socket": false
     },
-    "poloniex": {
+    "bybit": {
       "api-key": "",
       "api-secret": "",
       "web-socket": false
