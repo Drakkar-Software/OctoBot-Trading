@@ -14,21 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-from octobot_trading.modes.basic_keywords.user_inputs import (
+from octobot_trading.modes.scripted_library import basic_keywords
+from octobot_trading.modes.scripted_library.basic_keywords import (
     user_input,
     save_user_input,
     get_user_inputs,
     clear_user_inputs,
-)
-
-from octobot_trading.modes.basic_keywords.configuration import (
     user_select_leverage,
     set_leverage,
     set_partial_take_profit_stop_loss,
-)
-
-from octobot_trading.modes.basic_keywords.run_persistence import (
     set_plot_orders,
     store_orders,
     store_trade,
@@ -40,6 +34,11 @@ from octobot_trading.modes.basic_keywords.run_persistence import (
     clear_trades_cache,
     clear_transactions_cache,
     clear_all_tables,
+)
+
+from octobot_trading.modes.scripted_library import context_management
+from octobot_trading.modes.scripted_library.context_management import (
+    Context,
 )
 
 
@@ -62,4 +61,5 @@ __all__ = [
     "clear_trades_cache",
     "clear_transactions_cache",
     "clear_all_tables",
+    "Context",
 ]
