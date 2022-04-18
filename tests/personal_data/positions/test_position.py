@@ -823,6 +823,26 @@ async def test__calculates_size_update_from_filled_order_long_increasing_one_way
         market_buy, position_inst.get_quantity_to_close()) == constants.ZERO
 
 
+async def test__calculates_size_update_from_filled_order_long_decreasing_one_way_reduce_only(
+        btc_usdt_future_trader_simulator_with_default_linear):
+    config, exchange_manager_inst, trader_inst, default_contract, position_inst = btc_usdt_future_trader_simulator_with_default_linear
+    symbol_contract = default_contract
+    exchange_manager_inst.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, symbol_contract)
+    symbol_contract.set_position_mode(is_one_way=True)
+    await position_inst.update(update_size=decimal.Decimal(10))
+    market_buy = SellMarketOrder(trader_inst)
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=decimal.Decimal(10),
+                      quantity=decimal.Decimal(15),
+                      price=decimal.Decimal(10))
+    market_buy.reduce_only = True
+    if os.getenv('CYTHON_IGNORE'):
+        return
+    assert position_inst._calculates_size_update_from_filled_order(
+        market_buy, position_inst.get_quantity_to_close()) == decimal.Decimal(-10)
+
+
 async def test__calculates_size_update_from_filled_order_long_decreasing_hedge(
         btc_usdt_future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract, position_inst = btc_usdt_future_trader_simulator_with_default_linear

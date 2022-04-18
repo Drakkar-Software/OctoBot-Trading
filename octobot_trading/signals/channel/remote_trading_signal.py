@@ -20,7 +20,6 @@ import async_channel.consumer as consumers
 import async_channel.producer as producers
 
 import octobot_trading.enums as enums
-import octobot_commons.enums as commons_enums
 
 
 class RemoteTradingSignalChannelConsumer(consumers.Consumer):

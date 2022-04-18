@@ -14,8 +14,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.modes.scripted_library import basic_keywords
-from octobot_trading.modes.scripted_library.basic_keywords import (
+from octobot_trading.modes.script_keywords import dsl
+from octobot_trading.modes.script_keywords.dsl import (
+    parse_quantity,
+    QuantityType,
+)
+
+from octobot_trading.modes.script_keywords import basic_keywords
+from octobot_trading.modes.script_keywords.basic_keywords import (
     user_input,
     save_user_input,
     get_user_inputs,
@@ -40,13 +46,15 @@ from octobot_trading.modes.scripted_library.basic_keywords import (
     clear_all_tables,
 )
 
-from octobot_trading.modes.scripted_library import context_management
-from octobot_trading.modes.scripted_library.context_management import (
+from octobot_trading.modes.script_keywords import context_management
+from octobot_trading.modes.script_keywords.context_management import (
     Context,
 )
 
 
 __all__ = [
+    "parse_quantity",
+    "QuantityType",
     "user_input",
     "save_user_input",
     "get_user_inputs",

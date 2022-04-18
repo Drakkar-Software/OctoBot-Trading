@@ -29,6 +29,8 @@ def get_signal_exchange_type(exchange_manager):
 
 def create_order_signal_description(
         order, action,
+        target_amount=None,
+        target_position=None,
         updated_quantity=trading_constants.ZERO,
         updated_limit_price=trading_constants.ZERO,
         updated_stop_price=trading_constants.ZERO,
@@ -42,6 +44,8 @@ def create_order_signal_description(
         trading_enums.TradingSignalOrdersAttrs.TYPE.value:
             personal_data.get_order_type_from_class(order.__class__).value,
         trading_enums.TradingSignalOrdersAttrs.QUANTITY.value: float(order.origin_quantity),
+        trading_enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value: target_amount,
+        trading_enums.TradingSignalOrdersAttrs.TARGET_POSITION.value: target_position,
         trading_enums.TradingSignalOrdersAttrs.UPDATED_QUANTITY.value: float(updated_quantity),
         trading_enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value: float(order.origin_price),
         trading_enums.TradingSignalOrdersAttrs.UPDATED_LIMIT_PRICE.value: float(updated_limit_price),
