@@ -25,6 +25,10 @@ class StopLossOrder(limit_order.LimitOrder):
     def is_counted_in_available_funds(self):
         return False
 
+    def _filled_maker_or_taker(self):
+        # Creates a market order when filled, which is taker
+        return enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
+
     async def on_filled(self):
         await limit_order.LimitOrder.on_filled(self)
         if not self.trader.simulate and self.is_self_managed():
