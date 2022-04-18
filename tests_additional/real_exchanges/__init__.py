@@ -18,8 +18,8 @@ from contextlib import asynccontextmanager
 import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
-from octobot_trading.exchanges.exchange_manager import ExchangeManager
-from octobot_trading.api.exchange import cancel_ccxt_throttle_task
+import octobot_trading.api as api
+import octobot_trading.exchanges as exchanges
 
 
 @asynccontextmanager
@@ -27,12 +27,12 @@ async def get_exchange_manager(exchange_name, config=None):
     config = config or load_test_config()
     if exchange_name not in config[commons_constants.CONFIG_EXCHANGES]:
         config[commons_constants.CONFIG_EXCHANGES][exchange_name] = {}
-    exchange_manager_instance = ExchangeManager(config, exchange_name)
+    exchange_manager_instance = exchanges.ExchangeManager(config, exchange_name)
     await exchange_manager_instance.initialize()
     try:
         yield exchange_manager_instance
     finally:
         await exchange_manager_instance.stop()
-        cancel_ccxt_throttle_task()
+        api.cancel_ccxt_throttle_task()
         # let updaters gracefully shutdown
         await wait_asyncio_next_cycle()
