@@ -42,4 +42,6 @@ cpdef object create_order_instance(object trader,
                                    double timestamp= *,
                                    object side= *,
                                    object fees_currency_side=*,
-                                   object group=*)
+                                   object group=*,
+                                   object tag=*,
+                                   object reduce_only=*)
