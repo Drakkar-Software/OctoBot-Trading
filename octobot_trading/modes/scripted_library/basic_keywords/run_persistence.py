@@ -155,7 +155,7 @@ async def store_transactions(ctx,
             "order_id": transaction.order_id if hasattr(transaction, "order_id") else None,
             "funding_rate": float(transaction.funding_rate) if hasattr(transaction, "funding_rate") else None,
             "realised_pnl": float(transaction.realised_pnl) if hasattr(transaction, "realised_pnl") else None,
-            "transaction_fee": transaction.realised_pnl if hasattr(transaction, "transaction_fee") else None,
+            "transaction_fee": float(transaction.transaction_fee) if hasattr(transaction, "transaction_fee") else None,
             "closed_quantity": float(transaction.closed_quantity) if hasattr(transaction, "closed_quantity") else None,
             "cumulated_closed_quantity": float(transaction.cumulated_closed_quantity)
             if hasattr(transaction, "cumulated_closed_quantity") else None,

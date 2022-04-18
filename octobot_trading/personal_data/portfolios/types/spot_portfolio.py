@@ -44,6 +44,14 @@ class SpotPortfolio(portfolio_class.Portfolio):
             new_quantity = (order.filled_quantity * order.filled_price) - order.get_total_fees(order.market)
             self._update_portfolio_data(order.market, total_value=new_quantity, available_value=new_quantity)
 
+    def update_portfolio_data_from_withdrawal(self, amount, currency):
+        """
+        Call update_portfolio_data for order currency and market
+        :param amount: the withdrawal amount
+        :param currency: the withdrawal currency
+        """
+        self._update_portfolio_data(currency, total_value=-amount)
+
     def update_portfolio_available_from_order(self, order, is_new_order=True):
         """
         Realise portfolio availability update
