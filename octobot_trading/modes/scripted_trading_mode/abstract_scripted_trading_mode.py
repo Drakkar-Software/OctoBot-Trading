@@ -35,6 +35,7 @@ import octobot_trading.modes.scripted_library.basic_keywords as basic_keywords
 import octobot_trading.constants as trading_constants
 import octobot_trading.enums as trading_enums
 import octobot_trading.errors as errors
+import octobot_trading.storage as storage
 import octobot_trading.personal_data as personal_data
 import octobot_backtesting.api as backtesting_api
 import octobot_tentacles_manager.api as tentacles_manager_api
