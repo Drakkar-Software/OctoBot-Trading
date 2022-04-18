@@ -151,6 +151,7 @@ from octobot_trading.api.positions import (
     get_positions,
 )
 from octobot_trading.api.storage import (
+    init_bot_storage,
     close_bot_storage,
 )
 
@@ -259,5 +260,6 @@ __all__ = [
     "cancel_all_open_orders_with_currency",
     "cancel_order_with_id",
     "get_positions",
+    "init_bot_storage",
     "close_bot_storage",
 ]
