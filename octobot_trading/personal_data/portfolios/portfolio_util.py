@@ -45,3 +45,26 @@ def portfolio_to_float(portfolio):
                 "total": float(symbol_balance.total)
             }
     return float_portfolio
+
+
+def get_draw_down(exchange_manager):
+    """
+    Draw down is the lowest portfolio value in % ever reached during a run
+    :param exchange_manager:
+    :return:
+    """
+    draw_down = 0
+    if exchange_manager.is_future:
+        origin_portfolio = portfolio_to_float(
+            exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
+        )
+        portfolio_history = [
+            origin_portfolio[exchange_manager.exchange_personal_data.portfolio_manager.reference_market]["total"]]
+        for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
+            current_pnl = float(transaction.quantity if hasattr(transaction, "quantity") else transaction.realised_pnl)
+            portfolio_history.append(portfolio_history[-1] + current_pnl)
+
+            current_draw_down = 100 - (portfolio_history[-1] / (max(portfolio_history) / 100))
+
+            draw_down = current_draw_down if current_draw_down > draw_down else draw_down
+    return draw_down
