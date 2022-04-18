@@ -257,5 +257,5 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     def get_required_candles_count(cls, tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration):
         return tentacles_manager_api.get_tentacle_config(tentacles_setup_config, cls).get(
             constants.CONFIG_CANDLES_HISTORY_SIZE_KEY,
-            -1
+            common_constants.DEFAULT_IGNORED_VALUE
         )
