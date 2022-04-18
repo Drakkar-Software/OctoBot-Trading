@@ -308,25 +308,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         ]
         win_rate = round(float(trading_api.get_win_rate(self.exchange_manager) * 100), 3)
         wins = round(win_rate * len(entries) / 100)
-        draw_down = None
-        if self.exchange_manager.is_future:
-            portfolio_history = [
-                origin_portfolio[self.exchange_manager.trader.config["trading"]["reference-market"]]["total"]
-            ]
-            draw_down = 0
-            for transaction in self.exchange_manager.exchange_personal_data.transactions_manager.transactions:
-                try:
-                    current_pnl = float(self.exchange_manager.exchange_personal_data.
-                                        transactions_manager.transactions[transaction].quantity)
-                except AttributeError:
-                    current_pnl = float(self.exchange_manager.exchange_personal_data.
-                                        transactions_manager.transactions[transaction].realised_pnl)
-
-                portfolio_history.append(portfolio_history[-1] + current_pnl)
-
-                current_draw_down = 100 - (portfolio_history[-1] / (max(portfolio_history) / 100))
-
-                draw_down = current_draw_down if current_draw_down > draw_down else draw_down
+        draw_down = trading_api.get_draw_down(self.exchange_manager)
 
         return {
             trading_enums.BacktestingMetadata.OPTIMIZATION_CAMPAIGN.value:

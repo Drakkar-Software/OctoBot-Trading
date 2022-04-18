@@ -66,3 +66,7 @@ def get_portfolio_amounts(portfolio,
         currency: values[portfolio_type]
         for currency, values in portfolio.items()
     }
+
+
+def get_draw_down(exchange_manager):
+    return personal_data.get_draw_down(exchange_manager)
