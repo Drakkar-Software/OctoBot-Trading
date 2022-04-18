@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.modes.scripted_library.basic_keywords.user_inputs import (
+from octobot_trading.modes.script_keywords.basic_keywords.user_inputs import (
     user_input,
     save_user_input,
     get_user_inputs,
@@ -22,20 +22,20 @@ from octobot_trading.modes.scripted_library.basic_keywords.user_inputs import (
     get_activation_topics,
 )
 
-from octobot_trading.modes.scripted_library.basic_keywords.configuration import (
+from octobot_trading.modes.script_keywords.basic_keywords.configuration import (
     user_select_leverage,
     user_select_emit_trading_signals,
     set_leverage,
     set_partial_take_profit_stop_loss,
 )
 
-from octobot_trading.modes.scripted_library.basic_keywords.trading_signals import (
+from octobot_trading.modes.script_keywords.basic_keywords.trading_signals import (
     is_emitting_trading_signals,
     emit_trading_signals,
 )
 
 
-from octobot_trading.modes.scripted_library.basic_keywords.run_persistence import (
+from octobot_trading.modes.script_keywords.basic_keywords.run_persistence import (
     set_plot_orders,
     store_orders,
     store_trade,
