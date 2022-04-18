@@ -82,7 +82,6 @@ class Order(util.Initializable):
         self.canceled_time = 0
 
         self.order_group = None
-        self.one_cancels_the_other = False
 
         # order state is initialized in initialize_impl()
         self.state = None
@@ -127,7 +126,7 @@ class Order(util.Initializable):
                fee=None, total_cost=constants.ZERO, timestamp=None,
                order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
                group=None,
-               allow_self_managed=None, one_cancels_the_other=None, tag=None) -> bool:
+               allow_self_managed=None, tag=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:
@@ -229,9 +228,6 @@ class Order(util.Initializable):
 
         if group is not None:
             self.add_to_order_group(group)
-
-        if one_cancels_the_other is not None:
-            self.one_cancels_the_other = one_cancels_the_other
 
         if tag is not None:
             self.tag = tag

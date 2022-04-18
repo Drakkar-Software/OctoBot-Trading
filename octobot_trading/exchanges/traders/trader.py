@@ -212,6 +212,8 @@ class Trader(util.Initializable):
             # rebind local elements to new order instance
             if new_order.order_group:
                 updated_order.add_to_order_group(new_order.order_group)
+            updated_order.allow_self_managed = new_order.allow_self_managed
+            updated_order.tag = new_order.tag
             updated_order.chained_orders = new_order.chained_orders
             for chained_order in new_order.chained_orders:
                 chained_order.triggered_by = updated_order
@@ -219,9 +221,6 @@ class Trader(util.Initializable):
             updated_order.has_been_bundled = new_order.has_been_bundled
             updated_order.exchange_creation_params = new_order.exchange_creation_params
             updated_order.is_waiting_for_chained_trigger = new_order.is_waiting_for_chained_trigger
-            updated_order.one_cancels_the_other = new_order.allow_self_managed
-            updated_order.one_cancels_the_other = new_order.one_cancels_the_other
-            updated_order.tag = new_order.tag
         return updated_order
 
     async def bundle_chained_order_with_uncreated_order(self, order, chained_order, **kwargs):
