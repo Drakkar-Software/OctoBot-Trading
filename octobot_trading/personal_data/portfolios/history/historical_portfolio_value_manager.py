@@ -161,7 +161,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
                 self.portfolio_manager.exchange_manager.exchange_name, self._portfolio_type_suffix
         )) as writer:
             # replace the whole table to ensure consistency
-            await writer.upsert(commons_enums.RunDatabases.METADATA, self._get_metadata(), None, uuid=1)
+            await writer.upsert(commons_enums.RunDatabases.METADATA.value, self._get_metadata(), None, uuid=1)
             await writer.replace_all(
                 self.TABLE_NAME,
                 [historical_asset.to_dict() for historical_asset in self.historical_portfolio_value.values()],

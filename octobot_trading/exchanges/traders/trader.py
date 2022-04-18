@@ -106,6 +106,8 @@ class Trader(util.Initializable):
 
         if pre_init_callback is not None:
             await pre_init_callback(new_order)
+
+        # force initialize to always create open state
         await new_order.initialize()
         return new_order
 

@@ -13,9 +13,6 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
-import octobot_commons.asyncio_tools as asyncio_tools
-
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order as order_class
 

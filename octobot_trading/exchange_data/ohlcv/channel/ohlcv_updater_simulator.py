@@ -18,7 +18,6 @@ import octobot_backtesting.api as api
 import octobot_commons.constants as constants
 import octobot_commons.enums as enums
 import octobot_commons.errors as errors
-import octobot_commons.time_frame_manager as time_frame_manager
 
 import octobot_trading.exchange_data.ohlcv.channel.ohlcv_updater as ohlcv_updater
 import octobot_trading.util as util
