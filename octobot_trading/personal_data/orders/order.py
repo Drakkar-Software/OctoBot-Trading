@@ -124,7 +124,7 @@ class Order(util.Initializable):
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None,
                order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
-               tag=None, group=None) -> bool:
+               group=None, tag=None) -> bool:
         changed: bool = False
 
         if order_id and self.order_id != order_id:

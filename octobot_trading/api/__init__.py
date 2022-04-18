@@ -90,6 +90,7 @@ from octobot_trading.api.exchange import (
     is_sponsoring,
     is_valid_account,
     get_historical_ohlcv,
+    get_bot_id,
     get_trading_pairs,
     get_watched_timeframes,
     get_base_currency,
@@ -103,7 +104,6 @@ from octobot_trading.api.exchange import (
 )
 from octobot_trading.api.modes import (
     get_trading_modes,
-    get_trading_mode_writers,
     get_trading_mode_symbol,
     get_trading_mode_current_state,
     get_activated_trading_mode,
@@ -163,6 +163,8 @@ from octobot_trading.api.positions import (
 )
 from octobot_trading.api.storage import (
     init_bot_storage,
+    get_run_db,
+    get_symbol_db,
     close_bot_storage,
 )
 
@@ -225,6 +227,7 @@ __all__ = [
     "is_sponsoring",
     "is_valid_account",
     "get_historical_ohlcv",
+    "get_bot_id",
     "get_trading_pairs",
     "get_watched_timeframes",
     "get_base_currency",
@@ -236,7 +239,6 @@ __all__ = [
     "cancel_ccxt_throttle_task",
     "stop_exchange",
     "get_trading_modes",
-    "get_trading_mode_writers",
     "get_trading_mode_symbol",
     "get_trading_mode_current_state",
     "get_activated_trading_mode",
@@ -283,5 +285,7 @@ __all__ = [
     "cancel_order_with_id",
     "get_positions",
     "init_bot_storage",
+    "get_run_db",
+    "get_symbol_db",
     "close_bot_storage",
 ]

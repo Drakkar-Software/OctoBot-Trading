@@ -156,7 +156,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
         local_exchange_manager.exchange.connector.logger.disable(False)
 
 
-async def get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_time):
+async def get_historical_ohlcv(local_exchange_manager, symbol, time_frame, start_time, end_time):
     """
     Async generator, use as follows:
         async for candles in get_historical_ohlcv(exchange_manager, pair, time_frame, start_time, end_time):
@@ -164,14 +164,14 @@ async def get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time,
     """
     reached_max = False
     while start_time < end_time and not reached_max:
-        candles = await exchange_manager.exchange.get_symbol_prices(symbol, time_frame, since=int(start_time))
+        candles = await local_exchange_manager.exchange.get_symbol_prices(symbol, time_frame, since=int(start_time))
         if candles:
             start_time = candles[-1][common_enums.PriceIndexes.IND_PRICE_TIME.value]
             while start_time > end_time and candles:
                 start_time = candles.pop(-1)[common_enums.PriceIndexes.IND_PRICE_TIME.value]
                 reached_max = True
             if candles:
-                exchange_manager.exchange.uniformize_candles_if_necessary(candles)
+                local_exchange_manager.exchange.uniformize_candles_if_necessary(candles)
                 yield candles
                 # avoid fetching the last element twice
                 start_time += 1

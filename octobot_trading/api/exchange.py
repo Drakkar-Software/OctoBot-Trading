@@ -236,6 +236,10 @@ def get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_t
     return exchanges.get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_time)
 
 
+def get_bot_id(exchange_manager):
+    return exchange_manager.bot_id
+
+
 def cancel_ccxt_throttle_task():
     for task in asyncio.all_tasks():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise

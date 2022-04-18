@@ -75,7 +75,6 @@ cdef class Order(util.Initializable):
     cdef public bint is_waiting_for_chained_trigger
     cdef public dict exchange_creation_params
     cdef public dict trader_creation_kwargs
-    cdef public bint one_cancels_the_other
 
 
     cdef public object exchange_order_type # raw exchange order type, used to create order dict
@@ -99,7 +98,6 @@ cdef class Order(util.Initializable):
             object close_position=*,
             object position_side=*,
             object fees_currency_side=*,
-            object one_cancels_the_other=*,
             object group=*,
             str tag=*)
     cdef void _update_type_from_raw(self, dict raw_order)
