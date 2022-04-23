@@ -39,7 +39,6 @@ class RemoteTradingSignalProducer(signals_channel.RemoteTradingSignalChannelProd
     async def on_new_signal(self, parsed_message) -> None:
         try:
             signal = trading_signal_factory.create_trading_signal(parsed_message)
-            self.logger.error(f"signal: {signal}")
             await self.send(signal, self.bot_id)
         except Exception as e:
             self.logger.exception(e, True, f"Error when processing signal: {e}")
