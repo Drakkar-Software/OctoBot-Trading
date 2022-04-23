@@ -51,7 +51,8 @@ class SignalBuilder:
 
     def add_edited_order(
             self, order,
-            updated_quantity=trading_constants.ZERO,
+            updated_target_amount=trading_constants.ZERO,
+            updated_target_position=trading_constants.ZERO,
             updated_limit_price=trading_constants.ZERO,
             updated_stop_price=trading_constants.ZERO,
             updated_current_price=trading_constants.ZERO
@@ -59,7 +60,8 @@ class SignalBuilder:
         if not self._update_pending_orders(
                 order,
                 trading_enums.TradingSignalOrdersActions.EDIT,
-                updated_quantity=updated_quantity,
+                updated_target_amount=updated_target_amount,
+                updated_target_position=updated_target_position,
                 updated_limit_price=updated_limit_price,
                 updated_stop_price=updated_stop_price,
                 updated_current_price=updated_current_price
@@ -67,7 +69,8 @@ class SignalBuilder:
             self.orders.append(signal_util.create_order_signal_description(
                 order,
                 trading_enums.TradingSignalOrdersActions.EDIT,
-                updated_quantity=updated_quantity,
+                updated_target_amount=updated_target_amount,
+                updated_target_position=updated_target_position,
                 updated_limit_price=updated_limit_price,
                 updated_stop_price=updated_stop_price,
                 updated_current_price=updated_current_price
@@ -85,7 +88,8 @@ class SignalBuilder:
         action,
         target_amount=None,
         target_position=None,
-        updated_quantity=trading_constants.ZERO,
+        updated_target_amount=trading_constants.ZERO,
+        updated_target_position=trading_constants.ZERO,
         updated_limit_price=trading_constants.ZERO,
         updated_stop_price=trading_constants.ZERO,
         updated_current_price=trading_constants.ZERO
@@ -107,8 +111,10 @@ class SignalBuilder:
                     order.order_group.__class__.__name__
             elif action is trading_enums.TradingSignalOrdersActions.EDIT:
                 # avoid editing order that are not yet created
-                order_description[trading_enums.TradingSignalOrdersAttrs.QUANTITY.value] = \
-                    float(updated_quantity)
+                order_description[trading_enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] = \
+                    float(updated_target_amount)
+                order_description[trading_enums.TradingSignalOrdersAttrs.UPDATED_TARGET_POSITION.value] = \
+                    float(updated_target_position)
                 order_description[trading_enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value] = \
                     float(updated_limit_price)
                 order_description[trading_enums.TradingSignalOrdersAttrs.STOP_PRICE.value] = \
