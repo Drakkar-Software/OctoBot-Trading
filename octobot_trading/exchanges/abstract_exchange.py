@@ -94,7 +94,7 @@ class AbstractExchange(util.Initializable):
         return False
 
     def authenticated(self) -> bool:
-        return self.connector.is_authenticated
+        return False if self.connector is None else self.connector.is_authenticated
 
     @classmethod
     def is_default_exchange(cls) -> bool:

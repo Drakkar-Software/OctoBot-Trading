@@ -32,9 +32,9 @@ class RemoteTradingSignalProducer(signals_channel.RemoteTradingSignalChannelProd
         self.authenticator = authenticator
         self.bot_id = bot_id
 
-    async def subscribe_to_product_feed(self, product_slug):
+    async def subscribe_to_product_feed(self, feed_id):
         await self.authenticator.register_feed_callback(commons_enums.CommunityChannelTypes.SIGNAL, self.on_new_signal,
-                                                        identifier=product_slug)
+                                                        identifier=feed_id)
 
     async def on_new_signal(self, parsed_message) -> None:
         try:
