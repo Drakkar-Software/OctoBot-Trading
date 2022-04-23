@@ -113,5 +113,5 @@ class RemoteTradingSignalsChannel(channels.Channel):
                           f" version={version}]"
                           f" bot_id={bot_id}]")
 
-    async def subscribe_to_product_feed(self, product_slug):
-        await self.producers[0].subscribe_to_product_feed(product_slug)
+    async def subscribe_to_product_feed(self, feed_id):
+        await self.producers[0].subscribe_to_product_feed(feed_id)

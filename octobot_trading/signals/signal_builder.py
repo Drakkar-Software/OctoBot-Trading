@@ -29,7 +29,6 @@ class SignalBuilder:
         self.description = description
         self.state = state
         self.orders = orders
-        self.signal = None
         self.reset()
 
     def add_created_order(self, order, target_amount=None, target_position=None):
@@ -131,8 +130,8 @@ class SignalBuilder:
                 return index, order_description
         raise trading_errors.OrderDescriptionNotFoundError(f"order not found {order}")
 
-    def reset(self):
-        self.signal = trading_signal.TradingSignal(
+    def build(self):
+        return trading_signal.TradingSignal(
             self.strategy,
             self.exchange,
             self.exchange_type,
@@ -141,3 +140,6 @@ class SignalBuilder:
             self.state,
             self.orders
         )
+
+    def reset(self):
+        self.orders = []
