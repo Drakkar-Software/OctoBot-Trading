@@ -623,12 +623,3 @@ class TradingSignalOrdersActions(enum.Enum):
     ADD_TO_GROUP = "add_to_group"
     EDIT = "edit"
     CANCEL = "cancel"
-
-
-class TradingSignalOrderTypes(enum.Enum):
-    MARKET = "market"
-    LIMIT = "limit"
-    TRAILING = "trailing"
-    TRAILING_LIMIT = "trailing_limit"
-    STOP = "stop"
-    STOP_LIMIT = "stop_limit"

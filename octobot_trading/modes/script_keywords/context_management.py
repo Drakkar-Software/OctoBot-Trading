@@ -128,9 +128,10 @@ class Context(databases.CacheClient):
     async def emit_signal(self):
         if self.signal_builder is None or not self.is_trading_signal_emitter() or self.exchange_manager.is_backtesting:
             return
-        self.logger.debug(f"Emitting trading signal for {self.signal_builder.strategy}: {self.signal_builder.signal}")
+        signal = self.signal_builder.build()
+        self.logger.debug(f"Emitting trading signal for {self.signal_builder.strategy}: {signal}")
         await trading_signals.emit_remote_trading_signal(
-            self.signal_builder.signal,
+            signal,
             self.signal_builder.strategy
         )
         self.signal_builder.reset()

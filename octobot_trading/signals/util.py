@@ -24,7 +24,7 @@ def get_signal_exchange_type(exchange_manager):
         return trading_enums.TradingSignalExchangeTypes.FUTURE
     if exchange_manager.is_margin:
         return trading_enums.TradingSignalExchangeTypes.MARGIN
-    return trading_enums.TradingSignalExchangeTypes.UNKNOWN
+    return trading_enums.TradingSignalExchangeTypes.SPOT
 
 
 def create_order_signal_description(
