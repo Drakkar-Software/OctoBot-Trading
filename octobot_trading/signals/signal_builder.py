@@ -34,7 +34,9 @@ class SignalBuilder:
     def add_created_order(self, order, target_amount=None, target_position=None):
         if target_amount is None and target_position is None:
             raise trading_errors.InvalidArgumentError("target_amount or target_position has to be provided")
-        if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.CREATE):
+        if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.CREATE,
+                                           target_amount=target_amount,
+                                           target_position=target_position):
             self.orders.append(signal_util.create_order_signal_description(
                 order,
                 trading_enums.TradingSignalOrdersActions.CREATE,
@@ -51,12 +53,15 @@ class SignalBuilder:
 
     def add_edited_order(
             self, order,
-            updated_target_amount=trading_constants.ZERO,
-            updated_target_position=trading_constants.ZERO,
+            updated_target_amount=None,
+            updated_target_position=None,
             updated_limit_price=trading_constants.ZERO,
             updated_stop_price=trading_constants.ZERO,
             updated_current_price=trading_constants.ZERO
     ):
+        if updated_target_amount is updated_target_position is None and \
+           updated_limit_price is updated_stop_price is updated_current_price is trading_constants.ZERO:
+            raise trading_errors.InvalidArgumentError("an updated argument has to be provided")
         if not self._update_pending_orders(
                 order,
                 trading_enums.TradingSignalOrdersActions.EDIT,
@@ -88,8 +93,8 @@ class SignalBuilder:
         action,
         target_amount=None,
         target_position=None,
-        updated_target_amount=trading_constants.ZERO,
-        updated_target_position=trading_constants.ZERO,
+        updated_target_amount=None,
+        updated_target_position=None,
         updated_limit_price=trading_constants.ZERO,
         updated_stop_price=trading_constants.ZERO,
         updated_current_price=trading_constants.ZERO
@@ -112,18 +117,34 @@ class SignalBuilder:
             elif action is trading_enums.TradingSignalOrdersActions.EDIT:
                 # avoid editing order that are not yet created
                 order_description[trading_enums.TradingSignalOrdersAttrs.TARGET_AMOUNT.value] = \
-                    float(updated_target_amount)
+                    updated_target_amount
+                order_description[trading_enums.TradingSignalOrdersAttrs.UPDATED_TARGET_AMOUNT.value] = \
+                    updated_target_amount
+                order_description[trading_enums.TradingSignalOrdersAttrs.TARGET_POSITION.value] = \
+                    updated_target_position
                 order_description[trading_enums.TradingSignalOrdersAttrs.UPDATED_TARGET_POSITION.value] = \
-                    float(updated_target_position)
+                    updated_target_position
                 order_description[trading_enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value] = \
+                    float(updated_limit_price)
+                order_description[trading_enums.TradingSignalOrdersAttrs.UPDATED_LIMIT_PRICE.value] = \
                     float(updated_limit_price)
                 order_description[trading_enums.TradingSignalOrdersAttrs.STOP_PRICE.value] = \
                     float(updated_stop_price)
+                order_description[trading_enums.TradingSignalOrdersAttrs.UPDATED_STOP_PRICE.value] = \
+                    float(updated_stop_price)
                 order_description[trading_enums.TradingSignalOrdersAttrs.CURRENT_PRICE.value] = \
                     float(updated_current_price)
+                order_description[trading_enums.TradingSignalOrdersAttrs.UPDATED_CURRENT_PRICE.value] = \
+                    float(updated_current_price)
             elif action is trading_enums.TradingSignalOrdersActions.CANCEL:
-                # avoid creating order that are to be cancelled
-                self.orders.pop(index)
+                if order_description[trading_enums.TradingSignalOrdersAttrs.ACTION.value] == \
+                   trading_enums.TradingSignalOrdersActions.CREATE.value:
+                    # avoid creating order that are to be cancelled
+                    self.orders.pop(index)
+                else:
+                    # now cancel order (no need to perform previous actions as it will get cancelled anyway
+                    order_description[trading_enums.TradingSignalOrdersAttrs.ACTION.value] = \
+                        trading_enums.TradingSignalOrdersActions.CANCEL.value
             return True
         except trading_errors.OrderDescriptionNotFoundError:
             pass

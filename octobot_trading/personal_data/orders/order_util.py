@@ -155,7 +155,7 @@ def get_futures_max_order_size(exchange_manager, symbol, side, current_price, re
     new_position_side = current_position.side
     if new_position_side is enums.PositionSide.UNKNOWN:
         new_position_side = enums.PositionSide.LONG if side == enums.TradeOrderSide.BUY \
-            else enums.PositionSide.LONG
+            else enums.PositionSide.SHORT
 
     # TODO check inverse
     position_size_in_currency = (current_position.size / current_price
