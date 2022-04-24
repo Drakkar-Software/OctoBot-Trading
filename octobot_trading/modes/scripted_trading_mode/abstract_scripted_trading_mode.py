@@ -280,8 +280,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         return {
             trading_enums.BacktestingMetadata.OPTIMIZATION_CAMPAIGN.value:
                 self.run_dbs_identifier.optimization_campaign_name,
-            trading_enums.BacktestingMetadata.ID.value: await self.trading_mode.get_backtesting_id(
-                self.trading_mode.bot_id),
+            trading_enums.BacktestingMetadata.ID.value: self.run_dbs_identifier.backtesting_id,
             trading_enums.BacktestingMetadata.GAINS.value: round(float(profitability), 8),
             trading_enums.BacktestingMetadata.PERCENT_GAINS.value: round(float(profitability_percent), 3),
             trading_enums.BacktestingMetadata.END_PORTFOLIO.value: str(end_portfolio),
