@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import decimal
+
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants
 import octobot_trading.personal_data as personal_data
@@ -59,7 +61,7 @@ async def refresh_real_trader_portfolio(exchange_manager) -> bool:
         refresh_real_trader_portfolio(True)
 
 
-def get_draw_down(exchange_manager):
+def get_draw_down(exchange_manager) -> decimal.Decimal:
     return personal_data.get_draw_down(exchange_manager)
 
 

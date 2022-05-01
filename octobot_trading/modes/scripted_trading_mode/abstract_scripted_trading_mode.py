@@ -275,7 +275,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         ]
         win_rate = round(float(trading_api.get_win_rate(self.exchange_manager) * 100), 3)
         wins = round(win_rate * len(entries) / 100)
-        draw_down = trading_api.get_draw_down(self.exchange_manager)
+        draw_down = round(float(trading_api.get_draw_down(self.exchange_manager)), 3)
         r_sq_end_balance \
             = await trading_api.get_coefficient_of_determination(self.exchange_manager,
                                                                  use_high_instead_of_end_balance=False)
