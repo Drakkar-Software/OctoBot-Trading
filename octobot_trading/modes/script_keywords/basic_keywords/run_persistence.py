@@ -15,6 +15,7 @@
 #  License along with this library.
 
 import octobot_commons.symbol_util as symbol_util
+import octobot_commons.enums as commons_enums
 import octobot_trading.enums as trading_enums
 import octobot_trading.api as trading_api
 
@@ -24,7 +25,7 @@ def set_plot_orders(ctx, value):
 
 
 async def store_orders(ctx, orders,
-                       chart=trading_enums.PlotCharts.MAIN_CHART.value,
+                       chart=commons_enums.PlotCharts.MAIN_CHART.value,
                        x_multiplier=1000,
                        mode="markers",
                        kind="scattergl"):
@@ -48,12 +49,12 @@ async def store_orders(ctx, orders,
         }
         for order in orders
     ]
-    await ctx.orders_writer.log_many(trading_enums.DBTables.ORDERS.value, order_data)
+    await ctx.orders_writer.log_many(commons_enums.DBTables.ORDERS.value, order_data)
 
 
 async def store_trade(ctx,
                       trade_dict,
-                      chart=trading_enums.PlotCharts.MAIN_CHART.value,
+                      chart=commons_enums.PlotCharts.MAIN_CHART.value,
                       x_multiplier=1000,
                       kind="scattergl",
                       mode="markers",
@@ -132,12 +133,12 @@ async def store_trade(ctx,
             trading_enums.ExchangeConstantsFeesColumns.CURRENCY.value]
         if trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value] else "",
     }
-    await writer.log(trading_enums.DBTables.TRADES.value, trade_data)
+    await writer.log(commons_enums.DBTables.TRADES.value, trade_data)
 
 
 async def store_transactions(ctx,
                              transactions,
-                             chart=trading_enums.PlotCharts.MAIN_CHART.value,
+                             chart=commons_enums.PlotCharts.MAIN_CHART.value,
                              x_multiplier=1000,
                              kind="scattergl",
                              mode="markers",
@@ -178,41 +179,41 @@ async def store_transactions(ctx,
         for index, transaction in enumerate(transactions)
     ]
     writer = writer or ctx.transactions_writer
-    await writer.log_many(trading_enums.DBTables.TRANSACTIONS.value, transactions_data)
+    await writer.log_many(commons_enums.DBTables.TRANSACTIONS.value, transactions_data)
 
 
 async def save_metadata(writer, metadata):
     await writer.log(
-        trading_enums.DBTables.METADATA.value,
+        commons_enums.DBTables.METADATA.value,
         metadata
     )
 
 
 async def save_portfolio(writer, context):
     await writer.log(
-        trading_enums.DBTables.PORTFOLIO.value,
+        commons_enums.DBTables.PORTFOLIO.value,
         trading_api.get_portfolio(context.exchange_manager, as_decimal=False)
     )
 
 
 async def clear_run_data(writer):
-    await _clear_table(writer, trading_enums.DBTables.METADATA.value, flush=False)
-    await _clear_table(writer, trading_enums.DBTables.PORTFOLIO.value, flush=False)
+    await _clear_table(writer, commons_enums.DBTables.METADATA.value, flush=False)
+    await _clear_table(writer, commons_enums.DBTables.PORTFOLIO.value, flush=False)
     await writer.clear()
 
 
 async def clear_orders_cache(writer):
-    await _clear_table(writer, trading_enums.DBTables.ORDERS.value)
+    await _clear_table(writer, commons_enums.DBTables.ORDERS.value)
     await writer.clear()
 
 
 async def clear_trades_cache(writer):
-    await _clear_table(writer, trading_enums.DBTables.TRADES.value)
+    await _clear_table(writer, commons_enums.DBTables.TRADES.value)
     await writer.clear()
 
 
 async def clear_transactions_cache(writer):
-    await _clear_table(writer, trading_enums.DBTables.TRANSACTIONS.value)
+    await _clear_table(writer, commons_enums.DBTables.TRANSACTIONS.value)
     await writer.clear()
 
 

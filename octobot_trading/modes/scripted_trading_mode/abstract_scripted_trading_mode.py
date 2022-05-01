@@ -282,36 +282,36 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         r_sq_max_balance = await trading_api.get_coefficient_of_determination(self.exchange_manager)
 
         return {
-            trading_enums.BacktestingMetadata.OPTIMIZATION_CAMPAIGN.value:
+            commons_enums.BacktestingMetadata.OPTIMIZATION_CAMPAIGN.value:
                 self.run_dbs_identifier.optimization_campaign_name,
-            trading_enums.BacktestingMetadata.ID.value: self.run_dbs_identifier.backtesting_id,
-            trading_enums.BacktestingMetadata.GAINS.value: round(float(profitability), 8),
-            trading_enums.BacktestingMetadata.PERCENT_GAINS.value: round(float(profitability_percent), 3),
-            trading_enums.BacktestingMetadata.END_PORTFOLIO.value: str(end_portfolio),
-            trading_enums.BacktestingMetadata.START_PORTFOLIO.value: str(origin_portfolio),
-            trading_enums.BacktestingMetadata.WIN_RATE.value: win_rate,
-            trading_enums.BacktestingMetadata.DRAW_DOWN.value: draw_down or 0,
-            trading_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_MAX_BALANCE.value: r_sq_max_balance or 0,
-            trading_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_END_BALANCE.value: r_sq_end_balance or 0,
-            trading_enums.BacktestingMetadata.SYMBOLS.value: symbols,
-            trading_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
-            trading_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(
+            commons_enums.BacktestingMetadata.ID.value: self.run_dbs_identifier.backtesting_id,
+            commons_enums.BacktestingMetadata.GAINS.value: round(float(profitability), 8),
+            commons_enums.BacktestingMetadata.PERCENT_GAINS.value: round(float(profitability_percent), 3),
+            commons_enums.BacktestingMetadata.END_PORTFOLIO.value: str(end_portfolio),
+            commons_enums.BacktestingMetadata.START_PORTFOLIO.value: str(origin_portfolio),
+            commons_enums.BacktestingMetadata.WIN_RATE.value: win_rate,
+            commons_enums.BacktestingMetadata.DRAW_DOWN.value: draw_down or 0,
+            commons_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_MAX_BALANCE.value: r_sq_max_balance or 0,
+            commons_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_END_BALANCE.value: r_sq_end_balance or 0,
+            commons_enums.BacktestingMetadata.SYMBOLS.value: symbols,
+            commons_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
+            commons_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(
                 self.exchange_manager.exchange.backtesting),
-            trading_enums.BacktestingMetadata.END_TIME.value: backtesting_api.get_backtesting_ending_time(
+            commons_enums.BacktestingMetadata.END_TIME.value: backtesting_api.get_backtesting_ending_time(
                 self.exchange_manager.exchange.backtesting),
-            trading_enums.BacktestingMetadata.DURATION.value: round(backtesting_api.get_backtesting_duration(
+            commons_enums.BacktestingMetadata.DURATION.value: round(backtesting_api.get_backtesting_duration(
                 self.exchange_manager.exchange.backtesting), 3),
-            trading_enums.BacktestingMetadata.ENTRIES.value: len(entries),
-            trading_enums.BacktestingMetadata.WINS.value: wins,
-            trading_enums.BacktestingMetadata.LOSES.value: len(entries) - wins,
-            trading_enums.BacktestingMetadata.TRADES.value: len(trades),
-            trading_enums.BacktestingMetadata.TIMESTAMP.value: self.trading_mode.timestamp,
-            trading_enums.BacktestingMetadata.NAME.value: self.trading_mode.script_name,
-            trading_enums.BacktestingMetadata.LEVERAGE.value: leverage,
-            trading_enums.BacktestingMetadata.USER_INPUTS.value: formatted_user_inputs,
-            trading_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(
+            commons_enums.BacktestingMetadata.ENTRIES.value: len(entries),
+            commons_enums.BacktestingMetadata.WINS.value: wins,
+            commons_enums.BacktestingMetadata.LOSES.value: len(entries) - wins,
+            commons_enums.BacktestingMetadata.TRADES.value: len(trades),
+            commons_enums.BacktestingMetadata.TIMESTAMP.value: self.trading_mode.timestamp,
+            commons_enums.BacktestingMetadata.NAME.value: self.trading_mode.script_name,
+            commons_enums.BacktestingMetadata.LEVERAGE.value: leverage,
+            commons_enums.BacktestingMetadata.USER_INPUTS.value: formatted_user_inputs,
+            commons_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(
                 self.exchange_manager),
-            trading_enums.BacktestingMetadata.EXCHANGE.value: self.exchange_name
+            commons_enums.BacktestingMetadata.EXCHANGE.value: self.exchange_name
         }
 
     async def get_live_metadata(self):
@@ -336,13 +336,13 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                 }
             }
         return {
-            trading_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config),
-            trading_enums.DBRows.START_TIME.value: start_time,
-            trading_enums.DBRows.END_TIME.value: end_time,
-            trading_enums.DBRows.TRADING_TYPE.value: exchange_type,
-            trading_enums.DBRows.EXCHANGES.value: exchanges,
-            trading_enums.DBRows.FUTURE_CONTRACTS.value: future_contracts_by_exchange,
-            trading_enums.DBRows.SYMBOLS.value: self.exchange_manager.exchange_config.traded_symbol_pairs,
+            commons_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config),
+            commons_enums.DBRows.START_TIME.value: start_time,
+            commons_enums.DBRows.END_TIME.value: end_time,
+            commons_enums.DBRows.TRADING_TYPE.value: exchange_type,
+            commons_enums.DBRows.EXCHANGES.value: exchanges,
+            commons_enums.DBRows.FUTURE_CONTRACTS.value: future_contracts_by_exchange,
+            commons_enums.DBRows.SYMBOLS.value: self.exchange_manager.exchange_config.traded_symbol_pairs,
         }
 
     def __init__(self, channel, config, trading_mode, exchange_manager):
