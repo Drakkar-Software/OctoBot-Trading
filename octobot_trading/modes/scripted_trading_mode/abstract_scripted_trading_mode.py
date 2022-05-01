@@ -479,9 +479,9 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         finally:
             if not self.exchange_manager.is_backtesting:
                 # update db after each run only in live mode
-                for writer in self.writers():
-                    if writer:
-                        await writer.flush()
+                for database in self.all_databases().values():
+                    if database:
+                        await database.flush()
                 if context.has_cache(context.symbol, context.time_frame):
                     await context.get_cache().flush()
             run_data_writer.set_initialized_flags(initialized)

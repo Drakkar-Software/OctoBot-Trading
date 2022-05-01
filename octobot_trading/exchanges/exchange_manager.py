@@ -119,8 +119,8 @@ class ExchangeManager(util.Initializable):
         await self.exchange_personal_data.initialize()
         await self.exchange_config.initialize()
 
-    def load_constants(self, is_simulated_exchange):
-        if not is_simulated_exchange:
+    def load_constants(self):
+        if not self.is_backtesting:
             self._load_config_symbols_and_time_frames()
             self.exchange_config.set_config_time_frame()
             self.exchange_config.set_config_traded_pairs()

@@ -29,11 +29,11 @@ async def create_exchanges(exchange_manager):
     if exchange_manager.is_backtesting:
         # simulated : create exchange simulator instance
         await create_simulated_exchange(exchange_manager)
-        exchange_manager.load_constants(True)
+        exchange_manager.load_constants()
     else:
         # real : create a rest or websocket exchange instance
         await create_real_exchange(exchange_manager)
-        exchange_manager.load_constants(False)
+        exchange_manager.load_constants()
         await initialize_real_exchange(exchange_manager)
 
     if not exchange_manager.exchange_only:

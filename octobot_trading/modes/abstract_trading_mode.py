@@ -158,14 +158,18 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         self.exchange_manager = None
 
     async def close_caches(self, reset_cache_db_ids=False):
-        for tentacle_name in [self.get_name()] + [evaluator.get_name() for evaluator in self.called_nested_evaluators]:
-            await databases.CacheManager().close_cache(
-                tentacle_name,
-                self.exchange_manager.exchange_name,
-                common_constants.UNPROVIDED_CACHE_IDENTIFIER if self.get_is_symbol_wildcard() else self.symbol,
-                common_constants.UNPROVIDED_CACHE_IDENTIFIER if self.get_is_time_frame_wildcard() else self.time_frame,
-                reset_cache_db_ids=reset_cache_db_ids
-            )
+        try:
+            import octobot_evaluators.util
+            for tentacle_identifier in octobot_evaluators.util.get_related_cache_identifiers(self):
+                await databases.CacheManager().close_cache(
+                    tentacle_identifier,
+                    self.exchange_manager.exchange_name,
+                    common_constants.UNPROVIDED_CACHE_IDENTIFIER if self.get_is_symbol_wildcard() else self.symbol,
+                    common_constants.UNPROVIDED_CACHE_IDENTIFIER if self.get_is_time_frame_wildcard() else self.time_frame,
+                    reset_cache_db_ids=reset_cache_db_ids
+                )
+        except ImportError:
+            pass
 
     async def create_producers(self) -> list:
         """
