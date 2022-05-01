@@ -15,6 +15,7 @@
 #  License along with this library.
 import decimal
 import octobot_trading.personal_data.portfolios.asset as asset
+import octobot_trading.constants as constants
 import octobot_commons.constants as commons_constants
 import numpy as numpy
 
@@ -54,23 +55,22 @@ def get_draw_down(exchange_manager):
     Draw down is the lowest portfolio value in % ever reached during a run
     :return: the Draw down value
     """
-    draw_down = 0.0
+    draw_down = constants.ZERO
     if exchange_manager.is_future:
-        origin_portfolio = portfolio_to_float(
-            exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
-        )
-        portfolio_history = [
-            origin_portfolio[exchange_manager.exchange_personal_data.portfolio_manager.reference_market]
-            [commons_constants.PORTFOLIO_TOTAL]
-        ]
+        origin_value = exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder \
+            .origin_portfolio.portfolio[
+                exchange_manager.exchange_personal_data.portfolio_manager.reference_market
+            ].total
+        portfolio_history = [origin_value]
         for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
-            current_pnl = float(transaction.quantity if hasattr(transaction, "quantity") else transaction.realised_pnl)
+            current_pnl = transaction.quantity if hasattr(transaction, "quantity") else transaction.realised_pnl
             portfolio_history.append(portfolio_history[-1] + current_pnl)
 
-            current_draw_down = 100 - (portfolio_history[-1] / (max(portfolio_history) / 100))
+            current_draw_down = constants.ONE_HUNDRED - \
+                (portfolio_history[-1] / (max(portfolio_history) / constants.ONE_HUNDRED))
 
             draw_down = current_draw_down if current_draw_down > draw_down else draw_down
-    return round(draw_down, 3)
+    return draw_down
 
 
 async def get_coefficient_of_determination_data(transactions, start_balance,
