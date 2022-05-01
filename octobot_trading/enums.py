@@ -521,6 +521,8 @@ class BacktestingMetadata(enum.Enum):
     START_PORTFOLIO = "start portfolio"
     WIN_RATE = "% win rate"
     DRAW_DOWN = "% draw down"
+    COEFFICIENT_OF_DETERMINATION_MAX_BALANCE = "R² max balance"
+    COEFFICIENT_OF_DETERMINATION_END_BALANCE = "R² end balance"
     SYMBOLS = "symbols"
     TIME_FRAMES = "time frames"
     START_TIME = "start time"

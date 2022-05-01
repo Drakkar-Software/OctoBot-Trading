@@ -61,3 +61,8 @@ async def refresh_real_trader_portfolio(exchange_manager) -> bool:
 
 def get_draw_down(exchange_manager):
     return personal_data.get_draw_down(exchange_manager)
+
+
+async def get_coefficient_of_determination(exchange_manager, use_high_instead_of_end_balance=True):
+    return await personal_data.get_coefficient_of_determination(exchange_manager,
+                                                                use_high_instead_of_end_balance)
