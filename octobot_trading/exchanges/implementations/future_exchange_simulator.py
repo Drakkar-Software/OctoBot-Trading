@@ -94,9 +94,6 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     def get_backtesting_data_files(self):
         return self.connector.get_backtesting_data_files()
 
-    def get_backtesting_data_file(self, symbol, time_frame):
-        return self.connector.get_backtesting_data_file(symbol, time_frame)
-
     async def load_pair_future_contract(self, pair: str):
         """
         Create a new FutureContract for the pair

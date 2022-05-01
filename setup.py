@@ -160,6 +160,7 @@ packages_list = [
     "octobot_trading.personal_data.transactions.types.realised_pnl_transaction",
     "octobot_trading.personal_data.transactions.types.transfer_transaction",
     "octobot_trading.modes.modes_factory",
+    "octobot_trading.modes.modes_util",
     "octobot_trading.modes.channel.abstract_mode_producer",
     "octobot_trading.modes.channel.mode",
     "octobot_trading.modes.channel.abstract_mode_consumer",

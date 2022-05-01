@@ -141,7 +141,7 @@ class Context(databases.CacheClient):
         previous_trigger_cache_timestamp = self.trigger_cache_timestamp
         try:
             if isinstance(self.tentacle, modes.AbstractTradingMode) and \
-                    self.trigger_source == common_enums.ActivationTopics.EVALUATORS.value:
+                    self.trigger_source == common_enums.ActivationTopics.EVALUATION_CYCLE.value:
                 # only trading modes can have a delayed trigger timestamp when they are waken up from evaluators
                 self.trigger_cache_timestamp = self._get_adapted_trigger_timestamp(tentacle_class,
                                                                                    previous_trigger_cache_timestamp,

@@ -23,4 +23,3 @@ cdef class SpotExchangeSimulator(exchanges_types.SpotExchange):
     cdef public list exchange_importers
 
     cpdef list get_backtesting_data_files(self)
-    cpdef str get_backtesting_data_file(self, str symbol, object time_frame)

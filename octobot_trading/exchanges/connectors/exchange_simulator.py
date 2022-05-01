@@ -114,13 +114,6 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
     def get_backtesting_data_files(self):
         return [backtesting_api.get_data_file_path(importer) for importer in self.exchange_importers]
 
-    def get_backtesting_data_file(self, symbol, time_frame):
-        for importer in self.exchange_importers:
-            if symbol in backtesting_api.get_available_symbols(importer) and \
-                    time_frame in backtesting_api.get_available_time_frames(importer):
-                return backtesting_api.get_data_file_path(importer)
-        return None
-
     def get_market_status(self, symbol, price_example=0, with_fixer=True):
         return {
             # number of decimal digits "after the dot"

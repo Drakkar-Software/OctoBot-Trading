@@ -13,28 +13,13 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_tentacles_manager.api as tentacles_manager_api
+import octobot_trading.constants as constants
+import octobot_commons.constants as common_constants
 
-from octobot_trading.modes cimport channel
-from octobot_trading.modes.channel cimport (
-    check_factor,
-    ModeChannelConsumer,
-    ModeChannelProducer,
-    ModeChannel,
-    AbstractTradingModeConsumer,
-    AbstractTradingModeProducer,
-)
 
-from octobot_trading.modes cimport modes_util
-from octobot_trading.modes.modes_util cimport (
-    get_required_candles_count,
-)
-
-__all__ = [
-    "ModeChannelConsumer",
-    "ModeChannelProducer",
-    "ModeChannel",
-    "AbstractTradingModeProducer",
-    "AbstractTradingModeConsumer",
-    "check_factor",
-    "get_required_candles_count",
-]
+def get_required_candles_count(trading_mode_class, tentacles_setup_config):
+    return tentacles_manager_api.get_tentacle_config(tentacles_setup_config, trading_mode_class).get(
+        constants.CONFIG_CANDLES_HISTORY_SIZE_KEY,
+        common_constants.DEFAULT_IGNORED_VALUE
+    )

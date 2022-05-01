@@ -439,7 +439,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
         await self.call_script(matrix_id, cryptocurrency, symbol, time_frame,
-                               commons_enums.ActivationTopics.EVALUATORS.value,
+                               commons_enums.ActivationTopics.EVALUATION_CYCLE.value,
                                self._get_latest_eval_time(matrix_id, cryptocurrency, symbol, time_frame))
 
     def _get_latest_eval_time(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame):
@@ -542,13 +542,13 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
         # register activating topics user input
         activation_topic_values = [
-            commons_enums.ActivationTopics.EVALUATORS.value,
+            commons_enums.ActivationTopics.EVALUATION_CYCLE.value,
             commons_enums.ActivationTopics.FULL_CANDLES.value,
             commons_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value
         ]
         await basic_keywords.get_activation_topics(
             context,
-            commons_enums.ActivationTopics.EVALUATORS.value,
+            commons_enums.ActivationTopics.EVALUATION_CYCLE.value,
             activation_topic_values
         )
 

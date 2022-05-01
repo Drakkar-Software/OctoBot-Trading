@@ -36,7 +36,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             channels_name.OctoBotTradingChannelsName.OHLCV_CHANNEL.value,
         common_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value:
             channels_name.OctoBotTradingChannelsName.KLINE_CHANNEL.value,
-        common_enums.ActivationTopics.EVALUATORS.value:
+        common_enums.ActivationTopics.EVALUATION_CYCLE.value:
             channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value,
     }
 
@@ -176,9 +176,9 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
     def get_channels_registration(self):
         registration_channels = []
-        # Activate on full candles only by default (same as technical evaluators)
+        # Activate on evaluation cycle only by default
         topic = self.trading_mode.trading_config.get(common_constants.CONFIG_ACTIVATION_TOPICS.replace(" ", "_"),
-                                                     common_enums.ActivationTopics.EVALUATORS.value)
+                                                     common_enums.ActivationTopics.EVALUATION_CYCLE.value)
         try:
             registration_channels.append(self.TOPIC_TO_CHANNEL_NAME[topic])
         except KeyError:

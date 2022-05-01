@@ -22,6 +22,8 @@ import octobot_trading.enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data as exchange_data
 
+import octobot_backtesting.api as backtesting_api
+
 
 def create_exchange_builder(config, exchange_name: str) -> exchanges.ExchangeBuilder:
     return exchanges.create_exchange_builder_instance(config, exchange_name)
@@ -172,10 +174,12 @@ def get_backtesting_data_files(exchange_manager) -> list:
     return exchange_manager.exchange.get_backtesting_data_files()
 
 
-def get_backtesting_data_file(exchange_manager, symbol, time_frame) -> list:
+def get_backtesting_data_file(exchange_manager, symbol, time_frame) -> str:
     if not get_is_backtesting(exchange_manager):
         raise RuntimeError("Require a backtesting exchange manager")
-    return exchange_manager.exchange.get_backtesting_data_file(symbol, time_frame)
+    return backtesting_api.get_data_file_from_importers(
+        exchange_manager.exchange.connector.exchange_importers, symbol, time_frame
+    )
 
 
 def get_has_websocket(exchange_manager) -> bool:
