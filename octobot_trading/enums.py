@@ -123,6 +123,11 @@ class TransactionType(enum.Enum):
     TRANSFER = "transfer"
 
 
+class BlockchainTypes(enum.Enum):
+    UNKNOWN = "UNKNOWN"
+    SIMULATED_WITHDRAWAL = "SIMULATED_WITHDRAWAL"
+
+
 class PNLTransactionSource(enum.Enum):
     MARKET_ORDER = "market_order"
     LIMIT_ORDER = "limit_order"

@@ -463,8 +463,6 @@ class Trader(util.Initializable):
         async with self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
             await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_withdrawal(amount, currency)
 
-
-
     async def set_leverage(self, symbol, side, leverage):
         """
         Updates the symbol contract leverage

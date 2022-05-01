@@ -21,6 +21,7 @@ import octobot_commons.logging as logging
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
+import octobot_trading.enums as enums
 import octobot_trading.personal_data.portfolios.portfolio_manager as portfolio_manager
 import octobot_trading.personal_data.positions.positions_manager as positions_manager
 import octobot_trading.personal_data.orders.orders_manager as orders_manager
@@ -124,7 +125,7 @@ class ExchangePersonalData(util.Initializable):
         changed = await self.portfolio_manager.handle_balance_update_from_withdrawal(amount, currency)
         transaction_factory.create_blockchain_transaction(
             self.exchange_manager, is_deposit=False, currency=currency, quantity=amount,
-            blockchain_type="SIMULATED_WITHDRAWAL",
+            blockchain_type=enums.BlockchainTypes.SIMULATED_WITHDRAWAL.value,
             blockchain_transaction_id=str(uuid.uuid4())
         )
         if should_notify:

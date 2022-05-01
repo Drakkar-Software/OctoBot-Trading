@@ -218,7 +218,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         """
         self.trading_mode = None
         self.exchange_manager = None
-        self.consumers = []
+        self.evaluator_consumers = []
+        self.trading_consumers = []
 
     async def ohlcv_callback(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str,
                              time_frame: str, candle: dict):
@@ -309,11 +310,17 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             return (await self.exchange_manager.trader.cancel_open_orders(symbol, cancel_loaded_orders))[0]
         return True
 
-    def writers(self):
+    def all_databases(self):
         provider = storage.RunDatabasesProvider.instance()
-        return provider.get_run_db(self.trading_mode.bot_id), \
-            provider.get_orders_db(self.trading_mode.bot_id, self.exchange_name), \
-            provider.get_trades_db(self.trading_mode.bot_id, self.exchange_name), \
-            provider.get_transactions_db(self.trading_mode.bot_id, self.exchange_name), \
-            provider.get_symbol_db(self.trading_mode.bot_id, self.exchange_name, self.trading_mode.symbol) \
-                if self.trading_mode.symbol else None
+        return {
+            common_enums.RunDatabases.RUN_DATA_DB.value: provider.get_run_db(self.trading_mode.bot_id),
+            common_enums.RunDatabases.ORDERS_DB.value:
+                provider.get_orders_db(self.trading_mode.bot_id, self.exchange_name),
+            common_enums.RunDatabases.TRADES_DB.value:
+                provider.get_trades_db(self.trading_mode.bot_id, self.exchange_name),
+            common_enums.RunDatabases.TRANSACTIONS_DB.value:
+                provider.get_transactions_db(self.trading_mode.bot_id, self.exchange_name),
+            self.trading_mode.symbol:
+                provider.get_symbol_db(self.trading_mode.bot_id, self.exchange_name, self.trading_mode.symbol)
+                if self.trading_mode.symbol else None,
+        }

@@ -90,10 +90,6 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
             self.require_last_init_candles_pairs_push = False
 
     async def _handle_ohlcv_data(self, ohlcv_data, time_frame, pair, timestamp):
-        if time_frame is self.future_candle_time_frame:
-            # There should always be at least 2 candles in read data, otherwise this means that
-            # the exchange was down for some time. Consider it unreachable
-            self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) < 2
         has_future_candle = False
         if self.future_candle_time_frame is time_frame:
             if ohlcv_data[-1][-1][enums.PriceIndexes.IND_PRICE_TIME.value] == timestamp:
@@ -106,6 +102,10 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                 # if no future candle available
                 # (end of backtesting of missing data: reset future candle)
                 self.channel.exchange.get_current_future_candles()[pair][time_frame.value] = None
+
+            # There should always be at least 2 candles in read data, otherwise this means that
+            # the exchange was down for some time. Consider it unreachable
+            self.channel.exchange_manager.exchange.is_unreachable = len(ohlcv_data) < 2
         if not has_future_candle or len(ohlcv_data) > 1:
             # push current candle(s)
             candles = ohlcv_data[:-1] if has_future_candle else ohlcv_data

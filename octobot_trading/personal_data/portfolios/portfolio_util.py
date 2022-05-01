@@ -15,6 +15,7 @@
 #  License along with this library.
 import decimal
 import octobot_trading.personal_data.portfolios.asset as asset
+import octobot_commons.constants as commons_constants
 
 
 def parse_decimal_portfolio(portfolio):
@@ -41,8 +42,8 @@ def portfolio_to_float(portfolio):
     for symbol, symbol_balance in portfolio.items():
         if isinstance(symbol_balance, asset.Asset):
             float_portfolio[symbol] = {
-                "available": float(symbol_balance.available),
-                "total": float(symbol_balance.total)
+                commons_constants.PORTFOLIO_AVAILABLE: float(symbol_balance.available),
+                commons_constants.PORTFOLIO_TOTAL: float(symbol_balance.total)
             }
     return float_portfolio
 
@@ -50,16 +51,17 @@ def portfolio_to_float(portfolio):
 def get_draw_down(exchange_manager):
     """
     Draw down is the lowest portfolio value in % ever reached during a run
-    :param exchange_manager:
-    :return:
+    :return: the Draw down value
     """
-    draw_down = 0
+    draw_down = 0.0
     if exchange_manager.is_future:
         origin_portfolio = portfolio_to_float(
             exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
         )
         portfolio_history = [
-            origin_portfolio[exchange_manager.exchange_personal_data.portfolio_manager.reference_market]["total"]]
+            origin_portfolio[exchange_manager.exchange_personal_data.portfolio_manager.reference_market]
+            [commons_constants.PORTFOLIO_TOTAL]
+        ]
         for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
             current_pnl = float(transaction.quantity if hasattr(transaction, "quantity") else transaction.realised_pnl)
             portfolio_history.append(portfolio_history[-1] + current_pnl)

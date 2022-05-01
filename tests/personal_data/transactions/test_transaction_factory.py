@@ -41,7 +41,7 @@ async def test_create_blockchain_transaction(backtesting_trader):
     transaction = transaction_factory.create_blockchain_transaction(exchange_manager,
                                                                     is_deposit=True,
                                                                     currency=TRANSACTION_CURRENCY,
-                                                                    blockchain_type="TEST",
+                                                                    blockchain_type=enums.BlockchainTypes.UNKNOWN.value,
                                                                     blockchain_transaction_id=t_id,
                                                                     blockchain_transaction_status=enums.BlockchainTransactionStatus.CONFIRMING,
                                                                     source_address="0x123456789",
