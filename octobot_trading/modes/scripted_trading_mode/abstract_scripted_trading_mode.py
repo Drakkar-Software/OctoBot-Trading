@@ -276,6 +276,10 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         win_rate = round(float(trading_api.get_win_rate(self.exchange_manager) * 100), 3)
         wins = round(win_rate * len(entries) / 100)
         draw_down = trading_api.get_draw_down(self.exchange_manager)
+        r_sq_end_balance \
+            = await trading_api.get_coefficient_of_determination(self.exchange_manager,
+                                                                 use_high_instead_of_end_balance=False)
+        r_sq_max_balance = await trading_api.get_coefficient_of_determination(self.exchange_manager)
 
         return {
             trading_enums.BacktestingMetadata.OPTIMIZATION_CAMPAIGN.value:
@@ -287,6 +291,8 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             trading_enums.BacktestingMetadata.START_PORTFOLIO.value: str(origin_portfolio),
             trading_enums.BacktestingMetadata.WIN_RATE.value: win_rate,
             trading_enums.BacktestingMetadata.DRAW_DOWN.value: draw_down or 0,
+            trading_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_MAX_BALANCE.value: r_sq_max_balance or 0,
+            trading_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_END_BALANCE.value: r_sq_end_balance or 0,
             trading_enums.BacktestingMetadata.SYMBOLS.value: symbols,
             trading_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
             trading_enums.BacktestingMetadata.START_TIME.value: backtesting_api.get_backtesting_starting_time(

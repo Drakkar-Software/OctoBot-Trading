@@ -16,6 +16,7 @@
 import decimal
 import octobot_trading.personal_data.portfolios.asset as asset
 import octobot_commons.constants as commons_constants
+import numpy as numpy
 
 
 def parse_decimal_portfolio(portfolio):
@@ -69,4 +70,103 @@ def get_draw_down(exchange_manager):
             current_draw_down = 100 - (portfolio_history[-1] / (max(portfolio_history) / 100))
 
             draw_down = current_draw_down if current_draw_down > draw_down else draw_down
-    return draw_down
+    return round(draw_down, 3)
+
+
+async def get_coefficient_of_determination_data(transactions, start_balance,
+                                                use_high_instead_of_end_balance=True,
+                                                x_as_trade_count=True):
+    if transactions:
+        # get realized portfolio history
+
+        pnl_history = [start_balance]
+        pnl_history_times = []
+        for transaction in transactions:
+            current_pnl = None
+            if hasattr(transaction, "quantity"):
+                current_pnl = float(transaction.quantity)
+                pnl_history_times.append(transaction.creation_time)
+            elif hasattr(transaction, 'realised_pnl'):
+                current_pnl = float(transaction.realised_pnl)
+                pnl_history_times.append(transaction.creation_time)
+            elif isinstance(transaction, dict):
+                if transaction["quantity"]:
+                    current_pnl = transaction["quantity"]
+                    pnl_history_times.append(transaction["x"])
+                elif transaction['realised_pnl']:
+                    current_pnl = transaction['realised_pnl']
+                    pnl_history_times.append(transaction["x"])
+
+            if current_pnl is not None:
+                pnl_history.append(pnl_history[-1] + current_pnl)
+
+        if pnl_history_times:
+
+            pnl_history_for_every_candle = None
+            # either use trade to trade basis or candle to candle basis
+            if x_as_trade_count is True:
+                start_time = pnl_history_times[0]
+                pnl_history_times.insert(0, start_time)
+                end_time = pnl_history_times[-1]
+                data_length = len(pnl_history)
+
+            else:  # calculate pnl history for every candle
+                raise NotImplementedError("x_as_trade_count=False is not implemented")
+            # calculate best case data (exponential growth)
+            end_balance = pnl_history[-1]
+
+            if use_high_instead_of_end_balance:
+                end_value = max(pnl_history)
+            else:  # use the end balance
+                end_value = end_balance
+
+            def get_ideal_value(linear_growth, adj1, adj2):
+                return ((linear_growth + adj1) ** pw) * adj2
+
+            x = [start_time, end_time]
+            y = [start_balance, end_value]
+
+            pw = 15
+            A = numpy.exp(numpy.log(y[0] / y[1]) / pw)
+            a = (x[0] - x[1] * A) / (A - 1)
+            b = y[0] / (x[0] + a) ** pw
+
+            linear_growth = numpy.linspace(start_time, end_time, data_length)
+            best_case = get_ideal_value(linear_growth, a, b)
+            pnl_data = pnl_history_for_every_candle or pnl_history
+            return list(best_case), pnl_data, start_balance, end_balance, pnl_history_times
+    return None, None, None, None, None
+
+
+async def get_coefficient_of_determination(exchange_manager, use_high_instead_of_end_balance=True):
+    """
+    Calculates proximity to the best case growth for the current run (best growth being associated to an exponential
+    curve). The closer the actual result, the higher the coefficient_of_determination (R squared) will be.
+    Return 0 if we end up with less money that we had to begin with
+    :param use_high_instead_of_end_balance: best case exponential growth based on end balance or highest balance
+    """
+    coefficient_of_determination = 0
+    # get data the data necessary to compute the coefficient_of_determination
+    origin_portfolio = portfolio_to_float(
+        exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
+    )
+    start_balance = origin_portfolio[
+        exchange_manager.exchange_personal_data.portfolio_manager.reference_market][commons_constants.PORTFOLIO_TOTAL]
+
+    best_case, pnl_data, start_balance, end_balance, _ \
+        = await get_coefficient_of_determination_data(transactions=exchange_manager.exchange_personal_data.
+                                                      transactions_manager.transactions.values(),
+                                                      start_balance=start_balance,
+                                                      use_high_instead_of_end_balance=use_high_instead_of_end_balance)
+
+    if pnl_data:
+        # calculate r²
+        corr_matrix = numpy.corrcoef(best_case, pnl_data)
+        corr = corr_matrix[0, 1]
+        coefficient_of_determination = corr ** 2
+
+        if start_balance > end_balance:
+            # if we end up with a negative balance we set it to 0
+            return 0
+
+    return round(coefficient_of_determination, 3)
