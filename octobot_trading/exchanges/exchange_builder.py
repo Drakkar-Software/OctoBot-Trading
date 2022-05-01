@@ -91,7 +91,7 @@ class ExchangeBuilder:
         # take trading modes candles requirements into account if any
         self.config[commons_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT] = max(
             self.config[commons_constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT],
-            trading_mode_class.get_required_candles_count(tentacles_setup_config)
+            modes.get_required_candles_count(trading_mode_class, tentacles_setup_config)
         )
 
     async def _build_trading_modes_if_required(self, trading_mode_class):

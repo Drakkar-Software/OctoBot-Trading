@@ -52,6 +52,11 @@ from octobot_trading.modes.modes_factory import (
     create_trading_mode,
 )
 
+from octobot_trading.modes import modes_util
+from octobot_trading.modes.modes_util import (
+    get_required_candles_count,
+)
+
 __all__ = [
     "ModeChannelConsumer",
     "ModeChannelProducer",
@@ -66,4 +71,5 @@ __all__ = [
     "create_trading_modes",
     "create_trading_mode",
     "get_activated_trading_mode",
+    "get_required_candles_count",
 ]

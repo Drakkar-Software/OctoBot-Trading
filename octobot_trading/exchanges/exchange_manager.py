@@ -203,6 +203,11 @@ class ExchangeManager(util.Initializable):
         return len(self.exchange_config.traded_symbol_pairs) * len(self.exchange_config.traded_time_frames)
 
     def ensure_reachability(self):
+        """
+        Raises UnreachableExchange if the exchange is not available
+        Warning: only working in backtesting for now as self.exchange.is_unreachable
+        is not updated in live mode
+        """
         if self.exchange.is_unreachable:
             current_time = self.exchange.get_exchange_current_time()
             raise errors.UnreachableExchange(f"{self.exchange_name} can't be reached or is offline on the "
