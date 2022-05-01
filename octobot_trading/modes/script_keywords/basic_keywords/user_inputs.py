@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_trading.enums as trading_enums
+import octobot_commons.enums as commons_enums
 import octobot_commons.constants as commons_constants
 
 
@@ -85,7 +85,7 @@ async def save_user_input(
     if is_nested_config is None:
         is_nested_config = ctx.is_nested_tentacle
     if not await ctx.run_data_writer.contains_row(
-            trading_enums.DBTables.INPUTS.value,
+            commons_enums.DBTables.INPUTS.value,
             {
                 "name": name,
                 "tentacle": ctx.tentacle.get_name(),
@@ -93,7 +93,7 @@ async def save_user_input(
                 "is_nested_config": is_nested_config
             }):
         await ctx.run_data_writer.log(
-            trading_enums.DBTables.INPUTS.value,
+            commons_enums.DBTables.INPUTS.value,
             {
                 "name": name,
                 "input_type": input_type,
@@ -118,11 +118,11 @@ async def save_user_input(
 
 
 async def get_user_inputs(reader):
-    return await reader.all(trading_enums.DBTables.INPUTS.value)
+    return await reader.all(commons_enums.DBTables.INPUTS.value)
 
 
 async def clear_user_inputs(writer):
-    await writer.delete(trading_enums.DBTables.INPUTS.value, None)
+    await writer.delete(commons_enums.DBTables.INPUTS.value, None)
 
 
 async def get_activation_topics(context, default_value, options):
