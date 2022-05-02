@@ -31,6 +31,9 @@ import octobot_trading.personal_data as personal_data
 async def test_create_order_signal_description(buy_limit_order, sell_limit_order):
     buy_limit_order.reduce_only = True
     buy_limit_order.tag = "hello"
+    buy_limit_order.origin_price = decimal.Decimal("1.11")
+    buy_limit_order.origin_quantity = decimal.Decimal("1.12")
+    buy_limit_order.origin_stop_price = decimal.Decimal("1.13")
     assert signals.create_order_signal_description(buy_limit_order, enums.TradingSignalOrdersActions.CREATE) == {
         enums.TradingSignalOrdersAttrs.ACTION.value: enums.TradingSignalOrdersActions.CREATE.value,
         enums.TradingSignalOrdersAttrs.SIDE.value: enums.TradeOrderSide.BUY.value,
