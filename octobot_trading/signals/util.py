@@ -48,14 +48,14 @@ def create_order_signal_description(
         if updated_target_position is None else updated_target_position,
         trading_enums.TradingSignalOrdersAttrs.UPDATED_TARGET_AMOUNT.value: updated_target_amount,
         trading_enums.TradingSignalOrdersAttrs.UPDATED_TARGET_POSITION.value: updated_target_position,
-        trading_enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value: float(order.origin_price)
-        if updated_limit_price is None else float(updated_limit_price),
+        trading_enums.TradingSignalOrdersAttrs.LIMIT_PRICE.value: float(updated_limit_price)
+        if updated_limit_price else float(order.origin_price),
         trading_enums.TradingSignalOrdersAttrs.UPDATED_LIMIT_PRICE.value: float(updated_limit_price),
-        trading_enums.TradingSignalOrdersAttrs.STOP_PRICE.value: float(order.origin_stop_price)
-        if updated_stop_price is None else float(updated_stop_price),
+        trading_enums.TradingSignalOrdersAttrs.STOP_PRICE.value: float(updated_stop_price)
+        if updated_stop_price else float(order.origin_stop_price),
         trading_enums.TradingSignalOrdersAttrs.UPDATED_STOP_PRICE.value: float(updated_stop_price),
-        trading_enums.TradingSignalOrdersAttrs.CURRENT_PRICE.value: float(order.created_last_price)
-        if updated_current_price is None else float(updated_current_price),
+        trading_enums.TradingSignalOrdersAttrs.CURRENT_PRICE.value: float(updated_current_price)
+        if updated_current_price else float(order.created_last_price),
         trading_enums.TradingSignalOrdersAttrs.UPDATED_CURRENT_PRICE.value: float(updated_current_price),
         trading_enums.TradingSignalOrdersAttrs.REDUCE_ONLY.value: order.reduce_only,
         trading_enums.TradingSignalOrdersAttrs.POST_ONLY.value: False,
