@@ -34,7 +34,7 @@ class LimitOrder(order_class.Order):
             if self.exchange_manager.is_backtesting and \
                     self.exchange_manager.exchange_symbols_data.\
                     get_exchange_symbol_data(self.symbol).price_events_manager.\
-                    is_triggered_by_last_recent_trades(self.origin_price, self.creation_time, self.trigger_above):
+                    is_triggered_by_last_recent_prices(self.origin_price, self.creation_time, self.trigger_above):
                 await self.on_fill(force_fill=True)
                 return
             # otherwise create a price event waiter
