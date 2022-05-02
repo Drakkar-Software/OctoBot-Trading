@@ -30,11 +30,13 @@ class PriceEventsManager:
     The price event index from a price event tuple
     """
     PRICE_EVENT_INDEX = 2
+    PRICE_KEY = "price"
+    TIME_KEY = "time"
 
     def __init__(self):
         self.logger = logging.get_logger(self.__class__.__name__)
         self.events = []
-        self._last_recent_trades = []
+        self._last_recent_prices = []
 
     def reset(self):
         """
@@ -47,11 +49,14 @@ class PriceEventsManager:
         Handle new recent trades prices
         :param recent_trades: prices to check
         """
-        self._last_recent_trades = recent_trades
+        # reset recent prices on new recent trades
+        self._last_recent_prices = []
         for recent_trade in recent_trades:
+            price = decimal.Decimal(str(recent_trade[ECOC.PRICE.value]))
+            timestamp = recent_trade[ECOC.TIMESTAMP.value]
             try:
-                for event_to_set in self._check_events(decimal.Decimal(str(recent_trade[ECOC.PRICE.value])),
-                                                       recent_trade[ECOC.TIMESTAMP.value]):
+                self._add_recent_price(price, timestamp)
+                for event_to_set in self._check_events(price, timestamp):
                     self._remove_and_set_event(event_to_set)
             except KeyError:
                 self.logger.error("Error when checking price events with recent trades data")
@@ -62,8 +67,15 @@ class PriceEventsManager:
         :param price: the price to check
         :param timestamp: the timestamp to check
         """
+        self._add_recent_price(price, timestamp)
         for event_to_set in self._check_events(price, timestamp):
             self._remove_and_set_event(event_to_set)
+
+    def _add_recent_price(self, price, timestamp):
+        self._last_recent_prices.append({
+            self.PRICE_KEY: price,
+            self.TIME_KEY: timestamp
+        })
 
     def add_event(self, price, timestamp, trigger_above):
         """
@@ -77,7 +89,7 @@ class PriceEventsManager:
         self.events.append(price_event_tuple)
         return price_event_tuple[PriceEventsManager.PRICE_EVENT_INDEX]
 
-    def is_triggered_by_last_recent_trades(self, price, timestamp, trigger_above):
+    def is_triggered_by_last_recent_prices(self, price, timestamp, trigger_above):
         """
         Check if the give price and time would be instantly triggered by last recent trades
         :param price: the trigger price
@@ -85,9 +97,9 @@ class PriceEventsManager:
         :param trigger_above: True if waiting for an upper price
         :return: True if it would be triggered
         """
-        for recent_trade in self._last_recent_trades:
-            trade_price = decimal.Decimal(str(recent_trade[ECOC.PRICE.value]))
-            if timestamp <= recent_trade[ECOC.TIMESTAMP.value] and (
+        for recent_price in self._last_recent_prices:
+            trade_price = recent_price[self.PRICE_KEY]
+            if timestamp <= recent_price[self.TIME_KEY] and (
                 (trigger_above and price <= trade_price) or
                 (not trigger_above and price >= trade_price)
             ):
