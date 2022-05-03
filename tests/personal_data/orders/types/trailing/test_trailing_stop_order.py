@@ -43,7 +43,6 @@ async def test_trailing_stop_trigger(trailing_stop_order):
     # set mark price
     set_mark_price(trailing_stop_order, order_price)
 
-    print(f"min: {max_trailing_hit_price} max: {order_price - trading_constants.ONE}")
     price_events_manager.handle_recent_trades(
         [decimal_random_recent_trade(
             price=decimal_random_price(min_value=decimal.Decimal(max_trailing_hit_price),

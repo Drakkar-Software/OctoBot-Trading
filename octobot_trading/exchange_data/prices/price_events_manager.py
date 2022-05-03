@@ -42,6 +42,7 @@ class PriceEventsManager:
         """
         Reset price events
         """
+        self.clear_recent_prices()
         self.events.clear()
 
     def handle_recent_trades(self, recent_trades):
@@ -50,7 +51,7 @@ class PriceEventsManager:
         :param recent_trades: prices to check
         """
         # reset recent prices on new recent trades
-        self._last_recent_prices = []
+        self.clear_recent_prices()
         for recent_trade in recent_trades:
             price = decimal.Decimal(str(recent_trade[ECOC.PRICE.value]))
             timestamp = recent_trade[ECOC.TIMESTAMP.value]
@@ -71,25 +72,36 @@ class PriceEventsManager:
         for event_to_set in self._check_events(price, timestamp):
             self._remove_and_set_event(event_to_set)
 
+    def clear_recent_prices(self):
+        self._last_recent_prices = []
+
     def _add_recent_price(self, price, timestamp):
         self._last_recent_prices.append({
             self.PRICE_KEY: price,
             self.TIME_KEY: timestamp
         })
 
-    def add_event(self, price, timestamp, trigger_above):
+    def new_event(self, price, timestamp, trigger_above, allow_instant_fill=True):
         """
-        Add a new event at price and timestamp
+        Create a new event at price and timestamp.
+        This event can already be set should it be instantly triggered.
+        Otherwise it will be set once the required price conditions are met
         :param price: the trigger price
         :param timestamp: the timestamp to wait for
         :param trigger_above: True if waiting for an upper price
+        :param allow_instant_fill: True if recent prices should be checked to fill this event
         :return: the price event
         """
         price_event_tuple = _new_price_event(price, timestamp, trigger_above)
-        self.events.append(price_event_tuple)
+        if allow_instant_fill and self._is_triggered_by_last_recent_prices(price, timestamp, trigger_above):
+            # don't add to self.events an event that is already set
+            price_event_tuple[PriceEventsManager.PRICE_EVENT_INDEX].set()
+        else:
+            # this event will be set when conditions are met
+            self.events.append(price_event_tuple)
         return price_event_tuple[PriceEventsManager.PRICE_EVENT_INDEX]
 
-    def is_triggered_by_last_recent_prices(self, price, timestamp, trigger_above):
+    def _is_triggered_by_last_recent_prices(self, price, timestamp, trigger_above):
         """
         Check if the give price and time would be instantly triggered by last recent trades
         :param price: the trigger price
