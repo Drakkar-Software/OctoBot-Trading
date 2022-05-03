@@ -17,7 +17,6 @@ import abc
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
-import octobot_commons.databases as databases
 import octobot_commons.tentacles_management as abstract_tentacle
 
 import async_channel.constants as channel_constants
@@ -68,10 +67,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # producers is the list of consumers created by this trading mode
         self.consumers = []
-
-        # Other evaluators that might have been called by this trading mode.
-        # This trading mode is now responsible for managing their cache
-        self.called_nested_evaluators = set()
 
         # True when this trading mode is waken up only after full candles close
         self.is_triggered_after_candle_close = False
@@ -154,22 +149,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await producer.stop()
         for consumer in self.consumers:
             await consumer.stop()
-        await self.close_caches()
         self.exchange_manager = None
-
-    async def close_caches(self, reset_cache_db_ids=False):
-        try:
-            import octobot_evaluators.util
-            for tentacle_identifier in octobot_evaluators.util.get_related_cache_identifiers(self):
-                await databases.CacheManager().close_cache(
-                    tentacle_identifier,
-                    self.exchange_manager.exchange_name,
-                    common_constants.UNPROVIDED_CACHE_IDENTIFIER if self.get_is_symbol_wildcard() else self.symbol,
-                    common_constants.UNPROVIDED_CACHE_IDENTIFIER if self.get_is_time_frame_wildcard() else self.time_frame,
-                    reset_cache_db_ids=reset_cache_db_ids
-                )
-        except ImportError:
-            pass
 
     async def create_producers(self) -> list:
         """

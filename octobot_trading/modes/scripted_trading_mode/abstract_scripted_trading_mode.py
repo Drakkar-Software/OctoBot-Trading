@@ -113,8 +113,6 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             await self.reload_script(live=False)
         elif action == commons_enums.UserCommands.CLEAR_PLOTTING_CACHE.value:
             await self.clear_plotting_cache()
-        elif action == commons_enums.UserCommands.CLEAR_ALL_CACHE.value:
-            await self.clear_all_cache()
         elif action == commons_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
             await self.clear_simulated_orders_cache()
         elif action == commons_enums.UserCommands.CLEAR_SIMULATED_TRADES_CACHE.value:
@@ -136,11 +134,6 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         await basic_keywords.clear_trades_cache(
             storage.RunDatabasesProvider.instance().get_transactions_db(self.bot_id, self.exchange_manager.exchange_name)
         )
-
-    async def clear_all_cache(self):
-        for tentacle_name in [self.get_name()] + [evaluator.get_name() for evaluator in
-                                                  self.called_nested_evaluators]:
-            await databases.CacheManager().clear_cache(tentacle_name)
 
     async def clear_plotting_cache(self):
         await basic_keywords.clear_all_tables(
@@ -197,7 +190,8 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
                 await producer.init_user_inputs(False)
                 run_db.set_initialized_flags(False, (time_frame, ))
                 self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
-                await self.close_caches(reset_cache_db_ids=True)
+                await databases.CacheManager().close_cache(commons_constants.UNPROVIDED_CACHE_IDENTIFIER,
+                                                           reset_cache_db_ids=True)
                 await producer.call_script(*call_args)
 
     @classmethod
