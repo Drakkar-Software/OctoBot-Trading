@@ -15,6 +15,10 @@
 #  License along with this library.
 import pytest
 
+# avoid circular imports when launching tests from this folder
+import octobot_trading.api  # TODO fix circular import when importing octobot_trading.exchange_data first
+
+
 from octobot_trading.enums import TradeOrderSide, TraderOrderType
 from octobot_trading.personal_data.orders.types import BuyLimitOrder, SellLimitOrder, SellMarketOrder, BuyMarketOrder, \
     StopLossOrder, StopLossLimitOrder, TakeProfitOrder, TakeProfitLimitOrder, TrailingStopOrder, TrailingStopLimitOrder

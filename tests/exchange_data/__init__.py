@@ -16,6 +16,9 @@
 
 import pytest
 
+# avoid circular imports when launching tests from this folder
+import octobot_trading.api  # TODO fix circular import when importing octobot_trading.exchange_data first
+
 from octobot_trading.exchange_data.prices.price_events_manager import PriceEventsManager
 from octobot_trading.exchange_data.prices.prices_manager import PricesManager
 from octobot_trading.exchange_data.recent_trades.recent_trades_manager import RecentTradesManager
