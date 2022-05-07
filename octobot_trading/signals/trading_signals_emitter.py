@@ -17,9 +17,9 @@ import octobot_commons.enums as commons_enums
 import octobot_commons.authentication as authentication
 
 
-async def emit_remote_trading_signal(signal, product_slug):
+async def emit_remote_trading_signal(signal, identifier):
     await authentication.Authenticator.instance().send(
         signal.to_dict(),
         commons_enums.CommunityChannelTypes.SIGNAL.value,
-        product_slug
+        identifier
     )

@@ -29,8 +29,8 @@ async def user_select_leverage(
     return await user_inputs.user_input(ctx, name, "int", def_val, order=order)
 
 
-async def user_select_emit_trading_signals(ctx, strategy_slug, def_val=False):
-    await user_inputs.user_input(ctx, constants.CONFIG_TRADING_SIGNALS_STRATEGY, "text", strategy_slug,
+async def user_select_emit_trading_signals(ctx, identifier, def_val=False):
+    await user_inputs.user_input(ctx, constants.CONFIG_TRADING_SIGNALS_STRATEGY, "text", identifier,
                                  show_in_summary=False, show_in_optimizer=False)
     return await user_inputs.user_input(ctx, "emit_trading_signals", "boolean", def_val,
                                         show_in_summary=False, show_in_optimizer=False)
