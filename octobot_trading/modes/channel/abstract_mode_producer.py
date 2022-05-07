@@ -128,8 +128,12 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                               f"Please activate those timeframes {missing_time_frames}")
         self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                                      self.exchange_manager.id).matrix_id
+        await self._subscribe_to_registration_topic(registration_topics, currency_filter, symbol_filter)
+
+    async def _subscribe_to_registration_topic(self, registration_topics, currency_filter, symbol_filter):
         for registration_topic in registration_topics:
             if registration_topic == channels_name.OctoBotEvaluatorsChannelsName.MATRIX_CHANNEL.value:
+                # register to matrix channel if necessary
                 try:
                     import octobot_evaluators.evaluators.channel as evaluators_channel
                     import octobot_evaluators.enums as evaluators_enums
@@ -153,7 +157,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 except (KeyError, ImportError):
                     self.logger.error(f"Can't connect matrix channel on {self.exchange_name}")
             else:
-                # trading channels
+                # register to trading channels if necessary
                 consumer = await exchanges_channel.get_chan(registration_topic, self.exchange_manager.id).new_consumer(
                     callback=self.get_callback(registration_topic),
                     priority_level=self.priority_level,
