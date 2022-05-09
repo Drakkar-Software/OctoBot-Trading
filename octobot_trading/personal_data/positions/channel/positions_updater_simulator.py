@@ -47,7 +47,7 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
                 pair=pair,
                 current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
                 margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
-                contract_type=constants.DEFAULT_SYMBOL_CONTRACT_TYPE,
+                contract_type=self.channel.exchange_manager.exchange_config.future_contract_type,
                 position_mode=constants.DEFAULT_SYMBOL_POSITION_MODE,
                 maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
                 maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE)

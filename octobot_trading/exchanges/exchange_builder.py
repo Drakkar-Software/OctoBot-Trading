@@ -20,6 +20,7 @@ import octobot_commons.constants as commons_constants
 import octobot_trading.errors as errors
 import octobot_trading.modes as modes
 import octobot_trading.exchanges as exchanges
+import octobot_trading.constants as constants
 import octobot_trading.util as util
 
 
@@ -145,8 +146,9 @@ class ExchangeBuilder:
         self.exchange_manager.is_margin = use_margin
         return self
 
-    def is_future(self, use_future=True):
+    def is_future(self, use_future=True, future_contract_type=constants.DEFAULT_SYMBOL_CONTRACT_TYPE):
         self.exchange_manager.is_future = use_future
+        self.exchange_manager.exchange_config.future_contract_type = future_contract_type
         return self
 
     def is_spot_only(self, use_spot_only=True):
