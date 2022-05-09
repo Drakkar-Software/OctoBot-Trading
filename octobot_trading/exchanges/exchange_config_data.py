@@ -58,6 +58,8 @@ class ExchangeConfig(util.Initializable):
         # number of required historical candles
         self.required_historical_candles_count = constants.DEFAULT_IGNORED_VALUE
 
+        self.future_contract_type = trading_constants.DEFAULT_SYMBOL_CONTRACT_TYPE
+
     async def initialize_impl(self):
         pass
 

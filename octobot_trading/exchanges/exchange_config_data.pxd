@@ -29,6 +29,7 @@ cdef class ExchangeConfig(util.Initializable):
     cdef public list traded_time_frames
     cdef public list real_time_time_frames
     cdef public int required_historical_candles_count
+    cdef public object future_contract_type
 
     cdef public object exchange_manager
 
