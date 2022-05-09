@@ -16,7 +16,10 @@
 import decimal
 import octobot_trading.personal_data.portfolios.asset as asset
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_commons.constants as commons_constants
+import octobot_commons.logging as commons_logging
+import octobot_commons.symbol_util as symbol_util
 import numpy as numpy
 
 
@@ -57,19 +60,27 @@ def get_draw_down(exchange_manager):
     """
     draw_down = constants.ZERO
     if exchange_manager.is_future:
-        origin_value = exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder \
-            .origin_portfolio.portfolio[
-                exchange_manager.exchange_personal_data.portfolio_manager.reference_market
-            ].total
-        portfolio_history = [origin_value]
-        for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
-            current_pnl = transaction.quantity if hasattr(transaction, "quantity") else transaction.realised_pnl
-            portfolio_history.append(portfolio_history[-1] + current_pnl)
+        try:
+            value_currency = exchange_manager.exchange_personal_data.portfolio_manager.reference_market
+            draw_down_pair = exchange_manager.exchange_config.traded_symbol_pairs[0]
+            if exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(
+                draw_down_pair,
+                enums.PositionSide.BOTH
+            ).symbol_contract.is_inverse_contract():
+                value_currency = symbol_util.split_symbol(draw_down_pair)[0]
+            origin_value = exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder \
+                .origin_portfolio.portfolio[value_currency].total
+            portfolio_history = [origin_value]
+            for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
+                current_pnl = transaction.quantity if hasattr(transaction, "quantity") else transaction.realised_pnl
+                portfolio_history.append(portfolio_history[-1] + current_pnl)
 
-            current_draw_down = constants.ONE_HUNDRED - \
-                (portfolio_history[-1] / (max(portfolio_history) / constants.ONE_HUNDRED))
+                current_draw_down = constants.ONE_HUNDRED - \
+                    (portfolio_history[-1] / (max(portfolio_history) / constants.ONE_HUNDRED))
 
-            draw_down = current_draw_down if current_draw_down > draw_down else draw_down
+                draw_down = current_draw_down if current_draw_down > draw_down else draw_down
+        except Exception as e:
+            commons_logging.get_logger(__name__).exception(e, True, f"Error when computing draw down: {e}")
     return draw_down
 
 
@@ -115,6 +126,10 @@ async def get_coefficient_of_determination_data(transactions, start_balance,
             # calculate best case data (exponential growth)
             end_balance = pnl_history[-1]
 
+            if start_balance > end_balance:
+                # if we end up with a negative balance we can't compute this
+                return None, None, None, None, None
+
             if use_high_instead_of_end_balance:
                 end_value = max(pnl_history)
             else:  # use the end balance
@@ -153,7 +168,7 @@ async def get_coefficient_of_determination(exchange_manager, use_high_instead_of
     start_balance = origin_portfolio[
         exchange_manager.exchange_personal_data.portfolio_manager.reference_market][commons_constants.PORTFOLIO_TOTAL]
 
-    best_case, pnl_data, start_balance, end_balance, _ \
+    best_case, pnl_data, start_balance, _, _ \
         = await get_coefficient_of_determination_data(transactions=exchange_manager.exchange_personal_data.
                                                       transactions_manager.transactions.values(),
                                                       start_balance=start_balance,
@@ -164,9 +179,5 @@ async def get_coefficient_of_determination(exchange_manager, use_high_instead_of
         corr_matrix = numpy.corrcoef(best_case, pnl_data)
         corr = corr_matrix[0, 1]
         coefficient_of_determination = corr ** 2
-
-        if start_balance > end_balance:
-            # if we end up with a negative balance we set it to 0
-            return 0
 
     return round(coefficient_of_determination, 3)
