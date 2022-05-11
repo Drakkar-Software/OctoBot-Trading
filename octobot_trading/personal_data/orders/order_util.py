@@ -174,7 +174,9 @@ def get_futures_max_order_size(exchange_manager, symbol, side, current_price, re
     if (new_position_side is enums.PositionSide.LONG and side is enums.TradeOrderSide.BUY) \
             or (new_position_side is enums.PositionSide.SHORT and
                 side is enums.TradeOrderSide.SELL):
-        unleveraged_quantity = market_quantity / current_position.symbol_contract.current_leverage
+        quantity = market_quantity if current_position.symbol_contract.is_inverse_contract() \
+            else market_quantity * current_price
+        unleveraged_quantity = quantity / current_position.symbol_contract.current_leverage
         max_position_increased_order_quantity = get_max_order_quantity_for_price(
             current_position, unleveraged_quantity, current_price, new_position_side, symbol
         )
