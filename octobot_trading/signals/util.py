@@ -19,12 +19,12 @@ import octobot_trading.constants as trading_constants
 
 def get_signal_exchange_type(exchange_manager):
     if exchange_manager.is_spot_only:
-        return trading_enums.TradingSignalExchangeTypes.SPOT
+        return trading_enums.ExchangeTypes.SPOT
     if exchange_manager.is_future:
-        return trading_enums.TradingSignalExchangeTypes.FUTURE
+        return trading_enums.ExchangeTypes.FUTURE
     if exchange_manager.is_margin:
-        return trading_enums.TradingSignalExchangeTypes.MARGIN
-    return trading_enums.TradingSignalExchangeTypes.SPOT
+        return trading_enums.ExchangeTypes.MARGIN
+    return trading_enums.ExchangeTypes.SPOT
 
 
 def create_order_signal_description(

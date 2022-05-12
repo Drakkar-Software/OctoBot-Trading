@@ -476,6 +476,13 @@ class ExchangeWrapperLibs(enum.Enum):
     CCXT = "ccxt"
 
 
+class ExchangeTypes(enum.Enum):
+    SPOT = "spot"
+    FUTURE = "future"
+    MARGIN = "margin"
+    UNKNOWN = "unknown"
+
+
 class TradingSignalAttrs(enum.Enum):
     STRATEGY = "strategy"
     EXCHANGE = "exchange"
@@ -484,13 +491,6 @@ class TradingSignalAttrs(enum.Enum):
     DESCRIPTION = "description"
     STATE = "state"
     ORDERS = "orders"
-
-
-class TradingSignalExchangeTypes(enum.Enum):
-    SPOT = "spot"
-    FUTURE = "future"
-    MARGIN = "margin"
-    UNKNOWN = "unknown"
 
 
 class TradingSignalOrdersAttrs(enum.Enum):

@@ -32,7 +32,7 @@ def signal_builder():
     return signals.SignalBuilder(
         "strategy_name",
         "exchange_name",
-        enums.TradingSignalExchangeTypes.SPOT.value,
+        enums.ExchangeTypes.SPOT.value,
         "BTC/USDT",
         "signal description",
         enums.EvaluatorStates.SHORT.value,
@@ -44,7 +44,7 @@ def test_build(signal_builder):
     trading_signal = signal_builder.build()
     assert trading_signal.strategy == "strategy_name"
     assert trading_signal.exchange == "exchange_name"
-    assert trading_signal.exchange_type == enums.TradingSignalExchangeTypes.SPOT.value
+    assert trading_signal.exchange_type == enums.ExchangeTypes.SPOT.value
     assert trading_signal.symbol == "BTC/USDT"
     assert trading_signal.description == "signal description"
     assert trading_signal.state == enums.EvaluatorStates.SHORT.value
