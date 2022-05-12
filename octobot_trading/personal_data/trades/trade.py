@@ -52,6 +52,7 @@ class Trade:
         self.total_cost = constants.ZERO
         self.reduce_only = False
         self.tag = None
+        self.quantity_currency = None
 
         # raw exchange trade type, used to create trade dict
         self.exchange_trade_type = None
@@ -65,6 +66,7 @@ class Trade:
         self.origin_price = order.origin_price
         self.origin_quantity = order.origin_quantity
         self.total_cost = order.total_cost
+        self.quantity_currency = order.quantity_currency
         self.trade_type = order.order_type
         self.exchange_trade_type = order.exchange_order_type
         self.status = order.status
@@ -98,6 +100,7 @@ class Trade:
             enums.ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
             enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.get_quantity(),
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
+            enums.ExchangeConstantsOrderColumns.QUANTITY_CURRENCY.value: self.quantity_currency,
             enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value: self.taker_or_maker,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,

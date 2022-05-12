@@ -53,6 +53,7 @@ class Order(util.Initializable):
         self.symbol = None
         self.currency = None
         self.market = None
+        self.quantity_currency = None
         self.taker_or_maker = None
         self.timestamp = 0
         self.side = side
@@ -126,8 +127,9 @@ class Order(util.Initializable):
                quantity_filled=constants.ZERO, filled_price=constants.ZERO, average_price=constants.ZERO,
                fee=None, total_cost=constants.ZERO, timestamp=None,
                order_type=None, reduce_only=None, close_position=None, position_side=None, fees_currency_side=None,
-               group=None, tag=None) -> bool:
+               group=None, tag=None, quantity_currency=None) -> bool:
         changed: bool = False
+        should_update_total_cost = False
 
         if order_id and self.order_id != order_id:
             self.order_id = order_id
@@ -135,6 +137,16 @@ class Order(util.Initializable):
         if symbol and self.symbol != symbol:
             self.currency, self.market = self.exchange_manager.get_exchange_quote_and_base(symbol)
             self.symbol = symbol
+
+        if quantity_currency is None:
+            if self.quantity_currency is None and self.symbol is not None:
+                self.quantity_currency = order_util.get_order_quantity_currency(
+                    self.exchange_manager,
+                    self.symbol,
+                    self.side
+                )
+        else:
+            self.quantity_currency = quantity_currency
 
         if status and self.status != status:
             self.status = status
@@ -161,6 +173,7 @@ class Order(util.Initializable):
             self._on_origin_price_change(previous_price,
                                          self.exchange_manager.exchange.get_exchange_current_time())
             changed = True
+            should_update_total_cost = True
 
         if fee is not None and self.fee != fee:
             self.fee = fee
@@ -175,6 +188,7 @@ class Order(util.Initializable):
         if quantity and self.origin_quantity != quantity:
             self.origin_quantity = quantity
             changed = True
+            should_update_total_cost = True
 
         if stop_price and self.origin_stop_price != stop_price:
             self.origin_stop_price = stop_price
@@ -187,22 +201,27 @@ class Order(util.Initializable):
             # try using average price first
             if self.filled_price != average_price:
                 self.filled_price = average_price
+                should_update_total_cost = True
         else:
             if filled_price and self.filled_price != filled_price:
                 self.filled_price = filled_price
+                should_update_total_cost = True
 
         if self.trader.simulate:
             if quantity and not self.filled_quantity:
                 self.filled_quantity = quantity
                 changed = True
+                should_update_total_cost = True
 
             if quantity_filled and self.filled_quantity != quantity_filled:
                 self.filled_quantity = quantity_filled
                 changed = True
+                should_update_total_cost = True
         else:
             if quantity_filled and self.filled_quantity != quantity_filled:
                 self.filled_quantity = quantity_filled
                 changed = True
+                should_update_total_cost = True
 
         if order_type:
             self.order_type = order_type
@@ -231,6 +250,9 @@ class Order(util.Initializable):
 
         if tag is not None:
             self.tag = tag
+
+        if should_update_total_cost and not total_cost:
+            self._update_total_cost()
 
         return changed
 
@@ -515,6 +537,18 @@ class Order(util.Initializable):
             self.filled_quantity = self.origin_quantity
         if self.filled_price == constants.ZERO:
             self.filled_price = self.origin_price
+        self._update_total_cost()
+
+    def _update_total_cost(self):
+        # use filled amounts when available
+        quantity = self.filled_quantity if self.filled_quantity else self.origin_quantity
+        price = self.filled_price if self.filled_price else self.origin_price
+        if self.quantity_currency == self.currency:
+            # quantity in BTC for BTC/USDT => cost = BTC * price(BTC in USDT)
+            self.total_cost = quantity * price
+        else:
+            # quantity in USDT for BTC/USDT => cost = price(BTC in USDT)
+            self.total_cost = quantity
 
     def consider_as_canceled(self):
         self.status = enums.OrderStatus.CANCELED
@@ -567,6 +601,7 @@ class Order(util.Initializable):
             enums.ExchangeConstantsOrderColumns.SIDE.value: self.side.value,
             enums.ExchangeConstantsOrderColumns.AMOUNT.value: self.origin_quantity,
             enums.ExchangeConstantsOrderColumns.COST.value: self.total_cost,
+            enums.ExchangeConstantsOrderColumns.QUANTITY_CURRENCY.value: self.quantity_currency,
             enums.ExchangeConstantsOrderColumns.FILLED.value: self.filled_quantity,
             enums.ExchangeConstantsOrderColumns.FEE.value: self.fee,
             enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value: self.reduce_only,

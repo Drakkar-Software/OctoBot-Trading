@@ -55,7 +55,8 @@ def create_order_instance(trader,
                           fees_currency_side=None,
                           group=None,
                           tag=None,
-                          reduce_only=None,):
+                          reduce_only=None,
+                          quantity_currency=None):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
                                    side=side)
@@ -76,5 +77,6 @@ def create_order_instance(trader,
                  fees_currency_side=fees_currency_side,
                  group=group,
                  tag=tag,
-                 reduce_only=reduce_only)
+                 reduce_only=reduce_only,
+                 quantity_currency=quantity_currency)
     return order

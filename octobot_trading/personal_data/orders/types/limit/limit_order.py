@@ -80,7 +80,7 @@ class LimitOrder(order_class.Order):
         self.taker_or_maker = self._filled_maker_or_taker()
         self.filled_price = self.origin_price
         self.filled_quantity = self.origin_quantity
-        self.total_cost = self.filled_price * self.filled_quantity
+        self._update_total_cost()
         order_class.Order.on_fill_actions(self)
 
     def clear(self):
