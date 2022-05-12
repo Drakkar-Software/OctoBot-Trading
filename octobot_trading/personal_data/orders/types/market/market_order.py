@@ -32,7 +32,7 @@ class MarketOrder(order_class.Order):
         self.origin_price = self.created_last_price
         self.filled_price = self.created_last_price
         self.filled_quantity = self.origin_quantity
-        self.total_cost = self.filled_price * self.filled_quantity
+        self._update_total_cost()
         order_class.Order.on_fill_actions(self)
 
     def can_be_edited(self):

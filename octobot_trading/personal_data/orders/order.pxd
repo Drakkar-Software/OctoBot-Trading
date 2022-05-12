@@ -43,6 +43,7 @@ cdef class Order(util.Initializable):
     cdef public str symbol
     cdef public str currency
     cdef public str market
+    cdef public str quantity_currency
     cdef public str taker_or_maker
     cdef public str order_id
     cdef public str logger_name
@@ -101,7 +102,8 @@ cdef class Order(util.Initializable):
             object position_side=*,
             object fees_currency_side=*,
             object group=*,
-            str tag=*)
+            str tag=*,
+            str quantity_currency=*)
     cdef void _update_type_from_raw(self, dict raw_order)
     cdef void _update_taker_maker(self)
     cdef object _on_origin_price_change(self, object previous_price, object price_time)
@@ -134,6 +136,7 @@ cdef class Order(util.Initializable):
     cpdef void add_chained_order(self, object chained_order)
     cpdef bint should_be_created(self)
     cpdef void add_to_order_group(self, object order_group)
+    cdef void _update_total_cost(self)
 
 cdef object _get_sell_and_buy_types(object order_type)
 cdef object _infer_order_type_from_maker_or_taker(dict raw_order, object side)

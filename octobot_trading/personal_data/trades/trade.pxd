@@ -40,6 +40,7 @@ cdef class Trade:
     cdef public object executed_price
     cdef public object total_cost
     cdef public object trade_profitability
+    cdef public str quantity_currency
 
     cdef public double timestamp
     cdef public double creation_time
