@@ -25,6 +25,7 @@ import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.configuration as tm_configuration
 
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 import octobot_trading.exchange_channel as exchanges_channel
 
 
@@ -99,6 +100,15 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         :return: True if the mode is not time_frame dependant else False
         """
         return True
+
+    @classmethod
+    def get_supported_exchange_types(cls) -> list:
+        """
+        :return: The list of supported exchange types
+        """
+        return [
+            enums.ExchangeTypes.SPOT
+        ]
 
     def is_trading_signal_emitter(self) -> bool:
         """
