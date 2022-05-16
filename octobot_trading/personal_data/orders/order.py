@@ -140,11 +140,17 @@ class Order(util.Initializable):
 
         if quantity_currency is None:
             if self.quantity_currency is None and self.symbol is not None:
-                self.quantity_currency = order_util.get_order_quantity_currency(
-                    self.exchange_manager,
-                    self.symbol,
-                    self.side
-                )
+                try:
+                    side = self.get_position_side(
+                        self.exchange_manager.exchange.get_pair_future_contract(self.symbol)
+                    ) if self.exchange_manager.is_future else None
+                    self.quantity_currency = order_util.get_order_quantity_currency(
+                        self.exchange_manager,
+                        self.symbol,
+                        side
+                    )
+                except errors.InvalidPositionSide as e:
+                    logging.get_logger(self.get_logger_name()).error(f"Can't infer quantity_currency: {e}")
         else:
             self.quantity_currency = quantity_currency
 

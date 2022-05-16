@@ -335,19 +335,13 @@ async def _cancel_reduce_only_orders_on_position_reset(exchange_manager, symbol)
                 await order.order_group.on_cancel(order)
 
 
-def get_order_quantity_currency(exchange_manager, symbol, side=enums.PositionSide.BOTH):
+def get_order_quantity_currency(exchange_manager, symbol, side):
     try:
         base, quote = symbol_util.split_symbol(symbol)
     except ValueError:
         # symbol that can't be split
         return None
     if exchange_manager.is_future:
-        if not exchange_manager.exchange.get_pair_future_contract(symbol).is_one_way_position_mode():
-            # side might change here
-            logging.get_logger(LOGGER_NAME).error("Not one way position mode are not implemented in "
-                                                  "get_order_quantity_currency")
-        else:
-            side = enums.PositionSide.BOTH
         position = exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(
             symbol, side
         )

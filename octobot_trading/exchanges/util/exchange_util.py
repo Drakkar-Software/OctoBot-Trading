@@ -179,3 +179,13 @@ async def get_historical_ohlcv(local_exchange_manager, symbol, time_frame, start
                 reached_max = True
         else:
             reached_max = True
+
+
+def get_exchange_type(exchange_manager_instance):
+    if exchange_manager_instance.is_spot_only:
+        return enums.ExchangeTypes.SPOT
+    if exchange_manager_instance.is_future:
+        return enums.ExchangeTypes.FUTURE
+    if exchange_manager_instance.is_margin:
+        return enums.ExchangeTypes.MARGIN
+    return enums.ExchangeTypes.SPOT

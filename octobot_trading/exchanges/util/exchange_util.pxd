@@ -21,6 +21,7 @@ cpdef object get_spot_exchange_class(str exchange_name, object tentacles_setup_c
 cpdef str get_order_side(object order_type)
 cpdef void log_time_sync_error(object logger, str exchange_name, object error, str details)
 cpdef str get_partners_explanation_message()
+cpdef object get_exchange_type(object exchange_manager_instance)
 
 cdef object search_exchange_class_from_exchange_name(object exchange_class,
                                                      str exchange_name,
