@@ -26,6 +26,7 @@ class LimitOrder(order_class.Order):
         self.limit_price_hit_event = None
         self.wait_for_hit_event_task = None
         self.trigger_above = self.side is enums.TradeOrderSide.SELL
+        self.allow_instant_fill = True
 
     async def update_order_status(self, force_refresh=False):
         if self.limit_price_hit_event is None:
@@ -47,7 +48,7 @@ class LimitOrder(order_class.Order):
     def _create_hit_event(self, price_time):
         self.limit_price_hit_event = self.exchange_manager.exchange_symbols_data.\
             get_exchange_symbol_data(self.symbol).price_events_manager.\
-            new_event(self.origin_price, price_time, self.trigger_above)
+            new_event(self.origin_price, price_time, self.trigger_above, self.allow_instant_fill)
 
     def _create_hit_task(self):
         self.wait_for_hit_event_task = asyncio.create_task(self.wait_for_price_hit())
