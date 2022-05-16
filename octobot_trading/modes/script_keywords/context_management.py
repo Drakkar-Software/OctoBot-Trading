@@ -29,6 +29,7 @@ import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
 import octobot_trading.storage as storage
 import octobot_trading.signals as trading_signals
+import octobot_trading.exchanges as exchanges
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.models as tentacles_manager_models
 
@@ -111,7 +112,7 @@ class Context(databases.CacheClient):
             self.signal_builder = trading_signals.SignalBuilder(
                 self.tentacle.trading_config[common_constants.CONFIG_TRADING_SIGNALS_STRATEGY],
                 self.exchange_manager.exchange_name,
-                trading_signals.get_signal_exchange_type(self.exchange_manager).value,
+                exchanges.get_exchange_type(self.exchange_manager).value,
                 self.symbol,
                 None,
                 None,

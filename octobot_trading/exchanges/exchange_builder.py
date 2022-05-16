@@ -21,7 +21,6 @@ import octobot_trading.errors as errors
 import octobot_trading.modes as modes
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
-import octobot_trading.enums as enums
 import octobot_trading.util as util
 
 
@@ -122,11 +121,7 @@ class ExchangeBuilder:
             raise e
 
     def _ensure_trading_mode_compatibility(self, trading_mode_class):
-        to_check_exchange_type = enums.ExchangeTypes.SPOT
-        if self.exchange_manager.is_future:
-            to_check_exchange_type = enums.ExchangeTypes.FUTURE
-        if self.exchange_manager.is_margin:
-            to_check_exchange_type = enums.ExchangeTypes.MARGIN
+        to_check_exchange_type = exchanges.get_exchange_type(self.exchange_manager)
         if to_check_exchange_type not in trading_mode_class.get_supported_exchange_types():
             self.logger.error(f"{trading_mode_class.get_name()} is not compatible with a {to_check_exchange_type.value} "
                               f"exchange. Activating it might have unexpected effects.")

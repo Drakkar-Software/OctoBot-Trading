@@ -28,4 +28,4 @@ cpdef object get_max_order_quantity_for_price(object position, object available_
 cpdef object get_pnl_transaction_source_from_order(object order)
 cpdef bint is_stop_order(object order_type)
 cpdef bint is_associated_pending_order(object pending_order, object created_order)
-cpdef object get_order_quantity_currency(object exchange_manager, str symbol, object side=*)
+cpdef object get_order_quantity_currency(object exchange_manager, str symbol, object side)
