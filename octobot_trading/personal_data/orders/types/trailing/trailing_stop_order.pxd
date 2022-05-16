@@ -22,6 +22,7 @@ cdef class TrailingStopOrder(order_class.Order):
     cdef object wait_for_stop_price_hit_event_task # object is asyncio.Event
     cdef object wait_for_price_hit_event_task # object is asyncio.Event
     cdef public object trailing_percent
+    cdef public bint allow_instant_fill
 
     cdef void _create_hit_events(self, object price_events_manager,
                                  object new_price,

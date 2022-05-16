@@ -35,6 +35,7 @@ class TrailingStopOrder(order_class.Order):
         self.wait_for_stop_price_hit_event_task = None
         self.wait_for_price_hit_event_task = None
         self.trailing_percent = trailing_percent
+        self.allow_instant_fill = True
 
     async def update_order_status(self, force_refresh=False):
         if not self.trader.simulate and (not self.is_synchronized_with_exchange or force_refresh):
@@ -69,7 +70,7 @@ class TrailingStopOrder(order_class.Order):
         if self.trailing_stop_price_hit_event is None:
             self.trailing_stop_price_hit_event = price_events_manager.new_event(
                 self._calculate_stop_price(new_price), new_price_time,
-                self.side is enums.TradeOrderSide.BUY)
+                self.side is enums.TradeOrderSide.BUY, self.allow_instant_fill)
         if self.trailing_price_hit_event is None:
             # don't allow instant fill since this event should only be triggered by next recent trades and prices
             self.trailing_price_hit_event = price_events_manager.new_event(new_price, new_price_time,
