@@ -103,7 +103,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
             pair=pair,
             current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
             margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
-            contract_type=self.exchange_manager.exchange_config.future_contract_type,
+            contract_type=self.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type,
             position_mode=constants.DEFAULT_SYMBOL_POSITION_MODE,
             maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
             maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE
@@ -116,10 +116,10 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
         return constants.DEFAULT_SYMBOL_MARGIN_TYPE
 
     async def get_contract_type(self, symbol: str):
-        return self.exchange_manager.exchange_config.future_contract_type
+        return self.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict):
-        return constants.DEFAULT_SYMBOL_FUNDING_RATE
+        return self.exchange_manager.exchange_config.backtesting_exchange_config.funding_rate
 
     async def get_position_mode(self, symbol: str, **kwargs: dict):
         return constants.DEFAULT_SYMBOL_POSITION_MODE

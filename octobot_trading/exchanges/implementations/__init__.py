@@ -15,6 +15,9 @@
 #  License along with this library.
 
 
+from octobot_trading.exchanges.implementations.cryptofeed_websocket_exchange import (
+    CryptofeedWebSocketExchange,
+)
 from octobot_trading.exchanges.implementations import spot_exchange_simulator
 from octobot_trading.exchanges.implementations.spot_exchange_simulator import (
     SpotExchangeSimulator,

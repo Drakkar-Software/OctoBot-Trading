@@ -133,6 +133,7 @@ class ExchangeBuilder:
 
     def is_backtesting(self, backtesting_instance):
         self.exchange_manager.is_backtesting = True
+        self.exchange_manager.exchange_config.init_backtesting_exchange_config()
         self.exchange_manager.backtesting = backtesting_instance
         return self
 
@@ -156,7 +157,9 @@ class ExchangeBuilder:
 
     def is_future(self, use_future=True, future_contract_type=constants.DEFAULT_SYMBOL_CONTRACT_TYPE):
         self.exchange_manager.is_future = use_future
-        self.exchange_manager.exchange_config.future_contract_type = future_contract_type
+        if self.exchange_manager.is_backtesting:
+            self.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type = \
+                future_contract_type
         return self
 
     def is_spot_only(self, use_spot_only=True):

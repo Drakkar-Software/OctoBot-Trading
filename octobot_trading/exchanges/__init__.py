@@ -78,9 +78,10 @@ from octobot_trading.exchanges.exchange_websocket_factory import (
     is_websocket_feed_requiring_init,
     search_and_create_websocket,
 )
-from octobot_trading.exchanges import exchange_config_data
-from octobot_trading.exchanges.exchange_config_data import (
+from octobot_trading.exchanges import config
+from octobot_trading.exchanges.config import (
     ExchangeConfig,
+    BacktestingExchangeConfig,
 )
 from octobot_trading.exchanges import traders
 from octobot_trading.exchanges.traders import (
@@ -122,6 +123,7 @@ from octobot_trading.exchanges.connectors import (
 
 __all__ = [
     "ExchangeConfig",
+    "BacktestingExchangeConfig",
     "ExchangeManager",
     "ExchangeBuilder",
     "create_exchange_builder_instance",

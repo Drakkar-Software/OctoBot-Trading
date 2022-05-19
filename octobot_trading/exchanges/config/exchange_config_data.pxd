@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 cimport octobot_trading.util as util
+cimport octobot_trading.exchanges.config.backtesting_exchange_config as backtesting_exchange_config
 
 cdef class ExchangeConfig(util.Initializable):
     cdef object _logger
@@ -33,10 +34,13 @@ cdef class ExchangeConfig(util.Initializable):
 
     cdef public object exchange_manager
 
+    cpdef backtesting_exchange_config.BacktestingExchangeConfig backtesting_exchange_config
+
     cpdef void set_config_time_frame(self)
     cpdef void set_config_traded_pairs(self)
     cpdef void set_historical_settings(self)
     cpdef object get_shortest_time_frame(self)
+    cpdef void init_backtesting_exchange_config(self)
 
     @staticmethod
     cdef str _is_tradable_with_cryptocurrency(str symbol, str cryptocurrency)

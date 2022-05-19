@@ -22,7 +22,7 @@ from octobot_trading.exchanges.exchanges cimport (
     Exchanges,
 )
 
-from octobot_trading.exchanges.exchange_config_data cimport (
+from octobot_trading.exchanges.config.exchange_config_data cimport (
     ExchangeConfig,
 )
 
