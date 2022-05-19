@@ -22,6 +22,7 @@ import octobot_commons.logging as logging
 import octobot_commons.errors as errors
 
 import octobot_trading.exchange_channel as exchange_channel
+import octobot_trading.exchanges.config.backtesting_exchange_config as backtesting_exchange_config
 import octobot_trading.constants as trading_constants
 import octobot_trading.util as util
 
@@ -58,7 +59,7 @@ class ExchangeConfig(util.Initializable):
         # number of required historical candles
         self.required_historical_candles_count = constants.DEFAULT_IGNORED_VALUE
 
-        self.future_contract_type = trading_constants.DEFAULT_SYMBOL_CONTRACT_TYPE
+        self.backtesting_exchange_config = None
 
     async def initialize_impl(self):
         pass
@@ -68,6 +69,9 @@ class ExchangeConfig(util.Initializable):
 
     def set_config_time_frame(self):  # TODO
         self._set_config_time_frame()
+
+    def init_backtesting_exchange_config(self):
+        self.backtesting_exchange_config = backtesting_exchange_config.BacktestingExchangeConfig()
 
     def set_historical_settings(self):
         self.required_historical_candles_count = self.config.get(constants.CONFIG_TENTACLES_REQUIRED_CANDLES_COUNT,

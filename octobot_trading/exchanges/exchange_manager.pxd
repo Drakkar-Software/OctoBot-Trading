@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
-cimport octobot_trading.exchanges.exchange_config_data as exchange_config_data
+cimport octobot_trading.exchanges.config.exchange_config_data as exchange_config_data
 cimport octobot_trading.exchanges.abstract_websocket_exchange as abstract_websocket
 # cimport octobot_trading.exchange_data.exchange_symbols_data as exchange_symbols_data
 # cimport octobot_trading.exchange_data.exchange_symbol_data as exchange_symbol_data
