@@ -30,3 +30,4 @@ cdef class TickerUpdaterSimulator(ticker_updater.TickerUpdater):
 
     cdef dict last_timestamp_pushed_by_symbol
     cdef str ticker_time_frame
+    cdef double ticker_time_frame_seconds
