@@ -104,7 +104,7 @@ cdef class Order(util.Initializable):
             object group=*,
             str tag=*,
             str quantity_currency=*)
-    cdef void _update_type_from_raw(self, dict raw_order)
+    cdef object _update_type_from_raw(self, dict raw_order)  # return object to allow exception raising
     cdef void _update_taker_maker(self)
     cdef object _on_origin_price_change(self, object previous_price, object price_time)
 
