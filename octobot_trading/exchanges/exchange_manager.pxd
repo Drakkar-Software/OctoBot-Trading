@@ -63,12 +63,11 @@ cdef class ExchangeManager(util.Initializable):
     cdef public object exchange_personal_data
 
     # private
-    cdef void _load_config_symbols_and_time_frames(self)
-    cdef void _load_config_symbols_and_time_frames(self)
+    cdef object _load_config_symbols_and_time_frames(self)
 
     # public
     cpdef bint enabled(self)
-    cpdef void load_constants(self)
+    cpdef object load_constants(self)
     cpdef str get_exchange_symbol(self, str symbol)
     cpdef tuple get_exchange_quote_and_base(self, str symbol)
     cpdef object get_rest_pairs_refresh_threshold(self)
