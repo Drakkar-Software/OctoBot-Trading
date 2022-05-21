@@ -74,11 +74,12 @@ cdef class Position(util.Initializable):
                       object fee_to_close,
                       object status=*)
     cdef bint _should_change(self, object original_value, object new_value)
-    cdef void _update_mark_price(self, object mark_price, bint check_liquidation=*)
+    cdef object _update_mark_price(self, object mark_price, bint check_liquidation=*)   # return object to allow exception raising
     cdef void _update_prices_if_necessary(self, object mark_price)
     cdef object _update_size_from_margin(self, object margin_update)  # needs object to forward exceptions
     cdef void _update_quantity_or_size_if_necessary(self)
     cdef void _update_quantity(self)
+    cdef object _check_for_liquidation(self)    # return object to allow exception raising
     cdef object _update_realized_pnl_from_order(self, object order)
     cdef object _update_realized_pnl_from_size_update(self, object size_update, bint is_closing=*, object update_price=*, object trigger_source=*)
     cdef object _update_initial_margin(self)
