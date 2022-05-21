@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 cimport octobot_trading.util as util
-cimport octobot_trading.exchanges.config.backtesting_exchange_config as backtesting_exchange_config
+cimport octobot_trading.exchanges.config.backtesting_exchange_config as backtesting_exchange_config_import
 
 cdef class ExchangeConfig(util.Initializable):
     cdef object _logger
@@ -30,11 +30,10 @@ cdef class ExchangeConfig(util.Initializable):
     cdef public list traded_time_frames
     cdef public list real_time_time_frames
     cdef public int required_historical_candles_count
-    cdef public object future_contract_type
 
     cdef public object exchange_manager
 
-    cpdef backtesting_exchange_config.BacktestingExchangeConfig backtesting_exchange_config
+    cpdef backtesting_exchange_config_import.BacktestingExchangeConfig backtesting_exchange_config
 
     cpdef void set_config_time_frame(self)
     cpdef void set_config_traded_pairs(self)
