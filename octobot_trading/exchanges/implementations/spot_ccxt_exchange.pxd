@@ -17,4 +17,5 @@
 cimport octobot_trading.exchanges.types as exchanges_types
 
 cdef class SpotCCXTExchange(exchanges_types.SpotExchange):
-    cpdef str get_default_type(self)
+    # cpdef str get_default_type(self)   generating a segfault on exchange that both extend spot and future exchanges
+    pass
