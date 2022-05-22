@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 
 import async_channel.enums as channel_enums
 import octobot_commons.channels_name as channels_name
@@ -57,9 +58,9 @@ class SpotRestExchangeTests:
             .prices_manager.get_mark_price(timeout=60)
         await self._create_order(symbol,
                                  trading_enums.TraderOrderType.SELL_LIMIT,
-                                 mark_price*1.1,
-                                 0.001,
-                                 mark_price*1.1)
+                                 mark_price * decimal.Decimal("1.1"),
+                                 decimal.Decimal("1.001"),
+                                 mark_price * decimal.Decimal("1.1"))
         await asyncio.sleep(7)
         assert (await self._get_exchange_orders_count(symbol)) == 1
         open_orders = self._get_orders_manager_open_orders(symbol)
