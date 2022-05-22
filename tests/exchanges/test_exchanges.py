@@ -162,9 +162,9 @@ class TestExchanges:
         config = await self.init_default()
         exchange_manager_bitmex = ExchangeManager(config, "bitmex")
         await exchange_manager_bitmex.initialize()
-        await exchange_manager_bitmex.stop()
 
         if os.getenv('CYTHON_IGNORE'):
+            await exchange_manager_bitmex.stop()
             return
 
         exchange = exchange_manager_bitmex.exchange
@@ -187,3 +187,4 @@ class TestExchanges:
             # 2000 months into the future
             expected_ms_timestamp = MS_TIMESTAMP + TimeFramesMinutes[TimeFrames.ONE_MONTH] * MSECONDS_TO_MINUTE * 2000
             assert exchange.get_candle_since_timestamp(TimeFrames.ONE_MONTH, count=-2000) == expected_ms_timestamp
+        await exchange_manager_bitmex.stop()

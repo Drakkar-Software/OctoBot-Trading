@@ -61,6 +61,9 @@ class Trader(util.Initializable):
             await self.exchange_manager.register_trader(self)
         self.logger.debug(f"{'Enabled' if self.is_enabled else 'Disabled'} on {self.exchange_manager.exchange_name}")
 
+    def clear(self):
+        self.exchange_manager = None
+
     @classmethod
     def enabled(cls, config):
         return util.is_trader_enabled(config)

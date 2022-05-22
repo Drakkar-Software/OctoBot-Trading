@@ -35,6 +35,7 @@ cdef class Trader(util.Initializable):
     cdef public exchange_manager.ExchangeManager exchange_manager
 
     # methods
+    cpdef void clear(self)
     cpdef str parse_order_id(self, str order_id)
     cpdef object set_risk(self, object risk)
     cpdef object convert_order_to_trade(self, object order)

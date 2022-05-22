@@ -104,13 +104,16 @@ class ExchangeManager(util.Initializable):
             exchanges.Exchanges.instance().del_exchange(self.exchange.name, self.id,
                                                         should_warn=warning_on_missing_elements)
             self.exchange.exchange_manager = None
+            self.exchange = None
         if self.exchange_personal_data is not None:
             await self.exchange_personal_data.stop()
 
         self.exchange_config = None
         self.exchange_personal_data = None
         self.exchange_symbols_data = None
-        self.trader = None
+        if self.trader is not None:
+            self.trader.clear()
+            self.trader = None
         self.trading_modes = []
         self.backtesting = None
 
