@@ -105,14 +105,13 @@ def _set_exchange_type_details(exchange_builder, config, backtesting):
             commons_constants.CONFIG_EXCHANGE_SANDBOXED, False)
     )
     # exchange trading type
-    if config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
-            commons_constants.CONFIG_EXCHANGE_FUTURE, False):
+    config_exchange_type = config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
+        commons_constants.CONFIG_EXCHANGE_TYPE, commons_constants.DEFAULT_EXCHANGE_TYPE)
+    if config_exchange_type == commons_constants.CONFIG_EXCHANGE_FUTURE:
         exchange_builder.is_future(True)
-    elif config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
-            commons_constants.CONFIG_EXCHANGE_MARGIN, False):
+    if config_exchange_type == commons_constants.CONFIG_EXCHANGE_MARGIN:
         exchange_builder.is_margin(True)
-    elif config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
-            commons_constants.CONFIG_EXCHANGE_SPOT, True):
+    if config_exchange_type == commons_constants.CONFIG_EXCHANGE_SPOT:
         # Use spot trading as default trading type
         exchange_builder.is_spot_only(True)
 
