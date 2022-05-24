@@ -22,6 +22,10 @@ cpdef str get_order_side(object order_type)
 cpdef void log_time_sync_error(object logger, str exchange_name, object error, str details)
 cpdef str get_partners_explanation_message()
 cpdef object get_exchange_type(object exchange_manager_instance)
+cpdef object get_exchange_class_from_name(object exchange_class,
+                                          str exchange_name,
+                                          object tentacles_setup_config,
+                                          bint enable_default)
 
 cdef object search_exchange_class_from_exchange_name(object exchange_class,
                                                      str exchange_name,
