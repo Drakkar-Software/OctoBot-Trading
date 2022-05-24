@@ -41,7 +41,7 @@ cdef class PortfolioProfitability:
 
     cdef object _calculate_average_market_profitability(self)
     cdef void _reset_before_profitability_calculation(self)
-    cdef void _update_profitability_calculation(self)
-    cdef void _update_portfolio_delta(self)
+    cdef object _update_profitability_calculation(self)
+    cdef object _update_portfolio_delta(self)
     cdef dict _only_symbol_currency_filter(self, dict currency_dict)
     # cdef void _init_traded_currencies_without_market_specific(self) can't be cythonized for now
