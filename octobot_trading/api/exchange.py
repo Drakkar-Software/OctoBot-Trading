@@ -21,6 +21,7 @@ import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data as exchange_data
+import octobot_tentacles_manager.api as octobot_tentacles_manager_api
 
 import octobot_backtesting.api as backtesting_api
 
@@ -242,6 +243,17 @@ def get_historical_ohlcv(exchange_manager, symbol, time_frame, start_time, end_t
 
 def get_bot_id(exchange_manager):
     return exchange_manager.bot_id
+
+
+def get_supported_exchange_types(exchange_name):
+    supported_exchanges = [octobot_trading.enums.ExchangeTypes.SPOT]
+    if exchanges.get_exchange_class_from_name(exchanges.FutureExchange, exchange_name, None, False,
+                                              strict_name_matching=True) is not None:
+        supported_exchanges.append(octobot_trading.enums.ExchangeTypes.FUTURE)
+    if exchanges.get_exchange_class_from_name(exchanges.MarginExchange, exchange_name, None, False,
+                                              strict_name_matching=True) is not None:
+        supported_exchanges.append(octobot_trading.enums.ExchangeTypes.MARGIN)
+    return supported_exchanges
 
 
 def cancel_ccxt_throttle_task():

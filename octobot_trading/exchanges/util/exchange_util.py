@@ -45,10 +45,25 @@ def get_spot_exchange_class(exchange_name, tentacles_setup_config):
 
 def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
                                              tentacles_setup_config, enable_default=False):
-    for exchange_candidate in tentacles_management.get_all_classes_from_parent(exchange_class):
+    exchange_class = get_exchange_class_from_name(exchange_class, exchange_name,  tentacles_setup_config, enable_default)
+    if exchange_class is not None:
+        return exchange_class
+    if enable_default:
+        return None
+
+    logging.get_logger().debug(f"No specific exchange implementation for {exchange_name} found, using a default one.")
+    # TODO: handle default future exchange instead of creating a SpotExchange
+    return search_exchange_class_from_exchange_name(exchanges_types.SpotExchange, exchange_name,
+                                                    tentacles_setup_config, enable_default=True)
+
+
+def get_exchange_class_from_name(exchange_parent_class, exchange_name, tentacles_setup_config, enable_default,
+                                 strict_name_matching=False):
+    for exchange_candidate in tentacles_management.get_all_classes_from_parent(exchange_parent_class):
         try:
             if _is_exchange_candidate_matching(exchange_candidate, exchange_name,
-                                               tentacles_setup_config, enable_default=enable_default):
+                                               tentacles_setup_config, enable_default=enable_default) and \
+               (not strict_name_matching or exchange_candidate.get_name() == exchange_name):
                 return exchange_candidate
         except NotImplementedError:
             # A subclass of AbstractExchange will raise a NotImplementedError when calling its get_name() method
@@ -57,14 +72,7 @@ def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
             # As we are searching for an exchange_type specific subclass
             # We should ignore classes that raises NotImplementedError
             pass
-
-    if enable_default:
-        return None
-
-    logging.get_logger().debug(f"No specific exchange implementation for {exchange_name} found, using a default one.")
-    # TODO: handle default future exchange instead of creating a SpotExchange
-    return search_exchange_class_from_exchange_name(exchanges_types.SpotExchange, exchange_name,
-                                                    tentacles_setup_config, enable_default=True)
+    return None
 
 
 def _is_exchange_candidate_matching(exchange_candidate, exchange_name, tentacles_setup_config, enable_default=False):
