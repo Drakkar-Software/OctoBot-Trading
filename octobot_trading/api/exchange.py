@@ -21,7 +21,6 @@ import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchanges as exchanges
 import octobot_trading.exchange_data as exchange_data
-import octobot_tentacles_manager.api as octobot_tentacles_manager_api
 
 import octobot_backtesting.api as backtesting_api
 
