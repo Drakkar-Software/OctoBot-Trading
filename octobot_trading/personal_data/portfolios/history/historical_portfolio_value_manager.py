@@ -182,7 +182,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
     def _load_historical_values(self, dict_values):
         self.historical_portfolio_value = sortedcontainers.SortedDict({
             element[historical_asset_value.HistoricalAssetValue.TIMESTAMP_KEY]:
-                historical_asset_value_factory.create_historical_asset_value_from_dict(
+                historical_asset_value_factory.create_historical_asset_value_from_dict_like_object(
                     historical_asset_value.HistoricalAssetValue, element
                 )
             for element in dict_values

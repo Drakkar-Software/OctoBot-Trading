@@ -16,7 +16,7 @@
 
 from octobot_trading.personal_data.portfolios.history import historical_asset_value_factory
 from octobot_trading.personal_data.portfolios.history.historical_asset_value_factory import (
-    create_historical_asset_value_from_dict,
+    create_historical_asset_value_from_dict_like_object,
 )
 
 from octobot_trading.personal_data.portfolios.history import historical_asset_value
@@ -30,7 +30,7 @@ from octobot_trading.personal_data.portfolios.history.historical_portfolio_value
 )
 
 __all__ = [
-    "create_historical_asset_value_from_dict",
+    "create_historical_asset_value_from_dict_like_object",
     "HistoricalAssetValue",
     "HistoricalPortfolioValueManager",
 ]

@@ -16,4 +16,4 @@
 #  License along with this library.
 
 
-cpdef object create_historical_asset_value_from_dict(object historical_asset_class, dict asset_dict)
+cpdef object create_historical_asset_value_from_dict_like_object(object historical_asset_class, object asset_values)

@@ -16,11 +16,11 @@
 import decimal
 
 
-def create_historical_asset_value_from_dict(historical_asset_class, asset_dict):
+def create_historical_asset_value_from_dict_like_object(historical_asset_class, asset_values):
     return historical_asset_class(
-        asset_dict[historical_asset_class.TIMESTAMP_KEY],
+        asset_values[historical_asset_class.TIMESTAMP_KEY],
         {
             currency: decimal.Decimal(f"{value}")
-            for currency, value in asset_dict[historical_asset_class.VALUES_KEY].items()
+            for currency, value in asset_values[historical_asset_class.VALUES_KEY].items()
         }
     )
