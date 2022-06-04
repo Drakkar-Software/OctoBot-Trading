@@ -27,8 +27,8 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestOkexRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "okex"
+class TestOkxRealExchangeTester(RealExchangeTester):
+    EXCHANGE_NAME = "okx"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
 
