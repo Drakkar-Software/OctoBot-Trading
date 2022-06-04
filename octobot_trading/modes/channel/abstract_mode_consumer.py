@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.modes.channel as modes_channel
@@ -77,7 +77,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
 
     # Can be overwritten
     async def can_create_order(self, symbol, state):
-        currency, market = symbol_util.split_symbol(symbol)
+        currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
         portfolio = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio
 
         # get symbol min amount when creating order

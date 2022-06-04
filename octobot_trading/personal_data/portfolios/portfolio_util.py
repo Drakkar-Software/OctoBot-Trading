@@ -19,7 +19,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_commons.constants as commons_constants
 import octobot_commons.logging as commons_logging
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 import numpy as numpy
 
 
@@ -67,7 +67,7 @@ def get_draw_down(exchange_manager):
                 draw_down_pair,
                 enums.PositionSide.BOTH
             ).symbol_contract.is_inverse_contract():
-                value_currency = symbol_util.split_symbol(draw_down_pair)[0]
+                value_currency = symbol_util.parse_symbol(draw_down_pair).base
             origin_value = exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder \
                 .origin_portfolio.portfolio[value_currency].total
             portfolio_history = [origin_value]

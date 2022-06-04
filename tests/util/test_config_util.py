@@ -16,7 +16,7 @@
 import copy
 import octobot_trading.util as util
 import octobot_trading.constants as trading_constants
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 import octobot_commons.constants as commons_constants
 
 from tests import config
@@ -83,7 +83,7 @@ def test_get_symbols(config):
 def test_get_all_currencies(config):
     symbols = set()
     for pair in FULL_PAIRS_LIST:
-        symbols.update(symbol_util.split_symbol(pair))
+        symbols.update(symbol_util.parse_symbol(pair).base_and_quote())
     assert util.get_all_currencies(config) == symbols
     assert util.get_all_currencies(config, enabled_only=True) == symbols
 
@@ -203,7 +203,7 @@ def _test_enabled(config, func, config_key, current_val):
 
 
 def _filter_by_base(pairs, filtered_base):
-    return [s for s in pairs if symbol_util.split_symbol(s)[0] != filtered_base]
+    return [s for s in pairs if symbol_util.parse_symbol(s).base != filtered_base]
 
 
 def _filter_by_key(pairs_by_cypto, filtered_key):
@@ -222,4 +222,4 @@ def _replace_value_by_key(pairs_by_cypto, filtered_key, replaced_value):
 
 
 def _select_by_base_or_quote(pairs, base_or_quote):
-    return [s for s in pairs if base_or_quote in symbol_util.split_symbol(s)]
+    return [s for s in pairs if base_or_quote in symbol_util.parse_symbol(s).base_and_quote()]

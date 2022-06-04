@@ -19,7 +19,7 @@ import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.constants as commons_constants
 import octobot_commons.enums as commons_enums
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 
 import octobot_trading.util as util
 import octobot_trading.errors as errors
@@ -243,7 +243,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
         # asset might also have changed in price since the time it was recorded)
         for currency in historical_value.get_currencies():
             for pair in self.portfolio_manager.portfolio_value_holder.last_prices_by_trading_pair:
-                base_and_quote = symbol_util.split_symbol(pair)
+                base_and_quote = symbol_util.parse_symbol(pair).base_and_quote()
                 if currency in base_and_quote and target_currency in base_and_quote:
                     return self.portfolio_manager.portfolio_value_holder.convert_currency_value_using_last_prices(
                         historical_value.get(currency), currency, target_currency

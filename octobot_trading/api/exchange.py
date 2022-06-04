@@ -17,6 +17,7 @@
 import asyncio
 import trading_backend
 
+import octobot_commons.symbols
 import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchanges as exchanges
@@ -190,8 +191,25 @@ def supports_websockets(exchange_name: str, tentacles_setup_config) -> bool:
     return exchanges.supports_websocket(exchange_name, tentacles_setup_config)
 
 
+# TODO remove after ccxt symbols update
 def get_trading_pairs(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_symbol_pairs
+
+
+def get_trading_symbols(exchange_manager) -> list:
+    symbols = exchange_manager.exchange_config.traded_symbols
+
+    #TODO remove loop after ccxt symbols update as it will be automatically filled
+    if exchange_manager.is_future:
+        for symbol in symbols:
+            merged_currencies = symbol.legacy_symbol()
+            if exchange_manager.exchange.get_pair_future_contract(merged_currencies).is_inverse_contract():
+                symbol.settlement_asset = symbol.base
+            else:
+                symbol.settlement_asset = symbol.quote
+            symbol.symbol_str = f"{merged_currencies}:{symbol.settlement_asset}"
+
+    return symbols
 
 
 def get_watched_timeframes(exchange_manager) -> list:

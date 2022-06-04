@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_commons.logging as logging
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 
 import octobot_trading.util as util
 import octobot_trading.constants as constants
@@ -137,6 +137,6 @@ class PortfolioProfitability:
         Use exchange_config.all_config_symbol_pairs to take every config pair into account including disabled ones
         """
         self.traded_currencies_without_market_specific = set(
-            symbol_util.split_symbol(pair)[0]
+            symbol_util.parse_symbol(pair).base
             for pair in self.portfolio_manager.exchange_manager.exchange_config.all_config_symbol_pairs
         )

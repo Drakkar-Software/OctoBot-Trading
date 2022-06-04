@@ -31,7 +31,7 @@ import octobot_commons
 import octobot_commons.asyncio_tools as asyncio_tools
 import octobot_commons.enums as commons_enums
 import octobot_commons.logging as commons_logging
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 import octobot_commons.time_frame_manager as time_frame_manager
 
 import octobot_trading.constants as trading_constants

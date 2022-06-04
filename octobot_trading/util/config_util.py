@@ -15,7 +15,7 @@
 #  License along with this library
 import octobot_commons.constants as commons_constants
 import octobot_trading.constants as trading_constants
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 
 
 def is_trader_enabled(config) -> bool:
@@ -64,7 +64,7 @@ def get_symbols(config, enabled_only) -> list:
 def get_all_currencies(config, enabled_only=False) -> set:
     currencies = set()
     for symbol in get_symbols(config, enabled_only):
-        quote, base = symbol_util.split_symbol(symbol)
+        quote, base = symbol_util.parse_symbol(symbol).base_and_quote()
         currencies.add(quote)
         currencies.add(base)
     return currencies
@@ -74,7 +74,7 @@ def get_pairs(config, currency, enabled_only=False) -> list:
     return [
         symbol
         for symbol in get_symbols(config, enabled_only)
-        if currency in symbol_util.split_symbol(symbol)
+        if currency in symbol_util.parse_symbol(symbol).base_and_quote()
     ]
 
 
@@ -82,7 +82,7 @@ def get_market_pair(config, currency, enabled_only=False) -> (str, bool):
     if commons_constants.CONFIG_TRADING in config:
         reference_market = get_reference_market(config)
         for symbol in get_symbols(config, enabled_only):
-            symbol_currency, symbol_market = symbol_util.split_symbol(symbol)
+            symbol_currency, symbol_market = symbol_util.parse_symbol(symbol).base_and_quote()
             if currency == symbol_currency and reference_market == symbol_market:
                 return symbol, False
             elif reference_market == symbol_currency and currency == symbol_market:

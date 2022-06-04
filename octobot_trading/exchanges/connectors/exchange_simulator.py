@@ -19,7 +19,7 @@ import octobot_backtesting.api as backtesting_api
 import octobot_backtesting.importers as importers
 
 import octobot_commons.number_util as number_util
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.constants as commons_constants
 
@@ -47,7 +47,7 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
         self.exchange_importers = self.backtesting.get_importers(importers.ExchangeDataImporter)
         # load symbols and time frames
         for importer in self.exchange_importers:
-            self.symbols.update(importer.symbols)
+            self.symbols.update(backtesting_api.get_available_symbols(importer))
             self.time_frames.update(importer.time_frames)
 
         # remove duplicates
@@ -185,7 +185,7 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
             taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.TAKER.value
         symbol_fees = self.get_fees(symbol)
         rate = symbol_fees[taker_or_maker]
-        currency, market = symbol_util.split_symbol(symbol)
+        currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
         fee_currency = currency
 
         precision = self.get_market_status(symbol)[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value] \
@@ -209,7 +209,7 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
                                                    reverse=True)
 
     def get_split_pair_from_exchange(self, pair) -> (str, str):
-        return symbol_util.split_symbol(pair)
+        return symbol_util.parse_symbol(pair).base_and_quote()
 
     def get_pair_cryptocurrency(self, pair) -> str:
         return self.get_split_pair_from_exchange(pair)[0]
