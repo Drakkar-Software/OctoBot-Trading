@@ -77,7 +77,7 @@ from octobot_trading.personal_data.portfolios.portfolio_util import (
     get_coefficient_of_determination,
 )
 from octobot_trading.personal_data.portfolios.history import (
-    create_historical_asset_value_from_dict,
+    create_historical_asset_value_from_dict_like_object,
     HistoricalAssetValue,
     HistoricalPortfolioValueManager,
 )
@@ -109,7 +109,7 @@ __all__ = [
     "portfolio_to_float",
     "get_draw_down",
     "get_coefficient_of_determination",
-    "create_historical_asset_value_from_dict",
+    "create_historical_asset_value_from_dict_like_object",
     "get_draw_down",
     "HistoricalAssetValue",
     "HistoricalPortfolioValueManager",

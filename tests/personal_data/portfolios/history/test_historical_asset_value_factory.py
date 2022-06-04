@@ -14,8 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
-
 import pytest
+import tinydb.table
 
 import octobot_trading.personal_data as personal_data
 
@@ -29,7 +29,7 @@ def test_create_historical_asset_value_from_dict_invalid_input():
         },
     }
     with pytest.raises(KeyError):
-        personal_data.create_historical_asset_value_from_dict(personal_data.HistoricalAssetValue, input_1)
+        personal_data.create_historical_asset_value_from_dict_like_object(personal_data.HistoricalAssetValue, input_1)
     input_2 = {
         f"{personal_data.HistoricalAssetValue.VALUES_KEY}_invalid": {
             "BTC": 1,
@@ -37,7 +37,7 @@ def test_create_historical_asset_value_from_dict_invalid_input():
         },
     }
     with pytest.raises(KeyError):
-        personal_data.create_historical_asset_value_from_dict(personal_data.HistoricalAssetValue, input_2)
+        personal_data.create_historical_asset_value_from_dict_like_object(personal_data.HistoricalAssetValue, input_2)
 
 
 def test_create_historical_asset_value_from_dict_valid_input():
@@ -48,8 +48,8 @@ def test_create_historical_asset_value_from_dict_valid_input():
             "USD": 222
         },
     }
-    historical_asset = personal_data.create_historical_asset_value_from_dict(personal_data.HistoricalAssetValue,
-                                                                             input_1)
+    historical_asset = personal_data.create_historical_asset_value_from_dict_like_object(personal_data.HistoricalAssetValue,
+                                                                                         input_1)
     assert historical_asset.get_timestamp() == 11
     assert list(historical_asset.get_currencies()) == ["BTC", "USD"]
     assert historical_asset.get("BTC") == decimal.Decimal(1)
@@ -60,9 +60,15 @@ def test_create_historical_asset_value_from_dict_valid_input():
         personal_data.HistoricalAssetValue.TIMESTAMP_KEY: 1111111111111.222,
         personal_data.HistoricalAssetValue.VALUES_KEY: {},
     }
-    assert personal_data.create_historical_asset_value_from_dict(
+    assert personal_data.create_historical_asset_value_from_dict_like_object(
         personal_data.HistoricalAssetValue,
         input_2
+    ).to_dict() == input_2
+
+    # input can be a tinydb.table.Document
+    assert personal_data.create_historical_asset_value_from_dict_like_object(
+        personal_data.HistoricalAssetValue,
+        tinydb.table.Document(input_2, 1)
     ).to_dict() == input_2
 
     input_3 = {
@@ -72,7 +78,7 @@ def test_create_historical_asset_value_from_dict_valid_input():
             "XXXXX": 0
         },
     }
-    assert personal_data.create_historical_asset_value_from_dict(
+    assert personal_data.create_historical_asset_value_from_dict_like_object(
         personal_data.HistoricalAssetValue,
         input_3
     ).to_dict() == input_3
