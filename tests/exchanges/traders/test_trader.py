@@ -28,7 +28,6 @@ from octobot_trading.personal_data import LinearPosition
 import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
-from octobot_commons.symbol_util import split_symbol
 from octobot_trading.personal_data.orders import Order
 from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, FeePropertyColumns, \
     ExchangeConstantsPositionColumns, PositionMode, MarginType, TakeProfitStopLossMode
@@ -43,6 +42,7 @@ from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 from octobot_trading.api.exchange import cancel_ccxt_throttle_task
 from tests.exchanges.traders import get_default_future_inverse_contract, DEFAULT_FUTURE_SYMBOL
 import octobot_trading.constants as constants
+import octobot_commons.symbols as commons_symbols
 
 from tests import event_loop
 from tests.exchanges import future_simulated_exchange_manager
@@ -871,7 +871,7 @@ class TestTrader:
     async def test_edit_order(self):
         _, exchange_manager, trader_inst = await self.init_default()
         portfolio_manager = exchange_manager.exchange_personal_data.portfolio_manager
-        currency, market = split_symbol(self.DEFAULT_SYMBOL)
+        currency, market = commons_symbols.parse_symbol(self.DEFAULT_SYMBOL).base_and_quote()
         assert portfolio_manager.portfolio.portfolio[currency].available == decimal.Decimal(10)
         assert portfolio_manager.portfolio.portfolio[market].available == decimal.Decimal(1000)
 

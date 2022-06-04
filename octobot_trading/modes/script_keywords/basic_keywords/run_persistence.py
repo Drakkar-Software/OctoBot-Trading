@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 import octobot_commons.enums as commons_enums
 import octobot_trading.enums as trading_enums
 import octobot_trading.api as trading_api
@@ -112,7 +112,7 @@ async def store_trade(ctx,
         "text": f"{tag}{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]} "
                 f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value]} "
                 f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.AMOUNT.value]} "
-                f"{symbol_util.split_symbol(trade_dict[trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value])[0]} "
+                f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.QUANTITY_CURRENCY.value]} "
                 f"at {trade_dict[trading_enums.ExchangeConstantsOrderColumns.PRICE.value]}",
         "id": trade_dict[trading_enums.ExchangeConstantsOrderColumns.ID.value],
         "symbol": trade_dict[trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value],

@@ -19,7 +19,7 @@ import copy
 
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 import octobot_commons.errors as common_errors
 import octobot_commons.databases as databases
 import octobot_commons.display as commons_display

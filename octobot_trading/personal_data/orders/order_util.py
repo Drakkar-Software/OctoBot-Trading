@@ -17,7 +17,7 @@ import asyncio
 import decimal
 import contextlib
 
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 import octobot_commons.constants as commons_constants
 import octobot_commons.logging as logging
 import octobot_commons.timestamp_util as timestamp_util
@@ -122,7 +122,7 @@ async def get_pre_order_data(exchange_manager, symbol: str, timeout: int = None,
     mark_price = await get_up_to_date_price(exchange_manager, symbol, timeout=timeout)
     symbol_market = exchange_manager.exchange.get_market_status(symbol, with_fixer=False)
 
-    currency, market = symbol_util.split_symbol(symbol)
+    currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
     portfolio = exchange_manager.exchange_personal_data.portfolio_manager.portfolio
     currency_available = portfolio.get_currency_portfolio(currency).available \
         if portfolio_type == commons_constants.PORTFOLIO_AVAILABLE else portfolio.get_currency_portfolio(currency).total
@@ -337,7 +337,7 @@ async def _cancel_reduce_only_orders_on_position_reset(exchange_manager, symbol)
 
 def get_order_quantity_currency(exchange_manager, symbol, side):
     try:
-        base, quote = symbol_util.split_symbol(symbol)
+        base, quote = symbol_util.parse_symbol(symbol).base_and_quote()
     except ValueError:
         # symbol that can't be split
         return None

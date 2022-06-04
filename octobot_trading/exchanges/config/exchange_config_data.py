@@ -15,7 +15,7 @@
 #  License along with this library.
 import copy
 
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols
 import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.constants as constants
 import octobot_commons.logging as logging
@@ -40,6 +40,8 @@ class ExchangeConfig(util.Initializable):
 
         # list of exchange supported enabled pairs from self.config
         self.traded_symbol_pairs = []
+        # Same as traded_symbol_pairs but with parsed symbols
+        self.traded_symbols = []
 
         # list of exchange supported pairs from self.config (used to initialize evaluators and more)
         self.all_config_symbol_pairs = []
@@ -108,6 +110,10 @@ class ExchangeConfig(util.Initializable):
                                                                    traded_symbol_pairs_set,
                                                                    existing_pairs)
         self.traded_symbol_pairs = list(traded_symbol_pairs_set)
+        self.traded_symbols = [
+            octobot_commons.symbols.parse_symbol(symbol)
+            for symbol in traded_symbol_pairs_set
+        ]
         self.all_config_symbol_pairs = list(existing_pairs)
 
         # only add self.traded_symbol_pairs to watched pairs as not every existing_pairs are being collected
@@ -195,7 +201,7 @@ class ExchangeConfig(util.Initializable):
 
     @staticmethod
     def _is_tradable_with_cryptocurrency(symbol, cryptocurrency):
-        return symbol if symbol_util.split_symbol(symbol)[1] == cryptocurrency else None
+        return symbol if octobot_commons.symbols.parse_symbol(symbol).quote == cryptocurrency else None
 
     def _add_tradable_symbols_from_config(self, cryptocurrency, filtered_symbols):
         return [

@@ -18,7 +18,7 @@ import copy
 import decimal
 
 import octobot_commons.logging as logging
-import octobot_commons.symbol_util as symbol_util
+import octobot_commons.symbols as symbol_util
 
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
@@ -57,7 +57,7 @@ class PortfolioValueHolder:
         :param mark_price: the symbol mark price value in decimal.Decimal
         :return: True if the origin portfolio should be recomputed
         """
-        currency, market = symbol_util.split_symbol(symbol)
+        currency, market = symbol_util.parse_symbol(symbol).base_and_quote()
         # update origin values if this price has relevant data regarding the origin portfolio (using both quote and base)
         origin_currencies_should_be_updated = (
                 (
@@ -329,9 +329,9 @@ class PortfolioValueHolder:
         :param missing_tickers: the list of missing currencies
         """
         if self.portfolio_manager.exchange_manager.exchange_config.all_config_symbol_pairs:
-            currency, market = symbol_util.split_symbol(
+            currency, market = symbol_util.parse_symbol(
                 self.portfolio_manager.exchange_manager.exchange_config.all_config_symbol_pairs[0]
-            )
+            ).base_and_quote()
             currency_to_evaluate = currency
             try:
                 if currency not in evaluated_currencies:

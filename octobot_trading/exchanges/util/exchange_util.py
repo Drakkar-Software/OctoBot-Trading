@@ -100,7 +100,7 @@ def _get_docs_url():
         import octobot.constants
         return octobot.constants.OCTOBOT_DOCS_URL
     except ImportError:
-        return "https://docs.octobot.online"
+        return "https://octobot.info"
 
 
 def _get_exchanges_docs_url():
@@ -108,7 +108,7 @@ def _get_exchanges_docs_url():
         import octobot.constants
         return octobot.constants.EXCHANGES_DOCS_URL
     except ImportError:
-        return "https://exchanges.docs.octobot.online"
+        return "https://exchanges.octobot.info"
 
 
 def _get_time_sync_error_message(exchange_name, details):
