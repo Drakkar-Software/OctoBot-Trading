@@ -17,7 +17,6 @@
 import asyncio
 import trading_backend
 
-import octobot_commons.symbols
 import octobot_trading.constants
 import octobot_trading.enums
 import octobot_trading.exchanges as exchanges
