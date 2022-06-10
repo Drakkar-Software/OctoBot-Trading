@@ -58,6 +58,7 @@ async def create_real_exchange(exchange_manager) -> None:
         await exchange_manager.exchange.initialize()
         _create_exchange_backend(exchange_manager)
         await _initialize_exchange_backend(exchange_manager)
+        _ensure_exchange_validity(exchange_manager)
     except errors.AuthenticationError:
         exchange_manager.logger.error("Authentication error, retrying without authentication...")
         exchange_manager.without_auth = True
@@ -74,6 +75,18 @@ async def initialize_real_exchange(exchange_manager):
         # search for websocket
         if exchanges.check_web_socket_config(exchange_manager.config, exchange_manager.exchange.name):
             await exchanges.search_and_create_websocket(exchange_manager)
+
+
+def _ensure_exchange_validity(exchange_manager):
+    if exchange_manager.is_future and \
+            not exchange_manager.is_trader_simulated and \
+            not exchange_manager.is_valid_account:
+        raise errors.NotSupported(f"Impossible to start futures trading for "
+                                  f"{exchange_manager.exchange.name.capitalize()}: "
+                                  f"incompatible account with no registered donation. "
+                                  f"Your OctoBot will work normally for spot trading but will be "
+                                  f"limited to backtesting for futures trading. "
+                                  f"Please select spot trading on your exchange configuration.")
 
 
 def _create_exchange_backend(exchange_manager):

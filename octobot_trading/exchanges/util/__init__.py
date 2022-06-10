@@ -30,6 +30,7 @@ from octobot_trading.exchanges.util.exchange_util import (
     is_compatible_account,
     get_historical_ohlcv,
     get_exchange_type,
+    get_supported_exchange_types,
     get_exchange_class_from_name,
 )
 from octobot_trading.exchanges.util import websockets_util
@@ -52,6 +53,7 @@ __all__ = [
     "is_compatible_account",
     "get_historical_ohlcv",
     "get_exchange_type",
+    "get_supported_exchange_types",
     "get_exchange_class_from_name",
     "force_disable_web_socket",
     "check_web_socket_config",

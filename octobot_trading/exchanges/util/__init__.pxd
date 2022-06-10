@@ -26,6 +26,7 @@ from octobot_trading.exchanges.util.exchange_util cimport (
     get_spot_exchange_class,
     get_order_side,
     get_exchange_type,
+    get_supported_exchange_types,
     get_exchange_class_from_name,
 )
 from octobot_trading.exchanges.util cimport websockets_util
@@ -46,5 +47,6 @@ __all__ = [
     "check_web_socket_config",
     "search_websocket_class",
     "get_exchange_type",
+    "get_supported_exchange_types",
     "get_exchange_class_from_name",
 ]
