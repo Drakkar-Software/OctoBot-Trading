@@ -18,3 +18,4 @@ cimport octobot_trading.exchanges as exchanges
 
 cdef void _initialize_simulator_time_frames(exchanges.ExchangeManager exchange_manager)
 cdef void _create_exchange_backend(exchanges.ExchangeManager exchange_manager)
+cdef object _ensure_exchange_validity(exchanges.ExchangeManager exchange_manager)

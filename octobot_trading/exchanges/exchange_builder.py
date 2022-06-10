@@ -59,6 +59,8 @@ class ExchangeBuilder:
             trading_mode_class = modes.get_activated_trading_mode(self._tentacles_setup_config)
             # handle exchange related requirements if the activated trading mode has any
             self._register_trading_modes_requirements(trading_mode_class, self._tentacles_setup_config)
+
+        self._ensure_exchange_compatibility()
         await self.exchange_manager.initialize()
 
         # initialize exchange for trading if not collecting
@@ -119,6 +121,18 @@ class ExchangeBuilder:
         except Exception as e:
             self.logger.error(f"An error occurred when initializing trading mode : {e}")
             raise e
+
+    def _ensure_exchange_compatibility(self):
+        if self.exchange_manager.is_backtesting or self.exchange_manager.is_collecting:
+            # allow backtesting and collecting on incompatible exchange types
+            return
+        # live exchange: ensure the exchange to be created supports the trading type
+        supported_exchange_types = exchanges.get_supported_exchange_types(self.exchange_manager.exchange_name)
+        exchange_type = exchanges.get_exchange_type(self.exchange_manager)
+        if exchange_type not in supported_exchange_types:
+            raise errors.NotSupported(f"{self.exchange_manager.exchange_name} does not support {exchange_type.value}"
+                                      f" trading. "
+                                      f"Supported exchange types are {[t.value for t in supported_exchange_types]}.")
 
     def _ensure_trading_mode_compatibility(self, trading_mode_class):
         to_check_exchange_type = exchanges.get_exchange_type(self.exchange_manager)
