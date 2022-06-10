@@ -197,3 +197,14 @@ def get_exchange_type(exchange_manager_instance):
     if exchange_manager_instance.is_margin:
         return enums.ExchangeTypes.MARGIN
     return enums.ExchangeTypes.SPOT
+
+
+def get_supported_exchange_types(exchange_name):
+    supported_exchanges = [enums.ExchangeTypes.SPOT]
+    if get_exchange_class_from_name(exchanges_types.FutureExchange, exchange_name, None, False,
+                                    strict_name_matching=True) is not None:
+        supported_exchanges.append(enums.ExchangeTypes.FUTURE)
+    if get_exchange_class_from_name(exchanges_types.MarginExchange, exchange_name, None, False,
+                                    strict_name_matching=True) is not None:
+        supported_exchanges.append(enums.ExchangeTypes.MARGIN)
+    return supported_exchanges
