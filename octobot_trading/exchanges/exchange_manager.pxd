@@ -53,6 +53,7 @@ cdef class ExchangeManager(util.Initializable):
     cdef public bint has_websocket
     cdef public bint exchange_only
     cdef public bint without_auth
+    cdef public bint check_credentials
 
     cdef public abstract_exchange.AbstractExchange exchange
     cdef public abstract_websocket.AbstractWebsocketExchange exchange_web_socket

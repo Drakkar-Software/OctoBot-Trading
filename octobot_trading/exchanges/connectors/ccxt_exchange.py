@@ -137,14 +137,14 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if self.exchange_manager.ignore_config or self.exchange_manager.check_config(self.name):
             try:
                 key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.name)
-                if key and secret:
-                    self.is_authenticated = True
-                elif not self.exchange_manager.is_simulated:
+                if not(key and secret) and not self.exchange_manager.is_simulated:
                     self.logger.warning(f"No exchange API key set for {self.exchange_manager.exchange_name}. "
                                         f"Enter your account details to enable real trading on this exchange.")
                 if self._should_authenticate():
                     self.client = self.exchange_type(self._get_client_config(key, secret, password))
-                    self.client.checkRequiredCredentials()
+                    self.is_authenticated = True
+                    if self.exchange_manager.check_credentials:
+                        self.client.checkRequiredCredentials()
                 else:
                     self.client = self.exchange_type(self._get_client_config())
             except (ccxt.AuthenticationError, Exception) as e:
