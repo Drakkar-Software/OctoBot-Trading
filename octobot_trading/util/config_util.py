@@ -44,8 +44,10 @@ def is_trade_history_loading_enabled(config, default=True) -> bool:
 
 
 def is_currency_enabled(config, currency, default_value) -> bool:
-    return config[commons_constants.CONFIG_CRYPTO_CURRENCIES][currency].get(commons_constants.CONFIG_ENABLED_OPTION,
-                                                                            default_value)
+    try:
+        return config[commons_constants.CONFIG_CRYPTO_CURRENCIES][currency][commons_constants.CONFIG_ENABLED_OPTION]
+    except KeyError:
+        return default_value
 
 
 def get_symbols(config, enabled_only) -> list:
