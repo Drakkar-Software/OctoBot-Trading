@@ -135,15 +135,19 @@ def _get_minimal_exchange_config(exchange_name, exchange_config):
     }
 
 
-async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config) -> (bool, str):
+async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool) \
+        -> (bool, str):
     local_exchange_manager = exchange_manager.ExchangeManager(
         _get_minimal_exchange_config(exchange_name, exchange_config),
         exchange_name
     )
     local_exchange_manager.tentacles_setup_config = tentacles_setup_config
     # Avoid exchange authentication error log
-    local_exchange_manager.is_collecting = True
+    local_exchange_manager.check_credentials = False
+    local_exchange_manager.is_sandboxed = is_sandboxed
     await exchange_factory.search_and_create_spot_exchange(local_exchange_manager)
+    if local_exchange_manager.is_sandboxed and local_exchange_manager.exchange.is_supporting_sandbox():
+        local_exchange_manager.exchange.connector.set_sandbox_mode(local_exchange_manager.is_sandboxed)
     backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
     try:
         is_compatible, error = await backend.is_valid_account()

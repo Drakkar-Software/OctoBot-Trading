@@ -241,8 +241,9 @@ def is_overloaded(exchange_manager) -> bool:
     return exchange_manager.get_is_overloaded()
 
 
-async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config) -> (bool, str):
-    return await exchanges.is_compatible_account(exchange_name, exchange_config, tentacles_setup_config)
+async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool) \
+        -> (bool, str):
+    return await exchanges.is_compatible_account(exchange_name, exchange_config, tentacles_setup_config, is_sandboxed)
 
 
 def is_sponsoring(exchange_name: str) -> bool:

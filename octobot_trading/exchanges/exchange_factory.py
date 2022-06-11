@@ -100,18 +100,18 @@ def _create_exchange_backend(exchange_manager):
 
 async def _initialize_exchange_backend(exchange_manager):
     if exchange_manager.exchange_backend is not None and exchange_manager.exchange.authenticated() \
-            and not exchange_manager.is_trader_simulated:
+            and not exchange_manager.is_trader_simulated and exchange_manager.is_future:
         try:
-            if await _is_supporting_octobot():
-                exchange_manager.is_valid_account = True
+            exchange_manager.is_valid_account = await _is_supporting_octobot()
+            if exchange_manager.is_valid_account:
                 return True
             exchange_manager.is_valid_account, message = await exchange_manager.exchange_backend.is_valid_account()
             if not exchange_manager.is_valid_account:
                 exchange_manager.logger.error(
-                    f"Incompatible {exchange_manager.exchange.name.capitalize()} account to use websockets: {message}. "
-                    f"OctoBot relies on exchanges profits sharing to remain 100% free, please create a "
-                    f"new {exchange_manager.exchange.name.capitalize()} account to support the project. "
-                    f"{exchanges.get_partners_explanation_message()}")
+                    f"Incompatible {exchange_manager.exchange.name.capitalize()} account to use futures trading: "
+                    f"{message}. OctoBot relies on exchanges profits sharing to remain 100% free, please create a "
+                    f"new {exchange_manager.exchange.name.capitalize()} account or register a donation to support "
+                    f"the project. {exchanges.get_partners_explanation_message()}")
         except trading_backend.TimeSyncError as err:
             exchanges.log_time_sync_error(exchange_manager.logger, exchange_manager.exchange.name,
                                           err, "account details")

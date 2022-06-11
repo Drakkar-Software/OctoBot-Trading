@@ -44,19 +44,9 @@ async def _create_websocket(exchange_manager, websocket_class_name, socket_manag
     try:
         exchange_manager.exchange_web_socket = socket_manager.get_websocket_client(exchange_manager.config,
                                                                                    exchange_manager)
-        if exchange_manager.is_valid_account:
-            await _init_websocket(exchange_manager)
-            exchange_manager.logger.info(f"{socket_manager.get_name()} connected to "
-                                         f"{exchange_manager.exchange.name.capitalize()}")
-        else:
-            exchange_manager.logger.error(f"Impossible to start websockets for "
-                                          f"{exchange_manager.exchange.name.capitalize()}: "
-                                          f"incompatible account. Your OctoBot will work normally but will be "
-                                          f"limited to the {exchange_manager.exchange.name.capitalize()} REST API "
-                                          f"which is slower and allows for less simultaneous traded pairs "
-                                          f"because of the exchange's rate limit.")
-            exchange_manager.exchange_web_socket = None
-            exchange_manager.has_websocket = False
+        await _init_websocket(exchange_manager)
+        exchange_manager.logger.info(f"{socket_manager.get_name()} connected to "
+                                     f"{exchange_manager.exchange.name.capitalize()}")
     except Exception as e:
         exchange_manager.logger.error(f"Fail to init websocket for {websocket_class_name} "
                                       f"({exchange_manager.exchange.name}): {e}")
