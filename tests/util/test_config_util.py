@@ -48,6 +48,7 @@ def test_is_currency_enabled(config):
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"].pop(commons_constants.CONFIG_ENABLED_OPTION, None)
     assert util.is_currency_enabled(config, "Bitcoin", True) is True
     assert util.is_currency_enabled(config, "Bitcoin", False) is False
+    assert util.is_currency_enabled(config, "Hello", False) is False
 
 
 def test_get_symbols(config):
