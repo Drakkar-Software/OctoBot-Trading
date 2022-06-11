@@ -43,13 +43,15 @@ def exchange_config():
 async def test_is_compatible_account_with_checked_exchange(exchange_config, tentacles_setup_config):
     with mock.patch.object(trading_backend.exchanges.Binance, "is_valid_account",
                            mock.AsyncMock(return_value=(True, None))) as is_valid_account_mock:
-        compatible, error = await exchanges.is_compatible_account("binance", exchange_config, tentacles_setup_config)
+        compatible, error = await exchanges.is_compatible_account("binance", exchange_config, tentacles_setup_config,
+                                                                  False)
         assert compatible is True
         assert error is None
         is_valid_account_mock.assert_called_once()
     with mock.patch.object(trading_backend.exchanges.Binance, "is_valid_account",
                            mock.AsyncMock(return_value=(False, "plop"))) as is_valid_account_mock:
-        compatible, error = await exchanges.is_compatible_account("binance", exchange_config, tentacles_setup_config)
+        compatible, error = await exchanges.is_compatible_account("binance", exchange_config, tentacles_setup_config,
+                                                                  False)
         assert compatible is False
         assert "plop" in error and len(error) > len("plop")
         is_valid_account_mock.assert_called_once()
@@ -70,12 +72,14 @@ def test_log_time_sync_error():
 
 
 async def test_is_compatible_account_with_unchecked_exchange(exchange_config, tentacles_setup_config):
-    compatible, error = await exchanges.is_compatible_account("hitbtc", exchange_config, tentacles_setup_config)
+    compatible, error = await exchanges.is_compatible_account("hitbtc", exchange_config, tentacles_setup_config,
+                                                              False)
     assert compatible is False
     assert isinstance(error, str)
     with mock.patch.object(trading_backend.exchanges.Exchange, "is_valid_account",
                            mock.AsyncMock(return_value=(True, "plop"))) as is_valid_account_mock:
-        compatible, error = await exchanges.is_compatible_account("hitbtc", exchange_config, tentacles_setup_config)
+        compatible, error = await exchanges.is_compatible_account("hitbtc", exchange_config, tentacles_setup_config,
+                                                                  False)
         assert compatible is True
         assert "plop" in error and len(error) > len("plop")
         is_valid_account_mock.assert_called_once()

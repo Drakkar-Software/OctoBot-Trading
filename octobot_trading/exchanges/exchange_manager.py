@@ -53,6 +53,7 @@ class ExchangeManager(util.Initializable):
         self.is_sandboxed: bool = False
         self.is_trading: bool = True
         self.without_auth: bool = False
+        self.check_credentials: bool = True
 
         # exchange_only is True when exchange channels are not required (therefore not created)
         self.exchange_only: bool = False
@@ -230,8 +231,9 @@ class ExchangeManager(util.Initializable):
                     common_constants.CONFIG_EXCHANGE_KEY, ''),
                 self.config[common_constants.CONFIG_EXCHANGES][self.get_exchange_name()].get(
                     common_constants.CONFIG_EXCHANGE_SECRET, '')):
-            logger.warning("Exchange configuration tokens are not set yet, to use OctoBot's real trader's features, "
-                           "please enter your api tokens in exchange configuration")
+            logger.warning(f"Exchange configuration tokens for {self.get_exchange_name()} are not set yet, "
+                           f"to use OctoBot's real trader's features, "
+                           f"please enter your api tokens in exchange configuration")
             return False
         return True
 
