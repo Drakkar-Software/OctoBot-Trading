@@ -299,6 +299,8 @@ class Order(util.Initializable):
         raise NotImplementedError("Update_order_status not implemented")
 
     def add_to_order_group(self, order_group):
+        if not self.is_open():
+            logging.get_logger(self.get_logger_name()).warning(f"Adding order to group however order is not open.")
         self.order_group = order_group
 
     def get_total_fees(self, currency):
