@@ -149,6 +149,8 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                              f"candle{'s' if candles_len > 1 else ''}")
         except Exception as e:
             self.logger.exception(e, True, f"Error while fetching historical candles: {e}")
+        if pair not in self.last_candles_by_pair_by_time_frame:
+            self.last_candles_by_pair_by_time_frame[pair] = {}
         if ohlcv_data:
             # init historical candles
             await self.channel.exchange_manager.get_symbol_data(pair) \
@@ -156,8 +158,6 @@ class OHLCVUpdaterSimulator(ohlcv_updater.OHLCVUpdater):
                                        [ohlcv[-1] for ohlcv in ohlcv_data],
                                        replace_all=True,
                                        partial=False)
-            if pair not in self.last_candles_by_pair_by_time_frame:
-                self.last_candles_by_pair_by_time_frame[pair] = {}
             self.last_candles_by_pair_by_time_frame[pair][time_frame.value] = ohlcv_data[-1]
             self.require_last_init_candles_pairs_push = True
         # self.initial_timestamp - 1 to re-select this candle and push it when init step will be over
