@@ -30,6 +30,7 @@ async def user_input(
     nested_tentacle=None,
     show_in_summary=True,
     show_in_optimizer=True,
+    path=None,
     order=None,
     flush_if_necessary=False
 ):
@@ -59,6 +60,7 @@ async def user_input(
         nested_tentacle=nested_tentacle,
         show_in_summary=show_in_summary,
         show_in_optimizer=show_in_optimizer,
+        path=path,
         order=order,
         flush_if_necessary=flush_if_necessary
     )
@@ -79,6 +81,7 @@ async def save_user_input(
     nested_tentacle=None,
     show_in_summary=True,
     show_in_optimizer=True,
+    path=None,
     order=None,
     flush_if_necessary=False
 ):
@@ -108,6 +111,7 @@ async def save_user_input(
                 "is_nested_config": is_nested_config,
                 "in_summary": show_in_summary,
                 "in_optimizer": show_in_optimizer,
+                "path": path,
                 "order": order
             }
         )
