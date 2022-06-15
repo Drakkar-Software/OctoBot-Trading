@@ -27,17 +27,38 @@ _LOSING_ORDER_TYPES = [
 def compute_win_rate(exchange_manager):
     lost_trades_count = constants.ZERO
     won_trades_count = constants.ZERO
+    entries = constants.ZERO
     if exchange_manager.is_future:
-        for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
-            if isinstance(transaction, personal_data.RealisedPnlTransaction) and transaction.is_closed_pnl():
-                if (transaction.side is trading_enums.PositionSide.SHORT and
-                        transaction.average_entry_price > transaction.average_exit_price) or (
-                    transaction.side is trading_enums.PositionSide.LONG and
-                        transaction.average_entry_price < transaction.average_exit_price
-                ):
-                    won_trades_count += constants.ONE
+        for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values():
+            if trade.status is trading_enums.OrderStatus.FILLED:
+                if trade.reduce_only:
+                    if trade.exchange_trade_type in _LOSING_ORDER_TYPES:
+                        lost_trades_count += constants.ONE
+                    else:
+                        won_trades_count += constants.ONE
                 else:
-                    lost_trades_count += constants.ONE
+                    entries += constants.ONE
+        total_exits = lost_trades_count + won_trades_count
+        if total_exits > entries:
+            # multiple take profits and SL not handled yet
+            win_rate = constants.ZERO
+        else:
+            win_rate = won_trades_count / total_exits if total_exits else constants.ZERO
+        if win_rate != constants.ZERO:
+            return win_rate
+        else:  # try fallback to transactions for trailing stops and multiple exits
+            lost_trades_count = constants.ZERO
+            won_trades_count = constants.ZERO
+            for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
+                if isinstance(transaction, personal_data.RealisedPnlTransaction) and transaction.is_closed_pnl():
+                    if (transaction.side is trading_enums.PositionSide.SHORT and
+                            transaction.average_entry_price > transaction.average_exit_price) or (
+                        transaction.side is trading_enums.PositionSide.LONG and
+                            transaction.average_entry_price < transaction.average_exit_price
+                    ):
+                        won_trades_count += constants.ONE
+                    else:
+                        lost_trades_count += constants.ONE
     else:
         for trade in exchange_manager.exchange_personal_data.trades_manager.trades.values():
             if trade.status is trading_enums.OrderStatus.FILLED and trade.side is trading_enums.TradeOrderSide.SELL:
