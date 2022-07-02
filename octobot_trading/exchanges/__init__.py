@@ -52,7 +52,6 @@ from octobot_trading.exchanges.exchange_factory import (
     create_exchanges,
     create_real_exchange,
     initialize_real_exchange,
-    create_rest_exchange,
     create_simulated_exchange,
     init_simulated_exchange,
 )
@@ -133,7 +132,6 @@ __all__ = [
     "create_exchanges",
     "create_real_exchange",
     "initialize_real_exchange",
-    "create_rest_exchange",
     "create_simulated_exchange",
     "init_simulated_exchange",
     "ExchangeConfiguration",

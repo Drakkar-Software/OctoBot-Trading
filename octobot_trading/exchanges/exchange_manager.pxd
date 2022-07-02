@@ -44,7 +44,7 @@ cdef class ExchangeManager(util.Initializable):
     cdef public bint is_simulated
     cdef public bint is_backtesting
     cdef public bint is_trader_simulated
-    cdef public bint is_collecting
+    cdef public bint is_loading_markets
     cdef public bint is_spot_only
     cdef public bint is_margin
     cdef public bint is_future

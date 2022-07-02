@@ -62,7 +62,9 @@ def _should_create_authenticated_producers(exchange_manager):
     """
     return exchange_manager.exchange.authenticated() \
            and exchange_manager.trader and exchange_manager.is_trading \
-           and not (exchange_manager.is_simulated or exchange_manager.is_backtesting or exchange_manager.is_collecting)
+           and not (exchange_manager.is_simulated
+                    or exchange_manager.is_backtesting
+                    or exchange_manager.exchange_only)
 
 
 def _should_create_simulated_producers(exchange_manager):
@@ -73,7 +75,7 @@ def _should_create_simulated_producers(exchange_manager):
     return (not exchange_manager.exchange.authenticated()
             or exchange_manager.is_simulated
             or exchange_manager.is_backtesting) \
-           and exchange_manager.trader and exchange_manager.is_trading and not exchange_manager.is_collecting
+           and exchange_manager.trader and exchange_manager.is_trading and not exchange_manager.exchange_only
 
 
 def _should_create_unauthenticated_producers(exchange_manager):
