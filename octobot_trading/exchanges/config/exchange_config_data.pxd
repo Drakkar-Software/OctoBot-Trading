@@ -24,6 +24,7 @@ cdef class ExchangeConfig(util.Initializable):
     cdef public dict config
 
     cdef public list traded_symbol_pairs
+    cdef public list traded_symbols
     cdef public list all_config_symbol_pairs
     cdef public list watched_pairs
     cdef public list available_required_time_frames
