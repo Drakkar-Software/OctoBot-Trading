@@ -62,11 +62,12 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             if self.exchange_manager.exchange.is_supporting_sandbox():
                 self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
 
-            if self._should_authenticate():
+            if self._should_authenticate() and not self.exchange_manager.exchange_only:
                 await self._ensure_auth()
 
-            with self.error_describer():
-                await self.client.load_markets()
+            if self.exchange_manager.is_loading_markets:
+                with self.error_describer():
+                    await self.client.load_markets()
 
             # initialize symbols and timeframes
             self.symbols = set(self.client.symbols)  \
@@ -156,8 +157,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     def _should_authenticate(self):
         return not (self.exchange_manager.is_simulated or
-                    self.exchange_manager.is_backtesting or
-                    self.exchange_manager.is_collecting)
+                    self.exchange_manager.is_backtesting)
 
     def _unauthenticated_exchange_fallback(self, err):
         self.is_authenticated = False

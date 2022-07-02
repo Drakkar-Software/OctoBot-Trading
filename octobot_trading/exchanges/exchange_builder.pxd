@@ -19,7 +19,6 @@ cimport octobot_trading.exchanges as exchanges
 cdef class ExchangeBuilder:
     cdef object logger
     cdef public exchanges.ExchangeManager exchange_manager
-    cdef object _tentacles_setup_config
 
     cdef dict config
 
@@ -27,7 +26,6 @@ cdef class ExchangeBuilder:
 
     cdef public str exchange_name
     cdef str _matrix_id
-    cdef str _bot_id
 
     """
     Builder methods
@@ -35,11 +33,14 @@ cdef class ExchangeBuilder:
     cpdef ExchangeBuilder is_backtesting(self, object backtesting_instance)
     cpdef ExchangeBuilder is_sandboxed(self, bint sandboxed)
     cpdef ExchangeBuilder is_simulated(self)
-    cpdef ExchangeBuilder is_collecting(self)
+    cpdef ExchangeBuilder is_loading_markets(self, bint is_loading_markets)
     cpdef ExchangeBuilder is_real(self)
+    cpdef ExchangeBuilder is_using_exchange_type(self, str exchange_type)
     cpdef ExchangeBuilder is_margin(self, bint use_margin=*)
     cpdef ExchangeBuilder is_exchange_only(self)
     cpdef ExchangeBuilder is_ignoring_config(self)
+    cpdef ExchangeBuilder is_without_auth(self)
+    cpdef ExchangeBuilder is_checking_credentials(self, bint check_credentials)
     cpdef ExchangeBuilder use_tentacles_setup_config(self, object tentacles_setup_config)
     cpdef ExchangeBuilder set_bot_id(self, str bot_id)
     cpdef ExchangeBuilder disable_trading_mode(self)

@@ -34,7 +34,7 @@ cdef class ExchangeConfig(util.Initializable):
 
     cdef public object exchange_manager
 
-    cpdef backtesting_exchange_config_import.BacktestingExchangeConfig backtesting_exchange_config
+    cdef public backtesting_exchange_config_import.BacktestingExchangeConfig backtesting_exchange_config
 
     cpdef void set_config_time_frame(self)
     cpdef void set_config_traded_pairs(self)

@@ -23,7 +23,7 @@ import octobot_trading.exchanges as exchanges
 
 
 async def create_exchanges(exchange_manager):
-    if exchange_manager.is_sandboxed:
+    if exchange_manager.is_sandboxed and not exchange_manager.exchange_only:
         exchange_manager.logger.info(f"Using sandbox exchange for {exchange_manager.exchange_name}")
 
     if exchange_manager.is_backtesting:
@@ -52,10 +52,11 @@ async def create_real_exchange(exchange_manager) -> None:
     Create and initialize real REST exchange
     :param exchange_manager: the related exchange manager
     """
-    await create_rest_exchange(exchange_manager)
-
+    await _create_rest_exchange(exchange_manager)
     try:
         await exchange_manager.exchange.initialize()
+        if exchange_manager.exchange_only:
+            return
         _create_exchange_backend(exchange_manager)
         await _initialize_exchange_backend(exchange_manager)
         _ensure_exchange_validity(exchange_manager)
@@ -138,7 +139,7 @@ async def _is_supporting_octobot() -> bool:
     return False
 
 
-async def create_rest_exchange(exchange_manager) -> None:
+async def _create_rest_exchange(exchange_manager) -> None:
     """
     create REST based on ccxt exchange
     :param exchange_manager: the related exchange manager

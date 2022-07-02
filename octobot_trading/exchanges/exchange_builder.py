@@ -34,9 +34,6 @@ class ExchangeBuilder:
 
         self._is_using_trading_modes: bool = True
         self._matrix_id: str = None
-        self._bot_id: str = None
-
-        self._tentacles_setup_config = None
 
     async def build(self):
         """
@@ -52,19 +49,17 @@ class ExchangeBuilder:
 
     async def _build_exchange_manager(self):
         trading_mode_class = None
-        self.exchange_manager.tentacles_setup_config = self._tentacles_setup_config
-        self.exchange_manager.bot_id = self._bot_id
 
         if self._is_using_trading_modes:
-            trading_mode_class = modes.get_activated_trading_mode(self._tentacles_setup_config)
+            trading_mode_class = modes.get_activated_trading_mode(self.exchange_manager.tentacles_setup_config)
             # handle exchange related requirements if the activated trading mode has any
-            self._register_trading_modes_requirements(trading_mode_class, self._tentacles_setup_config)
+            self._register_trading_modes_requirements(trading_mode_class, self.exchange_manager.tentacles_setup_config)
 
         self._ensure_exchange_compatibility()
         await self.exchange_manager.initialize()
 
         # initialize exchange for trading if not collecting
-        if not self.exchange_manager.is_collecting:
+        if not self.exchange_manager.exchange_only:
 
             # initialize trader
             if self.exchange_manager.trader is not None:
@@ -115,7 +110,7 @@ class ExchangeBuilder:
             return await modes.create_trading_modes(self.config,
                                                     self.exchange_manager,
                                                     trading_mode_class,
-                                                    self._bot_id)
+                                                    self.exchange_manager.bot_id)
         except errors.TradingModeIncompatibility as e:
             raise e
         except Exception as e:
@@ -123,7 +118,7 @@ class ExchangeBuilder:
             raise e
 
     def _ensure_exchange_compatibility(self):
-        if self.exchange_manager.is_backtesting or self.exchange_manager.is_collecting:
+        if self.exchange_manager.is_backtesting or self.exchange_manager.exchange_only:
             # allow backtesting and collecting on incompatible exchange types
             return
         # live exchange: ensure the exchange to be created supports the trading type
@@ -165,6 +160,16 @@ class ExchangeBuilder:
         self.exchange_manager.trader = exchanges.Trader(self.config, self.exchange_manager)
         return self
 
+    def is_using_exchange_type(self, exchange_type):
+        if exchange_type == commons_constants.CONFIG_EXCHANGE_FUTURE:
+            self.is_future(True)
+        elif exchange_type == commons_constants.CONFIG_EXCHANGE_MARGIN:
+            self.is_margin(True)
+        else:
+            # Use spot trading as default trading type
+            self.is_spot_only(True)
+        return self
+
     def is_margin(self, use_margin=True):
         self.exchange_manager.is_margin = use_margin
         return self
@@ -188,20 +193,28 @@ class ExchangeBuilder:
         self.exchange_manager.exchange_only = True
         return self
 
-    def is_collecting(self):
-        self.exchange_manager.is_collecting = True
+    def is_loading_markets(self, is_loading_markets):
+        self.exchange_manager.is_loading_markets = is_loading_markets
         return self
 
     def is_ignoring_config(self):
         self.exchange_manager.ignore_config = True
         return self
 
+    def is_without_auth(self):
+        self.exchange_manager.without_auth = True
+        return self
+
+    def is_checking_credentials(self, check_credentials):
+        self.exchange_manager.check_credentials = check_credentials
+        return self
+
     def use_tentacles_setup_config(self, tentacles_setup_config):
-        self._tentacles_setup_config = tentacles_setup_config
+        self.exchange_manager.tentacles_setup_config = tentacles_setup_config
         return self
 
     def set_bot_id(self, bot_id):
-        self._bot_id = bot_id
+        self.exchange_manager.bot_id = bot_id
         return self
 
     def disable_trading_mode(self):

@@ -107,13 +107,7 @@ def _set_exchange_type_details(exchange_builder, config, backtesting):
     # exchange trading type
     config_exchange_type = config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
         commons_constants.CONFIG_EXCHANGE_TYPE, commons_constants.DEFAULT_EXCHANGE_TYPE)
-    if config_exchange_type == commons_constants.CONFIG_EXCHANGE_FUTURE:
-        exchange_builder.is_future(True)
-    if config_exchange_type == commons_constants.CONFIG_EXCHANGE_MARGIN:
-        exchange_builder.is_margin(True)
-    if config_exchange_type == commons_constants.CONFIG_EXCHANGE_SPOT:
-        # Use spot trading as default trading type
-        exchange_builder.is_spot_only(True)
+    exchange_builder.is_using_exchange_type(config_exchange_type)
 
     # rest, web socket
     if config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
