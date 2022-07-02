@@ -24,8 +24,7 @@ import octobot_tentacles_manager.api as api
 
 import octobot_trading.enums as enums
 import octobot_trading.exchanges.types as exchanges_types
-import octobot_trading.exchanges.exchange_manager as exchange_manager
-import octobot_trading.exchanges.exchange_factory as exchange_factory
+import octobot_trading.exchanges.exchange_builder as exchange_builder
 
 
 def get_margin_exchange_class(exchange_name, tentacles_setup_config):
@@ -51,7 +50,8 @@ def search_exchange_class_from_exchange_name(exchange_class, exchange_name,
     if enable_default:
         return None
 
-    logging.get_logger().debug(f"No specific exchange implementation for {exchange_name} found, using a default one.")
+    logging.get_logger("ExchangeUtil").debug(f"No specific exchange implementation for {exchange_name} found, "
+                                             f"using a default one.")
     # TODO: handle default future exchange instead of creating a SpotExchange
     return search_exchange_class_from_exchange_name(exchanges_types.SpotExchange, exchange_name,
                                                     tentacles_setup_config, enable_default=True)
@@ -131,7 +131,9 @@ def _get_minimal_exchange_config(exchange_name, exchange_config):
         },
         common_constants.CONFIG_SIMULATOR: {
             common_constants.CONFIG_ENABLED_OPTION: False
-        }
+        },
+        common_constants.CONFIG_TIME_FRAME: [],
+        common_constants.CONFIG_CRYPTO_CURRENCIES: []
     }
 
 
@@ -142,24 +144,19 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     :return: (True if compatible, True if successful login, error explanation if any)
     """
     exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, common_constants.DEFAULT_EXCHANGE_TYPE)
-    # non spot exchange config then check supports
-    local_exchange_manager = exchange_manager.ExchangeManager(
+    builder = exchange_builder.ExchangeBuilder(
         _get_minimal_exchange_config(exchange_name, exchange_config),
         exchange_name
     )
-    local_exchange_manager.tentacles_setup_config = tentacles_setup_config
-    # Avoid exchange authentication error log
-    local_exchange_manager.check_credentials = False
-    local_exchange_manager.is_sandboxed = is_sandboxed
-    if exchange_type == common_constants.CONFIG_EXCHANGE_SPOT:
-        local_exchange_manager.is_spot_only = True
-    elif exchange_type == common_constants.CONFIG_EXCHANGE_FUTURE:
-        local_exchange_manager.is_future = True
-    elif exchange_type == common_constants.CONFIG_EXCHANGE_MARGIN:
-        local_exchange_manager.is_margin = True
-    await exchange_factory.create_rest_exchange(local_exchange_manager)
-    if local_exchange_manager.is_sandboxed and local_exchange_manager.exchange.is_supporting_sandbox():
-        local_exchange_manager.exchange.connector.set_sandbox_mode(local_exchange_manager.is_sandboxed)
+    local_exchange_manager = await builder.use_tentacles_setup_config(tentacles_setup_config) \
+        .is_checking_credentials(False) \
+        .is_sandboxed(is_sandboxed) \
+        .is_using_exchange_type(exchange_type) \
+        .is_exchange_only() \
+        .is_rest_only() \
+        .is_loading_markets(False) \
+        .disable_trading_mode() \
+        .build()
     backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
     try:
         is_compatible, error = await backend.is_valid_account()
@@ -179,9 +176,10 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
         return False, True, f"Error when loading exchange account: {e}"
     finally:
         # do not log stopping message
-        local_exchange_manager.exchange.connector.logger.disable(True)
-        await local_exchange_manager.exchange.stop()
-        local_exchange_manager.exchange.connector.logger.disable(False)
+        logger = local_exchange_manager.exchange.connector.logger
+        logger.disable(True)
+        await local_exchange_manager.stop()
+        logger.disable(False)
 
 
 async def get_historical_ohlcv(local_exchange_manager, symbol, time_frame, start_time, end_time):

@@ -45,7 +45,7 @@ async def test_build_collector_exchange(exchange_manager):
         .is_simulated() \
         .is_rest_only() \
         .is_exchange_only() \
-        .is_collecting() \
+        .is_without_auth() \
         .is_ignoring_config() \
         .disable_trading_mode() \
         .use_tentacles_setup_config(exchange_manager.tentacles_setup_config) \

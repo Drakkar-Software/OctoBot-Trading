@@ -46,7 +46,7 @@ class ExchangeManager(util.Initializable):
         self.is_backtesting: bool = False
         self.rest_only: bool = False
         self.ignore_config: bool = False
-        self.is_collecting: bool = False
+        self.is_loading_markets: bool = True
         self.is_spot_only: bool = False
         self.is_margin: bool = False
         self.is_future: bool = False
@@ -180,7 +180,7 @@ class ExchangeManager(util.Initializable):
         if self.exchange.symbols and self.exchange.time_frames:
             self.client_symbols = list(self.exchange.symbols)
             self.client_time_frames = list(self.exchange.time_frames)
-        else:
+        elif not self.exchange_only:
             self.logger.error("Failed to load exchange symbols or time frames")
             self._raise_exchange_load_error()
 
