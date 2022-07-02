@@ -242,7 +242,7 @@ def is_overloaded(exchange_manager) -> bool:
 
 
 async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool) \
-        -> (bool, str):
+        -> (bool, bool, str):
     return await exchanges.is_compatible_account(exchange_name, exchange_config, tentacles_setup_config, is_sandboxed)
 
 
