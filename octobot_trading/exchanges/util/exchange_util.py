@@ -100,7 +100,7 @@ def _get_docs_url():
         import octobot.constants
         return octobot.constants.OCTOBOT_DOCS_URL
     except ImportError:
-        return "https://octobot.info"
+        return "https://www.octobot.info"
 
 
 def _get_exchanges_docs_url():
