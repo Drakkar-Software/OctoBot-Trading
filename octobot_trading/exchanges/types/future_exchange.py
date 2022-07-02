@@ -16,6 +16,7 @@
 import asyncio
 
 import octobot_trading.enums
+import octobot_trading.constants
 import octobot_trading.errors as errors
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchange_data.contracts as contracts
@@ -168,9 +169,14 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     async def get_contract_type(self, symbol: str):
         """
         :param symbol: the symbol
-        :return: the contract type for the requested symbol. Can be FutureContractType INVERSE_PERPETUAL or PERPETUAL
+        :return: the contract type for the requested symbol.
+        Can be FutureContractType INVERSE_PERPETUAL or LINEAR_PERPETUAL
+        Requires is_inverse_symbol and is_linear_symbol to be implemented
         """
-        raise NotImplementedError("get_contract_type is not implemented")
+        if self.is_inverse_symbol(symbol):
+            return octobot_trading.enums.FutureContractType.INVERSE_PERPETUAL
+        elif self.is_linear_symbol(symbol):
+            return octobot_trading.enums.FutureContractType.LINEAR_PERPETUAL
 
     async def get_position_mode(self, symbol: str):
         """
