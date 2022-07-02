@@ -136,7 +136,13 @@ def _get_minimal_exchange_config(exchange_name, exchange_config):
 
 
 async def is_compatible_account(exchange_name: str, exchange_config: dict, tentacles_setup_config, is_sandboxed: bool) \
-        -> (bool, str):
+        -> (bool, bool, str):
+    """
+    Returns details regarding the compatibility of the account given in parameters
+    :return: (True if compatible, True if successful login, error explanation if any)
+    """
+    exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, common_constants.DEFAULT_EXCHANGE_TYPE)
+    # non spot exchange config then check supports
     local_exchange_manager = exchange_manager.ExchangeManager(
         _get_minimal_exchange_config(exchange_name, exchange_config),
         exchange_name
@@ -145,22 +151,32 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     # Avoid exchange authentication error log
     local_exchange_manager.check_credentials = False
     local_exchange_manager.is_sandboxed = is_sandboxed
-    await exchange_factory.search_and_create_spot_exchange(local_exchange_manager)
+    if exchange_type == common_constants.CONFIG_EXCHANGE_SPOT:
+        local_exchange_manager.is_spot_only = True
+    elif exchange_type == common_constants.CONFIG_EXCHANGE_FUTURE:
+        local_exchange_manager.is_future = True
+    elif exchange_type == common_constants.CONFIG_EXCHANGE_MARGIN:
+        local_exchange_manager.is_margin = True
+    await exchange_factory.create_rest_exchange(local_exchange_manager)
     if local_exchange_manager.is_sandboxed and local_exchange_manager.exchange.is_supporting_sandbox():
         local_exchange_manager.exchange.connector.set_sandbox_mode(local_exchange_manager.is_sandboxed)
     backend = trading_backend.exchange_factory.create_exchange_backend(local_exchange_manager.exchange)
     try:
         is_compatible, error = await backend.is_valid_account()
-        message = f"[REST API] {exchange_name.capitalize()} connection can be faster " \
-                  f"using websockets. {error}. " \
-                  f"Please create a new {exchange_name.capitalize()} account to use websockets. "
-        return is_compatible, message if error else error
+        if not local_exchange_manager.is_spot_only:
+            message = f"Future trading on {exchange_name.capitalize()} requires a supporting account. {error}." \
+                      f"Please create a new {exchange_name.capitalize()} account to use futures trading. "
+            # only ensure compatibility for non spot trading
+            return is_compatible, True, message if error else error
+        else:
+            # auth didn't fail, spot trading is always allowed
+            return True, True, None
     except trading_backend.TimeSyncError:
-        return False, _get_time_sync_error_message(exchange_name, "account details")
+        return False, False, _get_time_sync_error_message(exchange_name, "account details")
     except trading_backend.ExchangeAuthError:
-        return False, f"Invalid {exchange_name.capitalize()} authentication details"
+        return False, False, f"Invalid {exchange_name.capitalize()} authentication details"
     except Exception as e:
-        return False, f"Error when loading exchange account: {e}"
+        return False, True, f"Error when loading exchange account: {e}"
     finally:
         # do not log stopping message
         local_exchange_manager.exchange.connector.logger.disable(True)
