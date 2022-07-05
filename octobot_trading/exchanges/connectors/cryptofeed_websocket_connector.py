@@ -149,6 +149,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](
             config=self.client_config,
             sandbox=self.exchange_manager.is_sandboxed,
+            candle_closed_only=False,
             **self.EXCHANGE_CONSTRUCTOR_KWARGS
         )
 
@@ -462,7 +463,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param channels: the feed channels
         :param callbacks: the feed callbacks
         """
-        feed_kwargs = {}
+        feed_kwargs = {
+            "candle_closed_only": False
+        }
         # feeds are creating an exchange, apply exchange kwargs
         feed_kwargs.update(self.EXCHANGE_CONSTRUCTOR_KWARGS)
         if symbols:
@@ -693,16 +696,16 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         }
 
         if candle_data.symbol not in self.watched_pairs:
-            if not candle_data.closed:
-                await self.push_to_channel(trading_constants.KLINE_CHANNEL,
-                                           time_frame=time_frame,
-                                           symbol=symbol,
-                                           kline=candle)
-            else:
+            if candle_data.closed:
                 await self.push_to_channel(trading_constants.OHLCV_CHANNEL,
                                            time_frame=time_frame,
                                            symbol=symbol,
                                            candle=candle)
+            else:
+                await self.push_to_channel(trading_constants.KLINE_CHANNEL,
+                                           time_frame=time_frame,
+                                           symbol=symbol,
+                                           kline=candle)
 
         # Push a new ticker if necessary : only push on the min timeframe
         if time_frame is self.min_timeframe:
