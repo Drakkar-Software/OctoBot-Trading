@@ -16,7 +16,7 @@ cryptography # Never specify a version (managed by https://github.com/Drakkar-So
 
 # Websocket requirements
 websockets==10.3
-cryptofeed==2.2.2
+cryptofeed==2.2.3
 
 # OrderBook requirement
 sortedcontainers==2.4.0

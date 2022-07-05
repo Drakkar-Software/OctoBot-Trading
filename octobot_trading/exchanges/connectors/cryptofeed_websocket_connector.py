@@ -147,7 +147,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
         # Creates cryptofeed exchange instance
         self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](
-            config=self.client_config, sandbox=self.exchange_manager.is_sandboxed, **self.EXCHANGE_CONSTRUCTOR_KWARGS)
+            config=self.client_config,
+            sandbox=self.exchange_manager.is_sandboxed,
+            **self.EXCHANGE_CONSTRUCTOR_KWARGS
+        )
 
     """
     Abstract methods
@@ -460,6 +463,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param callbacks: the feed callbacks
         """
         feed_kwargs = {}
+        # feeds are creating an exchange, apply exchange kwargs
+        feed_kwargs.update(self.EXCHANGE_CONSTRUCTOR_KWARGS)
         if symbols:
             feed_kwargs["symbols"] = symbols
         if candle_interval:

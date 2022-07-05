@@ -91,7 +91,8 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                 self.logger.warning(f"Can't initialize the required "
                                     f"{self.channel.exchange_manager.exchange_config.required_historical_candles_count}"
                                     f" historical candles: {self.channel.exchange_manager.exchange_name} is not "
-                                    f"supporting candles history.")
+                                    f"supporting large candles history. Using the {self.OHLCV_OLD_LIMIT} "
+                                    f"latest candles instead.")
         return self.OHLCV_OLD_LIMIT
 
     async def _get_init_candles(self, time_frame, pair):
