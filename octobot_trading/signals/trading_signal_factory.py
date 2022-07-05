@@ -28,6 +28,6 @@ def create_trading_signal(dict_signal):
         signal_value.get(enums.TradingSignalAttrs.DESCRIPTION.value),
         signal_value.get(enums.TradingSignalAttrs.STATE.value),
         signal_value.get(enums.TradingSignalAttrs.ORDERS.value),
-        identifier=dict_signal[commons_enums.CommunityFeedAttrs.ID.value],
+        identifier=dict_signal.get(commons_enums.CommunityFeedAttrs.ID.value, None),
         version=dict_signal[commons_enums.CommunityFeedAttrs.VERSION.value],
     )
