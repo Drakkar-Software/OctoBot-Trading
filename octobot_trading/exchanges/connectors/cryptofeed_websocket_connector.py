@@ -153,6 +153,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
             **self.EXCHANGE_CONSTRUCTOR_KWARGS
         )
 
+        self._previous_open_candles = {}
+
     """
     Abstract methods
     """
@@ -696,16 +698,26 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         }
 
         if candle_data.symbol not in self.watched_pairs:
-            if candle_data.closed:
+            previous_candle = self._get_previous_open_candle(time_frame, symbol)
+            push_previous_candle = previous_candle is not None and \
+                previous_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] < candle_data.start
+            if candle_data.closed or push_previous_candle:
+                if candle_data.closed and previous_candle is not None and \
+                   previous_candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] > candle_data.start:
+                    self.logger.warning(f"Duplicate closed candle: pushing already pushed closed "
+                                        f"candle: [{candle_data}]")
                 await self.push_to_channel(trading_constants.OHLCV_CHANNEL,
                                            time_frame=time_frame,
                                            symbol=symbol,
-                                           candle=candle)
-            else:
+                                           candle=previous_candle if push_previous_candle else candle)
+                # closed candle has been fetched from exchange, use it and reset previous open candle
+                self._register_previous_open_candle(time_frame, symbol, None)
+            if not candle_data.closed:
                 await self.push_to_channel(trading_constants.KLINE_CHANNEL,
                                            time_frame=time_frame,
                                            symbol=symbol,
                                            kline=candle)
+                self._register_previous_open_candle(time_frame, symbol, candle)
 
         # Push a new ticker if necessary : only push on the min timeframe
         if time_frame is self.min_timeframe:
@@ -873,3 +885,17 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         """
         return trading_enums.TradeOrderSide.BUY.value \
             if raw_order_side == cryptofeed_constants.BUY else trading_enums.TradeOrderSide.SELL.value
+
+    def _register_previous_open_candle(self, time_frame, symbol, candle):
+        try:
+            self._previous_open_candles[time_frame][symbol] = candle
+        except KeyError:
+            if time_frame not in self._previous_open_candles:
+                self._previous_open_candles[time_frame] = {}
+            self._previous_open_candles[time_frame][symbol] = candle
+
+    def _get_previous_open_candle(self, time_frame, symbol):
+        try:
+            return self._previous_open_candles[time_frame][symbol]
+        except KeyError:
+            return None
