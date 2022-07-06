@@ -32,6 +32,7 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
 
     cdef public object local_loop
     cdef public bint is_websocket_restarting
+    cdef dict _previous_open_candles
 
     cpdef void start(self)
     cpdef void _set_async_callbacks(self)
@@ -68,3 +69,5 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef str _parse_order_type(self, str raw_order_type)
     cdef str _parse_order_status(self, str raw_order_status)
     cdef str _parse_order_side(self, str raw_order_side)
+    cdef void _register_previous_open_candle(self, object time_frame, str symbol, list candle)
+    cdef list _get_previous_open_candle(self, object time_frame, str symbol)
