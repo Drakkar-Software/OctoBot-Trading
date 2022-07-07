@@ -75,6 +75,8 @@ class TickerUpdater(ticker_channel.TickerProducer):
                 self.logger.debug(f"Ignored incomplete ticker: {ticker}")
         except errors.FailedRequest as e:
             self.logger.warning(str(e))
+            # avoid spamming on disconnected situation
+            await asyncio.sleep(constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
 
     @staticmethod
     def _is_valid(ticker):
