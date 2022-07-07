@@ -126,6 +126,9 @@ class Context(databases.CacheClient):
         except AttributeError:
             return False
 
+    def set_is_trading_signal_emitter(self, is_trading_signal_emitter):
+        self.tentacle.trading_config[common_constants.CONFIG_EMIT_TRADING_SIGNALS] = is_trading_signal_emitter
+
     async def emit_signal(self):
         if self.signal_builder is None or not self.is_trading_signal_emitter() or self.exchange_manager.is_backtesting:
             return
