@@ -37,6 +37,8 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cpdef void start(self)
     cpdef void _set_async_callbacks(self)
 
+    # warning, as cdef functions, those can't be called from an exchange ws tentacle. Migrate to cpdef if a
+    # call is necessary
     cdef void _create_client(self)
     cdef void _create_client_config(self)
     cdef dict _get_credentials_config(self)

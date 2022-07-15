@@ -204,7 +204,7 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
         return await self.connector.set_symbol_partial_take_profit_stop_loss(symbol=symbol, inverse=inverse,
                                                                              tp_sl_mode=tp_sl_mode)
 
-    def _get_pair_market_type(self, pair):
+    def get_pair_market_type(self, pair):
         return self.connector.client.safe_string(
             self.connector.client.safe_value(self.connector.client.options, 'marketTypes', {}), pair, None)
 

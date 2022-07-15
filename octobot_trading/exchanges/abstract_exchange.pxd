@@ -78,8 +78,8 @@ cdef class AbstractExchange(util.Initializable):
     cpdef object get_uniformized_timestamp(self, object candle_or_candles)
     cpdef long long get_candle_since_timestamp(self, object time_frame, int count)
 
-    cdef object _uniformize_candles_timestamps(self, list candles)
-    cdef void _uniformize_candle_timestamps(self, list candle)
+    cpdef object uniformize_candles_timestamps(self, list candles)
+    cpdef void uniformize_candle_timestamps(self, list candle)
 
     # utils
     cpdef void log_order_creation_error(self, object error, object order_type, str symbol, object quantity,
