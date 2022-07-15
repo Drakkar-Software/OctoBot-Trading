@@ -567,21 +567,21 @@ class AbstractExchange(util.Initializable):
             if isinstance(candle_or_candles[0], list):
                 if self.need_to_uniformize_timestamp(
                         candle_or_candles[0][common_enums.PriceIndexes.IND_PRICE_TIME.value]):
-                    self._uniformize_candles_timestamps(candle_or_candles)
+                    self.uniformize_candles_timestamps(candle_or_candles)
             else:
                 if self.need_to_uniformize_timestamp(candle_or_candles[common_enums.PriceIndexes.IND_PRICE_TIME.value]):
-                    self._uniformize_candle_timestamps(candle_or_candles)
+                    self.uniformize_candle_timestamps(candle_or_candles)
         return candle_or_candles
 
-    def _uniformize_candles_timestamps(self, candles):
+    def uniformize_candles_timestamps(self, candles):
         """
         Uniformize a list candle timestamps
         :param candles: the list of candles to uniformize
         """
         for candle in candles:
-            self._uniformize_candle_timestamps(candle)
+            self.uniformize_candle_timestamps(candle)
 
-    def _uniformize_candle_timestamps(self, candle):
+    def uniformize_candle_timestamps(self, candle):
         """
         Uniformize a candle timestamp
         :param candle: the candle to uniformize
