@@ -70,15 +70,21 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                     await self.client.load_markets()
 
             # initialize symbols and timeframes
-            self.symbols = set(self.client.symbols)  \
-                if hasattr(self.client, "symbols") and self.client.symbols is not None else set()
+            self.symbols = self.get_client_symbols()
+            self.time_frames = self.get_client_time_frames()
 
-            self.time_frames = set(self.client.timeframes) \
-                if hasattr(self.client, "timeframes") and self.client.timeframes is not None else set()
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
             self.logger.error(f"initialization impossible: {e}")
         except ccxt.AuthenticationError:
             raise ccxt.AuthenticationError
+
+    def get_client_symbols(self):
+        return set(self.client.symbols) \
+            if hasattr(self.client, "symbols") and self.client.symbols is not None else set()
+
+    def get_client_time_frames(self):
+        return set(self.client.timeframes) \
+            if hasattr(self.client, "timeframes") and self.client.timeframes is not None else set()
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
