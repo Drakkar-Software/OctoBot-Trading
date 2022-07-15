@@ -37,6 +37,8 @@ cdef class CCXTExchange(abstract_exchange.AbstractExchange):
 
     cpdef void add_headers(self, dict headers_dict)
     cpdef void add_options(self, dict options_dict)
+    cpdef set get_client_symbols(self)
+    cpdef set get_client_time_frames(self)
     cpdef dict get_ccxt_client_login_options(self)
     cpdef str get_ccxt_order_type(self, object order_type)
     cpdef void set_sandbox_mode(self, bint is_sandboxed)

@@ -33,10 +33,11 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     ORDER_NON_EMPTY_FIELDS = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
                               ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
     ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [ecoc.REMAINING.value]
+    CONNECTOR_CLASS = exchange_connectors.CCXTExchange
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
-        self.connector = exchange_connectors.CCXTExchange(
+        self.connector = self.CONNECTOR_CLASS(
             config,
             exchange_manager,
             additional_ccxt_config=self.get_additional_connector_config()
@@ -55,7 +56,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
-        return exchange_connectors.CCXTExchange.is_supporting_exchange(exchange_candidate_name)
+        return cls.CONNECTOR_CLASS.is_supporting_exchange(exchange_candidate_name)
 
     def get_default_type(self):
         # keep default value
