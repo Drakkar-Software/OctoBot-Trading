@@ -231,7 +231,7 @@ def decimal_add_dusts_to_quantity_if_necessary(quantity, price, symbol_market, c
 
     if not (personal_data.is_valid(limit_amount, Ecmsc.LIMITS_AMOUNT_MIN.value) and
             personal_data.is_valid(limit_cost, Ecmsc.LIMITS_COST_MIN.value)):
-        fixed_market_status = exchanges.ExchangeMarketStatusFixer(symbol_market, price).market_status
+        fixed_market_status = exchanges.ExchangeMarketStatusFixer(symbol_market, float(price)).market_status
         limit_amount = fixed_market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_AMOUNT.value]
         limit_cost = fixed_market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value]
 
