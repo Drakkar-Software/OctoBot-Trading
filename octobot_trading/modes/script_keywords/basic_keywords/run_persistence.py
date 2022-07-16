@@ -15,6 +15,7 @@
 #  License along with this library.
 
 import octobot_commons.enums as commons_enums
+import octobot_commons.databases as commons_databases
 import octobot_trading.enums as trading_enums
 import octobot_trading.api as trading_api
 
@@ -228,3 +229,11 @@ async def _clear_table(writer, table, flush=True):
     await writer.delete(table, None)
     if flush:
         await writer.flush()
+
+
+def get_shared_element(key):
+    return commons_databases.GlobalSharedMemoryStorage.instance()[key]
+
+
+def set_shared_element(key, element):
+    commons_databases.GlobalSharedMemoryStorage.instance()[key] = element
