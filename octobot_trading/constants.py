@@ -57,7 +57,8 @@ NaN = decimal.Decimal("nan")
 FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm", "bitcoincom",
                                  "bitfinex", "bitfinex2", "bitmex", "idex", "bybit"]
 
-TESTED_EXCHANGES = ["binance", "ftx", "okx", "gateio", "huobi", "ascendex", "kucoin", "coinbasepro", "bybit", "hollaex"]
+TESTED_EXCHANGES = ["binance", "ftx", "okx", "gateio", "huobi", "bitget",
+                    "ascendex", "kucoin", "coinbasepro", "bybit", "hollaex"]
 SIMULATOR_TESTED_EXCHANGES = []
 
 CONFIG_DEFAULT_FEES = 0.001
