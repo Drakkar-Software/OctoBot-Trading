@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+import pytest_asyncio
 import mock
 import ccxt.async_support
 
@@ -25,7 +26,7 @@ import octobot_trading.enums as enums
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def basic_exchange_wrapper():
     async with exchanges.temporary_exchange_wrapper("binance", enums.ExchangeWrapperLibs.ASYNC_CCXT) as wrapper:
         return wrapper

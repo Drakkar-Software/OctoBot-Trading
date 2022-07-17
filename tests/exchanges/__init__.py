@@ -15,6 +15,7 @@
 #  License along with this library.
 import os
 import pytest
+import pytest_asyncio
 
 import octobot_commons.constants as commons_constants
 from octobot_backtesting.backtesting import Backtesting
@@ -35,7 +36,7 @@ TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
 DEFAULT_EXCHANGE_NAME = "binance"
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = True
@@ -48,7 +49,7 @@ async def exchange_manager():
     await wait_asyncio_next_cycle()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def simulated_exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = True
@@ -61,7 +62,7 @@ async def simulated_exchange_manager():
     await wait_asyncio_next_cycle()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def margin_exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = False
@@ -74,7 +75,7 @@ async def margin_exchange_manager():
     await wait_asyncio_next_cycle()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def margin_simulated_exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = False
@@ -88,7 +89,7 @@ async def margin_simulated_exchange_manager():
     await wait_asyncio_next_cycle()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def future_exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = False
@@ -101,7 +102,7 @@ async def future_exchange_manager():
     await wait_asyncio_next_cycle()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def future_simulated_exchange_manager():
     exchange_manager_instance = ExchangeManager(load_test_config(), DEFAULT_EXCHANGE_NAME)
     exchange_manager_instance.is_spot_only = False
@@ -115,7 +116,7 @@ async def future_simulated_exchange_manager():
     await wait_asyncio_next_cycle()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def exchange_builder(request):
     config = None
     exchange_name = DEFAULT_EXCHANGE_NAME
@@ -136,7 +137,7 @@ DEFAULT_BACKTESTING_MARKET = "USDT"
 DEFAULT_BACKTESTING_TF = TimeFrames.ONE_HOUR
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def backtesting_config(request):
     config = load_test_config()
     config[CONFIG_BACKTESTING] = {}
@@ -147,7 +148,7 @@ async def backtesting_config(request):
     return config
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def fake_backtesting(backtesting_config):
     return Backtesting(config=backtesting_config,
                        exchange_ids=[],
@@ -155,7 +156,7 @@ async def fake_backtesting(backtesting_config):
                        backtesting_files=[])
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def backtesting_exchange_manager(request, backtesting_config, fake_backtesting):
     config = None
     exchange_name = DEFAULT_EXCHANGE_NAME
@@ -179,7 +180,7 @@ async def backtesting_exchange_manager(request, backtesting_config, fake_backtes
     await exchange_manager_instance.stop()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def simulated_trader(simulated_exchange_manager):
     config = load_test_config()
     trader_instance = TraderSimulator(config, simulated_exchange_manager)
@@ -187,21 +188,21 @@ async def simulated_trader(simulated_exchange_manager):
     return config, simulated_exchange_manager, trader_instance
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def backtesting_trader(backtesting_config, backtesting_exchange_manager):
     trader_instance = TraderSimulator(backtesting_config, backtesting_exchange_manager)
     await trader_instance.initialize()
     return backtesting_config, backtesting_exchange_manager, trader_instance
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def margin_backtesting_trader(backtesting_config, backtesting_exchange_manager):
     trader_instance = TraderSimulator(backtesting_config, backtesting_exchange_manager)
     await trader_instance.initialize()
     return backtesting_config, backtesting_exchange_manager, trader_instance
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def future_backtesting_trader(backtesting_config, backtesting_exchange_manager):
     trader_instance = TraderSimulator(backtesting_config, backtesting_exchange_manager)
     await trader_instance.initialize()

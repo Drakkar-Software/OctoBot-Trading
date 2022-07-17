@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+import pytest_asyncio
 
 # avoid circular imports when launching tests from this folder
 import octobot_trading.api  # TODO fix circular import when importing octobot_trading.exchange_data first
@@ -25,13 +26,13 @@ from octobot_trading.personal_data.orders.types import BuyLimitOrder, SellLimitO
 from octobot_trading.personal_data.orders import Order
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def order(trader):
     config, trader_inst, exchange_manager = trader
     return config, trader_inst, exchange_manager, Order(trader_inst)
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def order_simulator(trader_simulator):
     config, trader_inst, exchange_manager = trader_simulator
     return config, trader_inst, exchange_manager, Order(trader_inst)

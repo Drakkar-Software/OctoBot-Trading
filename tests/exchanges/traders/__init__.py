@@ -15,7 +15,7 @@
 #  License along with this library.
 import decimal
 
-import pytest
+import pytest_asyncio
 
 import octobot_commons.constants as commons_constants
 from octobot_commons.tests.test_config import load_test_config
@@ -40,27 +40,27 @@ async def create_trader_from_exchange_manager(exchange_manager, simulated=False,
     return config, exchange_manager, trader_inst
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def trader(exchange_manager):
     return await create_trader_from_exchange_manager(exchange_manager)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def margin_trader(margin_exchange_manager):
     return await create_trader_from_exchange_manager(margin_exchange_manager)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def future_trader(future_exchange_manager):
     return await create_trader_from_exchange_manager(future_exchange_manager)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def trader_simulator(simulated_exchange_manager):
     return await create_trader_from_exchange_manager(simulated_exchange_manager, simulated=True)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def margin_trader_simulator(margin_simulated_exchange_manager):
     return await create_trader_from_exchange_manager(margin_simulated_exchange_manager, simulated=True)
 
@@ -90,7 +90,7 @@ def get_default_future_linear_contract():
         maximum_leverage=DEFAULT_FUTURE_SYMBOL_MAX_LEVERAGE)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def future_trader_simulator_with_default_inverse(future_simulated_exchange_manager):
     contract = get_default_future_inverse_contract()
     future_simulated_exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, contract)
@@ -99,7 +99,7 @@ async def future_trader_simulator_with_default_inverse(future_simulated_exchange
                                                      contract=contract)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def future_trader_simulator_with_default_linear(future_simulated_exchange_manager):
     contract = get_default_future_linear_contract()
     future_simulated_exchange_manager.exchange.set_pair_future_contract(DEFAULT_FUTURE_SYMBOL, contract)
