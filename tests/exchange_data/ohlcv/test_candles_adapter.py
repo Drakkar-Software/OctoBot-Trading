@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+import pytest_asyncio
 import numpy as np
 
 from octobot_commons.enums import PriceIndexes, TimeFrames
@@ -37,7 +38,7 @@ def time_frame():
     return "1h"
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def symbol_data(time_frame):
     symbol_candles = CandlesManager()
     await symbol_candles.initialize()

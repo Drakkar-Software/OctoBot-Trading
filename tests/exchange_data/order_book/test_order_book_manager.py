@@ -16,6 +16,7 @@
 from copy import deepcopy
 
 import pytest
+import pytest_asyncio
 
 from octobot_trading.exchange_data.order_book.order_book_manager import OrderBookManager
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC
@@ -27,7 +28,7 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def order_book_manager():
     ob_manager = OrderBookManager()
     await ob_manager.initialize()

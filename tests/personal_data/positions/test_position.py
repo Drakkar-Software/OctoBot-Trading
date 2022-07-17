@@ -17,6 +17,7 @@ import decimal
 import os
 
 import pytest
+import pytest_asyncio
 from mock import mock
 
 import octobot_trading.constants as constants
@@ -35,7 +36,7 @@ from tests.test_utils.random_numbers import decimal_random_price, decimal_random
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def btc_usdt_future_trader_simulator_with_default_linear(future_trader_simulator_with_default_linear):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position_inst = personal_data.LinearPosition(trader_inst, default_contract)
@@ -45,7 +46,7 @@ async def btc_usdt_future_trader_simulator_with_default_linear(future_trader_sim
     return config, exchange_manager_inst, trader_inst, default_contract, position_inst
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def btc_usdt_future_trader_simulator_with_default_inverse(future_trader_simulator_with_default_inverse):
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
     position_inst = personal_data.InversePosition(trader_inst, default_contract)

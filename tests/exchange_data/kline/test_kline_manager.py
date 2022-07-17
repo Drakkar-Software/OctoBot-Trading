@@ -16,6 +16,7 @@
 import os
 
 import pytest
+import pytest_asyncio
 from math import nan
 from octobot_commons.enums import PriceIndexes
 
@@ -26,7 +27,7 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def kline_manager():
     k_manager = KlineManager()
     await k_manager.initialize()

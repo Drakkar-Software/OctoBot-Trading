@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+import pytest_asyncio
 
 from octobot_trading.exchange_data.exchange_symbols_data import ExchangeSymbolsData
 
@@ -25,7 +26,7 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.mark.usefixtures("event_loop", "exchange_manager")
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def exchange_symbols_data(exchange_manager):
     return ExchangeSymbolsData(exchange_manager)
 

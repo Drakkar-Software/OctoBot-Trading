@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
+import pytest_asyncio
 
 import octobot_trading.constants as constants
 from octobot_trading.exchange_data.funding.funding_manager import FundingManager
@@ -23,7 +24,7 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def funding_manager():
     fund_manager = FundingManager()
     await fund_manager.initialize()

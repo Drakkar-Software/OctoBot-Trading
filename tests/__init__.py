@@ -19,6 +19,7 @@ import os
 
 import aiohttp
 import pytest
+import pytest_asyncio
 import requests
 
 import octobot_commons.asyncio_tools as asyncio_tools
@@ -45,12 +46,12 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def config():
     return load_test_config()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def install_tentacles():
     def _download_tentacles():
         r = requests.get(TENTACLES_LATEST_URL, stream=True)

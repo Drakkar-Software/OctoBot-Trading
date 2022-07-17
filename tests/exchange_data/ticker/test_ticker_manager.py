@@ -16,6 +16,7 @@
 import os
 
 import pytest
+import pytest_asyncio
 from math import nan
 
 from octobot_trading.exchange_data.ticker.ticker_manager import TickerManager
@@ -26,7 +27,7 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def ticker_manager():
     t_manager = TickerManager()
     await t_manager.initialize()
