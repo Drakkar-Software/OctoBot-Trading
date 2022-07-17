@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        exchange: [ ascendex, binance, bitfinex, bithumb, bitstamp, bittrex, bybit, coinbasepro, crex24, ftx, gateio, hollaex, hitbtc, huobi, huobipro, kraken, kucoin, okcoin, okx, poloniex, upbit, wavesexchange ]
+        exchange: [ ascendex, binance, bitfinex, bithumb, bitstamp, bittrex, bybit, coinbasepro, crex24, ftx, gateio, hollaex, hitbtc, huobi, huobipro, kraken, kucoin, okcoin, okx, poloniex, upbit, wavesexchange, bitget ]
 
     steps:
     - uses: actions/checkout@v2
