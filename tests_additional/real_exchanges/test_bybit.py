@@ -32,6 +32,7 @@ class TestBybitRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "bybit"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/USD"
+    SYMBOL_3 = "XRP/USD"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -54,7 +55,7 @@ class TestBybitRealExchangeTester(RealExchangeTester):
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             assert market_status
-            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2)
+            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
             assert market_status[Ecmsc.PRECISION.value]
             # on Bybit, precision is a decimal instead of a number of digits
             assert 0 < market_status[Ecmsc.PRECISION.value][
@@ -65,6 +66,9 @@ class TestBybitRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
+            # min cost and price can be equal as we are in /USD
+            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] >= \
+                   market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]
 
     async def test_get_symbol_prices(self):
         # Bybit return an error if there is no limit or since parameter

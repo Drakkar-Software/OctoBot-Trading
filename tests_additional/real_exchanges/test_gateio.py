@@ -31,6 +31,7 @@ class TestGateIORealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "gateio"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
+    SYMBOL_3 = "XRP/BTC"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -48,14 +49,19 @@ class TestGateIORealExchangeTester(RealExchangeTester):
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             assert market_status
-            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2)
+            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
             assert market_status[Ecmsc.PRECISION.value]
-            assert 1e-08 <= market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] < 1
-            assert 1e-08 <= market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value] < 1
+            assert 1e-08 <= market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_AMOUNT.value] < 1   # to be fixed in tentacle
+            assert 1e-08 <= market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_PRICE.value] < 1    # to be fixed in tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
+            # invalid values (should be much lower for XRP/BTC => remove price limit in tentacle
+            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] >= 0.1
+            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] >= 0.0001
 
     async def test_get_symbol_prices(self):
         # without limit
@@ -91,7 +97,7 @@ class TestGateIORealExchangeTester(RealExchangeTester):
 
     async def test_get_recent_trades(self):
         recent_trades = await self.get_recent_trades()
-        assert len(recent_trades) == 50
+        assert len(recent_trades) > 20
         # check trades order (oldest first)
         self.ensure_elements_order(recent_trades, Ecoc.TIMESTAMP.value)
 
