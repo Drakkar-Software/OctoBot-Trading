@@ -33,6 +33,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "bitfinex2"
     SYMBOL = "BTC/USD"
     SYMBOL_2 = "ETH/BTC"
+    SYMBOL_3 = "XRP/BTC"
     DEFAULT_CANDLE_LIMIT = 100
     SLEEP_TIME = 10
 
@@ -54,17 +55,22 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         ))
 
     async def test_get_market_status(self):
-        await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
+        # await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit
         for market_status in await self.get_market_statuses():
             assert market_status
-            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2)
+            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
             assert market_status[Ecmsc.PRECISION.value]
-            assert market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] >= 1
-            assert market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value] >= 1
+            assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]) == \
+                   market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]
+            assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]) == \
+                   market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
+            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] == 1e-08
+            assert 1e-13 <= \
+                   market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] < 1e-07
 
     async def test_get_symbol_prices(self):
         await asyncio.sleep(self.SLEEP_TIME)  # prevent rate api limit

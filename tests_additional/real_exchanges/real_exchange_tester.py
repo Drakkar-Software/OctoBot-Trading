@@ -28,6 +28,7 @@ class RealExchangeTester:
     SYMBOL_2 = None
     # default is 1h, change if necessary
     TIME_FRAME = TimeFrames.ONE_HOUR
+    ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 0
 
     # Public methods: to be implemented as tests
     # Use await self._[method_name] to get the test request result
@@ -93,7 +94,8 @@ class RealExchangeTester:
         # side effects using only one pair.
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
             return exchange_manager.exchange.get_market_status(self.SYMBOL), \
-                   exchange_manager.exchange.get_market_status(self.SYMBOL_2)
+                   exchange_manager.exchange.get_market_status(self.SYMBOL_2), \
+                   exchange_manager.exchange.get_market_status(self.SYMBOL_3)
 
     async def get_symbol_prices(self, limit=None, **kwargs):
         async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
@@ -121,7 +123,8 @@ class RealExchangeTester:
             return await exchange_manager.exchange.get_all_currencies_price_ticker(**kwargs)
 
     def get_allowed_time_delta(self):
-        return TimeFramesMinutes[self.TIME_FRAME] * MINUTE_TO_SECONDS * MSECONDS_TO_SECONDS * 1.3
+        return (self.ALLOWED_TIMEFRAMES_WITHOUT_CANDLE + 1) * \
+               TimeFramesMinutes[self.TIME_FRAME] * MINUTE_TO_SECONDS * MSECONDS_TO_SECONDS * 1.3
 
     @staticmethod
     def get_time():

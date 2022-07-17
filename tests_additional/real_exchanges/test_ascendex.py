@@ -31,6 +31,7 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "ascendex"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
+    SYMBOL_3 = "XRP/BTC"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -52,17 +53,21 @@ class TestAscendExRealExchangeTester(RealExchangeTester):
     async def test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             assert market_status
-            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2)
+            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
             assert market_status[Ecmsc.PRECISION.value]
             # on AscendEx, precision is a decimal instead of a number of digits
             assert 0 < market_status[Ecmsc.PRECISION.value][
-                Ecmsc.PRECISION_AMOUNT.value] < 1  # to be fixed in AscendEx tentacle
+                Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in AscendEx tentacle
             assert 0 < market_status[Ecmsc.PRECISION.value][
-                Ecmsc.PRECISION_PRICE.value] < 1  # to be fixed in AscendEx tentacle
+                Ecmsc.PRECISION_PRICE.value] <= 1  # to be fixed in AscendEx tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
+            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] >= 1e-09
+            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] >= 0.0001
+            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] < \
+                   market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]
 
     async def test_get_symbol_prices(self):
         # without limit
