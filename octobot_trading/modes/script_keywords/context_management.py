@@ -54,6 +54,7 @@ class Context(databases.CacheClient):
         backtesting_id,
         optimizer_id,
         optimization_campaign_name=None,
+        backtesting_analysis_settings=None,
     ):
         # no cache if live trading to ensure cache is always writen
         super().__init__(
@@ -64,6 +65,7 @@ class Context(databases.CacheClient):
             exchange_manager.tentacles_setup_config if exchange_manager else None,
             not exchange_manager.is_backtesting if exchange_manager else False
         )
+        self.backtesting_analysis_settings = backtesting_analysis_settings
         self.exchange_manager = exchange_manager
         self.trader = trader
         self.matrix_id = matrix_id
@@ -176,8 +178,8 @@ class Context(databases.CacheClient):
                 await self._reset_cache()
 
     @staticmethod
-    def minimal(trading_mode_class, logger, exchange_name, traded_pair,
-                backtesting_id, optimizer_id, optimization_campaign_name):
+    def minimal(trading_mode_class, logger, exchange_name, traded_pair, backtesting_id,
+                optimizer_id, optimization_campaign_name, backtesting_analysis_settings):
         return Context(
             None,
             None,
@@ -196,6 +198,7 @@ class Context(databases.CacheClient):
             backtesting_id,
             optimizer_id,
             optimization_campaign_name,
+            backtesting_analysis_settings,
         )
 
     @contextlib.asynccontextmanager

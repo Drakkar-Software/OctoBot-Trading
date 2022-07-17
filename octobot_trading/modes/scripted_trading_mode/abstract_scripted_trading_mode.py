@@ -143,9 +143,11 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         )
 
     @classmethod
-    async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id, optimization_campaign):
+    async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id,
+                                   optimization_campaign, backtesting_analysis_settings):
         ctx = context_management.Context.minimal(cls, logging.get_logger(cls.get_name()), exchange, symbol,
-                                                 backtesting_id, optimizer_id, optimization_campaign)
+                                                 backtesting_id, optimizer_id,
+                                                 optimization_campaign, backtesting_analysis_settings)
         return await cls.get_script_from_module(cls.BACKTESTING_SCRIPT_MODULE)(ctx)
 
     @classmethod
