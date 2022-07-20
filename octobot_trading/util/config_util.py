@@ -16,6 +16,7 @@
 import octobot_commons.constants as commons_constants
 import octobot_trading.constants as trading_constants
 import octobot_commons.symbols as symbol_util
+import octobot.constants as octobot_constants
 
 
 def is_trader_enabled(config) -> bool:
@@ -106,3 +107,12 @@ def get_traded_pairs_by_currency(config):
            and val[commons_constants.CONFIG_CRYPTO_PAIRS]
            and is_currency_enabled(config, currency, True)
     }
+
+
+def get_current_bot_recording_id(config=None):
+    if config:
+        return config[commons_constants.CONFIG_TRADING].get(octobot_constants.CURRENT_BOT_RECORDING_ID,
+                                                            octobot_constants.DEFAULT_BOT_RECORDING_ID)
+    import octobot_services.interfaces.util as interfaces_util  # todo move function to a better place
+    return interfaces_util.get_edited_config()[commons_constants.CONFIG_TRADING]\
+        .get(octobot_constants.CURRENT_BOT_RECORDING_ID, octobot_constants.DEFAULT_BOT_RECORDING_ID)
