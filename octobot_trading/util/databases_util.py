@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
+from octobot_trading.util import config_util as config_util
 import octobot_commons.databases as databases
 import octobot_commons.optimization_campaign as optimization_campaign
 import octobot_commons.constants as commons_constants
@@ -26,5 +27,6 @@ def get_run_databases_identifier(config, tentacles_setup_config, trading_mode_cl
         trading_mode_class or modes.get_activated_trading_mode(tentacles_setup_config),
         optimization_campaign.OptimizationCampaign.get_campaign_name(tentacles_setup_config),
         backtesting_id=config.get(commons_constants.CONFIG_BACKTESTING_ID),
-        optimizer_id=config.get(commons_constants.CONFIG_OPTIMIZER_ID)
+        optimizer_id=config.get(commons_constants.CONFIG_OPTIMIZER_ID),
+        bot_recording_id=config_util.get_current_bot_recording_id(config)
     )
