@@ -407,12 +407,17 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         Subscribes a new candle feed for each time frame
         """
         for time_frame in self.time_frames:
-            self._subscribe_feed(
-                symbols=self.filtered_pairs,
-                candle_interval=time_frame.value,
-                channels=self.CANDLE_CHANNELS,
-                callbacks={cryptofeed_constants.CANDLES: self.candle_callback}
-            )
+            try:
+                self._subscribe_feed(
+                    symbols=self.filtered_pairs,
+                    candle_interval=time_frame.value,
+                    channels=self.CANDLE_CHANNELS,
+                    callbacks={cryptofeed_constants.CANDLES: self.candle_callback}
+                )
+            except ValueError as e:
+                self.logger.exception(e, True,
+                                      f"Error when subscribing to feed: ignored candle feed with {self.filtered_pairs} "
+                                      f"on {time_frame.value} ({e})")
 
     def _subscribe_channels_feeds(self):
         """
