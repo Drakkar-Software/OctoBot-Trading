@@ -45,6 +45,7 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef void _init_client(self)
     cdef void _start_client(self, bint should_create_loop=*)
     cdef bint _should_use_authenticated_feeds(self)
+    cdef dict _get_feed_default_kwargs(self)
     cdef void _subscribe_feeds(self)
     cdef void _add_pair(self, str pair, bint watching_only)
     cdef void _add_time_frame(self, object time_frame)
