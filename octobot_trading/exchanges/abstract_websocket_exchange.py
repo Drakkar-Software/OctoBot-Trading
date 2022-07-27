@@ -203,13 +203,6 @@ class AbstractWebsocketExchange:
         """
         raise NotImplementedError("add_pairs is not implemented")
 
-    def add_time_frames(self, time_frames):
-        """
-        Add new time_frames to self.filtered_time_frames
-        :param time_frames: the list of time_frame to add
-        """
-        raise NotImplementedError("add_time_frames is not implemented")
-
     def get_max_handled_pair_with_time_frame(self):
         """
         :return: the maximum number of simultaneous pairs * time_frame that this exchange can handle.

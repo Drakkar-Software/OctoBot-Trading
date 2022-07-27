@@ -39,7 +39,6 @@ cdef class AbstractWebsocketExchange:
     cpdef object get_book_instance(self, str symbol)
 
     cpdef void add_pairs(self, list pairs, bint watching_only=*)
-    cpdef void add_time_frames(self, list time_frames)
     cpdef void initialize(self, list currencies=*, list pairs=*, list time_frames=*, list channels=*)
 
     cpdef bint _should_authenticate(self)

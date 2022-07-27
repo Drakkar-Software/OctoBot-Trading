@@ -207,14 +207,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         for pair in pairs:
             self._add_pair(self.get_exchange_pair(pair), watching_only=watching_only)
 
-    def add_time_frames(self, time_frames):
-        """
-        Add new time_frames to self.filtered_time_frames
-        :param time_frames: the list of time_frame to add
-        """
-        for time_frame in time_frames:
-            self._add_time_frame(time_frame)
-
     async def _inner_reset(self):
         """
         Removes and stops all running feeds an recreate them
