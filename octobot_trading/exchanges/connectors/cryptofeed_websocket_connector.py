@@ -452,7 +452,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     def _subscribe_watched_pairs_feed(self):
         """
-        Subscribes all time frame unrelated feeds for watched pairs
+        Subscribes feeds for watched pairs (only on one timeframe for multiple timeframes feeds)
         """
         channels = [channel
                     for channel in self.WATCHED_PAIR_CHANNELS
@@ -485,7 +485,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         if symbols:
             feed_kwargs["symbols"] = symbols
         if candle_interval:
-            feed_kwargs["candle_interval"] = candle_interval
+            # always specify candle_interval even if not always used
+            feed_kwargs["candle_interval"] = candle_interval or \
+                                             self.min_timeframe.value if self.min_timeframe else candle_interval
         self.client.add_feed(self.get_feed_name(),
                              log_message_on_error=True,
                              callbacks=callbacks,
