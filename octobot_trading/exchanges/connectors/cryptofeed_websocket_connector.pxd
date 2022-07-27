@@ -53,7 +53,7 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef bint _is_supported_pair(self, pair)
     cdef bint _is_supported_time_frame(self, object time_frame)
     cdef bint _is_pair_independent_feed(self, feed)
-    cdef void _subscribe_feed(self, list channels, dict callbacks, list symbols=*, str candle_interval=*)
+    cdef object _subscribe_feed(self, list channels, dict callbacks, list symbols=*, str candle_interval=*)
     cdef void _filter_exchange_pairs_and_timeframes(self)
     cdef void _filter_exchange_symbols(self)
     cdef void _filter_exchange_time_frames(self)
