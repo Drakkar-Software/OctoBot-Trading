@@ -148,9 +148,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         # Creates cryptofeed exchange instance
         self.cryptofeed_exchange = cryptofeed_exchanges.EXCHANGE_MAP[self.get_feed_name()](
             config=self.client_config,
-            sandbox=self.exchange_manager.is_sandboxed,
-            candle_closed_only=False,
-            **self.EXCHANGE_CONSTRUCTOR_KWARGS
+            **self._get_feed_default_kwargs()
         )
 
         self._previous_open_candles = {}
@@ -457,6 +455,15 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                 callbacks=self.callbacks
             )
 
+    def _get_feed_default_kwargs(self):
+        kwargs = {
+            "candle_closed_only": False,
+            "sandbox": self.exchange_manager.is_sandboxed
+        }
+        # apply exchange kwargs
+        kwargs.update(self.EXCHANGE_CONSTRUCTOR_KWARGS)
+        return kwargs
+
     def _subscribe_feed(self, channels, callbacks, symbols=None, candle_interval=None):
         """
         Subscribe a new feed
@@ -465,11 +472,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param channels: the feed channels
         :param callbacks: the feed callbacks
         """
-        feed_kwargs = {
-            "candle_closed_only": False
-        }
-        # feeds are creating an exchange, apply exchange kwargs
-        feed_kwargs.update(self.EXCHANGE_CONSTRUCTOR_KWARGS)
+        feed_kwargs = self._get_feed_default_kwargs()
         if symbols:
             feed_kwargs["symbols"] = symbols
         if candle_interval:
