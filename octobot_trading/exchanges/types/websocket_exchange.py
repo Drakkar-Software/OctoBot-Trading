@@ -183,10 +183,6 @@ class WebSocketExchange(abstract_websocket.AbstractWebsocketExchange):
         for websocket in self.websocket_connectors:
             websocket.add_pairs(pairs, watching_only=watching_only)
 
-    def add_time_frames(self, time_frames):
-        for websocket in self.websocket_connectors:
-            websocket.add_time_frames(time_frames)
-
     def is_handling(self, feed_name):
         return feed_name in self.handled_feeds[feed_name] and self.handled_feeds[feed_name]
 
