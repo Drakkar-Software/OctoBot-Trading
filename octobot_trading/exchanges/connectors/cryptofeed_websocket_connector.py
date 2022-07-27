@@ -106,7 +106,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
         self.filtered_pairs = []
         self.watched_pairs = []
-        self.filtered_timeframes = []
         self.min_timeframe = None
 
         self.local_loop = None
@@ -358,6 +357,11 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         Prepares the subscription of unauthenticated and authenticated feeds and subscribe all
         """
         if self._should_run_candle_feed():
+            if self.min_timeframe is None:
+                self.logger.error(
+                    f"Missing min_timeframe in exchange websocket with candle feeds. This probably means that no "
+                    f"required time frame is supported by this exchange's websocket "
+                    f"(valid_candle_intervals: {self.cryptofeed_exchange.valid_candle_intervals})")
             self.candle_callback = self.callback_by_feed[self.EXCHANGE_FEEDS[Feeds.CANDLE]]
             self._subscribe_candle_feed()
 
@@ -489,7 +493,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     def _filter_exchange_pairs_and_timeframes(self):
         """
-        Populates self.filtered_pairs and self.filtered_timeframes
+        Populates self.filtered_pairs and self.min_timeframe
         """
         self._filter_exchange_symbols()
         self._filter_exchange_time_frames()
@@ -515,16 +519,16 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         for pair in self.pairs:
             self._add_pair(pair, watching_only=False)
 
-    def _add_time_frame(self, time_frame):
+    def _add_time_frame(self, filtered_timeframes, time_frame, log_on_error):
         """
-        Add a time frame to self.filtered_timeframes if supported
+        Add a time frame to filtered_timeframes if supported
         :param time_frame: the time frame to add
         """
         try:
             if self.cryptofeed_exchange.valid_candle_intervals is not NotImplemented and \
                     time_frame.value in self.cryptofeed_exchange.valid_candle_intervals :
-                self.filtered_timeframes.append(time_frame)
-            else:
+                filtered_timeframes.append(time_frame)
+            elif log_on_error:
                 self.logger.error(f"{time_frame.value} time frame is not supported by this exchange's websocket")
         except AttributeError:
             # exchange.valid_candle_intervals is not implemented in each cryptofeed exchange
@@ -532,11 +536,16 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
 
     def _filter_exchange_time_frames(self):
         """
-        Populates self.filtered_timeframes from self.time_frames when time frame is supported by the cryptofeed exchange
+        Populates self.min_timeframe from self.time_frames when time frame is supported by the cryptofeed exchange
+        Leaves self.min_timeframe at None if no timeframe is available on this exchange ws
         """
+        # Log error only if necessary (self.min_timeframe is used by candle feed only)
+        log_on_error = self._should_run_candle_feed()
+        filtered_timeframes = []
         for time_frame in self.time_frames:
-            self._add_time_frame(time_frame)
-        self.min_timeframe = time_frame_manager.find_min_time_frame(self.filtered_timeframes)
+            self._add_time_frame(filtered_timeframes, time_frame, log_on_error)
+        if filtered_timeframes:
+            self.min_timeframe = time_frame_manager.find_min_time_frame(filtered_timeframes)
 
     def _should_run_candle_feed(self):
         return self.EXCHANGE_FEEDS.get(Feeds.CANDLE) and self.EXCHANGE_FEEDS.get(

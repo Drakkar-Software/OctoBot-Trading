@@ -22,7 +22,6 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
 
     cdef public list filtered_pairs
     cdef public list watched_pairs
-    cdef public list filtered_timeframes
 
     cdef public object min_timeframe
     cdef public object candle_callback
@@ -48,7 +47,7 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef dict _get_feed_default_kwargs(self)
     cdef void _subscribe_feeds(self)
     cdef void _add_pair(self, str pair, bint watching_only)
-    cdef void _add_time_frame(self, object time_frame)
+    cdef void _add_time_frame(self, list filtered_timeframes, object time_frame, bint log_on_error)
     cdef void _subscribe_feeds(self)
     cdef bint _is_supported_channel(self, str channel)
     cdef bint _is_supported_pair(self, pair)
