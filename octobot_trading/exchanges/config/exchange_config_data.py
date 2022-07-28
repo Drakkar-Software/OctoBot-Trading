@@ -158,8 +158,13 @@ class ExchangeConfig(util.Initializable):
                     # also add disabled pairs to existing pairs since they still exist on exchange
                     existing_pairs.add(symbol)
                 elif is_enabled:
+                    additional_details = ""
+                    if self.exchange_manager.is_sandboxed:
+                        additional_details = f" Exchange sandbox is enabled, please make sure this pair is traded on " \
+                                             f" the {self.exchange_manager.exchange_name} sandbox as sandboxes " \
+                                             f"usually only support a subset of the real exchange's pairs."
                     self._logger.error(f"{self.exchange_manager.exchange_name} is not supporting the "
-                                       f"{symbol} trading pair.")
+                                       f"{symbol} trading pair.{additional_details}")
             if is_enabled:
                 self.traded_cryptocurrencies[cryptocurrency] = currency_pairs
 
