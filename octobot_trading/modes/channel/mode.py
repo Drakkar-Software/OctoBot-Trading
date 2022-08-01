@@ -17,9 +17,8 @@
 import async_channel.constants as channel_constants
 import async_channel.enums as channel_enums
 
-import octobot_commons.constants as constants
-
 import octobot_trading.exchange_channel as exchanges_channel
+import octobot_trading.constants as constants
 
 
 class ModeChannelConsumer(exchanges_channel.ExchangeChannelInternalConsumer):
@@ -28,7 +27,7 @@ class ModeChannelConsumer(exchanges_channel.ExchangeChannelInternalConsumer):
 
 class ModeChannelProducer(exchanges_channel.ExchangeChannelProducer):
     async def send(self,
-                   final_note=constants.INIT_EVAL_NOTE,
+                   final_note=constants.ZERO,
                    trading_mode_name=channel_constants.CHANNEL_WILDCARD,
                    state=channel_constants.CHANNEL_WILDCARD,
                    cryptocurrency=channel_constants.CHANNEL_WILDCARD,
