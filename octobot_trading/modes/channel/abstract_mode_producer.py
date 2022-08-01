@@ -23,6 +23,7 @@ import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
@@ -60,8 +61,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         # matrix_id shortcut
         self.matrix_id = None
 
-        # the final eval used by TradingModeConsumers, default value is INIT_EVAL_NOTE
-        self.final_eval = common_constants.INIT_EVAL_NOTE
+        # the final eval used by TradingModeConsumers, default value is 0
+        self.final_eval = constants.ZERO
 
         # the producer state used by TradingModeConsumers
         self.state = None
@@ -285,7 +286,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         raise NotImplementedError("set_final_eval not implemented")
 
     async def submit_trading_evaluation(self, cryptocurrency, symbol, time_frame,
-                                        final_note=common_constants.INIT_EVAL_NOTE,
+                                        final_note=constants.ZERO,
                                         state=enums.EvaluatorStates.NEUTRAL,
                                         data=None) -> None:
         await self.send(trading_mode_name=self.trading_mode.get_name(),
