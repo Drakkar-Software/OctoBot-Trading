@@ -22,7 +22,7 @@ cpdef object total_fees_from_order_dict(dict order_dict, str currency)
 cpdef object get_fees_for_currency(object fee, str currency)
 cpdef dict parse_raw_fees(object raw_fees)
 cpdef object parse_order_status(dict raw_order)
-cpdef bint parse_is_cancelled(dict raw_order)
+cpdef object parse_is_cancelled(dict raw_order)
 cpdef object get_max_order_quantity_for_price(object position, object available_quantity,
                                               object price, object side, str symbol)
 cpdef object get_pnl_transaction_source_from_order(object order)
