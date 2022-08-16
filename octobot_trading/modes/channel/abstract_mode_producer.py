@@ -265,10 +265,11 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             return
 
         with self.trading_mode_trigger():
-            await self.set_final_eval(matrix_id=matrix_id,
-                                      cryptocurrency=cryptocurrency,
-                                      symbol=symbol,
-                                      time_frame=time_frame)
+            async with self.trading_mode.remote_signal_publisher(symbol):
+                await self.set_final_eval(matrix_id=matrix_id,
+                                          cryptocurrency=cryptocurrency,
+                                          symbol=symbol,
+                                          time_frame=time_frame)
 
     @contextlib.contextmanager
     def trading_mode_trigger(self):

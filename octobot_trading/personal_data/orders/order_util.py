@@ -354,3 +354,25 @@ def get_order_quantity_currency(exchange_manager, symbol, side):
         return quote if position.symbol_contract.is_inverse_contract() else base
     # always base in spot
     return base
+
+
+async def get_order_size_portfolio_percent(exchange_manager, order_amount, side, symbol):
+    current_symbol_holding, current_market_holding, market_quantity, current_price, symbol_market = \
+        await get_pre_order_data(exchange_manager,
+                                 symbol=symbol,
+                                 timeout=constants.ORDER_DATA_FETCHING_TIMEOUT,
+                                 portfolio_type=commons_constants.PORTFOLIO_TOTAL)
+    if exchange_manager.is_future:
+        # TODO check inverse
+        if market_quantity is constants.ZERO:
+            return constants.ZERO
+        return order_amount / market_quantity * constants.ONE_HUNDRED
+    if side is enums.TradeOrderSide.SELL:
+        if current_symbol_holding is constants.ZERO:
+            return constants.ZERO
+        return order_amount / current_symbol_holding * constants.ONE_HUNDRED
+    if side is enums.TradeOrderSide.BUY:
+        if current_market_holding is constants.ZERO:
+            return constants.ZERO
+        return order_amount / current_market_holding * constants.ONE_HUNDRED
+    raise errors.InvalidArgumentError(f"Unhandled side: {side}")

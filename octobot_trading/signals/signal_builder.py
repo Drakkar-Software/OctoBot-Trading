@@ -31,6 +31,9 @@ class SignalBuilder:
         self.orders = orders
         self.reset()
 
+    def is_empty(self):
+        return not self.orders
+
     def add_created_order(self, order, target_amount=None, target_position=None):
         if target_amount is None and target_position is None:
             raise trading_errors.InvalidArgumentError("target_amount or target_position has to be provided")

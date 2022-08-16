@@ -110,7 +110,7 @@ class Context(databases.CacheClient):
     def get_signal_builder(self) -> trading_signals.SignalBuilder:
         if self.signal_builder is None:
             self.signal_builder = trading_signals.SignalBuilder(
-                self.tentacle.trading_config[common_constants.CONFIG_TRADING_SIGNALS_STRATEGY],
+                self.tentacle.get_trading_signal_identifier(),
                 self.exchange_manager.exchange_name,
                 exchanges.get_exchange_type(self.exchange_manager).value,
                 self.symbol,

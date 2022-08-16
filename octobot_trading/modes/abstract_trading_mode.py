@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import abc
+import contextlib
+import decimal
 
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
@@ -27,6 +29,10 @@ import octobot_tentacles_manager.configuration as tm_configuration
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchange_channel as exchanges_channel
+import octobot_trading.modes.script_keywords as script_keywords
+import octobot_trading.personal_data.orders as orders
+import octobot_trading.signals as signals
+import octobot_trading.exchanges as exchanges
 
 
 class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
@@ -71,6 +77,9 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # True when this trading mode is waken up only after full candles close
         self.is_triggered_after_candle_close = False
+
+        # dict of signal builders by symbol
+        self._signal_builders = {}
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -118,6 +127,15 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             return self.trading_config[common_constants.CONFIG_EMIT_TRADING_SIGNALS]
         except KeyError:
             return False
+
+    def get_trading_signal_identifier(self) -> str:
+        """
+        :return: True if the mode should be emitting trading signals
+        """
+        try:
+            return self.trading_config[common_constants.CONFIG_TRADING_SIGNALS_STRATEGY]
+        except KeyError:
+            return self.get_name()
 
     @classmethod
     def get_is_trading_on_exchange(cls, exchange_name,
@@ -262,3 +280,73 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             constants.CONFIG_CANDLES_HISTORY_SIZE_KEY,
             common_constants.DEFAULT_IGNORED_VALUE
         )
+
+    def get_signal_builder(self, symbol):
+        return self._signal_builders[symbol]
+
+    async def _create_signal_builder(self, symbol) -> signals.SignalBuilder:
+        self._signal_builders[symbol] = signals.SignalBuilder(
+            self.get_trading_signal_identifier(),
+            self.exchange_manager.exchange_name,
+            exchanges.get_exchange_type(self.exchange_manager).value,
+            symbol,
+            None,
+            None,
+            []
+        )
+        return self._signal_builders[symbol]
+
+    @contextlib.asynccontextmanager
+    async def remote_signal_publisher(self, symbol):
+        try:
+            signal_builder = await self._create_signal_builder(symbol)
+            yield signal_builder
+            if not self.exchange_manager.is_backtesting and \
+                    self.is_trading_signal_emitter() and not signal_builder.is_empty():
+                await signals.emit_remote_trading_signal(signal_builder.build(), signal_builder.strategy)
+        finally:
+            self._signal_builders.pop(symbol)
+
+    async def create_order(self, order, loaded: bool = False, params: dict = None, pre_init_callback=None):
+        created_order = await self.exchange_manager.trader.create_order(
+            order, loaded=loaded, params=params, pre_init_callback=pre_init_callback
+        )
+        percent = await orders.get_order_size_portfolio_percent(
+            self.exchange_manager,
+            order.origin_quantity,
+            order.side,
+            order.symbol
+        )
+        order_pf_percent = f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
+        self.get_signal_builder(order.symbol).add_created_order(created_order, target_amount=order_pf_percent)
+        return created_order
+
+    async def cancel_order(self, order, ignored_order: object = None) -> bool:
+        cancelled = await self.exchange_manager.trader.cancel_order(order, ignored_order=ignored_order)
+        if cancelled:
+            self.get_signal_builder(order.symbol).add_cancelled_order(order)
+        return cancelled
+
+    async def edit_order(self, order,
+                         edited_quantity: decimal.Decimal = None,
+                         edited_price: decimal.Decimal = None,
+                         edited_stop_price: decimal.Decimal = None,
+                         edited_current_price: decimal.Decimal = None,
+                         params: dict = None) -> bool:
+        changed = await self.exchange_manager.trader.edit_order(
+            order,
+            edited_quantity=edited_quantity,
+            edited_price=edited_price,
+            edited_stop_price=edited_stop_price,
+            edited_current_price=edited_current_price,
+            params=params
+        )
+        if changed:
+            self.get_signal_builder(order.symbol).add_edited_order(
+                order,
+                updated_target_amount=edited_quantity,
+                updated_limit_price=edited_price,
+                updated_stop_price=edited_stop_price,
+                updated_current_price=edited_current_price,
+            )
+        return changed
