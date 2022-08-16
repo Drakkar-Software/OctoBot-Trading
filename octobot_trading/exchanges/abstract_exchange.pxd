@@ -45,7 +45,7 @@ cdef class AbstractExchange(util.Initializable):
     cpdef str get_exchange_pair(self, str pair)
     cpdef str get_pair_cryptocurrency(self, str pair)
     cpdef tuple get_split_pair_from_exchange(self, str pair)
-    cpdef int get_rate_limit(self)
+    cpdef object get_rate_limit(self)
     cpdef dict get_default_balance(self)
 
     # exchange settings
@@ -60,7 +60,7 @@ cdef class AbstractExchange(util.Initializable):
     cpdef dict parse_ohlcv(self, dict ohlcv)
     cpdef dict parse_order_book(self, dict order_book)
     cpdef dict parse_order_book_ticker(self, dict order_book_ticker)
-    cpdef double parse_timestamp(self, dict data_dict, str timestamp_key, object default_value=*, bint ms=*)
+    cpdef object parse_timestamp(self, dict data_dict, str timestamp_key, object default_value=*, bint ms=*)
     cpdef str parse_currency(self, str currency)
     cpdef str parse_order_id(self, dict order)
     cpdef object parse_status(self, str status)
@@ -73,7 +73,7 @@ cdef class AbstractExchange(util.Initializable):
     cpdef dict clean_order(self, dict order)
 
     # uniformization
-    cpdef double get_exchange_current_time(self)
+    cpdef object get_exchange_current_time(self)
     cpdef object uniformize_candles_if_necessary(self, object candle_or_candles)
     cpdef object get_uniformized_timestamp(self, object candle_or_candles)
     cpdef long long get_candle_since_timestamp(self, object time_frame, int count)
