@@ -25,6 +25,7 @@ import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
 import octobot_commons.optimization_campaign as optimization_campaign
 import octobot_commons.event_tree as event_tree
+import octobot_commons.signals as signals
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
 import octobot_trading.storage as storage
@@ -107,16 +108,10 @@ class Context(databases.CacheClient):
         self.optimization_campaign_name = optimization_campaign_name
         self.signal_builder = None
 
-    def get_signal_builder(self) -> trading_signals.SignalBuilder:
+    def get_signal_builder(self) -> trading_signals.TradingSignalBundleBuilder:
         if self.signal_builder is None:
-            self.signal_builder = trading_signals.SignalBuilder(
-                self.tentacle.get_trading_signal_identifier(),
-                self.exchange_manager.exchange_name,
-                exchanges.get_exchange_type(self.exchange_manager).value,
-                self.symbol,
-                None,
-                None,
-                []
+            self.signal_builder = trading_signals.TradingSignalBundleBuilder(
+                self.tentacle.get_trading_signal_identifier()
             )
         return self.signal_builder
 
@@ -132,11 +127,10 @@ class Context(databases.CacheClient):
     async def emit_signal(self):
         if self.signal_builder is None or not self.is_trading_signal_emitter() or self.exchange_manager.is_backtesting:
             return
-        signal = self.signal_builder.build()
-        self.logger.debug(f"Emitting trading signal for {self.signal_builder.strategy}: {signal}")
-        await trading_signals.emit_remote_trading_signal(
-            signal,
-            self.signal_builder.strategy
+        signal_bundle = self.signal_builder.build()
+        self.logger.debug(f"Emitting trading signal for {self.signal_builder.strategy}: {signal_bundle}")
+        await signals.emit_signal_bundle(
+            signal_bundle
         )
         self.signal_builder.reset()
 

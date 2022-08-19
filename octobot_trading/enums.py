@@ -493,9 +493,20 @@ class TradingSignalAttrs(enum.Enum):
     ORDERS = "orders"
 
 
-class TradingSignalOrdersAttrs(enum.Enum):
+class TradingSignalTopics(enum.Enum):
+    ORDERS = "orders"
+    PORTFOLIO = "portfolio"
+
+
+class TradingSignalCommonsAttrs(enum.Enum):
     ACTION = "action"
+
+
+class TradingSignalOrdersAttrs(enum.Enum):
     SIDE = "side"
+    SYMBOL = "symbol"
+    EXCHANGE = "exchange"
+    EXCHANGE_TYPE = "exchange_type"
     TYPE = "type"
     QUANTITY = "quantity"
     TARGET_AMOUNT = "target_amount"

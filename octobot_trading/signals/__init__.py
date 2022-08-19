@@ -15,25 +15,16 @@
 #  License along with this library.
 
 
-from octobot_trading.signals import trading_signal
-from octobot_trading.signals.trading_signal import (
-    TradingSignal,
-)
-from octobot_trading.signals import signal_builder
-from octobot_trading.signals.signal_builder import (
-    SignalBuilder,
-)
-from octobot_trading.signals import trading_signal_factory
-from octobot_trading.signals.trading_signal_factory import (
-    create_trading_signal,
+from octobot_trading.signals import trading_signal_bundle_builder
+from octobot_trading.signals.trading_signal_bundle_builder import (
+    TradingSignalBundleBuilder,
 )
 from octobot_trading.signals import util
 from octobot_trading.signals.util import (
-    create_order_signal_description,
+    create_order_signal_content,
 )
-from octobot_trading.signals import trading_signals_emitter
-from octobot_trading.signals.trading_signals_emitter import (
-    emit_remote_trading_signal,
+from octobot_commons.signals.signal_publisher import (
+    SignalPublisher,
 )
 from octobot_trading.signals import channel
 from octobot_trading.signals.channel import (
@@ -46,11 +37,10 @@ from octobot_trading.signals.channel import (
 
 
 __all__ = [
-    "TradingSignal",
-    "SignalBuilder",
-    "create_trading_signal",
-    "create_order_signal_description",
-    "emit_remote_trading_signal",
+    "TradingSignalBundleBuilder",
+    "SignalBuilderWrapper",
+    "create_order_signal_content",
+    "SignalPublisher",
     "RemoteTradingSignalsChannel",
     "RemoteTradingSignalChannelProducer",
     "RemoteTradingSignalChannelConsumer",

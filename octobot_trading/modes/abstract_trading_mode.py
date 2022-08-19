@@ -40,6 +40,8 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     MODE_PRODUCER_CLASSES = []
     MODE_CONSUMER_CLASSES = []
+    # maximum seconds before sending a trading signal if orders are slow to create on exchange
+    TRADING_SIGNAL_TIMEOUT = 10
 
     def __init__(self, config, exchange_manager):
         super().__init__()
@@ -77,9 +79,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # True when this trading mode is waken up only after full candles close
         self.is_triggered_after_candle_close = False
-
-        # dict of signal builders by symbol
-        self._signal_builders = {}
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -121,19 +120,26 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     def is_trading_signal_emitter(self) -> bool:
         """
-        :return: True if the mode should be emitting trading signals
+        :return: True if the mode should be emitting trading signals according to configuration
         """
         try:
             return self.trading_config[common_constants.CONFIG_EMIT_TRADING_SIGNALS]
         except KeyError:
             return False
 
+    def should_emit_trading_signal(self) -> bool:
+        """
+        :return: True if the mode should be emitting trading signals according to configuration and trading environment
+        """
+        # TODO
+        return True or not self.exchange_manager.is_backtesting and self.is_trading_signal_emitter()
+
     def get_trading_signal_identifier(self) -> str:
         """
-        :return: True if the mode should be emitting trading signals
+        :return: The identifier of the trading signal from config or the name of the tentacle if missing
         """
         try:
-            return self.trading_config[common_constants.CONFIG_TRADING_SIGNALS_STRATEGY]
+            return self.trading_config[common_constants.CONFIG_TRADING_SIGNALS_STRATEGY] or self.get_name()
         except KeyError:
             return self.get_name()
 
@@ -281,50 +287,42 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             common_constants.DEFAULT_IGNORED_VALUE
         )
 
-    def get_signal_builder(self, symbol):
-        return self._signal_builders[symbol]
-
-    async def _create_signal_builder(self, symbol) -> signals.SignalBuilder:
-        self._signal_builders[symbol] = signals.SignalBuilder(
-            self.get_trading_signal_identifier(),
-            self.exchange_manager.exchange_name,
-            exchanges.get_exchange_type(self.exchange_manager).value,
-            symbol,
-            None,
-            None,
-            []
-        )
-        return self._signal_builders[symbol]
-
     @contextlib.asynccontextmanager
-    async def remote_signal_publisher(self, symbol):
-        try:
-            signal_builder = await self._create_signal_builder(symbol)
-            yield signal_builder
-            if not self.exchange_manager.is_backtesting and \
-                    self.is_trading_signal_emitter() and not signal_builder.is_empty():
-                await signals.emit_remote_trading_signal(signal_builder.build(), signal_builder.strategy)
-        finally:
-            self._signal_builders.pop(symbol)
+    async def remote_signal_publisher(self, symbol: str):
+        if self.should_emit_trading_signal():
+            async with signals.SignalPublisher.instance().remote_signal_bundle_builder(
+                symbol,
+                self.get_trading_signal_identifier(),
+                self.TRADING_SIGNAL_TIMEOUT,
+                signals.TradingSignalBundleBuilder
+            ) as signal_builder:
+                yield signal_builder
+        else:
+            yield None
 
     async def create_order(self, order, loaded: bool = False, params: dict = None, pre_init_callback=None):
+        order_pf_percent = "0"
+        if self.should_emit_trading_signal():
+            percent = await orders.get_order_size_portfolio_percent(
+                self.exchange_manager,
+                order.origin_quantity,
+                order.side,
+                order.symbol
+            )
+            order_pf_percent = f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
         created_order = await self.exchange_manager.trader.create_order(
             order, loaded=loaded, params=params, pre_init_callback=pre_init_callback
         )
-        percent = await orders.get_order_size_portfolio_percent(
-            self.exchange_manager,
-            order.origin_quantity,
-            order.side,
-            order.symbol
-        )
-        order_pf_percent = f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
-        self.get_signal_builder(order.symbol).add_created_order(created_order, target_amount=order_pf_percent)
+        if self.should_emit_trading_signal():
+            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_created_order(
+                    created_order, target_amount=order_pf_percent
+                )
         return created_order
 
     async def cancel_order(self, order, ignored_order: object = None) -> bool:
         cancelled = await self.exchange_manager.trader.cancel_order(order, ignored_order=ignored_order)
-        if cancelled:
-            self.get_signal_builder(order.symbol).add_cancelled_order(order)
+        if self.should_emit_trading_signal() and cancelled:
+            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_cancelled_order(order)
         return cancelled
 
     async def edit_order(self, order,
@@ -341,12 +339,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             edited_current_price=edited_current_price,
             params=params
         )
-        if changed:
-            self.get_signal_builder(order.symbol).add_edited_order(
-                order,
-                updated_target_amount=edited_quantity,
-                updated_limit_price=edited_price,
-                updated_stop_price=edited_stop_price,
-                updated_current_price=edited_current_price,
-            )
+        if self.should_emit_trading_signal() and changed:
+            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_edited_order(
+                    order,
+                    updated_target_amount=edited_quantity,
+                    updated_limit_price=edited_price,
+                    updated_stop_price=edited_stop_price,
+                    updated_current_price=edited_current_price,
+                )
         return changed

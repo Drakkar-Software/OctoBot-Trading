@@ -14,10 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_trading.enums as trading_enums
+import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as trading_constants
 
 
-def create_order_signal_description(
+def create_order_signal_content(
         order, action,
         target_amount=None,
         target_position=None,
@@ -26,9 +27,13 @@ def create_order_signal_description(
         updated_limit_price=trading_constants.ZERO,
         updated_stop_price=trading_constants.ZERO,
         updated_current_price=trading_constants.ZERO,
-):
+) -> dict:
     return {
-        trading_enums.TradingSignalOrdersAttrs.ACTION.value: action.value,
+        trading_enums.TradingSignalCommonsAttrs.ACTION.value: action.value,
+        trading_enums.TradingSignalOrdersAttrs.SYMBOL.value: order.symbol,
+        trading_enums.TradingSignalOrdersAttrs.EXCHANGE.value: order.exchange_manager.exchange_name,
+        trading_enums.TradingSignalOrdersAttrs.EXCHANGE_TYPE.value:
+            exchanges.get_exchange_type(order.exchange_manager).value,
         trading_enums.TradingSignalOrdersAttrs.SIDE.value: order.side.value,
         trading_enums.TradingSignalOrdersAttrs.TYPE.value: order.order_type.value,
         trading_enums.TradingSignalOrdersAttrs.QUANTITY.value: float(order.origin_quantity),
