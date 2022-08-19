@@ -13,46 +13,39 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.signals.trading_signal as trading_signal
+import octobot_commons.signals as signals
 import octobot_trading.signals.util as signal_util
 import octobot_trading.enums as trading_enums
 import octobot_trading.errors as trading_errors
 import octobot_trading.constants as trading_constants
 
 
-class SignalBuilder:
-    def __init__(self, strategy, exchange, exchange_type, symbol, description, state, orders):
-        self.strategy = strategy
-        self.exchange = exchange
-        self.exchange_type = exchange_type
-        self.symbol = symbol
-        self.description = description
-        self.state = state
-        self.orders = orders
-        self.reset()
-
-    def is_empty(self):
-        return not self.orders
-
+class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
     def add_created_order(self, order, target_amount=None, target_position=None):
         if target_amount is None and target_position is None:
             raise trading_errors.InvalidArgumentError("target_amount or target_position has to be provided")
         if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.CREATE,
                                            target_amount=target_amount,
                                            target_position=target_position):
-            self.orders.append(signal_util.create_order_signal_description(
-                order,
-                trading_enums.TradingSignalOrdersActions.CREATE,
-                target_amount=target_amount,
-                target_position=target_position
-            ))
+            self.register_signal(
+                trading_enums.TradingSignalTopics.ORDERS.value,
+                signal_util.create_order_signal_content(
+                    order,
+                    trading_enums.TradingSignalOrdersActions.CREATE,
+                    target_amount=target_amount,
+                    target_position=target_position
+                )
+            )
 
     def add_order_to_group(self, order):
         if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP):
-            self.orders.append(signal_util.create_order_signal_description(
-                order,
-                trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP
-            ))
+            self.register_signal(
+                trading_enums.TradingSignalTopics.ORDERS.value,
+                signal_util.create_order_signal_content(
+                    order,
+                    trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP
+                )
+            )
 
     def add_edited_order(
             self, order,
@@ -74,22 +67,28 @@ class SignalBuilder:
                 updated_stop_price=updated_stop_price,
                 updated_current_price=updated_current_price
         ):
-            self.orders.append(signal_util.create_order_signal_description(
-                order,
-                trading_enums.TradingSignalOrdersActions.EDIT,
-                updated_target_amount=updated_target_amount,
-                updated_target_position=updated_target_position,
-                updated_limit_price=updated_limit_price,
-                updated_stop_price=updated_stop_price,
-                updated_current_price=updated_current_price
-            ))
+            self.register_signal(
+                trading_enums.TradingSignalTopics.ORDERS.value,
+                signal_util.create_order_signal_content(
+                    order,
+                    trading_enums.TradingSignalOrdersActions.EDIT,
+                    updated_target_amount=updated_target_amount,
+                    updated_target_position=updated_target_position,
+                    updated_limit_price=updated_limit_price,
+                    updated_stop_price=updated_stop_price,
+                    updated_current_price=updated_current_price
+                )
+            )
 
     def add_cancelled_order(self, order):
         if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.CANCEL):
-            self.orders.append(signal_util.create_order_signal_description(
-                order,
-                trading_enums.TradingSignalOrdersActions.CANCEL
-            ))
+            self.register_signal(
+                trading_enums.TradingSignalTopics.ORDERS.value,
+                signal_util.create_order_signal_content(
+                    order,
+                    trading_enums.TradingSignalOrdersActions.CANCEL
+                )
+            )
 
     def _update_pending_orders(
         self, order,
@@ -106,11 +105,14 @@ class SignalBuilder:
             index, order_description = self.get_order_description_from_local_orders(order)
             if action is trading_enums.TradingSignalOrdersActions.CREATE:
                 # replace order
-                self.orders[index] = signal_util.create_order_signal_description(
-                    order,
-                    trading_enums.TradingSignalOrdersActions.CREATE,
-                    target_amount=target_amount,
-                    target_position=target_position
+                self.signals[index] = self.create_signal(
+                    trading_enums.TradingSignalTopics.ORDERS.value,
+                    signal_util.create_order_signal_content(
+                        order,
+                        trading_enums.TradingSignalOrdersActions.CREATE,
+                        target_amount=target_amount,
+                        target_position=target_position
+                    )
                 )
             if action is trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP:
                 # update order group
@@ -143,7 +145,7 @@ class SignalBuilder:
                 if order_description[trading_enums.TradingSignalOrdersAttrs.ACTION.value] == \
                    trading_enums.TradingSignalOrdersActions.CREATE.value:
                     # avoid creating order that are to be cancelled
-                    self.orders.pop(index)
+                    self.signals.pop(index)
                 else:
                     # now cancel order (no need to perform previous actions as it will get cancelled anyway
                     order_description[trading_enums.TradingSignalOrdersAttrs.ACTION.value] = \
@@ -154,22 +156,8 @@ class SignalBuilder:
         return False
 
     def get_order_description_from_local_orders(self, order):
-        for index, order_description in enumerate(self.orders):
-            if order_description[trading_enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
+        for index, order_description in enumerate(self.signals):
+            if order_description.content[trading_enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
                     order.shared_signal_order_id:
-                return index, order_description
+                return index, order_description.content
         raise trading_errors.OrderDescriptionNotFoundError(f"order not found {order}")
-
-    def build(self):
-        return trading_signal.TradingSignal(
-            self.strategy,
-            self.exchange,
-            self.exchange_type,
-            self.symbol,
-            self.description,
-            self.state,
-            self.orders
-        )
-
-    def reset(self):
-        self.orders = []

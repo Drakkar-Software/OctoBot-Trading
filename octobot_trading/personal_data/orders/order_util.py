@@ -374,5 +374,5 @@ async def get_order_size_portfolio_percent(exchange_manager, order_amount, side,
     if side is enums.TradeOrderSide.BUY:
         if current_market_holding is constants.ZERO:
             return constants.ZERO
-        return order_amount / current_market_holding * constants.ONE_HUNDRED
+        return order_amount / market_quantity * constants.ONE_HUNDRED
     raise errors.InvalidArgumentError(f"Unhandled side: {side}")

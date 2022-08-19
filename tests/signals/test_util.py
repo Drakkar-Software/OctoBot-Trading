@@ -34,7 +34,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     buy_limit_order.origin_price = decimal.Decimal("1.11")
     buy_limit_order.origin_quantity = decimal.Decimal("1.12")
     buy_limit_order.origin_stop_price = decimal.Decimal("1.13")
-    assert signals.create_order_signal_description(buy_limit_order, enums.TradingSignalOrdersActions.CREATE) == {
+    assert signals.create_order_signal_content(buy_limit_order, enums.TradingSignalOrdersActions.CREATE) == {
         enums.TradingSignalOrdersAttrs.ACTION.value: enums.TradingSignalOrdersActions.CREATE.value,
         enums.TradingSignalOrdersAttrs.SIDE.value: enums.TradeOrderSide.BUY.value,
         enums.TradingSignalOrdersAttrs.TYPE.value: enums.TraderOrderType.BUY_LIMIT.value,
@@ -61,7 +61,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
 
     sell_limit_order.add_chained_order(buy_limit_order)
     await buy_limit_order.set_as_chained_order(sell_limit_order, True, {})
-    assert signals.create_order_signal_description(
+    assert signals.create_order_signal_content(
         buy_limit_order,
         enums.TradingSignalOrdersActions.CREATE,
         target_amount="1%",
@@ -96,7 +96,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         buy_limit_order.exchange_manager.exchange_personal_data.orders_manager
     )
     buy_limit_order.add_to_order_group(order_group)
-    assert signals.create_order_signal_description(
+    assert signals.create_order_signal_content(
         buy_limit_order,
         enums.TradingSignalOrdersActions.CREATE,
         target_amount="1%",

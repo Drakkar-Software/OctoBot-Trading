@@ -17,8 +17,8 @@ import async_channel.enums as channel_enums
 import octobot_commons.logging as logging
 import octobot_commons.enums as commons_enums
 import octobot_commons.authentication as authentication
+import octobot_commons.signals as signals
 import octobot_trading.signals.channel.remote_trading_signal as signals_channel
-import octobot_trading.signals.trading_signal_factory as trading_signal_factory
 
 
 class RemoteTradingSignalProducer(signals_channel.RemoteTradingSignalChannelProducer):
@@ -33,12 +33,14 @@ class RemoteTradingSignalProducer(signals_channel.RemoteTradingSignalChannelProd
         self.bot_id = bot_id
 
     async def subscribe_to_product_feed(self, feed_id):
-        await authentication.Authenticator.instance().register_feed_callback(commons_enums.CommunityChannelTypes.SIGNAL, self.on_new_signal,
+        await authentication.Authenticator.instance().register_feed_callback(commons_enums.CommunityChannelTypes.SIGNAL,
+                                                                             self.on_new_signal,
                                                                              identifier=feed_id)
 
     async def on_new_signal(self, parsed_message) -> None:
         try:
-            signal = trading_signal_factory.create_trading_signal(parsed_message)
+            signal = signals.create_signal(parsed_message)
+            # split signals and send independently
             await self.send(signal, self.bot_id)
         except Exception as e:
             self.logger.exception(e, True, f"Error when processing signal: {e}")
