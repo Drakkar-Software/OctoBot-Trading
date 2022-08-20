@@ -20,6 +20,7 @@ import decimal
 import octobot_commons.constants as common_constants
 import octobot_commons.logging as logging
 import octobot_commons.tentacles_management as abstract_tentacle
+import octobot_commons.authentication as authentication
 
 import async_channel.constants as channel_constants
 
@@ -32,7 +33,6 @@ import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.script_keywords as script_keywords
 import octobot_trading.personal_data.orders as orders
 import octobot_trading.signals as signals
-import octobot_trading.exchanges as exchanges
 
 
 class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
@@ -290,13 +290,16 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     @contextlib.asynccontextmanager
     async def remote_signal_publisher(self, symbol: str):
         if self.should_emit_trading_signal():
-            async with signals.SignalPublisher.instance().remote_signal_bundle_builder(
-                symbol,
-                self.get_trading_signal_identifier(),
-                self.TRADING_SIGNAL_TIMEOUT,
-                signals.TradingSignalBundleBuilder
-            ) as signal_builder:
-                yield signal_builder
+            try:
+                async with signals.SignalPublisher.instance().remote_signal_bundle_builder(
+                    symbol,
+                    self.get_trading_signal_identifier(),
+                    self.TRADING_SIGNAL_TIMEOUT,
+                    signals.TradingSignalBundleBuilder
+                ) as signal_builder:
+                    yield signal_builder
+            except authentication.AuthenticationRequired as e:
+                self.logger.exception(e, True, f"Failed to send trading signals: {e}")
         else:
             yield None
 
