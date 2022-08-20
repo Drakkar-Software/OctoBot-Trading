@@ -132,7 +132,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         :return: True if the mode should be emitting trading signals according to configuration and trading environment
         """
         # TODO
-        return True or not self.exchange_manager.is_backtesting and self.is_trading_signal_emitter()
+        return not self.exchange_manager.is_backtesting and self.is_trading_signal_emitter()
 
     def get_trading_signal_identifier(self) -> str:
         """

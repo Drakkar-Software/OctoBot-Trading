@@ -18,6 +18,7 @@ import decimal
 import mock
 import pytest
 
+import octobot_trading.api as api
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
@@ -447,3 +448,38 @@ async def test_ensure_orders_relevancy_with_positions(future_trader_simulator_wi
         position.side = "other_side"
     # canceled order
     trader_mock.cancel_order.assert_called_once_with(to_cancel_order_mock)
+
+
+@pytest.mark.asyncio
+async def test_get_order_size_portfolio_percent(trader_simulator):
+    config, exchange_manager_inst, trader_inst = trader_simulator
+    api.force_set_mark_price(exchange_manager_inst, "BTC/UDST", 1000)
+    # no USDT in portfolio
+    assert await personal_data.get_order_size_portfolio_percent(
+        exchange_manager_inst, decimal.Decimal("0.1"), enums.TradeOrderSide.BUY, "BTC/UDST"
+    ) == constants.ZERO
+    # 10 BTC in portfolio
+    assert await personal_data.get_order_size_portfolio_percent(
+        exchange_manager_inst, decimal.Decimal("1"), enums.TradeOrderSide.SELL, "BTC/UDST"
+    ) == decimal.Decimal("10")
+    assert await personal_data.get_order_size_portfolio_percent(
+        exchange_manager_inst, decimal.Decimal("10"), enums.TradeOrderSide.SELL, "BTC/UDST"
+    ) == decimal.Decimal("100")
+    assert await personal_data.get_order_size_portfolio_percent(
+        exchange_manager_inst, decimal.Decimal("11"), enums.TradeOrderSide.SELL, "BTC/UDST"
+    ) == decimal.Decimal("100")
+    assert await personal_data.get_order_size_portfolio_percent(
+        exchange_manager_inst, decimal.Decimal("6.6666"), enums.TradeOrderSide.SELL, "BTC/UDST"
+    ) == decimal.Decimal("66.666")
+
+    # 100 USDT in portfolio
+    exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.portfolio['UDST'].available \
+        = decimal.Decimal("100")
+    exchange_manager_inst.exchange_personal_data.portfolio_manager.portfolio.portfolio['UDST'].total \
+        = decimal.Decimal("100")
+    assert await personal_data.get_order_size_portfolio_percent(
+        exchange_manager_inst, decimal.Decimal("0.1"), enums.TradeOrderSide.BUY, "BTC/UDST"
+    ) == decimal.Decimal("100")
+    assert await personal_data.get_order_size_portfolio_percent(
+        exchange_manager_inst, decimal.Decimal("0.01"), enums.TradeOrderSide.BUY, "BTC/UDST"
+    ) == decimal.Decimal("10")
