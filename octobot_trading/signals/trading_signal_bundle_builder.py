@@ -186,12 +186,12 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
             include_signal = True
             # bundled orders must be sent at the same time as the original order, add them both to the same signal
             if add_to_order_id := signal.content[trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value]:
-                index, order_description = self._get_order_description_from_local_orders(add_to_order_id)
+                _, order_description = self._get_order_description_from_local_orders(add_to_order_id)
                 order_description[trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value].append(signal.content)
                 include_signal = False
             # chained orders must be sent at the same time as the original order, add them both to the same signal
             elif add_to_order_id := signal.content[trading_enums.TradingSignalOrdersAttrs.CHAINED_TO.value]:
-                index, order_description = self._get_order_description_from_local_orders(add_to_order_id)
+                _, order_description = self._get_order_description_from_local_orders(add_to_order_id)
                 order_description[trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value].append(signal.content)
                 include_signal = False
             # grouped orders must be created before the group is enabled, add them both to the same signal

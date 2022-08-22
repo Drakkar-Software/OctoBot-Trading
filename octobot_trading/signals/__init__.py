@@ -38,7 +38,6 @@ from octobot_trading.signals.channel import (
 
 __all__ = [
     "TradingSignalBundleBuilder",
-    "SignalBuilderWrapper",
     "create_order_signal_content",
     "SignalPublisher",
     "RemoteTradingSignalsChannel",

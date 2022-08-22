@@ -320,9 +320,9 @@ async def test_add_cancelled_order(trading_signal_bundle_builder, buy_limit_orde
 
 def test_pack_referenced_orders_together(trading_signal_bundle_builder,
                                          buy_limit_order, sell_limit_order, stop_loss_limit_order, stop_loss_buy_order):
-    buy_limit_order.shared_signal_order_id = "0"
-    sell_limit_order.shared_signal_order_id = "1"
-    stop_loss_limit_order.shared_signal_order_id = "2"
+    buy_limit_order.set_shared_signal_order_id("0")
+    sell_limit_order.set_shared_signal_order_id("1")
+    stop_loss_limit_order.set_shared_signal_order_id("2")
     trading_signal_bundle_builder.add_created_order(buy_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
     trading_signal_bundle_builder.add_created_order(sell_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
     trading_signal_bundle_builder.add_created_order(stop_loss_limit_order, buy_limit_order.exchange_manager, target_amount="1%")
