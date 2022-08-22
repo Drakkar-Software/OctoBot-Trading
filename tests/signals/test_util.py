@@ -17,7 +17,6 @@ import decimal
 import pytest
 
 import octobot_trading.enums as enums
-import octobot_trading.errors as errors
 import octobot_trading.signals as signals
 
 from tests import event_loop
@@ -35,7 +34,9 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
     buy_limit_order.origin_price = decimal.Decimal("1.11")
     buy_limit_order.origin_quantity = decimal.Decimal("1.12")
     buy_limit_order.origin_stop_price = decimal.Decimal("1.13")
-    assert signals.create_order_signal_content(buy_limit_order, enums.TradingSignalOrdersActions.CREATE, "strat") == {
+    exchange_manager = buy_limit_order.exchange_manager
+    assert signals.create_order_signal_content(buy_limit_order, enums.TradingSignalOrdersActions.CREATE,
+                                               "strat", exchange_manager) == {
         enums.TradingSignalCommonsAttrs.ACTION.value: enums.TradingSignalOrdersActions.CREATE.value,
         enums.TradingSignalOrdersAttrs.SIDE.value: enums.TradeOrderSide.BUY.value,
         enums.TradingSignalOrdersAttrs.STRATEGY.value: "strat",
@@ -72,6 +73,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         buy_limit_order,
         enums.TradingSignalOrdersActions.CREATE,
         "strat",
+        exchange_manager,
         target_amount="1%",
         target_position="2"
     ) == {
@@ -109,18 +111,7 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         buy_limit_order.exchange_manager.exchange_personal_data.orders_manager
     )
     buy_limit_order.add_to_order_group(order_group)
-    assert signals.create_order_signal_content(
-        buy_limit_order,
-        enums.TradingSignalOrdersActions.CREATE,
-        "strat",
-        target_amount="1%",
-        target_position="2",
-        updated_target_amount="10",
-        updated_target_position="8%",
-        updated_limit_price=decimal.Decimal("111.545445445"),
-        updated_stop_price=decimal.Decimal("111.1"),
-        updated_current_price=decimal.Decimal("111"),
-    ) == {
+    final_order_desc = {
         enums.TradingSignalCommonsAttrs.ACTION.value: enums.TradingSignalOrdersActions.CREATE.value,
         enums.TradingSignalOrdersAttrs.SIDE.value: enums.TradeOrderSide.BUY.value,
         enums.TradingSignalOrdersAttrs.STRATEGY.value: "strat",
@@ -149,3 +140,32 @@ async def test_create_order_signal_description(buy_limit_order, sell_limit_order
         enums.TradingSignalOrdersAttrs.CHAINED_TO.value: sell_limit_order.shared_signal_order_id,
         enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
     }
+    assert signals.create_order_signal_content(
+        buy_limit_order,
+        enums.TradingSignalOrdersActions.CREATE,
+        "strat",
+        exchange_manager,
+        target_amount="1%",
+        target_position="2",
+        updated_target_amount="10",
+        updated_target_position="8%",
+        updated_limit_price=decimal.Decimal("111.545445445"),
+        updated_stop_price=decimal.Decimal("111.1"),
+        updated_current_price=decimal.Decimal("111"),
+    ) == final_order_desc
+
+    # with cleared order, gives the same signal
+    buy_limit_order.clear()
+    assert signals.create_order_signal_content(
+        buy_limit_order,
+        enums.TradingSignalOrdersActions.CREATE,
+        "strat",
+        exchange_manager,
+        target_amount="1%",
+        target_position="2",
+        updated_target_amount="10",
+        updated_target_position="8%",
+        updated_limit_price=decimal.Decimal("111.545445445"),
+        updated_stop_price=decimal.Decimal("111.1"),
+        updated_current_price=decimal.Decimal("111"),
+    ) == final_order_desc

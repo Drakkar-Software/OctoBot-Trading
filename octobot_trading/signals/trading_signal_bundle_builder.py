@@ -32,10 +32,11 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
         self._pack_referenced_orders_together()
         return super().build()
 
-    def add_created_order(self, order, target_amount=None, target_position=None):
+    def add_created_order(self, order, exchange_manager, target_amount=None, target_position=None):
         if target_amount is None and target_position is None:
             raise trading_errors.InvalidArgumentError("target_amount or target_position has to be provided")
-        if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.CREATE,
+        if not self._update_pending_orders(order, exchange_manager,
+                                           trading_enums.TradingSignalOrdersActions.CREATE,
                                            target_amount=target_amount,
                                            target_position=target_position):
             self.register_signal(
@@ -44,24 +45,27 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                     order,
                     trading_enums.TradingSignalOrdersActions.CREATE,
                     self.strategy,
+                    exchange_manager,
                     target_amount=target_amount,
                     target_position=target_position
                 )
             )
 
-    def add_order_to_group(self, order):
-        if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP):
+    def add_order_to_group(self, order, exchange_manager):
+        if not self._update_pending_orders(order, exchange_manager,
+                                           trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP):
             self.register_signal(
                 trading_enums.TradingSignalTopics.ORDERS.value,
                 signal_util.create_order_signal_content(
                     order,
                     trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP,
                     self.strategy,
+                    exchange_manager,
                 )
             )
 
     def add_edited_order(
-            self, order,
+            self, order, exchange_manager,
             updated_target_amount=None,
             updated_target_position=None,
             updated_limit_price=trading_constants.ZERO,
@@ -73,6 +77,7 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
             raise trading_errors.InvalidArgumentError("an updated argument has to be provided")
         if not self._update_pending_orders(
                 order,
+                exchange_manager,
                 trading_enums.TradingSignalOrdersActions.EDIT,
                 updated_target_amount=updated_target_amount,
                 updated_target_position=updated_target_position,
@@ -86,6 +91,7 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                     order,
                     trading_enums.TradingSignalOrdersActions.EDIT,
                     self.strategy,
+                    exchange_manager,
                     updated_target_amount=updated_target_amount,
                     updated_target_position=updated_target_position,
                     updated_limit_price=updated_limit_price,
@@ -94,19 +100,20 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                 )
             )
 
-    def add_cancelled_order(self, order):
-        if not self._update_pending_orders(order, trading_enums.TradingSignalOrdersActions.CANCEL):
+    def add_cancelled_order(self, order, exchange_manager):
+        if not self._update_pending_orders(order, exchange_manager, trading_enums.TradingSignalOrdersActions.CANCEL):
             self.register_signal(
                 trading_enums.TradingSignalTopics.ORDERS.value,
                 signal_util.create_order_signal_content(
                     order,
                     trading_enums.TradingSignalOrdersActions.CANCEL,
                     self.strategy,
+                    exchange_manager,
                 )
             )
 
     def _update_pending_orders(
-        self, order,
+        self, order, exchange_manager,
         action,
         target_amount=None,
         target_position=None,
@@ -126,6 +133,7 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                         order,
                         trading_enums.TradingSignalOrdersActions.CREATE,
                         self.strategy,
+                        exchange_manager,
                         target_amount=target_amount,
                         target_position=target_position
                     )
