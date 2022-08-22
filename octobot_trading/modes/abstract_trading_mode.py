@@ -131,7 +131,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         :return: True if the mode should be emitting trading signals according to configuration and trading environment
         """
-        # TODO
         return not self.exchange_manager.is_backtesting and self.is_trading_signal_emitter()
 
     def get_trading_signal_identifier(self) -> str:
@@ -295,7 +294,8 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                     symbol,
                     self.get_trading_signal_identifier(),
                     self.TRADING_SIGNAL_TIMEOUT,
-                    signals.TradingSignalBundleBuilder
+                    signals.TradingSignalBundleBuilder,
+                    (self.get_name(), )
                 ) as signal_builder:
                     yield signal_builder
             except authentication.AuthenticationRequired as e:
@@ -304,7 +304,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             yield None
 
     async def create_order(self, order, loaded: bool = False, params: dict = None, pre_init_callback=None):
-        order_pf_percent = "0"
+        order_pf_percent = f"0{script_keywords.QuantityType.PERCENT.value}"
         if self.should_emit_trading_signal():
             percent = await orders.get_order_size_portfolio_percent(
                 self.exchange_manager,

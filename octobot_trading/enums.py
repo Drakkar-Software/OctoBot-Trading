@@ -504,6 +504,7 @@ class TradingSignalCommonsAttrs(enum.Enum):
 
 class TradingSignalOrdersAttrs(enum.Enum):
     SIDE = "side"
+    STRATEGY = "strategy"
     SYMBOL = "symbol"
     EXCHANGE = "exchange"
     EXCHANGE_TYPE = "exchange_type"
@@ -527,6 +528,7 @@ class TradingSignalOrdersAttrs(enum.Enum):
     SHARED_SIGNAL_ORDER_ID = "shared_signal_order_id"
     BUNDLED_WITH = "bundled_with"
     CHAINED_TO = "chained_to"
+    ADDITIONAL_ORDERS = "additional_orders"
 
 
 class TradingSignalOrdersActions(enum.Enum):

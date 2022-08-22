@@ -19,7 +19,7 @@ import octobot_trading.constants as trading_constants
 
 
 def create_order_signal_content(
-        order, action,
+        order, action, strategy,
         target_amount=None,
         target_position=None,
         updated_target_amount=None,
@@ -30,6 +30,7 @@ def create_order_signal_content(
 ) -> dict:
     return {
         trading_enums.TradingSignalCommonsAttrs.ACTION.value: action.value,
+        trading_enums.TradingSignalOrdersAttrs.STRATEGY.value: strategy,
         trading_enums.TradingSignalOrdersAttrs.SYMBOL.value: order.symbol,
         trading_enums.TradingSignalOrdersAttrs.EXCHANGE.value: order.exchange_manager.exchange_name,
         trading_enums.TradingSignalOrdersAttrs.EXCHANGE_TYPE.value:
@@ -65,4 +66,5 @@ def create_order_signal_content(
         if order.has_been_bundled else None,
         trading_enums.TradingSignalOrdersAttrs.CHAINED_TO.value:
             None if order.triggered_by is None else order.triggered_by.shared_signal_order_id,
+        trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value: [],
     }
