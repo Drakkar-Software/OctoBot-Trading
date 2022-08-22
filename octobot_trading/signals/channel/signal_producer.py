@@ -39,9 +39,11 @@ class RemoteTradingSignalProducer(signals_channel.RemoteTradingSignalChannelProd
 
     async def on_new_signal(self, parsed_message) -> None:
         try:
-            signal = signals.create_signal(parsed_message)
-            # split signals and send independently
-            await self.send(signal, self.bot_id)
+            signal_bundle = signals.create_signal_bundle(parsed_message)
+            if not signal_bundle.signals:
+                self.logger.info(f"No signal in received signal bundle, message: {parsed_message}")
+            for signal in signal_bundle.signals:
+                await self.send(signal, self.bot_id, signal_bundle.version)
         except Exception as e:
             self.logger.exception(e, True, f"Error when processing signal: {e}")
 

@@ -21,6 +21,17 @@ import octobot_trading.constants as trading_constants
 
 
 class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
+    def __init__(self, identifier: str, strategy: str):
+        super().__init__(identifier)
+        self.strategy = strategy
+
+    def build(self) -> signals.SignalBundle:
+        """
+        Link bundled an grouped orders and create a signal_bundle.SignalBundle from registered signals
+        """
+        self._pack_referenced_orders_together()
+        return super().build()
+
     def add_created_order(self, order, target_amount=None, target_position=None):
         if target_amount is None and target_position is None:
             raise trading_errors.InvalidArgumentError("target_amount or target_position has to be provided")
@@ -32,6 +43,7 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                 signal_util.create_order_signal_content(
                     order,
                     trading_enums.TradingSignalOrdersActions.CREATE,
+                    self.strategy,
                     target_amount=target_amount,
                     target_position=target_position
                 )
@@ -43,7 +55,8 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                 trading_enums.TradingSignalTopics.ORDERS.value,
                 signal_util.create_order_signal_content(
                     order,
-                    trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP
+                    trading_enums.TradingSignalOrdersActions.ADD_TO_GROUP,
+                    self.strategy,
                 )
             )
 
@@ -72,6 +85,7 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                 signal_util.create_order_signal_content(
                     order,
                     trading_enums.TradingSignalOrdersActions.EDIT,
+                    self.strategy,
                     updated_target_amount=updated_target_amount,
                     updated_target_position=updated_target_position,
                     updated_limit_price=updated_limit_price,
@@ -86,7 +100,8 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                 trading_enums.TradingSignalTopics.ORDERS.value,
                 signal_util.create_order_signal_content(
                     order,
-                    trading_enums.TradingSignalOrdersActions.CANCEL
+                    trading_enums.TradingSignalOrdersActions.CANCEL,
+                    self.strategy,
                 )
             )
 
@@ -99,10 +114,10 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
         updated_target_position=None,
         updated_limit_price=trading_constants.ZERO,
         updated_stop_price=trading_constants.ZERO,
-        updated_current_price=trading_constants.ZERO
+        updated_current_price=trading_constants.ZERO,
     ):
         try:
-            index, order_description = self.get_order_description_from_local_orders(order)
+            index, order_description = self._get_order_description_from_local_orders(order.shared_signal_order_id)
             if action is trading_enums.TradingSignalOrdersActions.CREATE:
                 # replace order
                 self.signals[index] = self.create_signal(
@@ -110,6 +125,7 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                     signal_util.create_order_signal_content(
                         order,
                         trading_enums.TradingSignalOrdersActions.CREATE,
+                        self.strategy,
                         target_amount=target_amount,
                         target_position=target_position
                     )
@@ -142,22 +158,52 @@ class TradingSignalBundleBuilder(signals.SignalBundleBuilder):
                 order_description[trading_enums.TradingSignalOrdersAttrs.UPDATED_CURRENT_PRICE.value] = \
                     float(updated_current_price)
             elif action is trading_enums.TradingSignalOrdersActions.CANCEL:
-                if order_description[trading_enums.TradingSignalOrdersAttrs.ACTION.value] == \
+                if order_description[trading_enums.TradingSignalCommonsAttrs.ACTION.value] == \
                    trading_enums.TradingSignalOrdersActions.CREATE.value:
                     # avoid creating order that are to be cancelled
                     self.signals.pop(index)
                 else:
                     # now cancel order (no need to perform previous actions as it will get cancelled anyway
-                    order_description[trading_enums.TradingSignalOrdersAttrs.ACTION.value] = \
+                    order_description[trading_enums.TradingSignalCommonsAttrs.ACTION.value] = \
                         trading_enums.TradingSignalOrdersActions.CANCEL.value
             return True
         except trading_errors.OrderDescriptionNotFoundError:
             pass
         return False
 
-    def get_order_description_from_local_orders(self, order):
-        for index, order_description in enumerate(self.signals):
-            if order_description.content[trading_enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
-                    order.shared_signal_order_id:
-                return index, order_description.content
-        raise trading_errors.OrderDescriptionNotFoundError(f"order not found {order}")
+    def _pack_referenced_orders_together(self):
+        filtered_signals = []
+        order_description_by_seen_group_ids = {}
+        for signal in self.signals:
+            include_signal = True
+            # bundled orders must be sent at the same time as the original order, add them both to the same signal
+            if add_to_order_id := signal.content[trading_enums.TradingSignalOrdersAttrs.BUNDLED_WITH.value]:
+                index, order_description = self._get_order_description_from_local_orders(add_to_order_id)
+                order_description[trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value].append(signal.content)
+                include_signal = False
+            # chained orders must be sent at the same time as the original order, add them both to the same signal
+            elif add_to_order_id := signal.content[trading_enums.TradingSignalOrdersAttrs.CHAINED_TO.value]:
+                index, order_description = self._get_order_description_from_local_orders(add_to_order_id)
+                order_description[trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value].append(signal.content)
+                include_signal = False
+            # grouped orders must be created before the group is enabled, add them both to the same signal
+            # groups might also need to be update together
+            elif add_to_group_ids := signal.content[trading_enums.TradingSignalOrdersAttrs.GROUP_ID.value]:
+                if add_to_group_ids in order_description_by_seen_group_ids:
+                    order_description_by_seen_group_ids[add_to_group_ids][
+                        trading_enums.TradingSignalOrdersAttrs.ADDITIONAL_ORDERS.value].append(signal.content)
+                    include_signal = False
+                else:
+                    order_description_by_seen_group_ids[add_to_group_ids] = signal.content
+            if include_signal:
+                filtered_signals.append(signal)
+        self.signals = filtered_signals
+
+    def _get_order_description_from_local_orders(self, shared_signal_order_id):
+        for index, signal in enumerate(self.signals):
+            if signal.content[trading_enums.TradingSignalOrdersAttrs.SHARED_SIGNAL_ORDER_ID.value] == \
+                    shared_signal_order_id:
+                return index, signal.content
+        raise trading_errors.OrderDescriptionNotFoundError(
+            f"order not found (shared_signal_order_id: {shared_signal_order_id})"
+        )

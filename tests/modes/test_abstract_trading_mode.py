@@ -62,6 +62,7 @@ async def test_remote_signal_publisher(trading_mode):
             should_emit_trading_signal_mock.assert_called_once()
             assert builder.identifier == "hello identifier"
             assert isinstance(builder, signals.TradingSignalBundleBuilder)
+            assert builder.strategy == trading_mode.get_name()
 
 
 async def test_create_order(trading_mode, buy_limit_order):

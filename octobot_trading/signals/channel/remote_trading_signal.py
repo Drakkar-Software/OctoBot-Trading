@@ -31,17 +31,19 @@ class RemoteTradingSignalChannelInternalConsumer(consumers.InternalConsumer):
 
 
 class RemoteTradingSignalChannelProducer(producers.Producer):
-    async def send(self, signal, bot_id):
-        for consumer in self.channel.get_filtered_consumers(strategy=signal.strategy,
-                                                            exchange=signal.exchange,
-                                                            symbol=signal.symbol,
-                                                            version=signal.version,
-                                                            bot_id=bot_id):
+    async def send(self, signal, bot_id, version):
+        for consumer in self.channel.get_filtered_consumers(
+                strategy=signal.content[enums.TradingSignalOrdersAttrs.STRATEGY.value],
+                exchange=signal.content[enums.TradingSignalOrdersAttrs.EXCHANGE.value],
+                symbol=signal.content[enums.TradingSignalOrdersAttrs.SYMBOL.value],
+                version=version,
+                bot_id=bot_id
+        ):
             await consumer.queue.put({
-                enums.TradingSignalAttrs.STRATEGY.value: signal.strategy,
-                enums.TradingSignalAttrs.EXCHANGE.value: signal.exchange,
-                enums.TradingSignalAttrs.SYMBOL.value: signal.symbol,
-                RemoteTradingSignalsChannel.VERSION_KEY: signal.version,
+                enums.TradingSignalAttrs.STRATEGY.value: signal.content[enums.TradingSignalOrdersAttrs.STRATEGY.value],
+                enums.TradingSignalAttrs.EXCHANGE.value: signal.content[enums.TradingSignalOrdersAttrs.EXCHANGE.value],
+                enums.TradingSignalAttrs.SYMBOL.value: signal.content[enums.TradingSignalOrdersAttrs.SYMBOL.value],
+                RemoteTradingSignalsChannel.VERSION_KEY: version,
                 RemoteTradingSignalsChannel.BOT_ID_KEY: bot_id,
                 RemoteTradingSignalsChannel.SIGNAL_KEY: signal,
             })

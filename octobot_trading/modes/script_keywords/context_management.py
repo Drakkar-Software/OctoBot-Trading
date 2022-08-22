@@ -111,7 +111,8 @@ class Context(databases.CacheClient):
     def get_signal_builder(self) -> trading_signals.TradingSignalBundleBuilder:
         if self.signal_builder is None:
             self.signal_builder = trading_signals.TradingSignalBundleBuilder(
-                self.tentacle.get_trading_signal_identifier()
+                self.tentacle.get_trading_signal_identifier(),
+                self.tentacle.get_name()
             )
         return self.signal_builder
 
