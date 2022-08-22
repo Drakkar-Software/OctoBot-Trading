@@ -357,7 +357,7 @@ def get_order_quantity_currency(exchange_manager, symbol, side):
 
 
 async def get_order_size_portfolio_percent(exchange_manager, order_amount, side, symbol):
-    current_symbol_holding, current_market_holding, market_quantity, current_price, symbol_market = \
+    current_symbol_holding, current_market_holding, market_quantity, _, _ = \
         await get_pre_order_data(exchange_manager,
                                  symbol=symbol,
                                  timeout=constants.ORDER_DATA_FETCHING_TIMEOUT,

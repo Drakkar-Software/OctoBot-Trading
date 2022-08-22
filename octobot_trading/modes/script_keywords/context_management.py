@@ -30,7 +30,6 @@ import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
 import octobot_trading.storage as storage
 import octobot_trading.signals as trading_signals
-import octobot_trading.exchanges as exchanges
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.models as tentacles_manager_models
 
