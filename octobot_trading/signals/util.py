@@ -19,7 +19,7 @@ import octobot_trading.constants as trading_constants
 
 
 def create_order_signal_content(
-        order, action, strategy,
+        order, action, strategy, exchange_manager,
         target_amount=None,
         target_position=None,
         updated_target_amount=None,
@@ -32,9 +32,8 @@ def create_order_signal_content(
         trading_enums.TradingSignalCommonsAttrs.ACTION.value: action.value,
         trading_enums.TradingSignalOrdersAttrs.STRATEGY.value: strategy,
         trading_enums.TradingSignalOrdersAttrs.SYMBOL.value: order.symbol,
-        trading_enums.TradingSignalOrdersAttrs.EXCHANGE.value: order.exchange_manager.exchange_name,
-        trading_enums.TradingSignalOrdersAttrs.EXCHANGE_TYPE.value:
-            exchanges.get_exchange_type(order.exchange_manager).value,
+        trading_enums.TradingSignalOrdersAttrs.EXCHANGE.value: exchange_manager.exchange_name,
+        trading_enums.TradingSignalOrdersAttrs.EXCHANGE_TYPE.value: exchanges.get_exchange_type(exchange_manager).value,
         trading_enums.TradingSignalOrdersAttrs.SIDE.value: order.side.value,
         trading_enums.TradingSignalOrdersAttrs.TYPE.value: order.order_type.value,
         trading_enums.TradingSignalOrdersAttrs.QUANTITY.value: float(order.origin_quantity),

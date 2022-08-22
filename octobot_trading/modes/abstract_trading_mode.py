@@ -318,14 +318,16 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         )
         if self.should_emit_trading_signal():
             signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_created_order(
-                    created_order, target_amount=order_pf_percent
+                    created_order, self.exchange_manager, target_amount=order_pf_percent
                 )
         return created_order
 
     async def cancel_order(self, order, ignored_order: object = None) -> bool:
         cancelled = await self.exchange_manager.trader.cancel_order(order, ignored_order=ignored_order)
         if self.should_emit_trading_signal() and cancelled:
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_cancelled_order(order)
+            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_cancelled_order(
+                order, self.exchange_manager
+            )
         return cancelled
 
     async def edit_order(self, order,
@@ -344,10 +346,11 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         )
         if self.should_emit_trading_signal() and changed:
             signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_edited_order(
-                    order,
-                    updated_target_amount=edited_quantity,
-                    updated_limit_price=edited_price,
-                    updated_stop_price=edited_stop_price,
-                    updated_current_price=edited_current_price,
-                )
+                order,
+                self.exchange_manager,
+                updated_target_amount=edited_quantity,
+                updated_limit_price=edited_price,
+                updated_stop_price=edited_stop_price,
+                updated_current_price=edited_current_price,
+            )
         return changed
