@@ -132,7 +132,7 @@ async def _is_supporting_octobot() -> bool:
         if not authenticator.is_initialized():
             initialization_timeout = 5
             await authenticator.await_initialization(initialization_timeout)
-        if authenticator.supports.is_supporting():
+        if authenticator.user_account.supports.is_supporting():
             return True
     except asyncio.TimeoutError:
         pass
