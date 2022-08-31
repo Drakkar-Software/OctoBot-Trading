@@ -630,9 +630,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         symbol = self.get_pair_from_exchange(ticker.symbol)
         # Can't create a full ticker from bid, ask, timestamp and symbol data
         # Push (ask + bid) / 2 as close price in MARK_PRICE channel
-        await self.push_to_channel(channel_name=trading_constants.MARK_PRICE_CHANNEL,
-                                   symbol=symbol,
-                                   mark_price=(ticker.ask + ticker.bid) / decimal.Decimal(2),
+        await self.push_to_channel(trading_constants.MARK_PRICE_CHANNEL,
+                                   symbol,
+                                   (ticker.ask + ticker.bid) / decimal.Decimal(2),
                                    mark_price_source=trading_enums.MarkPriceSources.TICKER_CLOSE_PRICE.value)
 
     async def trades(self, trade: cryptofeed_types.Trade, receipt_timestamp: float):
@@ -643,8 +643,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         """
         symbol = self.get_pair_from_exchange(trade.symbol)
         await self.push_to_channel(trading_constants.RECENT_TRADES_CHANNEL,
-                                   symbol=symbol,
-                                   recent_trades=[{
+                                   symbol,
+                                   [{
                                        trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: trade.timestamp,
                                        trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value: symbol,
                                        trading_enums.ExchangeConstantsOrderColumns.ID.value: trade.id,
@@ -672,9 +672,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                 book_side=trading_enums.TradeOrderSide.BUY.value))
 
         await self.push_to_channel(trading_constants.ORDER_BOOK_CHANNEL,
-                                   symbol=symbol,
-                                   asks=book_instance.asks,
-                                   bids=book_instance.bids,
+                                   symbol,
+                                   book_instance.asks,
+                                   book_instance.bids,
                                    update_order_book=False)
 
     async def candle(self, candle_data: cryptofeed_types.Candle, receipt_timestamp: float):
@@ -718,23 +718,23 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
                     self.logger.warning(f"Duplicate closed candle: pushing already pushed closed "
                                         f"candle: [{candle_data}]")
                 await self.push_to_channel(trading_constants.OHLCV_CHANNEL,
-                                           time_frame=time_frame,
-                                           symbol=symbol,
-                                           candle=previous_candle if push_previous_candle else candle)
+                                           time_frame,
+                                           symbol,
+                                           previous_candle if push_previous_candle else candle)
                 # closed candle has been fetched from exchange, use it and reset previous open candle
                 self._register_previous_open_candle(time_frame, symbol, None)
             if not candle_data.closed:
                 await self.push_to_channel(trading_constants.KLINE_CHANNEL,
-                                           time_frame=time_frame,
-                                           symbol=symbol,
-                                           kline=candle)
+                                           time_frame,
+                                           symbol,
+                                           candle)
                 self._register_previous_open_candle(time_frame, symbol, candle)
 
         # Push a new ticker if necessary : only push on the min timeframe
         if time_frame is self.min_timeframe:
             await self.push_to_channel(trading_constants.TICKER_CHANNEL,
-                                       symbol=symbol,
-                                       ticker=ticker)
+                                       symbol,
+                                       ticker)
 
     async def liquidations(self, liquidation: cryptofeed_types.Liquidation, receipt_timestamp: float):
         """
@@ -751,13 +751,14 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         """
         symbol = self.get_pair_from_exchange(funding.symbol)
         await self.push_to_channel(trading_constants.FUNDING_CHANNEL,
-                                   symbol=symbol,
-                                   funding_rate=funding.rate,
-                                   next_funding_time=funding.next_funding_time,
-                                   timestamp=funding.timestamp)
+                                   symbol,
+                                   funding.rate,
+                                   funding.predicted_rate,
+                                   funding.next_funding_time,
+                                   funding.timestamp)
         await self.push_to_channel(trading_constants.MARK_PRICE_CHANNEL,
-                                   symbol=symbol,
-                                   mark_price=funding.mark_price)
+                                   symbol,
+                                   funding.mark_price)
 
     async def open_interest(self, open_interest: cryptofeed_types.OpenInterest, receipt_timestamp: float):
         """
@@ -772,10 +773,10 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param index: the index object defined in cryptofeed.types.Index
         :param receipt_timestamp: received timestamp
         """
-        await self.push_to_channel(channel_name=trading_constants.MARK_PRICE_CHANNEL,
-                                   symbol=self.get_pair_from_exchange(index.symbol),
-                                   mark_price=index.price,
-                                   mark_price_source=trading_enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value)
+        await self.push_to_channel(trading_constants.MARK_PRICE_CHANNEL,
+                                   self.get_pair_from_exchange(index.symbol),
+                                   index.price,
+                                   trading_enums.MarkPriceSources.EXCHANGE_MARK_PRICE.value)
 
     async def order(self, order: cryptofeed_types.OrderInfo, receipt_timestamp: float):
         """
@@ -783,7 +784,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param order the order object defined in cryptofeed.types.?
         :param receipt_timestamp: received timestamp
         """
-        await self.push_to_channel(trading_constants.ORDERS_CHANNEL, orders=[{
+        await self.push_to_channel(trading_constants.ORDERS_CHANNEL, [{
             trading_enums.ExchangeConstantsOrderColumns.TYPE.value: self._parse_order_type(order.type),
             trading_enums.ExchangeConstantsOrderColumns.STATUS.value: self._parse_order_status(order.status),
             trading_enums.ExchangeConstantsOrderColumns.ID.value: order.id,
@@ -802,7 +803,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param trade: the trade object defined in cryptofeed.types.?
         :param receipt_timestamp: received timestamp
         """
-        await self.push_to_channel(trading_constants.TRADES_CHANNEL, trades=[self.exchange.parse_trade(trade)])
+        await self.push_to_channel(trading_constants.TRADES_CHANNEL, [self.exchange.parse_trade(trade)])
 
     async def balance(self, balance: cryptofeed_types.Balance, receipt_timestamp: float):
         """
@@ -811,7 +812,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param receipt_timestamp: received timestamp
         """
         await self.push_to_channel(trading_constants.BALANCE_CHANNEL,
-                                   balance=self.exchange.parse_balance(balance.balance))
+                                   self.exchange.parse_balance(balance.balance))
 
     async def transaction(self, transaction: cryptofeed_types.Transaction, receipt_timestamp: float):
         """

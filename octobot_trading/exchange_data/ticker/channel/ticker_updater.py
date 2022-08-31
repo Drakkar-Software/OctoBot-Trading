@@ -111,7 +111,7 @@ class TickerUpdater(ticker_channel.TickerProducer):
         try:
             await exchanges_channel.get_chan(constants.MINI_TICKER_CHANNEL,
                                              self.channel.exchange_manager.id).get_internal_producer(). \
-                push(symbol=pair, mini_ticker={
+                push(pair, {
                 enums.ExchangeConstantsMiniTickerColumns.HIGH_PRICE.value:
                     ticker[enums.ExchangeConstantsTickersColumns.HIGH.value],
                 enums.ExchangeConstantsMiniTickerColumns.LOW_PRICE.value:
@@ -150,8 +150,8 @@ class TickerUpdater(ticker_channel.TickerProducer):
             ticker = self.channel.exchange_manager.exchange.parse_mark_price(ticker, from_ticker=True)
             await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL,
                                              self.channel.exchange_manager.id).get_internal_producer(). \
-                push(symbol=symbol,
-                     mark_price=decimal.Decimal(str(ticker[enums.ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])))
+                push(symbol,
+                     decimal.Decimal(str(ticker[enums.ExchangeConstantsMarkPriceColumns.MARK_PRICE.value])))
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update mark price from ticker : {e}")
 
@@ -160,13 +160,11 @@ class TickerUpdater(ticker_channel.TickerProducer):
             ticker = self.channel.exchange_manager.exchange.parse_funding(ticker, from_ticker=True)
             await exchanges_channel.get_chan(constants.FUNDING_CHANNEL,
                                              self.channel.exchange_manager.id).get_internal_producer(). \
-                push(symbol=symbol,
-                     funding_rate=decimal.Decimal(str(
-                         ticker[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value])),
-                     predicted_funding_rate=decimal.Decimal(str(
-                         ticker[enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value])),
-                     next_funding_time=ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
-                     timestamp=ticker[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
+                push(symbol,
+                     decimal.Decimal(str(ticker[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value])),
+                     decimal.Decimal(str(ticker[enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value])),
+                     ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
+                     ticker[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update funding rate from ticker : {e}")
 

@@ -123,11 +123,11 @@ class FundingUpdater(funding_channel.FundingProducer):
         if next_funding_time is None:
             next_funding_time = last_funding_time + self.FUNDING_REFRESH_TIME_MAX
         await self.push(
-            symbol=symbol,
-            funding_rate=funding_rate,
-            predicted_funding_rate=predicted_funding_rate,
-            next_funding_time=next_funding_time,
-            timestamp=last_funding_time,
+            symbol,
+            funding_rate,
+            predicted_funding_rate,
+            next_funding_time,
+            last_funding_time,
         )
 
     def _should_run(self):

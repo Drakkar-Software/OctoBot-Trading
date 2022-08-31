@@ -155,7 +155,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
             await self._push_positions(positions)
 
     async def _push_positions(self, positions):
-        await self.push(positions=positions)
+        await self.push(positions)
 
         if self._should_push_mark_price():
             for position in positions:
@@ -180,8 +180,8 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         try:
             await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL,
                                              self.channel.exchange_manager.id).get_internal_producer(). \
-                push(symbol=position_dict[enums.ExchangeConstantsPositionColumns.SYMBOL.value],
-                     mark_price=position_dict[enums.ExchangeConstantsPositionColumns.MARK_PRICE.value])
+                push(position_dict[enums.ExchangeConstantsPositionColumns.SYMBOL.value],
+                     position_dict[enums.ExchangeConstantsPositionColumns.MARK_PRICE.value])
         except Exception as e:
             self.logger.exception(e, True, f"Fail to update mark price from position : {e}")
 

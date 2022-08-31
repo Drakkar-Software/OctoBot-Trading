@@ -61,7 +61,7 @@ class TradesUpdater(trades_channel.TradesProducer):
                 limit=self.MAX_OLD_TRADES_TO_FETCH)
 
             if trades:
-                await self.push(trades=list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
+                await self.push(list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
 
     async def start(self):
         if util.is_trade_history_loading_enabled(self.channel.exchange_manager.config):
