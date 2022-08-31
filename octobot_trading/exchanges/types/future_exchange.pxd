@@ -18,7 +18,7 @@ cimport octobot_trading.exchanges.abstract_exchange as abstract_exchange
 cimport octobot_trading.exchange_data.contracts as contracts
 
 cdef class FutureExchange(abstract_exchange.AbstractExchange):
-    cdef dict pair_contracts
+    cdef public dict pair_contracts
 
     cpdef void create_pair_contract(self, str pair,
                                     object current_leverage, object margin_type,
