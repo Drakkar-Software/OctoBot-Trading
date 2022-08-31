@@ -138,10 +138,11 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
         if funding_rate:
             await exchanges_channel.get_chan(constants.FUNDING_CHANNEL,
                                              self.channel.exchange_manager.id).get_internal_producer(). \
-                push(symbol=symbol,
-                     funding_rate=funding_rate[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
-                     next_funding_time=funding_rate[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
-                     timestamp=funding_rate[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
+                push(symbol,
+                     funding_rate[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
+                     funding_rate.get(enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value, 0),
+                     funding_rate[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
+                     funding_rate[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
 
     def _should_fetch_on_exchange(self) -> bool:
         return not (

@@ -99,7 +99,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
             open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(symbol=symbol, limit=limit)
             if open_orders:
-                await self.push(orders=list(map(self.channel.exchange_manager.exchange.clean_order, open_orders)),
+                await self.push(list(map(self.channel.exchange_manager.exchange.clean_order, open_orders)),
                                 is_from_bot=is_from_bot)
             else:
                 await self.handle_post_open_order_update(symbol, open_orders, False)
@@ -114,7 +114,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                 symbol=symbol, limit=limit)
 
             if close_orders:
-                await self.push(orders=list(map(self.channel.exchange_manager.exchange.clean_order, close_orders)),
+                await self.push(list(map(self.channel.exchange_manager.exchange.clean_order, close_orders)),
                                 are_closed=True)
 
     async def update_order_from_exchange(self, order,
