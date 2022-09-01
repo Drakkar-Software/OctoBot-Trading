@@ -149,8 +149,8 @@ class Order(util.Initializable):
                         self.symbol,
                         side
                     )
-                except errors.InvalidPositionSide as e:
-                    logging.get_logger(self.get_logger_name()).error(f"Can't infer quantity_currency: {e}")
+                except (errors.InvalidPositionSide, errors.ContractExistsError) as e:
+                    logging.get_logger(self.get_logger_name()).warning(f"Can't infer quantity_currency: {e}")
         else:
             self.quantity_currency = quantity_currency
 
