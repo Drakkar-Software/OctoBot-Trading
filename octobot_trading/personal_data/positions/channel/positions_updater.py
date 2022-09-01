@@ -77,11 +77,11 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         Initialize data before starting jobs
         """
         try:
-            await self.fetch_and_push(should_initialize_contract=True)
+            await self.fetch_and_push()
         except NotImplementedError:
             self.should_use_position_per_symbol = True
             try:
-                await self.fetch_and_push(should_initialize_contract=True)
+                await self.fetch_and_push()
             except NotImplementedError:
                 self.logger.warning("Position updater cannot fetch positions : required methods are not implemented")
                 await self.stop()
@@ -102,31 +102,29 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         await asyncio.sleep(self.POSITIONS_STARTING_REFRESH_TIME)
         await self.position_update_job.run()
 
-    async def fetch_and_push(self, should_initialize_contract=False):
+    async def fetch_and_push(self):
         """
         Update positions from exchange
-        :param should_initialize_contract: if fetch and push should create contract if necessary
         """
-        await self._positions_fetch_and_push(should_initialize_contract=should_initialize_contract)
+        await self._positions_fetch_and_push()
         await asyncio.sleep(self.TIME_BETWEEN_POSITIONS_REFRESH)
 
-    async def _positions_fetch_and_push(self, should_initialize_contract=False):
+    async def _positions_fetch_and_push(self):
         """
         Update positions from exchange
-        :param should_initialize_contract: if the fetch method should create contract if necessary
         """
         try:
             if self.should_use_position_per_symbol:
-                await self.fetch_position_per_symbol(should_initialize_contract=should_initialize_contract)
+                await self.fetch_position_per_symbol()
             else:
-                await self.fetch_positions(should_initialize_contract=should_initialize_contract)
+                await self.fetch_positions()
         except Exception as e:
             self.logger.error(f"Fail to update positions : {e}")
 
     def _should_run(self):
         return self.channel.exchange_manager.is_future
 
-    async def fetch_position_per_symbol(self, should_initialize_contract=False):
+    async def fetch_position_per_symbol(self):
         positions = []
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
             fetched_positions = await self.channel.exchange_manager.exchange.get_symbol_positions(symbol=symbol)
@@ -134,15 +132,14 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                 positions += fetched_positions
 
         if positions:
-            if should_initialize_contract:
-                self._initialize_contract_if_necessary(positions)
+            self._initialize_contract_if_necessary(positions)
             await self._push_positions(positions)
 
     def _is_valid_position(self, position_dict):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
                in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
 
-    async def fetch_positions(self, should_initialize_contract=False):
+    async def fetch_positions(self):
         positions = [
             position
             for position in await self.channel.exchange_manager.exchange.get_positions()
@@ -150,8 +147,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         ]
 
         if positions:
-            if should_initialize_contract:
-                self._initialize_contract_if_necessary(positions)
+            self._initialize_contract_if_necessary(positions)
             await self._push_positions(positions)
 
     async def _push_positions(self, positions):
