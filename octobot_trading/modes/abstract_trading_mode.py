@@ -298,7 +298,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                     (self.get_name(), )
                 ) as signal_builder:
                     yield signal_builder
-            except authentication.AuthenticationRequired as e:
+            except (authentication.AuthenticationRequired, authentication.UnavailableError) as e:
                 self.logger.exception(e, True, f"Failed to send trading signals: {e}")
         else:
             yield None
