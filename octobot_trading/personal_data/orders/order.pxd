@@ -82,7 +82,7 @@ cdef class Order(util.Initializable):
 
     cdef public object exchange_order_type # raw exchange order type, used to create order dict
 
-    cpdef bint update(self,
+    cpdef object update(self,
             str symbol,
             str order_id=*,
             object status=*,
