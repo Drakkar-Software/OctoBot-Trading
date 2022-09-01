@@ -48,6 +48,10 @@ class BalanceUpdater(portfolios_channel.BalanceProducer):
             try:
                 await self.fetch_and_push()
                 await asyncio.sleep(self.BALANCE_REFRESH_TIME)
+            except errors.FailedRequest as e:
+                self.logger.warning(str(e))
+                # avoid spamming on disconnected situation
+                await asyncio.sleep(constants.DEFAULT_FAILED_REQUEST_RETRY_TIME)
             except errors.NotSupported:
                 self.logger.warning(
                     f"{self.channel.exchange_manager.exchange_name} is not supporting updates"
