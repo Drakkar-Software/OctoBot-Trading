@@ -316,7 +316,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         created_order = await self.exchange_manager.trader.create_order(
             order, loaded=loaded, params=params, pre_init_callback=pre_init_callback
         )
-        if self.should_emit_trading_signal():
+        if created_order is not None and self.should_emit_trading_signal():
             signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_created_order(
                     created_order, self.exchange_manager, target_amount=order_pf_percent
                 )
