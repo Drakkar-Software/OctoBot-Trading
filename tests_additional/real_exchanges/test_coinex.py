@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import pytest
-from ccxt.async_support import bittrex
 
 from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
@@ -28,8 +27,8 @@ from tests import event_loop
 pytestmark = pytest.mark.asyncio
 
 
-class TestBittrexRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "bittrex"
+class TestCoinexRealExchangeTester(RealExchangeTester):
+    EXCHANGE_NAME = "coinex"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "XRP/BTC"
@@ -38,9 +37,18 @@ class TestBittrexRealExchangeTester(RealExchangeTester):
         time_frames = await self.time_frames()
         assert all(time_frame in time_frames for time_frame in (
             TimeFrames.ONE_MINUTE.value,
+            TimeFrames.THREE_MINUTES.value,
             TimeFrames.FIVE_MINUTES.value,
+            TimeFrames.FIFTEEN_MINUTES.value,
+            TimeFrames.THIRTY_MINUTES.value,
             TimeFrames.ONE_HOUR.value,
-            TimeFrames.ONE_DAY.value
+            TimeFrames.TWO_HOURS.value,
+            TimeFrames.FOUR_HOURS.value,
+            TimeFrames.SIX_HOURS.value,
+            TimeFrames.TWELVE_HOURS.value,
+            TimeFrames.ONE_DAY.value,
+            TimeFrames.THREE_DAYS.value,
+            TimeFrames.ONE_WEEK.value,
         ))
 
     async def test_get_market_status(self):
@@ -62,40 +70,36 @@ class TestBittrexRealExchangeTester(RealExchangeTester):
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) >= 744
+        # default 100 candles
+        assert len(symbol_prices) == 100
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-        # candle limit is not supported, replaced by (await self.get_symbol_prices())[-limit:] in bittrex tentacle
         # try with candles limit (used in candled updater)
-        symbol_prices = (await self.get_symbol_prices())[-200:]
-        assert len(symbol_prices) == 200
+        symbol_prices = await self.get_symbol_prices(limit=550)
+        assert len(symbol_prices) == 550
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
     async def test_get_kline_price(self):
-        # kline_price = await self.get_kline_price()
-        client = bittrex()
-        await client.fetch_markets()
-        kline_price = [(await client.fetch_ohlcv(TestBittrexRealExchangeTester.SYMBOL, TimeFrames.ONE_HOUR.value))[-1]]
+        kline_price = await self.get_kline_price()
 
         assert len(kline_price) == 1
         assert len(kline_price[0]) == 6
         kline_start_time = kline_price[0][PriceIndexes.IND_PRICE_TIME.value]
         # assert kline is the current candle
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
-        await client.close()
 
     async def test_get_order_book(self):
-        # fetchOrderBook() limit argument must be None, 1, 25 or 500, default is 25
-        order_book = await self.get_order_book(limit=25)
-        assert len(order_book[Ecobic.ASKS.value]) == 25
+        # fetchOrderBook() limit argument must be None, 5/10/20/50. Default is 20
+        order_book = await self.get_order_book(limit=10)
+        assert len(order_book[Ecobic.ASKS.value]) == 10
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
-        assert len(order_book[Ecobic.BIDS.value]) == 25
+        assert len(order_book[Ecobic.BIDS.value]) == 10
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
     async def test_get_recent_trades(self):
@@ -129,8 +133,8 @@ class TestBittrexRealExchangeTester(RealExchangeTester):
             Ectc.PREVIOUS_CLOSE.value
         ))
         if check_content:
-            assert ticker[Ectc.HIGH.value] is None
-            assert ticker[Ectc.LOW.value] is None
+            assert ticker[Ectc.HIGH.value]
+            assert ticker[Ectc.LOW.value]
             assert ticker[Ectc.BID.value]
             assert ticker[Ectc.BID_VOLUME.value] is None
             assert ticker[Ectc.ASK.value]
@@ -138,8 +142,7 @@ class TestBittrexRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.OPEN.value] is None
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
-            assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
-            assert ticker[Ectc.BASE_VOLUME.value] is None
-            RealExchangeTester.check_ticker_typing(ticker, check_open=False, check_high=False,
-                                                   check_low=False, check_base_volume=False, check_timestamp=False)
+            assert ticker[Ectc.BASE_VOLUME.value]
+            assert ticker[Ectc.TIMESTAMP.value]
+            RealExchangeTester.check_ticker_typing(ticker, check_open=False)
