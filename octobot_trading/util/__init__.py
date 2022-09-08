@@ -39,6 +39,7 @@ from octobot_trading.util.config_util import (
     get_market_pair,
     get_reference_market,
     get_traded_pairs_by_currency,
+    get_current_bot_live_id,
 )
 from octobot_trading.util.databases_util import (
     get_run_databases_identifier,
@@ -59,5 +60,6 @@ __all__ = [
     "get_market_pair",
     "get_reference_market",
     "get_traded_pairs_by_currency",
+    "get_current_bot_live_id",
     "get_run_databases_identifier",
 ]
