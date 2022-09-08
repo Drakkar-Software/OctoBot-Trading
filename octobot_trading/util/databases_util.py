@@ -28,5 +28,5 @@ def get_run_databases_identifier(config, tentacles_setup_config, trading_mode_cl
         optimization_campaign.OptimizationCampaign.get_campaign_name(tentacles_setup_config),
         backtesting_id=config.get(commons_constants.CONFIG_BACKTESTING_ID),
         optimizer_id=config.get(commons_constants.CONFIG_OPTIMIZER_ID),
-        bot_recording_id=config_util.get_current_bot_recording_id(config)
+        live_id=config_util.get_current_bot_live_id(config)
     )

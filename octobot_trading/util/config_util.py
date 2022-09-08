@@ -109,10 +109,10 @@ def get_traded_pairs_by_currency(config):
     }
 
 
-def get_current_bot_recording_id(config=None):
+def get_current_bot_live_id(config=None):
     if config:
-        return config[commons_constants.CONFIG_TRADING].get(octobot_constants.CURRENT_BOT_RECORDING_ID,
-                                                            octobot_constants.DEFAULT_BOT_RECORDING_ID)
+        return config[commons_constants.CONFIG_TRADING].get(commons_constants.CONFIG_CURRENT_LIVE_ID,
+                                                            commons_constants.DEFAULT_CURRENT_LIVE_ID)
     import octobot_services.interfaces.util as interfaces_util  # todo move function to a better place
     return interfaces_util.get_edited_config()[commons_constants.CONFIG_TRADING]\
-        .get(octobot_constants.CURRENT_BOT_RECORDING_ID, octobot_constants.DEFAULT_BOT_RECORDING_ID)
+        .get(commons_constants.CONFIG_CURRENT_LIVE_ID, commons_constants.DEFAULT_CURRENT_LIVE_ID)
