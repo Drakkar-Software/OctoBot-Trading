@@ -19,4 +19,4 @@ pur
 
 aiohttp
 
-pylint
+pylint<2.15.2   # bug with pylint 2.15.2
