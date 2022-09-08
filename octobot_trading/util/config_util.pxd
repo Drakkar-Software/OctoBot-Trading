@@ -26,5 +26,6 @@ cpdef list get_pairs(dict config, str currency, bint enabled_only=*)
 cpdef tuple get_market_pair(dict config, str currency, bint enabled_only=*)
 cpdef str get_reference_market(dict config)
 cpdef dict get_traded_pairs_by_currency(dict config)
+cpdef object get_current_bot_live_id(dict config)
 
 cdef bint _is_trader_enabled(dict config, str trader_key)

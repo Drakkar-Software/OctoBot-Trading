@@ -16,7 +16,6 @@
 import octobot_commons.constants as commons_constants
 import octobot_trading.constants as trading_constants
 import octobot_commons.symbols as symbol_util
-import octobot.constants as octobot_constants
 
 
 def is_trader_enabled(config) -> bool:
@@ -109,10 +108,8 @@ def get_traded_pairs_by_currency(config):
     }
 
 
-def get_current_bot_live_id(config=None):
-    if config:
-        return config[commons_constants.CONFIG_TRADING].get(commons_constants.CONFIG_CURRENT_LIVE_ID,
-                                                            commons_constants.DEFAULT_CURRENT_LIVE_ID)
-    import octobot_services.interfaces.util as interfaces_util  # todo move function to a better place
-    return interfaces_util.get_edited_config()[commons_constants.CONFIG_TRADING]\
-        .get(commons_constants.CONFIG_CURRENT_LIVE_ID, commons_constants.DEFAULT_CURRENT_LIVE_ID)
+def get_current_bot_live_id(config):
+    return config[commons_constants.CONFIG_TRADING].get(
+        commons_constants.CONFIG_CURRENT_LIVE_ID,
+        commons_constants.DEFAULT_CURRENT_LIVE_ID
+    )
