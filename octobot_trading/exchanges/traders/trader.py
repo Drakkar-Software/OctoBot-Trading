@@ -93,26 +93,30 @@ class Trader(util.Initializable):
         :param pre_init_callback: A callback function that will be called just before initializing the order
         :return: The crated order instance
         """
-        new_order: object = order
-
+        created_order = order
         if loaded:
-            new_order.is_from_this_octobot = False
-            self.logger.debug(f"Order loaded : {new_order.to_string()} ")
+            order.is_from_this_octobot = False
+            self.logger.debug(f"Order loaded : {order.to_string()} ")
         else:
             try:
                 params = params or {}
-                new_order = await self._create_new_order(new_order, params)
-                self.logger.debug(f"Order creation : {new_order.to_string()} ")
-            except TypeError as e:
-                self.logger.error(f"Fail to create not loaded order : {e}")
+                created_order = await self._create_new_order(order, params)
+                self.logger.debug(f"Order creation : {created_order.to_string()} ")
+            except Exception as e:
+                if created_order is None:
+                    self.logger.warning(f"Order not created order on {self.exchange_manager.exchange_name} "
+                                        f"(failed attempt to create: {order}). This is likely due to "
+                                        f"the order being refused by the exchange.")
+                else:
+                    self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
                 return None
 
         if pre_init_callback is not None:
-            await pre_init_callback(new_order)
+            await pre_init_callback(created_order)
 
         # force initialize to always create open state
-        await new_order.initialize()
-        return new_order
+        await created_order.initialize()
+        return created_order
 
     async def create_artificial_order(self, order_type, symbol, current_price, quantity, price):
         """
@@ -210,7 +214,8 @@ class Trader(util.Initializable):
                                                                               new_order.side,
                                                                               new_order.created_last_price,
                                                                               params=order_params)
-
+            if created_order is None:
+                return None
             self.logger.info(f"Created order on {self.exchange_manager.exchange_name}: {created_order}")
 
             # get real order from exchange
