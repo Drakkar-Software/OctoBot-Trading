@@ -161,7 +161,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         for position in positions:
             pair = position.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None)
             if pair and pair not in self.channel.exchange_manager.exchange.pair_contracts:
-                self.channel.exchange_manager.exchange.create_pair_contract(
+                contract = self.channel.exchange_manager.exchange.create_pair_contract(
                     pair=pair,
                     current_leverage=position.get(
                         enums.ExchangeConstantsPositionColumns.LEVERAGE.value, constants.ZERO),
@@ -171,6 +171,8 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                     maintenance_margin_rate=position.get(
                         enums.ExchangeConstantsPositionColumns.MAINTENANCE_MARGIN_RATE.value,
                         constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE))
+                if not contract.is_handled_contract():
+                    self.logger.error(f"Unhandled contract {contract}. This contract can't be traded")
 
     async def extract_mark_price(self, position_dict: dict):
         try:

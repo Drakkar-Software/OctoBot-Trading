@@ -44,7 +44,7 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         Initialize exchange FutureContracts required to manage positions
         """
         for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            self.channel.exchange_manager.exchange.create_pair_contract(
+            contract = self.channel.exchange_manager.exchange.create_pair_contract(
                 pair=pair,
                 current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
                 margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
@@ -54,6 +54,8 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
                 position_mode=constants.DEFAULT_SYMBOL_POSITION_MODE,
                 maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
                 maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE)
+            if not contract.is_handled_contract():
+                self.logger.error(f"Unhandled contract {contract}. This contract can't be traded")
 
     async def _get_contract_type_or_default(self, pair):
         try:

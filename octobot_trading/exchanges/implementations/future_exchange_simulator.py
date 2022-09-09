@@ -99,7 +99,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
         Create a new FutureContract for the pair
         :param pair: the pair
         """
-        self.create_pair_contract(
+        return self.create_pair_contract(
             pair=pair,
             current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
             margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,

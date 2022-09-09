@@ -15,6 +15,7 @@
 #  License along with this library.
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
+import octobot_trading.errors as errors
 
 
 def create_position_instance_from_raw(trader, raw_position):
@@ -38,7 +39,9 @@ def create_position_from_type(trader, symbol_contract):
     :param symbol_contract: the position symbol contract
     :return: the created position
     """
-    return personal_data.TraderPositionTypeClasses[symbol_contract.contract_type](trader, symbol_contract)
+    if symbol_contract.is_handled_contract():
+        return personal_data.TraderPositionTypeClasses[symbol_contract.contract_type](trader, symbol_contract)
+    raise errors.UnhandledContractError(f"{symbol_contract} is not supported")
 
 
 def create_symbol_position(trader, symbol):
