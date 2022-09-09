@@ -20,11 +20,13 @@ cimport octobot_trading.exchange_data.contracts as contracts
 cdef class FutureExchange(abstract_exchange.AbstractExchange):
     cdef public dict pair_contracts
 
-    cpdef void create_pair_contract(self, str pair,
-                                    object current_leverage, object margin_type,
-                                    object contract_type, object position_mode,
-                                    object maintenance_margin_rate,
-                                    object maximum_leverage=*)
+    cpdef contracts.FutureContract create_pair_contract(
+            self, str pair,
+            object current_leverage, object margin_type,
+            object contract_type, object position_mode,
+            object maintenance_margin_rate,
+            object maximum_leverage=*
+    )
     cpdef double calculate_position_value(self, double quantity, double mark_price)
     cpdef contracts.FutureContract get_pair_future_contract(self, str pair)
     cpdef void set_pair_future_contract(self, str pair, contracts.FutureContract future_contract)

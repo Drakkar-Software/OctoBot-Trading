@@ -288,8 +288,11 @@ class ExchangePersonalData(util.Initializable):
                     symbol=symbol, side=None if position.symbol_contract.is_one_way_position_mode() else side)
                 await self.handle_position_update_notification(position_instance, is_updated=changed)
             return changed
+        except errors.UnhandledContractError as e:
+            self.logger.debug(f"Failed to update {symbol} position : {e}")
+            return False
         except Exception as e:
-            self.logger.exception(e, True, f"Failed to update position : {e}")
+            self.logger.exception(e, True, f"Failed to update {symbol} position : {e}")
             return False
 
     async def handle_position_instance_update(self, position, should_notify: bool = True):

@@ -39,9 +39,13 @@ class FutureContract(margin_contract.MarginContract):
         self.take_profit_stop_loss_mode = take_profit_stop_loss_mode
 
     def __str__(self):
+        if self.is_handled_contract():
+            return (f"{self.pair} "
+                    f"{'inverse' if self.is_inverse_contract() else 'linear'} "
+                    f"{'perpetual' if self.is_perpetual_contract() else 'future'} "
+                    f"{self.margin_type.value} x{self.current_leverage}")
         return (f"{self.pair} "
-                f"{'inverse' if self.is_inverse_contract() else 'linear'} "
-                f"{'perpetual' if self.is_perpetual_contract() else 'future'} "
+                f"unhandled contract "
                 f"{self.margin_type.value} x{self.current_leverage}")
 
     def is_inverse_contract(self):
@@ -83,3 +87,7 @@ class FutureContract(margin_contract.MarginContract):
 
     def set_take_profit_stop_loss_mode(self, take_profit_stop_loss_mode):
         self.take_profit_stop_loss_mode = take_profit_stop_loss_mode
+
+    def is_handled_contract(self):
+        # unhandled / unknown contracts have None in self.contract_type
+        return self.contract_type is not None
