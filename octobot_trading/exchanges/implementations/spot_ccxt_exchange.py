@@ -118,7 +118,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             raise errors.NotSupported
         except Exception as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
+            self.logger.exception(e, False, f"Unexpected error during order operation: {e}")
 
     async def _verify_order(self, created_order, order_type, symbol, price, params=None):
         # some exchanges are not returning the full order details on creation: fetch it if necessary

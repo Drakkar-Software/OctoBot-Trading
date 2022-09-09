@@ -1,3 +1,4 @@
+# pylint: disable=W0706
 #  Drakkar-Software OctoBot-Trading
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -40,6 +41,10 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         except errors.MissingMinimalExchangeTradeVolume:
             self.logger.info(f"Not enough funds to create a new order: {self.exchange_manager.exchange_name} "
                              f"exchange minimal order volume has not been reached.")
+        except errors.OrderCreationError:
+            self.logger.info(f"Failed order creation on: {self.exchange_manager.exchange_name} "
+                             f"an unexpected error happened when creating order. This is likely due to "
+                             f"the order being refused by the exchange.")
 
     async def create_new_orders(self, symbol, final_note, state, **kwargs):
         raise NotImplementedError("create_new_orders is not implemented")
@@ -57,7 +62,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                 if await self.can_create_order(symbol, state):
                     try:
                         return await self.create_new_orders(symbol, final_note, state, **kwargs)
-                    except errors.MissingMinimalExchangeTradeVolume:
+                    except (errors.MissingMinimalExchangeTradeVolume, errors.OrderCreationError):
                         raise
                     except errors.MissingFunds:
                         try:
