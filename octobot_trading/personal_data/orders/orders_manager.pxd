@@ -36,6 +36,7 @@ cdef class OrdersManager(util.Initializable):
     cdef void _remove_oldest_orders(self, int nb_to_remove)
     cdef list _select_orders(self, object state=*, str symbol=*, int since=*, int limit=*, str tag=*)
     cdef object _get_pending_order(self, object created_order, bint should_pop)
+    cdef void _add_order(self, str order_id, object order)
 
     cpdef order_class.Order get_order(self, str order_id)
     cpdef void register_pending_creation_order(self, object pending_order)

@@ -86,7 +86,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
             return self.pair_contracts[pair]
         except KeyError:
             asyncio.create_task(self.load_pair_future_contract(pair))
-            raise errors.ContractExistsError(f"{pair} future contract doesn't exist, fetching...")
+            raise errors.ContractExistsError(f"{pair} future contract doesn't exist, fetching it...")
 
     def set_pair_future_contract(self, pair, future_contract):
         """

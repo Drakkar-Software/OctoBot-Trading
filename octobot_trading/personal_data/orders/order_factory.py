@@ -79,4 +79,5 @@ def create_order_instance(trader,
                  tag=tag,
                  reduce_only=reduce_only,
                  quantity_currency=quantity_currency)
+    order.ensure_order_id()
     return order

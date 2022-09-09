@@ -100,8 +100,8 @@ class Trader(util.Initializable):
         else:
             try:
                 params = params or {}
+                self.logger.info(f"Creating order: {created_order}")
                 created_order = await self._create_new_order(order, params)
-                self.logger.debug(f"Order creation : {created_order.to_string()} ")
             except Exception as e:
                 if created_order is None:
                     self.logger.warning(f"Order not created order on {self.exchange_manager.exchange_name} "
@@ -154,6 +154,12 @@ class Trader(util.Initializable):
                     # careful here: make sure we are not editing an order on exchange that is being updated
                     # somewhere else
                     async with order.state.refresh_operation():
+                        self.logger.info(f"Editing order: {order} ["
+                                         f"edited_quantity: {str(edited_quantity)} "
+                                         f"edited_price: {str(edited_price)} "
+                                         f"edited_stop_price: {str(edited_stop_price)} "
+                                         f"edited_current_price: {str(edited_current_price)}"
+                                         f"]")
                         order_params = self.exchange_manager.exchange.get_order_additional_params(order)
                         order_params.update(params or {})
                         # fill in every param as some exchange rely on re-creating the order altogether
@@ -169,8 +175,8 @@ class Trader(util.Initializable):
                             params=order_params
                         )
                         # apply new values from returned order (even order id might have changed)
-                        self.logger.debug(f"Successful order edit on {self.exchange_manager.exchange_name}: "
-                                          f"{edited_order}")
+                        self.logger.debug(f"Successfully edited order on {self.exchange_manager.exchange_name}, "
+                                          f"new order values: {edited_order}")
                         changed = order.update_from_raw(edited_order)
                         # update portfolio from exchange
                         await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
@@ -216,7 +222,7 @@ class Trader(util.Initializable):
                                                                               params=order_params)
             if created_order is None:
                 return None
-            self.logger.info(f"Created order on {self.exchange_manager.exchange_name}: {created_order}")
+            self.logger.debug(f"Successfully created order on {self.exchange_manager.exchange_name}: {created_order}")
 
             # get real order from exchange
             updated_order = order_factory.create_order_instance_from_raw(self, created_order, force_open=True)
@@ -272,6 +278,7 @@ class Trader(util.Initializable):
         :return: None
         """
         if order and order.is_open():
+            self.logger.info(f"Cancelling order: {order}")
             # always cancel this order first to avoid infinite loop followed by deadlock
             return await self._handle_order_cancellation(order, ignored_order)
         return False
