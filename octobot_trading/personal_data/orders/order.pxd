@@ -136,6 +136,7 @@ cdef class Order(util.Initializable):
     cpdef void add_chained_order(self, object chained_order)
     cpdef bint should_be_created(self)
     cpdef void add_to_order_group(self, object order_group)
+    cpdef object ensure_order_id(self)
     cdef void _update_total_cost(self)
 
 cdef object _get_sell_and_buy_types(object order_type)

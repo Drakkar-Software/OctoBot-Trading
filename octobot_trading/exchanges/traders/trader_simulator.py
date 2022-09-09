@@ -13,11 +13,10 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import uuid
-
 import octobot_trading.constants
 import octobot_trading.exchanges.traders.trader as trader
 import octobot_trading.util as util
+import octobot_trading.personal_data.orders.order_util as order_util
 
 
 class TraderSimulator(trader.Trader):
@@ -40,4 +39,4 @@ class TraderSimulator(trader.Trader):
         return util.is_trader_simulator_enabled(config)
 
     def parse_order_id(self, order_id):
-        return str(uuid.uuid4()) if order_id is None else order_id
+        return order_util.generate_order_id() if order_id is None else order_id

@@ -596,6 +596,11 @@ class Order(util.Initializable):
             # (should only be used for simulation anyway)
             self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
 
+    def ensure_order_id(self):
+        if self.order_id is None and self.is_self_managed():
+            # self managed orders should always have an id, even on real trader
+            self.order_id = order_util.generate_order_id()
+
     def to_dict(self):
         filled_price = self.filled_price if self.filled_price > 0 else self.origin_price
         return {

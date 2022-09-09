@@ -89,6 +89,7 @@ from octobot_trading.personal_data.orders.order_util cimport (
     is_stop_order,
     is_associated_pending_order,
     get_order_quantity_currency,
+    generate_order_id,
 )
 from octobot_trading.personal_data.orders.order_adapter cimport (
     adapt_price,
@@ -121,6 +122,7 @@ __all__ = [
     "is_stop_order",
     "is_associated_pending_order",
     "get_order_quantity_currency",
+    "generate_order_id",
     "OrderState",
     "OrderGroup",
     "BalancedTakeProfitAndStopOrderGroup",
