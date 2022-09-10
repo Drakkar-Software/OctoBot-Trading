@@ -136,11 +136,13 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
 
     async def push_funding_rate(self, symbol, funding_rate):
         if funding_rate:
+            predicted_funding_rate = \
+                funding_rate.get(enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value, constants.NaN)
             await exchanges_channel.get_chan(constants.FUNDING_CHANNEL,
                                              self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol,
-                     funding_rate[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
-                     funding_rate.get(enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value, 0),
+                     decimal.Decimal(str(funding_rate[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value])),
+                     decimal.Decimal(str(predicted_funding_rate or constants.NaN)),
                      funding_rate[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
                      funding_rate[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
 
