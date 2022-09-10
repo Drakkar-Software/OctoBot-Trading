@@ -158,11 +158,13 @@ class TickerUpdater(ticker_channel.TickerProducer):
     async def extract_funding_rate(self, symbol: str, ticker: dict):
         try:
             ticker = self.channel.exchange_manager.exchange.parse_funding(ticker, from_ticker=True)
+            predicted_funding_rate = ticker.get(enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value,
+                                                constants.NaN)
             await exchanges_channel.get_chan(constants.FUNDING_CHANNEL,
                                              self.channel.exchange_manager.id).get_internal_producer(). \
                 push(symbol,
                      decimal.Decimal(str(ticker[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value])),
-                     decimal.Decimal(str(ticker[enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value])),
+                     decimal.Decimal(str(predicted_funding_rate or constants.NaN)),
                      ticker[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value],
                      ticker[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
         except Exception as e:

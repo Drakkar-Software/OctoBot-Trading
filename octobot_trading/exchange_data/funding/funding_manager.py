@@ -22,8 +22,8 @@ class FundingManager(util.Initializable):
     def __init__(self):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
-        self.funding_rate = constants.ZERO
-        self.predicted_funding_rate = constants.ZERO
+        self.funding_rate = constants.NaN
+        self.predicted_funding_rate = constants.NaN
         self.next_update = 0
         self.last_updated = 0
         self.reset_funding()
@@ -32,8 +32,8 @@ class FundingManager(util.Initializable):
         self.reset_funding()
 
     def reset_funding(self):
-        self.funding_rate = constants.ZERO
-        self.predicted_funding_rate = constants.ZERO
+        self.funding_rate = constants.NaN
+        self.predicted_funding_rate = constants.NaN
         self.next_update = 0
         self.last_updated = 0
 
