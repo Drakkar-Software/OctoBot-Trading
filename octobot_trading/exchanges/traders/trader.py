@@ -102,13 +102,13 @@ class Trader(util.Initializable):
                 params = params or {}
                 self.logger.info(f"Creating order: {created_order}")
                 created_order = await self._create_new_order(order, params)
-            except Exception as e:
                 if created_order is None:
                     self.logger.warning(f"Order not created order on {self.exchange_manager.exchange_name} "
                                         f"(failed attempt to create: {order}). This is likely due to "
                                         f"the order being refused by the exchange.")
-                else:
-                    self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
+                    return None
+            except Exception as e:
+                self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
                 return None
 
         if pre_init_callback is not None:
