@@ -15,12 +15,14 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import octobot_commons.symbols as symbol_util
+import octobot_commons.constants as commons_constants
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.modes.channel as modes_channel
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
+import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
@@ -94,6 +96,22 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         if symbol_min_amount is None:
             symbol_min_amount = 0
 
+        if self.exchange_manager.is_future:
+            # future: need settlement asset and to take the open positions into account
+            current_symbol_holding, _, market_quantity, current_price, _ = \
+                await personal_data.get_pre_order_data(self.exchange_manager,
+                                                       symbol=symbol,
+                                                       timeout=constants.ORDER_DATA_FETCHING_TIMEOUT,
+                                                       portfolio_type=commons_constants.PORTFOLIO_TOTAL)
+            side = enums.TradeOrderSide.SELL \
+                if state == enums.EvaluatorStates.VERY_SHORT.value or state == enums.EvaluatorStates.SHORT.value \
+                else enums.TradeOrderSide.BUY
+            max_order_size, _ = personal_data.get_futures_max_order_size(
+                self.exchange_manager, symbol, side, current_price, False, current_symbol_holding, market_quantity
+            )
+            return max_order_size > symbol_min_amount
+
+        # spot, trade asset directly
         # short cases => sell => need this currency
         if state == enums.EvaluatorStates.VERY_SHORT.value or state == enums.EvaluatorStates.SHORT.value:
             return portfolio.get_currency_portfolio(currency).available > symbol_min_amount
