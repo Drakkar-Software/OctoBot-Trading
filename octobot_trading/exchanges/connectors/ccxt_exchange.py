@@ -242,7 +242,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_symbol_prices {e}")
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_symbol_prices: {e.__class__.__name__} on {e}")
 
     async def get_kline_price(self,
                               symbol: str,
@@ -609,9 +609,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             yield
         except ccxt.DDoSProtection as e:
             # raised upon rate limit issues, last response data might have details on what is happening
-            self.logger.error(
-                f"DDoSProtection triggered [{e} ({e.__class__.__name__})]. "
-                f"Last response headers: {self.client.last_response_headers} "
-                f"Last json response: {self.client.last_json_response}"
-            )
+            if self.exchange_manager.exchange.should_log_on_ddos_exception(e):
+                self.logger.error(
+                    f"DDoSProtection triggered [{e} ({e.__class__.__name__})]. "
+                    f"Last response headers: {self.client.last_response_headers} "
+                    f"Last json response: {self.client.last_json_response}"
+                )
             raise
