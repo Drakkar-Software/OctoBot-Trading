@@ -354,7 +354,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         cancel_resp = None
         try:
             with self.error_describer():
-                cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, **kwargs)
+                cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
             try:
                 cancelled_order = await self.get_order(order_id, symbol=symbol)
                 return cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order)
