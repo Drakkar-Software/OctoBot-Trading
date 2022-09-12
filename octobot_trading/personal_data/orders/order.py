@@ -162,12 +162,14 @@ class Order(util.Initializable):
 
         if timestamp and self.timestamp != timestamp:
             self.timestamp = timestamp
+            # if we have a timestamp, it's a real trader => need to format timestamp if necessary
+            self.creation_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
         if not self.timestamp:
             if not timestamp:
                 self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
-                self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+                self.creation_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
             self.timestamp = self.creation_time
 
         if status in {enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED} and not self.executed_time:
@@ -237,7 +239,7 @@ class Order(util.Initializable):
         if not self.filled_price and self.filled_quantity and self.total_cost:
             self.filled_price = self.total_cost / self.filled_quantity
             if timestamp is not None:
-                self.executed_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+                self.executed_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
 
         if self.taker_or_maker is None:
             self._update_taker_maker()
@@ -575,7 +577,7 @@ class Order(util.Initializable):
 
         self.fee = order_util.parse_raw_fees(raw_order[enums.ExchangeConstantsOrderColumns.FEE.value])
 
-        self.executed_time = self.trader.exchange.get_uniform_timestamp(
+        self.executed_time = self.trader.exchange.get_uniformized_timestamp(
             raw_order[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value])
 
     def _update_type_from_raw(self, raw_order):
