@@ -21,9 +21,10 @@ import octobot_trading.signals.channel.signal_producer as signal_producer
 
 
 async def create_remote_trading_signal_channel_if_missing(exchange_manager) -> \
-        remote_trading_signal.RemoteTradingSignalsChannel:
+        (remote_trading_signal.RemoteTradingSignalsChannel, bool):
     try:
-        return channels.get_chan(channels_names.OctoBotCommunityChannelsName.REMOTE_TRADING_SIGNALS_CHANNEL.value)
+        return channels.get_chan(channels_names.OctoBotCommunityChannelsName.REMOTE_TRADING_SIGNALS_CHANNEL.value), \
+               False
     except KeyError:
         channel = await channel_creator.create_channel_instance(remote_trading_signal.RemoteTradingSignalsChannel,
                                                                 channels.set_chan)
@@ -33,4 +34,4 @@ async def create_remote_trading_signal_channel_if_missing(exchange_manager) -> \
             exchange_manager.bot_id
         )
         await channel.register_producer(producer)
-        return channel
+        return channel, True
