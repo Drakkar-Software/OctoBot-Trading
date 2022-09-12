@@ -138,7 +138,7 @@ class Position(util.Initializable):
                 self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
-                self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+                self.creation_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
             self.timestamp = self.creation_time
 
         if self._should_change(self.quantity, quantity):

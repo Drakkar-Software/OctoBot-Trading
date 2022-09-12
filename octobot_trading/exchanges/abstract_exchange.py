@@ -126,6 +126,8 @@ class AbstractExchange(util.Initializable):
 
     def get_uniform_timestamp(self, timestamp):
         """
+        WARNING: does not check if the timestamp is already in the right form, better using get_uniformized_timestamp
+        to be sure to keep the right format and uniformize if necessary only
         :param timestamp: the timestamp to uniformize
         :return: the uniformized timestamp
         """
