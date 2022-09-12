@@ -620,6 +620,12 @@ class AbstractExchange(util.Initializable):
         """
         return False
 
+    def should_log_on_ddos_exception(self, _) -> bool:
+        """
+        Override when necessary
+        """
+        return True
+
     def log_order_creation_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {str(quantity)}, price: {str(price)}," \
                      f" stop_price: {str(stop_price)}"

@@ -87,3 +87,4 @@ cdef class AbstractExchange(util.Initializable):
     cpdef void handle_token_error(self, object error)
     cpdef bint is_supported_order_type(self, object order_type)
     cpdef bint supports_bundled_order_on_order_creation(self, object base_order, object bundled_order_type)
+    cpdef bint should_log_on_ddos_exception(self, object exception)
