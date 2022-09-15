@@ -57,7 +57,7 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         Will retry once on failure
         :return: None
         """
-        self.logger.debug(f"Entering create_order_if_possible for {symbol}")
+        self.logger.debug(f"Entering create_order_if_possible for {symbol} on {self.exchange_manager.exchange_name}")
         try:
             async with self.trading_mode.remote_signal_publisher(symbol), \
                   self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
@@ -78,7 +78,8 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                             self.logger.error(f"Failed to create order on second attempt : {e})")
                     except Exception as e:
                         self.logger.exception(e, True, f"Error when creating order: {e}")
-            self.logger.debug(f"Skipping order creation for {symbol}: not enough available funds")
+            self.logger.debug(f"Skipping order creation for {symbol} on {self.exchange_manager.exchange_name}: "
+                              f"not enough available funds")
             return []
         finally:
             self.logger.debug(f"Exiting create_order_if_possible for {symbol}")
