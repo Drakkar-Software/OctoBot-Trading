@@ -44,6 +44,7 @@ from octobot_trading.api.symbol_data import (
     create_new_candles_manager,
     force_set_mark_price,
     is_mark_price_initialized,
+    get_config_symbols,
 )
 from octobot_trading.api.trades import (
     get_trade_history,
@@ -193,6 +194,7 @@ __all__ = [
     "create_new_candles_manager",
     "force_set_mark_price",
     "is_mark_price_initialized",
+    "get_config_symbols",
     "get_trade_history",
     "get_total_paid_trading_fees",
     "get_trade_exchange_name",
