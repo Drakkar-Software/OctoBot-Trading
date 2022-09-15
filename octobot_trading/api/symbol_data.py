@@ -17,6 +17,7 @@ import octobot_commons.enums
 
 import octobot_trading.enums
 import octobot_trading.exchange_data as exchange_data
+import octobot_trading.util as util
 
 
 def get_symbol_data(exchange_manager, symbol, allow_creation=True) -> exchange_data.ExchangeSymbolData:
@@ -96,3 +97,7 @@ def force_set_mark_price(exchange_manager, symbol, price):
 def is_mark_price_initialized(exchange_manager, symbol: str) -> bool:
     return exchange_manager.exchange_symbols_data.get_exchange_symbol_data(symbol).prices_manager.\
         valid_price_received_event.is_set()
+
+
+def get_config_symbols(config, enabled_only) -> list:
+    return util.get_symbols(config, enabled_only)
