@@ -131,3 +131,13 @@ CANCEL_ORDER_STATUS_SCOPE = [enums.OrderStatus.PENDING_CANCEL,
                              enums.OrderStatus.CANCELED,
                              enums.OrderStatus.EXPIRED,
                              enums.OrderStatus.REJECTED]
+
+ORDER_NON_EMPTY_FIELDS = [enums.ExchangeConstantsOrderColumns.ID.value,
+                          enums.ExchangeConstantsOrderColumns.TIMESTAMP.value,
+                          enums.ExchangeConstantsOrderColumns.SYMBOL.value,
+                          enums.ExchangeConstantsOrderColumns.TYPE.value,
+                          enums.ExchangeConstantsOrderColumns.SIDE.value,
+                          enums.ExchangeConstantsOrderColumns.PRICE.value,
+                          enums.ExchangeConstantsOrderColumns.AMOUNT.value,
+                          enums.ExchangeConstantsOrderColumns.STATUS.value]
+ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [enums.ExchangeConstantsOrderColumns.REMAINING.value]

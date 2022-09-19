@@ -29,6 +29,7 @@ import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
+#TODO remove
 class SpotCCXTExchange(exchanges_types.SpotExchange):
     ORDER_NON_EMPTY_FIELDS = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
                               ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
@@ -55,7 +56,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         self.exchange_manager = None
 
     @classmethod
-    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
+    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:    # move to connector
         return cls.CONNECTOR_CLASS.is_supporting_exchange(exchange_candidate_name)
 
     def get_default_type(self):

@@ -23,7 +23,7 @@ import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as trading_enums
 
-
+#TODO remove
 class FutureCCXTExchange(exchanges_types.FutureExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
 
