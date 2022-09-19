@@ -38,6 +38,9 @@ class PositionsUpdater(positions_channel.PositionsProducer):
 
     def __init__(self, channel):
         super().__init__(channel)
+        # Warning, when True, might result in missing contract details after bot startup as not every available
+        # contract will be loaded (only the ones related to configured symbols will be loaded alongside
+        # their position)
         self.should_use_position_per_symbol = False
 
         # create async jobs
@@ -113,13 +116,10 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         """
         Update positions from exchange
         """
-        try:
-            if self.should_use_position_per_symbol:
-                await self.fetch_position_per_symbol()
-            else:
-                await self.fetch_positions()
-        except Exception as e:
-            self.logger.error(f"Fail to update positions : {e}")
+        if self.should_use_position_per_symbol:
+            await self.fetch_position_per_symbol()
+        else:
+            await self.fetch_positions()
 
     def _should_run(self):
         return self.channel.exchange_manager.is_future
@@ -135,7 +135,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
             self._initialize_contract_if_necessary(positions)
             await self._push_positions(positions)
 
-    def _is_valid_position(self, position_dict):
+    def _is_relevant_position(self, position_dict):
         return position_dict and position_dict.get(enums.ExchangeConstantsPositionColumns.SYMBOL.value, None) \
                in self.channel.exchange_manager.exchange_config.traded_symbol_pairs
 
@@ -143,12 +143,16 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         positions = [
             position
             for position in await self.channel.exchange_manager.exchange.get_positions()
-            if self._is_valid_position(position)
         ]
 
         if positions:
             self._initialize_contract_if_necessary(positions)
-            await self._push_positions(positions)
+            # only consider positions that are relevant to the current setup
+            await self._push_positions([
+                position
+                for position in positions
+                if self._is_relevant_position(position)
+            ])
 
     async def _push_positions(self, positions):
         await self.push(positions)
@@ -172,7 +176,13 @@ class PositionsUpdater(positions_channel.PositionsProducer):
                         enums.ExchangeConstantsPositionColumns.MAINTENANCE_MARGIN_RATE.value,
                         constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE))
                 if not contract.is_handled_contract():
-                    self.logger.error(f"Unhandled contract {contract}. This contract can't be traded")
+                    message = f"Unhandled contract {contract}. This contract can't be traded"
+                    if pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+                        # inform user that the contract can't be used
+                        self.logger.error(message)
+                    else:
+                        # no need to inform as the contract is not requested
+                        self.logger.debug(message)
 
     async def extract_mark_price(self, position_dict: dict):
         try:
