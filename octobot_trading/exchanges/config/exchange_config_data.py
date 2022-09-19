@@ -20,6 +20,8 @@ import octobot_commons.time_frame_manager as time_frame_manager
 import octobot_commons.constants as constants
 import octobot_commons.logging as logging
 import octobot_commons.errors as errors
+import octobot_commons.enums as commons_enums
+import octobot_commons.tree as commons_tree
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.exchanges.config.backtesting_exchange_config as backtesting_exchange_config
@@ -52,7 +54,7 @@ class ExchangeConfig(util.Initializable):
         # list of required time frames from configuration that are available
         self.available_required_time_frames = []
 
-        # list of exchange supported time frames
+        # list of exchange supported time frames that are also required (config + real time)
         self.traded_time_frames = []
 
         # list of time frames to be used for real-time purposes (short time frames)
@@ -81,6 +83,45 @@ class ExchangeConfig(util.Initializable):
 
     def get_shortest_time_frame(self):
         return self.traded_time_frames[-1]
+
+    def initialize_exchange_event_tree(self):
+        tree_provider = commons_tree.EventProvider.instance()
+        for topic in commons_enums.InitializationEventExchangeTopics:
+            if topic in (
+                    commons_enums.InitializationEventExchangeTopics.CANDLES,
+                    commons_enums.InitializationEventExchangeTopics.POSITIONS,
+                    commons_enums.InitializationEventExchangeTopics.PRICE,
+                    commons_enums.InitializationEventExchangeTopics.ORDER_BOOK,
+                    commons_enums.InitializationEventExchangeTopics.FUNDING,
+            ):
+                for symbol in self.traded_symbol_pairs:
+                    if topic in (
+                            commons_enums.InitializationEventExchangeTopics.CANDLES,
+                    ):
+                        for time_frame in self.traded_time_frames:
+                            tree_provider.create_event_at_path(
+                                self.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                                    self.exchange_manager.exchange_name,
+                                    topic.value,
+                                    symbol=symbol,
+                                    time_frame=time_frame
+                                )
+                            )
+                    else:
+                        tree_provider.create_event_at_path(
+                            self.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                                self.exchange_manager.exchange_name,
+                                topic.value,
+                                symbol=symbol
+                            )
+                        )
+            else:
+                tree_provider.create_event_at_path(
+                    self.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                        self.exchange_manager.exchange_name,
+                        topic.value
+                    )
+                )
 
     async def add_watched_symbols(self, symbols):
         new_valid_symbols = [

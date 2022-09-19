@@ -24,7 +24,7 @@ import octobot_commons.errors as common_errors
 import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
 import octobot_commons.optimization_campaign as optimization_campaign
-import octobot_commons.event_tree as event_tree
+import octobot_commons.tree.base_tree as event_tree
 import octobot_commons.signals as signals
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes

@@ -140,6 +140,7 @@ class ExchangeManager(util.Initializable):
             self.exchange_config.set_config_traded_pairs()
         # always call set_historical_settings
         self.exchange_config.set_historical_settings()
+        self.exchange_config.initialize_exchange_event_tree()
 
     def need_user_stream(self):
         return self.config[common_constants.CONFIG_TRADER][common_constants.CONFIG_ENABLED_OPTION]
