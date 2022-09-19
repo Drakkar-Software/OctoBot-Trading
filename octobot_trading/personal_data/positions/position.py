@@ -777,7 +777,7 @@ class Position(util.Initializable):
         """
         if self.symbol_contract.is_one_way_position_mode() or self.side is enums.PositionSide.UNKNOWN:
             changed_side = False
-            if self.quantity >= constants.ZERO:
+            if self.quantity > constants.ZERO:
                 if self.side is not enums.PositionSide.LONG:
                     self.side = enums.PositionSide.LONG
                     changed_side = True
