@@ -23,6 +23,7 @@ import octobot_trading.personal_data as personal_data
 from octobot_trading import enums as enums
 
 
+#TODO remove
 class MarginCCXTExchange(exchanges_types.MarginExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
 

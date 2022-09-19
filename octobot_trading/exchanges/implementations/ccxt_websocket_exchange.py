@@ -19,6 +19,7 @@ import octobot_trading.exchanges.types as exchanges_types
 import octobot_tentacles_manager.api as api
 
 
+#TODO remove?
 class CCXTWebSocketExchange(exchanges_types.WebSocketExchange):
     @staticmethod
     def get_websocket_client(config, exchange_manager):

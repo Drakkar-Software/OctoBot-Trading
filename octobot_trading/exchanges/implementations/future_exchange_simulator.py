@@ -18,6 +18,7 @@ import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 
 
+#TODO remove
 class FutureExchangeSimulator(exchanges_types.FutureExchange):
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)

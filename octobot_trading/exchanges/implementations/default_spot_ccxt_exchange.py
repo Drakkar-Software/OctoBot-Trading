@@ -17,6 +17,7 @@ import octobot_trading.enums
 import octobot_trading.exchanges.implementations.spot_ccxt_exchange as spot_ccxt_exchange
 
 
+#TODO remove
 class DefaultCCXTSpotExchange(spot_ccxt_exchange.SpotCCXTExchange):
     @classmethod
     def get_name(cls) -> str:

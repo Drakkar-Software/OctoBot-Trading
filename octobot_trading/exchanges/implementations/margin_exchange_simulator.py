@@ -17,6 +17,7 @@ import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 
 
+#TODO remove
 class MarginExchangeSimulator(exchanges_types.MarginExchange):
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
