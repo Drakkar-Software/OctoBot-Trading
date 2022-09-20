@@ -219,6 +219,10 @@ def get_exchange_type(exchange_manager_instance):
 
 def get_supported_exchange_types(exchange_name):
     supported_exchanges = [enums.ExchangeTypes.SPOT]
+    # TODO remove this after rest exchange refactor
+    if exchange_name.lower() == "bybit":
+        supported_exchanges = []
+    # end TODO
     if get_exchange_class_from_name(exchanges_types.FutureExchange, exchange_name, None, False,
                                     strict_name_matching=True) is not None:
         supported_exchanges.append(enums.ExchangeTypes.FUTURE)
