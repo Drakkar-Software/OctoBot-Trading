@@ -86,18 +86,24 @@ class ExchangeManager(util.Initializable):
         Stops exchange manager relative tasks : websockets, trading mode, and exchange channels
         :param warning_on_missing_elements: warn on missing element
         """
+        self.logger.debug("Stopping ...")
         # stop websockets if any
         if self.has_websocket:
+            self.logger.debug("Stopping websocket ...")
             await self.exchange_web_socket.stop_sockets()
             await self.exchange_web_socket.close_sockets()
             self.exchange_web_socket.clear()
             self.exchange_web_socket = None
+            self.logger.debug("Stopped websocket")
 
         # stop trading modes
+        self.logger.debug("Stopping trading modes ...")
         for trading_mode in self.trading_modes:
             await trading_mode.stop()
+        self.logger.debug("Stopped trading modes")
 
         # stop exchange channels
+        self.logger.debug(f"Stopping exchange channels for exchange_id: {self.id} ...")
         if self.exchange is not None:
             if not self.exchange_only:
                 await exchange_channel.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
@@ -108,15 +114,19 @@ class ExchangeManager(util.Initializable):
             self.exchange = None
         if self.exchange_personal_data is not None:
             await self.exchange_personal_data.stop()
+        self.logger.debug(f"Stopped exchange channels for exchange_id: {self.id}")
 
         self.exchange_config = None
         self.exchange_personal_data = None
         self.exchange_symbols_data = None
+        self.logger.debug("Stopping trader ...")
         if self.trader is not None:
             self.trader.clear()
             self.trader = None
+        self.logger.debug("Stopped trader")
         self.trading_modes = []
         self.backtesting = None
+        self.logger.debug("Stopped")
 
     async def register_trader(self, trader):
         self.trader = trader

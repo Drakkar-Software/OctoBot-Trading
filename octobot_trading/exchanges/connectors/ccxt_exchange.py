@@ -74,7 +74,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             self.time_frames = self.get_client_time_frames()
 
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
-            self.logger.error(f"initialization impossible: {e}")
+            raise octobot_trading.errors.UnreachableExchange() from e
         except ccxt.AuthenticationError:
             raise ccxt.AuthenticationError
 
