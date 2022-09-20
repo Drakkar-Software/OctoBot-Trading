@@ -24,7 +24,6 @@ import octobot_commons.symbols as symbol_util
 import octobot_trading.util as util
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
-import octobot_trading.storage as storage
 import octobot_trading.personal_data.portfolios.history.historical_asset_value as historical_asset_value
 import octobot_trading.personal_data.portfolios.history.historical_asset_value_factory as historical_asset_value_factory
 
@@ -60,7 +59,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
         self.max_history_size = self.__class__.MAX_HISTORY_SIZE
         self.historical_portfolio_value = sortedcontainers.SortedDict()
         try:
-            self.run_dbs_identifier = storage.RunDatabasesProvider.instance().get_run_databases_identifier(
+            self.run_dbs_identifier = databases.RunDatabasesProvider.instance().get_run_databases_identifier(
                 self.portfolio_manager.exchange_manager.bot_id
             )
         except KeyError:
