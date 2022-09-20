@@ -141,6 +141,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         Exchange instance creation
         :return:
         """
+        self.logger.info(f"Creating {self.exchange_type.__name__} exchange with ccxt in version {ccxt.__version__}")
         if self.exchange_manager.ignore_config or self.exchange_manager.check_config(self.name):
             try:
                 key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.name)
