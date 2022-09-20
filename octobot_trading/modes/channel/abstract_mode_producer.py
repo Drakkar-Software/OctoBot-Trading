@@ -24,13 +24,13 @@ import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 import octobot_commons.tree as commons_tree
 import octobot_commons.logging as logging
+import octobot_commons.databases as databases
 
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
-import octobot_trading.storage as storage
 import octobot_trading.errors as errors
 
 
@@ -320,7 +320,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         return True
 
     def all_databases(self):
-        provider = storage.RunDatabasesProvider.instance()
+        provider = databases.RunDatabasesProvider.instance()
         return {
             common_enums.RunDatabases.RUN_DATA_DB.value: provider.get_run_db(self.trading_mode.bot_id),
             common_enums.RunDatabases.ORDERS_DB.value:

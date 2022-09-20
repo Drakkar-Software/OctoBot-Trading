@@ -23,7 +23,6 @@ from octobot_trading.api import trader
 from octobot_trading.api import portfolio
 from octobot_trading.api import profitability
 from octobot_trading.api import orders
-from octobot_trading.api import storage
 from octobot_trading.api import contracts
 
 from octobot_trading.api.symbol_data import (
@@ -128,6 +127,7 @@ from octobot_trading.api.trader import (
     set_trader_risk,
     sell_all_everything_for_reference_market,
     sell_currency_for_reference_market,
+    get_current_bot_live_id,
 )
 from octobot_trading.api.portfolio import (
     get_portfolio,
@@ -164,12 +164,6 @@ from octobot_trading.api.orders import (
 )
 from octobot_trading.api.positions import (
     get_positions,
-)
-from octobot_trading.api.storage import (
-    init_bot_storage,
-    get_run_db,
-    get_symbol_db,
-    close_bot_storage,
 )
 from octobot_trading.api.contracts import (
     is_inverse_future_contract,
@@ -268,6 +262,7 @@ __all__ = [
     "set_trader_risk",
     "sell_all_everything_for_reference_market",
     "sell_currency_for_reference_market",
+    "get_current_bot_live_id",
     "get_portfolio",
     "get_portfolio_historical_values",
     "reset_portfolio_historical_values",
@@ -295,10 +290,6 @@ __all__ = [
     "cancel_all_open_orders_with_currency",
     "cancel_order_with_id",
     "get_positions",
-    "init_bot_storage",
-    "get_run_db",
-    "get_symbol_db",
-    "close_bot_storage",
     "is_inverse_future_contract",
     "is_perpetual_future_contract",
 ]

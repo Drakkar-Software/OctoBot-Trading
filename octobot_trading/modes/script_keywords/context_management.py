@@ -28,7 +28,6 @@ import octobot_commons.tree.base_tree as event_tree
 import octobot_commons.signals as signals
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
-import octobot_trading.storage as storage
 import octobot_trading.signals as trading_signals
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.models as tentacles_manager_models
@@ -73,17 +72,17 @@ class Context(databases.CacheClient):
         self.signal_symbol = signal_symbol
         self.logger = logger
         bot_id = exchange_manager.bot_id if exchange_manager else None
-        self.run_data_writer = storage.RunDatabasesProvider.instance().get_run_db(bot_id) \
+        self.run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(bot_id) \
             if bot_id else None
-        self.orders_writer = storage.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \
+        self.orders_writer = databases.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \
             if bot_id else None
-        self.trades_writer = storage.RunDatabasesProvider.instance().get_trades_db(bot_id, self.exchange_name) \
+        self.trades_writer = databases.RunDatabasesProvider.instance().get_trades_db(bot_id, self.exchange_name) \
             if bot_id else None
-        self.transaction_writer = storage.RunDatabasesProvider.instance().get_transactions_db(bot_id,
-                                                                                              self.exchange_name) \
+        self.transaction_writer = databases.RunDatabasesProvider.instance().get_transactions_db(bot_id,
+                                                                                                self.exchange_name) \
             if bot_id else None
-        self.symbol_writer = storage.RunDatabasesProvider.instance().get_symbol_db(bot_id, self.exchange_name,
-                                                                                   self.symbol) \
+        self.symbol_writer = databases.RunDatabasesProvider.instance().get_symbol_db(bot_id, self.exchange_name,
+                                                                                     self.symbol) \
             if bot_id else None
         self.trading_mode_class = trading_mode_class
         self.trigger_cache_timestamp = trigger_cache_timestamp
