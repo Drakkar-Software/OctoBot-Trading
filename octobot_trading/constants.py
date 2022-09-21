@@ -141,3 +141,17 @@ ORDER_NON_EMPTY_FIELDS = [enums.ExchangeConstantsOrderColumns.ID.value,
                           enums.ExchangeConstantsOrderColumns.AMOUNT.value,
                           enums.ExchangeConstantsOrderColumns.STATUS.value]
 ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [enums.ExchangeConstantsOrderColumns.REMAINING.value]
+
+DEFAULT_INITIALIZATION_EVENT_TOPICS = [
+    commons_enums.InitializationEventExchangeTopics.BALANCE,
+    commons_enums.InitializationEventExchangeTopics.ORDERS,
+    commons_enums.InitializationEventExchangeTopics.TRADES,
+    commons_enums.InitializationEventExchangeTopics.CANDLES,
+    commons_enums.InitializationEventExchangeTopics.PRICE,
+]
+
+DEFAULT_FUTURES_INITIALIZATION_EVENT_TOPICS = DEFAULT_INITIALIZATION_EVENT_TOPICS + [
+    commons_enums.InitializationEventExchangeTopics.POSITIONS,
+    commons_enums.InitializationEventExchangeTopics.CONTRACTS,
+    commons_enums.InitializationEventExchangeTopics.FUNDING,
+]

@@ -15,6 +15,10 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import concurrent.futures
+
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
 
 import async_channel.enums as channel_enums
 import async_channel.constants as channel_constants
@@ -57,6 +61,25 @@ class ExchangeChannelProducer(producers.Producer):
 
     def trigger_single_update(self):
         asyncio.create_task(self.fetch_and_push())
+
+    async def wait_for_dependencies(self, paths, timeout):
+        try:
+            for path in paths:
+                try:
+                    event = commons_tree.EventProvider.instance().get_or_create_event(
+                        self.channel.exchange_manager.bot_id,
+                        path,
+                        allow_creation=False
+                    )
+                    if not event.is_triggered():
+                        await asyncio.wait_for(event.wait(), timeout)
+                except commons_tree.NodeExistsError:
+                    # nothing to wait for
+                    pass
+            return True
+        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
+            self.logger.error(f"Dependencies waiting took more than {timeout} seconds")
+            return False
 
 
 class ExchangeChannel(channels.Channel):

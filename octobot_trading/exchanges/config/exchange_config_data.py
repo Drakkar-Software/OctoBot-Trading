@@ -86,7 +86,9 @@ class ExchangeConfig(util.Initializable):
 
     def initialize_exchange_event_tree(self):
         tree_provider = commons_tree.EventProvider.instance()
-        for topic in commons_enums.InitializationEventExchangeTopics:
+        for topic in trading_constants.DEFAULT_FUTURES_INITIALIZATION_EVENT_TOPICS \
+                if self.exchange_manager.is_future \
+                else trading_constants.DEFAULT_INITIALIZATION_EVENT_TOPICS:
             if topic in (
                     commons_enums.InitializationEventExchangeTopics.POSITIONS,
                     commons_enums.InitializationEventExchangeTopics.TRADES,
