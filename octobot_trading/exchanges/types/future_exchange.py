@@ -101,13 +101,13 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         self.pair_contracts[pair] = future_contract
 
     def _set_contract_initialized_event(self, symbol):
-        commons_tree.EventProvider.instance().get_or_create_event(
+        commons_tree.EventProvider.instance().trigger_event(
             self.exchange_manager.bot_id, commons_tree.get_exchange_path(
                 self.exchange_manager.exchange_name,
                 commons_enums.InitializationEventExchangeTopics.CONTRACTS.value,
                 symbol=symbol
             )
-        ).trigger()
+        )
 
     """
     Positions

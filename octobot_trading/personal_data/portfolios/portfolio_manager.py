@@ -226,12 +226,12 @@ class PortfolioManager(util.Initializable):
         self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
 
     def _set_initialized_event(self):
-        commons_tree.EventProvider.instance().get_or_create_event(
+        commons_tree.EventProvider.instance().trigger_event(
             self.exchange_manager.bot_id, commons_tree.get_exchange_path(
                 self.exchange_manager.exchange_name,
                 commons_enums.InitializationEventExchangeTopics.BALANCE.value
             )
-        ).trigger()
+        )
 
     async def stop(self):
         if self.historical_portfolio_value_manager is not None:

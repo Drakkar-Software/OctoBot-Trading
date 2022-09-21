@@ -126,13 +126,13 @@ class OrdersUpdater(orders_channel.OrdersProducer):
 
     def _set_initialized_event(self, symbol):
         # set init in updater as it's the only place we know if we fetched orders or not regardless of orders existence
-        commons_tree.EventProvider.instance().get_or_create_event(
+        commons_tree.EventProvider.instance().trigger_event(
             self.channel.exchange_manager.bot_id, commons_tree.get_exchange_path(
                 self.channel.exchange_manager.exchange_name,
                 commons_enums.InitializationEventExchangeTopics.ORDERS.value,
                 symbol=symbol
             )
-        ).trigger()
+        )
 
     async def _closed_orders_fetch_and_push(self, limit=ORDERS_UPDATE_LIMIT) -> None:
         """
