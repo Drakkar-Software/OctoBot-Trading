@@ -37,6 +37,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
     OPEN_ORDER_REFRESH_TIME = 7
     CLOSE_ORDER_REFRESH_TIME = 81
     TIME_BETWEEN_ORDERS_REFRESH = 2
+    DEPENDENCIES_TIMEOUT = 30
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -60,6 +61,19 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         Initialize data before starting jobs
         """
         try:
+            await self.wait_for_dependencies(
+                [
+                    commons_tree.get_exchange_path(
+                        self.channel.exchange_manager.exchange_name,
+                        commons_enums.InitializationEventExchangeTopics.CONTRACTS.value
+                    ),
+                    commons_tree.get_exchange_path(
+                        self.channel.exchange_manager.exchange_name,
+                        commons_enums.InitializationEventExchangeTopics.POSITIONS.value
+                    ),
+                ],
+                self.DEPENDENCIES_TIMEOUT
+            )
             await self.fetch_and_push(is_from_bot=False)
         except errors.NotSupported:
             self.logger.error(f"{self.channel.exchange_manager.exchange_name} is not supporting open orders updates")

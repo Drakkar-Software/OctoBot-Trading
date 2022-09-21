@@ -15,9 +15,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import concurrent.futures
 
 import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
+import octobot_commons.constants as commons_constants
 
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.trades.channel as trades_channel
@@ -45,6 +47,8 @@ class TradesUpdater(trades_channel.TradesProducer):
     The default trade history update refresh time in seconds
     """
     TRADES_REFRESH_TIME = 333
+
+    DEPENDENCIES_TIMEOUT = 5 * commons_constants.MINUTE_TO_SECONDS
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -85,6 +89,15 @@ class TradesUpdater(trades_channel.TradesProducer):
 
     async def start(self):
         if util.is_trade_history_loading_enabled(self.channel.exchange_manager.config):
+            await self.wait_for_dependencies(
+                [
+                    commons_tree.get_exchange_path(
+                        self.channel.exchange_manager.exchange_name,
+                        commons_enums.InitializationEventExchangeTopics.CONTRACTS.value
+                    ),
+                ],
+                self.DEPENDENCIES_TIMEOUT
+            )
             await self.init_old_trades()
 
         # Code bellow shouldn't be necessary
