@@ -63,7 +63,8 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         # fetch current positions from exchange
         await self.initialize_positions()
 
-        self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
+        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            self.channel.exchange_manager.exchange_personal_data.positions_manager.set_initialized_event(pair)
 
     async def initialize_contracts(self) -> None:
         """

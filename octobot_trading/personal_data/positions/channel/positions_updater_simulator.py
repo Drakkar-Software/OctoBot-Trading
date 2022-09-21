@@ -31,13 +31,13 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         Initialize positions and future contracts
         """
         await self.initialize_contracts()
-        self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
+        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            self.channel.exchange_manager.exchange_personal_data.positions_manager.set_initialized_event(pair)
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.channel.exchange_manager.exchange.name}]")
         await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.handle_mark_price)
         await exchanges_channel.get_chan(constants.FUNDING_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.handle_funding_rate)
-        self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
 
     async def initialize_contracts(self) -> None:
         """

@@ -25,6 +25,8 @@ class OrdersUpdaterSimulator(orders_updater.OrdersUpdater):
         self.channel.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized = True
         await exchange_channel.get_chan(constants.RECENT_TRADES_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.ignore_recent_trades_update)
+        for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            self._set_initialized_event(symbol)
 
     async def ignore_recent_trades_update(self, exchange: str, exchange_id: str,
                                           cryptocurrency: str, symbol: str, recent_trades: list):
