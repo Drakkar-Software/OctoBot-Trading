@@ -73,6 +73,9 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
             try:
                 await self.channel.exchange_manager.exchange.load_pair_future_contract(pair)
+            except NotImplementedError as e:
+                self.logger.debug(f"Can't to load {pair} contract info from exchange: {e}. "
+                                  f"This contract will be created from fetched positions.")
             except Exception as e:
                 self.logger.warning(f"Failed to load {pair} contract info : {e}")
 
@@ -147,13 +150,16 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         ]
 
         if positions:
-            self._initialize_contract_if_necessary(positions)
-            # only consider positions that are relevant to the current setup
-            await self._push_positions([
+            relevant_positions = [
                 position
                 for position in positions
                 if self._is_relevant_position(position)
-            ])
+            ]
+            # initialize relevant contracts first as they might be waited for
+            self._initialize_contract_if_necessary(relevant_positions)
+            self._initialize_contract_if_necessary(positions)
+            # only consider positions that are relevant to the current setup
+            await self._push_positions(relevant_positions)
 
     async def _push_positions(self, positions):
         await self.push(positions)

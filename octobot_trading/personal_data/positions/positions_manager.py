@@ -85,13 +85,13 @@ class PositionsManager(util.Initializable):
         return self.positions[position_id].update_from_raw(raw_position)
 
     def set_initialized_event(self, symbol):
-        commons_tree.EventProvider.instance().get_or_create_event(
+        commons_tree.EventProvider.instance().trigger_event(
             self.trader.exchange_manager.bot_id, commons_tree.get_exchange_path(
                 self.trader.exchange_manager.exchange_name,
                 commons_enums.InitializationEventExchangeTopics.POSITIONS.value,
                 symbol=symbol
             )
-        ).trigger()
+        )
 
     async def recreate_position(self, position) -> bool:
         """

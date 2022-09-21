@@ -98,12 +98,12 @@ class TradesManager(util.Initializable):
 
     def _set_initialized_event(self, symbol):
         # set init in updater as it's the only place we know if we fetched trades or not regardless of trades existence
-        commons_tree.EventProvider.instance().get_or_create_event(
+        commons_tree.EventProvider.instance().trigger_event(
             self.trader.exchange_manager.bot_id, commons_tree.get_exchange_path(
                 self.trader.exchange_manager.exchange_name,
                 commons_enums.InitializationEventExchangeTopics.TRADES.value
             )
-        ).trigger()
+        )
 
     def clear(self):
         for trade in self.trades.values():

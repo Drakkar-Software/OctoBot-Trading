@@ -100,14 +100,14 @@ class ExchangeSymbolData:
         return updated
 
     def _set_initialized_event(self, topic, time_frame=None):
-        commons_tree.EventProvider.instance().get_or_create_event(
+        commons_tree.EventProvider.instance().trigger_event(
             self.exchange_manager.bot_id, commons_tree.get_exchange_path(
                 self.exchange_manager.exchange_name,
                 topic,
                 symbol=self.symbol,
                 time_frame=time_frame
             )
-        ).trigger()
+        )
 
     def handle_order_book_update(self, asks, bids):
         trigger_init_event = not self.order_book_manager.order_book_initialized
