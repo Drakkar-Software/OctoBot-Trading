@@ -88,8 +88,11 @@ class ExchangeConfig(util.Initializable):
         tree_provider = commons_tree.EventProvider.instance()
         for topic in commons_enums.InitializationEventExchangeTopics:
             if topic in (
-                    commons_enums.InitializationEventExchangeTopics.CANDLES,
                     commons_enums.InitializationEventExchangeTopics.POSITIONS,
+                    commons_enums.InitializationEventExchangeTopics.TRADES,
+                    commons_enums.InitializationEventExchangeTopics.ORDERS,
+                    commons_enums.InitializationEventExchangeTopics.CONTRACTS,
+                    commons_enums.InitializationEventExchangeTopics.CANDLES,
                     commons_enums.InitializationEventExchangeTopics.PRICE,
                     commons_enums.InitializationEventExchangeTopics.ORDER_BOOK,
                     commons_enums.InitializationEventExchangeTopics.FUNDING,
@@ -104,7 +107,7 @@ class ExchangeConfig(util.Initializable):
                                     self.exchange_manager.exchange_name,
                                     topic.value,
                                     symbol=symbol,
-                                    time_frame=time_frame
+                                    time_frame=time_frame.value
                                 )
                             )
                     else:

@@ -15,6 +15,8 @@
 #  License along with this library.
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
@@ -38,6 +40,7 @@ class PortfolioManager(util.Initializable):
         self.portfolio_value_holder = None
         self.historical_portfolio_value_manager = None
         self.reference_market = None
+        self._is_initialized_event_set = False
 
     async def initialize_impl(self):
         """
@@ -53,9 +56,13 @@ class PortfolioManager(util.Initializable):
         :param is_diff_update: True when the update is a partial portfolio
         :return: True if the portfolio was updated
         """
+        changed = False
         if self.trader.is_enabled and balance is not None:
-            return self.portfolio.update_portfolio_from_balance(balance, force_replace=not is_diff_update)
-        return False
+            changed = self.portfolio.update_portfolio_from_balance(balance, force_replace=not is_diff_update)
+        if not self._is_initialized_event_set:
+            self._set_initialized_event()
+            self._is_initialized_event_set = True
+        return changed
 
     async def handle_balance_update_from_order(self, order, require_exchange_update: bool) -> bool:
         """
@@ -179,6 +186,7 @@ class PortfolioManager(util.Initializable):
         self.portfolio_value_holder = personal_data.PortfolioValueHolder(self)
         self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
         self.portfolio_profitability = personal_data.PortfolioProfitability(self)
+        self._is_initialized_event_set = False
 
     def _refresh_simulated_trader_portfolio_from_order(self, order):
         """
@@ -216,6 +224,14 @@ class PortfolioManager(util.Initializable):
             self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]
         )
         self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
+
+    def _set_initialized_event(self):
+        commons_tree.EventProvider.instance().get_or_create_event(
+            self.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.BALANCE.value
+            )
+        ).trigger()
 
     async def stop(self):
         if self.historical_portfolio_value_manager is not None:

@@ -17,6 +17,8 @@
 import asyncio
 
 import octobot_commons.async_job as async_job
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
 
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.channel.orders as orders_channel
@@ -39,6 +41,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
     def __init__(self, channel):
         super().__init__(channel)
 
+        self._initialized_event = False
         # create async jobs
         self.open_orders_job = async_job.AsyncJob(self._open_orders_fetch_and_push,
                                                   execution_interval_delay=self.OPEN_ORDER_REFRESH_TIME,
@@ -103,6 +106,19 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                                 is_from_bot=is_from_bot)
             else:
                 await self.handle_post_open_order_update(symbol, open_orders, False)
+            if not self._initialized_event:
+                self._set_initialized_event(symbol)
+        self._initialized_event = True
+
+    def _set_initialized_event(self, symbol):
+        # set init in updater as it's the only place we know if we fetched orders or not regardless of orders existence
+        commons_tree.EventProvider.instance().get_or_create_event(
+            self.channel.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.channel.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.ORDERS.value,
+                symbol=symbol
+            )
+        ).trigger()
 
     async def _closed_orders_fetch_and_push(self, limit=ORDERS_UPDATE_LIMIT) -> None:
         """

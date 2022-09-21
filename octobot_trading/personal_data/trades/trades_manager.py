@@ -16,6 +16,8 @@
 import collections
 
 import octobot_commons.logging as logging
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
 
 import octobot_trading.enums as enums
 import octobot_trading.personal_data as personal_data
@@ -36,6 +38,10 @@ class TradesManager(util.Initializable):
     async def initialize_impl(self):
         self._reset_trades()
         self.trades_initialized = True
+        if self.trader.simulate:
+            # force init as there is no trade updater simulator
+            for symbol in self.trader.exchange_manager.exchange_config.traded_symbol_pairs:
+                self._set_initialized_event(symbol)
 
     def upsert_trade(self, trade_id, raw_trade):
         if trade_id not in self.trades:
@@ -89,6 +95,15 @@ class TradesManager(util.Initializable):
     def _remove_oldest_trades(self, nb_to_remove):
         for _ in range(nb_to_remove):
             self.trades.popitem(last=False)
+
+    def _set_initialized_event(self, symbol):
+        # set init in updater as it's the only place we know if we fetched trades or not regardless of trades existence
+        commons_tree.EventProvider.instance().get_or_create_event(
+            self.trader.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.trader.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.TRADES.value
+            )
+        ).trigger()
 
     def clear(self):
         for trade in self.trades.values():

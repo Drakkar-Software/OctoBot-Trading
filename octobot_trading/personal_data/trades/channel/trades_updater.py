@@ -16,8 +16,10 @@
 #  License along with this library.
 import asyncio
 
-import octobot_trading.errors as errors
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
 
+import octobot_trading.errors as errors
 import octobot_trading.personal_data.trades.channel as trades_channel
 import octobot_trading.constants as constants
 import octobot_trading.util as util
@@ -44,6 +46,11 @@ class TradesUpdater(trades_channel.TradesProducer):
     """
     TRADES_REFRESH_TIME = 333
 
+    def __init__(self, channel):
+        super().__init__(channel)
+
+        self._initialized_event = False
+
     async def init_old_trades(self):
         try:
             await self.fetch_and_push()
@@ -62,6 +69,19 @@ class TradesUpdater(trades_channel.TradesProducer):
 
             if trades:
                 await self.push(list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
+            if not self._initialized_event:
+                self._set_initialized_event(symbol)
+        self._initialized_event = True
+
+    def _set_initialized_event(self, symbol):
+        # set init in updater as it's the only place we know if we fetched trades or not regardless of trades existence
+        commons_tree.EventProvider.instance().get_or_create_event(
+            self.channel.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.channel.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.TRADES.value,
+                symbol=symbol
+            )
+        ).trigger()
 
     async def start(self):
         if util.is_trade_history_loading_enabled(self.channel.exchange_manager.config):

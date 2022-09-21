@@ -15,6 +15,9 @@
 #  License along with this library.
 import asyncio
 
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
+
 import octobot_trading.enums
 import octobot_trading.constants
 import octobot_trading.errors as errors
@@ -74,6 +77,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
                                             position_mode=position_mode,
                                             maintenance_margin_rate=maintenance_margin_rate)
         self.pair_contracts[pair] = contract
+        self._set_contract_initialized_event(pair)
         return contract
 
     def get_pair_future_contract(self, pair):
@@ -95,6 +99,15 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :param future_contract: the future contract
         """
         self.pair_contracts[pair] = future_contract
+
+    def _set_contract_initialized_event(self, symbol):
+        commons_tree.EventProvider.instance().get_or_create_event(
+            self.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.CONTRACTS.value,
+                symbol=symbol
+            )
+        ).trigger()
 
     """
     Positions
