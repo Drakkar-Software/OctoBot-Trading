@@ -13,13 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import concurrent.futures
 import time
 import contextlib
 import importlib
 import asyncio
 
 import octobot_commons.logging as logging
-import octobot_commons.databases as databases
+import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
 import octobot_commons.errors as commons_errors
 import octobot_commons.constants as commons_constants
@@ -372,7 +373,6 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         # fake an full candle call
         cryptocurrency, symbol, time_frame = self._get_initialization_call_args()
         # wait for symbol data to be initialized
-        # TODO use trading ready event when done
         candle = await self._wait_for_symbol_init(symbol, time_frame, 30)
         if candle is None:
             self.logger.error(f"Can't initialize trading script: {symbol} {time_frame} candles are not fetched")
@@ -381,30 +381,39 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
 
     async def _wait_for_symbol_init(self, symbol, time_frame, timeout):
         # warning: should never be called in backtesting
+        try:
+            await asyncio.wait_for(
+                commons_tree.EventProvider.instance().get_or_create_event(
+                    self.exchange_manager.bot_id,
+                    commons_tree.get_exchange_path(
+                        self.exchange_manager.exchange_name,
+                        commons_enums.InitializationEventExchangeTopics.CANDLES.value,
+                        symbol=symbol
+                    ),
+                    allow_creation=False
+                ).wait(),
+                timeout
+            )
+        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
+            self.logger.error(f"Initialization took more than {timeout} seconds")
+            return None
+        return self._get_latest_full_candle(symbol, time_frame)
+
+    def _get_latest_full_candle(self, symbol, time_frame):
         tf = commons_enums.TimeFrames(time_frame)
-        t0 = time.time()
-        while time.time() - t0 < timeout:
-            try:
-                if self.exchange_manager.is_future:
-                    # wait for contracts to be loaded
-                    _ = self.exchange_manager.exchange.pair_contracts[symbol]
-                candles_manager = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
-                    symbol,
-                    allow_creation=False) \
-                    .symbol_candles[tf]
-                candle_data = candles_manager.get_candles(5)
-                current_time = self.exchange_manager.exchange.get_exchange_current_time()
-                time_frame_sec = commons_enums.TimeFramesMinutes[tf] * commons_constants.MINUTE_TO_SECONDS
-                last_full_candle_time = current_time - current_time % time_frame_sec - time_frame_sec
-                for candle in reversed(candle_data):
-                    if candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] == last_full_candle_time:
-                        return candle
-                # return the candle right before the last (last being in construction)
-                return candle_data[-2]
-            except KeyError:
-                # no symbol data initialized, keep waiting
-                await asyncio.sleep(0.2)
-        return None
+        candles_manager = self.exchange_manager.exchange_symbols_data.get_exchange_symbol_data(
+            symbol,
+            allow_creation=False) \
+            .symbol_candles[tf]
+        candle_data = candles_manager.get_candles(5)
+        current_time = self.exchange_manager.exchange.get_exchange_current_time()
+        time_frame_sec = commons_enums.TimeFramesMinutes[tf] * commons_constants.MINUTE_TO_SECONDS
+        last_full_candle_time = current_time - current_time % time_frame_sec - time_frame_sec
+        for candle in reversed(candle_data):
+            if candle[commons_enums.PriceIndexes.IND_PRICE_TIME.value] == last_full_candle_time:
+                return candle
+        # return the candle right before the last (last being in construction)
+        return candle_data[-2]
 
     def _get_initialization_call_args(self):
         currency = next(iter(self.exchange_manager.exchange_config.traded_cryptocurrencies))
