@@ -60,6 +60,7 @@ cdef class ExchangeManager(util.Initializable):
     cdef public exchange_config_data.ExchangeConfig exchange_config
     cdef public object exchange_backend
     cdef public bint is_valid_account
+    cdef public object init_error
     cdef public object exchange_symbols_data
     cdef public object exchange_personal_data
 
