@@ -67,6 +67,7 @@ class ExchangeManager(util.Initializable):
         self.exchange = None
         self.exchange_backend = None
         self.is_valid_account = True
+        self.init_error = None
         self.trading_modes = []
 
         self.exchange_web_socket = None
