@@ -178,7 +178,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
         # do not log stopping message
         logger = local_exchange_manager.exchange.connector.logger
         logger.disable(True)
-        await local_exchange_manager.stop()
+        await local_exchange_manager.stop(enable_logs=False)
         logger.disable(False)
 
 

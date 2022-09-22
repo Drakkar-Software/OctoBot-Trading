@@ -82,29 +82,36 @@ class ExchangeManager(util.Initializable):
     async def initialize_impl(self):
         await exchanges.create_exchanges(self)
 
-    async def stop(self, warning_on_missing_elements=True):
+    async def stop(self, warning_on_missing_elements=True, enable_logs=True):
         """
         Stops exchange manager relative tasks : websockets, trading mode, and exchange channels
         :param warning_on_missing_elements: warn on missing element
+        :param enable_logs: log stopping steps
         """
-        self.logger.debug("Stopping ...")
+        if enable_logs:
+            self.logger.debug("Stopping ...")
         # stop websockets if any
         if self.has_websocket:
-            self.logger.debug("Stopping websocket ...")
+            if enable_logs:
+                self.logger.debug("Stopping websocket ...")
             await self.exchange_web_socket.stop_sockets()
             await self.exchange_web_socket.close_sockets()
             self.exchange_web_socket.clear()
             self.exchange_web_socket = None
-            self.logger.debug("Stopped websocket")
+            if enable_logs:
+                self.logger.debug("Stopped websocket")
 
         # stop trading modes
-        self.logger.debug("Stopping trading modes ...")
+        if enable_logs:
+            self.logger.debug("Stopping trading modes ...")
         for trading_mode in self.trading_modes:
             await trading_mode.stop()
-        self.logger.debug("Stopped trading modes")
+        if enable_logs:
+            self.logger.debug("Stopped trading modes")
 
         # stop exchange channels
-        self.logger.debug(f"Stopping exchange channels for exchange_id: {self.id} ...")
+        if enable_logs:
+            self.logger.debug(f"Stopping exchange channels for exchange_id: {self.id} ...")
         if self.exchange is not None:
             if not self.exchange_only:
                 await exchange_channel.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
@@ -115,19 +122,23 @@ class ExchangeManager(util.Initializable):
             self.exchange = None
         if self.exchange_personal_data is not None:
             await self.exchange_personal_data.stop()
-        self.logger.debug(f"Stopped exchange channels for exchange_id: {self.id}")
+        if enable_logs:
+            self.logger.debug(f"Stopped exchange channels for exchange_id: {self.id}")
 
         self.exchange_config = None
         self.exchange_personal_data = None
         self.exchange_symbols_data = None
-        self.logger.debug("Stopping trader ...")
+        if enable_logs:
+            self.logger.debug("Stopping trader ...")
         if self.trader is not None:
             self.trader.clear()
             self.trader = None
-        self.logger.debug("Stopped trader")
+        if enable_logs:
+            self.logger.debug("Stopped trader")
         self.trading_modes = []
         self.backtesting = None
-        self.logger.debug("Stopped")
+        if enable_logs:
+            self.logger.debug("Stopped")
 
     async def register_trader(self, trader):
         self.trader = trader
@@ -141,7 +152,8 @@ class ExchangeManager(util.Initializable):
             self.exchange_config.set_config_traded_pairs()
         # always call set_historical_settings
         self.exchange_config.set_historical_settings()
-        self.exchange_config.initialize_exchange_event_tree()
+        if not self.exchange_only:
+            self.exchange_config.initialize_exchange_event_tree()
 
     def need_user_stream(self):
         return self.config[common_constants.CONFIG_TRADER][common_constants.CONFIG_ENABLED_OPTION]
