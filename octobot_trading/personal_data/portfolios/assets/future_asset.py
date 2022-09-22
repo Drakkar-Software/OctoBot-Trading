@@ -102,6 +102,7 @@ class FutureAsset(asset_class.Asset):
             self.wallet_balance += self._ensure_update_validity(self.wallet_balance, total)
             self._update_available()
             self._update_total()
+            print(f"asset_update  {self}")
             return True
 
     def set(self, total=constants.ZERO, available=None, initial_margin=constants.ZERO, position_margin=constants.ZERO,
@@ -136,6 +137,7 @@ class FutureAsset(asset_class.Asset):
                 self.total = margin_balance
             else:
                 self._update_total()
+            print(f"asset_update  {self}")
             return True
 
     def set_unrealized_pnl(self, unrealized_pnl):
@@ -144,6 +146,7 @@ class FutureAsset(asset_class.Asset):
         :param unrealized_pnl: the new unrealized pnl value
         """
         self.unrealized_pnl = unrealized_pnl
+        print(f"set_unrealized_pnl: {self.unrealized_pnl}")
         self._update_total()
 
     def update_realised_pnl(self, realized_pnl_update):

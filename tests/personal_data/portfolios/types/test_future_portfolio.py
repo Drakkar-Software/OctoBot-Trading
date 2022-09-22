@@ -19,6 +19,7 @@ import os
 import pytest
 import mock
 
+import octobot_trading.api
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
 import octobot_trading.enums as enums
@@ -85,6 +86,30 @@ async def test_update_future_portfolio_from_order(
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal(str(100))
     assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == constants.ZERO
 
+    # Test second buy order
+    market_buy = BuyMarketOrder(trader_inst)
+    buy_price = decimal.Decimal(str(250))
+    market_buy.update(order_type=enums.TraderOrderType.BUY_MARKET,
+                      symbol=DEFAULT_FUTURE_SYMBOL,
+                      current_price=buy_price,
+                      quantity=decimal.Decimal(str(2)),
+                      price=buy_price)
+    # test second buy order creation
+    portfolio_manager.portfolio.update_portfolio_available(market_buy, True)
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").available == decimal.Decimal(str(650))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").total == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").initial_margin == constants.ZERO
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").wallet_balance == decimal.Decimal(str(1000))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal(str(100))
+    assert portfolio_manager.portfolio.get_currency_portfolio("USDT").order_margin == decimal.Decimal(str(250))
+
+    # cancel second order
+    # todo test that order_margin is reset.
+    # The issue seems to be that order_margin is not reset after cancelled orders (issue seen on real trading)
+    # initial error process:
+    # future-real order (pos created from ex + create sell orders (dip) + cancel (1 local 2 exchange) +
+    # close position from ex pas free du portfolio available
 
 async def test_update_portfolio_available_from_order_with_market_buy_long_linear_contract(
         future_trader_simulator_with_default_linear):
