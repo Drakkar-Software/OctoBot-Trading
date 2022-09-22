@@ -15,7 +15,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
-import concurrent.futures
 
 import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums

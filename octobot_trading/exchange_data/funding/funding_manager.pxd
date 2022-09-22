@@ -26,6 +26,7 @@ cdef class FundingManager(util.Initializable):
     cdef public double last_updated
 
     cpdef void reset_funding(self)
+    cpdef bint initialized(self)
 
     cpdef funding_update(self, object funding_rate, object predicted_funding_rate, double next_funding_time, double timestamp)
 

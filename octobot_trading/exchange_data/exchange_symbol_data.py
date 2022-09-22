@@ -90,7 +90,7 @@ class ExchangeSymbolData:
         self.recent_trades_manager.add_new_liquidations(liquidations)
 
     def handle_mark_price_update(self, mark_price, mark_price_source) -> bool:
-        trigger_init_event = self.prices_manager.mark_price is constants.ZERO
+        trigger_init_event = not self.prices_manager.initialized()
         updated = self.prices_manager.set_mark_price(mark_price, mark_price_source)
         if updated:
             if trigger_init_event:
@@ -141,7 +141,7 @@ class ExchangeSymbolData:
 
     async def handle_funding_update(self, funding_rate, predicted_funding_rate, next_funding_time, timestamp):
         if self.funding_manager:
-            trigger_init_event = self.funding_manager.funding_rate is constants.NaN
+            trigger_init_event = not self.funding_manager.initialized()
             self.funding_manager.funding_update(funding_rate, predicted_funding_rate, next_funding_time, timestamp)
             if trigger_init_event:
                 self._set_initialized_event(commons_enums.InitializationEventExchangeTopics.FUNDING.value)

@@ -31,6 +31,9 @@ class FundingManager(util.Initializable):
     async def initialize_impl(self):
         self.reset_funding()
 
+    def initialized(self):
+        return self.funding_rate is not constants.NaN
+
     def reset_funding(self):
         self.funding_rate = constants.NaN
         self.predicted_funding_rate = constants.NaN
