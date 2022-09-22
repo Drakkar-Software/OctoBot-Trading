@@ -14,12 +14,15 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import contextlib
+import asyncio
+import concurrent.futures
 
 import async_channel.enums as channel_enums
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
+import octobot_commons.tree as commons_tree
 import octobot_commons.logging as logging
 
 import octobot_trading.enums as enums
@@ -330,3 +333,22 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 provider.get_symbol_db(self.trading_mode.bot_id, self.exchange_name, self.trading_mode.symbol)
                 if self.trading_mode.symbol else None,
         }
+
+    async def _wait_for_symbol_init(self, symbol, time_frame, timeout) -> bool:
+        try:
+            await asyncio.wait_for(
+                commons_tree.EventProvider.instance().get_or_create_event(
+                    self.exchange_manager.bot_id,
+                    commons_tree.get_exchange_path(
+                        self.exchange_manager.exchange_name,
+                        common_enums.InitializationEventExchangeTopics.CANDLES.value,
+                        symbol=symbol
+                    ),
+                    allow_creation=False
+                ).wait(),
+                timeout
+            )
+            return True
+        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
+            self.logger.error(f"Initialization took more than {timeout} seconds")
+        return False

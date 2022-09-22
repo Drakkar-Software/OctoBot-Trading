@@ -13,14 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import concurrent.futures
 import time
 import contextlib
 import importlib
-import asyncio
 
 import octobot_commons.logging as logging
-import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
 import octobot_commons.errors as commons_errors
 import octobot_commons.constants as commons_constants
@@ -361,7 +358,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         # refresh user inputs
         await self.init_user_inputs(True)
         if not self.exchange_manager.is_backtesting:
-            asyncio.create_task(self._schedule_initialization_call())
+            await self._schedule_initialization_call()
 
     async def _schedule_initialization_call(self):
         # initialization call is a special call that does not trigger trades and allows the script
@@ -380,22 +377,7 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                                   candle, init_call=True)
 
     async def _wait_for_symbol_init(self, symbol, time_frame, timeout):
-        # warning: should never be called in backtesting
-        try:
-            await asyncio.wait_for(
-                commons_tree.EventProvider.instance().get_or_create_event(
-                    self.exchange_manager.bot_id,
-                    commons_tree.get_exchange_path(
-                        self.exchange_manager.exchange_name,
-                        commons_enums.InitializationEventExchangeTopics.CANDLES.value,
-                        symbol=symbol
-                    ),
-                    allow_creation=False
-                ).wait(),
-                timeout
-            )
-        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
-            self.logger.error(f"Initialization took more than {timeout} seconds")
+        if not await super()._wait_for_symbol_init(symbol, time_frame, timeout):
             return None
         return self._get_latest_full_candle(symbol, time_frame)
 
