@@ -31,6 +31,13 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
         super().__init__()
         self.trading_mode = trading_mode
         self.exchange_manager = trading_mode.exchange_manager
+        self.reload_config()
+
+    def reload_config(self):
+        """
+        Called at constructor and after the associated trading mode's reload_config.
+        Implement if necessary
+        """
 
     def flush(self):
         self.trading_mode = None

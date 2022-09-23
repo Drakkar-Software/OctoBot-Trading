@@ -50,6 +50,7 @@ from octobot_trading.modes import modes_factory
 from octobot_trading.modes.modes_factory import (
     create_trading_modes,
     create_trading_mode,
+    create_temporary_trading_mode_with_local_config,
 )
 
 from octobot_trading.modes import modes_util
@@ -70,6 +71,7 @@ __all__ = [
     "check_factor",
     "create_trading_modes",
     "create_trading_mode",
+    "create_temporary_trading_mode_with_local_config",
     "get_activated_trading_mode",
     "get_required_candles_count",
 ]

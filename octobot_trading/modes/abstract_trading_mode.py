@@ -18,6 +18,7 @@ import contextlib
 import decimal
 
 import octobot_commons.constants as common_constants
+import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.tentacles_management as abstract_tentacle
 import octobot_commons.authentication as authentication
@@ -31,12 +32,17 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.script_keywords as script_keywords
+import octobot_trading.modes.modes_factory as modes_factory
+import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_producer
+import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
 import octobot_trading.personal_data.orders as orders
 import octobot_trading.signals as signals
 
 
 class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     __metaclass__ = abc.ABCMeta
+    USER_INPUT_TENTACLE_TYPE = common_enums.UserInputTentacleTypes.TRADING_MODE
+
 
     MODE_PRODUCER_CLASSES = []
     MODE_CONSUMER_CLASSES = []
@@ -118,6 +124,17 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             enums.ExchangeTypes.SPOT
         ]
 
+    def should_emit_trading_signals_user_input(self, inputs: dict):
+        if self.user_input(
+            common_constants.CONFIG_EMIT_TRADING_SIGNALS, common_enums.UserInputTypes.BOOLEAN, False, inputs,
+            title="Emit trading signals on Astrolab for people to follow.", order=998
+        ):
+            self.user_input(
+                common_constants.CONFIG_TRADING_SIGNALS_STRATEGY, common_enums.UserInputTypes.TEXT, self.get_name(),
+                inputs,
+                title="Name of the strategy to send signals on.", order=999, other_schema_values={"minLength": 0}
+            )
+
     def is_trading_signal_emitter(self) -> bool:
         """
         :return: True if the mode should be emitting trading signals according to configuration
@@ -171,6 +188,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         Triggers producers and consumers creation
         """
+        await self.reload_config(self.exchange_manager.bot_id)
         self.producers = await self.create_producers()
         self.consumers = await self.create_consumers()
 
@@ -243,6 +261,40 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         # set default config if nothing found
         if not self.trading_config:
             self.set_default_config()
+
+    LIGHT_VOLUME_WEIGHT = "light_weight_volume_multiplier"
+    MEDIUM_VOLUME_WEIGHT = "medium_weight_volume_multiplier"
+    HEAVY_VOLUME_WEIGHT = "heavy_weight_volume_multiplier"
+    VOLUME_WEIGH_TO_VOLUME_PERCENT = {}
+
+    LIGHT_PRICE_WEIGHT = "light_weight_price_multiplier"
+    MEDIUM_PRICE_WEIGHT = "medium_weight_price_multiplier"
+    HEAVY_PRICE_WEIGHT = "heavy_weight_price_multiplier"
+
+    async def reload_config(self, bot_id: str) -> None:
+        """
+        Try to load TradingMode tentacle config.
+        Calls set_default_config() if the tentacle config is empty
+        """
+        self.trading_config = tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config,
+                                                                        self.__class__)
+        # set default config if nothing found
+        if not self.trading_config:
+            self.set_default_config()
+        await self.load_and_save_user_inputs(bot_id)
+        for element in self.consumers + self.producers:
+            if isinstance(element, (abstract_mode_consumer.AbstractTradingModeConsumer,
+                                    abstract_mode_producer.AbstractTradingModeProducer)):
+                element.reload_config()
+
+    def get_local_config(self):
+        return self.trading_config
+
+    @classmethod
+    def create_local_instance(cls, config, tentacles_setup_config, tentacle_config):
+        return modes_factory.create_temporary_trading_mode_with_local_config(
+            cls, config, tentacle_config
+        )
 
     # to implement in subclasses if config is necessary
     def set_default_config(self) -> None:

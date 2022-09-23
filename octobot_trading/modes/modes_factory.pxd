@@ -21,3 +21,4 @@ cdef list _get_symbols_to_create(object trading_mode_class,
                                  str cryptocurrency,
                                  list symbols)
 cdef list _get_time_frames_to_create(object trading_mode_class, list time_frames)
+cpdef object create_temporary_trading_mode_with_local_config(object trading_mode_class, dict config, dict trading_config)
