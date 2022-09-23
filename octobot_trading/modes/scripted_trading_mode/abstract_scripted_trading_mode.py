@@ -56,7 +56,6 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         self.script_name = None
 
         if exchange_manager:
-            self.load_config()
             # add config folder to importable files to import the user script
             tentacles_manager_api.import_user_tentacles_config_folder(self.exchange_manager.tentacles_setup_config)
 
@@ -172,7 +171,7 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         importlib.reload(module)
         self.register_script_module(module, live=live)
         # reload config
-        self.load_config()
+        await self.reload_config(self.exchange_manager.bot_id)
         if live:
             # todo cancel and restart live tasks
             await self.start_over_database()

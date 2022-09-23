@@ -81,6 +81,14 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
         self.run_dbs_identifier = None
         self.symbol = None
+        self.reload_config()
+
+    def reload_config(self):
+        """
+        Called at constructor and after the associated trading mode's reload_config.
+        Implement if necessary
+        """
+        pass
 
     def is_cryptocurrency_wildcard(self):
         """
