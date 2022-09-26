@@ -83,6 +83,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
         self.symbol = None
         self.reload_config()
+        self._is_first_call = True
 
     def reload_config(self):
         """
@@ -286,6 +287,13 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     @contextlib.asynccontextmanager
     async def trading_mode_trigger(self):
         try:
+            try:
+                if self.exchange_manager.is_backtesting and self._is_first_call:
+                    # reset_exchange_init_data done at first trading mode call in backtesting
+                    await self.trading_mode.reset_exchange_init_data()
+                    self._is_first_call = False
+            except Exception as e:
+                self.logger.exception(e, True, f"Error when resetting exchange init data: {e}")
             yield
         except errors.UnreachableExchange as e:
             self.logger.warning(f"Error when calling trading mode: {e}")

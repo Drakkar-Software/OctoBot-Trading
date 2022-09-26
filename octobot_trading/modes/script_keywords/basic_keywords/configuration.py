@@ -31,9 +31,9 @@ async def user_select_leverage(
 
 
 async def user_select_emit_trading_signals(ctx, identifier, def_val=False) -> bool:
-    if is_emitting_signals := user_inputs.user_input(ctx, constants.CONFIG_EMIT_TRADING_SIGNALS,
-                                                     commons_enums.UserInputTypes.BOOLEAN.value, def_val,
-                                                     show_in_summary=False, show_in_optimizer=False):
+    if is_emitting_signals := await user_inputs.user_input(ctx, constants.CONFIG_EMIT_TRADING_SIGNALS,
+                                                           commons_enums.UserInputTypes.BOOLEAN.value, def_val,
+                                                           show_in_summary=False, show_in_optimizer=False):
         await user_inputs.user_input(ctx, constants.CONFIG_TRADING_SIGNALS_STRATEGY,
                                      commons_enums.UserInputTypes.TEXT.value, identifier,
                                      show_in_summary=False, show_in_optimizer=False)
