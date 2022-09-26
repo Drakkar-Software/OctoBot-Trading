@@ -53,15 +53,7 @@ async def store_orders(ctx, orders,
     await ctx.orders_writer.log_many(commons_enums.DBTables.ORDERS.value, order_data)
 
 
-async def store_trade(ctx,
-                      trade_dict,
-                      chart=commons_enums.PlotCharts.MAIN_CHART.value,
-                      x_multiplier=1000,
-                      kind="scattergl",
-                      mode="markers",
-                      exchange_manager=None,
-                      writer=None):
-    exchange_manager = exchange_manager or ctx.exchange_manager
+def _format_trade(trade_dict, exchange_manager, chart, x_multiplier, kind, mode):
     tag = f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TAG.value]} " \
         if trade_dict[trading_enums.ExchangeConstantsOrderColumns.TAG.value] else ""
     symbol = trade_dict[trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value]
@@ -107,7 +99,7 @@ async def store_trade(ctx,
             color = "magenta"
             shape = "arrow-bar-left"
 
-    trade_data = {
+    return {
         "x": trade_dict[trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value] * x_multiplier,
         "text": f"{tag}{trade_dict[trading_enums.ExchangeConstantsOrderColumns.TYPE.value]} "
                 f"{trade_dict[trading_enums.ExchangeConstantsOrderColumns.SIDE.value]} "
@@ -135,53 +127,127 @@ async def store_trade(ctx,
             trading_enums.ExchangeConstantsFeesColumns.CURRENCY.value]
         if trade_dict[trading_enums.ExchangeConstantsOrderColumns.FEE.value] else "",
     }
-    await writer.log(commons_enums.DBTables.TRADES.value, trade_data)
 
 
-async def store_transactions(ctx,
+async def store_trades(
+        exchange_manager,
+        trades,
+        chart=commons_enums.PlotCharts.MAIN_CHART.value,
+        x_multiplier=1000,
+        kind="scattergl",
+        mode="markers",
+):
+    trades_db = commons_databases.RunDatabasesProvider.instance().get_trades_db(
+        exchange_manager.bot_id,
+        exchange_manager.exchange_name
+    )
+    trades_data = [
+        _format_trade(
+            trade.to_dict(),
+            exchange_manager,
+            chart,
+            x_multiplier,
+            kind,
+            mode
+        )
+        for trade in trades
+    ]
+    await trades_db.log_many(commons_enums.DBTables.TRADES.value, trades_data)
+
+
+async def store_trade(ctx,
+                      trade_dict,
+                      chart=commons_enums.PlotCharts.MAIN_CHART.value,
+                      x_multiplier=1000,
+                      kind="scattergl",
+                      mode="markers",
+                      exchange_manager=None,
+                      writer=None):
+    await writer.log(
+        commons_enums.DBTables.TRADES.value,
+        _format_trade(
+            trade_dict,
+            exchange_manager or ctx.exchange_manager,
+            chart,
+            x_multiplier,
+            kind,
+            mode
+        )
+    )
+
+
+def _format_transaction(transaction, chart, x_multiplier, kind, mode, y_data):
+    return {
+        "x": transaction.creation_time * x_multiplier,
+        "type": transaction.transaction_type.value,
+        "id": transaction.transaction_id,
+        "symbol": transaction.symbol,
+        "currency": transaction.currency,
+        "quantity": float(transaction.quantity) if hasattr(transaction, "quantity") else None,
+        "order_id": transaction.order_id if hasattr(transaction, "order_id") else None,
+        "funding_rate": float(transaction.funding_rate) if hasattr(transaction, "funding_rate") else None,
+        "realised_pnl": float(transaction.realised_pnl) if hasattr(transaction, "realised_pnl") else None,
+        "transaction_fee": float(transaction.transaction_fee) if hasattr(transaction, "transaction_fee") else None,
+        "closed_quantity": float(transaction.closed_quantity) if hasattr(transaction, "closed_quantity") else None,
+        "cumulated_closed_quantity": float(transaction.cumulated_closed_quantity)
+        if hasattr(transaction, "cumulated_closed_quantity") else None,
+        "first_entry_time": float(transaction.first_entry_time) * x_multiplier
+        if hasattr(transaction, "first_entry_time") else None,
+        "average_entry_price": float(transaction.average_entry_price)
+        if hasattr(transaction, "average_entry_price") else None,
+        "average_exit_price": float(transaction.average_exit_price)
+        if hasattr(transaction, "average_exit_price") else None,
+        "order_exit_price": float(transaction.order_exit_price)
+        if hasattr(transaction, "order_exit_price") else None,
+        "leverage": float(transaction.leverage) if hasattr(transaction, "leverage") else None,
+        "trigger_source": transaction.trigger_source.value if hasattr(transaction, "trigger_source") else None,
+        "side": transaction.side.value if hasattr(transaction, "side") else None,
+        "y": y_data,
+        "chart": chart,
+        "kind": kind,
+        "mode": mode
+    }
+
+
+async def store_transaction(transaction,
+                            chart=commons_enums.PlotCharts.MAIN_CHART.value,
+                            x_multiplier=1000,
+                            kind="scattergl",
+                            mode="markers",
+                            y_data=None,
+                            writer=None):
+
+    y_data = y_data or 0
+    await writer.log(
+        commons_enums.DBTables.TRANSACTIONS.value,
+        _format_transaction(
+            transaction,
+            chart,
+            x_multiplier,
+            kind,
+            mode,
+            y_data
+        )
+    )
+
+
+async def store_transactions(exchange_manager,
                              transactions,
                              chart=commons_enums.PlotCharts.MAIN_CHART.value,
                              x_multiplier=1000,
                              kind="scattergl",
                              mode="markers",
-                             y_data=None,
-                             writer=None):
+                             y_data=None):
+    transactions_db = commons_databases.RunDatabasesProvider.instance().get_transactions_db(
+        exchange_manager.bot_id,
+        exchange_manager.exchange_name
+    )
     y_data = y_data or [0] * len(transactions)
     transactions_data = [
-        {
-            "x": transaction.creation_time * x_multiplier,
-            "type": transaction.transaction_type.value,
-            "id": transaction.transaction_id,
-            "symbol": transaction.symbol,
-            "currency": transaction.currency,
-            "quantity": float(transaction.quantity) if hasattr(transaction, "quantity") else None,
-            "order_id": transaction.order_id if hasattr(transaction, "order_id") else None,
-            "funding_rate": float(transaction.funding_rate) if hasattr(transaction, "funding_rate") else None,
-            "realised_pnl": float(transaction.realised_pnl) if hasattr(transaction, "realised_pnl") else None,
-            "transaction_fee": float(transaction.transaction_fee) if hasattr(transaction, "transaction_fee") else None,
-            "closed_quantity": float(transaction.closed_quantity) if hasattr(transaction, "closed_quantity") else None,
-            "cumulated_closed_quantity": float(transaction.cumulated_closed_quantity)
-            if hasattr(transaction, "cumulated_closed_quantity") else None,
-            "first_entry_time": float(transaction.first_entry_time) * x_multiplier
-            if hasattr(transaction, "first_entry_time") else None,
-            "average_entry_price": float(transaction.average_entry_price)
-            if hasattr(transaction, "average_entry_price") else None,
-            "average_exit_price": float(transaction.average_exit_price)
-            if hasattr(transaction, "average_exit_price") else None,
-            "order_exit_price": float(transaction.order_exit_price)
-            if hasattr(transaction, "order_exit_price") else None,
-            "leverage": float(transaction.leverage) if hasattr(transaction, "leverage") else None,
-            "trigger_source": transaction.trigger_source.value if hasattr(transaction, "trigger_source") else None,
-            "side": transaction.side.value if hasattr(transaction, "side") else None,
-            "y": y_data[index],
-            "chart": chart,
-            "kind": kind,
-            "mode": mode
-        }
+        _format_transaction(transaction, chart, x_multiplier, kind, mode, y_data[index])
         for index, transaction in enumerate(transactions)
     ]
-    writer = writer or ctx.transactions_writer
-    await writer.log_many(commons_enums.DBTables.TRANSACTIONS.value, transactions_data)
+    await transactions_db.log_many(commons_enums.DBTables.TRANSACTIONS.value, transactions_data)
 
 
 async def save_metadata(writer, metadata):
@@ -191,10 +257,11 @@ async def save_metadata(writer, metadata):
     )
 
 
-async def save_portfolio(writer, context):
-    await writer.log(
+async def store_portfolio(exchange_manager):
+    run_db = commons_databases.RunDatabasesProvider.instance().get_run_db(exchange_manager.bot_id)
+    await run_db.log(
         commons_enums.DBTables.PORTFOLIO.value,
-        trading_api.get_portfolio(context.exchange_manager, as_decimal=False)
+        trading_api.get_portfolio(exchange_manager, as_decimal=False)
     )
 
 

@@ -16,6 +16,7 @@
 import decimal
 
 import octobot_commons.constants as constants
+import octobot_commons.enums as commons_enums
 import octobot_trading.modes.script_keywords.basic_keywords.user_inputs as user_inputs
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
@@ -26,14 +27,17 @@ async def user_select_leverage(
         def_val=1,
         order=None,
         name="leverage"):
-    return await user_inputs.user_input(ctx, name, "int", def_val, order=order)
+    return await user_inputs.user_input(ctx, name, commons_enums.UserInputTypes.INT.value, def_val, order=order)
 
 
-async def user_select_emit_trading_signals(ctx, identifier, def_val=False):
-    await user_inputs.user_input(ctx, constants.CONFIG_TRADING_SIGNALS_STRATEGY, "text", identifier,
-                                 show_in_summary=False, show_in_optimizer=False)
-    return await user_inputs.user_input(ctx, "emit_trading_signals", "boolean", def_val,
-                                        show_in_summary=False, show_in_optimizer=False)
+async def user_select_emit_trading_signals(ctx, identifier, def_val=False) -> bool:
+    if is_emitting_signals := user_inputs.user_input(ctx, constants.CONFIG_EMIT_TRADING_SIGNALS,
+                                                     commons_enums.UserInputTypes.BOOLEAN.value, def_val,
+                                                     show_in_summary=False, show_in_optimizer=False):
+        await user_inputs.user_input(ctx, constants.CONFIG_TRADING_SIGNALS_STRATEGY,
+                                     commons_enums.UserInputTypes.TEXT.value, identifier,
+                                     show_in_summary=False, show_in_optimizer=False)
+    return is_emitting_signals
 
 
 async def set_leverage(ctx, leverage):
