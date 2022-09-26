@@ -131,17 +131,9 @@ async def save_user_input(
     )
 
 
-async def get_user_inputs(reader):
-    return await reader.all(commons_enums.DBTables.INPUTS.value)
-
-
-async def clear_user_inputs(writer):
-    await writer.delete(commons_enums.DBTables.INPUTS.value, None)
-
-
 async def get_activation_topics(context, default_value, options):
     return await user_input(
-        context, commons_constants.CONFIG_ACTIVATION_TOPICS, "options",
+        context, commons_constants.CONFIG_ACTIVATION_TOPICS, commons_enums.UserInputTypes.OPTIONS.value,
         default_value,
         options=options,
         show_in_optimizer=False, show_in_summary=False, order=1000

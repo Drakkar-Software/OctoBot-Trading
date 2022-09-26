@@ -25,13 +25,15 @@ import octobot_commons.enums as common_enums
 import octobot_commons.tree as commons_tree
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
-
+import octobot_commons.configuration as commons_configuration
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
-import octobot_trading.errors as errors
+import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
+import octobot_trading.modes.script_keywords.context_management as context_management
 
 
 class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
@@ -79,7 +81,6 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         # Define trading modes default consumer priority level
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
-        self.run_dbs_identifier = None
         self.symbol = None
         self.reload_config()
 
@@ -141,6 +142,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self.matrix_id = exchanges.Exchanges.instance().get_exchange(self.exchange_manager.exchange_name,
                                                                      self.exchange_manager.id).matrix_id
         await self._subscribe_to_registration_topic(registration_topics, currency_filter, symbol_filter)
+        await self.init_user_inputs(False)
 
     async def _subscribe_to_registration_topic(self, registration_topics, currency_filter, symbol_filter):
         for registration_topic in registration_topics:
@@ -275,21 +277,29 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
             # Do nothing if not its exchange
             return
 
-        with self.trading_mode_trigger():
-            async with self.trading_mode.remote_signal_publisher(symbol):
-                await self.set_final_eval(matrix_id=matrix_id,
-                                          cryptocurrency=cryptocurrency,
-                                          symbol=symbol,
-                                          time_frame=time_frame)
+        async with self.trading_mode_trigger(), self.trading_mode.remote_signal_publisher(symbol):
+            await self.set_final_eval(matrix_id=matrix_id,
+                                      cryptocurrency=cryptocurrency,
+                                      symbol=symbol,
+                                      time_frame=time_frame)
 
-    @contextlib.contextmanager
-    def trading_mode_trigger(self):
+    @contextlib.asynccontextmanager
+    async def trading_mode_trigger(self):
         try:
             yield
         except errors.UnreachableExchange as e:
             self.logger.warning(f"Error when calling trading mode: {e}")
         except Exception as e:
             self.logger.exception(e, True, f"Error when calling trading mode: {e}")
+        finally:
+            await self.post_trigger()
+
+    async def post_trigger(self):
+        if not self.exchange_manager.is_backtesting:
+            # update db after each run only in live mode
+            for database in self.all_databases().values():
+                if database:
+                    await database.flush()
 
     async def set_final_eval(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame) -> None:
         """
@@ -360,3 +370,51 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
             self.logger.error(f"Initialization took more than {timeout} seconds")
         return False
+
+    async def init_user_inputs(self, should_clear_inputs):
+        if should_clear_inputs:
+            await commons_configuration.clear_user_inputs(
+                databases.RunDatabasesProvider.instance().get_run_db(self.trading_mode.bot_id)
+            )
+        await self._register_and_apply_required_user_inputs(
+            self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None, True)
+        )
+
+    async def _register_and_apply_required_user_inputs(self, context):
+        if context.exchange_manager.is_future:
+            await basic_keywords.set_leverage(context, await basic_keywords.user_select_leverage(context))
+
+        # register activating topics user input
+        activation_topic_values = [
+            common_enums.ActivationTopics.EVALUATION_CYCLE.value,
+            common_enums.ActivationTopics.FULL_CANDLES.value,
+            common_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value
+        ]
+        await basic_keywords.get_activation_topics(
+            context,
+            common_enums.ActivationTopics.EVALUATION_CYCLE.value,
+            activation_topic_values
+        )
+
+    def get_context(self, matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
+                    candle, kline, init_call=False):
+        context = context_management.Context(
+            self.trading_mode,
+            self.exchange_manager,
+            self.exchange_manager.trader,
+            self.exchange_name,
+            self.trading_mode.symbol,
+            matrix_id,
+            cryptocurrency,
+            symbol,
+            time_frame,
+            self.logger,
+            self.trading_mode.__class__,
+            trigger_cache_timestamp,
+            trigger_source,
+            candle or kline,
+            None,
+            None,
+        )
+        context.enable_trading = not init_call
+        return context

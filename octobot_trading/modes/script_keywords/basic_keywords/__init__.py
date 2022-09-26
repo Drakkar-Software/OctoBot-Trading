@@ -17,9 +17,12 @@
 from octobot_trading.modes.script_keywords.basic_keywords.user_inputs import (
     user_input,
     save_user_input,
+    get_activation_topics,
+)
+
+from octobot_commons.configuration import (
     get_user_inputs,
     clear_user_inputs,
-    get_activation_topics,
 )
 
 from octobot_trading.modes.script_keywords.basic_keywords.configuration import (
@@ -39,9 +42,10 @@ from octobot_trading.modes.script_keywords.basic_keywords.run_persistence import
     set_plot_orders,
     store_orders,
     store_trade,
+    store_trades,
     store_transactions,
     save_metadata,
-    save_portfolio,
+    store_portfolio,
     clear_run_data,
     clear_orders_cache,
     clear_trades_cache,
@@ -65,9 +69,10 @@ __all__ = [
     "set_plot_orders",
     "store_orders",
     "store_trade",
+    "store_trades",
     "store_transactions",
     "save_metadata",
-    "save_portfolio",
+    "store_portfolio",
     "clear_run_data",
     "clear_orders_cache",
     "clear_trades_cache",
