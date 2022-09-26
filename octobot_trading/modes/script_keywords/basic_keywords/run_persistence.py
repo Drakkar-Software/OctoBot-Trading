@@ -18,7 +18,8 @@ import octobot_commons.enums as commons_enums
 import octobot_commons.constants as commons_constants
 import octobot_commons.databases as commons_databases
 import octobot_trading.enums as trading_enums
-import octobot_trading.api as trading_api
+import octobot_backtesting.api as backtesting_api
+import octobot_trading.personal_data as personal_data
 
 
 def set_plot_orders(ctx, value):
@@ -34,9 +35,11 @@ async def store_candles(exchange_manager, symbol, time_frame, chart=commons_enum
     )
     candles_data = {
         "time_frame": time_frame,
-        "value": trading_api.get_backtesting_data_file(exchange_manager, symbol,
-                                                       commons_enums.TimeFrames(time_frame))
-        if trading_api.get_is_backtesting(exchange_manager) else commons_constants.LOCAL_BOT_DATA,
+        "value": backtesting_api.get_data_file_from_importers(
+            exchange_manager.exchange.connector.exchange_importers, symbol,
+            commons_enums.TimeFrames(time_frame)
+        )
+        if exchange_manager.is_backtesting else commons_constants.LOCAL_BOT_DATA,
         "chart": chart
     }
     if (not await symbol_db.contains_row(
@@ -284,7 +287,9 @@ async def store_portfolio(exchange_manager):
     run_db = commons_databases.RunDatabasesProvider.instance().get_run_db(exchange_manager.bot_id)
     await run_db.log(
         commons_enums.DBTables.PORTFOLIO.value,
-        trading_api.get_portfolio(exchange_manager, as_decimal=False)
+        personal_data.portfolio_to_float(
+            exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio
+        )
     )
 
 
