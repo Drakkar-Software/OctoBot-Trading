@@ -15,6 +15,7 @@
 #  License along with this library.
 
 import octobot_commons.enums as commons_enums
+import octobot_commons.constants as commons_constants
 import octobot_commons.databases as commons_databases
 import octobot_trading.enums as trading_enums
 import octobot_trading.api as trading_api
@@ -22,6 +23,29 @@ import octobot_trading.api as trading_api
 
 def set_plot_orders(ctx, value):
     ctx.plot_orders = value
+
+
+async def store_candles(exchange_manager, symbol, time_frame, chart=commons_enums.PlotCharts.MAIN_CHART.value,
+                        symbol_db=None):
+    symbol_db = symbol_db or commons_databases.RunDatabasesProvider.instance().get_symbol_db(
+        exchange_manager.bot_id,
+        exchange_manager.exchange_name,
+        symbol
+    )
+    candles_data = {
+        "time_frame": time_frame,
+        "value": trading_api.get_backtesting_data_file(exchange_manager, symbol,
+                                                       commons_enums.TimeFrames(time_frame))
+        if trading_api.get_is_backtesting(exchange_manager) else commons_constants.LOCAL_BOT_DATA,
+        "chart": chart
+    }
+    if (not await symbol_db.contains_row(
+                commons_enums.DBTables.CANDLES_SOURCE.value,
+                {
+                    "time_frame": time_frame,
+                    "value": candles_data["value"],
+                })):
+        await symbol_db.log(commons_enums.DBTables.CANDLES_SOURCE.value, candles_data)
 
 
 async def store_orders(ctx, orders,
@@ -216,7 +240,6 @@ async def store_transaction(transaction,
                             mode="markers",
                             y_data=None,
                             writer=None):
-
     y_data = y_data or 0
     await writer.log(
         commons_enums.DBTables.TRANSACTIONS.value,
@@ -265,10 +288,21 @@ async def store_portfolio(exchange_manager):
     )
 
 
-async def clear_run_data(writer):
-    await _clear_table(writer, commons_enums.DBTables.METADATA.value, flush=False)
-    await _clear_table(writer, commons_enums.DBTables.PORTFOLIO.value, flush=False)
-    await writer.clear()
+async def clear_run_data(exchange_manager):
+    run_db = commons_databases.RunDatabasesProvider.instance().get_run_db(exchange_manager.bot_id)
+    await _clear_table(run_db, commons_enums.DBTables.METADATA.value, flush=False)
+    await _clear_table(run_db, commons_enums.DBTables.PORTFOLIO.value, flush=False)
+    await run_db.clear()
+    for symbol in exchange_manager.exchange_config.traded_symbol_pairs:
+        await _clear_table(
+            commons_databases.RunDatabasesProvider.instance().get_symbol_db(
+                exchange_manager.bot_id,
+                exchange_manager.exchange_name,
+                symbol
+            ),
+            commons_enums.DBTables.CANDLES.value,
+            flush=False
+        )
 
 
 async def clear_orders_cache(writer):

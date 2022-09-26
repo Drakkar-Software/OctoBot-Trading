@@ -17,12 +17,15 @@ import abc
 import contextlib
 import decimal
 import time
+import asyncio
+import concurrent.futures
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
+import octobot_commons.tree as commons_tree
 import octobot_commons.configuration as commons_configuration
 import octobot_commons.tentacles_management as abstract_tentacle
 import octobot_commons.authentication as authentication
@@ -99,6 +102,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         self.start_time = time.time()
         self.are_metadata_saved = False
+        self._init_exchange_data_task = None
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -205,16 +209,23 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         await self.reload_config(self.exchange_manager.bot_id)
         await databases.RunDatabasesProvider.instance().get_run_databases_identifier(self.exchange_manager.bot_id)\
             .initialize(self.exchange_manager.exchange_name)
-        await self.save_exchange_init_data()
         self.producers = await self.create_producers()
         self.consumers = await self.create_consumers()
+        if not self.exchange_manager.is_backtesting:
+            # reset_exchange_init_data done at first trading mode call in backtesting
+            self._init_exchange_data_task = asyncio.create_task(self.init_live_exchange_init_data())
 
     async def stop(self) -> None:
         """
         Stops all producers and consumers
         """
+        if self._init_exchange_data_task is not None and not self._init_exchange_data_task.done():
+            self._init_exchange_data_task.cancel()
         if self.exchange_manager.is_backtesting:
-            await self.save_backtesting_data()
+            try:
+                await self.save_backtesting_data()
+            except Exception as e:
+                self.logger.exception(e, True, f"Error when saving backtesting metadata: {e}")
         for producer in self.producers:
             await producer.stop()
         for consumer in self.consumers:
@@ -289,7 +300,11 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     async def save_trades(self):
         await basic_keywords.store_trades(
             self.exchange_manager,
-            self.exchange_manager.exchange_personal_data.trades_manager.trades.values()
+            [
+                trade
+                for trade in self.exchange_manager.exchange_personal_data.trades_manager.trades.values()
+                if trade.status != enums.OrderStatus.CANCELED
+            ]
         )
 
     async def save_portfolio(self):
@@ -301,9 +316,29 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await self.get_live_metadata()
         )
 
-    async def save_exchange_init_data(self):
+    async def save_candles_data(self):
+        for symbol in self.exchange_manager.exchange_config.traded_symbol_pairs:
+            symbol_db = databases.RunDatabasesProvider.instance().get_symbol_db(
+                self.exchange_manager.bot_id,
+                self.exchange_manager.exchange_name,
+                symbol
+            )
+            for time_frame in self.exchange_manager.exchange_config.available_required_time_frames:
+                await basic_keywords.store_candles(self.exchange_manager, symbol, time_frame.value, symbol_db=symbol_db)
+            await symbol_db.clear()
+
+    async def init_live_exchange_init_data(self):
+        if not self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.exchange_manager.bot_id, False):
+            self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.exchange_manager.bot_id] = True
+            run_data_init_timeout = 2 * common_constants.MINUTE_TO_SECONDS
+            await self._wait_for_run_data_init(run_data_init_timeout)
+            await self.reset_exchange_init_data()
+
+    async def reset_exchange_init_data(self):
+        await basic_keywords.clear_run_data(self.exchange_manager)
         await self.save_portfolio()
         await self.save_live_metadata()
+        await self.save_candles_data()
 
     # END TODO remove when proper run storage strategy
 
@@ -492,6 +527,39 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             )
         return changed
 
+    async def _wait_for_run_data_init(self, timeout) -> bool:
+        if self.exchange_manager.is_backtesting:
+            raise NotImplementedError("Not implemented in backtesting")
+        try:
+            await asyncio.wait_for(
+                commons_tree.EventProvider.instance().get_or_create_event(
+                    self.exchange_manager.bot_id,
+                    commons_tree.get_exchange_path(
+                        self.exchange_manager.exchange_name,
+                        common_enums.InitializationEventExchangeTopics.CANDLES.value
+                    ),
+                    allow_creation=False
+                ).wait(),
+                timeout
+            )
+            if not self.exchange_manager.is_future:
+                return True
+            await asyncio.wait_for(
+                commons_tree.EventProvider.instance().get_or_create_event(
+                    self.exchange_manager.bot_id,
+                    commons_tree.get_exchange_path(
+                        self.exchange_manager.exchange_name,
+                        common_enums.InitializationEventExchangeTopics.CONTRACTS.value
+                    ),
+                    allow_creation=False
+                ).wait(),
+                timeout
+            )
+            return True
+        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
+            self.logger.error(f"Initialization took more than {timeout} seconds")
+        return False
+
     async def save_backtesting_data(self):
         if not self.are_metadata_saved and self.exchange_manager is not None:
             run_dbs_identifier = databases.RunDatabasesProvider.instance().get_run_databases_identifier(
@@ -607,11 +675,17 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         win_rate = round(float(trading_api.get_win_rate(self.exchange_manager) * 100), 3)
         wins = round(win_rate * len(entries) / 100)
         draw_down = round(float(trading_api.get_draw_down(self.exchange_manager)), 3)
-        r_sq_end_balance = await trading_api.get_coefficient_of_determination(
-            self.exchange_manager,
-            use_high_instead_of_end_balance=False
-        )
-        r_sq_max_balance = await trading_api.get_coefficient_of_determination(self.exchange_manager)
+        try:
+            r_sq_end_balance = await trading_api.get_coefficient_of_determination(
+                self.exchange_manager,
+                use_high_instead_of_end_balance=False
+            )
+        except KeyError:
+            r_sq_end_balance = None
+        try:
+            r_sq_max_balance = await trading_api.get_coefficient_of_determination(self.exchange_manager)
+        except KeyError:
+            r_sq_max_balance = None
 
         return {
             **{

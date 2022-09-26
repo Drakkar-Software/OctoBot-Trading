@@ -40,6 +40,7 @@ from octobot_trading.modes.script_keywords.basic_keywords.trading_signals import
 
 from octobot_trading.modes.script_keywords.basic_keywords.run_persistence import (
     set_plot_orders,
+    store_candles,
     store_orders,
     store_trade,
     store_trades,
@@ -67,6 +68,7 @@ __all__ = [
     "set_leverage",
     "set_partial_take_profit_stop_loss",
     "set_plot_orders",
+    "store_candles",
     "store_orders",
     "store_trade",
     "store_trades",

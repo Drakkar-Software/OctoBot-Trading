@@ -37,7 +37,6 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
     TRADING_SCRIPT_MODULE = None
     BACKTESTING_SCRIPT_MODULE = None
 
-    INITIALIZED_DB_BY_BOT_ID = {}
     INITIALIZED_TRADING_PAIR_BY_BOT_ID = {}
 
     def __init__(self, config, exchange_manager):
@@ -163,7 +162,7 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
                 await commons_configuration.clear_user_inputs(run_db)
                 await producer.init_user_inputs(False)
                 run_db.set_initialized_flags(False, (time_frame, ))
-                self.__class__.INITIALIZED_DB_BY_BOT_ID[self.bot_id] = False
+                await self.reset_exchange_init_data()
                 await databases.CacheManager().close_cache(commons_constants.UNPROVIDED_CACHE_IDENTIFIER,
                                                            reset_cache_db_ids=True)
                 await producer.call_script(*call_args)
@@ -311,9 +310,6 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
         initialized = True
         run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(self.exchange_manager.bot_id)
         try:
-            if not run_data_writer.are_data_initialized and not \
-                    self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID.get(self.exchange_manager.bot_id, False):
-                await self._reset_run_data()
             await self._pre_script_call(context)
             await self.trading_mode.get_script(live=True)(context)
         except errors.UnreachableExchange:
@@ -332,10 +328,5 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
                                                                   self.exchange_name, symbol)\
                 .set_initialized_flags(initialized, (time_frame,))
 
-    async def _reset_run_data(self):
-        run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(self.exchange_manager.bot_id)
-        await basic_keywords.clear_run_data(run_data_writer)
-
     async def _pre_script_call(self, context):
         await basic_keywords.set_leverage(context, await basic_keywords.user_select_leverage(context))
-        self.trading_mode.__class__.INITIALIZED_DB_BY_BOT_ID[self.exchange_manager.bot_id] = True
