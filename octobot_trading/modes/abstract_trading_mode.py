@@ -37,7 +37,7 @@ import octobot_tentacles_manager.configuration as tm_configuration
 
 import octobot_backtesting.api as backtesting_api
 
-import octobot_trading.api as trading_api
+import octobot_trading.util as util
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchange_channel as exchanges_channel
@@ -47,6 +47,7 @@ import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_pro
 import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
 import octobot_trading.personal_data.orders as orders
 import octobot_trading.personal_data.portfolios as portfolios
+import octobot_trading.personal_data.trades as personal_data_trades
 import octobot_trading.signals as signals
 import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
 import octobot_trading.modes.script_keywords.context_management as context_management
@@ -591,10 +592,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     async def get_live_metadata(self):
         start_time = backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting) \
-            if trading_api.get_is_backtesting(self.exchange_manager) \
-            else trading_api.get_exchange_current_time(self.exchange_manager)
+            if self.exchange_manager.is_backtesting \
+            else self.exchange_manager.exchange.get_exchange_current_time()
         end_time = backtesting_api.get_backtesting_ending_time(self.exchange_manager.exchange.backtesting) \
-            if trading_api.get_is_backtesting(self.exchange_manager) \
+            if self.exchange_manager.is_backtesting \
             else -1
         exchange_type = "spot"
         exchange_names = [
@@ -618,7 +619,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             }
         return {
             **{
-                common_enums.DBRows.REFERENCE_MARKET.value: trading_api.get_reference_market(self.config),
+                common_enums.DBRows.REFERENCE_MARKET.value: util.get_reference_market(self.config),
                 common_enums.DBRows.START_TIME.value: start_time,
                 common_enums.DBRows.END_TIME.value: end_time,
                 common_enums.DBRows.TRADING_TYPE.value: exchange_type,
@@ -634,8 +635,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         Override this method to get add addition metadata
         :return: the metadata dict related to this backtesting run
         """
-        symbols = trading_api.get_trading_pairs(self.exchange_manager)
-        profitability, profitability_percent, _, _, _ = trading_api.get_profitability_stats(self.exchange_manager)
+        symbols = self.exchange_manager.exchange_config.traded_symbol_pairs
+        portfolio_manager = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability
+        profitability = portfolio_manager.profitability
+        profitability_percent = portfolio_manager.profitability_percent
         origin_portfolio = portfolios.portfolio_to_float(
             self.exchange_manager.exchange_personal_data.portfolio_manager.
             portfolio_value_holder.origin_portfolio.portfolio)
@@ -649,10 +652,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 end_portfolio[position.get_currency()]["position"] = float(position.quantity)
         time_frames = [
             tf.value
-            for tf in trading_api.get_exchange_available_required_time_frames(
-                self.exchange_manager.exchange_name,
-                self.exchange_manager.id
-            )
+            for tf in self.exchange_manager.exchange_config.available_required_time_frames
         ]
         formatted_user_inputs = {}
         for user_input in user_inputs:
@@ -666,24 +666,28 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         leverage = 0
         if self.exchange_manager.is_future and hasattr(self.exchange_manager.exchange, "get_pair_future_contract"):
             leverage = float(self.exchange_manager.exchange.get_pair_future_contract(symbols[0]).current_leverage)
-        trades = trading_api.get_trade_history(self.exchange_manager)
+        trades = [
+            trade
+            for trade in self.exchange_manager.exchange_personal_data.trades_manager.trades.values()
+            if trade.status != enums.OrderStatus.CANCELED
+        ]
         entries = [
             trade
             for trade in trades
             if trade.status is enums.OrderStatus.FILLED and trade.side is enums.TradeOrderSide.BUY
         ]
-        win_rate = round(float(trading_api.get_win_rate(self.exchange_manager) * 100), 3)
+        win_rate = round(float(personal_data_trades.compute_win_rate(self.exchange_manager) * 100), 3)
         wins = round(win_rate * len(entries) / 100)
-        draw_down = round(float(trading_api.get_draw_down(self.exchange_manager)), 3)
+        draw_down = round(float(portfolios.get_draw_down(self.exchange_manager)), 3)
         try:
-            r_sq_end_balance = await trading_api.get_coefficient_of_determination(
+            r_sq_end_balance = await portfolios.get_coefficient_of_determination(
                 self.exchange_manager,
                 use_high_instead_of_end_balance=False
             )
         except KeyError:
             r_sq_end_balance = None
         try:
-            r_sq_max_balance = await trading_api.get_coefficient_of_determination(self.exchange_manager)
+            r_sq_max_balance = await portfolios.get_coefficient_of_determination(self.exchange_manager)
         except KeyError:
             r_sq_max_balance = None
 
@@ -716,8 +720,8 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 common_enums.BacktestingMetadata.NAME.value: self.get_name(),
                 common_enums.BacktestingMetadata.LEVERAGE.value: leverage,
                 common_enums.BacktestingMetadata.USER_INPUTS.value: formatted_user_inputs,
-                common_enums.BacktestingMetadata.BACKTESTING_FILES.value: trading_api.get_backtesting_data_files(
-                    self.exchange_manager),
+                common_enums.BacktestingMetadata.BACKTESTING_FILES.value:
+                    self.exchange_manager.exchange.get_backtesting_data_files(),
                 common_enums.BacktestingMetadata.EXCHANGE.value: self.exchange_manager.exchange_name
             },
             **(await self.get_additional_backtesting_metadata())
