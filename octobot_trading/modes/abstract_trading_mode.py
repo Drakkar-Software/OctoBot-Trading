@@ -31,6 +31,7 @@ import octobot_commons.tentacles_management as abstract_tentacle
 import octobot_commons.authentication as authentication
 
 import async_channel.constants as channel_constants
+import async_channel.channels as channels
 
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.configuration as tm_configuration
@@ -56,7 +57,6 @@ import octobot_trading.modes.script_keywords.context_management as context_manag
 class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     __metaclass__ = abc.ABCMeta
     USER_INPUT_TENTACLE_TYPE = common_enums.UserInputTentacleTypes.TRADING_MODE
-
 
     MODE_PRODUCER_CLASSES = []
     MODE_CONSUMER_CLASSES = []
@@ -208,8 +208,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         Triggers producers and consumers creation
         """
         await self.reload_config(self.exchange_manager.bot_id)
-        await databases.RunDatabasesProvider.instance().get_run_databases_identifier(self.exchange_manager.bot_id)\
-            .initialize(self.exchange_manager.exchange_name)
+        try:
+            await databases.RunDatabasesProvider.instance().get_run_databases_identifier(self.exchange_manager.bot_id)\
+                .initialize(self.exchange_manager.exchange_name)
+        except KeyError as e:
+            self.logger.exception(e, True, f"Error when initializing {self.exchange_manager.exchange_name} "
+                                           f"run database: {e}")
         self.producers = await self.create_producers()
         self.consumers = await self.create_consumers()
         if not self.exchange_manager.is_backtesting:
@@ -264,6 +268,18 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await self._create_mode_consumer(mode_consumer_class)
             for mode_consumer_class in self.MODE_CONSUMER_CLASSES
         ]
+        try:
+            import octobot_services.channel as services_channels
+            user_commands_consumer = \
+                await channels.get_chan(services_channels.UserCommandsChannel.get_name()).new_consumer(
+                    self.user_commands_callback,
+                    {"bot_id": self.bot_id, "subject": self.get_name()}
+                )
+            base_consumers.append(user_commands_consumer)
+        except ImportError:
+            self.logger.warning("Can't connect to services channels")
+        except KeyError:
+            self.logger.debug(f"{services_channels.UserCommandsChannel.get_name()} unavailable")
         return base_consumers + await self._add_temp_consumers()
 
     # TODO remove when proper run storage strategy
@@ -291,6 +307,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 )
             )
         return consumers
+
+    async def user_commands_callback(self, bot_id, subject, action, data) -> None:
+        self.logger.debug(f"Received {action} command")
+        if action == common_enums.UserCommands.RELOAD_CONFIG.value:
+            await self.reload_config(bot_id)
+            self.logger.debug("Reloaded configuration")
 
     async def save_transactions(self):
         await basic_keywords.store_transactions(
@@ -326,7 +348,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             )
             for time_frame in self.exchange_manager.exchange_config.available_required_time_frames:
                 await basic_keywords.store_candles(self.exchange_manager, symbol, time_frame.value, symbol_db=symbol_db)
-            await symbol_db.clear()
+            await symbol_db.flush()
 
     async def init_live_exchange_init_data(self):
         if not self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.exchange_manager.bot_id, False):
