@@ -21,8 +21,6 @@ import octobot_commons.enums as commons_enums
 import octobot_commons.errors as commons_errors
 import octobot_commons.constants as commons_constants
 import octobot_commons.databases as databases
-import octobot_commons.configuration as commons_configuration
-import async_channel.channels as channels
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.abstract_trading_mode as abstract_trading_mode
 import octobot_trading.modes.channel as modes_channel
@@ -41,7 +39,6 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
-        self.producer = AbstractScriptedTradingModeProducer
         self._live_script = None
         self._backtesting_script = None
         self.timestamp = time.time()
@@ -56,32 +53,21 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
                "N/A"
 
     async def create_producers(self) -> list:
-        mode_producer = self.producer(
+        producers = await super().create_producers()
+        mode_producer = AbstractScriptedTradingModeProducer(
             exchanges_channel.get_chan(trading_constants.MODE_CHANNEL, self.exchange_manager.id),
             self.config, self, self.exchange_manager)
         await mode_producer.run()
-        return [mode_producer]
+        return producers + [mode_producer]
 
-    async def create_consumers(self) -> list:
-        try:
-            import octobot_services.channel as services_channels
-            user_commands_consumer = \
-                await channels.get_chan(services_channels.UserCommandsChannel.get_name()).new_consumer(
-                    self._user_commands_callback,
-                    {"bot_id": self.bot_id, "subject": self.get_name()}
-                )
-            return [user_commands_consumer]
-        except ImportError:
-            self.logger.warning("Can't connect to services channels")
-        except KeyError:
-            return []
-        return []
-
-    async def _user_commands_callback(self, bot_id, subject, action, data) -> None:
-        self.logger.debug(f"Received {action} command.")
-        if action == commons_enums.UserCommands.RELOAD_SCRIPT.value:
-            await self.reload_script(live=True)
-            await self.reload_script(live=False)
+    async def user_commands_callback(self, bot_id, subject, action, data) -> None:
+        # do not call super as reload_config is called by reload_scripts already
+        # on RELOAD_CONFIG command
+        if action == commons_enums.UserCommands.RELOAD_CONFIG.value:
+            # also reload script on RELOAD_CONFIG
+            await self.reload_scripts()
+        elif action == commons_enums.UserCommands.RELOAD_SCRIPT.value:
+            await self.reload_scripts()
         elif action == commons_enums.UserCommands.CLEAR_PLOTTING_CACHE.value:
             await self.clear_plotting_cache()
         elif action == commons_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
@@ -140,15 +126,16 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
     def get_script_from_module(module):
         return module.script
 
-    async def reload_script(self, live=True):
-        module = self.__class__.TRADING_SCRIPT_MODULE if live else self.__class__.BACKTESTING_SCRIPT_MODULE
-        importlib.reload(module)
-        self.register_script_module(module, live=live)
-        # reload config
-        await self.reload_config(self.exchange_manager.bot_id)
-        if live:
-            # todo cancel and restart live tasks
-            await self.start_over_database()
+    async def reload_scripts(self):
+        for is_live in (False, True):
+            module = self.__class__.TRADING_SCRIPT_MODULE if is_live else self.__class__.BACKTESTING_SCRIPT_MODULE
+            importlib.reload(module)
+            self.register_script_module(module, live=is_live)
+            # reload config
+            await self.reload_config(self.exchange_manager.bot_id)
+            if is_live:
+                # todo cancel and restart live tasks
+                await self.start_over_database()
 
     async def start_over_database(self):
         await self.clear_plotting_cache()
@@ -159,13 +146,13 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         for producer in self.producers:
             for time_frame, call_args in producer.last_call_by_timeframe.items():
                 run_db = databases.RunDatabasesProvider.instance().get_run_db(self.bot_id)
-                await commons_configuration.clear_user_inputs(run_db)
                 await producer.init_user_inputs(False)
                 run_db.set_initialized_flags(False, (time_frame, ))
                 await self.reset_exchange_init_data()
                 await databases.CacheManager().close_cache(commons_constants.UNPROVIDED_CACHE_IDENTIFIER,
                                                            reset_cache_db_ids=True)
                 await producer.call_script(*call_args)
+                await run_db.flush()
 
     def set_initialized_trading_pair_by_bot_id(self, symbol, time_frame, initialized):
         # todo migrate to event tree
@@ -323,6 +310,12 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
             if not self.exchange_manager.is_backtesting:
                 if context.has_cache(context.symbol, context.time_frame):
                     await context.get_cache().flush()
+                for symbol in self.exchange_manager.exchange_config.traded_symbol_pairs:
+                    await databases.RunDatabasesProvider.instance().get_symbol_db(
+                        self.exchange_manager.bot_id,
+                        self.exchange_manager.exchange_name,
+                        symbol
+                    ).flush()
             run_data_writer.set_initialized_flags(initialized)
             databases.RunDatabasesProvider.instance().get_symbol_db(self.exchange_manager.bot_id,
                                                                   self.exchange_name, symbol)\
