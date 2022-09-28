@@ -65,7 +65,7 @@ async def user_input(
         other_schema_values=other_schema_values,
         editor_options=editor_options,
         read_only=read_only,
-        is_nested_config=is_nested_config,
+        is_nested_config=ctx.is_nested_tentacle if is_nested_config is None else is_nested_config,
         nested_tentacle=nested_tentacle,
         parent_input_name=parent_input_name,
         show_in_summary=show_in_summary,
