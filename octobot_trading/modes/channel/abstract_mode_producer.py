@@ -132,7 +132,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self.time_frame_filter = self.trading_mode.time_frame \
             if self.trading_mode.time_frame is not None and self.is_time_frame_wildcard() \
             else [tf.value
-                  for tf in self.exchange_manager.exchange_config.available_required_time_frames
+                  for tf in self.exchange_manager.exchange_config.get_relevant_time_frames()
                   if tf.value in trigger_time_frames or
                   trigger_time_frames == common_constants.CONFIG_WILDCARD]
         if trigger_time_frames != common_constants.CONFIG_WILDCARD and \
