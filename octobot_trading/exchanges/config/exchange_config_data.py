@@ -128,6 +128,10 @@ class ExchangeConfig(util.Initializable):
                     )
                 )
 
+    def get_relevant_time_frames(self):
+        # If required timeframes: use those. Use traded timeframes otherwise
+        return self.available_required_time_frames or self.traded_time_frames
+
     async def add_watched_symbols(self, symbols):
         new_valid_symbols = [
             symbol

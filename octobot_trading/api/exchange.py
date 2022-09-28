@@ -215,6 +215,10 @@ def get_watched_timeframes(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_time_frames
 
 
+def get_relevant_time_frames(exchange_manager) -> list:
+    return exchange_manager.exchange_config.get_relevant_time_frames()
+
+
 def get_base_currency(exchange_manager, pair) -> str:
     return exchange_manager.exchange.get_pair_cryptocurrency(pair)
 

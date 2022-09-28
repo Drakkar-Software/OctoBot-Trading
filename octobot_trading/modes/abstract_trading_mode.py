@@ -346,7 +346,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 self.exchange_manager.exchange_name,
                 symbol
             )
-            for time_frame in self.exchange_manager.exchange_config.available_required_time_frames:
+            for time_frame in self.exchange_manager.exchange_config.get_relevant_time_frames():
                 await basic_keywords.store_candles(self.exchange_manager, symbol, time_frame.value, symbol_db=symbol_db)
             await symbol_db.flush()
 
@@ -674,7 +674,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 end_portfolio[position.get_currency()]["position"] = float(position.quantity)
         time_frames = [
             tf.value
-            for tf in self.exchange_manager.exchange_config.available_required_time_frames
+            for tf in self.exchange_manager.exchange_config.get_relevant_time_frames()
         ]
         formatted_user_inputs = {}
         for user_input in user_inputs:
@@ -760,3 +760,15 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         Override if necessary
         """
         return {}
+
+    def flush_trading_mode_consumers(self):
+        for consumer in self.get_trading_mode_consumers():
+            consumer.flush()
+
+    def get_trading_mode_consumers(self):
+        return [
+            consumer
+            for consumer in self.consumers
+            if isinstance(consumer, abstract_mode_consumer.AbstractTradingModeConsumer)
+        ]
+

@@ -41,6 +41,7 @@ cdef class ExchangeConfig(util.Initializable):
     cpdef void set_historical_settings(self)
     cpdef object get_shortest_time_frame(self)
     cpdef void init_backtesting_exchange_config(self)
+    cpdef list get_relevant_time_frames(self)
 
     @staticmethod
     cdef str _is_tradable_with_cryptocurrency(str symbol, str cryptocurrency)
