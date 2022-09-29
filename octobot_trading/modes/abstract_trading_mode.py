@@ -283,26 +283,27 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         return base_consumers + await self._add_temp_consumers()
 
     # TODO remove when proper run storage strategy
+    async def _trades_callback(
+            self,
+            exchange: str,
+            exchange_id: str,
+            cryptocurrency: str,
+            symbol: str,
+            trade: dict,
+            old_trade: bool,
+    ):
+        if trade[enums.ExchangeConstantsOrderColumns.STATUS.value] != enums.OrderStatus.CANCELED.value:
+            db = databases.RunDatabasesProvider.instance().get_trades_db(self.bot_id,
+                                                                         self.exchange_manager.exchange_name)
+            await basic_keywords.store_trade(None, trade, exchange_manager=self.exchange_manager, writer=db)
+
     async def _add_temp_consumers(self):
         consumers = []
         if not self.exchange_manager.is_backtesting:
-            async def _trades_callback(
-                    _self,
-                    exchange: str,
-                    exchange_id: str,
-                    cryptocurrency: str,
-                    symbol: str,
-                    trade: dict,
-                    old_trade: bool,
-            ):
-                if trade[enums.ExchangeConstantsOrderColumns.STATUS.value] != enums.OrderStatus.CANCELED.value:
-                    db = databases.RunDatabasesProvider.instance().get_trades_db(_self.bot_id,
-                                                                                 _self.exchange_manager.exchange_name)
-                    await basic_keywords.store_trade(None, trade, exchange_manager=_self.exchange_manager, writer=db)
             consumers.append(
                 await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.TRADES_CHANNEL.value,
                                                  self.exchange_manager.id).new_consumer(
-                    _trades_callback,
+                    self._trades_callback,
                     symbol=self.symbol
                 )
             )
