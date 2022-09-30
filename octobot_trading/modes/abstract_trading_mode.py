@@ -143,6 +143,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             enums.ExchangeTypes.SPOT
         ]
 
+    def get_mode_producer_classes(self) -> list:
+        return self.MODE_PRODUCER_CLASSES
+
+    def get_mode_consumer_classes(self) -> list:
+        return self.MODE_CONSUMER_CLASSES
+
     def should_emit_trading_signals_user_input(self, inputs: dict):
         if self.user_input(
             common_constants.CONFIG_EMIT_TRADING_SIGNALS, common_enums.UserInputTypes.BOOLEAN, False, inputs,
@@ -244,7 +250,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         return [
             await self._create_mode_producer(mode_producer_class)
-            for mode_producer_class in self.MODE_PRODUCER_CLASSES
+            for mode_producer_class in self.get_mode_producer_classes()
         ]
 
     async def _create_mode_producer(self, mode_producer_class):
@@ -266,7 +272,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         base_consumers = [
             await self._create_mode_consumer(mode_consumer_class)
-            for mode_consumer_class in self.MODE_CONSUMER_CLASSES
+            for mode_consumer_class in self.get_mode_consumer_classes()
         ]
         try:
             import octobot_services.channel as services_channels
