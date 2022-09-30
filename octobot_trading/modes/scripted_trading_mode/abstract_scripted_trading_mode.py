@@ -177,7 +177,7 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         except KeyError:
             return False
 
-    async def get_additional_metadata(self):
+    async def get_additional_metadata(self, _):
         return {
             commons_enums.BacktestingMetadata.NAME.value: self.script_name
         }
