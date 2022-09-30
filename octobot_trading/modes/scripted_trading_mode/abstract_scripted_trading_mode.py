@@ -52,13 +52,8 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         return super().get_current_state()[0] if self.producers[0].state is None else self.producers[0].state.name, \
                "N/A"
 
-    async def create_producers(self) -> list:
-        producers = await super().create_producers()
-        mode_producer = AbstractScriptedTradingModeProducer(
-            exchanges_channel.get_chan(trading_constants.MODE_CHANNEL, self.exchange_manager.id),
-            self.config, self, self.exchange_manager)
-        await mode_producer.run()
-        return producers + [mode_producer]
+    def get_mode_producer_classes(self) -> list:
+        return [AbstractScriptedTradingModeProducer]
 
     async def user_commands_callback(self, bot_id, subject, action, data) -> None:
         # do not call super as reload_config is called by reload_scripts already
