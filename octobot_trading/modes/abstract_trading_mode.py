@@ -731,10 +731,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 common_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_MAX_BALANCE.value: r_sq_max_balance or 0,
                 common_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_END_BALANCE.value: r_sq_end_balance or 0,
                 common_enums.BacktestingMetadata.SYMBOLS.value: symbols,
-                common_enums.DBRows.REFERENCE_MARKET.value: util.get_reference_market(self.config),
                 common_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
-                common_enums.DBRows.START_TIME.value: start_time,
-                common_enums.DBRows.END_TIME.value: end_time,
                 common_enums.BacktestingMetadata.ENTRIES.value: len(entries),
                 common_enums.BacktestingMetadata.WINS.value: wins,
                 common_enums.BacktestingMetadata.LOSES.value: len(entries) - wins,
@@ -744,27 +741,15 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 common_enums.BacktestingMetadata.LEVERAGE.value: leverage,
                 common_enums.DBRows.TRADING_TYPE.value: exchange_type,
                 common_enums.DBRows.EXCHANGES.value: exchange_names,
-                common_enums.BacktestingMetadata.EXCHANGE.value: self.exchange_manager.exchange_name,
+                common_enums.DBRows.REFERENCE_MARKET.value: util.get_reference_market(self.config),
+                common_enums.DBRows.START_TIME.value: start_time,
+                common_enums.DBRows.END_TIME.value: end_time,
                 common_enums.DBRows.FUTURE_CONTRACTS.value: future_contracts_by_exchange,
             },
-            **(await self.get_additional_backtesting_metadata() if is_backtesting
-               else await self.get_additional_live_metadata()),
-            **(await self.get_additional_metadata())
+            **(await self.get_additional_metadata(is_backtesting))
         }
 
-    async def get_additional_metadata(self):
-        """
-        Override if necessary
-        """
-        return {}
-
-    async def get_additional_live_metadata(self):
-        """
-        Override if necessary
-        """
-        return {}
-
-    async def get_additional_backtesting_metadata(self):
+    async def get_additional_metadata(self, is_backtesting):
         """
         Override if necessary
         """
