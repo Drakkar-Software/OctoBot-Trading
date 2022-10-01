@@ -51,7 +51,6 @@ import octobot_trading.personal_data.portfolios as portfolios
 import octobot_trading.personal_data.trades as personal_data_trades
 import octobot_trading.signals as signals
 import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
-import octobot_trading.modes.script_keywords.context_management as context_management
 
 
 class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
@@ -101,9 +100,13 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         # True when this trading mode is waken up only after full candles close
         self.is_triggered_after_candle_close = False
 
-        self.start_time = time.time()
+        self.start_time = None
         self.are_metadata_saved = False
+
+        # TODO remove when proper run storage strategy
         self._init_exchange_data_task = None
+        self._stored_backtesting_metadata = False
+        # END TODO
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -213,6 +216,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         Triggers producers and consumers creation
         """
+        self.start_time = time.time()
         await self.reload_config(self.exchange_manager.bot_id)
         try:
             await databases.RunDatabasesProvider.instance().get_run_databases_identifier(self.exchange_manager.bot_id)\
@@ -274,6 +278,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await self._create_mode_consumer(mode_consumer_class)
             for mode_consumer_class in self.get_mode_consumer_classes()
         ]
+        if user_input_consumer := await self._create_user_input_consumer():
+            base_consumers.append(user_input_consumer)
+
+        return base_consumers + await self._add_temp_consumers()
+
+    async def _create_user_input_consumer(self):
         try:
             import octobot_services.channel as services_channels
             user_commands_consumer = \
@@ -281,12 +291,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                     self.user_commands_callback,
                     {"bot_id": self.bot_id, "subject": self.get_name()}
                 )
-            base_consumers.append(user_commands_consumer)
-        except ImportError:
-            self.logger.warning("Can't connect to services channels")
+            return user_commands_consumer
         except KeyError:
             self.logger.debug(f"{services_channels.UserCommandsChannel.get_name()} unavailable")
-        return base_consumers + await self._add_temp_consumers()
+        except ImportError:
+            self.logger.warning("Can't connect to services channels")
+        return None
 
     # TODO remove when proper run storage strategy
     async def _trades_callback(
@@ -369,256 +379,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         await self.save_portfolio()
         await self.save_live_metadata()
         await self.save_candles_data()
-
-    # END TODO remove when proper run storage strategy
-
-    async def _create_mode_consumer(self, mode_consumer_class):
-        """
-        Creates a new :mode_consumer_class: instance and subscribe this new consumer to the trading mode channel
-        :param mode_consumer_class: the trading mode consumer class to create
-        :return: the consumer class created
-        """
-        mode_consumer = mode_consumer_class(self)
-        await exchanges_channel.get_chan(constants.MODE_CHANNEL, self.exchange_manager.id).new_consumer(
-            consumer_instance=mode_consumer,
-            trading_mode_name=self.get_name(),
-            cryptocurrency=self.cryptocurrency if self.cryptocurrency else channel_constants.CHANNEL_WILDCARD,
-            symbol=self.symbol if self.symbol else channel_constants.CHANNEL_WILDCARD,
-            time_frame=self.time_frame if self.time_frame else channel_constants.CHANNEL_WILDCARD)
-        return mode_consumer
-
-    def load_config(self) -> None:
-        """
-        Try to load TradingMode tentacle config.
-        Calls set_default_config() if the tentacle config is empty
-        """
-        # try with this class name
-        self.trading_config = tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config,
-                                                                        self.__class__)
-
-        # set default config if nothing found
-        if not self.trading_config:
-            self.set_default_config()
-
-    LIGHT_VOLUME_WEIGHT = "light_weight_volume_multiplier"
-    MEDIUM_VOLUME_WEIGHT = "medium_weight_volume_multiplier"
-    HEAVY_VOLUME_WEIGHT = "heavy_weight_volume_multiplier"
-    VOLUME_WEIGH_TO_VOLUME_PERCENT = {}
-
-    LIGHT_PRICE_WEIGHT = "light_weight_price_multiplier"
-    MEDIUM_PRICE_WEIGHT = "medium_weight_price_multiplier"
-    HEAVY_PRICE_WEIGHT = "heavy_weight_price_multiplier"
-
-    async def reload_config(self, bot_id: str) -> None:
-        """
-        Try to load TradingMode tentacle config.
-        Calls set_default_config() if the tentacle config is empty
-        """
-        self.trading_config = tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config,
-                                                                        self.__class__)
-        # set default config if nothing found
-        if not self.trading_config:
-            self.set_default_config()
-        await self.load_and_save_user_inputs(bot_id)
-        for element in self.consumers + self.producers:
-            if isinstance(element, (abstract_mode_consumer.AbstractTradingModeConsumer,
-                                    abstract_mode_producer.AbstractTradingModeProducer)):
-                element.reload_config()
-
-    def get_local_config(self):
-        return self.trading_config
-
-    @classmethod
-    def create_local_instance(cls, config, tentacles_setup_config, tentacle_config):
-        return modes_factory.create_temporary_trading_mode_with_local_config(
-            cls, config, tentacle_config
-        )
-
-    # to implement in subclasses if config is necessary
-    def set_default_config(self) -> None:
-        pass
-
-    """
-    Strategy related methods
-    """
-
-    @classmethod
-    def get_required_strategies_names_and_count(cls,
-                                                tentacles_config: tm_configuration.TentaclesSetupConfiguration,
-                                                trading_mode_config=None):
-        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(tentacles_config, cls)
-        if constants.TRADING_MODE_REQUIRED_STRATEGIES in config:
-            return config[constants.TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)
-        raise Exception(f"'{constants.TRADING_MODE_REQUIRED_STRATEGIES}' is missing in configuration file")
-
-    @classmethod
-    def get_default_strategies(cls,
-                               tentacles_config: tm_configuration.TentaclesSetupConfiguration,
-                               trading_mode_config=None):
-        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(tentacles_config, cls)
-        if common_constants.TENTACLE_DEFAULT_CONFIG in config:
-            return config[common_constants.TENTACLE_DEFAULT_CONFIG]
-
-        strategies_classes, _ = cls.get_required_strategies_names_and_count(tentacles_config, config)
-        return strategies_classes
-
-    @classmethod
-    def get_required_strategies_count(cls, config):
-        min_strategies_count = 1
-        if constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT in config:
-            min_strategies_count = config[constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT]
-        return min_strategies_count
-
-    @classmethod
-    def get_required_candles_count(cls, tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration):
-        return tentacles_manager_api.get_tentacle_config(tentacles_setup_config, cls).get(
-            constants.CONFIG_CANDLES_HISTORY_SIZE_KEY,
-            common_constants.DEFAULT_IGNORED_VALUE
-        )
-
-    @classmethod
-    async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id,
-                                   optimization_campaign, backtesting_analysis_settings):
-        try:
-            import tentacles.Meta.Keywords.scripting_library as scripting_library
-            ctx = context_management.Context.minimal(cls, logging.get_logger(cls.get_name()), exchange, symbol,
-                                                     backtesting_id, optimizer_id,
-                                                     optimization_campaign, backtesting_analysis_settings)
-            return await scripting_library.default_backtesting_analysis_script(ctx)
-        except ImportError:
-            raise ImportError("scripting_library keywords are required")
-
-    @contextlib.asynccontextmanager
-    async def remote_signal_publisher(self, symbol: str):
-        if self.should_emit_trading_signal():
-            try:
-                async with signals.SignalPublisher.instance().remote_signal_bundle_builder(
-                    symbol,
-                    self.get_trading_signal_identifier(),
-                    self.TRADING_SIGNAL_TIMEOUT,
-                    signals.TradingSignalBundleBuilder,
-                    (self.get_name(), )
-                ) as signal_builder:
-                    yield signal_builder
-            except (authentication.AuthenticationRequired, authentication.UnavailableError) as e:
-                self.logger.exception(e, True, f"Failed to send trading signals: {e}")
-        else:
-            yield None
-
-    async def create_order(self, order, loaded: bool = False, params: dict = None, pre_init_callback=None):
-        order_pf_percent = f"0{script_keywords.QuantityType.PERCENT.value}"
-        if self.should_emit_trading_signal():
-            percent = await orders.get_order_size_portfolio_percent(
-                self.exchange_manager,
-                order.origin_quantity,
-                order.side,
-                order.symbol
-            )
-            order_pf_percent = f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
-        created_order = await self.exchange_manager.trader.create_order(
-            order, loaded=loaded, params=params, pre_init_callback=pre_init_callback
-        )
-        if created_order is not None and self.should_emit_trading_signal():
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_created_order(
-                    created_order, self.exchange_manager, target_amount=order_pf_percent
-                )
-        return created_order
-
-    async def cancel_order(self, order, ignored_order: object = None) -> bool:
-        cancelled = await self.exchange_manager.trader.cancel_order(order, ignored_order=ignored_order)
-        if self.should_emit_trading_signal() and cancelled:
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_cancelled_order(
-                order, self.exchange_manager
-            )
-        return cancelled
-
-    async def edit_order(self, order,
-                         edited_quantity: decimal.Decimal = None,
-                         edited_price: decimal.Decimal = None,
-                         edited_stop_price: decimal.Decimal = None,
-                         edited_current_price: decimal.Decimal = None,
-                         params: dict = None) -> bool:
-        changed = await self.exchange_manager.trader.edit_order(
-            order,
-            edited_quantity=edited_quantity,
-            edited_price=edited_price,
-            edited_stop_price=edited_stop_price,
-            edited_current_price=edited_current_price,
-            params=params
-        )
-        if self.should_emit_trading_signal() and changed:
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_edited_order(
-                order,
-                self.exchange_manager,
-                updated_target_amount=edited_quantity,
-                updated_limit_price=edited_price,
-                updated_stop_price=edited_stop_price,
-                updated_current_price=edited_current_price,
-            )
-        return changed
-
-    async def _wait_for_run_data_init(self, timeout) -> bool:
-        if self.exchange_manager.is_backtesting:
-            raise NotImplementedError("Not implemented in backtesting")
-        try:
-            await asyncio.wait_for(
-                commons_tree.EventProvider.instance().get_or_create_event(
-                    self.exchange_manager.bot_id,
-                    commons_tree.get_exchange_path(
-                        self.exchange_manager.exchange_name,
-                        common_enums.InitializationEventExchangeTopics.CANDLES.value
-                    ),
-                    allow_creation=False
-                ).wait(),
-                timeout
-            )
-            if not self.exchange_manager.is_future:
-                return True
-            await asyncio.wait_for(
-                commons_tree.EventProvider.instance().get_or_create_event(
-                    self.exchange_manager.bot_id,
-                    commons_tree.get_exchange_path(
-                        self.exchange_manager.exchange_name,
-                        common_enums.InitializationEventExchangeTopics.CONTRACTS.value
-                    ),
-                    allow_creation=False
-                ).wait(),
-                timeout
-            )
-            return True
-        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
-            self.logger.error(f"Initialization took more than {timeout} seconds")
-        return False
-
-    async def save_backtesting_data(self):
-        if not self.are_metadata_saved and self.exchange_manager is not None:
-            run_dbs_identifier = databases.RunDatabasesProvider.instance().get_run_databases_identifier(
-                self.exchange_manager.bot_id
-            )
-            run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(self.exchange_manager.bot_id)
-            await run_data_writer.flush()
-            user_inputs = await commons_configuration.get_user_inputs(run_data_writer)
-
-            # TODO remove when proper run storage strategy
-            await self.save_transactions()
-            await self.save_trades()
-            # END TODO
-
-            if not self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.exchange_manager.bot_id, False):
-                try:
-                    self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.exchange_manager.bot_id] = True
-                    async with databases.DBWriter.database(
-                            run_dbs_identifier.get_backtesting_metadata_identifier(),
-                            with_lock=True) as writer:
-                        await basic_keywords.save_metadata(writer, await self.get_trading_metadata(
-                            user_inputs,
-                            run_dbs_identifier,
-                            is_backtesting=True
-                        ))
-                        self.are_metadata_saved = True
-                except Exception:
-                    self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.exchange_manager.bot_id] = False
-                    raise
 
     async def get_trading_metadata(self, user_inputs=None, run_dbs_identifier=None, is_backtesting=True) -> dict:
         """
@@ -748,6 +508,207 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             },
             **(await self.get_additional_metadata(is_backtesting))
         }
+
+    async def ensure_backtesting_storage(self):
+        if self.exchange_manager.is_backtesting and not self._stored_backtesting_metadata:
+            await self.reset_exchange_init_data()
+            self._stored_backtesting_metadata = True
+
+    # END TODO remove when proper run storage strategy
+
+    async def _create_mode_consumer(self, mode_consumer_class):
+        """
+        Creates a new :mode_consumer_class: instance and subscribe this new consumer to the trading mode channel
+        :param mode_consumer_class: the trading mode consumer class to create
+        :return: the consumer class created
+        """
+        mode_consumer = mode_consumer_class(self)
+        await exchanges_channel.get_chan(constants.MODE_CHANNEL, self.exchange_manager.id).new_consumer(
+            consumer_instance=mode_consumer,
+            trading_mode_name=self.get_name(),
+            cryptocurrency=self.cryptocurrency if self.cryptocurrency else channel_constants.CHANNEL_WILDCARD,
+            symbol=self.symbol if self.symbol else channel_constants.CHANNEL_WILDCARD,
+            time_frame=self.time_frame if self.time_frame else channel_constants.CHANNEL_WILDCARD)
+        return mode_consumer
+
+    async def reload_config(self, bot_id: str) -> None:
+        """
+        Try to load TradingMode tentacle config.
+        Calls set_default_config() if the tentacle config is empty
+        """
+        self.trading_config = tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config,
+                                                                        self.__class__)
+        # set default config if nothing found
+        if not self.trading_config:
+            self.set_default_config()
+        await self.load_and_save_user_inputs(bot_id)
+        for element in self.consumers + self.producers:
+            if isinstance(element, (abstract_mode_consumer.AbstractTradingModeConsumer,
+                                    abstract_mode_producer.AbstractTradingModeProducer)):
+                element.on_reload_config()
+
+    def get_local_config(self):
+        return self.trading_config
+
+    @classmethod
+    def create_local_instance(cls, config, tentacles_setup_config, tentacle_config):
+        return modes_factory.create_temporary_trading_mode_with_local_config(
+            cls, config, tentacle_config
+        )
+
+    # to implement in subclasses if config is necessary
+    def set_default_config(self) -> None:
+        pass
+
+    """
+    Strategy related methods
+    """
+
+    @classmethod
+    def get_required_strategies_names_and_count(cls,
+                                                tentacles_config: tm_configuration.TentaclesSetupConfiguration,
+                                                trading_mode_config=None):
+        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(tentacles_config, cls)
+        if constants.TRADING_MODE_REQUIRED_STRATEGIES in config:
+            return config[constants.TRADING_MODE_REQUIRED_STRATEGIES], cls.get_required_strategies_count(config)
+        raise Exception(f"'{constants.TRADING_MODE_REQUIRED_STRATEGIES}' is missing in configuration file")
+
+    @classmethod
+    def get_default_strategies(cls,
+                               tentacles_config: tm_configuration.TentaclesSetupConfiguration,
+                               trading_mode_config=None):
+        config = trading_mode_config or tentacles_manager_api.get_tentacle_config(tentacles_config, cls)
+        if common_constants.TENTACLE_DEFAULT_CONFIG in config:
+            return config[common_constants.TENTACLE_DEFAULT_CONFIG]
+
+        strategies_classes, _ = cls.get_required_strategies_names_and_count(tentacles_config, config)
+        return strategies_classes
+
+    @classmethod
+    def get_required_strategies_count(cls, config):
+        min_strategies_count = 1
+        if constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT in config:
+            min_strategies_count = config[constants.TRADING_MODE_REQUIRED_STRATEGIES_MIN_COUNT]
+        return min_strategies_count
+
+    @classmethod
+    def get_required_candles_count(cls, tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration):
+        return tentacles_manager_api.get_tentacle_config(tentacles_setup_config, cls).get(
+            constants.CONFIG_CANDLES_HISTORY_SIZE_KEY,
+            common_constants.DEFAULT_IGNORED_VALUE
+        )
+
+    @contextlib.asynccontextmanager
+    async def remote_signal_publisher(self, symbol: str):
+        if self.should_emit_trading_signal():
+            try:
+                async with signals.SignalPublisher.instance().remote_signal_bundle_builder(
+                    symbol,
+                    self.get_trading_signal_identifier(),
+                    self.TRADING_SIGNAL_TIMEOUT,
+                    signals.TradingSignalBundleBuilder,
+                    (self.get_name(), )
+                ) as signal_builder:
+                    yield signal_builder
+            except (authentication.AuthenticationRequired, authentication.UnavailableError) as e:
+                self.logger.exception(e, True, f"Failed to send trading signals: {e}")
+        else:
+            yield None
+
+    async def create_order(self, order, loaded: bool = False, params: dict = None, pre_init_callback=None):
+        order_pf_percent = f"0{script_keywords.QuantityType.PERCENT.value}"
+        if self.should_emit_trading_signal():
+            percent = await orders.get_order_size_portfolio_percent(
+                self.exchange_manager,
+                order.origin_quantity,
+                order.side,
+                order.symbol
+            )
+            order_pf_percent = f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
+        created_order = await self.exchange_manager.trader.create_order(
+            order, loaded=loaded, params=params, pre_init_callback=pre_init_callback
+        )
+        if created_order is not None and self.should_emit_trading_signal():
+            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_created_order(
+                    created_order, self.exchange_manager, target_amount=order_pf_percent
+                )
+        return created_order
+
+    async def cancel_order(self, order, ignored_order: object = None) -> bool:
+        cancelled = await self.exchange_manager.trader.cancel_order(order, ignored_order=ignored_order)
+        if self.should_emit_trading_signal() and cancelled:
+            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_cancelled_order(
+                order, self.exchange_manager
+            )
+        return cancelled
+
+    async def edit_order(self, order,
+                         edited_quantity: decimal.Decimal = None,
+                         edited_price: decimal.Decimal = None,
+                         edited_stop_price: decimal.Decimal = None,
+                         edited_current_price: decimal.Decimal = None,
+                         params: dict = None) -> bool:
+        changed = await self.exchange_manager.trader.edit_order(
+            order,
+            edited_quantity=edited_quantity,
+            edited_price=edited_price,
+            edited_stop_price=edited_stop_price,
+            edited_current_price=edited_current_price,
+            params=params
+        )
+        if self.should_emit_trading_signal() and changed:
+            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_edited_order(
+                order,
+                self.exchange_manager,
+                updated_target_amount=edited_quantity,
+                updated_limit_price=edited_price,
+                updated_stop_price=edited_stop_price,
+                updated_current_price=edited_current_price,
+            )
+        return changed
+
+    async def _wait_for_run_data_init(self, timeout) -> bool:
+        if self.exchange_manager.is_backtesting:
+            raise NotImplementedError("Not implemented in backtesting")
+        try:
+            await util.wait_for_topic_init(self.exchange_manager, timeout,
+                                           common_enums.InitializationEventExchangeTopics.CANDLES.value)
+            await util.wait_for_topic_init(self.exchange_manager, timeout,
+                                           common_enums.InitializationEventExchangeTopics.CONTRACTS.value)
+            return True
+        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
+            self.logger.error(f"Initialization took more than {timeout} seconds")
+        return False
+
+    async def save_backtesting_data(self):
+        if not self.are_metadata_saved and self.exchange_manager is not None:
+            run_dbs_identifier = databases.RunDatabasesProvider.instance().get_run_databases_identifier(
+                self.exchange_manager.bot_id
+            )
+            run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(self.exchange_manager.bot_id)
+            await run_data_writer.flush()
+            user_inputs = await commons_configuration.get_user_inputs(run_data_writer)
+
+            # TODO remove when proper run storage strategy
+            await self.save_transactions()
+            await self.save_trades()
+            # END TODO
+
+            if not self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.exchange_manager.bot_id, False):
+                try:
+                    self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.exchange_manager.bot_id] = True
+                    async with databases.DBWriter.database(
+                            run_dbs_identifier.get_backtesting_metadata_identifier(),
+                            with_lock=True) as writer:
+                        await basic_keywords.save_metadata(writer, await self.get_trading_metadata(
+                            user_inputs,
+                            run_dbs_identifier,
+                            is_backtesting=True
+                        ))
+                        self.are_metadata_saved = True
+                except Exception:
+                    self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.exchange_manager.bot_id] = False
+                    raise
 
     async def get_additional_metadata(self, is_backtesting):
         """

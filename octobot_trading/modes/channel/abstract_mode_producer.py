@@ -29,6 +29,7 @@ import octobot_commons.configuration as commons_configuration
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
 import octobot_trading.errors as errors
+import octobot_trading.util as util
 import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
@@ -82,10 +83,9 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         self.priority_level: int = channel_enums.ChannelConsumerPriorityLevels.MEDIUM.value
 
         self.symbol = None
-        self.reload_config()
-        self._is_first_call = True
+        self.on_reload_config()
 
-    def reload_config(self):
+    def on_reload_config(self):
         """
         Called at constructor and after the associated trading mode's reload_config.
         Implement if necessary
@@ -288,10 +288,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     async def trading_mode_trigger(self):
         try:
             try:
-                if self.exchange_manager.is_backtesting and self._is_first_call:
-                    # reset_exchange_init_data done at first trading mode call in backtesting
-                    await self.trading_mode.reset_exchange_init_data()
-                    self._is_first_call = False
+                await self.trading_mode.ensure_backtesting_storage()
             except Exception as e:
                 self.logger.exception(e, True, f"Error when resetting exchange init data: {e}")
             yield
@@ -362,18 +359,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
 
     async def _wait_for_symbol_init(self, symbol, time_frame, timeout) -> bool:
         try:
-            await asyncio.wait_for(
-                commons_tree.EventProvider.instance().get_or_create_event(
-                    self.exchange_manager.bot_id,
-                    commons_tree.get_exchange_path(
-                        self.exchange_manager.exchange_name,
-                        common_enums.InitializationEventExchangeTopics.CANDLES.value,
-                        symbol=symbol
-                    ),
-                    allow_creation=False
-                ).wait(),
-                timeout
-            )
+            await util.wait_for_topic_init(self.exchange_manager, timeout,
+                                           common_enums.InitializationEventExchangeTopics.CANDLES.value, symbol)
             return True
         except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
             self.logger.error(f"Initialization took more than {timeout} seconds")
