@@ -13,26 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
-
 import octobot_commons.tree as commons_tree
 
 
 async def wait_for_topic_init(exchange_manager, timeout, topic, symbol=None, time_frame=None):
-    try:
-        await asyncio.wait_for(
-            commons_tree.EventProvider.instance().get_or_create_event(
-                exchange_manager.bot_id,
-                commons_tree.get_exchange_path(
-                    exchange_manager.exchange_name,
-                    topic,
-                    symbol=symbol,
-                    time_frame=time_frame
-                ),
-                allow_creation=False
-            ).wait(),
-            timeout
-        )
-    except commons_tree.NodeExistsError:
-        # no element to be initialized
-        pass
+    return await commons_tree.EventProvider.instance().wait_for_event(
+        exchange_manager.bot_id,
+        commons_tree.get_exchange_path(
+            exchange_manager.exchange_name,
+            topic,
+            symbol=symbol,
+            time_frame=time_frame
+        ),
+        timeout
+    )

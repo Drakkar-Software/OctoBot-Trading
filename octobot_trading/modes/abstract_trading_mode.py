@@ -18,14 +18,12 @@ import contextlib
 import decimal
 import time
 import asyncio
-import concurrent.futures
 
 import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
-import octobot_commons.tree as commons_tree
 import octobot_commons.configuration as commons_configuration
 import octobot_commons.tentacles_management as abstract_tentacle
 import octobot_commons.authentication as authentication
@@ -670,13 +668,10 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     async def _wait_for_run_data_init(self, timeout) -> bool:
         if self.exchange_manager.is_backtesting:
             raise NotImplementedError("Not implemented in backtesting")
-        try:
+        if not await util.wait_for_topic_init(self.exchange_manager, timeout,
+                                              common_enums.InitializationEventExchangeTopics.CANDLES.value) and \
             await util.wait_for_topic_init(self.exchange_manager, timeout,
-                                           common_enums.InitializationEventExchangeTopics.CANDLES.value)
-            await util.wait_for_topic_init(self.exchange_manager, timeout,
-                                           common_enums.InitializationEventExchangeTopics.CONTRACTS.value)
-            return True
-        except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
+                                           common_enums.InitializationEventExchangeTopics.CONTRACTS.value):
             self.logger.error(f"Initialization took more than {timeout} seconds")
         return False
 
