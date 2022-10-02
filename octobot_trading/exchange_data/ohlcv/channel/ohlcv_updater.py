@@ -19,7 +19,6 @@ import time
 
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
-import octobot_commons.tree as commons_tree
 
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
@@ -38,7 +37,6 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
 
     OHLCV_INITIALIZATION_TIMEOUT = 60
     OHLCV_INITIALIZATION_RETRY_DELAY = 10
-    DEPENDENCIES_TIMEOUT = 5 * common_constants.MINUTE_TO_SECONDS
 
     def __init__(self, channel):
         super().__init__(channel)
@@ -51,7 +49,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         Creates OHLCV refresh tasks
         """
         if not self.is_initialized:
-            await self._initialize(False, True)
+            await self._initialize(False)
         if self.channel is not None:
             if self.channel.is_paused:
                 await self.pause()
@@ -68,12 +66,12 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         return self.channel.exchange_manager.exchange_config.traded_time_frames
 
     async def fetch_and_push(self):
-        return await self._initialize(True, False)
+        return await self._initialize(True)
 
-    async def _initialize(self, push_initialization_candles, wait_for_dependencies):
+    async def _initialize(self, push_initialization_candles):
         try:
             initial_candles_data = await asyncio.gather(*[
-                self._initialize_candles(time_frame, pair, True, wait_for_dependencies)
+                self._initialize_candles(time_frame, pair, True)
                 for time_frame in self._get_time_frames()
                 for pair in self._get_traded_pairs()
             ])
@@ -115,24 +113,13 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         self.channel.exchange_manager.exchange.uniformize_candles_if_necessary(candles)
         return candles
 
-    async def _initialize_candles(self, time_frame, pair, should_retry, wait_for_dependencies) \
+    async def _initialize_candles(self, time_frame, pair, should_retry) \
             -> (str, common_enums.TimeFrames, list):
         """
         Manage timeframe OHLCV data refreshing for all pairs
         :return: a tuple with (trading pair, time_frame, fetched candles)
         """
         self._set_initialized(pair, time_frame, False)
-        if wait_for_dependencies:
-            # do not push candles without an initialized price
-            await self.wait_for_dependencies(
-                [
-                    commons_tree.get_exchange_path(
-                        self.channel.exchange_manager.exchange_name,
-                        common_enums.InitializationEventExchangeTopics.PRICE.value
-                    ),
-                ],
-                self.DEPENDENCIES_TIMEOUT
-            )
         # fetch history
         candles = None
         try:
@@ -151,7 +138,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
                                 f"{self.OHLCV_INITIALIZATION_RETRY_DELAY} seconds")
             # retry only once
             await asyncio.sleep(self.OHLCV_INITIALIZATION_RETRY_DELAY)
-            return await self._initialize_candles(time_frame, pair, False, wait_for_dependencies)
+            return await self._initialize_candles(time_frame, pair, False)
         else:
             self.logger.warning(f"Failed to initialize candle history for {pair} on {time_frame}. Retrying on "
                                 f"the next time frame update")
@@ -167,9 +154,9 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
     async def _push_complete_candles(self, time_frame, pair, candles):
         await self.push(time_frame, pair, candles[:-1], partial=True)  # push only completed candles
 
-    async def _ensure_candles_initialization(self, pair, wait_for_dependencies):
+    async def _ensure_candles_initialization(self, pair):
         init_coroutines = tuple(
-            self._initialize_candles(time_frame, pair, False, wait_for_dependencies)
+            self._initialize_candles(time_frame, pair, False)
             for time_frame, initialized in self.initialized_candles_by_tf_by_symbol[pair].items()
             if not initialized
         )
@@ -186,7 +173,7 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         while not self.should_stop and not self.channel.is_paused:
             try:
                 start_update_time = time.time()
-                await self._ensure_candles_initialization(pair, True)
+                await self._ensure_candles_initialization(pair)
                 # skip uninitialized candles
                 if self.initialized_candles_by_tf_by_symbol[pair][time_frame]:
                     candles: list = await self.channel.exchange_manager.exchange.get_symbol_prices(
