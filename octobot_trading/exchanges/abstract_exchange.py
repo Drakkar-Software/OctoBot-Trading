@@ -20,6 +20,9 @@ import octobot_commons.constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.timestamp_util as timestamp_util
+import octobot_commons.configuration as configuration
+
+import octobot_tentacles_manager.api as octobot_tentacles_manager_api
 
 import octobot_trading.constants
 import octobot_trading.enums as enums
@@ -30,8 +33,8 @@ class AbstractExchange(util.Initializable):
     BUY_STR = enums.TradeOrderSide.BUY.value
     SELL_STR = enums.TradeOrderSide.SELL.value
 
-    # order that should be self managed by OctoBot
-    # can be override locally to match exchange support
+    # order that should be self-managed by OctoBot
+    # can be overridden locally to match exchange support
     UNSUPPORTED_ORDERS = [enums.TraderOrderType.STOP_LOSS,
                           enums.TraderOrderType.STOP_LOSS_LIMIT,
                           enums.TraderOrderType.TAKE_PROFIT,
@@ -43,7 +46,7 @@ class AbstractExchange(util.Initializable):
     # format: dict of bundled types by base order type
     # ex: SUPPORTED_BUNDLED_ORDERS[enums.TraderOrderType.BUY_MARKET] = \
     # [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT]
-    # can be override locally to match exchange support
+    # can be overridden locally to match exchange support
     SUPPORTED_BUNDLED_ORDERS = {}
     ACCOUNTS = {}
 
@@ -52,6 +55,8 @@ class AbstractExchange(util.Initializable):
         self.config = config
         self.exchange_manager = exchange_manager
         self.connector = None
+
+        self.tentacle_config = {}
 
         # Initialized when initializing exchange connector
         self.symbols = set()
@@ -66,6 +71,8 @@ class AbstractExchange(util.Initializable):
         self.current_account = enums.AccountTypes.CASH
 
         self.is_unreachable = False
+
+        self.load_user_inputs(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
 
     async def initialize_impl(self):
         """
@@ -634,3 +641,104 @@ class AbstractExchange(util.Initializable):
     def handle_token_error(self, error):
         self.logger.error(f"Exchange configuration is invalid : please check your configuration ! "
                           f"({error.__class__.__name__}: {error})")
+
+    @classmethod
+    def load_user_inputs(cls, tentacles_setup_config, tentacle_config):
+        inputs = {}
+        try:
+            tentacle_config.update(
+                octobot_tentacles_manager_api.get_tentacle_config(
+                    tentacles_setup_config, cls
+                )
+            )
+        except NotImplementedError:
+            # get_name not implemented, no tentacle config
+            return inputs
+        try:
+            cls.init_user_inputs(tentacle_config, inputs)
+        except Exception as e:
+            logging.get_logger(cls.get_name()).exception(e, True, f"Error when initializing user inputs: {e}")
+        return inputs
+
+    @classmethod
+    async def get_raw_config_and_user_inputs(
+            cls, _, tentacles_setup_config, __
+    ):
+        # use user inputs from init_user_inputs
+        tentacle_config = octobot_tentacles_manager_api.get_tentacle_config(tentacles_setup_config, cls)
+        user_inputs = cls.load_user_inputs(tentacles_setup_config, tentacle_config)
+        return tentacle_config, list(user_input.to_dict() for user_input in user_inputs.values())
+
+    @classmethod
+    def init_user_inputs(cls, tentacle_config: dict, inputs: dict) -> None:
+        """
+        Called at constructor, should define all the exchange's user inputs.
+        """
+        pass
+
+    @classmethod
+    def user_input(
+        cls,
+        name: str,
+        input_type,
+        def_val,
+        registered_inputs: dict,
+        tentacle_config: dict,
+        min_val=None,
+        max_val=None,
+        options=None,
+        title=None,
+        item_title=None,
+        other_schema_values=None,
+        editor_options=None,
+        read_only=False,
+        is_nested_config=None,
+        nested_tentacle=None,
+        parent_input_name=None,
+        show_in_summary=True,
+        show_in_optimizer=True,
+        path=None,
+        order=None,
+    ):
+        """
+        Set and return a user input value.
+        :return: the saved_config value if any, def_val otherwise
+        """
+        value = def_val
+        sanitized_name = configuration.sanitize_user_input_name(name)
+        parent = tentacle_config
+        if parent is not None:
+            try:
+                value = parent[sanitized_name]
+            except KeyError:
+                # use default value
+                pass
+        input_key = f"{parent_input_name}{name}"
+        if input_key not in registered_inputs:
+            # do not register user input multiple times
+            registered_inputs[input_key] = configuration.UserInput(
+                name,
+                input_type,
+                value,
+                def_val,
+                common_enums.UserInputTentacleTypes.EXCHANGE.value,
+                cls.get_name(),
+                min_val=min_val,
+                max_val=max_val,
+                options=options,
+                title=title,
+                item_title=item_title,
+                other_schema_values=other_schema_values,
+                editor_options=editor_options,
+                read_only=read_only,
+                is_nested_config=is_nested_config,
+                nested_tentacle=nested_tentacle,
+                parent_input_name=parent_input_name,
+                show_in_summary=show_in_summary,
+                show_in_optimizer=show_in_optimizer,
+                path=path,
+                order=order,
+            )
+        if parent is not None:
+            parent[sanitized_name] = value
+        return value
