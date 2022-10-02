@@ -102,7 +102,7 @@ async def save_user_input(
     flush_if_necessary=False
 ):
     await configuration.save_user_input(
-        configuration.format_user_input(
+        configuration.UserInput(
             name,
             input_type,
             value,

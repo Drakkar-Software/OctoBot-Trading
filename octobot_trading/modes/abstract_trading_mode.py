@@ -298,6 +298,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             self.logger.warning("Can't connect to services channels")
         return None
 
+    async def user_commands_callback(self, bot_id, subject, action, data) -> None:
+        self.logger.debug(f"Received {action} command")
+        if action == common_enums.UserCommands.RELOAD_CONFIG.value:
+            await self.reload_config(bot_id)
+            self.logger.debug("Reloaded configuration")
+
     # TODO remove when proper run storage strategy
     async def _trades_callback(
             self,
@@ -324,12 +330,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 )
             )
         return consumers
-
-    async def user_commands_callback(self, bot_id, subject, action, data) -> None:
-        self.logger.debug(f"Received {action} command")
-        if action == common_enums.UserCommands.RELOAD_CONFIG.value:
-            await self.reload_config(bot_id)
-            self.logger.debug("Reloaded configuration")
 
     async def save_transactions(self):
         await basic_keywords.store_transactions(
