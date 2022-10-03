@@ -24,6 +24,7 @@ async def user_input(
     name,
     input_type,
     def_val,
+    value=None,
     min_val=None,
     max_val=None,
     options=None,
@@ -39,6 +40,7 @@ async def user_input(
     show_in_optimizer=True,
     path=None,
     order=None,
+    array_indexes=None,
     flush_if_necessary=False
 ):
     """
@@ -46,17 +48,12 @@ async def user_input(
     Types are: int, float, boolean, options, multiple-options, text
     :return:
     """
-    tentacle_type_str = configuration.get_user_input_tentacle_type(ctx.tentacle)
-    config = ctx.tentacle.trading_config if tentacle_type_str == commons_enums.UserInputTentacleTypes.TRADING_MODE.value\
-        else ctx.tentacle.specific_config
-    return await configuration.user_input(
+    created_input = _get_user_input_factory(ctx).user_input(
         name,
         input_type,
         def_val,
-        tentacle_type_str,
-        ctx.tentacle.get_name(),
-        config,
-        ctx.run_data_writer,
+        {},
+        value=value,
         min_val=min_val,
         max_val=max_val,
         options=options,
@@ -72,9 +69,16 @@ async def user_input(
         show_in_optimizer=show_in_optimizer,
         path=path,
         order=order,
+        array_indexes=array_indexes,
+        return_value_only=False,
+    )
+    await configuration.save_user_input(
+        created_input,
+        ctx.run_data_writer,
         flush_if_necessary=flush_if_necessary,
         skip_flush=ctx.exchange_manager.is_backtesting,
     )
+    return created_input.value
 
 
 async def save_user_input(
@@ -83,7 +87,6 @@ async def save_user_input(
     input_type,
     value,
     def_val,
-    tentacle_type_str,
     min_val=None,
     max_val=None,
     options=None,
@@ -99,16 +102,16 @@ async def save_user_input(
     show_in_optimizer=True,
     path=None,
     order=None,
+    array_indexes=None,
     flush_if_necessary=False
 ):
     await configuration.save_user_input(
-        configuration.UserInput(
+        _get_user_input_factory(ctx).user_input(
             name,
             input_type,
-            value,
             def_val,
-            tentacle_type_str,
-            ctx.tentacle.get_name(),
+            {},
+            value=value,
             min_val=min_val,
             max_val=max_val,
             options=options,
@@ -124,6 +127,8 @@ async def save_user_input(
             show_in_optimizer=show_in_optimizer,
             path=path,
             order=order,
+            array_indexes=array_indexes,
+            return_value_only=False,
         ),
         ctx.run_data_writer,
         flush_if_necessary=flush_if_necessary,
@@ -138,3 +143,9 @@ async def get_activation_topics(context, default_value, options):
         options=options,
         show_in_optimizer=False, show_in_summary=False, order=1000
     )
+
+
+def _get_user_input_factory(context):
+    factory = configuration.UserInputFactory(context.tentacle.USER_INPUT_TENTACLE_TYPE)
+    factory.set_tentacle_class(context.tentacle).set_tentacle_config_proxy(context.tentacle.get_local_config)
+    return factory

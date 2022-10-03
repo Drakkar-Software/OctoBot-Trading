@@ -30,6 +30,9 @@ import octobot_trading.util as util
 
 
 class AbstractExchange(util.Initializable):
+    UI: configuration.UserInputFactory = configuration.UserInputFactory(
+        common_enums.UserInputTentacleTypes.EXCHANGE
+    )
     BUY_STR = enums.TradeOrderSide.BUY.value
     SELL_STR = enums.TradeOrderSide.SELL.value
 
@@ -655,7 +658,8 @@ class AbstractExchange(util.Initializable):
             # get_name not implemented, no tentacle config
             return inputs
         try:
-            cls.init_user_inputs(tentacle_config, inputs)
+            with cls.UI.local_factory(cls, lambda: tentacle_config):
+                cls.init_user_inputs(inputs)
         except Exception as e:
             logging.get_logger(cls.get_name()).exception(e, True, f"Error when initializing user inputs: {e}")
         return inputs
@@ -670,75 +674,8 @@ class AbstractExchange(util.Initializable):
         return tentacle_config, list(user_input.to_dict() for user_input in user_inputs.values())
 
     @classmethod
-    def init_user_inputs(cls, tentacle_config: dict, inputs: dict) -> None:
+    def init_user_inputs(cls, inputs: dict) -> None:
         """
         Called at constructor, should define all the exchange's user inputs.
         """
         pass
-
-    @classmethod
-    def user_input(
-        cls,
-        name: str,
-        input_type,
-        def_val,
-        registered_inputs: dict,
-        tentacle_config: dict,
-        min_val=None,
-        max_val=None,
-        options=None,
-        title=None,
-        item_title=None,
-        other_schema_values=None,
-        editor_options=None,
-        read_only=False,
-        is_nested_config=None,
-        nested_tentacle=None,
-        parent_input_name=None,
-        show_in_summary=True,
-        show_in_optimizer=True,
-        path=None,
-        order=None,
-    ):
-        """
-        Set and return a user input value.
-        :return: the saved_config value if any, def_val otherwise
-        """
-        value = def_val
-        sanitized_name = configuration.sanitize_user_input_name(name)
-        parent = tentacle_config
-        if parent is not None:
-            try:
-                value = parent[sanitized_name]
-            except KeyError:
-                # use default value
-                pass
-        input_key = f"{parent_input_name}{name}"
-        if input_key not in registered_inputs:
-            # do not register user input multiple times
-            registered_inputs[input_key] = configuration.UserInput(
-                name,
-                input_type,
-                value,
-                def_val,
-                common_enums.UserInputTentacleTypes.EXCHANGE.value,
-                cls.get_name(),
-                min_val=min_val,
-                max_val=max_val,
-                options=options,
-                title=title,
-                item_title=item_title,
-                other_schema_values=other_schema_values,
-                editor_options=editor_options,
-                read_only=read_only,
-                is_nested_config=is_nested_config,
-                nested_tentacle=nested_tentacle,
-                parent_input_name=parent_input_name,
-                show_in_summary=show_in_summary,
-                show_in_optimizer=show_in_optimizer,
-                path=path,
-                order=order,
-            )
-        if parent is not None:
-            parent[sanitized_name] = value
-        return value
