@@ -22,7 +22,6 @@ import async_channel.enums as channel_enums
 import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
-import octobot_commons.tree as commons_tree
 import octobot_commons.logging as logging
 import octobot_commons.databases as databases
 import octobot_commons.configuration as commons_configuration
@@ -287,10 +286,6 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
     @contextlib.asynccontextmanager
     async def trading_mode_trigger(self):
         try:
-            try:
-                await self.trading_mode.ensure_backtesting_storage()
-            except Exception as e:
-                self.logger.exception(e, True, f"Error when resetting exchange init data: {e}")
             yield
         except errors.UnreachableExchange as e:
             self.logger.warning(f"Error when calling trading mode: {e}")

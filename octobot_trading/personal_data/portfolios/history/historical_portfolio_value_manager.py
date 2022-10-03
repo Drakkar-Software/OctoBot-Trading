@@ -16,7 +16,6 @@
 import sortedcontainers
 
 import octobot_commons.logging as logging
-import octobot_commons.databases as databases
 import octobot_commons.constants as commons_constants
 import octobot_commons.enums as commons_enums
 import octobot_commons.symbols as symbol_util
@@ -24,6 +23,7 @@ import octobot_commons.symbols as symbol_util
 import octobot_trading.util as util
 import octobot_trading.errors as errors
 import octobot_trading.constants as constants
+import octobot_trading.personal_data.portfolios.portfolio_util as portfolio_util
 import octobot_trading.personal_data.portfolios.history.historical_asset_value as historical_asset_value
 import octobot_trading.personal_data.portfolios.history.historical_asset_value_factory as historical_asset_value_factory
 
@@ -35,6 +35,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
     TABLE_NAME = "historical_portfolio_value"
     DATA_SOURCE_KEY = "data_source"
     DATA_VERSION_KEY = "data_version"
+    STARTING_PORTFOLIO = "starting_portfolio"
     DEFAULT_DATA_SOURCE = "portfolio_value_holder"  # for later versions: consolidate data with transaction history
     DEFAULT_DATA_VERSION = "1.0.0"
     MIN_TIME_FRAME_RELEVANCY_SECONDS = 29   # less than 30s to support 1m time frames
@@ -48,7 +49,6 @@ class HistoricalPortfolioValueManager(util.Initializable):
         self.portfolio_manager = portfolio_manager
         self.logger = logging.get_logger(f"{self.__class__.__name__}"
                                          f"[{self.portfolio_manager.exchange_manager.exchange_name}]")
-        self._portfolio_type_suffix = self._get_portfolio_type_suffix()
         self.saved_time_frames = self.portfolio_manager.exchange_manager.config.get(
             commons_constants.CONFIG_SAVED_HISTORICAL_TIMEFRAMES,
             constants.DEFAULT_SAVED_HISTORICAL_TIMEFRAMES
@@ -58,13 +58,6 @@ class HistoricalPortfolioValueManager(util.Initializable):
 
         self.max_history_size = self.__class__.MAX_HISTORY_SIZE
         self.historical_portfolio_value = sortedcontainers.SortedDict()
-        try:
-            self.run_dbs_identifier = databases.RunDatabasesProvider.instance().get_run_databases_identifier(
-                self.portfolio_manager.exchange_manager.bot_id
-            )
-        except KeyError:
-            # can't save data without an activated trading mode
-            self.run_dbs_identifier = None
 
     async def initialize_impl(self):
         """
@@ -154,29 +147,14 @@ class HistoricalPortfolioValueManager(util.Initializable):
             historical_asset_value.HistoricalAssetValue(timestamp, value_by_currency)
 
     async def save_historical_portfolio_value(self):
-        if self.run_dbs_identifier is None:
-            return
-        async with databases.DBWriter.database(self.run_dbs_identifier.get_historical_portfolio_value_db_identifier(
-                self.portfolio_manager.exchange_manager.exchange_name, self._portfolio_type_suffix
-        )) as writer:
-            # replace the whole table to ensure consistency
-            await writer.upsert(commons_enums.RunDatabases.METADATA.value, self._get_metadata(), None, uuid=1)
-            await writer.replace_all(
-                self.TABLE_NAME,
-                [historical_asset.to_dict() for historical_asset in self.historical_portfolio_value.values()],
-                cache=False
-            )
+        await self.portfolio_manager.exchange_manager.storage_manager.portfolio_storage.save_historical_portfolio_value(
+            self._get_metadata(),
+            [historical_asset.to_dict() for historical_asset in self.historical_portfolio_value.values()]
+        )
 
     async def _reload_historical_portfolio_value(self):
-        if self.run_dbs_identifier is None:
-            return
-        await self.run_dbs_identifier.initialize(
-            exchange=self.portfolio_manager.exchange_manager.exchange_name, from_global_history=True
-        )
-        async with databases.DBReader.database(self.run_dbs_identifier.get_historical_portfolio_value_db_identifier(
-                self.portfolio_manager.exchange_manager.exchange_name, self._portfolio_type_suffix
-        )) as reader:
-            self._load_historical_values(await reader.all(self.TABLE_NAME))
+        db = self.portfolio_manager.exchange_manager.storage_manager.portfolio_storage.get_db()
+        self._load_historical_values(await db.all(self.TABLE_NAME))
 
     def _load_historical_values(self, dict_values):
         self.historical_portfolio_value = sortedcontainers.SortedDict({
@@ -252,22 +230,11 @@ class HistoricalPortfolioValueManager(util.Initializable):
     def _get_metadata(self):
         return {
             self.DATA_SOURCE_KEY: self.data_source,
-            self.DATA_VERSION_KEY: self.version
+            self.DATA_VERSION_KEY: self.version,
+            self.STARTING_PORTFOLIO: portfolio_util.portfolio_to_float(
+                self.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
+            )
         }
-
-    def _get_portfolio_type_suffix(self):
-        suffix = ""
-        if self.portfolio_manager.exchange_manager.is_future:
-            suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_FUTURE}"
-        elif self.portfolio_manager.exchange_manager.is_margin:
-            suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_MARGIN}"
-        else:
-            suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_SPOT}"
-        if self.portfolio_manager.exchange_manager.is_sandboxed:
-            suffix = f"{suffix}_{commons_constants.CONFIG_EXCHANGE_SANDBOXED}"
-        if self.portfolio_manager.exchange_manager.is_trader_simulated:
-            suffix = f"{suffix}_{commons_constants.CONFIG_SIMULATOR}"
-        return suffix
 
     async def stop(self):
         await self.save_historical_portfolio_value()

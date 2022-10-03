@@ -22,3 +22,7 @@ def is_inverse_future_contract(contract_type):
 
 def is_perpetual_future_contract(contract_type):
     return exchange_data.FutureContract(None, None, contract_type).is_perpetual_contract()
+
+
+def get_pair_contracts(exchange_manager) -> dict:
+    return exchange_manager.exchange.pair_contracts

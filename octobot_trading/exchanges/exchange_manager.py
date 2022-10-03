@@ -28,6 +28,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
 import octobot_trading.errors as errors
+import octobot_trading.storage as storage
 
 
 class ExchangeManager(util.Initializable):
@@ -75,12 +76,14 @@ class ExchangeManager(util.Initializable):
         self.client_symbols = []
         self.client_time_frames = []
 
+        self.storage_manager = storage.StorageManager(self)
         self.exchange_config = exchanges.ExchangeConfig(self)
         self.exchange_personal_data = personal_data.ExchangePersonalData(self)
         self.exchange_symbols_data = exchange_data.ExchangeSymbolsData(self)
 
     async def initialize_impl(self):
         await exchanges.create_exchanges(self)
+        await self.storage_manager.initialize()
 
     async def stop(self, warning_on_missing_elements=True, enable_logs=True):
         """
@@ -124,6 +127,10 @@ class ExchangeManager(util.Initializable):
             await self.exchange_personal_data.stop()
         if enable_logs:
             self.logger.debug(f"Stopped exchange channels for exchange_id: {self.id}")
+
+        if enable_logs:
+            self.logger.debug("Stopping storages ...")
+        await self.storage_manager.stop()
 
         self.exchange_config = None
         self.exchange_personal_data = None

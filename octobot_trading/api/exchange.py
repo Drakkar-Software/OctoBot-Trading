@@ -270,6 +270,10 @@ def get_supported_exchange_types(exchange_name) -> list:
     return exchanges.get_supported_exchange_types(exchange_name)
 
 
+async def store_history_in_run_storage(exchange_manager):
+    await exchange_manager.storage_manager.store_history()
+
+
 def cancel_ccxt_throttle_task():
     for task in asyncio.all_tasks():
         # manually cancel ccxt async throttle task since it apparently can't be cancelled otherwise
