@@ -16,10 +16,7 @@
 import abc
 import contextlib
 import decimal
-import time
-import asyncio
 
-import octobot_commons.channels_name as channels_name
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
@@ -34,9 +31,6 @@ import async_channel.channels as channels
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.configuration as tm_configuration
 
-import octobot_backtesting.api as backtesting_api
-
-import octobot_trading.util as util
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchange_channel as exchanges_channel
@@ -45,10 +39,7 @@ import octobot_trading.modes.modes_factory as modes_factory
 import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_producer
 import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
 import octobot_trading.personal_data.orders as orders
-import octobot_trading.personal_data.portfolios as portfolios
-import octobot_trading.personal_data.trades as personal_data_trades
 import octobot_trading.signals as signals
-import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
 
 
 class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
@@ -59,7 +50,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     MODE_CONSUMER_CLASSES = []
     # maximum seconds before sending a trading signal if orders are slow to create on exchange
     TRADING_SIGNAL_TIMEOUT = 10
-    SAVED_RUN_METADATA_DB_BY_BOT_ID = {}
 
     def __init__(self, config, exchange_manager):
         super().__init__()
@@ -97,14 +87,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
         # True when this trading mode is waken up only after full candles close
         self.is_triggered_after_candle_close = False
-
-        self.start_time = None
-        self.are_metadata_saved = False
-
-        # TODO remove when proper run storage strategy
-        self._init_exchange_data_task = None
-        self._stored_backtesting_metadata = False
-        # END TODO
 
     # Used to know the current state of the trading mode.
     # Overwrite in subclasses
@@ -217,7 +199,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         Triggers producers and consumers creation
         """
-        self.start_time = time.time()
         await self.reload_config(self.exchange_manager.bot_id)
         try:
             await databases.RunDatabasesProvider.instance().get_run_databases_identifier(self.exchange_manager.bot_id)\
@@ -227,21 +208,11 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                                            f"run database: {e}")
         self.producers = await self.create_producers()
         self.consumers = await self.create_consumers()
-        if not self.exchange_manager.is_backtesting:
-            # reset_exchange_init_data done at first trading mode call in backtesting
-            self._init_exchange_data_task = asyncio.create_task(self.init_live_exchange_init_data())
 
     async def stop(self) -> None:
         """
         Stops all producers and consumers
         """
-        if self._init_exchange_data_task is not None and not self._init_exchange_data_task.done():
-            self._init_exchange_data_task.cancel()
-        if self.exchange_manager.is_backtesting:
-            try:
-                await self.save_backtesting_data()
-            except Exception as e:
-                self.logger.exception(e, True, f"Error when saving backtesting metadata: {e}")
         for producer in self.producers:
             await producer.stop()
         for consumer in self.consumers:
@@ -282,7 +253,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         if user_input_consumer := await self._create_user_input_consumer():
             base_consumers.append(user_input_consumer)
 
-        return base_consumers + await self._add_temp_consumers()
+        return base_consumers
 
     async def _create_user_input_consumer(self):
         try:
@@ -305,217 +276,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             await self.reload_config(bot_id)
             self.logger.debug("Reloaded configuration")
 
-    # TODO remove when proper run storage strategy
-    async def _trades_callback(
-            self,
-            exchange: str,
-            exchange_id: str,
-            cryptocurrency: str,
-            symbol: str,
-            trade: dict,
-            old_trade: bool,
-    ):
-        if trade[enums.ExchangeConstantsOrderColumns.STATUS.value] != enums.OrderStatus.CANCELED.value:
-            db = databases.RunDatabasesProvider.instance().get_trades_db(self.bot_id,
-                                                                         self.exchange_manager.exchange_name)
-            await basic_keywords.store_trade(None, trade, exchange_manager=self.exchange_manager, writer=db)
-
-    async def _add_temp_consumers(self):
-        consumers = []
-        if not self.exchange_manager.is_backtesting:
-            consumers.append(
-                await exchanges_channel.get_chan(channels_name.OctoBotTradingChannelsName.TRADES_CHANNEL.value,
-                                                 self.exchange_manager.id).new_consumer(
-                    self._trades_callback,
-                    symbol=self.symbol
-                )
-            )
-        return consumers
-
-    async def save_transactions(self):
-        await basic_keywords.store_transactions(
-            self.exchange_manager,
-            self.exchange_manager.exchange_personal_data.transactions_manager.transactions.values()
-        )
-
-    async def save_trades(self):
-        await basic_keywords.store_trades(
-            self.exchange_manager,
-            [
-                trade
-                for trade in self.exchange_manager.exchange_personal_data.trades_manager.trades.values()
-                if trade.status != enums.OrderStatus.CANCELED
-            ]
-        )
-
-    async def save_portfolio(self):
-        await basic_keywords.store_portfolio(self.exchange_manager)
-
-    async def save_live_metadata(self):
-        await basic_keywords.save_metadata(
-            databases.RunDatabasesProvider.instance().get_run_db(self.exchange_manager.bot_id),
-            await self.get_trading_metadata(is_backtesting=False)
-        )
-
-    async def save_candles_data(self):
-        for symbol in self.exchange_manager.exchange_config.traded_symbol_pairs:
-            symbol_db = databases.RunDatabasesProvider.instance().get_symbol_db(
-                self.exchange_manager.bot_id,
-                self.exchange_manager.exchange_name,
-                symbol
-            )
-            for time_frame in self.exchange_manager.exchange_config.get_relevant_time_frames():
-                await basic_keywords.store_candles(self.exchange_manager, symbol, time_frame.value, symbol_db=symbol_db)
-            await symbol_db.flush()
-
-    async def init_live_exchange_init_data(self):
-        if not self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.exchange_manager.bot_id, False):
-            self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.exchange_manager.bot_id] = True
-            run_data_init_timeout = 2 * common_constants.MINUTE_TO_SECONDS
-            await self._wait_for_run_data_init(run_data_init_timeout)
-            await self.reset_exchange_init_data()
-
-    async def reset_exchange_init_data(self):
-        await basic_keywords.clear_run_data(self.exchange_manager)
-        await self.save_portfolio()
-        await self.save_live_metadata()
-        await self.save_candles_data()
-
-    async def get_trading_metadata(self, user_inputs=None, run_dbs_identifier=None, is_backtesting=True) -> dict:
-        """
-        Override this method to replace metadata
-        Overide get_additional_live_metadata or get_additional_backtesting_metadata to add additional metadata
-        :return: the metadata dict related to this backtesting and live run
-        """
-        symbols = self.exchange_manager.exchange_config.traded_symbol_pairs
-        portfolio_manager = self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio_profitability
-        profitability = portfolio_manager.profitability
-        profitability_percent = portfolio_manager.profitability_percent
-        if user_inputs is None:
-            user_inputs = {}
-        origin_portfolio = portfolios.portfolio_to_float(
-            self.exchange_manager.exchange_personal_data.portfolio_manager.
-            portfolio_value_holder.origin_portfolio.portfolio)
-        end_portfolio = portfolios.portfolio_to_float(
-            self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.portfolio)
-        for portfolio in (origin_portfolio, end_portfolio):
-            for values in portfolio.values():
-                values.pop("available", None)
-        if self.exchange_manager.is_future:
-            for position in self.exchange_manager.exchange_personal_data.positions_manager.positions.values():
-                end_portfolio[position.get_currency()]["position"] = float(position.quantity)
-        time_frames = [
-            tf.value
-            for tf in self.exchange_manager.exchange_config.get_relevant_time_frames()
-        ]
-        start_time = backtesting_api.get_backtesting_starting_time(self.exchange_manager.exchange.backtesting) \
-            if self.exchange_manager.is_backtesting \
-            else self.exchange_manager.exchange.get_exchange_current_time()
-        end_time = backtesting_api.get_backtesting_ending_time(self.exchange_manager.exchange.backtesting) \
-            if self.exchange_manager.is_backtesting \
-            else -1
-        exchange_type = "spot"
-        exchange_names = [
-            exchange
-            for exchange, config in self.config[common_constants.CONFIG_EXCHANGES].items()
-            if config.get(common_constants.CONFIG_ENABLED_OPTION, True)
-        ]
-        future_contracts_by_exchange = {}
-        if self.exchange_manager.is_future and hasattr(self.exchange_manager.exchange, "pair_contracts"):
-            exchange_type = "future"
-            future_contracts_by_exchange = {
-                self.exchange_manager.exchange_name: {
-                    symbol: {
-                        "contract_type": contract.contract_type.value,
-                        "position_mode": contract.position_mode.value,
-                        "margin_type": contract.margin_type.value
-                    }
-                    for symbol, contract in self.exchange_manager.exchange.pair_contracts.items()
-                    if symbol in self.exchange_manager.exchange_config.traded_symbol_pairs
-                }
-            }
-        formatted_user_inputs = {}
-        for user_input in user_inputs:
-            if not user_input["is_nested_config"]:
-                try:
-                    formatted_user_inputs[user_input["tentacle"]][user_input["name"]] = user_input["value"]
-                except KeyError:
-                    formatted_user_inputs[user_input["tentacle"]] = {
-                        user_input["name"]: user_input["value"]
-                    }
-        leverage = 0
-        if self.exchange_manager.is_future and hasattr(self.exchange_manager.exchange, "get_pair_future_contract"):
-            leverage = float(self.exchange_manager.exchange.get_pair_future_contract(symbols[0]).current_leverage)
-        trades = [
-            trade
-            for trade in self.exchange_manager.exchange_personal_data.trades_manager.trades.values()
-            if trade.status != enums.OrderStatus.CANCELED
-        ]
-        entries = [
-            trade
-            for trade in trades
-            if trade.status is enums.OrderStatus.FILLED and trade.side is enums.TradeOrderSide.BUY
-        ]
-        win_rate = round(float(personal_data_trades.compute_win_rate(self.exchange_manager) * 100), 3)
-        wins = round(win_rate * len(entries) / 100)
-        draw_down = round(float(portfolios.get_draw_down(self.exchange_manager)), 3)
-        try:
-            r_sq_end_balance = await portfolios.get_coefficient_of_determination(
-                self.exchange_manager,
-                use_high_instead_of_end_balance=False
-            )
-        except KeyError:
-            r_sq_end_balance = None
-        try:
-            r_sq_max_balance = await portfolios.get_coefficient_of_determination(self.exchange_manager)
-        except KeyError:
-            r_sq_max_balance = None
-
-        backtesting_only_metadata = {
-            common_enums.BacktestingMetadata.ID.value: run_dbs_identifier.backtesting_id,
-            common_enums.BacktestingMetadata.OPTIMIZATION_CAMPAIGN.value: run_dbs_identifier.optimization_campaign_name,
-            common_enums.BacktestingMetadata.DURATION.value: round(backtesting_api.get_backtesting_duration(
-                self.exchange_manager.exchange.backtesting), 3),
-            common_enums.BacktestingMetadata.BACKTESTING_FILES.value:
-                self.exchange_manager.exchange.get_backtesting_data_files(),
-            common_enums.BacktestingMetadata.USER_INPUTS.value: formatted_user_inputs,
-        } if is_backtesting else {}
-        return {
-            **backtesting_only_metadata,
-            **{
-                common_enums.BacktestingMetadata.GAINS.value: round(float(profitability), 8),
-                common_enums.BacktestingMetadata.PERCENT_GAINS.value: round(float(profitability_percent), 3),
-                common_enums.BacktestingMetadata.END_PORTFOLIO.value: str(end_portfolio),
-                common_enums.BacktestingMetadata.START_PORTFOLIO.value: str(origin_portfolio),
-                common_enums.BacktestingMetadata.WIN_RATE.value: win_rate,
-                common_enums.BacktestingMetadata.DRAW_DOWN.value: draw_down or 0,
-                common_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_MAX_BALANCE.value: r_sq_max_balance or 0,
-                common_enums.BacktestingMetadata.COEFFICIENT_OF_DETERMINATION_END_BALANCE.value: r_sq_end_balance or 0,
-                common_enums.BacktestingMetadata.SYMBOLS.value: symbols,
-                common_enums.BacktestingMetadata.TIME_FRAMES.value: time_frames,
-                common_enums.BacktestingMetadata.ENTRIES.value: len(entries),
-                common_enums.BacktestingMetadata.WINS.value: wins,
-                common_enums.BacktestingMetadata.LOSES.value: len(entries) - wins,
-                common_enums.BacktestingMetadata.TRADES.value: len(trades),
-                common_enums.BacktestingMetadata.TIMESTAMP.value: self.start_time,
-                common_enums.BacktestingMetadata.NAME.value: self.get_name(),
-                common_enums.BacktestingMetadata.LEVERAGE.value: leverage,
-                common_enums.DBRows.TRADING_TYPE.value: exchange_type,
-                common_enums.DBRows.EXCHANGES.value: exchange_names,
-                common_enums.DBRows.REFERENCE_MARKET.value: util.get_reference_market(self.config),
-                common_enums.DBRows.START_TIME.value: start_time,
-                common_enums.DBRows.END_TIME.value: end_time,
-                common_enums.DBRows.FUTURE_CONTRACTS.value: future_contracts_by_exchange,
-            },
-            **(await self.get_additional_metadata(is_backtesting))
-        }
-
-    async def ensure_backtesting_storage(self):
-        if self.exchange_manager.is_backtesting and not self._stored_backtesting_metadata:
-            await self.reset_exchange_init_data()
-            self._stored_backtesting_metadata = True
-
-    # END TODO remove when proper run storage strategy
 
     async def _create_mode_consumer(self, mode_consumer_class):
         """
@@ -667,46 +427,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                 updated_current_price=edited_current_price,
             )
         return changed
-
-    async def _wait_for_run_data_init(self, timeout) -> bool:
-        if self.exchange_manager.is_backtesting:
-            raise NotImplementedError("Not implemented in backtesting")
-        if not await util.wait_for_topic_init(self.exchange_manager, timeout,
-                                              common_enums.InitializationEventExchangeTopics.CANDLES.value) and \
-            await util.wait_for_topic_init(self.exchange_manager, timeout,
-                                           common_enums.InitializationEventExchangeTopics.CONTRACTS.value):
-            self.logger.error(f"Initialization took more than {timeout} seconds")
-        return False
-
-    async def save_backtesting_data(self):
-        if not self.are_metadata_saved and self.exchange_manager is not None:
-            run_dbs_identifier = databases.RunDatabasesProvider.instance().get_run_databases_identifier(
-                self.exchange_manager.bot_id
-            )
-            run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(self.exchange_manager.bot_id)
-            await run_data_writer.flush()
-            user_inputs = await commons_configuration.get_user_inputs(run_data_writer)
-
-            # TODO remove when proper run storage strategy
-            await self.save_transactions()
-            await self.save_trades()
-            # END TODO
-
-            if not self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID.get(self.exchange_manager.bot_id, False):
-                try:
-                    self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.exchange_manager.bot_id] = True
-                    async with databases.DBWriter.database(
-                            run_dbs_identifier.get_backtesting_metadata_identifier(),
-                            with_lock=True) as writer:
-                        await basic_keywords.save_metadata(writer, await self.get_trading_metadata(
-                            user_inputs,
-                            run_dbs_identifier,
-                            is_backtesting=True
-                        ))
-                        self.are_metadata_saved = True
-                except Exception:
-                    self.__class__.SAVED_RUN_METADATA_DB_BY_BOT_ID[self.exchange_manager.bot_id] = False
-                    raise
 
     async def get_additional_metadata(self, is_backtesting):
         """

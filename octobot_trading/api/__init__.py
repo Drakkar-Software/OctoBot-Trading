@@ -103,6 +103,7 @@ from octobot_trading.api.exchange import (
     get_currently_handled_pair_with_time_frame,
     get_required_historical_candles_count,
     is_overloaded,
+    store_history_in_run_storage,
     cancel_ccxt_throttle_task,
     stop_exchange,
 )
@@ -169,6 +170,7 @@ from octobot_trading.api.positions import (
 from octobot_trading.api.contracts import (
     is_inverse_future_contract,
     is_perpetual_future_contract,
+    get_pair_contracts,
 )
 
 __all__ = [
@@ -243,6 +245,7 @@ __all__ = [
     "get_currently_handled_pair_with_time_frame",
     "get_required_historical_candles_count",
     "is_overloaded",
+    "store_history_in_run_storage",
     "cancel_ccxt_throttle_task",
     "stop_exchange",
     "get_trading_modes",
@@ -294,4 +297,5 @@ __all__ = [
     "get_positions",
     "is_inverse_future_contract",
     "is_perpetual_future_contract",
+    "get_pair_contracts",
 ]

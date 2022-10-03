@@ -55,6 +55,7 @@ cdef class ExchangeManager(util.Initializable):
     cdef public bint without_auth
     cdef public bint check_credentials
 
+    cdef public object storage_manager
     cdef public abstract_exchange.AbstractExchange exchange
     cdef public abstract_websocket.AbstractWebsocketExchange exchange_web_socket
     cdef public exchange_config_data.ExchangeConfig exchange_config

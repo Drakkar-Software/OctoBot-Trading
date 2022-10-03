@@ -21,12 +21,10 @@ import octobot_commons.enums as commons_enums
 import octobot_commons.errors as commons_errors
 import octobot_commons.constants as commons_constants
 import octobot_commons.databases as databases
-import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.abstract_trading_mode as abstract_trading_mode
 import octobot_trading.modes.channel as modes_channel
 import octobot_trading.modes.script_keywords.context_management as context_management
 import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
-import octobot_trading.constants as trading_constants
 import octobot_trading.errors as errors
 import octobot_tentacles_manager.api as tentacles_manager_api
 
@@ -143,7 +141,7 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
                 run_db = databases.RunDatabasesProvider.instance().get_run_db(self.bot_id)
                 await producer.init_user_inputs(False)
                 run_db.set_initialized_flags(False, (time_frame, ))
-                await self.reset_exchange_init_data()
+                await basic_keywords.clear_run_data(self.exchange_manager)
                 await databases.CacheManager().close_cache(commons_constants.UNPROVIDED_CACHE_IDENTIFIER,
                                                            reset_cache_db_ids=True)
                 await producer.call_script(*call_args)
