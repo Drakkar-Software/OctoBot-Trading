@@ -153,12 +153,15 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     def should_emit_trading_signals_user_input(self, inputs: dict):
         if self.UI.user_input(
             common_constants.CONFIG_EMIT_TRADING_SIGNALS, common_enums.UserInputTypes.BOOLEAN, False, inputs,
-            title="Emit trading signals on Astrolab for people to follow.", order=998
+            title="Emit trading signals on Astrolab for people to follow.",
+            order=commons_configuration.UserInput.MAX_ORDER - 2
         ):
             self.UI.user_input(
                 common_constants.CONFIG_TRADING_SIGNALS_STRATEGY, common_enums.UserInputTypes.TEXT, self.get_name(),
                 inputs,
-                title="Name of the strategy to send signals on.", order=999, other_schema_values={"minLength": 0}
+                title="Name of the strategy to send signals on.",
+                order=commons_configuration.UserInput.MAX_ORDER - 1,
+                other_schema_values={"minLength": 0}
             )
 
     def is_trading_signal_emitter(self) -> bool:
