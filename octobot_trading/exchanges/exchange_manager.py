@@ -83,7 +83,8 @@ class ExchangeManager(util.Initializable):
 
     async def initialize_impl(self):
         await exchanges.create_exchanges(self)
-        await self.storage_manager.initialize()
+        if not self.exchange_only:
+            await self.storage_manager.initialize()
 
     async def stop(self, warning_on_missing_elements=True, enable_logs=True):
         """

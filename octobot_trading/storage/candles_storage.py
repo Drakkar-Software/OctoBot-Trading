@@ -77,36 +77,3 @@ class CandlesStorage(abstract_storage.AbstractStorage):
             self.exchange_manager.exchange_name,
             symbol
         )
-
-
-def _format_transaction(transaction, chart, x_multiplier, kind, mode, y_data):
-    return {
-        "x": transaction.creation_time * x_multiplier,
-        "type": transaction.transaction_type.value,
-        "id": transaction.transaction_id,
-        "symbol": transaction.symbol,
-        "currency": transaction.currency,
-        "quantity": float(transaction.quantity) if hasattr(transaction, "quantity") else None,
-        "order_id": transaction.order_id if hasattr(transaction, "order_id") else None,
-        "funding_rate": float(transaction.funding_rate) if hasattr(transaction, "funding_rate") else None,
-        "realised_pnl": float(transaction.realised_pnl) if hasattr(transaction, "realised_pnl") else None,
-        "transaction_fee": float(transaction.transaction_fee) if hasattr(transaction, "transaction_fee") else None,
-        "closed_quantity": float(transaction.closed_quantity) if hasattr(transaction, "closed_quantity") else None,
-        "cumulated_closed_quantity": float(transaction.cumulated_closed_quantity)
-        if hasattr(transaction, "cumulated_closed_quantity") else None,
-        "first_entry_time": float(transaction.first_entry_time) * x_multiplier
-        if hasattr(transaction, "first_entry_time") else None,
-        "average_entry_price": float(transaction.average_entry_price)
-        if hasattr(transaction, "average_entry_price") else None,
-        "average_exit_price": float(transaction.average_exit_price)
-        if hasattr(transaction, "average_exit_price") else None,
-        "order_exit_price": float(transaction.order_exit_price)
-        if hasattr(transaction, "order_exit_price") else None,
-        "leverage": float(transaction.leverage) if hasattr(transaction, "leverage") else None,
-        "trigger_source": transaction.trigger_source.value if hasattr(transaction, "trigger_source") else None,
-        "side": transaction.side.value if hasattr(transaction, "side") else None,
-        "y": y_data,
-        "chart": chart,
-        "kind": kind,
-        "mode": mode
-    }
