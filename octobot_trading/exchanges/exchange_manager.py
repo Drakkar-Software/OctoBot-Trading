@@ -83,7 +83,7 @@ class ExchangeManager(util.Initializable):
 
     async def initialize_impl(self):
         await exchanges.create_exchanges(self)
-        if not self.exchange_only:
+        if self.is_storage_enabled():
             await self.storage_manager.initialize()
 
     async def stop(self, warning_on_missing_elements=True, enable_logs=True):
@@ -282,6 +282,9 @@ class ExchangeManager(util.Initializable):
     def get_exchange_sub_account_id(self, exchange_name):
         config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
         return config_exchange.get(common_constants.CONFIG_EXCHANGE_SUB_ACCOUNT, None)
+
+    def is_storage_enabled(self):
+        return not self.exchange_only and self.bot_id is not None
 
     def __str__(self):
         exchange_type = 'rest'

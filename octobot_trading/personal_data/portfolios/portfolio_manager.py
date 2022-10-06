@@ -47,7 +47,8 @@ class PortfolioManager(util.Initializable):
         Reset the portfolio instance
         """
         self._reset_portfolio()
-        await self.historical_portfolio_value_manager.initialize()
+        if self.historical_portfolio_value_manager is not None:
+            await self.historical_portfolio_value_manager.initialize()
 
     def handle_balance_update(self, balance, is_diff_update=False):
         """
@@ -119,6 +120,8 @@ class PortfolioManager(util.Initializable):
         return self.portfolio_profitability.update_profitability()
 
     def get_portfolio_historical_values(self, currency, time_frame, from_timestamp, to_timestamp):
+        if self.historical_portfolio_value_manager is None:
+            raise errors.NotSupported("historical_portfolio_value_manager has to be set to get historical values")
         historical_values = self.historical_portfolio_value_manager.get_historical_values(
             currency, time_frame, from_timestamp, to_timestamp
         )
@@ -130,7 +133,8 @@ class PortfolioManager(util.Initializable):
         return historical_values
 
     async def update_historical_portfolio_values(self):
-        if not self.portfolio_value_holder.current_crypto_currencies_values or \
+        if self.historical_portfolio_value_manager is None or \
+           not self.portfolio_value_holder.current_crypto_currencies_values or \
            self.portfolio_value_holder.initializing_symbol_prices:
             # initializing symbol prices, impossible to get an accurate portfolio value for now
             return
@@ -183,7 +187,8 @@ class PortfolioManager(util.Initializable):
 
         self.reference_market = util.get_reference_market(self.config)
         self.portfolio_value_holder = personal_data.PortfolioValueHolder(self)
-        self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
+        if self.exchange_manager.is_storage_enabled():
+            self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
         self.portfolio_profitability = personal_data.PortfolioProfitability(self)
         self._is_initialized_event_set = False
 
