@@ -204,8 +204,10 @@ def storage_mock():
                 return_value=mock.Mock(
                     all=mock.AsyncMock(return_value=[])
                 )
-            )
-        )
+            ),
+            save_historical_portfolio_value=mock.AsyncMock(),
+        ),
+        stop=mock.AsyncMock(),
     )
 
 
@@ -219,6 +221,7 @@ async def backtesting_trader_with_historical_pf_value_manager(backtesting_trader
     backtesting_exchange_manager.exchange_personal_data.portfolio_manager.historical_portfolio_value_manager = \
         historical_portfolio_value_manager_inst
     await historical_portfolio_value_manager_inst.initialize()
+    backtesting_exchange_manager.exchange_personal_data.portfolio_manager.handle_profitability_recalculation(True)
     return backtesting_config, backtesting_exchange_manager, trader_instance
 
 

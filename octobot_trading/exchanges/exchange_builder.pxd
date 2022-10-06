@@ -36,6 +36,7 @@ cdef class ExchangeBuilder:
     cpdef ExchangeBuilder is_loading_markets(self, bint is_loading_markets)
     cpdef ExchangeBuilder is_real(self)
     cpdef ExchangeBuilder is_using_exchange_type(self, str exchange_type)
+    cpdef ExchangeBuilder enable_storage(self, bint enabled)
     cpdef ExchangeBuilder is_margin(self, bint use_margin=*)
     cpdef ExchangeBuilder is_exchange_only(self)
     cpdef ExchangeBuilder is_ignoring_config(self)

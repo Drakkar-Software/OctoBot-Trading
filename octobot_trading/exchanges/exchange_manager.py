@@ -55,6 +55,7 @@ class ExchangeManager(util.Initializable):
         self.is_trading: bool = True
         self.without_auth: bool = False
         self.check_credentials: bool = True
+        self.enable_storage: bool = True
 
         # exchange_only is True when exchange channels are not required (therefore not created)
         self.exchange_only: bool = False
@@ -284,7 +285,7 @@ class ExchangeManager(util.Initializable):
         return config_exchange.get(common_constants.CONFIG_EXCHANGE_SUB_ACCOUNT, None)
 
     def is_storage_enabled(self):
-        return not self.exchange_only and self.bot_id is not None
+        return self.enable_storage and not self.exchange_only and self.bot_id is not None
 
     def __str__(self):
         exchange_type = 'rest'
