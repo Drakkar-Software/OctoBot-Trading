@@ -42,7 +42,10 @@ def test_constructor(historical_portfolio_value_manager):
     assert historical_portfolio_value_manager.portfolio_manager is not None
     assert historical_portfolio_value_manager.saved_time_frames == constants.DEFAULT_SAVED_HISTORICAL_TIMEFRAMES
     assert historical_portfolio_value_manager.historical_portfolio_value == sortedcontainers.SortedDict()
-    assert historical_portfolio_value_manager.run_dbs_identifier is None
+    assert historical_portfolio_value_manager.starting_time is not None
+    assert historical_portfolio_value_manager.starting_time == historical_portfolio_value_manager.last_update_time
+    assert historical_portfolio_value_manager.starting_portfolio is None
+    assert historical_portfolio_value_manager.ending_portfolio is None
 
 
 async def test_initialize(historical_portfolio_value_manager):

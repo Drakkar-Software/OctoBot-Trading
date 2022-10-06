@@ -181,6 +181,10 @@ class ExchangeBuilder:
                 future_contract_type
         return self
 
+    def enable_storage(self, enabled):
+        self.exchange_manager.enable_storage = enabled
+        return self
+
     def is_spot_only(self, use_spot_only=True):
         self.exchange_manager.is_spot_only = use_spot_only
         return self

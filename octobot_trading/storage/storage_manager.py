@@ -17,6 +17,7 @@ import octobot_commons.display as commons_display
 import octobot_commons.enums as commons_enums
 import octobot_commons.databases as commons_databases
 import octobot_commons.logging as commons_logging
+import octobot_commons.errors as commons_errors
 
 import octobot_trading.util as util
 import octobot_trading.storage.trades_storage as trades_storage
@@ -56,6 +57,8 @@ class StorageManager(util.Initializable):
             self.portfolio_storage = self.candles_storage = None
 
     async def store_history(self):
+        if self.exchange_manager is None:
+            raise commons_errors.MissingExchangeDataError("This exchange storage has been stopped")
         for storage in self._historical_storages():
             await storage.store_history()
 
