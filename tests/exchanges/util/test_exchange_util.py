@@ -29,6 +29,7 @@ pytestmark = pytest.mark.asyncio
 def tentacles_setup_config():
     setup_config = mock.Mock()
     setup_config.is_tentacle_activated = mock.Mock(return_value=True)
+    setup_config.get_config_folder = mock.Mock(return_value="")
     return setup_config
 
 

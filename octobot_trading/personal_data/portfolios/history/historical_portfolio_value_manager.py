@@ -198,7 +198,7 @@ class HistoricalPortfolioValueManager(util.Initializable):
         if metadata:
             metadata = metadata[0]
             # on real trader, use historical values
-            if not self.portfolio_manager.exchange_manager.trader.is_trader_simulated:
+            if not self.portfolio_manager.exchange_manager.trader.simulate:
                 self.starting_time = metadata.get(self.STARTING_TIME, self.starting_time)
                 self.starting_portfolio = metadata.get(self.STARTING_PORTFOLIO, None)
 

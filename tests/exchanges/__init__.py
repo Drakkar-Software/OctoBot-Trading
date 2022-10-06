@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import os
+import mock
 import pytest
 import pytest_asyncio
 
@@ -28,6 +29,7 @@ from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.api.exchange import create_exchange_builder, cancel_ccxt_throttle_task
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
+import octobot_trading.personal_data as personal_data
 
 pytestmark = pytest.mark.asyncio
 
@@ -192,6 +194,31 @@ async def simulated_trader(simulated_exchange_manager):
 async def backtesting_trader(backtesting_config, backtesting_exchange_manager):
     trader_instance = TraderSimulator(backtesting_config, backtesting_exchange_manager)
     await trader_instance.initialize()
+    return backtesting_config, backtesting_exchange_manager, trader_instance
+
+
+def storage_mock():
+    return mock.Mock(
+        portfolio_storage=mock.Mock(
+            get_db=mock.Mock(
+                return_value=mock.Mock(
+                    all=mock.AsyncMock(return_value=[])
+                )
+            )
+        )
+    )
+
+
+@pytest_asyncio.fixture
+async def backtesting_trader_with_historical_pf_value_manager(backtesting_trader):
+    backtesting_config, backtesting_exchange_manager, trader_instance = backtesting_trader
+    backtesting_exchange_manager.storage_manager = storage_mock()
+    historical_portfolio_value_manager_inst = personal_data.HistoricalPortfolioValueManager(
+        backtesting_exchange_manager.exchange_personal_data.portfolio_manager
+    )
+    backtesting_exchange_manager.exchange_personal_data.portfolio_manager.historical_portfolio_value_manager = \
+        historical_portfolio_value_manager_inst
+    await historical_portfolio_value_manager_inst.initialize()
     return backtesting_config, backtesting_exchange_manager, trader_instance
 
 

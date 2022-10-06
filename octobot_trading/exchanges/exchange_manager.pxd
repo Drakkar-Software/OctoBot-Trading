@@ -87,3 +87,4 @@ cdef class ExchangeManager(util.Initializable):
     cpdef str get_exchange_sub_account_id(self, str exchange_name)
     cpdef bint should_decrypt_token(self, object logger)
     cpdef object get_symbol_data(self, str symbol)
+    cpdef bint is_storage_enabled(self)

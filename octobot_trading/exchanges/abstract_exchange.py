@@ -75,7 +75,8 @@ class AbstractExchange(util.Initializable):
 
         self.is_unreachable = False
 
-        self.load_user_inputs(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
+        if self.exchange_manager.tentacles_setup_config is not None:
+            self.load_user_inputs(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
 
     async def initialize_impl(self):
         """

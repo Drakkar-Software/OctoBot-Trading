@@ -23,7 +23,8 @@ import octobot_commons.enums as commons_enums
 import octobot_trading.personal_data as personal_data
 import octobot_trading.constants as constants
 
-from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
+from tests.exchanges import backtesting_trader_with_historical_pf_value_manager, \
+    backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
@@ -31,8 +32,8 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def historical_portfolio_value_manager(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
+def historical_portfolio_value_manager(backtesting_trader_with_historical_pf_value_manager):
+    config, exchange_manager, trader = backtesting_trader_with_historical_pf_value_manager
     return exchange_manager.exchange_personal_data.portfolio_manager.historical_portfolio_value_manager
 
 
