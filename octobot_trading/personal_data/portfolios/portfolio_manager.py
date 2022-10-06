@@ -118,7 +118,6 @@ class PortfolioManager(util.Initializable):
         """
         return self.portfolio_profitability.update_profitability()
 
-
     def get_portfolio_historical_values(self, currency, time_frame, from_timestamp, to_timestamp):
         historical_values = self.historical_portfolio_value_manager.get_historical_values(
             currency, time_frame, from_timestamp, to_timestamp
