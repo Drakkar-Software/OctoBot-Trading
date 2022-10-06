@@ -76,21 +76,13 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
         )
 
     async def clear_simulated_trades_cache(self):
-        await basic_keywords.clear_trades_cache(
-            databases.RunDatabasesProvider.instance().get_trades_db(self.bot_id, self.exchange_manager.exchange_name)
-        )
+        await self.exchange_manager.storage_manager.trades_storage.clear_history()
 
     async def clear_simulated_transactions_cache(self):
-        await basic_keywords.clear_trades_cache(
-            databases.RunDatabasesProvider.instance().get_transactions_db(self.bot_id, self.exchange_manager.exchange_name)
-        )
+        await self.exchange_manager.storage_manager.transactions_storage.clear_history()
 
     async def clear_plotting_cache(self):
-        await basic_keywords.clear_all_tables(
-            databases.RunDatabasesProvider.instance().get_symbol_db(self.bot_id,
-                                                                    self.exchange_manager.exchange_name,
-                                                                    self.symbol)
-        )
+        await self.exchange_manager.storage_manager.candles_storage.clear_history()
 
     @classmethod
     async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id,
@@ -141,7 +133,6 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
                 run_db = databases.RunDatabasesProvider.instance().get_run_db(self.bot_id)
                 await producer.init_user_inputs(False)
                 run_db.set_initialized_flags(False, (time_frame, ))
-                await basic_keywords.clear_run_data(self.exchange_manager)
                 await databases.CacheManager().close_cache(commons_constants.UNPROVIDED_CACHE_IDENTIFIER,
                                                            reset_cache_db_ids=True)
                 await producer.call_script(*call_args)

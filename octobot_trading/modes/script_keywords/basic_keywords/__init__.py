@@ -39,19 +39,10 @@ from octobot_trading.modes.script_keywords.basic_keywords.trading_signals import
 
 
 from octobot_trading.modes.script_keywords.basic_keywords.run_persistence import (
+    disable_candles_plot,
     set_plot_orders,
-    store_candles,
     store_orders,
-    store_trade,
-    store_trades,
-    store_transactions,
-    save_metadata,
-    store_portfolio,
-    clear_run_data,
     clear_orders_cache,
-    clear_trades_cache,
-    clear_transactions_cache,
-    clear_all_tables,
 )
 
 
@@ -67,17 +58,8 @@ __all__ = [
     "emit_trading_signals",
     "set_leverage",
     "set_partial_take_profit_stop_loss",
+    "disable_candles_plot",
     "set_plot_orders",
-    "store_candles",
     "store_orders",
-    "store_trade",
-    "store_trades",
-    "store_transactions",
-    "save_metadata",
-    "store_portfolio",
-    "clear_run_data",
     "clear_orders_cache",
-    "clear_trades_cache",
-    "clear_transactions_cache",
-    "clear_all_tables",
 ]

@@ -23,6 +23,7 @@ import octobot_trading.storage.abstract_storage as abstract_storage
 
 class TradesStorage(abstract_storage.AbstractStorage):
     LIVE_CHANNEL = channels_name.OctoBotTradingChannelsName.TRADES_CHANNEL.value
+    HISTORY_TABLE = commons_enums.DBTables.TRADES.value
 
     async def _live_callback(
         self,
@@ -35,7 +36,7 @@ class TradesStorage(abstract_storage.AbstractStorage):
     ):
         if trade[enums.ExchangeConstantsOrderColumns.STATUS.value] != enums.OrderStatus.CANCELED.value:
             await self._get_db().log(
-                commons_enums.DBTables.TRADES.value,
+                self.HISTORY_TABLE,
                 _format_trade(
                     trade,
                     self.exchange_manager,
@@ -46,9 +47,9 @@ class TradesStorage(abstract_storage.AbstractStorage):
                 )
             )
 
-    async def store_history(self):
+    async def _store_history(self):
         await self._get_db().log_many(
-            commons_enums.DBTables.TRADES.value,
+            self.HISTORY_TABLE,
             [
                 _format_trade(
                     trade.to_dict(),
@@ -125,7 +126,7 @@ def _format_trade(trade_dict, exchange_manager, chart, x_multiplier, kind, mode)
                 f"at {trade_dict[enums.ExchangeConstantsOrderColumns.PRICE.value]}",
         "id": trade_dict[enums.ExchangeConstantsOrderColumns.ID.value],
         "symbol": trade_dict[enums.ExchangeConstantsOrderColumns.SYMBOL.value],
-        "exchange": exchange_manager.exchange_name,
+        "trading_mode": exchange_manager.trading_modes[0].get_name(),
         "type": trade_dict[enums.ExchangeConstantsOrderColumns.TYPE.value],
         "volume": float(trade_dict[enums.ExchangeConstantsOrderColumns.AMOUNT.value]),
         "y": float(trade_dict[enums.ExchangeConstantsOrderColumns.PRICE.value]),
