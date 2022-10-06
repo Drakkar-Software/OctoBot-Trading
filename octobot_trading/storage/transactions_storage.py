@@ -22,18 +22,20 @@ import octobot_trading.storage.abstract_storage as abstract_storage
 
 class TransactionsStorage(abstract_storage.AbstractStorage):
     IS_LIVE_CONSUMER = False
+    HISTORY_TABLE = commons_enums.DBTables.TRANSACTIONS.value
 
-    async def store_history(self):
+    async def _store_history(self):
         transactions = [
             transaction
             for transaction in self.exchange_manager.exchange_personal_data.transactions_manager.transactions.values()
         ]
         y_data = self.plot_settings.y_data or [0] * len(transactions)
         await self._get_db().log_many(
-            commons_enums.DBTables.TRANSACTIONS.value,
+            self.HISTORY_TABLE,
             [
                 _format_transaction(
                     transaction,
+                    self.exchange_manager,
                     self.plot_settings.chart,
                     self.plot_settings.x_multiplier,
                     self.plot_settings.kind,
@@ -51,12 +53,13 @@ class TransactionsStorage(abstract_storage.AbstractStorage):
         )
 
 
-def _format_transaction(transaction, chart, x_multiplier, kind, mode, y_data):
+def _format_transaction(transaction, exchange_manager, chart, x_multiplier, kind, mode, y_data):
     return {
         "x": transaction.creation_time * x_multiplier,
         "type": transaction.transaction_type.value,
         "id": transaction.transaction_id,
         "symbol": transaction.symbol,
+        "trading_mode": exchange_manager.trading_modes[0].get_name(),
         "currency": transaction.currency,
         "quantity": float(transaction.quantity) if hasattr(transaction, "quantity") else None,
         "order_id": transaction.order_id if hasattr(transaction, "order_id") else None,

@@ -24,7 +24,16 @@ class PortfolioStorage(abstract_storage.AbstractStorage):
     IS_LIVE_CONSUMER = False
     IS_HISTORICAL = False
 
+    async def on_start(self):
+        """
+        Called after start, implement in necessary
+        """
+        # todo unify run db
+        pass
+
     async def save_historical_portfolio_value(self, metadata, historical_portfolio_value):
+        if not self.enabled:
+            return
         portfolio_db = self.get_db()
         # replace the whole table to ensure consistency
         await portfolio_db.upsert(commons_enums.RunDatabases.METADATA.value, metadata, None, uuid=1)

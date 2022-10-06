@@ -23,6 +23,7 @@ class AbstractStorage:
     USE_LIVE_CONSUMER_IN_BACKTESTING = False
     LIVE_CHANNEL = None
     IS_HISTORICAL = True
+    HISTORY_TABLE = None
 
     def __init__(self, exchange_manager, plot_settings: commons_display.PlotSettings,
                  use_live_consumer_in_backtesting=None, is_historical=None):
@@ -32,6 +33,7 @@ class AbstractStorage:
         self.use_live_consumer_in_backtesting = use_live_consumer_in_backtesting \
             or self.USE_LIVE_CONSUMER_IN_BACKTESTING
         self.is_historical = is_historical or self.IS_HISTORICAL
+        self.enabled = True
 
     def should_register_live_consumer(self):
         return self.IS_LIVE_CONSUMER and \
@@ -61,14 +63,39 @@ class AbstractStorage:
             self._live_callback
         )
 
-    async def stop(self):
+    async def enable(self, enabled):
+        changed = self.enabled != enabled
+        self.enabled = enabled
+        if changed:
+            if self.enabled:
+                await self.start()
+            else:
+                await self.stop(clear=False)
+
+    async def stop(self, clear=True):
         if self.consumer is not None:
             await self.consumer.stop()
-        self.consumer = None
-        self.exchange_manager = None
+        if clear:
+            self.consumer = None
+            self.exchange_manager = None
+
+    async def store_history(self):
+        if self.enabled:
+            await self._store_history()
 
     async def _live_callback(self, *args, **kwargs):
         raise NotImplementedError(f"_live_callback not implemented for {self.__class__.__name__}")
 
-    async def store_history(self):
-        raise NotImplementedError(f"store_history not implemented for {self.__class__.__name__}")
+    async def _store_history(self):
+        raise NotImplementedError(f"_store_history not implemented for {self.__class__.__name__}")
+
+    def _get_db(self, *args):
+        raise NotImplementedError(f"_get_db not implemented for {self.__class__.__name__}")
+
+    async def clear_history(self, flush=True):
+        if self.HISTORY_TABLE is None:
+            raise NotImplementedError(f"{self.__class__.__name__}.HISTORY_TABLE has to be set")
+        database = self._get_db()
+        await database.delete(self.HISTORY_TABLE, None)
+        if flush:
+            await database.flush()

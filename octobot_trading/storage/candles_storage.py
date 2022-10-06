@@ -27,6 +27,7 @@ import octobot_trading.util as util
 class CandlesStorage(abstract_storage.AbstractStorage):
     IS_LIVE_CONSUMER = False
     IS_HISTORICAL = False
+    HISTORY_TABLE = commons_enums.DBTables.CANDLES_SOURCE.value
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -36,10 +37,10 @@ class CandlesStorage(abstract_storage.AbstractStorage):
     async def on_start(self):
         self._init_task = asyncio.create_task(self._store_candles_when_available())
 
-    async def stop(self):
+    async def stop(self, **kwargs):
         if self._init_task is not None and not self._init_task.done():
             self._init_task.cancel()
-        await super().stop()
+        await super().stop(**kwargs)
 
     async def _store_candles_when_available(self):
         await util.wait_for_topic_init(self.exchange_manager, self._init_timeout,
@@ -47,10 +48,12 @@ class CandlesStorage(abstract_storage.AbstractStorage):
         await self.store_candles()
 
     async def store_candles(self):
+        if not self.enabled:
+            return
         for symbol in self.exchange_manager.exchange_config.traded_symbol_pairs:
             symbol_db = self._get_db(symbol)
             for time_frame in self.exchange_manager.exchange_config.get_relevant_time_frames():
-                await symbol_db.delete(commons_enums.DBTables.CANDLES_SOURCE.value, None)
+                await symbol_db.delete(self.HISTORY_TABLE, None)
                 await self._store_candles_if_necessary(symbol, time_frame.value, symbol_db)
 
     async def _store_candles_if_necessary(self, symbol, time_frame, symbol_db):
@@ -64,12 +67,19 @@ class CandlesStorage(abstract_storage.AbstractStorage):
             "chart": self.plot_settings.chart
         }
         if (not await symbol_db.contains_row(
-                commons_enums.DBTables.CANDLES_SOURCE.value,
+                self.HISTORY_TABLE,
                 {
                     "time_frame": time_frame,
                     "value": candles_data["value"],
                 })):
-            await symbol_db.log(commons_enums.DBTables.CANDLES_SOURCE.value, candles_data)
+            await symbol_db.log(self.HISTORY_TABLE, candles_data)
+
+    async def clear_history(self, flush=True):
+        for symbol in self.exchange_manager.exchange_config.traded_symbol_pairs:
+            database = self._get_db(symbol)
+            await database.delete(self.HISTORY_TABLE, None)
+            if flush:
+                await database.flush()
 
     def _get_db(self, symbol):
         return commons_databases.RunDatabasesProvider.instance().get_symbol_db(

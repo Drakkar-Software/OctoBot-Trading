@@ -200,12 +200,6 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         Triggers producers and consumers creation
         """
         await self.reload_config(self.exchange_manager.bot_id)
-        try:
-            await databases.RunDatabasesProvider.instance().get_run_databases_identifier(self.exchange_manager.bot_id)\
-                .initialize(self.exchange_manager.exchange_name)
-        except KeyError as e:
-            self.logger.exception(e, True, f"Error when initializing {self.exchange_manager.exchange_name} "
-                                           f"run database: {e}")
         self.producers = await self.create_producers()
         self.consumers = await self.create_consumers()
 

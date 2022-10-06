@@ -22,6 +22,7 @@ from octobot_trading.modes.script_keywords.dsl import (
 
 from octobot_trading.modes.script_keywords import basic_keywords
 from octobot_trading.modes.script_keywords.basic_keywords import (
+    disable_candles_plot,
     user_input,
     save_user_input,
     get_user_inputs,
@@ -34,17 +35,7 @@ from octobot_trading.modes.script_keywords.basic_keywords import (
     set_leverage,
     set_partial_take_profit_stop_loss,
     set_plot_orders,
-    store_candles,
     store_orders,
-    store_trade,
-    store_transactions,
-    save_metadata,
-    store_portfolio,
-    clear_run_data,
-    clear_orders_cache,
-    clear_trades_cache,
-    clear_transactions_cache,
-    clear_all_tables,
 )
 
 from octobot_trading.modes.script_keywords import context_management
@@ -56,6 +47,7 @@ from octobot_trading.modes.script_keywords.context_management import (
 __all__ = [
     "parse_quantity",
     "QuantityType",
+    "disable_candles_plot",
     "user_input",
     "save_user_input",
     "get_user_inputs",
@@ -68,16 +60,6 @@ __all__ = [
     "set_leverage",
     "set_partial_take_profit_stop_loss",
     "set_plot_orders",
-    "store_candles",
     "store_orders",
-    "store_trade",
-    "store_transactions",
-    "save_metadata",
-    "store_portfolio",
-    "clear_run_data",
-    "clear_orders_cache",
-    "clear_trades_cache",
-    "clear_transactions_cache",
-    "clear_all_tables",
     "Context",
 ]
