@@ -24,6 +24,7 @@ from octobot_trading.api import portfolio
 from octobot_trading.api import profitability
 from octobot_trading.api import orders
 from octobot_trading.api import contracts
+from octobot_trading.api import storage
 
 from octobot_trading.api.symbol_data import (
     get_symbol_data,
@@ -172,6 +173,13 @@ from octobot_trading.api.contracts import (
     is_perpetual_future_contract,
     get_pair_contracts,
 )
+from octobot_trading.api.storage import (
+    clear_trades_storage_history,
+    clear_candles_storage_history,
+    clear_transactions_storage_history,
+    clear_portfolio_storage_history,
+    clear_orders_storage_history,
+)
 
 __all__ = [
     "get_symbol_data",
@@ -298,4 +306,9 @@ __all__ = [
     "is_inverse_future_contract",
     "is_perpetual_future_contract",
     "get_pair_contracts",
+    "clear_trades_storage_history",
+    "clear_candles_storage_history",
+    "clear_transactions_storage_history",
+    "clear_portfolio_storage_history",
+    "clear_orders_storage_history",
 ]

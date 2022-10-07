@@ -194,11 +194,12 @@ class HistoricalPortfolioValueManager(util.Initializable):
             for element in dict_values
         })
 
-    def _load_metadata(self, metadata):
-        if metadata:
-            metadata = metadata[0]
+    def _load_metadata(self, metadata_list):
+        if metadata_list:
+            # metadata are always stored as the 1st element of the table
+            metadata = metadata_list[0]
             # on real trader, use historical values
-            if not self.portfolio_manager.exchange_manager.trader.simulate:
+            if not self.portfolio_manager.exchange_manager.is_trader_simulated:
                 self.starting_time = metadata.get(self.STARTING_TIME, self.starting_time)
                 self.starting_portfolio = metadata.get(self.STARTING_PORTFOLIO, None)
 
