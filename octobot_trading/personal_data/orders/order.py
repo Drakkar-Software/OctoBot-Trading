@@ -488,7 +488,7 @@ class Order(util.Initializable):
         price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0.0
         # TODO replace with := when cython will be supporting it
         stop_price = raw_order.get(enums.ExchangeConstantsOrderColumns.STOP_PRICE.value, None)
-        if stop_price is not None:
+        if stop_price is not None and (price is None or price == 0):
             # parse stop price when available
             price = stop_price
         filled_price = decimal.Decimal(str(price))
