@@ -16,13 +16,17 @@
 import decimal
 import math
 
+import octobot_commons.logging as logging
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 from octobot_trading.enums import ExchangeConstantsMarketStatusInfoColumns as Ecmsic
 
 
 def is_ms_valid(value, zero_valid=False):
     if isinstance(value, str):
-        value = float(value)
+        try:
+            value = float(value)
+        except ValueError:
+            return False
     return value is not None and value is not math.nan and (value >= 0 if zero_valid else value > 0)
 
 
@@ -132,6 +136,7 @@ class ExchangeMarketStatusFixer:
     """
 
     def __init__(self, market_status, price_example=None):
+        self.logger = logging.get_logger(self.__class__.__name__)
         self.market_status = market_status
         self.price_example = price_example
 
@@ -140,8 +145,46 @@ class ExchangeMarketStatusFixer:
         else:
             self.market_status_specific = None
 
+        self._fix_typing()
         self._fix_market_status_precision()
         self._fix_market_status_limits()
+
+    def _convert_values_to_float(self, element, parent_keys, key_whitelist):
+        try:
+            for parent_key in parent_keys:
+                element = element[parent_key]
+        except KeyError:
+            # no parent_key in element, nothing to convert
+            return
+        for key, val in element.items():
+            if key in key_whitelist and isinstance(val, str):
+                try:
+                    element[key] = float(val)
+                except ValueError:
+                    self.logger.debug(f"Impossible to convert {val} to float in {key} market status. "
+                                      f"Full market status: {self.market_status}")
+
+    def _fix_typing(self):
+        self._convert_values_to_float(
+            self.market_status,
+            [Ecmsc.PRECISION.value, ],
+            [Ecmsc.PRECISION_AMOUNT.value, Ecmsc.PRECISION_COST.value, Ecmsc.PRECISION_PRICE.value],
+        )
+        self._convert_values_to_float(
+            self.market_status,
+            [Ecmsc.LIMITS.value, Ecmsc.LIMITS_COST.value],
+            [Ecmsc.LIMITS_COST_MAX.value, Ecmsc.LIMITS_COST_MIN.value],
+        )
+        self._convert_values_to_float(
+            self.market_status,
+            [Ecmsc.LIMITS.value, Ecmsc.LIMITS_AMOUNT.value],
+            [Ecmsc.LIMITS_AMOUNT_MAX.value, Ecmsc.LIMITS_AMOUNT_MIN.value],
+        )
+        self._convert_values_to_float(
+            self.market_status,
+            [Ecmsc.LIMITS.value, Ecmsc.LIMITS_PRICE.value],
+            [Ecmsc.LIMITS_PRICE_MAX.value, Ecmsc.LIMITS_PRICE_MIN.value],
+        )
 
     def _fix_market_status_precision(self):
         if Ecmsc.PRECISION.value not in self.market_status:
