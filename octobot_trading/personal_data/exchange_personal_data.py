@@ -71,10 +71,11 @@ class ExchangePersonalData(util.Initializable):
     # updates
     async def handle_portfolio_update(self, balance, should_notify: bool = True, is_diff_update=False) -> bool:
         try:
-            changed: bool = self.portfolio_manager.handle_balance_update(balance, is_diff_update=is_diff_update)
-            if should_notify:
-                await self.handle_portfolio_update_notification(balance)
-            return changed
+            async with self.portfolio_manager.portfolio_history_update():
+                changed: bool = self.portfolio_manager.handle_balance_update(balance, is_diff_update=is_diff_update)
+                if should_notify:
+                    await self.handle_portfolio_update_notification(balance)
+                return changed
         except AttributeError as e:
             self.logger.exception(e, True, f"Failed to update balance : {e}")
             return False
