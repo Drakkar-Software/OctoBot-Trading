@@ -163,13 +163,17 @@ class HistoricalPortfolioValueManager(util.Initializable):
             historical_asset_value.HistoricalAssetValue(timestamp, value_by_currency)
 
     def _update_portfolios(self):
-        if self.starting_portfolio is None:
-            self.starting_portfolio = portfolio_util.portfolio_to_float(
-                self.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
-            )
         self.ending_portfolio = portfolio_util.portfolio_to_float(
             self.portfolio_manager.portfolio.portfolio
         )
+        if self.starting_portfolio is None:
+            try:
+                self.starting_portfolio = portfolio_util.portfolio_to_float(
+                    self.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
+                )
+            except AttributeError:
+                # origin portfolio might not be initialized, use ending_portfolio
+                self.starting_portfolio = self.ending_portfolio
 
     async def save_historical_portfolio_value(self, update_data=True):
         if update_data:

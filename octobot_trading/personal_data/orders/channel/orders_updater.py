@@ -79,7 +79,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
             self.logger.error(f"{self.channel.exchange_manager.exchange_name} is not supporting open orders updates")
             await self.pause()
         except Exception as e:
-            self.logger.error(f"Fail to initialize orders : {e}")
+            self.logger.error(e, True, f"Fail to initialize orders : {e}")
         finally:
             self.channel.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized = True
 

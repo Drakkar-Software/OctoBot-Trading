@@ -129,7 +129,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
                 created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value], symbol,
                                                                                params=params)
 
-        # on some exchange, market order are not not including price, add it manually to ensure uniformity
+        # on some exchange, market order are not including price, add it manually to ensure uniformity
         if created_order[ecoc.PRICE.value] is None and price is not None:
             created_order[ecoc.PRICE.value] = float(price)
 
