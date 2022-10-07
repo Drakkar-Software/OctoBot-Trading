@@ -13,6 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
+
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
 import octobot_commons.tree as commons_tree
@@ -74,10 +76,11 @@ class PortfolioManager(util.Initializable):
         :return: True if the portfolio was updated
         """
         if self.trader.is_enabled:
-            if self.trader.simulate or not require_exchange_update:
-                return self._refresh_simulated_trader_portfolio_from_order(order)
-            # on real trading: reload portfolio to ensure portfolio sync
-            return await self._refresh_real_trader_portfolio()
+            async with self.portfolio_history_update():
+                if self.trader.simulate or not require_exchange_update:
+                    return self._refresh_simulated_trader_portfolio_from_order(order)
+                # on real trading: reload portfolio to ensure portfolio sync
+                return await self._refresh_real_trader_portfolio()
         return False
 
     async def handle_balance_update_from_funding(self, position, funding_rate, require_exchange_update: bool) -> bool:
@@ -90,11 +93,12 @@ class PortfolioManager(util.Initializable):
         :return: True if the portfolio was updated
         """
         if self.trader.is_enabled:
-            if self.trader.simulate or not require_exchange_update:
-                self.portfolio.update_portfolio_from_funding(position, funding_rate)
-                return True
-            # on real trading: reload portfolio to ensure portfolio sync
-            return await self._refresh_real_trader_portfolio()
+            async with self.portfolio_history_update():
+                if self.trader.simulate or not require_exchange_update:
+                    self.portfolio.update_portfolio_from_funding(position, funding_rate)
+                    return True
+                # on real trading: reload portfolio to ensure portfolio sync
+                return await self._refresh_real_trader_portfolio()
         return False
 
     async def handle_balance_update_from_withdrawal(self, amount, currency) -> bool:
@@ -105,11 +109,12 @@ class PortfolioManager(util.Initializable):
         :return: True if the portfolio was updated
         """
         if self.trader.is_enabled:
-            if self.trader.simulate:
-                self.portfolio.update_portfolio_from_withdrawal(amount, currency)
-                return True
-            # do not withdraw on real trading
-            raise errors.PortfolioOperationError("withdraw is not supported in real trading")
+            async with self.portfolio_history_update():
+                if self.trader.simulate:
+                    self.portfolio.update_portfolio_from_withdrawal(amount, currency)
+                    return True
+                # do not withdraw on real trading
+                raise errors.PortfolioOperationError("withdraw is not supported in real trading")
         return False
 
     def handle_balance_updated(self):
@@ -149,6 +154,14 @@ class PortfolioManager(util.Initializable):
             )
         except Exception as e:
             self.logger.exception(e, True, f"Error when saving historical portfolio: {e}")
+
+    @contextlib.asynccontextmanager
+    async def portfolio_history_update(self):
+        try:
+            yield
+        finally:
+            if self.historical_portfolio_value_manager is not None:
+                await self.historical_portfolio_value_manager.on_portfolio_update()
 
     def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """

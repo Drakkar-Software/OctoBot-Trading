@@ -72,6 +72,15 @@ class HistoricalPortfolioValueManager(util.Initializable):
         """
         await self._reload_historical_portfolio_value()
 
+    async def on_portfolio_update(self):
+        """
+        Updates the historical portfolio if changed
+        """
+        if self.ending_portfolio != portfolio_util.portfolio_to_float(
+            self.portfolio_manager.portfolio.portfolio
+        ):
+            await self.save_historical_portfolio_value()
+
     async def on_new_value(self, timestamp, value_by_currency, force_update=False, save_changes=True,
                            include_past_data=False):
         """
@@ -84,21 +93,11 @@ class HistoricalPortfolioValueManager(util.Initializable):
         timestamp
         :return: True if something changed
         """
-        self.last_update_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
-        previous_ending_portfolio = self.ending_portfolio
-        self.ending_portfolio = portfolio_util.portfolio_to_float(
-            self.portfolio_manager.portfolio.portfolio
-        )
         # TODO replace by := when cython will support it
         relevant_timestamps = self._get_relevant_timestamps(timestamp, value_by_currency.keys(),
                                                             self.saved_time_frames, force_update, include_past_data)
         if relevant_timestamps:
             return await self._upsert_value(relevant_timestamps, value_by_currency, save_changes)
-        elif previous_ending_portfolio is not None and previous_ending_portfolio != self.ending_portfolio:
-            if save_changes:
-                # portfolio update, save the new value
-                await self.save_historical_portfolio_value()
-            return True
         return False
 
     async def on_new_values(self, value_by_currency_by_timestamp, force_update=False, save_changes=True):
@@ -163,18 +162,19 @@ class HistoricalPortfolioValueManager(util.Initializable):
         self.historical_portfolio_value[timestamp] = \
             historical_asset_value.HistoricalAssetValue(timestamp, value_by_currency)
 
-    def _init_portfolios_if_necessary(self):
+    def _update_portfolios(self):
         if self.starting_portfolio is None:
             self.starting_portfolio = portfolio_util.portfolio_to_float(
                 self.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
             )
-        if self.ending_portfolio is None:
-            self.ending_portfolio = portfolio_util.portfolio_to_float(
-                self.portfolio_manager.portfolio.portfolio
-            )
+        self.ending_portfolio = portfolio_util.portfolio_to_float(
+            self.portfolio_manager.portfolio.portfolio
+        )
 
-    async def save_historical_portfolio_value(self):
-        self._init_portfolios_if_necessary()
+    async def save_historical_portfolio_value(self, update_data=True):
+        if update_data:
+            self.last_update_time = self.portfolio_manager.exchange_manager.exchange.get_exchange_current_time()
+            self._update_portfolios()
         await self.portfolio_manager.exchange_manager.storage_manager.portfolio_storage.save_historical_portfolio_value(
             self._get_metadata(),
             [historical_asset.to_dict() for historical_asset in self.historical_portfolio_value.values()]
@@ -276,4 +276,4 @@ class HistoricalPortfolioValueManager(util.Initializable):
         }
 
     async def stop(self):
-        await self.save_historical_portfolio_value()
+        await self.save_historical_portfolio_value(update_data=False)
