@@ -64,6 +64,11 @@ async def clear_orders_cache(writer):
     await writer.clear()
 
 
+async def clear_symbol_plot_cache(writer):
+    await _clear_table(writer, commons_enums.DBTables.CACHE_SOURCE.value)
+    await writer.clear()
+
+
 async def _clear_table(writer, table, flush=True):
     await writer.delete(table, None)
     if flush:

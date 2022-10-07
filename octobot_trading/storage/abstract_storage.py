@@ -64,9 +64,8 @@ class AbstractStorage:
         )
 
     async def enable(self, enabled):
-        changed = self.enabled != enabled
-        self.enabled = enabled
-        if changed:
+        if self.enabled != enabled:
+            self.enabled = enabled
             if self.enabled:
                 await self.start()
             else:

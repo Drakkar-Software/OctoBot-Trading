@@ -75,8 +75,7 @@ class CandlesStorage(abstract_storage.AbstractStorage):
             await symbol_db.log(self.HISTORY_TABLE, candles_data)
 
     async def clear_history(self, flush=True):
-        for symbol in self.exchange_manager.exchange_config.traded_symbol_pairs:
-            database = self._get_db(symbol)
+        for database in await self._get_all_symbol_dbs():
             await database.delete(self.HISTORY_TABLE, None)
             if flush:
                 await database.flush()
@@ -87,3 +86,10 @@ class CandlesStorage(abstract_storage.AbstractStorage):
             self.exchange_manager.exchange_name,
             symbol
         )
+
+    async def _get_all_symbol_dbs(self):
+        return await commons_databases.RunDatabasesProvider.instance().get_all_symbol_dbs(
+            self.exchange_manager.bot_id,
+            self.exchange_manager.exchange_name
+        )
+

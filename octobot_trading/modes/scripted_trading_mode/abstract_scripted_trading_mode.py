@@ -65,24 +65,17 @@ class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
             await self.clear_plotting_cache()
         elif action == commons_enums.UserCommands.CLEAR_SIMULATED_ORDERS_CACHE.value:
             await self.clear_simulated_orders_cache()
-        elif action == commons_enums.UserCommands.CLEAR_SIMULATED_TRADES_CACHE.value:
-            await self.clear_simulated_trades_cache()
-        elif action == commons_enums.UserCommands.CLEAR_SIMULATED_TRANSACTIONS_CACHE.value:
-            await self.clear_simulated_transactions_cache()
 
     async def clear_simulated_orders_cache(self):
         await basic_keywords.clear_orders_cache(
             databases.RunDatabasesProvider.instance().get_orders_db(self.bot_id, self.exchange_manager.exchange_name)
         )
 
-    async def clear_simulated_trades_cache(self):
-        await self.exchange_manager.storage_manager.trades_storage.clear_history()
-
-    async def clear_simulated_transactions_cache(self):
-        await self.exchange_manager.storage_manager.transactions_storage.clear_history()
-
     async def clear_plotting_cache(self):
-        await self.exchange_manager.storage_manager.candles_storage.clear_history()
+        await basic_keywords.clear_symbol_plot_cache(
+            databases.RunDatabasesProvider.instance().get_symbol_db(self.bot_id, self.exchange_manager.exchange_name,
+                                                                    self.symbol)
+        )
 
     @classmethod
     async def get_backtesting_plot(cls, exchange, symbol, backtesting_id, optimizer_id,

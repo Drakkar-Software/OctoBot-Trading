@@ -43,6 +43,7 @@ from octobot_trading.modes.script_keywords.basic_keywords.run_persistence import
     set_plot_orders,
     store_orders,
     clear_orders_cache,
+    clear_symbol_plot_cache,
 )
 
 
@@ -62,4 +63,5 @@ __all__ = [
     "set_plot_orders",
     "store_orders",
     "clear_orders_cache",
+    "clear_symbol_plot_cache",
 ]
