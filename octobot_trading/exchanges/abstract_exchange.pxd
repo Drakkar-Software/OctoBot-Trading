@@ -25,6 +25,7 @@ cdef class AbstractExchange(util.Initializable):
     cdef public object trader
     cdef public object exchange_manager
     cdef public object connector
+    cdef public dict tentacle_config
 
     cdef public set symbols
     cdef public set time_frames
@@ -33,8 +34,6 @@ cdef class AbstractExchange(util.Initializable):
 
     cdef public str name
     cdef public bint is_unreachable
-
-    cpdef str get_name(cls)
 
     # exchange requests
     cpdef dict get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
