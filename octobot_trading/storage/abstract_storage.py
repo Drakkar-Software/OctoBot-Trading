@@ -51,7 +51,6 @@ class AbstractStorage:
         """
         Called after start, implement in necessary
         """
-        pass
 
     async def register_live_consumer(self):
         if self.LIVE_CHANNEL is None:

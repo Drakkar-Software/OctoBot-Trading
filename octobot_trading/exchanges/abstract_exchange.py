@@ -679,4 +679,3 @@ class AbstractExchange(util.Initializable):
         """
         Called at constructor, should define all the exchange's user inputs.
         """
-        pass

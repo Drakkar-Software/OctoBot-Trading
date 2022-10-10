@@ -18,8 +18,6 @@ import decimal
 
 import octobot_commons.constants as commons_constants
 import octobot_commons.logging as logging
-import octobot_commons.tree as commons_tree
-import octobot_commons.enums as commons_enums
 
 import octobot_trading.enums as enums
 import octobot_trading.util as util

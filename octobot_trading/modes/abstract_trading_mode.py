@@ -20,7 +20,6 @@ import decimal
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
-import octobot_commons.databases as databases
 import octobot_commons.configuration as commons_configuration
 import octobot_commons.tentacles_management as abstract_tentacle
 import octobot_commons.authentication as authentication

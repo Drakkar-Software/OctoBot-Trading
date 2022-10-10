@@ -87,11 +87,7 @@ async def create_trading_mode(trading_mode_class,
         raise e
 
 
-def create_temporary_trading_mode_with_local_config(
-        trading_mode_class,
-        config: dict,
-        trading_config: dict
-):
+def create_temporary_trading_mode_with_local_config(trading_mode_class, config, trading_config):
     trading_mode = trading_mode_class(config, None)
     trading_mode.trading_config = trading_config
     return trading_mode
