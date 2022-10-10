@@ -15,8 +15,9 @@
 #  License along with this library.
 from ccxt import Exchange
 
-from octobot_commons.constants import MINUTE_TO_SECONDS, MSECONDS_TO_SECONDS
-from octobot_commons.enums import TimeFrames, TimeFramesMinutes
+import octobot_commons.constants as constants
+import octobot_commons.enums as commons_enums
+import octobot_trading.enums as trading_enums
 from octobot_trading.enums import ExchangeConstantsTickersColumns as Ectc
 from tests_additional.real_exchanges import get_exchange_manager
 
@@ -24,10 +25,12 @@ from tests_additional.real_exchanges import get_exchange_manager
 class RealExchangeTester:
     # enter exchange name as a class variable here
     EXCHANGE_NAME = None
+    EXCHANGE_TYPE = trading_enums.ExchangeTypes.SPOT.value
     SYMBOL = None
     SYMBOL_2 = None
+    SYMBOL_3 = None
     # default is 1h, change if necessary
-    TIME_FRAME = TimeFrames.ONE_HOUR
+    TIME_FRAME = commons_enums.TimeFrames.ONE_HOUR
     ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 0
 
     # Public methods: to be implemented as tests
@@ -84,47 +87,57 @@ class RealExchangeTester:
     #
     # async def test_create_order(self):
     #     pass
+    
+    def get_config(self):
+        return {
+            constants.CONFIG_EXCHANGES: {
+                self.EXCHANGE_NAME: {
+                    constants.CONFIG_EXCHANGE_TYPE: self.EXCHANGE_TYPE
+                }
+            }
+        }
 
     async def time_frames(self):
-        async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
             return exchange_manager.exchange.time_frames
 
     async def get_market_statuses(self):
         # return 2 different market status with different traded pairs to reduce possible
         # side effects using only one pair.
-        async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
             return exchange_manager.exchange.get_market_status(self.SYMBOL), \
                    exchange_manager.exchange.get_market_status(self.SYMBOL_2), \
                    exchange_manager.exchange.get_market_status(self.SYMBOL_3)
 
     async def get_symbol_prices(self, limit=None, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
             return await exchange_manager.exchange.get_symbol_prices(self.SYMBOL, self.TIME_FRAME,
                                                                      limit=limit, **kwargs)
 
     async def get_kline_price(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
             return await exchange_manager.exchange.get_kline_price(self.SYMBOL, self.TIME_FRAME, **kwargs)
 
     async def get_order_book(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
             return await exchange_manager.exchange.get_order_book(self.SYMBOL, **kwargs)
 
     async def get_recent_trades(self, limit=50):
-        async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
             return await exchange_manager.exchange.get_recent_trades(self.SYMBOL, limit=limit)
 
     async def get_price_ticker(self):
-        async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
             return await exchange_manager.exchange.get_price_ticker(self.SYMBOL)
 
     async def get_all_currencies_price_ticker(self, **kwargs):
-        async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
+        async with get_exchange_manager(self.EXCHANGE_NAME, self.get_config()) as exchange_manager:
             return await exchange_manager.exchange.get_all_currencies_price_ticker(**kwargs)
 
     def get_allowed_time_delta(self):
         return (self.ALLOWED_TIMEFRAMES_WITHOUT_CANDLE + 1) * \
-               TimeFramesMinutes[self.TIME_FRAME] * MINUTE_TO_SECONDS * MSECONDS_TO_SECONDS * 1.3
+               commons_enums.TimeFramesMinutes[self.TIME_FRAME] * \
+               constants.MINUTE_TO_SECONDS * constants.MSECONDS_TO_SECONDS * 1.3
 
     @staticmethod
     def get_time():
