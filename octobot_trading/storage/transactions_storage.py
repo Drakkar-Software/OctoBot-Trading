@@ -16,7 +16,6 @@
 import octobot_commons.enums as commons_enums
 import octobot_commons.databases as commons_databases
 
-import octobot_trading.enums as enums
 import octobot_trading.storage.abstract_storage as abstract_storage
 
 

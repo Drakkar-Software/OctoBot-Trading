@@ -18,7 +18,6 @@ import octobot_commons.logging as logging
 import octobot_commons.tree as commons_tree
 import octobot_commons.enums as commons_enums
 
-import octobot_trading.constants as constants
 import octobot_trading.exchange_data.ohlcv.candles_manager as candles_manager
 import octobot_trading.exchange_data.ticker.ticker_manager as ticker_manager
 import octobot_trading.exchange_data.order_book.order_book_manager as order_book_manager

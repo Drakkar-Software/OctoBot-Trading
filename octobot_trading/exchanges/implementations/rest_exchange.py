@@ -13,21 +13,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import contextlib
-import decimal
-import typing
-
-from octobot_commons import enums as common_enums
-
-import octobot_trading.enums as enums
-import octobot_trading.errors as errors
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
-import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.connectors as exchange_connectors
-import octobot_trading.personal_data as personal_data
-from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
+# TODO
 class RestExchange(abstract_exchange.AbstractExchange):
     """
     RestExchange is only calling the right exchange connector and should be used for each exchange
@@ -42,7 +32,8 @@ class RestExchange(abstract_exchange.AbstractExchange):
             exchange_manager,
             additional_ccxt_config=self.get_additional_connector_config()  # move to connector
         )
-        self.connector.client.options['defaultType'] = self.get_default_type() # move to connector
+        # commented for pylint
+        # self.connector.client.options['defaultType'] = self.get_default_type() # move to connector
 
     async def initialize_impl(self):
         await self.connector.initialize()

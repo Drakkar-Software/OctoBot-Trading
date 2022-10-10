@@ -27,7 +27,6 @@ from octobot_trading.modes.channel.abstract_mode_producer cimport (
 from octobot_trading.modes.channel cimport abstract_mode_consumer
 from octobot_trading.modes.channel.abstract_mode_consumer cimport (
     AbstractTradingModeConsumer,
-    check_factor,
 )
 
 __all__ = [
@@ -36,5 +35,4 @@ __all__ = [
     "ModeChannel",
     "AbstractTradingModeProducer",
     "AbstractTradingModeConsumer",
-    "check_factor",
 ]
