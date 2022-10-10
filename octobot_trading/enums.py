@@ -409,6 +409,8 @@ class AccountTypes(enum.Enum):
     CASH = "cash"
     MARGIN = "margin"
     FUTURE = "future"
+    SWAP = "swap"
+    OPTION = "option"
 
 
 class MarkPriceSources(enum.Enum):

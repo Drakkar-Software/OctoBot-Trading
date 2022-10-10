@@ -188,10 +188,10 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         Can be FutureContractType INVERSE_PERPETUAL or LINEAR_PERPETUAL
         Requires is_inverse_symbol and is_linear_symbol to be implemented
         """
+        if self.is_linear_symbol(symbol):
+            return octobot_trading.enums.FutureContractType.LINEAR_PERPETUAL
         if self.is_inverse_symbol(symbol):
             return octobot_trading.enums.FutureContractType.INVERSE_PERPETUAL
-        elif self.is_linear_symbol(symbol):
-            return octobot_trading.enums.FutureContractType.LINEAR_PERPETUAL
 
     async def get_position_mode(self, symbol: str):
         """
