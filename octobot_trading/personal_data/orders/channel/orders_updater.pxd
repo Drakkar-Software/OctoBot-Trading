@@ -23,3 +23,4 @@ cdef class OrdersUpdater(orders_channel.OrdersProducer):
     cdef async_job.AsyncJob open_orders_job
     cdef async_job.AsyncJob closed_orders_job
     cdef async_job.AsyncJob order_update_job
+    cdef bint _is_initialized_event_set

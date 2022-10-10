@@ -24,7 +24,6 @@ cdef class HistoricalPortfolioValueManager(util.Initializable):
 
     cdef public portfolio_manager.PortfolioManager portfolio_manager
 
-    cdef public str _portfolio_type_suffix
     cdef public list saved_time_frames
     cdef public str data_source
     cdef public str version
@@ -35,7 +34,6 @@ cdef class HistoricalPortfolioValueManager(util.Initializable):
 
     cdef public int max_history_size
     cdef public object historical_portfolio_value
-    cdef public object run_dbs_identifier
 
     cpdef object get_historical_values(self, str currency, object time_frame, object from_timestamp=*, object to_timestamp=*)
     cpdef object get_historical_value(self, object timestamp)

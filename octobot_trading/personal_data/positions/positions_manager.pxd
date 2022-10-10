@@ -21,8 +21,6 @@ cimport octobot_trading.util as util
 cdef class PositionsManager(util.Initializable):
     cdef object logger
 
-    cdef public bint positions_initialized
-
     cdef object trader
 
     cdef public object positions

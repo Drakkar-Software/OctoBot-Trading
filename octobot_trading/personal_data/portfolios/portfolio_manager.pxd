@@ -37,6 +37,8 @@ cdef class PortfolioManager(util.Initializable):
     cdef public portfolio_class.Portfolio portfolio
     cdef public portfolio_history.HistoricalPortfolioValueManager historical_portfolio_value_manager
 
+    cdef bint _is_initialized_event_set
+
     cpdef object handle_balance_updated(self)
     cpdef bint handle_balance_update(self, dict balance, bint is_diff_update=*)
     cpdef object handle_profitability_recalculation(self, bint force_recompute_origin_portfolio)

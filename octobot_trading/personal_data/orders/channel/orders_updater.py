@@ -42,7 +42,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
     def __init__(self, channel):
         super().__init__(channel)
 
-        self._initialized_event = False
+        self._is_initialized_event_set = False
         # create async jobs
         self.open_orders_job = async_job.AsyncJob(self._open_orders_fetch_and_push,
                                                   execution_interval_delay=self.OPEN_ORDER_REFRESH_TIME,
@@ -120,9 +120,9 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                                 is_from_bot=is_from_bot)
             else:
                 await self.handle_post_open_order_update(symbol, open_orders, False)
-            if not self._initialized_event:
+            if not self._is_initialized_event_set:
                 self._set_initialized_event(symbol)
-        self._initialized_event = True
+        self._is_initialized_event_set = True
 
     def _set_initialized_event(self, symbol):
         # set init in updater as it's the only place we know if we fetched orders or not regardless of orders existence

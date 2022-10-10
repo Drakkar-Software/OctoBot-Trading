@@ -52,7 +52,7 @@ class TradesUpdater(trades_channel.TradesProducer):
     def __init__(self, channel):
         super().__init__(channel)
 
-        self._initialized_event = False
+        self._is_initialized_event_set = False
 
     async def init_old_trades(self):
         try:
@@ -72,9 +72,9 @@ class TradesUpdater(trades_channel.TradesProducer):
 
             if trades:
                 await self.push(list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
-            if not self._initialized_event:
+            if not self._is_initialized_event_set:
                 self._set_initialized_event(symbol)
-        self._initialized_event = True
+        self._is_initialized_event_set = True
 
     def _set_initialized_event(self, symbol):
         # set init in updater as it's the only place we know if we fetched trades or not regardless of trades existence
