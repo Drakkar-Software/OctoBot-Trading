@@ -245,12 +245,12 @@ class PortfolioValueHolder:
         try:
             symbol = symbol_util.merge_currencies(current_currency, target_currency)
             if self._has_price_data(symbol):
-                return quantity * self.last_prices_by_trading_pair[symbol]
+                return quantity * self._get_last_price_data(symbol)
         except KeyError:
             pass
         try:
             reversed_symbol = symbol_util.merge_currencies(target_currency, current_currency)
-            return quantity / self.last_prices_by_trading_pair[reversed_symbol]
+            return quantity / self._get_last_price_data(reversed_symbol)
         except decimal.DivisionByZero:
             pass
         except KeyError:
@@ -258,7 +258,18 @@ class PortfolioValueHolder:
         raise errors.MissingPriceDataError(f"no price data to evaluate {current_currency} price in {target_currency}")
 
     def _has_price_data(self, symbol):
-        return self.last_prices_by_trading_pair[symbol] is not constants.ZERO
+        return self._get_last_price_data(symbol) is not constants.ZERO
+
+    def _get_last_price_data(self, symbol):
+        try:
+            return self.last_prices_by_trading_pair[symbol]
+        except KeyError:
+            # a settlement asset or other symbol extra data might be different, try to ignore it
+            to_find_symbol = symbol_util.parse_symbol(symbol)
+            for symbol_key in self.last_prices_by_trading_pair:
+                if symbol_util.parse_symbol(symbol_key).is_same_base_and_quote(to_find_symbol):
+                    return self.last_prices_by_trading_pair[symbol_key]
+        raise KeyError(symbol)
 
     def _try_to_ask_ticker_missing_symbol_data(self, currency, symbol, reversed_symbol):
         """

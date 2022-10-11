@@ -168,8 +168,9 @@ class ExchangeConstantsCCXTColumns(enum.Enum):
 class ExchangePositionCCXTColumns(enum.Enum):
     CONTRACTS = "contracts"
     CONTRACT_SIZE = "contractSize"
-    MARGIN_TYPE = "leverage"
-    LEVERAGE = "marginType"
+    MARGIN_TYPE = "marginType"
+    MARGIN_MODE = "marginMode"
+    LEVERAGE = "leverage"
     SYMBOL = "symbol"
     COLLATERAL = "collateral"
     INITIAL_MARGIN = "initialMargin"
@@ -187,6 +188,7 @@ class ExchangePositionCCXTColumns(enum.Enum):
     DATETIME = "datetime"
     PERCENTAGE = "percentage"
     SIDE = "side"
+    INFO = "info"
 
 
 class ExchangeConstantsFundingColumns(enum.Enum):

@@ -196,19 +196,7 @@ def get_trading_pairs(exchange_manager) -> list:
 
 
 def get_trading_symbols(exchange_manager) -> list:
-    symbols = exchange_manager.exchange_config.traded_symbols
-
-    #TODO remove loop after ccxt symbols update as it will be automatically filled
-    if exchange_manager.is_future:
-        for symbol in symbols:
-            merged_currencies = symbol.legacy_symbol()
-            if exchange_manager.exchange.get_pair_future_contract(merged_currencies).is_inverse_contract():
-                symbol.settlement_asset = symbol.base
-            else:
-                symbol.settlement_asset = symbol.quote
-            symbol.symbol_str = f"{merged_currencies}:{symbol.settlement_asset}"
-
-    return symbols
+    return exchange_manager.exchange_config.traded_symbols
 
 
 def get_watched_timeframes(exchange_manager) -> list:

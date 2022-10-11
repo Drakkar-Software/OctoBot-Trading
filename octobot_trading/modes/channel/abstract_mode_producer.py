@@ -355,6 +355,9 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         try:
             await util.wait_for_topic_init(self.exchange_manager, timeout,
                                            common_enums.InitializationEventExchangeTopics.CANDLES.value, symbol)
+            if self.exchange_manager.is_future:
+                await util.wait_for_topic_init(self.exchange_manager, timeout,
+                                               common_enums.InitializationEventExchangeTopics.CONTRACTS.value, symbol)
             return True
         except (asyncio.TimeoutError, concurrent.futures.TimeoutError):
             self.logger.error(f"Initialization took more than {timeout} seconds")

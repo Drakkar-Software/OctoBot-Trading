@@ -266,6 +266,40 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         return await self.connector.get_order(symbol=symbol, order_id=order_id, **kwargs)
 
+    async def get_order_from_open_and_closed_orders(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
+        for order in await self.get_open_orders(symbol, **kwargs):
+            if order[enums.ExchangeConstantsOrderColumns.ID.value] == order_id:
+                return order
+        for order in await self.get_closed_orders(symbol, **kwargs):
+            if order[enums.ExchangeConstantsOrderColumns.ID.value] == order_id:
+                return order
+        return None  # OrderNotFound
+
+    async def get_order_from_trades(self, symbol, order_id, order_to_update=None):
+        order_to_update = order_to_update or {}
+        trades = await self.get_my_recent_trades(symbol)
+        # usually the right trade is within the last ones
+        for trade in trades[::-1]:
+            if trade[ecoc.ORDER.value] == order_id:
+                order_to_update[ecoc.INFO.value] = trade[ecoc.INFO.value]
+                order_to_update[ecoc.ID.value] = order_id
+                order_to_update[ecoc.SYMBOL.value] = symbol
+                order_to_update[ecoc.TYPE.value] = trade[ecoc.TYPE.value]
+                order_to_update[ecoc.AMOUNT.value] = trade[ecoc.AMOUNT.value]
+                order_to_update[ecoc.DATETIME.value] = trade[ecoc.DATETIME.value]
+                order_to_update[ecoc.SIDE.value] = trade[ecoc.SIDE.value]
+                order_to_update[ecoc.TAKERORMAKER.value] = trade[ecoc.TAKERORMAKER.value]
+                order_to_update[ecoc.PRICE.value] = trade[ecoc.PRICE.value]
+                order_to_update[ecoc.TIMESTAMP.value] = order_to_update.get(ecoc.TIMESTAMP.value,
+                                                                            trade[ecoc.TIMESTAMP.value])
+                order_to_update[ecoc.STATUS.value] = enums.OrderStatus.FILLED.value
+                order_to_update[ecoc.FILLED.value] = trade[ecoc.AMOUNT.value]
+                order_to_update[ecoc.COST.value] = trade[ecoc.COST.value]
+                order_to_update[ecoc.REMAINING.value] = 0
+                order_to_update[ecoc.FEE.value] = trade[ecoc.FEE.value]
+                return order_to_update
+        return None  #OrderNotFound
+
     async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
         return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, **kwargs)
 
