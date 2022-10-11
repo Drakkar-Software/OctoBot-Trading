@@ -116,7 +116,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     async def get_margin_type(self, symbol: str):
         return constants.DEFAULT_SYMBOL_MARGIN_TYPE
 
-    async def get_contract_type(self, symbol: str):
+    def get_contract_type(self, symbol: str):
         return self.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict):

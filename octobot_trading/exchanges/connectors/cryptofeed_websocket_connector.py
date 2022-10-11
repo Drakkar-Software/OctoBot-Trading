@@ -151,6 +151,7 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         )
 
         self._previous_open_candles = {}
+        self._full_symbol_by_feed_symbol = {}
 
     """
     Abstract methods
@@ -242,6 +243,9 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         # reset might take up to a few seconds, no need to wait for it and block the whole async loop
         threading.Thread(target=self._call_inner_reset, name=f"{self.name}ResetWrapper").start()
 
+    def get_cryptofeed_symbol(self, symbol):
+        return symbol
+
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
         return cls.get_name() == exchange_candidate_name
@@ -253,15 +257,23 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :return: the formatted pair when success else an empty string
         """
         try:
-            return symbol_util.convert_symbol(
-                symbol=pair,
-                symbol_separator=self.CRYPTOFEED_DEFAULT_MARKET_SEPARATOR,
-                new_symbol_separator=octobot_commons.MARKET_SEPARATOR,
-                should_uppercase=True,
+            return self._get_full_symbol(
+                symbol_util.convert_symbol(
+                    symbol=pair,
+                    symbol_separator=self.CRYPTOFEED_DEFAULT_MARKET_SEPARATOR,
+                    new_symbol_separator=octobot_commons.MARKET_SEPARATOR,
+                    should_uppercase=True,
+                )
             )
         except Exception:
             self.logger.error(f"Failed to get market of {pair}")
         return ""
+
+    def _get_full_symbol(self, feed_symbol):
+        try:
+            return self._full_symbol_by_feed_symbol[feed_symbol]
+        except KeyError:
+            return feed_symbol
 
     def get_exchange_pair(self, pair) -> str:
         """
@@ -270,12 +282,15 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :return: the cryptofeed pair when success else an empty string
         """
         try:
-            return symbol_util.convert_symbol(
+            feed_symbol = symbol_util.convert_symbol(
                 symbol=pair,
                 symbol_separator=octobot_commons.MARKET_SEPARATOR,
                 new_symbol_separator=self.CRYPTOFEED_DEFAULT_MARKET_SEPARATOR,
                 should_uppercase=True,
+                base_and_quote_only=True,
             )
+            self._full_symbol_by_feed_symbol[feed_symbol] = pair
+            return feed_symbol
         except Exception:
             self.logger.error(f"Failed to get market of {pair}")
         return ""

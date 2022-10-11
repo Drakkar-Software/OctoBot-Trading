@@ -310,13 +310,16 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
                 pass
+            except ccxt.NotSupported as e:
+                # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
+                raise octobot_trading.errors.NotSupported from e
         else:
             # When fetch_order is not supported, uses get_open_orders and extract order id
             open_orders = await self.get_open_orders(symbol=symbol)
             for order in open_orders:
                 if order.get(ecoc.ID.value, None) == order_id:
                     return order
-        return None # OrderNotFound
+        return None  # OrderNotFound
 
     async def get_all_orders(self, symbol: str = None, since: int = None,
                              limit: int = None, **kwargs: dict) -> list:
@@ -359,7 +362,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             with self.error_describer():
                 cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
             try:
-                cancelled_order = await self.get_order(order_id, symbol=symbol)
+                cancelled_order = await self.exchange_manager.exchange.get_order(order_id, symbol=symbol)
                 return cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order)
             except ccxt.OrderNotFound:
                 # Order is not found: it has successfully been cancelled (some exchanges don't allow to
@@ -367,23 +370,23 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 return True
         except ccxt.OrderNotFound:
             self.logger.error(f"Trying to cancel order with id {order_id} but order was not found")
-        except ccxt.NotSupported:
-            raise octobot_trading.errors.NotSupported
+        except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
+            raise octobot_trading.errors.NotSupported from e
         except Exception as e:
             self.logger.exception(e, True, f"Order {order_id} failed to cancel | {e} ({e.__class__.__name__})")
         return cancel_resp is not None
 
     async def get_positions(self, **kwargs: dict) -> list:
-        return await self.client.fetch_positions()
+        return await self.client.fetch_positions(params=kwargs)
 
     async def get_symbol_positions(self, symbol: str, **kwargs: dict) -> list:
-        return await self.client.fetch_positions(symbols=[symbol])
+        return await self.client.fetch_positions(symbols=[symbol], params=kwargs)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
-        return await self.client.fetch_funding_rate(symbol=symbol)
+        return await self.client.fetch_funding_rate(symbol=symbol, params=kwargs)
 
     async def get_funding_rate_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
-        return await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit)
+        return await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
 
     async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
         return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)

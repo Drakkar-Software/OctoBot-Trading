@@ -50,7 +50,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
             pair=pair,
             current_leverage=await self.get_symbol_leverage(pair),
             margin_type=await self.get_margin_type(pair),
-            contract_type=await self.get_contract_type(pair),
+            contract_type=self.get_contract_type(pair),
             position_mode=await self.get_position_mode(pair),
             maintenance_margin_rate=await self.get_maintenance_margin_rate(pair),
         )
@@ -181,7 +181,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_margin_type is not implemented")
 
-    async def get_contract_type(self, symbol: str):
+    def get_contract_type(self, symbol: str):
         """
         :param symbol: the symbol
         :return: the contract type for the requested symbol.
@@ -315,7 +315,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         if mode is octobot_trading.enums.PositionMode.ONE_WAY:
             return octobot_trading.enums.PositionSide.BOTH
         return octobot_trading.enums.PositionSide.LONG \
-            if side == self.LONG_STR else octobot_trading.enums.PositionSide.SHORT
+            if side == octobot_trading.enums.PositionSide.LONG.value else octobot_trading.enums.PositionSide.SHORT
 
     def calculate_position_value(self, quantity, mark_price):
         """

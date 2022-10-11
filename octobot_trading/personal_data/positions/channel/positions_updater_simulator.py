@@ -50,16 +50,16 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
                 margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
                 contract_type=
                 self.channel.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type
-                if self.channel.exchange_manager.is_backtesting else await self._get_contract_type_or_default(pair),
+                if self.channel.exchange_manager.is_backtesting else self._get_contract_type_or_default(pair),
                 position_mode=constants.DEFAULT_SYMBOL_POSITION_MODE,
                 maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
                 maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE)
             if not contract.is_handled_contract():
                 self.logger.error(f"Unhandled contract {contract}. This contract can't be traded")
 
-    async def _get_contract_type_or_default(self, pair):
+    def _get_contract_type_or_default(self, pair):
         try:
-            return await self.channel.exchange_manager.exchange.get_contract_type(pair)
+            return self.channel.exchange_manager.exchange.get_contract_type(pair)
         except NotImplementedError as e:
             self.logger.error(f"Unimplemented required method: {e}")
         self.logger.error(f"Unknown contract type for {pair} on {self.channel.exchange_manager.exchange_name}. Using "
