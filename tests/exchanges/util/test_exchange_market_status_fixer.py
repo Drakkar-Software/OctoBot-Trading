@@ -130,6 +130,12 @@ class TestExchangeMarketStatusFixer:
                                                  0.01000000000000001, 1000000000.0000011)
         }
 
+    def test_exchange_market_status_fixer_without_market_status(self):
+        assert ExchangeMarketStatusFixer({}).market_status == {
+            Ecmsc.PRECISION.value: self._get_precision(None, None, None),
+            Ecmsc.LIMITS.value: self._get_limits(None, None, None, None, 0, None)
+        }
+
     def test_exchange_market_status_fixer_with_str_instead_of_floats(self):
         ms = {
             Ecmsc.PRECISION.value: self._get_precision("5", "5.777772", None),
