@@ -18,7 +18,8 @@ from ccxt import Exchange
 import octobot_commons.constants as constants
 import octobot_commons.enums as commons_enums
 import octobot_trading.enums as trading_enums
-from octobot_trading.enums import ExchangeConstantsTickersColumns as Ectc
+from octobot_trading.enums import ExchangeConstantsTickersColumns as Ectc, \
+    ExchangeConstantsMarketStatusColumns as Ecmsc
 from tests_additional.real_exchanges import get_exchange_manager
 
 
@@ -146,6 +147,39 @@ class RealExchangeTester:
     @staticmethod
     def ensure_elements_order(elements, sort_key, reverse=False):
         assert sorted(elements, key=lambda x: x[sort_key], reverse=reverse) == elements
+
+    def check_market_status_limits(self, market_status,
+                                   normal_price_max=10000, normal_price_min=1e-06,
+                                   normal_cost_max=10000, normal_cost_min=1e-06,
+                                   low_price_max=1e-07, low_price_min=1e-09,
+                                   low_cost_max=1e-03, low_cost_min=1e-06,
+                                   expect_invalid_price_limit_values=False,
+                                   expect_inferior_or_equal_price_and_cost=False,
+                                   enable_price_and_cost_comparison=True):
+        min_price = market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value]
+        min_cost = market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]
+        has_price_limit_value = min_price not in (None, 0)
+        has_cost_limit_value = min_cost not in (None, 0)
+        has_limit_value = has_price_limit_value and has_cost_limit_value
+        if (not has_limit_value) and expect_invalid_price_limit_values:
+            raise AssertionError("No price and limit value does not mean invalid values")
+        if not expect_invalid_price_limit_values and market_status[Ecmsc.SYMBOL.value] == self.SYMBOL_3:
+            # if these test are not passing, it means that limits are invalid
+            # (limits should be much lower for SYMBOL_3 which is the low price pair, ex: XRP/BTC)
+            # => set expect_invalid_price_limit_values to True in call and
+            # remove price limit in exchange tentacle market status fixer if this is the case
+            assert (not has_price_limit_value) or low_price_max >= min_price >= low_price_min
+            assert (not has_cost_limit_value) or low_cost_max >= min_cost >= low_cost_min
+        else:
+            assert (not has_price_limit_value) or normal_price_max >= min_price >= normal_price_min
+            assert (not has_cost_limit_value) or normal_cost_max >= min_cost >= normal_cost_min
+        if enable_price_and_cost_comparison and has_limit_value:
+            # Consistency here is not required by OctoBot. Fix in tentacles if consistency
+            # in price/cost comparison becomes required and min_price <= min_cost is false without a good reason
+            if expect_inferior_or_equal_price_and_cost:
+                assert min_price >= min_cost
+            else:
+                assert min_price <= min_cost
 
     @staticmethod
     def check_ticker_typing(ticker, check_open=True, check_high=True, check_low=True,
