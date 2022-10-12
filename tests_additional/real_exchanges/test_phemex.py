@@ -71,9 +71,9 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
             assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] >= 1e-08
 
     async def test_get_symbol_prices(self):
-        # Phemex return an error if there is no limit or since parameter
-        with pytest.raises(errors.FailedRequest):
-            await self.get_symbol_prices()
+        # without limit
+        symbol_prices = await self.get_symbol_prices()
+        assert len(symbol_prices) == 100
         symbol_prices = await self.get_symbol_prices(limit=751)
         assert len(symbol_prices) == 751
         # check candles order (oldest first)
