@@ -52,6 +52,7 @@ from tests.exchanges.traders import future_trader_simulator_with_default_linear
 pytestmark = pytest.mark.asyncio
 
 FEES_MOCK = {
+    FeePropertyColumns.RATE.value: 0.1, # huge fees for tests
     FeePropertyColumns.COST.value: 0.1,
     FeePropertyColumns.CURRENCY.value: "BQX"
 }
@@ -582,7 +583,7 @@ class TestTrader:
 
         assert initial_portfolio != portfolio_manager.portfolio
         # (mocked) fees are taken into account
-        assert portfolio_manager.portfolio.portfolio["BQX"].available == decimal.Decimal(str(2 - 0.1))
+        assert portfolio_manager.portfolio.portfolio["BQX"].available == decimal.Decimal(str(2 - (2 * 4 * 0.1)))
         assert portfolio_manager.portfolio.portfolio["BTC"].available == decimal.Decimal("0.5")
         assert portfolio_manager.portfolio.portfolio["BTC"].total == decimal.Decimal("2")
 
