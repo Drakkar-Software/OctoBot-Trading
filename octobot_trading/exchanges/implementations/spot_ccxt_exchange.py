@@ -17,13 +17,16 @@
 import contextlib
 import decimal
 import typing
+import copy
 
 import ccxt.async_support as ccxt
 from octobot_commons import enums as common_enums
+from octobot_commons import number_util
 
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.exchanges.types as exchanges_types
+import octobot_trading.exchanges.util as exchanges_util
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
@@ -239,7 +242,52 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return self.connector.get_uniform_timestamp(timestamp)
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
+        """
+        Override using get_fixed_market_status in exchange tentacle if the default market status is not as expected
+        """
         return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
+
+    def get_fixed_market_status(self, symbol, price_example=None, with_fixer=True, remove_price_limits=False):
+        """
+        Use this method in local get_market_status overrides when market status has to be fixed by
+        calling _fix_market_status.
+        Changes PRECISION_AMOUNT and PRECISION_PRICE from decimals to integers
+        (use number of digits instead of price example) by default.
+        Override _fix_market_status to change other elements
+        """
+        market_status = self._fix_market_status(
+            copy.deepcopy(
+                self.connector.get_market_status(symbol, with_fixer=False)
+            ),
+            remove_price_limits=remove_price_limits
+        )
+        if with_fixer:
+            return exchanges_util.ExchangeMarketStatusFixer(market_status, price_example).market_status
+        return market_status
+
+    def _fix_market_status(self, market_status, remove_price_limits=False):
+        """
+        Overrite if necessary
+        """
+        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = number_util.get_digits_count(
+            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value]
+        )
+        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value] = number_util.get_digits_count(
+            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
+        )
+        if remove_price_limits:
+            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value] = None
+            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value] = None
+
+        return market_status
 
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
