@@ -17,6 +17,7 @@ import pytest
 
 from tests_additional.real_exchanges.test_okx import TestOkxRealExchangeTester
 from octobot_commons.enums import PriceIndexes
+from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 # required to catch async loop context exceptions
 from tests import event_loop
 
@@ -27,6 +28,28 @@ pytestmark = pytest.mark.asyncio
 class TestOkcoinRealExchangeTester(TestOkxRealExchangeTester):
     EXCHANGE_NAME = "okcoin"
     SYMBOL_3 = "DOGE/USD"
+
+    async def test_get_market_status(self):
+        for market_status in await self.get_market_statuses():
+            assert market_status
+            assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
+            assert market_status[Ecmsc.PRECISION.value]
+            assert 1e-08 <= market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_AMOUNT.value] < 1   # to be fixed in tentacle
+            assert 1e-08 <= market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_PRICE.value] < 1    # to be fixed in tentacle
+            assert all(elem in market_status[Ecmsc.LIMITS.value]
+                       for elem in (Ecmsc.LIMITS_AMOUNT.value,
+                                    Ecmsc.LIMITS_PRICE.value,
+                                    Ecmsc.LIMITS_COST.value))
+            self.check_market_status_limits(market_status,
+                                            normal_cost_min=1e-08,
+                                            low_price_min=1e-06,  # DOGE/USD instead of /BTC
+                                            low_price_max=1e-04,
+                                            low_cost_min=1e-06,
+                                            low_cost_max=1e-04,
+                                            expect_invalid_price_limit_values=False,
+                                            enable_price_and_cost_comparison=False)
 
     async def test_get_symbol_prices(self):
         # without limit

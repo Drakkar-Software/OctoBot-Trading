@@ -60,8 +60,12 @@ class TestCREX24RealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] == 1e-08
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] >= 1e-10
+            self.check_market_status_limits(market_status,
+                                            normal_price_min=1e-08,
+                                            normal_cost_min=1e-10,
+                                            low_cost_min=1e-10,
+                                            expect_invalid_price_limit_values=False,
+                                            enable_price_and_cost_comparison=False)
 
     async def test_get_symbol_prices(self):
         # without limit

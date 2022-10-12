@@ -33,6 +33,7 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/USDT"
     SYMBOL_3 = "XRP/USDT"
+    ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 1   # low liquidity on spot trading
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -67,8 +68,12 @@ class TestPhemexRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] >= 1e-08
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] >= 1e-08
+            self.check_market_status_limits(market_status,
+                                            low_price_min=1e-05,  # XRP/USDT instead of /BTC
+                                            low_price_max=1e-04,
+                                            low_cost_min=0.01,
+                                            low_cost_max=1,
+                                            expect_invalid_price_limit_values=False)
 
     async def test_get_symbol_prices(self):
         # without limit
