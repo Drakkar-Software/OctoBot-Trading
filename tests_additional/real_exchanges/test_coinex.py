@@ -56,10 +56,11 @@ class TestCoinexRealExchangeTester(RealExchangeTester):
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
             assert market_status[Ecmsc.PRECISION.value]
-            assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]) == \
-                   market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]
-            assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]) == \
-                   market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]
+            # on this exchange, precision is a decimal instead of a number of digits
+            assert 0 < market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in this exchange tentacle
+            assert 0 < market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_PRICE.value] <= 1  # to be fixed in this exchange tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
@@ -139,7 +140,7 @@ class TestCoinexRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.BID_VOLUME.value] is None
             assert ticker[Ectc.ASK.value]
             assert ticker[Ectc.ASK_VOLUME.value] is None
-            assert ticker[Ectc.OPEN.value] is None
+            assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
