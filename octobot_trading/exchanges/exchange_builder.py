@@ -69,6 +69,7 @@ class ExchangeBuilder:
             await self._build_trading_modes_if_required(trading_mode_class)
 
         # add to global exchanges
+        self.exchange_manager.update_debug_info()
         exchanges.Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
 
     async def _build_trader(self):

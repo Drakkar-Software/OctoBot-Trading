@@ -82,6 +82,8 @@ class ExchangeManager(util.Initializable):
         self.exchange_personal_data = personal_data.ExchangePersonalData(self)
         self.exchange_symbols_data = exchange_data.ExchangeSymbolsData(self)
 
+        self.debug_info = {}
+
     async def initialize_impl(self):
         await exchanges.create_exchanges(self)
         if self.is_storage_enabled():
@@ -286,6 +288,15 @@ class ExchangeManager(util.Initializable):
 
     def is_storage_enabled(self):
         return self.enable_storage and not self.exchange_only and self.bot_id is not None
+
+    def update_debug_info(self):
+        self.debug_info = {
+            "str": str(self),
+            "trading_modes": str([tm.get_name() for tm in self.trading_modes]),
+            "traded_time_frames": str(self.exchange_config.traded_time_frames),
+            "watched_pairs": str(self.exchange_config.watched_pairs),
+            "all_config_symbol_pairs": str(self.exchange_config.all_config_symbol_pairs),
+        }
 
     def __str__(self):
         exchange_type = 'rest'
