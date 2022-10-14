@@ -488,7 +488,7 @@ class ExchangeTypes(enum.Enum):
 
 
 class TradingSignalAttrs(enum.Enum):
-    STRATEGY = "strategy"
+    IDENTIFIER = "identifier"
     EXCHANGE = "exchange"
     EXCHANGE_TYPE = "exchange_type"
     SYMBOL = "symbol"

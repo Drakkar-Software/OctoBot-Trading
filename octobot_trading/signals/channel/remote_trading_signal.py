@@ -31,16 +31,16 @@ class RemoteTradingSignalChannelInternalConsumer(consumers.InternalConsumer):
 
 
 class RemoteTradingSignalChannelProducer(producers.Producer):
-    async def send(self, signal, bot_id, version):
+    async def send(self, signal, bot_id, identifier, version):
         for consumer in self.channel.get_filtered_consumers(
-                strategy=signal.content[enums.TradingSignalOrdersAttrs.STRATEGY.value],
+                identifier=identifier,
                 exchange=signal.content[enums.TradingSignalOrdersAttrs.EXCHANGE.value],
                 symbol=signal.content[enums.TradingSignalOrdersAttrs.SYMBOL.value],
                 version=version,
                 bot_id=bot_id
         ):
             await consumer.queue.put({
-                enums.TradingSignalAttrs.STRATEGY.value: signal.content[enums.TradingSignalOrdersAttrs.STRATEGY.value],
+                enums.TradingSignalAttrs.IDENTIFIER.value: identifier,
                 enums.TradingSignalAttrs.EXCHANGE.value: signal.content[enums.TradingSignalOrdersAttrs.EXCHANGE.value],
                 enums.TradingSignalAttrs.SYMBOL.value: signal.content[enums.TradingSignalOrdersAttrs.SYMBOL.value],
                 RemoteTradingSignalsChannel.VERSION_KEY: version,
@@ -62,7 +62,7 @@ class RemoteTradingSignalsChannel(channels.Channel):
                            consumer_instance: object = None,
                            size: int = 0,
                            priority_level: int = DEFAULT_PRIORITY_LEVEL,
-                           strategy: str = channel_constants.CHANNEL_WILDCARD,
+                           identifier: str = channel_constants.CHANNEL_WILDCARD,
                            exchange=channel_constants.CHANNEL_WILDCARD,
                            symbol: str = channel_constants.CHANNEL_WILDCARD,
                            version: str = channel_constants.CHANNEL_WILDCARD,
@@ -71,7 +71,7 @@ class RemoteTradingSignalsChannel(channels.Channel):
                                                                                    size=size,
                                                                                    priority_level=priority_level)
         await self._add_new_consumer_and_run(consumer,
-                                             strategy=strategy,
+                                             identifier=identifier,
                                              exchange=exchange,
                                              symbol=symbol,
                                              version=version,
@@ -79,13 +79,13 @@ class RemoteTradingSignalsChannel(channels.Channel):
         return consumer
 
     def get_filtered_consumers(self,
-                               strategy=channel_constants.CHANNEL_WILDCARD,
+                               identifier=channel_constants.CHANNEL_WILDCARD,
                                exchange=channel_constants.CHANNEL_WILDCARD,
                                symbol=channel_constants.CHANNEL_WILDCARD,
                                version=channel_constants.CHANNEL_WILDCARD,
                                bot_id=channel_constants.CHANNEL_WILDCARD):
         return self.get_consumer_from_filters({
-            enums.TradingSignalAttrs.STRATEGY.value: strategy,
+            enums.TradingSignalAttrs.IDENTIFIER.value: identifier,
             enums.TradingSignalAttrs.EXCHANGE.value: exchange,
             enums.TradingSignalAttrs.SYMBOL.value: symbol,
             RemoteTradingSignalsChannel.VERSION_KEY: version,
@@ -93,13 +93,13 @@ class RemoteTradingSignalsChannel(channels.Channel):
         })
 
     async def _add_new_consumer_and_run(self, consumer,
-                                        strategy=channel_constants.CHANNEL_WILDCARD,
+                                        identifier=channel_constants.CHANNEL_WILDCARD,
                                         exchange=channel_constants.CHANNEL_WILDCARD,
                                         symbol=channel_constants.CHANNEL_WILDCARD,
                                         version=channel_constants.CHANNEL_WILDCARD,
                                         bot_id=channel_constants.CHANNEL_WILDCARD):
         consumer_filters: dict = {
-            enums.TradingSignalAttrs.STRATEGY.value: strategy,
+            enums.TradingSignalAttrs.IDENTIFIER.value: identifier,
             enums.TradingSignalAttrs.EXCHANGE.value: exchange,
             enums.TradingSignalAttrs.SYMBOL.value: symbol,
             RemoteTradingSignalsChannel.VERSION_KEY: version,
@@ -109,7 +109,7 @@ class RemoteTradingSignalsChannel(channels.Channel):
         self.add_new_consumer(consumer, consumer_filters)
         await consumer.run()
         self.logger.debug(f"Consumer started for : "
-                          f"[strategy={strategy},"
+                          f"[identifier={identifier},"
                           f" exchange={exchange},"
                           f" symbol={symbol},"
                           f" version={version}]"
