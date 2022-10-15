@@ -424,10 +424,12 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                          amount=float(quantity),
                                          price=float(price),
                                          takerOrMaker=taker_or_maker)
-        rate = fees[enums.FeePropertyColumns.RATE.value]
-        # avoid using ccxt computed fees as they are often wrong
-        # see https://docs.ccxt.com/en/latest/manual.html#trading-fees
-        fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(rate)) * quantity * price
+        if self.exchange_manager.is_future:
+            # fees on futures are wrong
+            rate = fees[enums.FeePropertyColumns.RATE.value]
+            # avoid using ccxt computed fees as they are often wrong
+            # see https://docs.ccxt.com/en/latest/manual.html#trading-fees
+            fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(rate)) * quantity * price
         return fees
 
     def get_fees(self, symbol):

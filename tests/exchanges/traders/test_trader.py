@@ -583,7 +583,7 @@ class TestTrader:
 
         assert initial_portfolio != portfolio_manager.portfolio
         # (mocked) fees are taken into account
-        assert portfolio_manager.portfolio.portfolio["BQX"].available == decimal.Decimal(str(2 - (2 * 4 * 0.1)))
+        assert portfolio_manager.portfolio.portfolio["BQX"].available == decimal.Decimal(str(2 - 0.1))
         assert portfolio_manager.portfolio.portfolio["BTC"].available == decimal.Decimal("0.5")
         assert portfolio_manager.portfolio.portfolio["BTC"].total == decimal.Decimal("2")
 
