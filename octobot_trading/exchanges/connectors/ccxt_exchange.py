@@ -23,6 +23,7 @@ import typing
 
 import octobot_commons.constants
 import octobot_commons.enums
+import octobot_commons.symbols as commons_symbols
 
 import octobot_trading
 import octobot_trading.constants as constants
@@ -424,12 +425,19 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                          amount=float(quantity),
                                          price=float(price),
                                          takerOrMaker=taker_or_maker)
+        fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(fees[enums.FeePropertyColumns.COST.value]))
         if self.exchange_manager.is_future:
             # fees on futures are wrong
             rate = fees[enums.FeePropertyColumns.RATE.value]
             # avoid using ccxt computed fees as they are often wrong
             # see https://docs.ccxt.com/en/latest/manual.html#trading-fees
-            fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(rate)) * quantity * price
+            parsed_symbol = commons_symbols.parse_symbol(symbol)
+            if self.exchange_manager.exchange.get_pair_future_contract(symbol).is_inverse_contract():
+                fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(rate)) * quantity
+                fees[enums.FeePropertyColumns.CURRENCY.value] = parsed_symbol.base
+            else:
+                fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(rate)) * quantity * price
+                fees[enums.FeePropertyColumns.CURRENCY.value] = parsed_symbol.quote
         return fees
 
     def get_fees(self, symbol):
