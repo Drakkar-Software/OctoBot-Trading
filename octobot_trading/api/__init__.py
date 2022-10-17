@@ -167,6 +167,7 @@ from octobot_trading.api.orders import (
 )
 from octobot_trading.api.positions import (
     get_positions,
+    close_position,
 )
 from octobot_trading.api.contracts import (
     is_inverse_future_contract,
@@ -303,6 +304,7 @@ __all__ = [
     "cancel_all_open_orders_with_currency",
     "cancel_order_with_id",
     "get_positions",
+    "close_position",
     "is_inverse_future_contract",
     "is_perpetual_future_contract",
     "get_pair_contracts",
