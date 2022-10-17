@@ -457,14 +457,15 @@ class Trader(util.Initializable):
                     order_type = enums.TraderOrderType.SELL_MARKET \
                         if position.is_long() else enums.TraderOrderType.BUY_MARKET
 
-                # TODO add reduce_only or close_position attribute
                 current_order = order_factory.create_order_instance(trader=self,
                                                                     order_type=order_type,
                                                                     symbol=position.symbol,
                                                                     current_price=order_price,
                                                                     quantity=order_quantity,
                                                                     price=limit_price
-                                                                    if limit_price is not None else order_price)
+                                                                    if limit_price is not None else order_price,
+                                                                    reduce_only=True,
+                                                                    close_position=True)
                 created_orders.append(
                     await self.create_order(current_order))
         return created_orders
