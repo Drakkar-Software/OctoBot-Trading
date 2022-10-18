@@ -311,25 +311,32 @@ class Trader(util.Initializable):
                               ignored_order=ignored_order)
         return True
 
-    async def cancel_order_with_id(self, order_id):
+    async def cancel_order_with_id(self, order_id, emit_trading_signals=False):
         """
         Gets order matching order_id from the OrderManager and calls self.cancel_order() on it
         :param order_id: Id of the order to cancel
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: True if cancel is successful, False if order is not found or cancellation failed
         """
         try:
-            return await self.cancel_order(
-                self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id)
-            )
+            order = self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id)
+            if emit_trading_signals:
+                trading_mode = self.exchange_manager.trading_modes[0]
+                async with trading_mode.remote_signal_publisher(order.symbol):
+                    order = await trading_mode.cancel_order(order)
+                    return order is not None
+            return await self.cancel_order(order)
         except KeyError:
             return False
 
-    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None) -> (bool, list):
+    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None,
+                                 emit_trading_signals=False) -> (bool, list):
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
         :param symbol: The symbol to cancel all orders on
         :param cancel_loaded_orders: When True, also cancels loaded orders (order that are not from this bot instance)
         :param side: When set, only cancels orders from this side
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: (True, orders): True if all orders got cancelled, False if an error occurred and the list of
         cancelled orders
         """
@@ -340,35 +347,48 @@ class Trader(util.Initializable):
                     (side is None or order.side is side) and \
                     not order.is_cancelled() and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
-                cancelled = await self.cancel_order(order)
+                if emit_trading_signals:
+                    trading_mode = self.exchange_manager.trading_modes[0]
+                    async with trading_mode.remote_signal_publisher(order.symbol):
+                        cancelled = await trading_mode.cancel_order(order)
+                else:
+                    cancelled = await self.cancel_order(order)
                 if cancelled:
                     cancelled_orders.append(order)
                 all_cancelled = cancelled and all_cancelled
         return all_cancelled, cancelled_orders
 
-    async def cancel_all_open_orders_with_currency(self, currency) -> bool:
+    async def cancel_all_open_orders_with_currency(self, currency, emit_trading_signals=False) -> bool:
         """
         Should be called only if the goal is to cancel all open orders for each traded symbol containing the
         given currency.
         :param currency: Currency to find trading pairs to cancel orders on.
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: True if all orders got cancelled, False if an error occurred
         """
         all_cancelled = True
         symbols = util.get_pairs(self.config, currency, enabled_only=True)
         if symbols:
             for symbol in symbols:
-                all_cancelled = (await self.cancel_open_orders(symbol))[0] and all_cancelled
+                all_cancelled = (await self.cancel_open_orders(symbol, emit_trading_signals=emit_trading_signals))[0] \
+                                and all_cancelled
         return all_cancelled
 
-    async def cancel_all_open_orders(self) -> bool:
+    async def cancel_all_open_orders(self, emit_trading_signals=False) -> bool:
         """
         Cancel all open orders registered on this bot.
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: True if all orders got cancelled, False if an error occurred
         """
         all_cancelled = True
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if not order.is_cancelled():
-                all_cancelled = await self.cancel_order(order) and all_cancelled
+                if emit_trading_signals:
+                    trading_mode = self.exchange_manager.trading_modes[0]
+                    async with trading_mode.remote_signal_publisher(order.symbol):
+                        all_cancelled = await trading_mode.cancel_order(order) and all_cancelled
+                else:
+                    all_cancelled = await self.cancel_order(order) and all_cancelled
         return all_cancelled
 
     async def _sell_everything(self, symbol, inverted, timeout=None):
@@ -434,12 +454,13 @@ class Trader(util.Initializable):
     Positions
     """
 
-    async def close_position(self, position, limit_price=None, timeout=1):
+    async def close_position(self, position, limit_price=None, timeout=1, emit_trading_signals=False):
         """
         Creates a close position order
         :param position: the position to close
         :param limit_price: the close order limit price if None uses a market order
         :param timeout: the mark price timeout
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: the list of created orders
         """
         created_orders = []
@@ -466,8 +487,13 @@ class Trader(util.Initializable):
                                                                     if limit_price is not None else order_price,
                                                                     reduce_only=True,
                                                                     close_position=True)
-                created_orders.append(
-                    await self.create_order(current_order))
+                if emit_trading_signals:
+                    trading_mode = self.exchange_manager.trading_modes[0]
+                    async with trading_mode.remote_signal_publisher(position.symbol):
+                        order = await trading_mode.create_order(current_order)
+                else:
+                    order = await self.create_order(current_order)
+                created_orders.append(order)
         return created_orders
 
     async def withdraw(self, amount, currency):
