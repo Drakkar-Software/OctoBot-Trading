@@ -167,13 +167,13 @@ class HistoricalPortfolioValueManager(util.Initializable):
             self.portfolio_manager.portfolio.portfolio
         )
         if self.starting_portfolio is None:
-            try:
+            if self.portfolio_manager.portfolio_value_holder.origin_portfolio is None:
+                # origin portfolio might not be initialized, use ending_portfolio
+                self.starting_portfolio = self.ending_portfolio
+            else:
                 self.starting_portfolio = portfolio_util.portfolio_to_float(
                     self.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
                 )
-            except AttributeError:
-                # origin portfolio might not be initialized, use ending_portfolio
-                self.starting_portfolio = self.ending_portfolio
 
     async def save_historical_portfolio_value(self, update_data=True):
         if update_data:
