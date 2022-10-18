@@ -161,7 +161,10 @@ class PortfolioManager(util.Initializable):
             yield
         finally:
             if self.historical_portfolio_value_manager is not None:
-                await self.historical_portfolio_value_manager.on_portfolio_update()
+                try:
+                    await self.historical_portfolio_value_manager.on_portfolio_update()
+                except Exception as err:
+                    self.logger.exception(f"Error when updating portfolio history: {err}")
 
     def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """
