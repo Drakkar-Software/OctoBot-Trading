@@ -23,6 +23,7 @@ import octobot_commons.tentacles_management as tentacles_management
 import octobot_tentacles_manager.api as api
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.exchange_builder as exchange_builder
 
@@ -215,6 +216,12 @@ def get_exchange_type(exchange_manager_instance):
     if exchange_manager_instance.is_margin:
         return enums.ExchangeTypes.MARGIN
     return enums.ExchangeTypes.SPOT
+
+
+def get_default_exchange_type(exchange_name):
+    if exchange_name in constants.DEFAULT_FUTURE_EXCHANGES:
+        return common_constants.CONFIG_EXCHANGE_FUTURE
+    return common_constants.DEFAULT_EXCHANGE_TYPE
 
 
 def get_supported_exchange_types(exchange_name):

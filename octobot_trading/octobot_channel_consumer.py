@@ -111,7 +111,7 @@ def _set_exchange_type_details(exchange_builder, config, backtesting):
     )
     # exchange trading type
     config_exchange_type = config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
-        commons_constants.CONFIG_EXCHANGE_TYPE, commons_constants.DEFAULT_EXCHANGE_TYPE)
+        commons_constants.CONFIG_EXCHANGE_TYPE, exchanges.get_default_exchange_type(exchange_builder.exchange_name))
     exchange_builder.is_using_exchange_type(config_exchange_type)
 
     # rest, web socket
