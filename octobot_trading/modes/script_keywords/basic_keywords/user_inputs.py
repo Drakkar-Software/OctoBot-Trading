@@ -41,7 +41,8 @@ async def user_input(
     path=None,
     order=None,
     array_indexes=None,
-    flush_if_necessary=False
+    flush_if_necessary=False,
+    should_save_user_input=True,
 ):
     """
     Set and return a user input value.
@@ -71,13 +72,15 @@ async def user_input(
         order=order,
         array_indexes=array_indexes,
         return_value_only=False,
+        update_parent_value=should_save_user_input,
     )
-    await configuration.save_user_input(
-        created_input,
-        ctx.run_data_writer,
-        flush_if_necessary=flush_if_necessary,
-        skip_flush=ctx.exchange_manager.is_backtesting,
-    )
+    if should_save_user_input:
+        await configuration.save_user_input(
+            created_input,
+            ctx.run_data_writer,
+            flush_if_necessary=flush_if_necessary,
+            skip_flush=ctx.exchange_manager.is_backtesting,
+        )
     return created_input.value
 
 
