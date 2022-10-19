@@ -333,7 +333,8 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         cancel_loaded_orders = self.get_should_cancel_loaded_orders()
 
         if self.exchange_manager.trader.is_enabled:
-            return (await self.exchange_manager.trader.cancel_open_orders(symbol, cancel_loaded_orders))[0]
+            return (await self.exchange_manager.trader.cancel_open_orders(
+                symbol, cancel_loaded_orders, emit_trading_signals=self.trading_mode.should_emit_trading_signal()))[0]
         return True
 
     def all_databases(self):

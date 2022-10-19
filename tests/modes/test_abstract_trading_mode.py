@@ -38,6 +38,7 @@ pytestmark = pytest.mark.asyncio
 def trading_mode(simulated_trader):
     config, exchange_manager_inst, trader_inst = simulated_trader
     mode = modes.AbstractTradingMode(config, exchange_manager_inst)
+    exchange_manager_inst.trading_modes = [mode]
     mode.trading_config = {}
     return mode
 
@@ -76,7 +77,7 @@ async def test_create_order(trading_mode, buy_limit_order):
          as should_emit_trading_signal_mock:
         assert await trading_mode.create_order(buy_limit_order, loaded=False, params=None, pre_init_callback=None) \
                is buy_limit_order
-        assert should_emit_trading_signal_mock.call_count == 2
+        assert should_emit_trading_signal_mock.call_count == 1
         create_order_mock.assert_called_once_with(
             buy_limit_order, loaded=False, params=None, pre_init_callback=None
         )
@@ -86,7 +87,7 @@ async def test_create_order(trading_mode, buy_limit_order):
          as should_emit_trading_signal_mock:
         with pytest.raises(KeyError):
             await trading_mode.create_order(buy_limit_order, loaded=False, params=None, pre_init_callback=None)
-        assert should_emit_trading_signal_mock.call_count == 2
+        assert should_emit_trading_signal_mock.call_count == 1
         create_order_mock.assert_called_once_with(
             buy_limit_order, loaded=False, params=None, pre_init_callback=None
         )
@@ -102,7 +103,7 @@ async def test_create_order(trading_mode, buy_limit_order):
                                                        params=None, pre_init_callback=None) \
                        is buy_limit_order
                 assert builder is None
-                assert should_emit_trading_signal_mock.call_count == 3
+                assert should_emit_trading_signal_mock.call_count == 2
                 create_order_mock.assert_called_once_with(
                     buy_limit_order, loaded=False, params=None, pre_init_callback=None
                 )
@@ -116,7 +117,7 @@ async def test_create_order(trading_mode, buy_limit_order):
                                                        pre_init_callback=None) \
                        is buy_limit_order
                 assert not builder.is_empty()
-                assert should_emit_trading_signal_mock.call_count == 3
+                assert should_emit_trading_signal_mock.call_count == 2
                 create_order_mock.assert_called_once_with(
                     buy_limit_order, loaded=False, params=None, pre_init_callback=None
                 )

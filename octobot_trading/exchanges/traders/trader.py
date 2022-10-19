@@ -27,6 +27,7 @@ import octobot_trading.enums as enums
 import octobot_trading.constants
 import octobot_trading.errors as errors
 import octobot_trading.util as util
+import octobot_trading.signals as signals
 
 
 class Trader(util.Initializable):
@@ -320,12 +321,8 @@ class Trader(util.Initializable):
         """
         try:
             order = self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id)
-            if emit_trading_signals:
-                trading_mode = self.exchange_manager.trading_modes[0]
-                async with trading_mode.remote_signal_publisher(order.symbol):
-                    order = await trading_mode.cancel_order(order)
-                    return order is not None
-            return await self.cancel_order(order)
+            async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
+                return await signals.cancel_order(self.exchange_manager, emit_trading_signals, order)
         except KeyError:
             return False
 
@@ -347,12 +344,8 @@ class Trader(util.Initializable):
                     (side is None or order.side is side) and \
                     not order.is_cancelled() and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
-                if emit_trading_signals:
-                    trading_mode = self.exchange_manager.trading_modes[0]
-                    async with trading_mode.remote_signal_publisher(order.symbol):
-                        cancelled = await trading_mode.cancel_order(order)
-                else:
-                    cancelled = await self.cancel_order(order)
+                async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
+                    cancelled = await signals.cancel_order(self.exchange_manager, emit_trading_signals, order)
                 if cancelled:
                     cancelled_orders.append(order)
                 all_cancelled = cancelled and all_cancelled
@@ -383,12 +376,9 @@ class Trader(util.Initializable):
         all_cancelled = True
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if not order.is_cancelled():
-                if emit_trading_signals:
-                    trading_mode = self.exchange_manager.trading_modes[0]
-                    async with trading_mode.remote_signal_publisher(order.symbol):
-                        all_cancelled = await trading_mode.cancel_order(order) and all_cancelled
-                else:
-                    all_cancelled = await self.cancel_order(order) and all_cancelled
+                async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
+                    all_cancelled = await signals.cancel_order(self.exchange_manager, emit_trading_signals, order) \
+                                    and all_cancelled
         return all_cancelled
 
     async def _sell_everything(self, symbol, inverted, timeout=None):
@@ -487,12 +477,9 @@ class Trader(util.Initializable):
                                                                     if limit_price is not None else order_price,
                                                                     reduce_only=True,
                                                                     close_position=True)
-                if emit_trading_signals:
-                    trading_mode = self.exchange_manager.trading_modes[0]
-                    async with trading_mode.remote_signal_publisher(position.symbol):
-                        order = await trading_mode.create_order(current_order)
-                else:
-                    order = await self.create_order(current_order)
+                async with signals.remote_signal_publisher(self.exchange_manager, current_order.symbol,
+                                                           emit_trading_signals):
+                    order = await signals.create_order(self.exchange_manager, emit_trading_signals, current_order)
                 created_orders.append(order)
         return created_orders
 
