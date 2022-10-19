@@ -22,7 +22,6 @@ import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.configuration as commons_configuration
 import octobot_commons.tentacles_management as abstract_tentacle
-import octobot_commons.authentication as authentication
 
 import async_channel.constants as channel_constants
 import async_channel.channels as channels
@@ -33,11 +32,9 @@ import octobot_tentacles_manager.configuration as tm_configuration
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchange_channel as exchanges_channel
-import octobot_trading.modes.script_keywords as script_keywords
 import octobot_trading.modes.modes_factory as modes_factory
 import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_producer
 import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
-import octobot_trading.personal_data.orders as orders
 import octobot_trading.signals as signals
 
 
@@ -354,47 +351,21 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     @contextlib.asynccontextmanager
     async def remote_signal_publisher(self, symbol: str):
-        if self.should_emit_trading_signal():
-            try:
-                async with signals.SignalPublisher.instance().remote_signal_bundle_builder(
-                    symbol,
-                    self.get_trading_signal_identifier(),
-                    self.TRADING_SIGNAL_TIMEOUT,
-                    signals.TradingSignalBundleBuilder,
-                    (self.get_name(), )
-                ) as signal_builder:
-                    yield signal_builder
-            except (authentication.AuthenticationRequired, authentication.UnavailableError) as e:
-                self.logger.exception(e, True, f"Failed to send trading signals: {e}")
-        else:
-            yield None
+        async with signals.remote_signal_publisher(self.exchange_manager, symbol, self.should_emit_trading_signal()) \
+             as signal_builder:
+            yield signal_builder
 
     async def create_order(self, order, loaded: bool = False, params: dict = None, pre_init_callback=None):
-        order_pf_percent = f"0{script_keywords.QuantityType.PERCENT.value}"
-        if self.should_emit_trading_signal():
-            percent = await orders.get_order_size_portfolio_percent(
-                self.exchange_manager,
-                order.origin_quantity,
-                order.side,
-                order.symbol
-            )
-            order_pf_percent = f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
-        created_order = await self.exchange_manager.trader.create_order(
-            order, loaded=loaded, params=params, pre_init_callback=pre_init_callback
+        return await signals.create_order(
+            self.exchange_manager, self.should_emit_trading_signal(), order,
+            loaded=loaded, params=params, pre_init_callback=pre_init_callback
         )
-        if created_order is not None and self.should_emit_trading_signal():
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_created_order(
-                    created_order, self.exchange_manager, target_amount=order_pf_percent
-                )
-        return created_order
 
     async def cancel_order(self, order, ignored_order: object = None) -> bool:
-        cancelled = await self.exchange_manager.trader.cancel_order(order, ignored_order=ignored_order)
-        if self.should_emit_trading_signal() and cancelled:
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_cancelled_order(
-                order, self.exchange_manager
-            )
-        return cancelled
+        return await signals.cancel_order(
+            self.exchange_manager, self.should_emit_trading_signal(), order,
+            ignored_order=ignored_order
+        )
 
     async def edit_order(self, order,
                          edited_quantity: decimal.Decimal = None,
@@ -402,24 +373,14 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                          edited_stop_price: decimal.Decimal = None,
                          edited_current_price: decimal.Decimal = None,
                          params: dict = None) -> bool:
-        changed = await self.exchange_manager.trader.edit_order(
-            order,
+        return await signals.edit_order(
+            self.exchange_manager, self.should_emit_trading_signal(), order,
             edited_quantity=edited_quantity,
             edited_price=edited_price,
             edited_stop_price=edited_stop_price,
             edited_current_price=edited_current_price,
             params=params
         )
-        if self.should_emit_trading_signal() and changed:
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_edited_order(
-                order,
-                self.exchange_manager,
-                updated_target_amount=edited_quantity,
-                updated_limit_price=edited_price,
-                updated_stop_price=edited_stop_price,
-                updated_current_price=edited_current_price,
-            )
-        return changed
 
     async def get_additional_metadata(self, is_backtesting):
         """
