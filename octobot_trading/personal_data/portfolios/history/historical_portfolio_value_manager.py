@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import sortedcontainers
+import copy
 
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
@@ -76,7 +77,9 @@ class HistoricalPortfolioValueManager(util.Initializable):
         """
         Updates the historical portfolio if changed
         """
-        if self.ending_portfolio != portfolio_util.portfolio_to_float(
+        if self.portfolio_manager.portfolio is not None \
+           and self.portfolio_manager.portfolio.portfolio is not None \
+           and self.ending_portfolio != portfolio_util.portfolio_to_float(
             self.portfolio_manager.portfolio.portfolio
         ):
             await self.save_historical_portfolio_value()
@@ -163,13 +166,17 @@ class HistoricalPortfolioValueManager(util.Initializable):
             historical_asset_value.HistoricalAssetValue(timestamp, value_by_currency)
 
     def _update_portfolios(self):
+        if self.portfolio_manager.portfolio is None or self.portfolio_manager.portfolio.portfolio is None:
+            self.logger.debug("Ignoring portfolio values in history: portfolio_manager.portfolio is not initialized")
+            return
         self.ending_portfolio = portfolio_util.portfolio_to_float(
             self.portfolio_manager.portfolio.portfolio
         )
         if self.starting_portfolio is None:
-            if self.portfolio_manager.portfolio_value_holder.origin_portfolio is None:
+            if self.portfolio_manager.portfolio_value_holder.origin_portfolio is None \
+                    or not self.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio:
                 # origin portfolio might not be initialized, use ending_portfolio
-                self.starting_portfolio = self.ending_portfolio
+                self.starting_portfolio = copy.deepcopy(self.ending_portfolio)
             else:
                 self.starting_portfolio = portfolio_util.portfolio_to_float(
                     self.portfolio_manager.portfolio_value_holder.origin_portfolio.portfolio
