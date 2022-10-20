@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.22] - 2022-10-20
+### Added
+- close position api
+- trading signal emission on close position and cancel order api call
+### Updated
+- cryptofeed version
+### Fixed
+- crash when computing historical portfolio
+
 ## [2.2.21] - 2022-10-16
 ### Fixed
 - Fees computation on future
