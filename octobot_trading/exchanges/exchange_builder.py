@@ -50,27 +50,32 @@ class ExchangeBuilder:
     async def _build_exchange_manager(self):
         trading_mode_class = None
 
-        if self._is_using_trading_modes:
-            trading_mode_class = modes.get_activated_trading_mode(self.exchange_manager.tentacles_setup_config)
-            # handle exchange related requirements if the activated trading mode has any
-            self._register_trading_modes_requirements(trading_mode_class, self.exchange_manager.tentacles_setup_config)
+        try:
+            if self._is_using_trading_modes:
+                trading_mode_class = modes.get_activated_trading_mode(self.exchange_manager.tentacles_setup_config)
+                # handle exchange related requirements if the activated trading mode has any
+                self._register_trading_modes_requirements(trading_mode_class, self.exchange_manager.tentacles_setup_config)
 
-        self._ensure_exchange_compatibility()
-        await self.exchange_manager.initialize()
+            self._ensure_exchange_compatibility()
+            await self.exchange_manager.initialize()
+            # add exchange to be able to use it
+            exchanges.Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
 
-        # initialize exchange for trading if not collecting
-        if not self.exchange_manager.exchange_only:
+            # initialize exchange for trading if not collecting
+            if not self.exchange_manager.exchange_only:
 
-            # initialize trader
-            if self.exchange_manager.trader is not None:
-                await self._build_trader()
+                # initialize trader
+                if self.exchange_manager.trader is not None:
+                    await self._build_trader()
 
-            # create trading modes
-            await self._build_trading_modes_if_required(trading_mode_class)
+                # create trading modes
+                await self._build_trading_modes_if_required(trading_mode_class)
 
-        # add to global exchanges
-        self.exchange_manager.update_debug_info()
-        exchanges.Exchanges.instance().add_exchange(self.exchange_manager, self._matrix_id)
+            # add to global exchanges
+            self.exchange_manager.update_debug_info()
+        except Exception:
+            exchanges.Exchanges.instance().del_exchange(self.exchange_manager.exchange_name, self.exchange_manager.id)
+            raise
 
     async def _build_trader(self):
         try:

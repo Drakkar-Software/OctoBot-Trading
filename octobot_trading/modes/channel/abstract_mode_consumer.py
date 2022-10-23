@@ -55,6 +55,9 @@ class AbstractTradingModeConsumer(modes_channel.ModeChannelConsumer):
                              f"an unexpected error happened when creating order. This is likely due to "
                              f"the order being refused by the exchange.")
 
+    async def init_user_inputs(self, should_clear_inputs):
+        pass
+
     async def create_new_orders(self, symbol, final_note, state, **kwargs):
         raise NotImplementedError("create_new_orders is not implemented")
 
