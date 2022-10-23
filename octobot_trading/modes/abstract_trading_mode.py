@@ -297,6 +297,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             if isinstance(element, (abstract_mode_consumer.AbstractTradingModeConsumer,
                                     abstract_mode_producer.AbstractTradingModeProducer)):
                 element.on_reload_config()
+                await element.init_user_inputs(False)
 
     def get_local_config(self):
         return self.trading_config
