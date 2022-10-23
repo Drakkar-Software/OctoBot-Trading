@@ -41,6 +41,7 @@ import octobot_trading.signals as signals
 class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     __metaclass__ = abc.ABCMeta
     USER_INPUT_TENTACLE_TYPE = common_enums.UserInputTentacleTypes.TRADING_MODE
+    ALLOW_CUSTOM_TRIGGER_SOURCE = False
 
     MODE_PRODUCER_CLASSES = []
     MODE_CONSUMER_CLASSES = []
