@@ -377,17 +377,18 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
         if context.exchange_manager.is_future:
             await basic_keywords.set_leverage(context, await basic_keywords.user_select_leverage(context))
 
-        # register activating topics user input
-        activation_topic_values = [
-            common_enums.ActivationTopics.EVALUATION_CYCLE.value,
-            common_enums.ActivationTopics.FULL_CANDLES.value,
-            common_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value
-        ]
-        await basic_keywords.get_activation_topics(
-            context,
-            common_enums.ActivationTopics.EVALUATION_CYCLE.value,
-            activation_topic_values
-        )
+        if self.trading_mode.ALLOW_CUSTOM_TRIGGER_SOURCE:
+            # register activating topics user input
+            activation_topic_values = [
+                common_enums.ActivationTopics.EVALUATION_CYCLE.value,
+                common_enums.ActivationTopics.FULL_CANDLES.value,
+                common_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value
+            ]
+            await basic_keywords.get_activation_topics(
+                context,
+                common_enums.ActivationTopics.EVALUATION_CYCLE.value,
+                activation_topic_values
+            )
 
     def get_context(self, matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
                     candle, kline, init_call=False):

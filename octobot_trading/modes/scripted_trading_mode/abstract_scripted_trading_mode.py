@@ -32,6 +32,7 @@ import octobot_tentacles_manager.api as tentacles_manager_api
 class AbstractScriptedTradingMode(abstract_trading_mode.AbstractTradingMode):
     TRADING_SCRIPT_MODULE = None
     BACKTESTING_SCRIPT_MODULE = None
+    ALLOW_CUSTOM_TRIGGER_SOURCE = True
 
     INITIALIZED_TRADING_PAIR_BY_BOT_ID = {}
 
