@@ -56,7 +56,7 @@ cdef class Position(util.Initializable):
     cdef public double canceled_time
     cdef public double executed_time
 
-    cdef bint _update(self,
+    cdef object _update(self,
                       str position_id,
                       str symbol,
                       str currency,

@@ -15,6 +15,8 @@
 #  License along with this library.
 
 import octobot_commons.logging as logging
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
 
 import octobot_trading.exchange_data.ohlcv.candles_manager as candles_manager
 import octobot_trading.exchange_data.ticker.ticker_manager as ticker_manager
@@ -62,6 +64,10 @@ class ExchangeSymbolData:
                 symbol_candles.replace_all_candles(new_symbol_candles_data)
 
             self.symbol_candles[time_frame] = symbol_candles
+            self._set_initialized_event(
+                commons_enums.InitializationEventExchangeTopics.CANDLES.value,
+                time_frame.value
+            )
             return
 
         if partial:
@@ -83,14 +89,30 @@ class ExchangeSymbolData:
         self.recent_trades_manager.add_new_liquidations(liquidations)
 
     def handle_mark_price_update(self, mark_price, mark_price_source) -> bool:
+        trigger_init_event = not self.prices_manager.initialized()
         updated = self.prices_manager.set_mark_price(mark_price, mark_price_source)
         if updated:
+            if trigger_init_event:
+                self._set_initialized_event(commons_enums.InitializationEventExchangeTopics.PRICE.value)
             self.price_events_manager.handle_price(mark_price,
                                                    self.exchange_manager.exchange.get_exchange_current_time())
         return updated
 
+    def _set_initialized_event(self, topic, time_frame=None):
+        commons_tree.EventProvider.instance().trigger_event(
+            self.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.exchange_manager.exchange_name,
+                topic,
+                symbol=self.symbol,
+                time_frame=time_frame
+            )
+        )
+
     def handle_order_book_update(self, asks, bids):
+        trigger_init_event = not self.order_book_manager.order_book_initialized
         self.order_book_manager.handle_new_books(asks, bids)
+        if trigger_init_event:
+            self._set_initialized_event(commons_enums.InitializationEventExchangeTopics.ORDER_BOOK.value)
 
     def handle_order_book_ticker_update(self, ask_quantity, ask_price, bid_quantity, bid_price):
         self.order_book_manager.order_book_ticker_update(ask_quantity, ask_price, bid_quantity, bid_price)
@@ -118,4 +140,7 @@ class ExchangeSymbolData:
 
     async def handle_funding_update(self, funding_rate, predicted_funding_rate, next_funding_time, timestamp):
         if self.funding_manager:
+            trigger_init_event = not self.funding_manager.initialized()
             self.funding_manager.funding_update(funding_rate, predicted_funding_rate, next_funding_time, timestamp)
+            if trigger_init_event:
+                self._set_initialized_event(commons_enums.InitializationEventExchangeTopics.FUNDING.value)

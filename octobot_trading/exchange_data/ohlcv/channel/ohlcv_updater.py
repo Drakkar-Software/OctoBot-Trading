@@ -113,7 +113,8 @@ class OHLCVUpdater(ohlcv_channel.OHLCVProducer):
         self.channel.exchange_manager.exchange.uniformize_candles_if_necessary(candles)
         return candles
 
-    async def _initialize_candles(self, time_frame, pair, should_retry) -> (str, common_enums.TimeFrames, list):
+    async def _initialize_candles(self, time_frame, pair, should_retry) \
+            -> (str, common_enums.TimeFrames, list):
         """
         Manage timeframe OHLCV data refreshing for all pairs
         :return: a tuple with (trading pair, time_frame, fetched candles)

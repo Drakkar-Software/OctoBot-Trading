@@ -36,5 +36,6 @@ cdef class PricesManager(util.Initializable):
     cdef int _compute_mark_price_validity_timeout(self)
 
     cpdef bint set_mark_price(self, object mark_price, str mark_price_source)
+    cpdef bint initialized(self)
 
 cpdef object calculate_mark_price_from_recent_trade_prices(list recent_trade_prices)

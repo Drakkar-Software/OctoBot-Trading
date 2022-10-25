@@ -130,6 +130,50 @@ class TestExchangeMarketStatusFixer:
                                                  0.01000000000000001, 1000000000.0000011)
         }
 
+    def test_exchange_market_status_fixer_without_market_status(self):
+        assert ExchangeMarketStatusFixer({}).market_status == {
+            Ecmsc.PRECISION.value: self._get_precision(None, None, None),
+            Ecmsc.LIMITS.value: self._get_limits(None, None, None, None, 0, None)
+        }
+
+    def test_exchange_market_status_fixer_with_str_instead_of_floats(self):
+        ms = {
+            Ecmsc.PRECISION.value: self._get_precision("5", "5.777772", None),
+            Ecmsc.LIMITS.value: self._get_limits("0.05", "1e4", "0.01", "1e4", "3.3", "11111111111")
+        }
+
+        assert ExchangeMarketStatusFixer(ms).market_status == {
+            Ecmsc.PRECISION.value: self._get_precision(5, 5.777772, None),
+            Ecmsc.LIMITS.value: self._get_limits(0.05, 1e4, 0.01, 1e4, 3.3, 11111111111)
+        }
+
+        assert ExchangeMarketStatusFixer(
+            {Ecmsc.LIMITS.value: self._get_limits("0.05", "1e4", "plop", nan, "3.3", "11111111111")}
+        ).market_status == {
+            Ecmsc.PRECISION.value: self._get_precision(None, None, None),
+            # replace "plop" and nan with computed numbers
+            Ecmsc.LIMITS.value: self._get_limits(0.05, 1e4, 65.99999999999999, 1111111.1111, 3.3, 11111111111)
+        }
+
+        # missing and added keys
+        limits = self._get_limits("0.05", "1e4", "plop", nan, "3.3", "11111111111")
+        limits["plop"] = {"a": "1"}
+        limits[Ecmsc.LIMITS_AMOUNT.value]["plop"] = "2"
+        limits[Ecmsc.LIMITS_AMOUNT.value].pop(Ecmsc.LIMITS_AMOUNT_MIN.value)
+
+        expected_limits = self._get_limits(0.05, 1e4, "plop", 1111111.1111, 3.3, 11111111111)
+        expected_limits[Ecmsc.LIMITS_AMOUNT.value].pop(Ecmsc.LIMITS_AMOUNT_MIN.value)
+        expected_limits[Ecmsc.LIMITS_AMOUNT.value]["plop"] = "2"
+        expected_limits["plop"] = {"a": "1"}
+
+        assert ExchangeMarketStatusFixer(
+            {Ecmsc.LIMITS.value: limits}
+        ).market_status == {
+            Ecmsc.PRECISION.value: self._get_precision(None, None, None),
+            # replace "plop" and nan with computed numbers
+            Ecmsc.LIMITS.value: expected_limits
+        }
+
     def test_exchange_market_status_fixer_without_cost(self):
         ms = {
             Ecmsc.PRECISION.value: self._get_precision(5, 5, 5),

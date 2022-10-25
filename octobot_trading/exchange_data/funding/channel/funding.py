@@ -28,17 +28,17 @@ class FundingProducer(exchanges_channel.ExchangeChannelProducer):
             if self.channel.get_filtered_consumers(
                     symbol=constants.CHANNEL_WILDCARD) or self.channel.get_filtered_consumers(symbol=symbol):
                 await self.channel.exchange_manager.get_symbol_data(symbol) \
-                    .handle_funding_update(funding_rate=funding_rate,
-                                           predicted_funding_rate=predicted_funding_rate,
-                                           next_funding_time=next_funding_time,
-                                           timestamp=timestamp)
-                await self.send(cryptocurrency=self.channel.exchange_manager.exchange.
+                    .handle_funding_update(funding_rate,
+                                           predicted_funding_rate,
+                                           next_funding_time,
+                                           timestamp)
+                await self.send(self.channel.exchange_manager.exchange.
                                 get_pair_cryptocurrency(symbol),
-                                symbol=symbol,
-                                funding_rate=funding_rate,
-                                predicted_funding_rate=predicted_funding_rate,
-                                next_funding_time=next_funding_time,
-                                timestamp=timestamp)
+                                symbol,
+                                funding_rate,
+                                predicted_funding_rate,
+                                next_funding_time,
+                                timestamp)
         except asyncio.CancelledError:
             self.logger.info("Update tasks cancelled.")
         except Exception as e:

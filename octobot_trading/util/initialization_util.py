@@ -13,12 +13,17 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.tree as commons_tree
 
-from octobot_trading.storage cimport run_databases_provider
-from octobot_trading.storage.run_databases_provider cimport (
-    RunDatabasesProvider,
-)
 
-__all__ = [
-    "RunDatabasesProvider",
-]
+async def wait_for_topic_init(exchange_manager, timeout, topic, symbol=None, time_frame=None):
+    return await commons_tree.EventProvider.instance().wait_for_event(
+        exchange_manager.bot_id,
+        commons_tree.get_exchange_path(
+            exchange_manager.exchange_name,
+            topic,
+            symbol=symbol,
+            time_frame=time_frame
+        ),
+        timeout
+    )

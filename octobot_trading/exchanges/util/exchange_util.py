@@ -23,6 +23,7 @@ import octobot_commons.tentacles_management as tentacles_management
 import octobot_tentacles_manager.api as api
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.exchange_builder as exchange_builder
 
@@ -178,7 +179,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
         # do not log stopping message
         logger = local_exchange_manager.exchange.connector.logger
         logger.disable(True)
-        await local_exchange_manager.stop()
+        await local_exchange_manager.stop(enable_logs=False)
         logger.disable(False)
 
 
@@ -217,8 +218,18 @@ def get_exchange_type(exchange_manager_instance):
     return enums.ExchangeTypes.SPOT
 
 
+def get_default_exchange_type(exchange_name):
+    if exchange_name in constants.DEFAULT_FUTURE_EXCHANGES:
+        return common_constants.CONFIG_EXCHANGE_FUTURE
+    return common_constants.DEFAULT_EXCHANGE_TYPE
+
+
 def get_supported_exchange_types(exchange_name):
     supported_exchanges = [enums.ExchangeTypes.SPOT]
+    # TODO remove this after rest exchange refactor
+    if exchange_name.lower() == "bybit":
+        supported_exchanges = []
+    # end TODO
     if get_exchange_class_from_name(exchanges_types.FutureExchange, exchange_name, None, False,
                                     strict_name_matching=True) is not None:
         supported_exchanges.append(enums.ExchangeTypes.FUTURE)

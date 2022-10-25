@@ -19,6 +19,7 @@ from octobot_commons.enums import TimeFrames, PriceIndexes
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
     ExchangeConstantsOrderBookInfoColumns as Ecobic, ExchangeConstantsOrderColumns as Ecoc, \
     ExchangeConstantsTickersColumns as Ectc
+import octobot_trading.enums as trading_enums
 import octobot_trading.errors as errors
 from tests_additional.real_exchanges.real_exchange_tester import RealExchangeTester
 # required to catch async loop context exceptions
@@ -30,9 +31,10 @@ pytestmark = pytest.mark.asyncio
 
 class TestBybitRealExchangeTester(RealExchangeTester):
     EXCHANGE_NAME = "bybit"
-    SYMBOL = "BTC/USDT"
-    SYMBOL_2 = "ETH/USD"
-    SYMBOL_3 = "XRP/USD"
+    EXCHANGE_TYPE = trading_enums.ExchangeTypes.FUTURE.value
+    SYMBOL = "BTC/USDT:USDT"
+    SYMBOL_2 = "ETH/USD:ETH"
+    SYMBOL_3 = "XRP/USD:XRP"
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -66,14 +68,17 @@ class TestBybitRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            # min cost and price can be equal as we are in /USD
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] >= \
-                   market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value]
+            # min cost and price can be inferior or equal as we are in /USD futures
+            self.check_market_status_limits(market_status,
+                                            low_price_min=0.0001,    # XRP/USD
+                                            low_price_max=0.1,    # XRP/USD
+                                            expect_invalid_price_limit_values=False,
+                                            expect_inferior_or_equal_price_and_cost=True)
 
     async def test_get_symbol_prices(self):
-        # Bybit return an error if there is no limit or since parameter
-        with pytest.raises(errors.FailedRequest):
-            await self.get_symbol_prices()
+        # without limit
+        symbol_prices = await self.get_symbol_prices()
+        assert len(symbol_prices) == 200
         # max is 200 on Bybit
         symbol_prices = await self.get_symbol_prices(limit=200)
         assert len(symbol_prices) == 200
@@ -153,5 +158,5 @@ class TestBybitRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value]
-            assert ticker[Ectc.TIMESTAMP.value]
-            RealExchangeTester.check_ticker_typing(ticker)
+            assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
+            RealExchangeTester.check_ticker_typing(ticker, check_timestamp=False)

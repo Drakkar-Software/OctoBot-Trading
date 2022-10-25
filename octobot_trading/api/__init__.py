@@ -23,8 +23,8 @@ from octobot_trading.api import trader
 from octobot_trading.api import portfolio
 from octobot_trading.api import profitability
 from octobot_trading.api import orders
-from octobot_trading.api import storage
 from octobot_trading.api import contracts
+from octobot_trading.api import storage
 
 from octobot_trading.api.symbol_data import (
     get_symbol_data,
@@ -44,6 +44,7 @@ from octobot_trading.api.symbol_data import (
     create_new_candles_manager,
     force_set_mark_price,
     is_mark_price_initialized,
+    get_config_symbols,
 )
 from octobot_trading.api.trades import (
     get_trade_history,
@@ -96,12 +97,14 @@ from octobot_trading.api.exchange import (
     get_trading_pairs,
     get_trading_symbols,
     get_watched_timeframes,
+    get_relevant_time_frames,
     get_base_currency,
     get_fees,
     get_max_handled_pair_with_time_frame,
     get_currently_handled_pair_with_time_frame,
     get_required_historical_candles_count,
     is_overloaded,
+    store_history_in_run_storage,
     cancel_ccxt_throttle_task,
     stop_exchange,
 )
@@ -127,6 +130,7 @@ from octobot_trading.api.trader import (
     set_trader_risk,
     sell_all_everything_for_reference_market,
     sell_currency_for_reference_market,
+    get_current_bot_live_id,
 )
 from octobot_trading.api.portfolio import (
     get_portfolio,
@@ -163,16 +167,19 @@ from octobot_trading.api.orders import (
 )
 from octobot_trading.api.positions import (
     get_positions,
-)
-from octobot_trading.api.storage import (
-    init_bot_storage,
-    get_run_db,
-    get_symbol_db,
-    close_bot_storage,
+    close_position,
 )
 from octobot_trading.api.contracts import (
     is_inverse_future_contract,
     is_perpetual_future_contract,
+    get_pair_contracts,
+)
+from octobot_trading.api.storage import (
+    clear_trades_storage_history,
+    clear_candles_storage_history,
+    clear_transactions_storage_history,
+    clear_portfolio_storage_history,
+    clear_orders_storage_history,
 )
 
 __all__ = [
@@ -193,6 +200,7 @@ __all__ = [
     "create_new_candles_manager",
     "force_set_mark_price",
     "is_mark_price_initialized",
+    "get_config_symbols",
     "get_trade_history",
     "get_total_paid_trading_fees",
     "get_trade_exchange_name",
@@ -239,12 +247,14 @@ __all__ = [
     "get_trading_pairs",
     "get_trading_symbols",
     "get_watched_timeframes",
+    "get_relevant_time_frames",
     "get_base_currency",
     "get_fees",
     "get_max_handled_pair_with_time_frame",
     "get_currently_handled_pair_with_time_frame",
     "get_required_historical_candles_count",
     "is_overloaded",
+    "store_history_in_run_storage",
     "cancel_ccxt_throttle_task",
     "stop_exchange",
     "get_trading_modes",
@@ -266,6 +276,7 @@ __all__ = [
     "set_trader_risk",
     "sell_all_everything_for_reference_market",
     "sell_currency_for_reference_market",
+    "get_current_bot_live_id",
     "get_portfolio",
     "get_portfolio_historical_values",
     "reset_portfolio_historical_values",
@@ -293,10 +304,13 @@ __all__ = [
     "cancel_all_open_orders_with_currency",
     "cancel_order_with_id",
     "get_positions",
-    "init_bot_storage",
-    "get_run_db",
-    "get_symbol_db",
-    "close_bot_storage",
+    "close_position",
     "is_inverse_future_contract",
     "is_perpetual_future_contract",
+    "get_pair_contracts",
+    "clear_trades_storage_history",
+    "clear_candles_storage_history",
+    "clear_transactions_storage_history",
+    "clear_portfolio_storage_history",
+    "clear_orders_storage_history",
 ]

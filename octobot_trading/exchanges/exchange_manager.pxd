@@ -54,14 +54,19 @@ cdef class ExchangeManager(util.Initializable):
     cdef public bint exchange_only
     cdef public bint without_auth
     cdef public bint check_credentials
+    cdef public bint enable_storage
 
+    cdef public object storage_manager
     cdef public abstract_exchange.AbstractExchange exchange
     cdef public abstract_websocket.AbstractWebsocketExchange exchange_web_socket
     cdef public exchange_config_data.ExchangeConfig exchange_config
     cdef public object exchange_backend
     cdef public bint is_valid_account
+    cdef public object init_error
     cdef public object exchange_symbols_data
     cdef public object exchange_personal_data
+
+    cdef public dict debug_info
 
     # private
     cdef object _load_config_symbols_and_time_frames(self)
@@ -85,3 +90,5 @@ cdef class ExchangeManager(util.Initializable):
     cpdef str get_exchange_sub_account_id(self, str exchange_name)
     cpdef bint should_decrypt_token(self, object logger)
     cpdef object get_symbol_data(self, str symbol)
+    cpdef bint is_storage_enabled(self)
+    cpdef object update_debug_info(self)

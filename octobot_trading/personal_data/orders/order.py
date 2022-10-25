@@ -149,8 +149,8 @@ class Order(util.Initializable):
                         self.symbol,
                         side
                     )
-                except errors.InvalidPositionSide as e:
-                    logging.get_logger(self.get_logger_name()).error(f"Can't infer quantity_currency: {e}")
+                except (errors.InvalidPositionSide, errors.ContractExistsError) as e:
+                    logging.get_logger(self.get_logger_name()).warning(f"Can't infer quantity_currency: {e}")
         else:
             self.quantity_currency = quantity_currency
 
@@ -162,12 +162,14 @@ class Order(util.Initializable):
 
         if timestamp and self.timestamp != timestamp:
             self.timestamp = timestamp
+            # if we have a timestamp, it's a real trader => need to format timestamp if necessary
+            self.creation_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
         if not self.timestamp:
             if not timestamp:
                 self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
-                self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+                self.creation_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
             self.timestamp = self.creation_time
 
         if status in {enums.OrderStatus.FILLED, enums.OrderStatus.CLOSED} and not self.executed_time:
@@ -237,7 +239,7 @@ class Order(util.Initializable):
         if not self.filled_price and self.filled_quantity and self.total_cost:
             self.filled_price = self.total_cost / self.filled_quantity
             if timestamp is not None:
-                self.executed_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+                self.executed_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
 
         if self.taker_or_maker is None:
             self._update_taker_maker()
@@ -486,7 +488,7 @@ class Order(util.Initializable):
         price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0.0
         # TODO replace with := when cython will be supporting it
         stop_price = raw_order.get(enums.ExchangeConstantsOrderColumns.STOP_PRICE.value, None)
-        if stop_price is not None:
+        if stop_price is not None and (price is None or price == 0):
             # parse stop price when available
             price = stop_price
         filled_price = decimal.Decimal(str(price))
@@ -575,7 +577,7 @@ class Order(util.Initializable):
 
         self.fee = order_util.parse_raw_fees(raw_order[enums.ExchangeConstantsOrderColumns.FEE.value])
 
-        self.executed_time = self.trader.exchange.get_uniform_timestamp(
+        self.executed_time = self.trader.exchange.get_uniformized_timestamp(
             raw_order[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value])
 
     def _update_type_from_raw(self, raw_order):
@@ -595,6 +597,11 @@ class Order(util.Initializable):
             # true 90% of the time: impossible to know for sure the reality
             # (should only be used for simulation anyway)
             self.taker_or_maker = enums.ExchangeConstantsMarketPropertyColumns.MAKER.value
+
+    def ensure_order_id(self):
+        if self.order_id is None and self.is_self_managed():
+            # self managed orders should always have an id, even on real trader
+            self.order_id = order_util.generate_order_id()
 
     def to_dict(self):
         filled_price = self.filled_price if self.filled_price > 0 else self.origin_price

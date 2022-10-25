@@ -56,7 +56,8 @@ def create_order_instance(trader,
                           group=None,
                           tag=None,
                           reduce_only=None,
-                          quantity_currency=None):
+                          quantity_currency=None,
+                          close_position=False):
     order = create_order_from_type(trader=trader,
                                    order_type=order_type,
                                    side=side)
@@ -78,5 +79,7 @@ def create_order_instance(trader,
                  group=group,
                  tag=tag,
                  reduce_only=reduce_only,
-                 quantity_currency=quantity_currency)
+                 quantity_currency=quantity_currency,
+                 close_position=close_position)
+    order.ensure_order_id()
     return order

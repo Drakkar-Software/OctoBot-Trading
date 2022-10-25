@@ -27,6 +27,7 @@ import octobot_trading.enums as enums
 import octobot_trading.constants
 import octobot_trading.errors as errors
 import octobot_trading.util as util
+import octobot_trading.signals as signals
 
 
 class Trader(util.Initializable):
@@ -93,26 +94,30 @@ class Trader(util.Initializable):
         :param pre_init_callback: A callback function that will be called just before initializing the order
         :return: The crated order instance
         """
-        new_order: object = order
-
+        created_order = order
         if loaded:
-            new_order.is_from_this_octobot = False
-            self.logger.debug(f"Order loaded : {new_order.to_string()} ")
+            order.is_from_this_octobot = False
+            self.logger.debug(f"Order loaded : {order.to_string()} ")
         else:
             try:
                 params = params or {}
-                new_order = await self._create_new_order(new_order, params)
-                self.logger.debug(f"Order creation : {new_order.to_string()} ")
-            except TypeError as e:
-                self.logger.error(f"Fail to create not loaded order : {e}")
+                self.logger.info(f"Creating order: {created_order}")
+                created_order = await self._create_new_order(order, params)
+                if created_order is None:
+                    self.logger.warning(f"Order not created order on {self.exchange_manager.exchange_name} "
+                                        f"(failed attempt to create: {order}). This is likely due to "
+                                        f"the order being refused by the exchange.")
+                    return None
+            except Exception as e:
+                self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
                 return None
 
         if pre_init_callback is not None:
-            await pre_init_callback(new_order)
+            await pre_init_callback(created_order)
 
         # force initialize to always create open state
-        await new_order.initialize()
-        return new_order
+        await created_order.initialize()
+        return created_order
 
     async def create_artificial_order(self, order_type, symbol, current_price, quantity, price):
         """
@@ -150,6 +155,12 @@ class Trader(util.Initializable):
                     # careful here: make sure we are not editing an order on exchange that is being updated
                     # somewhere else
                     async with order.state.refresh_operation():
+                        self.logger.info(f"Editing order: {order} ["
+                                         f"edited_quantity: {str(edited_quantity)} "
+                                         f"edited_price: {str(edited_price)} "
+                                         f"edited_stop_price: {str(edited_stop_price)} "
+                                         f"edited_current_price: {str(edited_current_price)}"
+                                         f"]")
                         order_params = self.exchange_manager.exchange.get_order_additional_params(order)
                         order_params.update(params or {})
                         # fill in every param as some exchange rely on re-creating the order altogether
@@ -165,8 +176,8 @@ class Trader(util.Initializable):
                             params=order_params
                         )
                         # apply new values from returned order (even order id might have changed)
-                        self.logger.debug(f"Successful order edit on {self.exchange_manager.exchange_name}: "
-                                          f"{edited_order}")
+                        self.logger.debug(f"Successfully edited order on {self.exchange_manager.exchange_name}, "
+                                          f"new order values: {edited_order}")
                         changed = order.update_from_raw(edited_order)
                         # update portfolio from exchange
                         await self.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(order)
@@ -210,8 +221,9 @@ class Trader(util.Initializable):
                                                                               new_order.side,
                                                                               new_order.created_last_price,
                                                                               params=order_params)
-
-            self.logger.info(f"Created order on {self.exchange_manager.exchange_name}: {created_order}")
+            if created_order is None:
+                return None
+            self.logger.debug(f"Successfully created order on {self.exchange_manager.exchange_name}: {created_order}")
 
             # get real order from exchange
             updated_order = order_factory.create_order_instance_from_raw(self, created_order, force_open=True)
@@ -267,6 +279,7 @@ class Trader(util.Initializable):
         :return: None
         """
         if order and order.is_open():
+            self.logger.info(f"Cancelling order: {order}")
             # always cancel this order first to avoid infinite loop followed by deadlock
             return await self._handle_order_cancellation(order, ignored_order)
         return False
@@ -299,25 +312,28 @@ class Trader(util.Initializable):
                               ignored_order=ignored_order)
         return True
 
-    async def cancel_order_with_id(self, order_id):
+    async def cancel_order_with_id(self, order_id, emit_trading_signals=False):
         """
         Gets order matching order_id from the OrderManager and calls self.cancel_order() on it
         :param order_id: Id of the order to cancel
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: True if cancel is successful, False if order is not found or cancellation failed
         """
         try:
-            return await self.cancel_order(
-                self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id)
-            )
+            order = self.exchange_manager.exchange_personal_data.orders_manager.get_order(order_id)
+            async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
+                return await signals.cancel_order(self.exchange_manager, emit_trading_signals, order)
         except KeyError:
             return False
 
-    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None) -> (bool, list):
+    async def cancel_open_orders(self, symbol, cancel_loaded_orders=True, side=None,
+                                 emit_trading_signals=False) -> (bool, list):
         """
         Should be called only if the goal is to cancel all open orders for a given symbol
         :param symbol: The symbol to cancel all orders on
         :param cancel_loaded_orders: When True, also cancels loaded orders (order that are not from this bot instance)
         :param side: When set, only cancels orders from this side
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: (True, orders): True if all orders got cancelled, False if an error occurred and the list of
         cancelled orders
         """
@@ -328,35 +344,41 @@ class Trader(util.Initializable):
                     (side is None or order.side is side) and \
                     not order.is_cancelled() and \
                     (cancel_loaded_orders or order.is_from_this_octobot):
-                cancelled = await self.cancel_order(order)
+                async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
+                    cancelled = await signals.cancel_order(self.exchange_manager, emit_trading_signals, order)
                 if cancelled:
                     cancelled_orders.append(order)
                 all_cancelled = cancelled and all_cancelled
         return all_cancelled, cancelled_orders
 
-    async def cancel_all_open_orders_with_currency(self, currency) -> bool:
+    async def cancel_all_open_orders_with_currency(self, currency, emit_trading_signals=False) -> bool:
         """
         Should be called only if the goal is to cancel all open orders for each traded symbol containing the
         given currency.
         :param currency: Currency to find trading pairs to cancel orders on.
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: True if all orders got cancelled, False if an error occurred
         """
         all_cancelled = True
         symbols = util.get_pairs(self.config, currency, enabled_only=True)
         if symbols:
             for symbol in symbols:
-                all_cancelled = (await self.cancel_open_orders(symbol))[0] and all_cancelled
+                all_cancelled = (await self.cancel_open_orders(symbol, emit_trading_signals=emit_trading_signals))[0] \
+                                and all_cancelled
         return all_cancelled
 
-    async def cancel_all_open_orders(self) -> bool:
+    async def cancel_all_open_orders(self, emit_trading_signals=False) -> bool:
         """
         Cancel all open orders registered on this bot.
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: True if all orders got cancelled, False if an error occurred
         """
         all_cancelled = True
         for order in self.exchange_manager.exchange_personal_data.orders_manager.get_open_orders():
             if not order.is_cancelled():
-                all_cancelled = await self.cancel_order(order) and all_cancelled
+                async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
+                    all_cancelled = await signals.cancel_order(self.exchange_manager, emit_trading_signals, order) \
+                                    and all_cancelled
         return all_cancelled
 
     async def _sell_everything(self, symbol, inverted, timeout=None):
@@ -422,12 +444,13 @@ class Trader(util.Initializable):
     Positions
     """
 
-    async def close_position(self, position, limit_price=None, timeout=1):
+    async def close_position(self, position, limit_price=None, timeout=1, emit_trading_signals=False):
         """
         Creates a close position order
         :param position: the position to close
         :param limit_price: the close order limit price if None uses a market order
         :param timeout: the mark price timeout
+        :param emit_trading_signals: when true, trading signals will be emitted
         :return: the list of created orders
         """
         created_orders = []
@@ -445,16 +468,19 @@ class Trader(util.Initializable):
                     order_type = enums.TraderOrderType.SELL_MARKET \
                         if position.is_long() else enums.TraderOrderType.BUY_MARKET
 
-                # TODO add reduce_only or close_position attribute
                 current_order = order_factory.create_order_instance(trader=self,
                                                                     order_type=order_type,
                                                                     symbol=position.symbol,
                                                                     current_price=order_price,
                                                                     quantity=order_quantity,
                                                                     price=limit_price
-                                                                    if limit_price is not None else order_price)
-                created_orders.append(
-                    await self.create_order(current_order))
+                                                                    if limit_price is not None else order_price,
+                                                                    reduce_only=True,
+                                                                    close_position=True)
+                async with signals.remote_signal_publisher(self.exchange_manager, current_order.symbol,
+                                                           emit_trading_signals):
+                    order = await signals.create_order(self.exchange_manager, emit_trading_signals, current_order)
+                created_orders.append(order)
         return created_orders
 
     async def withdraw(self, amount, currency):

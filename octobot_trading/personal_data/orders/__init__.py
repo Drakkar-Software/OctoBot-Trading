@@ -90,6 +90,7 @@ from octobot_trading.personal_data.orders.order_util import (
     ensure_orders_relevancy,
     get_order_quantity_currency,
     get_order_size_portfolio_percent,
+    generate_order_id,
 )
 from octobot_trading.personal_data.orders import order_adapter
 from octobot_trading.personal_data.orders.order_adapter import (
@@ -140,6 +141,7 @@ __all__ = [
     "ensure_orders_relevancy",
     "get_order_quantity_currency",
     "get_order_size_portfolio_percent",
+    "generate_order_id",
     "is_associated_pending_order",
     "apply_pending_order_from_created_order",
     "OrderState",

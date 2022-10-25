@@ -15,6 +15,9 @@
 #  License along with this library.
 import asyncio
 
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
+
 import octobot_trading.enums
 import octobot_trading.constants
 import octobot_trading.errors as errors
@@ -43,11 +46,11 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         Load and create a new FutureContract for the pair
         :param pair: the contract pair
         """
-        self.create_pair_contract(
+        return self.create_pair_contract(
             pair=pair,
             current_leverage=await self.get_symbol_leverage(pair),
             margin_type=await self.get_margin_type(pair),
-            contract_type=await self.get_contract_type(pair),
+            contract_type=self.get_contract_type(pair),
             position_mode=await self.get_position_mode(pair),
             maintenance_margin_rate=await self.get_maintenance_margin_rate(pair),
         )
@@ -66,13 +69,16 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :param maximum_leverage: the contract maximum leverage
         """
         self.logger.debug(f"Creating {pair} contract...")
-        self.pair_contracts[pair] = contracts.FutureContract(pair=pair,
-                                                             margin_type=margin_type,
-                                                             contract_type=contract_type,
-                                                             maximum_leverage=maximum_leverage,
-                                                             current_leverage=current_leverage,
-                                                             position_mode=position_mode,
-                                                             maintenance_margin_rate=maintenance_margin_rate)
+        contract = contracts.FutureContract(pair=pair,
+                                            margin_type=margin_type,
+                                            contract_type=contract_type,
+                                            maximum_leverage=maximum_leverage,
+                                            current_leverage=current_leverage,
+                                            position_mode=position_mode,
+                                            maintenance_margin_rate=maintenance_margin_rate)
+        self.pair_contracts[pair] = contract
+        self._set_contract_initialized_event(pair)
+        return contract
 
     def get_pair_future_contract(self, pair):
         """
@@ -84,7 +90,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
             return self.pair_contracts[pair]
         except KeyError:
             asyncio.create_task(self.load_pair_future_contract(pair))
-            raise errors.ContractExistsError(f"{pair} future contract doesn't exist, fetching...")
+            raise errors.ContractExistsError(f"{pair} future contract doesn't exist, fetching it...")
 
     def set_pair_future_contract(self, pair, future_contract):
         """
@@ -93,6 +99,15 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :param future_contract: the future contract
         """
         self.pair_contracts[pair] = future_contract
+
+    def _set_contract_initialized_event(self, symbol):
+        commons_tree.EventProvider.instance().trigger_event(
+            self.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.CONTRACTS.value,
+                symbol=symbol
+            )
+        )
 
     """
     Positions
@@ -166,17 +181,17 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         """
         raise NotImplementedError("get_margin_type is not implemented")
 
-    async def get_contract_type(self, symbol: str):
+    def get_contract_type(self, symbol: str):
         """
         :param symbol: the symbol
         :return: the contract type for the requested symbol.
         Can be FutureContractType INVERSE_PERPETUAL or LINEAR_PERPETUAL
         Requires is_inverse_symbol and is_linear_symbol to be implemented
         """
+        if self.is_linear_symbol(symbol):
+            return octobot_trading.enums.FutureContractType.LINEAR_PERPETUAL
         if self.is_inverse_symbol(symbol):
             return octobot_trading.enums.FutureContractType.INVERSE_PERPETUAL
-        elif self.is_linear_symbol(symbol):
-            return octobot_trading.enums.FutureContractType.LINEAR_PERPETUAL
 
     async def get_position_mode(self, symbol: str):
         """
@@ -300,7 +315,7 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         if mode is octobot_trading.enums.PositionMode.ONE_WAY:
             return octobot_trading.enums.PositionSide.BOTH
         return octobot_trading.enums.PositionSide.LONG \
-            if side == self.LONG_STR else octobot_trading.enums.PositionSide.SHORT
+            if side == octobot_trading.enums.PositionSide.LONG.value else octobot_trading.enums.PositionSide.SHORT
 
     def calculate_position_value(self, quantity, mark_price):
         """

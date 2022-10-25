@@ -138,7 +138,7 @@ class Position(util.Initializable):
                 self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
             else:
                 # if we have a timestamp, it's a real trader => need to format timestamp if necessary
-                self.creation_time = self.exchange_manager.exchange.get_uniform_timestamp(timestamp)
+                self.creation_time = self.exchange_manager.exchange.get_uniformized_timestamp(timestamp)
             self.timestamp = self.creation_time
 
         if self._should_change(self.quantity, quantity):
@@ -777,7 +777,7 @@ class Position(util.Initializable):
         """
         if self.symbol_contract.is_one_way_position_mode() or self.side is enums.PositionSide.UNKNOWN:
             changed_side = False
-            if self.quantity >= constants.ZERO:
+            if self.quantity > constants.ZERO:
                 if self.side is not enums.PositionSide.LONG:
                     self.side = enums.PositionSide.LONG
                     changed_side = True
@@ -795,6 +795,8 @@ class Position(util.Initializable):
 
     def to_string(self):
         currency = self.get_currency()
+        position_mode = self.symbol_contract.position_mode.value \
+            if self.symbol_contract.position_mode else 'no position mode'
         return (f"{self.symbol} | "
                 f"Size : {round(self.size, 10).normalize()} "
                 f"({round(self.value, 10).normalize()} {currency}) "
@@ -807,7 +809,7 @@ class Position(util.Initializable):
                 f"Liquidation price : {round(self.liquidation_price, 10).normalize()} | "
                 f"Realised PNL : {round(self.realised_pnl, 14).normalize()} {currency} "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} "
-                f"({self.symbol_contract.position_mode.value})")
+                f"({position_mode})")
 
     async def close(self):
         await self.reset()

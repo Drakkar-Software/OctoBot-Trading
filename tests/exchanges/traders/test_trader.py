@@ -52,6 +52,7 @@ from tests.exchanges.traders import future_trader_simulator_with_default_linear
 pytestmark = pytest.mark.asyncio
 
 FEES_MOCK = {
+    FeePropertyColumns.RATE.value: 0.1, # huge fees for tests
     FeePropertyColumns.COST.value: 0.1,
     FeePropertyColumns.CURRENCY.value: "BQX"
 }
@@ -980,6 +981,7 @@ async def test_close_position(future_trader_simulator_with_default_linear):
             assert orders[0].order_type is TraderOrderType.SELL_LIMIT
             assert orders[0].origin_price == 5
             assert orders[0].origin_quantity == 10
+            assert orders[0].reduce_only is True
 
         with patch('octobot_trading.exchange_data.prices.prices_manager.PricesManager.get_mark_price',
                    new=AsyncMock(return_value=20)):
@@ -988,6 +990,7 @@ async def test_close_position(future_trader_simulator_with_default_linear):
             assert orders[0].order_type is TraderOrderType.SELL_MARKET
             assert orders[0].origin_price == 20
             assert orders[0].origin_quantity == 10
+            assert orders[0].reduce_only is True
 
 
 async def test_set_leverage(future_trader_simulator_with_default_linear):

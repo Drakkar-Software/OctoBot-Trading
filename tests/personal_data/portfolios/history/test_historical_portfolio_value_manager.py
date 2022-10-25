@@ -23,7 +23,8 @@ import octobot_commons.enums as commons_enums
 import octobot_trading.personal_data as personal_data
 import octobot_trading.constants as constants
 
-from tests.exchanges import backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
+from tests.exchanges import backtesting_trader_with_historical_pf_value_manager, \
+    backtesting_trader, backtesting_config, backtesting_exchange_manager, fake_backtesting
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
@@ -31,8 +32,8 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def historical_portfolio_value_manager(backtesting_trader):
-    config, exchange_manager, trader = backtesting_trader
+def historical_portfolio_value_manager(backtesting_trader_with_historical_pf_value_manager):
+    config, exchange_manager, trader = backtesting_trader_with_historical_pf_value_manager
     return exchange_manager.exchange_personal_data.portfolio_manager.historical_portfolio_value_manager
 
 
@@ -41,7 +42,10 @@ def test_constructor(historical_portfolio_value_manager):
     assert historical_portfolio_value_manager.portfolio_manager is not None
     assert historical_portfolio_value_manager.saved_time_frames == constants.DEFAULT_SAVED_HISTORICAL_TIMEFRAMES
     assert historical_portfolio_value_manager.historical_portfolio_value == sortedcontainers.SortedDict()
-    assert historical_portfolio_value_manager.run_dbs_identifier is None
+    assert historical_portfolio_value_manager.starting_time is not None
+    assert historical_portfolio_value_manager.starting_time == historical_portfolio_value_manager.last_update_time
+    assert historical_portfolio_value_manager.starting_portfolio is None
+    assert historical_portfolio_value_manager.ending_portfolio is None
 
 
 async def test_initialize(historical_portfolio_value_manager):

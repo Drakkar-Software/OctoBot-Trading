@@ -16,6 +16,7 @@
 
 import octobot_commons.enums as commons_enums
 import octobot_commons.constants as commons_constants
+import octobot_commons.configuration as configuration
 
 
 async def user_input(
@@ -23,48 +24,64 @@ async def user_input(
     name,
     input_type,
     def_val,
+    value=None,
     min_val=None,
     max_val=None,
     options=None,
+    title=None,
+    item_title=None,
+    other_schema_values=None,
+    editor_options=None,
+    read_only=False,
     is_nested_config=None,
     nested_tentacle=None,
+    parent_input_name=None,
     show_in_summary=True,
     show_in_optimizer=True,
     path=None,
     order=None,
-    flush_if_necessary=False
+    array_indexes=None,
+    flush_if_necessary=False,
+    should_save_user_input=True,
 ):
     """
     Set and return a user input value.
     Types are: int, float, boolean, options, multiple-options, text
     :return:
     """
-    tentacle_type_str = "trading_mode" if hasattr(ctx.tentacle, "trading_config") else "evaluator"
-    config = ctx.tentacle.trading_config if tentacle_type_str == "trading_mode" else ctx.tentacle.specific_config
-    try:
-        value = config[name.replace(" ", "_")]
-    except KeyError:
-        config[name.replace(" ", "_")] = def_val
-        value = def_val
-    await save_user_input(
-        ctx,
+    created_input = _get_user_input_factory(ctx).user_input(
         name,
         input_type,
-        value,
         def_val,
-        tentacle_type_str,
+        {},
+        value=value,
         min_val=min_val,
         max_val=max_val,
         options=options,
-        is_nested_config=is_nested_config,
+        title=title,
+        item_title=item_title,
+        other_schema_values=other_schema_values,
+        editor_options=editor_options,
+        read_only=read_only,
+        is_nested_config=ctx.is_nested_tentacle if is_nested_config is None else is_nested_config,
         nested_tentacle=nested_tentacle,
+        parent_input_name=parent_input_name,
         show_in_summary=show_in_summary,
         show_in_optimizer=show_in_optimizer,
         path=path,
         order=order,
-        flush_if_necessary=flush_if_necessary
+        array_indexes=array_indexes,
+        return_value_only=False,
+        update_parent_value=should_save_user_input,
     )
-    return value
+    if should_save_user_input:
+        await configuration.save_user_input(
+            created_input,
+            ctx.run_data_writer,
+            flush_if_necessary=flush_if_necessary,
+            skip_flush=ctx.exchange_manager.is_backtesting,
+        )
+    return created_input.value
 
 
 async def save_user_input(
@@ -73,66 +90,65 @@ async def save_user_input(
     input_type,
     value,
     def_val,
-    tentacle_type_str,
     min_val=None,
     max_val=None,
     options=None,
+    title=None,
+    item_title=None,
+    other_schema_values=None,
+    editor_options=None,
+    read_only=False,
     is_nested_config=None,
     nested_tentacle=None,
+    parent_input_name=None,
     show_in_summary=True,
     show_in_optimizer=True,
     path=None,
     order=None,
+    array_indexes=None,
     flush_if_necessary=False
 ):
-    if is_nested_config is None:
-        is_nested_config = ctx.is_nested_tentacle
-    if not await ctx.run_data_writer.contains_row(
-            commons_enums.DBTables.INPUTS.value,
-            {
-                "name": name,
-                "tentacle": ctx.tentacle.get_name(),
-                "nested_tentacle": nested_tentacle,
-                "is_nested_config": is_nested_config
-            }):
-        await ctx.run_data_writer.log(
-            commons_enums.DBTables.INPUTS.value,
-            {
-                "name": name,
-                "input_type": input_type,
-                "value": value,
-                "def_val": def_val,
-                "min_val": min_val,
-                "max_val": max_val,
-                "options": options,
-                "tentacle_type": tentacle_type_str,
-                "tentacle": ctx.tentacle.get_name(),
-                "nested_tentacle": nested_tentacle,
-                "is_nested_config": is_nested_config,
-                "in_summary": show_in_summary,
-                "in_optimizer": show_in_optimizer,
-                "path": path,
-                "order": order
-            }
-        )
-        if not ctx.exchange_manager.is_backtesting and (flush_if_necessary or ctx.run_data_writer.are_data_initialized):
-            # in some cases, user inputs might be setup after the 1st trading mode cycle: flush
-            # writer in live mode to ensure writing
-            await ctx.run_data_writer.flush()
-
-
-async def get_user_inputs(reader):
-    return await reader.all(commons_enums.DBTables.INPUTS.value)
-
-
-async def clear_user_inputs(writer):
-    await writer.delete(commons_enums.DBTables.INPUTS.value, None)
+    await configuration.save_user_input(
+        _get_user_input_factory(ctx).user_input(
+            name,
+            input_type,
+            def_val,
+            {},
+            value=value,
+            min_val=min_val,
+            max_val=max_val,
+            options=options,
+            title=title,
+            item_title=item_title,
+            other_schema_values=other_schema_values,
+            editor_options=editor_options,
+            read_only=read_only,
+            is_nested_config=ctx.is_nested_tentacle if is_nested_config is None else is_nested_config,
+            nested_tentacle=nested_tentacle,
+            parent_input_name=parent_input_name,
+            show_in_summary=show_in_summary,
+            show_in_optimizer=show_in_optimizer,
+            path=path,
+            order=order,
+            array_indexes=array_indexes,
+            return_value_only=False,
+        ),
+        ctx.run_data_writer,
+        flush_if_necessary=flush_if_necessary,
+        skip_flush=ctx.exchange_manager.is_backtesting,
+    )
 
 
 async def get_activation_topics(context, default_value, options):
     return await user_input(
-        context, commons_constants.CONFIG_ACTIVATION_TOPICS, "options",
+        context, commons_constants.CONFIG_ACTIVATION_TOPICS, commons_enums.UserInputTypes.OPTIONS.value,
         default_value,
         options=options,
         show_in_optimizer=False, show_in_summary=False, order=1000
     )
+
+
+def _get_user_input_factory(context):
+    factory = configuration.UserInputFactory(context.tentacle.USER_INPUT_TENTACLE_TYPE)
+    factory.set_tentacle_class(context.tentacle).set_tentacle_config_proxy(context.tentacle.get_local_config)
+    return factory

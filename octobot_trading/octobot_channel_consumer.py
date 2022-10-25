@@ -82,6 +82,11 @@ async def _handle_creation(bot_id, action, data):
             logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).error(
                 f"Error when initializing trading mode, {exchange_name} "
                 f"exchange connection is closed to increase performances: {e}")
+        except errors.UnreachableExchange as e:
+            logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).exception(
+                e,
+                True,
+                f"Error when connecting to {exchange_name} exchange, please check your internet connection.")
         except Exception as e:
             logging.get_logger(OCTOBOT_CHANNEL_TRADING_CONSUMER_LOGGER_TAG).exception(
                 e,
@@ -106,7 +111,7 @@ def _set_exchange_type_details(exchange_builder, config, backtesting):
     )
     # exchange trading type
     config_exchange_type = config[commons_constants.CONFIG_EXCHANGES].get(exchange_builder.exchange_name, {}).get(
-        commons_constants.CONFIG_EXCHANGE_TYPE, commons_constants.DEFAULT_EXCHANGE_TYPE)
+        commons_constants.CONFIG_EXCHANGE_TYPE, exchanges.get_default_exchange_type(exchange_builder.exchange_name))
     exchange_builder.is_using_exchange_type(config_exchange_type)
 
     # rest, web socket

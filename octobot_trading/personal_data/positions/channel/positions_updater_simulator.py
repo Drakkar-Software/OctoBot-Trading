@@ -31,33 +31,35 @@ class PositionsUpdaterSimulator(positions_updater.PositionsUpdater):
         Initialize positions and future contracts
         """
         await self.initialize_contracts()
-        self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
+        for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
+            self.channel.exchange_manager.exchange_personal_data.positions_manager.set_initialized_event(pair)
         self.logger = logging.get_logger(f"{self.__class__.__name__}[{self.channel.exchange_manager.exchange.name}]")
         await exchanges_channel.get_chan(constants.MARK_PRICE_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.handle_mark_price)
         await exchanges_channel.get_chan(constants.FUNDING_CHANNEL, self.channel.exchange_manager.id) \
             .new_consumer(self.handle_funding_rate)
-        self.channel.exchange_manager.exchange_personal_data.positions_manager.positions_initialized = True
 
     async def initialize_contracts(self) -> None:
         """
         Initialize exchange FutureContracts required to manage positions
         """
         for pair in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
-            self.channel.exchange_manager.exchange.create_pair_contract(
+            contract = self.channel.exchange_manager.exchange.create_pair_contract(
                 pair=pair,
                 current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
                 margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
                 contract_type=
                 self.channel.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type
-                if self.channel.exchange_manager.is_backtesting else await self._get_contract_type_or_default(pair),
+                if self.channel.exchange_manager.is_backtesting else self._get_contract_type_or_default(pair),
                 position_mode=constants.DEFAULT_SYMBOL_POSITION_MODE,
                 maintenance_margin_rate=constants.DEFAULT_SYMBOL_MAINTENANCE_MARGIN_RATE,
                 maximum_leverage=constants.DEFAULT_SYMBOL_MAX_LEVERAGE)
+            if not contract.is_handled_contract():
+                self.logger.error(f"Unhandled contract {contract}. This contract can't be traded")
 
-    async def _get_contract_type_or_default(self, pair):
+    def _get_contract_type_or_default(self, pair):
         try:
-            return await self.channel.exchange_manager.exchange.get_contract_type(pair)
+            return self.channel.exchange_manager.exchange.get_contract_type(pair)
         except NotImplementedError as e:
             self.logger.error(f"Unimplemented required method: {e}")
         self.logger.error(f"Unknown contract type for {pair} on {self.channel.exchange_manager.exchange_name}. Using "

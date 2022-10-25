@@ -73,3 +73,7 @@ async def sell_all_everything_for_reference_market(exchange_manager) -> list:
 
 async def sell_currency_for_reference_market(exchange_manager, currency) -> list:
     return await exchange_manager.trader.sell_all([currency])
+
+
+def get_current_bot_live_id(config):
+    return util.get_current_bot_live_id(config)

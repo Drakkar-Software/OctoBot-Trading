@@ -116,6 +116,12 @@ class ContractExistsError(Exception):
     """
 
 
+class UnhandledContractError(Exception):
+    """
+    Raised when trying to use a contract that is not supported / implemented
+    """
+
+
 class TooManyOpenPositionError(Exception):
     """
     Raised when changing future contract attributes without closing positions first

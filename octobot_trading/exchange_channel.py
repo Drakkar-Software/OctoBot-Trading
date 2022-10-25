@@ -16,6 +16,8 @@
 #  License along with this library.
 import asyncio
 
+import octobot_commons.tree as commons_tree
+
 import async_channel.enums as channel_enums
 import async_channel.constants as channel_constants
 import async_channel.channels as channels
@@ -57,6 +59,16 @@ class ExchangeChannelProducer(producers.Producer):
 
     def trigger_single_update(self):
         asyncio.create_task(self.fetch_and_push())
+
+    async def wait_for_dependencies(self, paths, timeout):
+        for path in paths:
+            if not await commons_tree.EventProvider.instance().wait_for_event(
+                self.channel.exchange_manager.bot_id,
+                path,
+                timeout
+            ):
+                return False
+        return True
 
 
 class ExchangeChannel(channels.Channel):

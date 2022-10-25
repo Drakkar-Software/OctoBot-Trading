@@ -18,11 +18,13 @@ import contextlib
 import decimal
 
 import octobot_commons.constants as common_constants
+import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
+import octobot_commons.configuration as commons_configuration
 import octobot_commons.tentacles_management as abstract_tentacle
-import octobot_commons.authentication as authentication
 
 import async_channel.constants as channel_constants
+import async_channel.channels as channels
 
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.configuration as tm_configuration
@@ -30,13 +32,16 @@ import octobot_tentacles_manager.configuration as tm_configuration
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.exchange_channel as exchanges_channel
-import octobot_trading.modes.script_keywords as script_keywords
-import octobot_trading.personal_data.orders as orders
+import octobot_trading.modes.modes_factory as modes_factory
+import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_producer
+import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
 import octobot_trading.signals as signals
 
 
 class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     __metaclass__ = abc.ABCMeta
+    USER_INPUT_TENTACLE_TYPE = common_enums.UserInputTentacleTypes.TRADING_MODE
+    ALLOW_CUSTOM_TRIGGER_SOURCE = False
 
     MODE_PRODUCER_CLASSES = []
     MODE_CONSUMER_CLASSES = []
@@ -118,6 +123,26 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             enums.ExchangeTypes.SPOT
         ]
 
+    def get_mode_producer_classes(self) -> list:
+        return self.MODE_PRODUCER_CLASSES
+
+    def get_mode_consumer_classes(self) -> list:
+        return self.MODE_CONSUMER_CLASSES
+
+    def should_emit_trading_signals_user_input(self, inputs: dict):
+        if self.UI.user_input(
+            common_constants.CONFIG_EMIT_TRADING_SIGNALS, common_enums.UserInputTypes.BOOLEAN, False, inputs,
+            title="Emit trading signals on Astrolab for people to follow.",
+            order=commons_configuration.UserInput.MAX_ORDER - 2
+        ):
+            self.UI.user_input(
+                common_constants.CONFIG_TRADING_SIGNALS_STRATEGY, common_enums.UserInputTypes.TEXT, self.get_name(),
+                inputs,
+                title="Name of the strategy to send signals on.",
+                order=commons_configuration.UserInput.MAX_ORDER - 1,
+                other_schema_values={"minLength": 0}
+            )
+
     def is_trading_signal_emitter(self) -> bool:
         """
         :return: True if the mode should be emitting trading signals according to configuration
@@ -171,6 +196,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         Triggers producers and consumers creation
         """
+        await self.reload_config(self.exchange_manager.bot_id)
         self.producers = await self.create_producers()
         self.consumers = await self.create_consumers()
 
@@ -191,7 +217,7 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         """
         return [
             await self._create_mode_producer(mode_producer_class)
-            for mode_producer_class in self.MODE_PRODUCER_CLASSES
+            for mode_producer_class in self.get_mode_producer_classes()
         ]
 
     async def _create_mode_producer(self, mode_producer_class):
@@ -211,10 +237,36 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         Creates the instance of consumers listed in MODE_CONSUMER_CLASSES
         :return: the list of consumers created
         """
-        return [
+        base_consumers = [
             await self._create_mode_consumer(mode_consumer_class)
-            for mode_consumer_class in self.MODE_CONSUMER_CLASSES
+            for mode_consumer_class in self.get_mode_consumer_classes()
         ]
+        if user_input_consumer := await self._create_user_input_consumer():
+            base_consumers.append(user_input_consumer)
+
+        return base_consumers
+
+    async def _create_user_input_consumer(self):
+        try:
+            import octobot_services.channel as services_channels
+            user_commands_consumer = \
+                await channels.get_chan(services_channels.UserCommandsChannel.get_name()).new_consumer(
+                    self.user_commands_callback,
+                    {"bot_id": self.bot_id, "subject": self.get_name()}
+                )
+            return user_commands_consumer
+        except KeyError:
+            self.logger.debug(f"{services_channels.UserCommandsChannel.get_name()} unavailable")
+        except ImportError:
+            self.logger.warning("Can't connect to services channels")
+        return None
+
+    async def user_commands_callback(self, bot_id, subject, action, data) -> None:
+        self.logger.debug(f"Received {action} command")
+        if action == common_enums.UserCommands.RELOAD_CONFIG.value:
+            await self.reload_config(bot_id)
+            self.logger.debug("Reloaded configuration")
+
 
     async def _create_mode_consumer(self, mode_consumer_class):
         """
@@ -231,18 +283,31 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             time_frame=self.time_frame if self.time_frame else channel_constants.CHANNEL_WILDCARD)
         return mode_consumer
 
-    def load_config(self) -> None:
+    async def reload_config(self, bot_id: str) -> None:
         """
         Try to load TradingMode tentacle config.
         Calls set_default_config() if the tentacle config is empty
         """
-        # try with this class name
         self.trading_config = tentacles_manager_api.get_tentacle_config(self.exchange_manager.tentacles_setup_config,
                                                                         self.__class__)
-
         # set default config if nothing found
         if not self.trading_config:
             self.set_default_config()
+        await self.load_and_save_user_inputs(bot_id)
+        for element in self.consumers + self.producers:
+            if isinstance(element, (abstract_mode_consumer.AbstractTradingModeConsumer,
+                                    abstract_mode_producer.AbstractTradingModeProducer)):
+                element.on_reload_config()
+                await element.init_user_inputs(False)
+
+    def get_local_config(self):
+        return self.trading_config
+
+    @classmethod
+    def create_local_instance(cls, config, tentacles_setup_config, tentacle_config):
+        return modes_factory.create_temporary_trading_mode_with_local_config(
+            cls, config, tentacle_config
+        )
 
     # to implement in subclasses if config is necessary
     def set_default_config(self) -> None:
@@ -288,47 +353,21 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
 
     @contextlib.asynccontextmanager
     async def remote_signal_publisher(self, symbol: str):
-        if self.should_emit_trading_signal():
-            try:
-                async with signals.SignalPublisher.instance().remote_signal_bundle_builder(
-                    symbol,
-                    self.get_trading_signal_identifier(),
-                    self.TRADING_SIGNAL_TIMEOUT,
-                    signals.TradingSignalBundleBuilder,
-                    (self.get_name(), )
-                ) as signal_builder:
-                    yield signal_builder
-            except authentication.AuthenticationRequired as e:
-                self.logger.exception(e, True, f"Failed to send trading signals: {e}")
-        else:
-            yield None
+        async with signals.remote_signal_publisher(self.exchange_manager, symbol, self.should_emit_trading_signal()) \
+             as signal_builder:
+            yield signal_builder
 
     async def create_order(self, order, loaded: bool = False, params: dict = None, pre_init_callback=None):
-        order_pf_percent = f"0{script_keywords.QuantityType.PERCENT.value}"
-        if self.should_emit_trading_signal():
-            percent = await orders.get_order_size_portfolio_percent(
-                self.exchange_manager,
-                order.origin_quantity,
-                order.side,
-                order.symbol
-            )
-            order_pf_percent = f"{float(percent)}{script_keywords.QuantityType.PERCENT.value}"
-        created_order = await self.exchange_manager.trader.create_order(
-            order, loaded=loaded, params=params, pre_init_callback=pre_init_callback
+        return await signals.create_order(
+            self.exchange_manager, self.should_emit_trading_signal(), order,
+            loaded=loaded, params=params, pre_init_callback=pre_init_callback
         )
-        if self.should_emit_trading_signal():
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_created_order(
-                    created_order, self.exchange_manager, target_amount=order_pf_percent
-                )
-        return created_order
 
     async def cancel_order(self, order, ignored_order: object = None) -> bool:
-        cancelled = await self.exchange_manager.trader.cancel_order(order, ignored_order=ignored_order)
-        if self.should_emit_trading_signal() and cancelled:
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_cancelled_order(
-                order, self.exchange_manager
-            )
-        return cancelled
+        return await signals.cancel_order(
+            self.exchange_manager, self.should_emit_trading_signal(), order,
+            ignored_order=ignored_order
+        )
 
     async def edit_order(self, order,
                          edited_quantity: decimal.Decimal = None,
@@ -336,21 +375,29 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
                          edited_stop_price: decimal.Decimal = None,
                          edited_current_price: decimal.Decimal = None,
                          params: dict = None) -> bool:
-        changed = await self.exchange_manager.trader.edit_order(
-            order,
+        return await signals.edit_order(
+            self.exchange_manager, self.should_emit_trading_signal(), order,
             edited_quantity=edited_quantity,
             edited_price=edited_price,
             edited_stop_price=edited_stop_price,
             edited_current_price=edited_current_price,
             params=params
         )
-        if self.should_emit_trading_signal() and changed:
-            signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_edited_order(
-                order,
-                self.exchange_manager,
-                updated_target_amount=edited_quantity,
-                updated_limit_price=edited_price,
-                updated_stop_price=edited_stop_price,
-                updated_current_price=edited_current_price,
-            )
-        return changed
+
+    async def get_additional_metadata(self, is_backtesting):
+        """
+        Override if necessary
+        """
+        return {}
+
+    def flush_trading_mode_consumers(self):
+        for consumer in self.get_trading_mode_consumers():
+            consumer.flush()
+
+    def get_trading_mode_consumers(self):
+        return [
+            consumer
+            for consumer in self.consumers
+            if isinstance(consumer, abstract_mode_consumer.AbstractTradingModeConsumer)
+        ]
+

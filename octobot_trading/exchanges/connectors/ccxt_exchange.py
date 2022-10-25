@@ -23,6 +23,7 @@ import typing
 
 import octobot_commons.constants
 import octobot_commons.enums
+import octobot_commons.symbols as commons_symbols
 
 import octobot_trading
 import octobot_trading.constants as constants
@@ -74,7 +75,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             self.time_frames = self.get_client_time_frames()
 
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
-            self.logger.error(f"initialization impossible: {e}")
+            raise octobot_trading.errors.UnreachableExchange() from e
         except ccxt.AuthenticationError:
             raise ccxt.AuthenticationError
 
@@ -141,6 +142,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         Exchange instance creation
         :return:
         """
+        if not self.exchange_manager.exchange_only:
+            # avoid logging version on temporary exchange_only exchanges
+            self.logger.info(f"Creating {self.exchange_type.__name__} exchange with ccxt in version {ccxt.__version__}")
         if self.exchange_manager.ignore_config or self.exchange_manager.check_config(self.name):
             try:
                 key, secret, password = self.exchange_manager.get_exchange_credentials(self.logger, self.name)
@@ -242,7 +246,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_symbol_prices {e}")
+            raise octobot_trading.errors.FailedRequest(f"Failed to get_symbol_prices: {e.__class__.__name__} on {e}")
 
     async def get_kline_price(self,
                               symbol: str,
@@ -307,13 +311,16 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
                 pass
+            except ccxt.NotSupported as e:
+                # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
+                raise octobot_trading.errors.NotSupported from e
         else:
             # When fetch_order is not supported, uses get_open_orders and extract order id
             open_orders = await self.get_open_orders(symbol=symbol)
             for order in open_orders:
                 if order.get(ecoc.ID.value, None) == order_id:
                     return order
-        return None # OrderNotFound
+        return None  # OrderNotFound
 
     async def get_all_orders(self, symbol: str = None, since: int = None,
                              limit: int = None, **kwargs: dict) -> list:
@@ -354,9 +361,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         cancel_resp = None
         try:
             with self.error_describer():
-                cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, **kwargs)
+                cancel_resp = await self.client.cancel_order(order_id, symbol=symbol, params=kwargs)
             try:
-                cancelled_order = await self.get_order(order_id, symbol=symbol)
+                cancelled_order = await self.exchange_manager.exchange.get_order(order_id, symbol=symbol)
                 return cancelled_order is None or personal_data.parse_is_cancelled(cancelled_order)
             except ccxt.OrderNotFound:
                 # Order is not found: it has successfully been cancelled (some exchanges don't allow to
@@ -364,23 +371,23 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 return True
         except ccxt.OrderNotFound:
             self.logger.error(f"Trying to cancel order with id {order_id} but order was not found")
-        except ccxt.NotSupported:
-            raise octobot_trading.errors.NotSupported
+        except (ccxt.NotSupported, octobot_trading.errors.NotSupported) as e:
+            raise octobot_trading.errors.NotSupported from e
         except Exception as e:
             self.logger.exception(e, True, f"Order {order_id} failed to cancel | {e} ({e.__class__.__name__})")
         return cancel_resp is not None
 
     async def get_positions(self, **kwargs: dict) -> list:
-        return await self.client.fetch_positions()
+        return await self.client.fetch_positions(params=kwargs)
 
     async def get_symbol_positions(self, symbol: str, **kwargs: dict) -> list:
-        return await self.client.fetch_positions(symbols=[symbol])
+        return await self.client.fetch_positions(symbols=[symbol], params=kwargs)
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict) -> dict:
-        return await self.client.fetch_funding_rate(symbol=symbol)
+        return await self.client.fetch_funding_rate(symbol=symbol, params=kwargs)
 
     async def get_funding_rate_history(self, symbol: str, limit: int = 1, **kwargs: dict) -> list:
-        return await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit)
+        return await self.client.fetch_funding_rate_history(symbol=symbol, limit=limit, params=kwargs)
 
     async def set_symbol_leverage(self, symbol: str, leverage: int, **kwargs: dict):
         return await self.client.set_leverage(leverage=int(leverage), symbol=symbol, params=kwargs)
@@ -419,6 +426,18 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                          price=float(price),
                                          takerOrMaker=taker_or_maker)
         fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(fees[enums.FeePropertyColumns.COST.value]))
+        if self.exchange_manager.is_future:
+            # fees on futures are wrong
+            rate = fees[enums.FeePropertyColumns.RATE.value]
+            # avoid using ccxt computed fees as they are often wrong
+            # see https://docs.ccxt.com/en/latest/manual.html#trading-fees
+            parsed_symbol = commons_symbols.parse_symbol(symbol)
+            if self.exchange_manager.exchange.get_pair_future_contract(symbol).is_inverse_contract():
+                fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(rate)) * quantity
+                fees[enums.FeePropertyColumns.CURRENCY.value] = parsed_symbol.base
+            else:
+                fees[enums.FeePropertyColumns.COST.value] = decimal.Decimal(str(rate)) * quantity * price
+                fees[enums.FeePropertyColumns.CURRENCY.value] = parsed_symbol.quote
         return fees
 
     def get_fees(self, symbol):
@@ -609,9 +628,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             yield
         except ccxt.DDoSProtection as e:
             # raised upon rate limit issues, last response data might have details on what is happening
-            self.logger.error(
-                f"DDoSProtection triggered [{e} ({e.__class__.__name__})]. "
-                f"Last response headers: {self.client.last_response_headers} "
-                f"Last json response: {self.client.last_json_response}"
-            )
+            if self.exchange_manager.exchange.should_log_on_ddos_exception(e):
+                self.logger.error(
+                    f"DDoSProtection triggered [{e} ({e.__class__.__name__})]. "
+                    f"Last response headers: {self.client.last_response_headers} "
+                    f"Last json response: {self.client.last_json_response}"
+                )
             raise

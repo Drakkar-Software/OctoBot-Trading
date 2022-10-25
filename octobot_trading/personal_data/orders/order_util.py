@@ -16,6 +16,7 @@
 import asyncio
 import decimal
 import contextlib
+import uuid
 
 import octobot_commons.symbols as symbol_util
 import octobot_commons.constants as commons_constants
@@ -376,3 +377,7 @@ async def get_order_size_portfolio_percent(exchange_manager, order_amount, side,
             return constants.ZERO
         return min(order_amount / market_quantity, constants.ONE) * constants.ONE_HUNDRED
     raise errors.InvalidArgumentError(f"Unhandled side: {side}")
+
+
+def generate_order_id():
+    return str(uuid.uuid4())

@@ -196,23 +196,15 @@ def get_trading_pairs(exchange_manager) -> list:
 
 
 def get_trading_symbols(exchange_manager) -> list:
-    symbols = exchange_manager.exchange_config.traded_symbols
-
-    #TODO remove loop after ccxt symbols update as it will be automatically filled
-    if exchange_manager.is_future:
-        for symbol in symbols:
-            merged_currencies = symbol.legacy_symbol()
-            if exchange_manager.exchange.get_pair_future_contract(merged_currencies).is_inverse_contract():
-                symbol.settlement_asset = symbol.base
-            else:
-                symbol.settlement_asset = symbol.quote
-            symbol.symbol_str = f"{merged_currencies}:{symbol.settlement_asset}"
-
-    return symbols
+    return exchange_manager.exchange_config.traded_symbols
 
 
 def get_watched_timeframes(exchange_manager) -> list:
     return exchange_manager.exchange_config.traded_time_frames
+
+
+def get_relevant_time_frames(exchange_manager) -> list:
+    return exchange_manager.exchange_config.get_relevant_time_frames()
 
 
 def get_base_currency(exchange_manager, pair) -> str:
@@ -264,6 +256,10 @@ def get_bot_id(exchange_manager):
 
 def get_supported_exchange_types(exchange_name) -> list:
     return exchanges.get_supported_exchange_types(exchange_name)
+
+
+async def store_history_in_run_storage(exchange_manager):
+    await exchange_manager.storage_manager.store_history()
 
 
 def cancel_ccxt_throttle_task():

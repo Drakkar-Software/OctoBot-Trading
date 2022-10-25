@@ -52,16 +52,20 @@ class TestKrakenRealExchangeTester(RealExchangeTester):
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
             assert market_status[Ecmsc.PRECISION.value]
-            assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]) == \
-                   market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]
-            assert int(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]) == \
-                   market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value]
+            # on this exchange, precision is a decimal instead of a number of digits
+            assert 0 < market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_AMOUNT.value] <= 1  # to be fixed in this exchange tentacle
+            assert 0 < market_status[Ecmsc.PRECISION.value][
+                Ecmsc.PRECISION_PRICE.value] <= 1  # to be fixed in this exchange tentacle
             assert all(elem in market_status[Ecmsc.LIMITS.value]
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] >= 1e-08
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] >= 1e-08
+            self.check_market_status_limits(market_status,
+                                            normal_cost_min=1e-07,
+                                            low_cost_min=1e-08,
+                                            expect_invalid_price_limit_values=False,
+                                            enable_price_and_cost_comparison=False)
 
     async def test_get_symbol_prices(self):
         # without limit

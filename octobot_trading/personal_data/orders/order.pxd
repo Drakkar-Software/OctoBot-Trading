@@ -82,7 +82,7 @@ cdef class Order(util.Initializable):
 
     cdef public object exchange_order_type # raw exchange order type, used to create order dict
 
-    cpdef bint update(self,
+    cpdef object update(self,
             str symbol,
             str order_id=*,
             object status=*,
@@ -136,6 +136,7 @@ cdef class Order(util.Initializable):
     cpdef void add_chained_order(self, object chained_order)
     cpdef bint should_be_created(self)
     cpdef void add_to_order_group(self, object order_group)
+    cpdef object ensure_order_id(self)
     cdef void _update_total_cost(self)
 
 cdef object _get_sell_and_buy_types(object order_type)

@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import asyncio
+import decimal
 import typing
 
 import octobot_commons.async_job as async_job
@@ -92,10 +93,12 @@ class FundingUpdater(funding_channel.FundingProducer):
 
             if funding:
                 next_funding_time = funding[enums.ExchangeConstantsFundingColumns.NEXT_FUNDING_TIME.value]
+                predicted_funding_rate = \
+                    funding.get(enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value, constants.NaN)
                 await self._push_funding(
                     symbol=symbol,
-                    funding_rate=funding[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value],
-                    predicted_funding_rate=funding[enums.ExchangeConstantsFundingColumns.PREDICTED_FUNDING_RATE.value],
+                    funding_rate=decimal.Decimal(funding[enums.ExchangeConstantsFundingColumns.FUNDING_RATE.value]),
+                    predicted_funding_rate=decimal.Decimal(str(predicted_funding_rate or constants.NaN)),
                     next_funding_time=next_funding_time,
                     last_funding_time=funding[enums.ExchangeConstantsFundingColumns.LAST_FUNDING_TIME.value])
                 return next_funding_time
@@ -123,11 +126,11 @@ class FundingUpdater(funding_channel.FundingProducer):
         if next_funding_time is None:
             next_funding_time = last_funding_time + self.FUNDING_REFRESH_TIME_MAX
         await self.push(
-            symbol=symbol,
-            funding_rate=funding_rate,
-            predicted_funding_rate=predicted_funding_rate,
-            next_funding_time=next_funding_time,
-            timestamp=last_funding_time,
+            symbol,
+            funding_rate,
+            predicted_funding_rate,
+            next_funding_time,
+            last_funding_time,
         )
 
     def _should_run(self):

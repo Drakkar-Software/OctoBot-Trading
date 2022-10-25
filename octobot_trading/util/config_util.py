@@ -106,3 +106,10 @@ def get_traded_pairs_by_currency(config):
            and val[commons_constants.CONFIG_CRYPTO_PAIRS]
            and is_currency_enabled(config, currency, True)
     }
+
+
+def get_current_bot_live_id(config):
+    return config[commons_constants.CONFIG_TRADING].get(
+        commons_constants.CONFIG_CURRENT_LIVE_ID,
+        commons_constants.DEFAULT_CURRENT_LIVE_ID
+    )

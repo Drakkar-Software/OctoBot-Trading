@@ -13,23 +13,23 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import octobot_trading.storage as storage
 
 
-def init_bot_storage(bot_id, config, tentacles_setup_config):
-    if not storage.RunDatabasesProvider.instance().has_bot_id(bot_id):
-        # only one run database per bot id
-        storage.RunDatabasesProvider.instance().add_bot_id(bot_id, config, tentacles_setup_config)
+async def clear_trades_storage_history(exchange_manager, flush=True):
+    await exchange_manager.storage_manager.trades_storage.clear_history(flush=flush)
 
 
-def get_run_db(bot_id):
-    return storage.RunDatabasesProvider.instance().get_run_db(bot_id)
+async def clear_orders_storage_history(exchange_manager, flush=True):
+    await exchange_manager.storage_manager.orders_storage.clear_history(flush=flush)
 
 
-def get_symbol_db(bot_id, exchange, symbol):
-    return storage.RunDatabasesProvider.instance().get_symbol_db(bot_id, exchange, symbol)
+async def clear_transactions_storage_history(exchange_manager, flush=True):
+    await exchange_manager.storage_manager.transactions_storage.clear_history(flush=flush)
 
 
-async def close_bot_storage(bot_id):
-    if storage.RunDatabasesProvider.instance().has_bot_id(bot_id):
-        await storage.RunDatabasesProvider.instance().close(bot_id)
+async def clear_portfolio_storage_history(exchange_manager, flush=True):
+    await exchange_manager.storage_manager.portfolio_storage.clear_history(flush=flush)
+
+
+async def clear_candles_storage_history(exchange_manager, flush=True):
+    await exchange_manager.storage_manager.candles_storage.clear_history(flush=flush)

@@ -57,8 +57,7 @@ class TestFTXRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] is None
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] == 0
+            self.check_market_status_limits(market_status, expect_invalid_price_limit_values=False)
 
     async def test_get_symbol_prices(self):
         # without limit
@@ -129,11 +128,11 @@ class TestFTXRealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.BID_VOLUME.value] is None
             assert ticker[Ectc.ASK.value]
             assert ticker[Ectc.ASK_VOLUME.value] is None
-            assert ticker[Ectc.OPEN.value]
+            assert ticker[Ectc.OPEN.value] is None
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
             assert ticker[Ectc.BASE_VOLUME.value] is None
-            assert ticker[Ectc.TIMESTAMP.value]
+            assert ticker[Ectc.TIMESTAMP.value] is None  # will trigger an 'Ignored incomplete ticker'
             RealExchangeTester.check_ticker_typing(ticker, check_open=False, check_high=False,
-                                                   check_low=False, check_base_volume=False)
+                                                   check_low=False, check_base_volume=False, check_timestamp=False)

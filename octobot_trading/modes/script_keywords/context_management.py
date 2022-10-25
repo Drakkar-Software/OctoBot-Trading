@@ -24,11 +24,10 @@ import octobot_commons.errors as common_errors
 import octobot_commons.databases as databases
 import octobot_commons.display as commons_display
 import octobot_commons.optimization_campaign as optimization_campaign
-import octobot_commons.event_tree as event_tree
+import octobot_commons.tree.base_tree as event_tree
 import octobot_commons.signals as signals
 import octobot_backtesting.api as backtesting_api
 import octobot_trading.modes as modes
-import octobot_trading.storage as storage
 import octobot_trading.signals as trading_signals
 import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.models as tentacles_manager_models
@@ -54,6 +53,7 @@ class Context(databases.CacheClient):
         backtesting_id,
         optimizer_id,
         optimization_campaign_name=None,
+        backtesting_analysis_settings=None,
     ):
         # no cache if live trading to ensure cache is always writen
         super().__init__(
@@ -64,6 +64,7 @@ class Context(databases.CacheClient):
             exchange_manager.tentacles_setup_config if exchange_manager else None,
             not exchange_manager.is_backtesting if exchange_manager else False
         )
+        self.backtesting_analysis_settings = backtesting_analysis_settings
         self.exchange_manager = exchange_manager
         self.trader = trader
         self.matrix_id = matrix_id
@@ -71,17 +72,17 @@ class Context(databases.CacheClient):
         self.signal_symbol = signal_symbol
         self.logger = logger
         bot_id = exchange_manager.bot_id if exchange_manager else None
-        self.run_data_writer = storage.RunDatabasesProvider.instance().get_run_db(bot_id) \
+        self.run_data_writer = databases.RunDatabasesProvider.instance().get_run_db(bot_id) \
             if bot_id else None
-        self.orders_writer = storage.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \
+        self.orders_writer = databases.RunDatabasesProvider.instance().get_orders_db(bot_id, self.exchange_name) \
             if bot_id else None
-        self.trades_writer = storage.RunDatabasesProvider.instance().get_trades_db(bot_id, self.exchange_name) \
+        self.trades_writer = databases.RunDatabasesProvider.instance().get_trades_db(bot_id, self.exchange_name) \
             if bot_id else None
-        self.transaction_writer = storage.RunDatabasesProvider.instance().get_transactions_db(bot_id,
-                                                                                              self.exchange_name) \
+        self.transaction_writer = databases.RunDatabasesProvider.instance().get_transactions_db(bot_id,
+                                                                                                self.exchange_name) \
             if bot_id else None
-        self.symbol_writer = storage.RunDatabasesProvider.instance().get_symbol_db(bot_id, self.exchange_name,
-                                                                                   self.symbol) \
+        self.symbol_writer = databases.RunDatabasesProvider.instance().get_symbol_db(bot_id, self.exchange_name,
+                                                                                     self.symbol) \
             if bot_id else None
         self.trading_mode_class = trading_mode_class
         self.trigger_cache_timestamp = trigger_cache_timestamp
@@ -176,8 +177,8 @@ class Context(databases.CacheClient):
                 await self._reset_cache()
 
     @staticmethod
-    def minimal(trading_mode_class, logger, exchange_name, traded_pair,
-                backtesting_id, optimizer_id, optimization_campaign_name):
+    def minimal(trading_mode_class, logger, exchange_name, traded_pair, backtesting_id,
+                optimizer_id, optimization_campaign_name, backtesting_analysis_settings):
         return Context(
             None,
             None,
@@ -196,6 +197,7 @@ class Context(databases.CacheClient):
             backtesting_id,
             optimizer_id,
             optimization_campaign_name,
+            backtesting_analysis_settings,
         )
 
     @contextlib.asynccontextmanager
@@ -301,7 +303,7 @@ class Context(databases.CacheClient):
         added, requirement = self.add_referenced_tentacle_requirement(tentacle_class, config_name)
         if added and self._requires_cache_sync_synchronization():
             # build a new tentacle instance with appropriate config (from previous trigger) to use it as requirement
-            config_name, _, _, tentacles_setup_config, _, _ = \
+            config_name, _, _, tentacles_setup_config, _ = \
                 self.get_tentacle_config_elements(tentacle_class, config_name, None)
             # use already registered requirement to access its configuration (config might be updated during script run)
             registered_requirement = self.get_cache_registered_requirements(tentacle_class.get_name(), config_name)
@@ -326,10 +328,7 @@ class Context(databases.CacheClient):
         config = {key.replace(" ", "_"): val for key, val in config.items()} if config else {}
         tentacles_setup_config = self.tentacle.tentacles_setup_config \
             if hasattr(self.tentacle, "tentacles_setup_config") else self.exchange_manager.tentacles_setup_config
-        tentacle_type_str = "trading_mode" if hasattr(self.tentacle, "trading_config") else "evaluator"
-        tentacle_config = self.tentacle.trading_config if tentacle_type_str == "trading_mode" \
-            else self.tentacle.specific_config
-        return config_name, cleaned_config_name, config, tentacles_setup_config, tentacle_config, tentacle_type_str
+        return config_name, cleaned_config_name, config, tentacles_setup_config, self.tentacle.get_local_config()
 
     def _requires_cache_sync_synchronization(self):
         registered_requirements = self.get_cache_registered_requirements()

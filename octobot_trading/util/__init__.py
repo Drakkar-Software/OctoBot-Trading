@@ -19,9 +19,13 @@ from octobot_trading.util.initializable import (
     Initializable,
 )
 
+from octobot_trading.util import initialization_util
+from octobot_trading.util.initialization_util import (
+    wait_for_topic_init,
+)
+
 from octobot_trading.util import simulator_updater_utils
 from octobot_trading.util import config_util
-from octobot_trading.util import databases_util
 
 from octobot_trading.util.simulator_updater_utils import (
     stop_and_pause,
@@ -39,9 +43,7 @@ from octobot_trading.util.config_util import (
     get_market_pair,
     get_reference_market,
     get_traded_pairs_by_currency,
-)
-from octobot_trading.util.databases_util import (
-    get_run_databases_identifier,
+    get_current_bot_live_id,
 )
 
 __all__ = [
@@ -59,5 +61,5 @@ __all__ = [
     "get_market_pair",
     "get_reference_market",
     "get_traded_pairs_by_currency",
-    "get_run_databases_identifier",
+    "get_current_bot_live_id",
 ]

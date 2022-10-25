@@ -58,7 +58,8 @@ FULL_CANDLE_HISTORY_EXCHANGES = ["bequant", "binance", "binanceus", "binanceusdm
                                  "bitfinex", "bitfinex2", "bitmex", "idex", "bybit"]
 
 TESTED_EXCHANGES = ["binance", "ftx", "okx", "gateio", "huobi", "bitget",
-                    "ascendex", "kucoin", "coinbasepro", "bybit", "hollaex"]
+                    "ascendex", "kucoin", "coinbasepro", "bybit", "phemex", "hollaex"]
+DEFAULT_FUTURE_EXCHANGES = ["bybit"]
 SIMULATOR_TESTED_EXCHANGES = []
 
 CONFIG_DEFAULT_FEES = 0.001
@@ -131,3 +132,27 @@ CANCEL_ORDER_STATUS_SCOPE = [enums.OrderStatus.PENDING_CANCEL,
                              enums.OrderStatus.CANCELED,
                              enums.OrderStatus.EXPIRED,
                              enums.OrderStatus.REJECTED]
+
+ORDER_NON_EMPTY_FIELDS = [enums.ExchangeConstantsOrderColumns.ID.value,
+                          enums.ExchangeConstantsOrderColumns.TIMESTAMP.value,
+                          enums.ExchangeConstantsOrderColumns.SYMBOL.value,
+                          enums.ExchangeConstantsOrderColumns.TYPE.value,
+                          enums.ExchangeConstantsOrderColumns.SIDE.value,
+                          enums.ExchangeConstantsOrderColumns.PRICE.value,
+                          enums.ExchangeConstantsOrderColumns.AMOUNT.value,
+                          enums.ExchangeConstantsOrderColumns.STATUS.value]
+ORDER_REQUIRED_FIELDS = ORDER_NON_EMPTY_FIELDS + [enums.ExchangeConstantsOrderColumns.REMAINING.value]
+
+DEFAULT_INITIALIZATION_EVENT_TOPICS = [
+    commons_enums.InitializationEventExchangeTopics.BALANCE,
+    commons_enums.InitializationEventExchangeTopics.ORDERS,
+    commons_enums.InitializationEventExchangeTopics.TRADES,
+    commons_enums.InitializationEventExchangeTopics.CANDLES,
+    commons_enums.InitializationEventExchangeTopics.PRICE,
+]
+
+DEFAULT_FUTURES_INITIALIZATION_EVENT_TOPICS = DEFAULT_INITIALIZATION_EVENT_TOPICS + [
+    commons_enums.InitializationEventExchangeTopics.POSITIONS,
+    commons_enums.InitializationEventExchangeTopics.CONTRACTS,
+    commons_enums.InitializationEventExchangeTopics.FUNDING,
+]

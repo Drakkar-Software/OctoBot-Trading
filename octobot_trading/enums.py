@@ -168,8 +168,9 @@ class ExchangeConstantsCCXTColumns(enum.Enum):
 class ExchangePositionCCXTColumns(enum.Enum):
     CONTRACTS = "contracts"
     CONTRACT_SIZE = "contractSize"
-    MARGIN_TYPE = "leverage"
-    LEVERAGE = "marginType"
+    MARGIN_TYPE = "marginType"
+    MARGIN_MODE = "marginMode"
+    LEVERAGE = "leverage"
     SYMBOL = "symbol"
     COLLATERAL = "collateral"
     INITIAL_MARGIN = "initialMargin"
@@ -187,6 +188,7 @@ class ExchangePositionCCXTColumns(enum.Enum):
     DATETIME = "datetime"
     PERCENTAGE = "percentage"
     SIDE = "side"
+    INFO = "info"
 
 
 class ExchangeConstantsFundingColumns(enum.Enum):
@@ -409,6 +411,8 @@ class AccountTypes(enum.Enum):
     CASH = "cash"
     MARGIN = "margin"
     FUTURE = "future"
+    SWAP = "swap"
+    OPTION = "option"
 
 
 class MarkPriceSources(enum.Enum):
@@ -484,7 +488,7 @@ class ExchangeTypes(enum.Enum):
 
 
 class TradingSignalAttrs(enum.Enum):
-    STRATEGY = "strategy"
+    IDENTIFIER = "identifier"
     EXCHANGE = "exchange"
     EXCHANGE_TYPE = "exchange_type"
     SYMBOL = "symbol"

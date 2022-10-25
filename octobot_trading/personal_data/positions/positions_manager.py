@@ -16,6 +16,8 @@
 import collections
 
 import octobot_commons.logging as logging
+import octobot_commons.enums as commons_enums
+import octobot_commons.tree as commons_tree
 
 import octobot_trading.personal_data.positions.position_factory as position_factory
 import octobot_trading.util as util
@@ -29,7 +31,6 @@ class PositionsManager(util.Initializable):
         super().__init__()
         self.logger = logging.get_logger(self.__class__.__name__)
         self.trader = trader
-        self.positions_initialized = False
         self.positions = collections.OrderedDict()
 
     async def initialize_impl(self):
@@ -82,6 +83,15 @@ class PositionsManager(util.Initializable):
             return await self._finalize_position_creation(new_position, is_from_exchange_data=True)
 
         return self.positions[position_id].update_from_raw(raw_position)
+
+    def set_initialized_event(self, symbol):
+        commons_tree.EventProvider.instance().trigger_event(
+            self.trader.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.trader.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.POSITIONS.value,
+                symbol=symbol
+            )
+        )
 
     async def recreate_position(self, position) -> bool:
         """
@@ -182,5 +192,4 @@ class PositionsManager(util.Initializable):
         """
         Clear all position references
         """
-        self.positions_initialized = False
         self.positions = collections.OrderedDict()

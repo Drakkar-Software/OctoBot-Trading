@@ -98,13 +98,13 @@ class OrdersManager(util.Initializable):
 
     async def upsert_order_from_raw(self, order_id, raw_order, is_from_exchange) -> bool:
         if not self.has_order(order_id):
-            self.logger.debug(f"Creating new order from exchange data: {raw_order}")
+            self.logger.info(f"Including new order fetched from exchange: {raw_order}")
             new_order = order_factory.create_order_instance_from_raw(self.trader, raw_order)
             # replace new_order by previously created pending_order if any relevant pending_order
             new_order = await self.get_and_update_pending_order(new_order) or new_order
             if is_from_exchange:
                 new_order.is_synchronized_with_exchange = True
-            self.orders[order_id] = new_order
+            self._add_order(order_id, new_order)
             await new_order.initialize(is_from_exchange_data=True)
             self._check_orders_size()
             return True
@@ -147,11 +147,16 @@ class OrdersManager(util.Initializable):
                 self.logger.error(f"Called upsert_order_instance on an order that fits a pending order, "
                                   f"this should not happen. Order: {order}")
             order = await self.get_and_update_pending_order(order) or order
-            self.orders[order.order_id] = order
+            self._add_order(order.order_id, order)
             self._check_orders_size()
             return True
         # TODO
         return False
+
+    def _add_order(self, order_id, order):
+        if order_id is None:
+            self.logger.warning(f"Adding order with None order_id to order manager: {order}")
+        self.orders[order_id] = order
 
     def has_order(self, order_id) -> bool:
         return order_id in set(self.orders.keys())
@@ -169,7 +174,7 @@ class OrdersManager(util.Initializable):
     def replace_order(self, previous_id, order):
         if self.has_order(previous_id):
             self.orders.pop(previous_id, None)
-        self.orders[order.order_id] = order
+        self._add_order(order.order_id, order)
         self._check_orders_size()
 
     # private methods

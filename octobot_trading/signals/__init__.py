@@ -34,6 +34,12 @@ from octobot_trading.signals.channel import (
     create_remote_trading_signal_channel_if_missing,
     RemoteTradingSignalProducer,
 )
+from octobot_trading.signals.signal_creation import (
+    remote_signal_publisher,
+    create_order,
+    cancel_order,
+    edit_order,
+)
 
 
 __all__ = [
@@ -45,4 +51,8 @@ __all__ = [
     "RemoteTradingSignalChannelConsumer",
     "create_remote_trading_signal_channel_if_missing",
     "RemoteTradingSignalProducer",
+    "remote_signal_publisher",
+    "create_order",
+    "cancel_order",
+    "edit_order",
 ]

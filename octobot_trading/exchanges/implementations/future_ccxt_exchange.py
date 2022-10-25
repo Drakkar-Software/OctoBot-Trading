@@ -23,7 +23,7 @@ import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as trading_enums
 
-
+#TODO remove
 class FutureCCXTExchange(exchanges_types.FutureExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
 
@@ -206,9 +206,25 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
         return await self.connector.set_symbol_partial_take_profit_stop_loss(symbol=symbol, inverse=inverse,
                                                                              tp_sl_mode=tp_sl_mode)
 
-    def get_pair_market_type(self, pair):
+    def get_pair_market_type(self, pair, property_name, def_value=False):
         return self.connector.client.safe_string(
-            self.connector.client.safe_value(self.connector.client.options, 'marketTypes', {}), pair, None)
+            self.connector.client.safe_value(self.connector.client.markets, pair, {}), property_name, def_value
+        )
+
+    def is_linear_symbol(self, symbol):
+        return self.get_pair_market_type(symbol, "linear") == "True"
+
+    def is_inverse_symbol(self, symbol):
+        return self.get_pair_market_type(symbol, "inverse") == "True"
+
+    def is_futures_symbol(self, symbol):
+        return self.get_pair_market_type(symbol, "futures") == "True"
+
+    def is_swap_symbol(self, symbol):
+        return self.get_pair_market_type(symbol, "swap") == "True"
+
+    def is_option_symbol(self, symbol):
+        return self.get_pair_market_type(symbol, "option") == "True"
 
     def parse_position(self, position_dict) -> dict:
         try:

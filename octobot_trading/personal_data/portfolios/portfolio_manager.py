@@ -13,8 +13,12 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import contextlib
+
 import octobot_commons.logging as logging
 import octobot_commons.constants as commons_constants
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
 
 import octobot_trading.exchange_channel as exchange_channel
 import octobot_trading.constants as constants
@@ -38,13 +42,15 @@ class PortfolioManager(util.Initializable):
         self.portfolio_value_holder = None
         self.historical_portfolio_value_manager = None
         self.reference_market = None
+        self._is_initialized_event_set = False
 
     async def initialize_impl(self):
         """
         Reset the portfolio instance
         """
         self._reset_portfolio()
-        await self.historical_portfolio_value_manager.initialize()
+        if self.historical_portfolio_value_manager is not None:
+            await self.historical_portfolio_value_manager.initialize()
 
     def handle_balance_update(self, balance, is_diff_update=False):
         """
@@ -53,9 +59,13 @@ class PortfolioManager(util.Initializable):
         :param is_diff_update: True when the update is a partial portfolio
         :return: True if the portfolio was updated
         """
+        changed = False
         if self.trader.is_enabled and balance is not None:
-            return self.portfolio.update_portfolio_from_balance(balance, force_replace=not is_diff_update)
-        return False
+            changed = self.portfolio.update_portfolio_from_balance(balance, force_replace=not is_diff_update)
+        if not self._is_initialized_event_set:
+            self._set_initialized_event()
+            self._is_initialized_event_set = True
+        return changed
 
     async def handle_balance_update_from_order(self, order, require_exchange_update: bool) -> bool:
         """
@@ -66,10 +76,11 @@ class PortfolioManager(util.Initializable):
         :return: True if the portfolio was updated
         """
         if self.trader.is_enabled:
-            if self.trader.simulate or not require_exchange_update:
-                return self._refresh_simulated_trader_portfolio_from_order(order)
-            # on real trading: reload portfolio to ensure portfolio sync
-            return await self._refresh_real_trader_portfolio()
+            async with self.portfolio_history_update():
+                if self.trader.simulate or not require_exchange_update:
+                    return self._refresh_simulated_trader_portfolio_from_order(order)
+                # on real trading: reload portfolio to ensure portfolio sync
+                return await self._refresh_real_trader_portfolio()
         return False
 
     async def handle_balance_update_from_funding(self, position, funding_rate, require_exchange_update: bool) -> bool:
@@ -82,11 +93,12 @@ class PortfolioManager(util.Initializable):
         :return: True if the portfolio was updated
         """
         if self.trader.is_enabled:
-            if self.trader.simulate or not require_exchange_update:
-                self.portfolio.update_portfolio_from_funding(position, funding_rate)
-                return True
-            # on real trading: reload portfolio to ensure portfolio sync
-            return await self._refresh_real_trader_portfolio()
+            async with self.portfolio_history_update():
+                if self.trader.simulate or not require_exchange_update:
+                    self.portfolio.update_portfolio_from_funding(position, funding_rate)
+                    return True
+                # on real trading: reload portfolio to ensure portfolio sync
+                return await self._refresh_real_trader_portfolio()
         return False
 
     async def handle_balance_update_from_withdrawal(self, amount, currency) -> bool:
@@ -97,11 +109,12 @@ class PortfolioManager(util.Initializable):
         :return: True if the portfolio was updated
         """
         if self.trader.is_enabled:
-            if self.trader.simulate:
-                self.portfolio.update_portfolio_from_withdrawal(amount, currency)
-                return True
-            # do not withdraw on real trading
-            raise errors.PortfolioOperationError("withdraw is not supported in real trading")
+            async with self.portfolio_history_update():
+                if self.trader.simulate:
+                    self.portfolio.update_portfolio_from_withdrawal(amount, currency)
+                    return True
+                # do not withdraw on real trading
+                raise errors.PortfolioOperationError("withdraw is not supported in real trading")
         return False
 
     def handle_balance_updated(self):
@@ -111,8 +124,9 @@ class PortfolioManager(util.Initializable):
         """
         return self.portfolio_profitability.update_profitability()
 
-
     def get_portfolio_historical_values(self, currency, time_frame, from_timestamp, to_timestamp):
+        if self.historical_portfolio_value_manager is None:
+            raise errors.NotSupported("historical_portfolio_value_manager has to be set to get historical values")
         historical_values = self.historical_portfolio_value_manager.get_historical_values(
             currency, time_frame, from_timestamp, to_timestamp
         )
@@ -124,7 +138,8 @@ class PortfolioManager(util.Initializable):
         return historical_values
 
     async def update_historical_portfolio_values(self):
-        if not self.portfolio_value_holder.current_crypto_currencies_values or \
+        if self.historical_portfolio_value_manager is None or \
+           not self.portfolio_value_holder.current_crypto_currencies_values or \
            self.portfolio_value_holder.initializing_symbol_prices:
             # initializing symbol prices, impossible to get an accurate portfolio value for now
             return
@@ -139,6 +154,17 @@ class PortfolioManager(util.Initializable):
             )
         except Exception as e:
             self.logger.exception(e, True, f"Error when saving historical portfolio: {e}")
+
+    @contextlib.asynccontextmanager
+    async def portfolio_history_update(self):
+        try:
+            yield
+        finally:
+            if self.historical_portfolio_value_manager is not None:
+                try:
+                    await self.historical_portfolio_value_manager.on_portfolio_update()
+                except Exception as err:
+                    self.logger.exception(f"Error when updating portfolio history: {err}")
 
     def handle_profitability_recalculation(self, force_recompute_origin_portfolio):
         """
@@ -177,8 +203,10 @@ class PortfolioManager(util.Initializable):
 
         self.reference_market = util.get_reference_market(self.config)
         self.portfolio_value_holder = personal_data.PortfolioValueHolder(self)
-        self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
+        if self.exchange_manager.is_storage_enabled():
+            self.historical_portfolio_value_manager = personal_data.HistoricalPortfolioValueManager(self)
         self.portfolio_profitability = personal_data.PortfolioProfitability(self)
+        self._is_initialized_event_set = False
 
     def _refresh_simulated_trader_portfolio_from_order(self, order):
         """
@@ -216,6 +244,14 @@ class PortfolioManager(util.Initializable):
             self.config[commons_constants.CONFIG_SIMULATOR][commons_constants.CONFIG_STARTING_PORTFOLIO]
         )
         self.handle_balance_update(self.portfolio.get_portfolio_from_amount_dict(portfolio_amount_dict))
+
+    def _set_initialized_event(self):
+        commons_tree.EventProvider.instance().trigger_event(
+            self.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.BALANCE.value
+            )
+        )
 
     async def stop(self):
         if self.historical_portfolio_value_manager is not None:

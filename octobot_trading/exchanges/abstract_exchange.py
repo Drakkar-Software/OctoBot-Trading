@@ -20,6 +20,9 @@ import octobot_commons.constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
 import octobot_commons.timestamp_util as timestamp_util
+import octobot_commons.configuration as configuration
+
+import octobot_tentacles_manager.api as octobot_tentacles_manager_api
 
 import octobot_trading.constants
 import octobot_trading.enums as enums
@@ -27,11 +30,14 @@ import octobot_trading.util as util
 
 
 class AbstractExchange(util.Initializable):
+    UI: configuration.UserInputFactory = configuration.UserInputFactory(
+        common_enums.UserInputTentacleTypes.EXCHANGE
+    )
     BUY_STR = enums.TradeOrderSide.BUY.value
     SELL_STR = enums.TradeOrderSide.SELL.value
 
-    # order that should be self managed by OctoBot
-    # can be override locally to match exchange support
+    # order that should be self-managed by OctoBot
+    # can be overridden locally to match exchange support
     UNSUPPORTED_ORDERS = [enums.TraderOrderType.STOP_LOSS,
                           enums.TraderOrderType.STOP_LOSS_LIMIT,
                           enums.TraderOrderType.TAKE_PROFIT,
@@ -43,7 +49,7 @@ class AbstractExchange(util.Initializable):
     # format: dict of bundled types by base order type
     # ex: SUPPORTED_BUNDLED_ORDERS[enums.TraderOrderType.BUY_MARKET] = \
     # [enums.TraderOrderType.STOP_LOSS, enums.TraderOrderType.TAKE_PROFIT]
-    # can be override locally to match exchange support
+    # can be overridden locally to match exchange support
     SUPPORTED_BUNDLED_ORDERS = {}
     ACCOUNTS = {}
 
@@ -52,6 +58,8 @@ class AbstractExchange(util.Initializable):
         self.config = config
         self.exchange_manager = exchange_manager
         self.connector = None
+
+        self.tentacle_config = {}
 
         # Initialized when initializing exchange connector
         self.symbols = set()
@@ -66,6 +74,9 @@ class AbstractExchange(util.Initializable):
         self.current_account = enums.AccountTypes.CASH
 
         self.is_unreachable = False
+
+        if self.exchange_manager.tentacles_setup_config is not None:
+            self.load_user_inputs(self.exchange_manager.tentacles_setup_config, self.tentacle_config)
 
     async def initialize_impl(self):
         """
@@ -126,6 +137,8 @@ class AbstractExchange(util.Initializable):
 
     def get_uniform_timestamp(self, timestamp):
         """
+        WARNING: does not check if the timestamp is already in the right form, better using get_uniformized_timestamp
+        to be sure to keep the right format and uniformize if necessary only
         :param timestamp: the timestamp to uniformize
         :return: the uniformized timestamp
         """
@@ -618,6 +631,12 @@ class AbstractExchange(util.Initializable):
         """
         return False
 
+    def should_log_on_ddos_exception(self, _) -> bool:
+        """
+        Override when necessary
+        """
+        return True
+
     def log_order_creation_error(self, error, order_type, symbol, quantity, price, stop_price):
         order_desc = f"order_type: {order_type}, symbol: {symbol}, quantity: {str(quantity)}, price: {str(price)}," \
                      f" stop_price: {str(stop_price)}"
@@ -626,3 +645,37 @@ class AbstractExchange(util.Initializable):
     def handle_token_error(self, error):
         self.logger.error(f"Exchange configuration is invalid : please check your configuration ! "
                           f"({error.__class__.__name__}: {error})")
+
+    @classmethod
+    def load_user_inputs(cls, tentacles_setup_config, tentacle_config):
+        inputs = {}
+        try:
+            tentacle_config.update(
+                octobot_tentacles_manager_api.get_tentacle_config(
+                    tentacles_setup_config, cls
+                )
+            )
+        except NotImplementedError:
+            # get_name not implemented, no tentacle config
+            return inputs
+        try:
+            with cls.UI.local_factory(cls, lambda: tentacle_config):
+                cls.init_user_inputs(inputs)
+        except Exception as e:
+            logging.get_logger(cls.get_name()).exception(e, True, f"Error when initializing user inputs: {e}")
+        return inputs
+
+    @classmethod
+    async def get_raw_config_and_user_inputs(
+            cls, _, tentacles_setup_config, __
+    ):
+        # use user inputs from init_user_inputs
+        tentacle_config = octobot_tentacles_manager_api.get_tentacle_config(tentacles_setup_config, cls)
+        user_inputs = cls.load_user_inputs(tentacles_setup_config, tentacle_config)
+        return tentacle_config, list(user_input.to_dict() for user_input in user_inputs.values())
+
+    @classmethod
+    def init_user_inputs(cls, inputs: dict) -> None:
+        """
+        Called at constructor, should define all the exchange's user inputs.
+        """

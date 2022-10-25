@@ -4,6 +4,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.23] - 2022-10-23
+### Fixed
+- trading mode user inputs
+
+## [2.2.22] - 2022-10-20
+### Added
+- close position api
+- trading signal emission on close position and cancel order api call
+### Updated
+- cryptofeed version
+### Fixed
+- crash when computing historical portfolio
+
+## [2.2.21] - 2022-10-16
+### Fixed
+- Fees computation on future
+
+## [2.2.20] - 2022-10-15
+### Fixed
+- Fees computation on spot
+
+## [2.2.19] - 2022-10-15
+### Fixed
+- Signals use identifier instead of strategy
+
+## [2.2.18] - 2022-10-12
+### Added
+- Exchange manager debug info
+
+## [2.2.17] - 2022-10-12
+### Added
+- User inputs support
+- Run storages
+- Futures trading symbols handling
+### Updated
+- CCXT
+
+## [2.2.16] - 2022-09-13
+No change, pypi issue version
+
+## [2.2.15] - 2022-09-12
+### Fixed
+- [Orders] creation time
+
+## [2.2.14] - 2022-09-11
+### Fixed
+- [Futures trading] minimal order size on futures
+
+## [2.2.13] - 2022-09-09
+### Fixed
+- [Futures trading] multiple issues and error messages
+
+## [2.2.12] - 2022-09-02
+### Fixed
+- [Signals] fix push issues
+
+## [2.2.11] - 2022-08-31
+### Fixed
+- [Exchanges] kwargs usage and attributes visibility
+
 ## [2.2.10] - 2022-08-23
 ### Fixed
 - [Supports] Fix use support call

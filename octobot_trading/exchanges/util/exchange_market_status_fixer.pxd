@@ -26,6 +26,7 @@ cdef void fix_market_status_limits_from_current_data(dict market_limit)
 
 cdef class ExchangeMarketStatusFixer:
     cdef public dict market_status
+    cdef object logger
     cdef object price_example
     cdef dict market_status_specific
 
@@ -37,3 +38,5 @@ cdef class ExchangeMarketStatusFixer:
     cdef double _get_price_precision(self)
     cdef void _fix_market_status_limits_with_specific(self)
     cdef void _fix_market_status_precision_with_specific(self)
+    cdef void _fix_typing(self)
+    cdef void _convert_values_to_float(self, dict element, list parent_keys, list key_whitelist)

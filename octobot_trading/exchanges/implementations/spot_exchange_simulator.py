@@ -17,6 +17,7 @@ import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 
 
+#TODO remove
 class SpotExchangeSimulator(exchanges_types.SpotExchange):
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
@@ -88,7 +89,7 @@ class SpotExchangeSimulator(exchanges_types.SpotExchange):
     def get_time_frames(self, importer):
         return self.connector.get_time_frames(importer)
 
-    def get_current_future_candles(self):
+    def get_current_future_candles(self):   # add to abstract exchange with annotation de check and rest_exchange
         return self.connector.current_future_candles
 
     def get_backtesting_data_files(self):

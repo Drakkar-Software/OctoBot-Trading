@@ -18,6 +18,7 @@ import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 
 
+#TODO remove
 class FutureExchangeSimulator(exchanges_types.FutureExchange):
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
@@ -99,7 +100,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
         Create a new FutureContract for the pair
         :param pair: the pair
         """
-        self.create_pair_contract(
+        return self.create_pair_contract(
             pair=pair,
             current_leverage=constants.DEFAULT_SYMBOL_LEVERAGE,
             margin_type=constants.DEFAULT_SYMBOL_MARGIN_TYPE,
@@ -115,7 +116,7 @@ class FutureExchangeSimulator(exchanges_types.FutureExchange):
     async def get_margin_type(self, symbol: str):
         return constants.DEFAULT_SYMBOL_MARGIN_TYPE
 
-    async def get_contract_type(self, symbol: str):
+    def get_contract_type(self, symbol: str):
         return self.exchange_manager.exchange_config.backtesting_exchange_config.future_contract_type
 
     async def get_funding_rate(self, symbol: str, **kwargs: dict):

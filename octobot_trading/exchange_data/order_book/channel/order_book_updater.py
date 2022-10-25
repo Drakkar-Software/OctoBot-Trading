@@ -77,9 +77,9 @@ class OrderBookUpdater(order_book_channel.OrderBookProducer):
             if asks and bids:
                 await exchanges_channel.get_chan(constants.ORDER_BOOK_TICKER_CHANNEL,
                                                  self.channel.exchange_manager.id).get_internal_producer(). \
-                    push(symbol=pair,
-                         ask_quantity=asks[0][1], ask_price=asks[0][0],
-                         bid_quantity=bids[0][1], bid_price=bids[0][0])
+                    push(pair,
+                         asks[0][1], asks[0][0],
+                         bids[0][1], bids[0][0])
         except Exception as e:
             self.logger.error(f"Failed to parse order book ticker : {e}")
 

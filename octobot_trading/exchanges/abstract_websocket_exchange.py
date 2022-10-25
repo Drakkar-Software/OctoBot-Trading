@@ -71,10 +71,10 @@ class AbstractWebsocketExchange:
         """
         return self.exchange_manager.get_exchange_credentials(self.logger, self.exchange_manager.exchange_name)
 
-    async def push_to_channel(self, channel_name, **kwargs):
+    async def push_to_channel(self, channel_name, *args, **kwargs):
         try:
             asyncio.run_coroutine_threadsafe(
-                exchange_channel.get_chan(channel_name, self.exchange_id).get_internal_producer().push(**kwargs),
+                exchange_channel.get_chan(channel_name, self.exchange_id).get_internal_producer().push(*args, **kwargs),
                 self.bot_mainloop)
         except Exception as e:
             self.logger.error(f"Push to {channel_name} failed : {e}")

@@ -25,6 +25,7 @@ cdef class AbstractExchange(util.Initializable):
     cdef public object trader
     cdef public object exchange_manager
     cdef public object connector
+    cdef public dict tentacle_config
 
     cdef public set symbols
     cdef public set time_frames
@@ -33,8 +34,6 @@ cdef class AbstractExchange(util.Initializable):
 
     cdef public str name
     cdef public bint is_unreachable
-
-    cpdef str get_name(cls)
 
     # exchange requests
     cpdef dict get_market_status(self, str symbol, object price_example=*, bint with_fixer=*)
@@ -87,3 +86,4 @@ cdef class AbstractExchange(util.Initializable):
     cpdef void handle_token_error(self, object error)
     cpdef bint is_supported_order_type(self, object order_type)
     cpdef bint supports_bundled_order_on_order_creation(self, object base_order, object bundled_order_type)
+    cpdef bint should_log_on_ddos_exception(self, object exception)

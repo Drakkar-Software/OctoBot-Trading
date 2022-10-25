@@ -17,4 +17,4 @@
 cimport octobot_trading.personal_data.trades.channel as trades_channel
 
 cdef class TradesUpdater(trades_channel.TradesProducer):
-    pass
+    cdef bint _is_initialized_event_set

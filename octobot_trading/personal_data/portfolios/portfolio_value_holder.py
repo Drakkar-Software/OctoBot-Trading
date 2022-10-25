@@ -35,6 +35,7 @@ class PortfolioValueHolder:
                                          f"[{self.portfolio_manager.exchange_manager.exchange_name}]")
 
         self.initializing_symbol_prices = set()
+        self.initializing_symbol_prices_pairs = set()
 
         self.portfolio_origin_value = constants.ZERO
         self.portfolio_current_value = constants.ZERO
@@ -245,12 +246,12 @@ class PortfolioValueHolder:
         try:
             symbol = symbol_util.merge_currencies(current_currency, target_currency)
             if self._has_price_data(symbol):
-                return quantity * self.last_prices_by_trading_pair[symbol]
+                return quantity * self._get_last_price_data(symbol)
         except KeyError:
             pass
         try:
             reversed_symbol = symbol_util.merge_currencies(target_currency, current_currency)
-            return quantity / self.last_prices_by_trading_pair[reversed_symbol]
+            return quantity / self._get_last_price_data(reversed_symbol)
         except decimal.DivisionByZero:
             pass
         except KeyError:
@@ -258,7 +259,18 @@ class PortfolioValueHolder:
         raise errors.MissingPriceDataError(f"no price data to evaluate {current_currency} price in {target_currency}")
 
     def _has_price_data(self, symbol):
-        return self.last_prices_by_trading_pair[symbol] is not constants.ZERO
+        return self._get_last_price_data(symbol) is not constants.ZERO
+
+    def _get_last_price_data(self, symbol):
+        try:
+            return self.last_prices_by_trading_pair[symbol]
+        except KeyError:
+            # a settlement asset or other symbol extra data might be different, try to ignore it
+            to_find_symbol = symbol_util.parse_symbol(symbol)
+            for symbol_key in self.last_prices_by_trading_pair:
+                if symbol_util.parse_symbol(symbol_key).is_same_base_and_quote(to_find_symbol):
+                    return self.last_prices_by_trading_pair[symbol_key]
+        raise KeyError(symbol)
 
     def _try_to_ask_ticker_missing_symbol_data(self, currency, symbol, reversed_symbol):
         """
@@ -274,9 +286,13 @@ class PortfolioValueHolder:
         elif self.portfolio_manager.exchange_manager.symbol_exists(reversed_symbol):
             symbols_to_add = [reversed_symbol]
 
-        if symbols_to_add:
-            self._ask_ticker_data_for_currency(symbols_to_add)
+        new_symbols_to_add = [s for s in symbols_to_add if s not in self.initializing_symbol_prices_pairs]
+        if new_symbols_to_add:
+            self.logger.debug(f"Fetching price for {new_symbols_to_add} to compute all the "
+                              f"currencies values and properly evaluate portfolio.")
+            self._ask_ticker_data_for_currency(new_symbols_to_add)
             self.initializing_symbol_prices.add(currency)
+            self.initializing_symbol_prices_pairs.update(new_symbols_to_add)
 
     def _ask_ticker_data_for_currency(self, symbols_to_add):
         """
@@ -314,10 +330,6 @@ class PortfolioValueHolder:
         self._evaluate_config_currencies_values(evaluated_pair_values, evaluated_currencies, missing_tickers)
         self._evaluate_portfolio_currencies_values(portfolio, evaluated_pair_values, evaluated_currencies,
                                                    missing_tickers, ignore_missing_currency_data)
-
-        if missing_tickers:
-            self.logger.debug(f"Missing price data for {missing_tickers}, impossible to compute all the "
-                              f"currencies values for now.")
         return evaluated_pair_values
 
     def _evaluate_config_currencies_values(self, evaluated_pair_values, evaluated_currencies, missing_tickers):

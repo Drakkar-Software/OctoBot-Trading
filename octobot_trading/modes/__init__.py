@@ -15,6 +15,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+from octobot_trading.modes import abstract_trading_mode
+from octobot_trading.modes.abstract_trading_mode import (
+    AbstractTradingMode,
+)
+
 from octobot_trading.modes import channel
 from octobot_trading.modes.channel import (
     check_factor,
@@ -23,11 +28,6 @@ from octobot_trading.modes.channel import (
     ModeChannel,
     AbstractTradingModeConsumer,
     AbstractTradingModeProducer,
-)
-
-from octobot_trading.modes import abstract_trading_mode
-from octobot_trading.modes.abstract_trading_mode import (
-    AbstractTradingMode,
 )
 
 from octobot_trading.modes import scripted_trading_mode
@@ -50,6 +50,7 @@ from octobot_trading.modes import modes_factory
 from octobot_trading.modes.modes_factory import (
     create_trading_modes,
     create_trading_mode,
+    create_temporary_trading_mode_with_local_config,
 )
 
 from octobot_trading.modes import modes_util
@@ -70,6 +71,7 @@ __all__ = [
     "check_factor",
     "create_trading_modes",
     "create_trading_mode",
+    "create_temporary_trading_mode_with_local_config",
     "get_activated_trading_mode",
     "get_required_candles_count",
 ]

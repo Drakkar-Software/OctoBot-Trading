@@ -33,6 +33,7 @@ cdef class PortfolioValueHolder:
     cdef public dict origin_crypto_currencies_values
     cdef public dict current_crypto_currencies_values
     cdef public set initializing_symbol_prices
+    cdef public set initializing_symbol_prices_pairs
 
     cdef public portfolio.Portfolio origin_portfolio
 
@@ -59,7 +60,7 @@ cdef class PortfolioValueHolder:
     cdef void _ask_ticker_data_for_currency(self, list symbols_to_add)
     cdef void _inform_no_matching_symbol(self, str currency)
     cdef object _has_price_data(self, str symbol) # return object to propagate exceptions
-    cdef _evaluate_config_crypto_currencies_and_portfolio_values(self,
+    cdef object _evaluate_config_crypto_currencies_and_portfolio_values(self,
                                                                 dict portfolio,
                                                                 bint ignore_missing_currency_data=*)
     cdef void _evaluate_config_currencies_values(self,

@@ -58,13 +58,17 @@ class TestPoloniexRealExchangeTester(RealExchangeTester):
                        for elem in (Ecmsc.LIMITS_AMOUNT.value,
                                     Ecmsc.LIMITS_PRICE.value,
                                     Ecmsc.LIMITS_COST.value))
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] >= 1e-08
-            assert market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_COST.value][Ecmsc.LIMITS_COST_MIN.value] >= 0.0001
+            # invalid values => remove price limit in tentacle
+            self.check_market_status_limits(market_status,
+                                            normal_price_min=1e-05,  # 1000000 for BTC/USDT, 1e-05 for XRP/BTC, lol
+                                            normal_price_max=10000000,
+                                            expect_invalid_price_limit_values=True,
+                                            enable_price_and_cost_comparison=False)
 
     async def test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
-        assert len(symbol_prices) in [336, 337]
+        assert len(symbol_prices) == 100
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -126,9 +130,9 @@ class TestPoloniexRealExchangeTester(RealExchangeTester):
         if check_content:
             assert ticker[Ectc.HIGH.value]
             assert ticker[Ectc.LOW.value]
-            assert ticker[Ectc.BID.value]
+            assert ticker[Ectc.BID.value] is None
             assert ticker[Ectc.BID_VOLUME.value] is None
-            assert ticker[Ectc.ASK.value]
+            assert ticker[Ectc.ASK.value] is None
             assert ticker[Ectc.ASK_VOLUME.value] is None
             assert ticker[Ectc.OPEN.value]
             assert ticker[Ectc.CLOSE.value]

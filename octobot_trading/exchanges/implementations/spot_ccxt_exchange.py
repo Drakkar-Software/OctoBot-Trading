@@ -17,18 +17,22 @@
 import contextlib
 import decimal
 import typing
+import copy
 
 import ccxt.async_support as ccxt
 from octobot_commons import enums as common_enums
+from octobot_commons import number_util
 
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
 import octobot_trading.exchanges.types as exchanges_types
+import octobot_trading.exchanges.util as exchanges_util
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc
 
 
+#TODO remove
 class SpotCCXTExchange(exchanges_types.SpotExchange):
     ORDER_NON_EMPTY_FIELDS = [ecoc.ID.value, ecoc.TIMESTAMP.value, ecoc.SYMBOL.value, ecoc.TYPE.value,
                               ecoc.SIDE.value, ecoc.PRICE.value, ecoc.AMOUNT.value, ecoc.STATUS.value]
@@ -55,7 +59,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         self.exchange_manager = None
 
     @classmethod
-    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
+    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:    # move to connector
         return cls.CONNECTOR_CLASS.is_supporting_exchange(exchange_candidate_name)
 
     def get_default_type(self):
@@ -118,7 +122,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             raise errors.NotSupported
         except Exception as e:
             self.log_order_creation_error(e, order_type, symbol, quantity, price, stop_price)
-            self.logger.exception(e, True, f"Unexpected error when creating order: {e}")
+            self.logger.exception(e, False, f"Unexpected error during order operation: {e}")
 
     async def _verify_order(self, created_order, order_type, symbol, price, params=None):
         # some exchanges are not returning the full order details on creation: fetch it if necessary
@@ -128,7 +132,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
                 created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value], symbol,
                                                                                params=params)
 
-        # on some exchange, market order are not not including price, add it manually to ensure uniformity
+        # on some exchange, market order are not including price, add it manually to ensure uniformity
         if created_order[ecoc.PRICE.value] is None and price is not None:
             created_order[ecoc.PRICE.value] = float(price)
 
@@ -238,7 +242,52 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return self.connector.get_uniform_timestamp(timestamp)
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
+        """
+        Override using get_fixed_market_status in exchange tentacle if the default market status is not as expected
+        """
         return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
+
+    def get_fixed_market_status(self, symbol, price_example=None, with_fixer=True, remove_price_limits=False):
+        """
+        Use this method in local get_market_status overrides when market status has to be fixed by
+        calling _fix_market_status.
+        Changes PRECISION_AMOUNT and PRECISION_PRICE from decimals to integers
+        (use number of digits instead of price example) by default.
+        Override _fix_market_status to change other elements
+        """
+        market_status = self._fix_market_status(
+            copy.deepcopy(
+                self.connector.get_market_status(symbol, with_fixer=False)
+            ),
+            remove_price_limits=remove_price_limits
+        )
+        if with_fixer:
+            return exchanges_util.ExchangeMarketStatusFixer(market_status, price_example).market_status
+        return market_status
+
+    def _fix_market_status(self, market_status, remove_price_limits=False):
+        """
+        Overrite if necessary
+        """
+        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = number_util.get_digits_count(
+            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value]
+        )
+        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value] = number_util.get_digits_count(
+            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
+        )
+        if remove_price_limits:
+            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value] = None
+            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value] = None
+
+        return market_status
 
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
@@ -264,6 +313,40 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
         return await self.connector.get_order(symbol=symbol, order_id=order_id, **kwargs)
+
+    async def get_order_from_open_and_closed_orders(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
+        for order in await self.get_open_orders(symbol, **kwargs):
+            if order[enums.ExchangeConstantsOrderColumns.ID.value] == order_id:
+                return order
+        for order in await self.get_closed_orders(symbol, **kwargs):
+            if order[enums.ExchangeConstantsOrderColumns.ID.value] == order_id:
+                return order
+        return None  # OrderNotFound
+
+    async def get_order_from_trades(self, symbol, order_id, order_to_update=None):
+        order_to_update = order_to_update or {}
+        trades = await self.get_my_recent_trades(symbol)
+        # usually the right trade is within the last ones
+        for trade in trades[::-1]:
+            if trade[ecoc.ORDER.value] == order_id:
+                order_to_update[ecoc.INFO.value] = trade[ecoc.INFO.value]
+                order_to_update[ecoc.ID.value] = order_id
+                order_to_update[ecoc.SYMBOL.value] = symbol
+                order_to_update[ecoc.TYPE.value] = trade[ecoc.TYPE.value]
+                order_to_update[ecoc.AMOUNT.value] = trade[ecoc.AMOUNT.value]
+                order_to_update[ecoc.DATETIME.value] = trade[ecoc.DATETIME.value]
+                order_to_update[ecoc.SIDE.value] = trade[ecoc.SIDE.value]
+                order_to_update[ecoc.TAKERORMAKER.value] = trade[ecoc.TAKERORMAKER.value]
+                order_to_update[ecoc.PRICE.value] = trade[ecoc.PRICE.value]
+                order_to_update[ecoc.TIMESTAMP.value] = order_to_update.get(ecoc.TIMESTAMP.value,
+                                                                            trade[ecoc.TIMESTAMP.value])
+                order_to_update[ecoc.STATUS.value] = enums.OrderStatus.FILLED.value
+                order_to_update[ecoc.FILLED.value] = trade[ecoc.AMOUNT.value]
+                order_to_update[ecoc.COST.value] = trade[ecoc.COST.value]
+                order_to_update[ecoc.REMAINING.value] = 0
+                order_to_update[ecoc.FEE.value] = trade[ecoc.FEE.value]
+                return order_to_update
+        return None  #OrderNotFound
 
     async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
         return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, **kwargs)

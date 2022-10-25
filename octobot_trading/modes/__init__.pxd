@@ -16,7 +16,6 @@
 
 from octobot_trading.modes cimport channel
 from octobot_trading.modes.channel cimport (
-    check_factor,
     ModeChannelConsumer,
     ModeChannelProducer,
     ModeChannel,
@@ -29,12 +28,17 @@ from octobot_trading.modes.modes_util cimport (
     get_required_candles_count,
 )
 
+from octobot_trading.modes cimport modes_factory
+from octobot_trading.modes.modes_factory cimport (
+    create_temporary_trading_mode_with_local_config,
+)
+
 __all__ = [
     "ModeChannelConsumer",
     "ModeChannelProducer",
     "ModeChannel",
     "AbstractTradingModeProducer",
     "AbstractTradingModeConsumer",
-    "check_factor",
     "get_required_candles_count",
+    "create_temporary_trading_mode_with_local_config",
 ]

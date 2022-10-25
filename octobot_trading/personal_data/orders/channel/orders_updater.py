@@ -17,6 +17,8 @@
 import asyncio
 
 import octobot_commons.async_job as async_job
+import octobot_commons.tree as commons_tree
+import octobot_commons.enums as commons_enums
 
 import octobot_trading.errors as errors
 import octobot_trading.personal_data.orders.channel.orders as orders_channel
@@ -35,10 +37,12 @@ class OrdersUpdater(orders_channel.OrdersProducer):
     OPEN_ORDER_REFRESH_TIME = 7
     CLOSE_ORDER_REFRESH_TIME = 81
     TIME_BETWEEN_ORDERS_REFRESH = 2
+    DEPENDENCIES_TIMEOUT = 30
 
     def __init__(self, channel):
         super().__init__(channel)
 
+        self._is_initialized_event_set = False
         # create async jobs
         self.open_orders_job = async_job.AsyncJob(self._open_orders_fetch_and_push,
                                                   execution_interval_delay=self.OPEN_ORDER_REFRESH_TIME,
@@ -57,12 +61,25 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         Initialize data before starting jobs
         """
         try:
+            await self.wait_for_dependencies(
+                [
+                    commons_tree.get_exchange_path(
+                        self.channel.exchange_manager.exchange_name,
+                        commons_enums.InitializationEventExchangeTopics.CONTRACTS.value
+                    ),
+                    commons_tree.get_exchange_path(
+                        self.channel.exchange_manager.exchange_name,
+                        commons_enums.InitializationEventExchangeTopics.POSITIONS.value
+                    ),
+                ],
+                self.DEPENDENCIES_TIMEOUT
+            )
             await self.fetch_and_push(is_from_bot=False)
         except errors.NotSupported:
             self.logger.error(f"{self.channel.exchange_manager.exchange_name} is not supporting open orders updates")
             await self.pause()
         except Exception as e:
-            self.logger.error(f"Fail to initialize orders : {e}")
+            self.logger.exception(e, True, f"Fail to initialize orders : {e}")
         finally:
             self.channel.exchange_manager.exchange_personal_data.orders_manager.are_exchange_orders_initialized = True
 
@@ -99,10 +116,23 @@ class OrdersUpdater(orders_channel.OrdersProducer):
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
             open_orders: list = await self.channel.exchange_manager.exchange.get_open_orders(symbol=symbol, limit=limit)
             if open_orders:
-                await self.push(orders=list(map(self.channel.exchange_manager.exchange.clean_order, open_orders)),
+                await self.push(list(map(self.channel.exchange_manager.exchange.clean_order, open_orders)),
                                 is_from_bot=is_from_bot)
             else:
                 await self.handle_post_open_order_update(symbol, open_orders, False)
+            if not self._is_initialized_event_set:
+                self._set_initialized_event(symbol)
+        self._is_initialized_event_set = True
+
+    def _set_initialized_event(self, symbol):
+        # set init in updater as it's the only place we know if we fetched orders or not regardless of orders existence
+        commons_tree.EventProvider.instance().trigger_event(
+            self.channel.exchange_manager.bot_id, commons_tree.get_exchange_path(
+                self.channel.exchange_manager.exchange_name,
+                commons_enums.InitializationEventExchangeTopics.ORDERS.value,
+                symbol=symbol
+            )
+        )
 
     async def _closed_orders_fetch_and_push(self, limit=ORDERS_UPDATE_LIMIT) -> None:
         """
@@ -114,7 +144,7 @@ class OrdersUpdater(orders_channel.OrdersProducer):
                 symbol=symbol, limit=limit)
 
             if close_orders:
-                await self.push(orders=list(map(self.channel.exchange_manager.exchange.clean_order, close_orders)),
+                await self.push(list(map(self.channel.exchange_manager.exchange.clean_order, close_orders)),
                                 are_closed=True)
 
     async def update_order_from_exchange(self, order,

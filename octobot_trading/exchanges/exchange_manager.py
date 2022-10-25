@@ -28,6 +28,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
 import octobot_trading.errors as errors
+import octobot_trading.storage as storage
 
 
 class ExchangeManager(util.Initializable):
@@ -54,6 +55,7 @@ class ExchangeManager(util.Initializable):
         self.is_trading: bool = True
         self.without_auth: bool = False
         self.check_credentials: bool = True
+        self.enable_storage: bool = True
 
         # exchange_only is True when exchange channels are not required (therefore not created)
         self.exchange_only: bool = False
@@ -67,6 +69,7 @@ class ExchangeManager(util.Initializable):
         self.exchange = None
         self.exchange_backend = None
         self.is_valid_account = True
+        self.init_error = None
         self.trading_modes = []
 
         self.exchange_web_socket = None
@@ -74,30 +77,48 @@ class ExchangeManager(util.Initializable):
         self.client_symbols = []
         self.client_time_frames = []
 
+        self.storage_manager = storage.StorageManager(self)
         self.exchange_config = exchanges.ExchangeConfig(self)
         self.exchange_personal_data = personal_data.ExchangePersonalData(self)
         self.exchange_symbols_data = exchange_data.ExchangeSymbolsData(self)
 
+        self.debug_info = {}
+
     async def initialize_impl(self):
         await exchanges.create_exchanges(self)
+        if self.is_storage_enabled():
+            await self.storage_manager.initialize()
 
-    async def stop(self, warning_on_missing_elements=True):
+    async def stop(self, warning_on_missing_elements=True, enable_logs=True):
         """
         Stops exchange manager relative tasks : websockets, trading mode, and exchange channels
         :param warning_on_missing_elements: warn on missing element
+        :param enable_logs: log stopping steps
         """
+        if enable_logs:
+            self.logger.debug("Stopping ...")
         # stop websockets if any
         if self.has_websocket:
+            if enable_logs:
+                self.logger.debug("Stopping websocket ...")
             await self.exchange_web_socket.stop_sockets()
             await self.exchange_web_socket.close_sockets()
             self.exchange_web_socket.clear()
             self.exchange_web_socket = None
+            if enable_logs:
+                self.logger.debug("Stopped websocket")
 
         # stop trading modes
+        if enable_logs:
+            self.logger.debug("Stopping trading modes ...")
         for trading_mode in self.trading_modes:
             await trading_mode.stop()
+        if enable_logs:
+            self.logger.debug("Stopped trading modes")
 
         # stop exchange channels
+        if enable_logs:
+            self.logger.debug(f"Stopping exchange channels for exchange_id: {self.id} ...")
         if self.exchange is not None:
             if not self.exchange_only:
                 await exchange_channel.stop_exchange_channels(self, should_warn=warning_on_missing_elements)
@@ -108,15 +129,27 @@ class ExchangeManager(util.Initializable):
             self.exchange = None
         if self.exchange_personal_data is not None:
             await self.exchange_personal_data.stop()
+        if enable_logs:
+            self.logger.debug(f"Stopped exchange channels for exchange_id: {self.id}")
+
+        if enable_logs:
+            self.logger.debug("Stopping storages ...")
+        await self.storage_manager.stop()
 
         self.exchange_config = None
         self.exchange_personal_data = None
         self.exchange_symbols_data = None
+        if enable_logs:
+            self.logger.debug("Stopping trader ...")
         if self.trader is not None:
             self.trader.clear()
             self.trader = None
+        if enable_logs:
+            self.logger.debug("Stopped trader")
         self.trading_modes = []
         self.backtesting = None
+        if enable_logs:
+            self.logger.debug("Stopped")
 
     async def register_trader(self, trader):
         self.trader = trader
@@ -130,6 +163,8 @@ class ExchangeManager(util.Initializable):
             self.exchange_config.set_config_traded_pairs()
         # always call set_historical_settings
         self.exchange_config.set_historical_settings()
+        if not self.exchange_only:
+            self.exchange_config.initialize_exchange_event_tree()
 
     def need_user_stream(self):
         return self.config[common_constants.CONFIG_TRADER][common_constants.CONFIG_ENABLED_OPTION]
@@ -250,6 +285,18 @@ class ExchangeManager(util.Initializable):
     def get_exchange_sub_account_id(self, exchange_name):
         config_exchange = self.config[common_constants.CONFIG_EXCHANGES][exchange_name]
         return config_exchange.get(common_constants.CONFIG_EXCHANGE_SUB_ACCOUNT, None)
+
+    def is_storage_enabled(self):
+        return self.enable_storage and not self.exchange_only and self.bot_id is not None
+
+    def update_debug_info(self):
+        self.debug_info = {
+            "str": str(self),
+            "trading_modes": str([tm.get_name() for tm in self.trading_modes]),
+            "traded_time_frames": str(self.exchange_config.traded_time_frames),
+            "watched_pairs": str(self.exchange_config.watched_pairs),
+            "all_config_symbol_pairs": str(self.exchange_config.all_config_symbol_pairs),
+        }
 
     def __str__(self):
         exchange_type = 'rest'
