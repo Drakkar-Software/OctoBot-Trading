@@ -51,11 +51,7 @@ def compute_win_rate(exchange_manager):
             won_trades_count = constants.ZERO
             for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
                 if isinstance(transaction, personal_data.RealisedPnlTransaction) and transaction.is_closed_pnl():
-                    if (transaction.side is trading_enums.PositionSide.SHORT and
-                            transaction.average_entry_price > transaction.average_exit_price) or (
-                        transaction.side is trading_enums.PositionSide.LONG and
-                            transaction.average_entry_price < transaction.average_exit_price
-                    ):
+                    if transaction.realised_pnl > constants.ZERO:
                         won_trades_count += constants.ONE
                     else:
                         lost_trades_count += constants.ONE

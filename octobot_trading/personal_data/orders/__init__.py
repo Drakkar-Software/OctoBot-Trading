@@ -104,6 +104,7 @@ from octobot_trading.personal_data.orders.order_adapter import (
     add_dusts_to_quantity_if_necessary,
 )
 from octobot_trading.personal_data.orders.decimal_order_adapter import (
+    get_minimal_order_amount,
     decimal_adapt_price,
     decimal_adapt_quantity,
     decimal_trunc_with_n_decimal_digits,
@@ -150,6 +151,7 @@ __all__ = [
     "OneCancelsTheOtherOrderGroup",
     "OrdersUpdater",
     "adapt_price",
+    "get_minimal_order_amount",
     "decimal_adapt_price",
     "adapt_quantity",
     "decimal_adapt_quantity",
