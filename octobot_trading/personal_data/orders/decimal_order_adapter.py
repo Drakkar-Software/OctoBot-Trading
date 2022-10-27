@@ -17,9 +17,22 @@ import math
 import decimal
 
 import octobot_trading.constants as constants
+import octobot_trading.errors as errors
 import octobot_trading.exchanges as exchanges
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
+
+
+def get_minimal_order_amount(symbol_market):
+    try:
+        min_limit = symbol_market[Ecmsc.LIMITS.value][Ecmsc.LIMITS_AMOUNT.value].get(Ecmsc.LIMITS_AMOUNT_MIN.value,
+                                                                                     None)
+        if min_limit is not None:
+            return decimal.Decimal(str(min_limit))
+        min_precision = symbol_market[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value]
+        return decimal.Decimal(f"1e-{min_precision}")
+    except KeyError:
+        raise errors.NotSupported("Impossible to get the minimal order size for the this exchange")
 
 
 def decimal_adapt_price(symbol_market, price, truncate=True):

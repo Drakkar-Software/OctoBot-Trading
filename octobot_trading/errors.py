@@ -47,7 +47,7 @@ class OrderEditError(Exception):
 
 class NotSupported(Exception):
     """
-    Raised when an exchange doesn't support the endpoint
+    Raised when an exchange doesn't support the required element
     """
 
 

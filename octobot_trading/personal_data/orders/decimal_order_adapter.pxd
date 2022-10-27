@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
+cpdef object get_minimal_order_amount(dict symbol_market)
 cpdef object decimal_adapt_price(dict symbol_market, object price, bint truncate=*)
 cpdef object decimal_adapt_quantity(dict symbol_market, object quantity, bint truncate=*)
 cpdef list decimal_adapt_order_quantity_because_quantity(object limiting_value, object max_value, object quantity_to_adapt, object price, dict symbol_market)
