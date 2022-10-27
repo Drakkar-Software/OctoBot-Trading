@@ -68,6 +68,9 @@ def get_draw_down(exchange_manager):
                 enums.PositionSide.BOTH
             ).symbol_contract.is_inverse_contract():
                 value_currency = symbol_util.parse_symbol(draw_down_pair).base
+            if exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder.origin_portfolio \
+                    is None:
+                return constants.ZERO
             origin_value = exchange_manager.exchange_personal_data.portfolio_manager.portfolio_value_holder \
                 .origin_portfolio.portfolio[value_currency].total
             portfolio_history = [origin_value]
