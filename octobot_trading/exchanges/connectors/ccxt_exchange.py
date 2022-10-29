@@ -179,8 +179,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     def _get_client_config(self, api_key=None, secret=None, password=None):
         config = {
-            'verbose': False,
-            'enableRateLimit': True,
+            'verbose': constants.ENABLE_CCXT_VERBOSE,
+            'enableRateLimit': constants.ENABLE_CCXT_RATE_LIMIT,
+            'timeout': constants.DEFAULT_REQUEST_TIMEOUT,
             'options': self.options,
             'headers': self.headers
         }

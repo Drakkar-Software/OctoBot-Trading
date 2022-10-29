@@ -14,9 +14,11 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library
 import decimal
+import os
 
 import octobot_trading.enums as enums
 import octobot_commons.enums as commons_enums
+import octobot_commons.os_util as os_util
 
 # Strings
 CURRENT_PORTFOLIO_STRING = "Current Portfolio :"
@@ -47,6 +49,9 @@ DEFAULT_BACKTESTING_TIME_LAG = 0
 INFINITE_MAX_HANDLED_PAIRS_WITH_TIMEFRAME = -1
 DEFAULT_CANDLE_HISTORY_SIZE = 200
 DEFAULT_FAILED_REQUEST_RETRY_TIME = 1
+DEFAULT_REQUEST_TIMEOUT = int(os.getenv("DEFAULT_REQUEST_TIMEOUT", "20000"))    # default ccxt is 10s, use 20
+ENABLE_CCXT_VERBOSE = os_util.parse_boolean_environment_var("ENABLE_CCXT_VERBOSE", "False")
+ENABLE_CCXT_RATE_LIMIT = os_util.parse_boolean_environment_var("ENABLE_CCXT_RATE_LIMIT", "True")
 
 # Decimal default values (decimals are immutable, can be stored as constant)
 ZERO = decimal.Decimal(0)
