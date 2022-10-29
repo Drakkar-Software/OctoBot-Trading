@@ -54,7 +54,7 @@ class TradesUpdater(trades_channel.TradesProducer):
 
         self._is_initialized_event_set = False
 
-    async def init_old_trades(self):
+    async def init_trade_history(self):
         try:
             await self.fetch_and_push()
             await asyncio.sleep(self.TRADES_REFRESH_TIME)
@@ -62,7 +62,7 @@ class TradesUpdater(trades_channel.TradesProducer):
             self.logger.warning(f"{self.channel.exchange_manager.exchange_name} is not supporting updates")
             await self.pause()
         except Exception as e:
-            self.logger.error(f"Fail to initialize old trades : {e}")
+            self.logger.error(f"Fail to initialize trade history : {e}")
 
     async def fetch_and_push(self):
         for symbol in self.channel.exchange_manager.exchange_config.traded_symbol_pairs:
@@ -97,7 +97,7 @@ class TradesUpdater(trades_channel.TradesProducer):
                 ],
                 self.DEPENDENCIES_TIMEOUT
             )
-            await self.init_old_trades()
+            await self.init_trade_history()
 
         # Code bellow shouldn't be necessary
         # while not self.should_stop and not self.channel.is_paused:
