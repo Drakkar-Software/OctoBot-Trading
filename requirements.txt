@@ -14,7 +14,7 @@ ccxt==1.95.36 # always ensure real exchanges tests (in tests_additional) are pas
 cryptography # Never specify a version (managed by https://github.com/Drakkar-Software/OctoBot-PyPi-Linux-Deployer)
 
 # Websocket requirements
-websockets==10.3
+websockets==10.4
 cryptofeed==2.3.1
 
 # OrderBook requirement
