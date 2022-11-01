@@ -22,26 +22,41 @@ import octobot_trading.signals.trading_signal_bundle_builder as trading_signal_b
 
 import octobot_commons.logging as logging
 import octobot_commons.signals as signals
+import octobot_commons.errors as commons_errors
 import octobot_commons.authentication as authentication
 
 
 @contextlib.asynccontextmanager
 async def remote_signal_publisher(exchange_manager, symbol: str, emit_trading_signals: bool):
-    if emit_trading_signals:
-        try:
-            trading_mode = exchange_manager.trading_modes[0]
-            async with signals.SignalPublisher.instance().remote_signal_bundle_builder(
-                symbol,
-                trading_mode.get_trading_signal_identifier(),
-                trading_mode.TRADING_SIGNAL_TIMEOUT,
-                trading_signal_bundle_builder.TradingSignalBundleBuilder,
-                (trading_mode.get_name(),)
-            ) as signal_builder:
-                yield signal_builder
-        except (authentication.AuthenticationRequired, authentication.UnavailableError) as e:
-            logging.get_logger(__name__).exception(e, True, f"Failed to send trading signals: {e}")
-    else:
-        yield None
+    try:
+        if emit_trading_signals:
+            try:
+                trading_mode = exchange_manager.trading_modes[0]
+            except IndexError:
+                yield None
+                return
+            try:
+                async with signals.SignalPublisher.instance().remote_signal_bundle_builder(
+                    symbol,
+                    trading_mode.get_trading_signal_identifier(),
+                    trading_mode.TRADING_SIGNAL_TIMEOUT,
+                    trading_signal_bundle_builder.TradingSignalBundleBuilder,
+                    (trading_mode.get_name(),)
+                ) as signal_builder:
+                    yield signal_builder
+            except (authentication.AuthenticationRequired, authentication.UnavailableError) as e:
+                logging.get_logger(__name__).exception(e, True, f"Failed to send trading signals: {e}")
+        else:
+            yield None
+    except commons_errors.MissingSignalBuilder as e:
+        logging.get_logger(__name__).exception(e, True, f"Error when sending trading signal: no signal builder {e}")
+
+
+def should_emit_trading_signal(exchange_manager):
+    try:
+        return exchange_manager.trading_modes[0].should_emit_trading_signal()
+    except IndexError:
+        return False
 
 
 async def create_order(exchange_manager, should_emit_signal, order,
@@ -76,7 +91,7 @@ async def cancel_order(exchange_manager, should_emit_signal, order, ignored_orde
 
 async def edit_order(
     exchange_manager,
-    should_emit_trading_signal,
+    should_emit_signal,
     order,
     edited_quantity: decimal.Decimal = None,
     edited_price: decimal.Decimal = None,
@@ -92,7 +107,7 @@ async def edit_order(
         edited_current_price=edited_current_price,
         params=params
     )
-    if should_emit_trading_signal and changed:
+    if should_emit_signal and changed:
         signals.SignalPublisher.instance().get_signal_bundle_builder(order.symbol).add_edited_order(
             order,
             exchange_manager,

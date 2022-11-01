@@ -19,6 +19,7 @@ import pytest
 import octobot_trading.personal_data as personal_data
 import octobot_trading.errors as errors
 from tests.exchanges import backtesting_config, backtesting_exchange_manager, fake_backtesting
+from tests.personal_data.orders.groups import order_mock
 
 
 # All test coroutines will be treated as marked.
@@ -30,14 +31,6 @@ def oco_group(backtesting_exchange_manager):
     orders_manager = mock.Mock()
     orders_manager.get_order_from_group = mock.Mock()
     return personal_data.OneCancelsTheOtherOrderGroup("name",  orders_manager)
-
-
-def order_mock():
-    order = mock.Mock()
-    order.is_open = mock.Mock(return_value=True)
-    order.trader = mock.Mock()
-    order.trader.cancel_order = mock.AsyncMock()
-    return order
 
 
 async def test_on_fill(oco_group):

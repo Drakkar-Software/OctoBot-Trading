@@ -24,6 +24,7 @@ import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.personal_data.orders.order_util as order_util
 from tests.exchanges import backtesting_config, backtesting_exchange_manager, fake_backtesting
+from tests.personal_data.orders.groups import order_mock
 
 
 # All test coroutines will be treated as marked.
@@ -40,15 +41,6 @@ def btps_group(backtesting_exchange_manager):
 @pytest.fixture
 def side_balance():
     return balanced_take_profit_and_stop_order_group._SideBalance()
-
-
-def order_mock(**kwargs):
-    order = mock.Mock(**kwargs)
-    order.is_open = mock.Mock(return_value=True)
-    order.trader = mock.Mock()
-    order.trader.cancel_order = mock.AsyncMock()
-    order.trader.edit_order = mock.AsyncMock()
-    return order
 
 
 async def test_on_fill(btps_group):
@@ -177,7 +169,14 @@ async def test_balance_orders(btps_group):
         get_order_from_group_mock.reset_mock()
         order_1.trader.edit_order.assert_not_called()
         order_1.trader.cancel_order.assert_called_once_with(order_1, ignored_order=order_4)
-        order_2.trader.edit_order.assert_called_once_with(order_2, edited_quantity=decimal.Decimal(10))
+        order_2.trader.edit_order.assert_called_once_with(
+            order_2,
+            edited_quantity=decimal.Decimal(10),
+            edited_price=None,
+            edited_stop_price=None,
+            edited_current_price=None,
+            params=None
+        )
         order_2.trader.cancel_order.assert_not_called()
         order_3.trader.edit_order.assert_not_called()
         order_3.trader.cancel_order.assert_not_called()
