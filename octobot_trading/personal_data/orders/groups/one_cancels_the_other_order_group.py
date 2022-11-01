@@ -15,6 +15,7 @@
 #  License along with this library.
 import octobot_trading.personal_data.orders.order_group as order_group
 import octobot_trading.errors as errors
+import octobot_trading.signals as signals
 
 
 class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
@@ -36,7 +37,13 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
             return
         for order in self.get_group_open_orders():
             if order is not filled_order and order.is_open():
-                await order.trader.cancel_order(order, ignored_order=filled_order)
+                async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
+                    await signals.cancel_order(
+                        order.trader.exchange_manager,
+                        signals.should_emit_trading_signal(order.trader.exchange_manager),
+                        order,
+                        ignored_order=filled_order
+                    )
 
     async def on_cancel(self, cancelled_order, ignored_orders=None):
         """
@@ -54,4 +61,8 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
         ignored_order = ignored_orders[0] if ignored_orders else None
         for order in self.get_group_open_orders():
             if order is not cancelled_order and order.is_open():
-                await order.trader.cancel_order(order, ignored_order=ignored_order)
+                async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
+                    await signals.cancel_order(order.trader.exchange_manager,
+                                               signals.should_emit_trading_signal(order.trader.exchange_manager),
+                                               order,
+                                               ignored_order=ignored_order)

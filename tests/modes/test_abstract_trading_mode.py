@@ -23,6 +23,7 @@ import octobot_trading.modes as modes
 import octobot_trading.signals as signals
 import octobot_trading.constants as constants
 import octobot_commons.constants as common_constants
+import octobot_commons.errors as common_errors
 import octobot_commons.signals.signals_emitter as signals_emitter
 
 from tests import event_loop
@@ -85,7 +86,7 @@ async def test_create_order(trading_mode, buy_limit_order):
         should_emit_trading_signal_mock.reset_mock()
     with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=True)) \
          as should_emit_trading_signal_mock:
-        with pytest.raises(KeyError):
+        with pytest.raises(common_errors.MissingSignalBuilder):
             await trading_mode.create_order(buy_limit_order, loaded=False, params=None, pre_init_callback=None)
         assert should_emit_trading_signal_mock.call_count == 1
         create_order_mock.assert_called_once_with(
@@ -134,7 +135,7 @@ async def test_cancel_order(trading_mode, buy_limit_order):
     # without context manager
     with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=True)) \
             as should_emit_trading_signal_mock:
-        with pytest.raises(KeyError):
+        with pytest.raises(common_errors.MissingSignalBuilder):
             await trading_mode.cancel_order(buy_limit_order, ignored_order="ignored")
         should_emit_trading_signal_mock.assert_called_once()
         cancel_order_mock.assert_called_once_with(buy_limit_order, ignored_order="ignored")
@@ -177,7 +178,7 @@ async def test_edit_order(trading_mode, buy_limit_order):
     # without context manager
     with mock.patch.object(trading_mode, "should_emit_trading_signal", mock.Mock(return_value=True)) \
             as should_emit_trading_signal_mock:
-        with pytest.raises(KeyError):
+        with pytest.raises(common_errors.MissingSignalBuilder):
             await trading_mode.edit_order(buy_limit_order, edited_quantity=constants.ONE, edited_price=constants.ONE,
                                           edited_stop_price=constants.ONE, edited_current_price=constants.ONE,
                                           params=None)

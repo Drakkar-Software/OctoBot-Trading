@@ -17,6 +17,7 @@ import octobot_trading.personal_data.orders.order_group as order_group
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.constants as constants
 import octobot_commons.logging as logging
+import octobot_trading.signals as signals
 
 
 class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
@@ -106,14 +107,21 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
             stop_actions = balance[self.STOP].get_actions_to_balance(balance[self.TAKE_PROFIT].get_balance())
             for order in take_profit_actions[self.CANCEL] + stop_actions[self.CANCEL]:
                 logger.debug(f"Cancelling order to keep balance, order: {order}")
-                await order.trader.cancel_order(order, ignored_order=closed_order)
+                async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
+                    await signals.cancel_order(order.trader.exchange_manager,
+                                               signals.should_emit_trading_signal(order.trader.exchange_manager),
+                                               order,
+                                               ignored_order=closed_order)
                 updated_orders = True
             for update_data in take_profit_actions[self.UPDATE] + stop_actions[self.UPDATE]:
                 logger.debug(f"Updating order side to {update_data[self.UPDATED_QUANTITY]} to keep balance, "
                              f"order: {update_data[self.ORDER]}")
-                await update_data[self.ORDER].trader.edit_order(
-                    update_data[self.ORDER],
-                    edited_quantity=update_data[self.UPDATED_QUANTITY])
+                order = update_data[self.ORDER]
+                async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
+                    await signals.edit_order(order.trader.exchange_manager,
+                                             signals.should_emit_trading_signal(order.trader.exchange_manager),
+                                             order,
+                                             edited_quantity=update_data[self.UPDATED_QUANTITY])
                 updated_orders = True
             if not updated_orders:
                 logger.debug("Nothing to update, orders are already evenly balanced")
