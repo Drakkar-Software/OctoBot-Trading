@@ -19,6 +19,7 @@ import decimal
 
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 import octobot_trading.personal_data as personal_data
+import octobot_trading.constants as constants
 from tests import event_loop
 
 # All test coroutines will be treated as marked.
@@ -452,4 +453,9 @@ async def test_decimal_trunc_with_n_decimal_digits():
     assert float(
         personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal(11111111111111578.000145000156), 12)) == \
            11111111111111578.000145000156
+    assert personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal('0.00000000000001'), 7) == \
+           constants.ZERO
+    assert personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal('0.11111111111111'), 7) == \
+           decimal.Decimal('0.1111111')
+
     assert math.isnan(personal_data.decimal_trunc_with_n_decimal_digits(decimal.Decimal(math.nan), 12))
