@@ -238,6 +238,10 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     return await exchanges.is_compatible_account(exchange_name, exchange_config, tentacles_setup_config, is_sandboxed)
 
 
+def get_default_exchange_type(exchange_name: str) -> str:
+    return exchanges.get_default_exchange_type(exchange_name)
+
+
 def is_sponsoring(exchange_name: str) -> bool:
     return trading_backend.is_sponsoring(exchange_name)
 
