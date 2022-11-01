@@ -22,6 +22,8 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.personal_data as personal_data
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
+DECIMAL_SCIENTIFIC_NOTATION_EXP = "E-"
+
 
 def get_minimal_order_amount(symbol_market):
     try:
@@ -48,10 +50,19 @@ def decimal_adapt_quantity(symbol_market, quantity, truncate=True):
     return decimal_trunc_with_n_decimal_digits(quantity, maximal_volume_digits, truncate)
 
 
+def _has_more_than_x_digits(value, digits):
+    str_val = str(value)
+    if len(str_val.split(".")[-1]) > digits:
+        return True
+    if DECIMAL_SCIENTIFIC_NOTATION_EXP in str_val and int(str_val.split(DECIMAL_SCIENTIFIC_NOTATION_EXP)[1]) > digits:
+        return True
+    return False
+
+
 def decimal_trunc_with_n_decimal_digits(value, digits, truncate=True):  # TODO migrate to commons
     try:
         # decimal.Decimal can add unnecessary complexity in numbers, only use it when necessary
-        if len(str(value).split(".")[-1]) > digits:
+        if _has_more_than_x_digits(value, digits):
             if digits > constants.ZERO:
                 return value.quantize(decimal.Decimal(f".{'0' * int(digits)}"),
                                       rounding=decimal.ROUND_DOWN if truncate else decimal.ROUND_UP)
