@@ -144,7 +144,7 @@ async def is_compatible_account(exchange_name: str, exchange_config: dict, tenta
     Returns details regarding the compatibility of the account given in parameters
     :return: (True if compatible, True if successful login, error explanation if any)
     """
-    exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, common_constants.DEFAULT_EXCHANGE_TYPE)
+    exchange_type = exchange_config.get(common_constants.CONFIG_EXCHANGE_TYPE, get_default_exchange_type(exchange_name))
     builder = exchange_builder.ExchangeBuilder(
         _get_minimal_exchange_config(exchange_name, exchange_config),
         exchange_name
