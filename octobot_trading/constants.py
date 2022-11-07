@@ -18,6 +18,7 @@ import os
 
 import octobot_trading.enums as enums
 import octobot_commons.enums as commons_enums
+import octobot_commons.constants as commons_constants
 import octobot_commons.os_util as os_util
 
 # Strings
@@ -34,7 +35,7 @@ DEFAULT_REFERENCE_MARKET = "BTC"
 CURRENCY_DEFAULT_MAX_PRICE_DIGITS = 8
 
 # Order creation
-ORDER_DATA_FETCHING_TIMEOUT = 60
+ORDER_DATA_FETCHING_TIMEOUT = 5 * commons_constants.MINUTE_TO_SECONDS
 
 # Tentacles
 TRADING_MODE_REQUIRED_STRATEGIES = "required_strategies"
