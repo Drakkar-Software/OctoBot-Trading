@@ -32,6 +32,13 @@ class RemoteTradingSignalProducer(signals_channel.RemoteTradingSignalChannelProd
 
         self.bot_id = bot_id
 
+    async def stop(self) -> None:
+        """
+        Stops non-triggered tasks management
+        """
+        self.logger.debug("Stopping producer: this should normally not be happening unless OctoBot is stopping")
+        await super().stop()
+
     async def subscribe_to_product_feed(self, feed_id):
         await authentication.Authenticator.instance().register_feed_callback(commons_enums.CommunityChannelTypes.SIGNAL,
                                                                              self.on_new_signal,

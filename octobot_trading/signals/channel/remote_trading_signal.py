@@ -117,3 +117,10 @@ class RemoteTradingSignalsChannel(channels.Channel):
 
     async def subscribe_to_product_feed(self, feed_id):
         await self.producers[0].subscribe_to_product_feed(feed_id)
+
+    async def stop(self) -> None:
+        """
+        Stops non-triggered tasks management
+        """
+        self.logger.debug("Stopping channel: this should normally not be happening unless OctoBot is stopping")
+        await super().stop()
