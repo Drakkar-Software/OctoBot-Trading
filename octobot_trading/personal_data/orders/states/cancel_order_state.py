@@ -69,12 +69,14 @@ class CancelOrderState(order_state.OrderState):
         """
         try:
             self.log_event_message(enums.StatesMessages.CANCELLED)
+            self.ensure_not_cleared(self.order)
 
             # set cancel time
             self.order.canceled_time = self.order.exchange_manager.exchange.get_exchange_current_time()
 
             # update portfolio after close
             async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+                self.ensure_not_cleared(self.order)
                 await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(self.order,
                                                                                                             False)
 

@@ -84,6 +84,7 @@ class FillOrderState(order_state.OrderState):
             except KeyError:
                 self.get_logger().error(f"Fail to compute trading fees for {self.order}.")
 
+            self.ensure_not_cleared(self.order)
             async with order_util.ensure_orders_relevancy(order=self.order):
                 # Trigger order group
                 if self.order.order_group:
@@ -91,6 +92,7 @@ class FillOrderState(order_state.OrderState):
 
                 # update portfolio with filled order and position if any
                 async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
+                    self.ensure_not_cleared(self.order)
                     await self.order.exchange_manager.exchange_personal_data.handle_portfolio_update_from_order(
                         self.order)
 
