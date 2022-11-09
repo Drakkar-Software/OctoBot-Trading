@@ -28,8 +28,7 @@ class OrderState(state_class.State):
         super().__init__(is_from_exchange_data)
 
         # ensure order has not been cleared
-        if order.is_cleared():
-            raise octobot_trading.errors.InvalidOrderState(f"Order has already been cleared. Order: {order}")
+        self.ensure_not_cleared(order)
 
         # related order
         self.order = order
@@ -74,7 +73,9 @@ class OrderState(state_class.State):
         elif state_message is enums.StatesMessages.SYNCHRONIZING_ERROR:
             self.get_logger().exception(error, True, f"Error when synchronizing order {self.order}: {error}")
         else:
-            self.get_logger().info(f"{self.order} {state_message.value} on {self.order.exchange_manager.exchange_name}")
+            exchange_name = self.order.exchange_manager.exchange_name if self.order.exchange_manager \
+                else 'unknown exchange'
+            self.get_logger().info(f"{self.order} {state_message.value} on {exchange_name}")
 
     async def should_be_updated(self) -> bool:
         """
@@ -100,6 +101,11 @@ class OrderState(state_class.State):
                 update_order_from_exchange(order=self.order,
                                            wait_for_refresh=True,
                                            force_job_execution=force_synchronization))
+
+    @staticmethod
+    def ensure_not_cleared(order):
+        if order.is_cleared():
+            raise octobot_trading.errors.InvalidOrderState(f"Order has already been cleared. Order: {order}")
 
     def clear(self):
         """

@@ -50,6 +50,7 @@ class CloseOrderState(order_state.OrderState):
             self.log_event_message(enums.StatesMessages.CLOSED)
 
             # add to trade history and notify
+            self.ensure_not_cleared(self.order)
             await self.order.exchange_manager.exchange_personal_data.handle_trade_instance_update(
                 self.order.trader.convert_order_to_trade(self.order))
 
