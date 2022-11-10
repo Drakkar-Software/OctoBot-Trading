@@ -119,17 +119,24 @@ class Trader(util.Initializable):
         await created_order.initialize()
         return created_order
 
-    async def create_artificial_order(self, order_type, symbol, current_price, quantity, price):
+    async def create_artificial_order(self, order_type, symbol, current_price, quantity, price,
+                                      emit_trading_signals=True):
         """
         Creates an OctoBot managed order (managed orders example: stop loss that is not published on the exchange and
         that is maintained internally).
         """
-        await self.create_order(order_factory.create_order_instance(trader=self,
-                                                                    order_type=order_type,
-                                                                    symbol=symbol,
-                                                                    current_price=current_price,
-                                                                    quantity=quantity,
-                                                                    price=price))
+        order = order_factory.create_order_instance(trader=self,
+                                                    order_type=order_type,
+                                                    symbol=symbol,
+                                                    current_price=current_price,
+                                                    quantity=quantity,
+                                                    price=price)
+        async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
+            await signals.create_order(
+                self.exchange_manager,
+                signals.should_emit_trading_signal(self.exchange_manager),
+                order
+            )
 
     async def edit_order(self, order: object,
                          edited_quantity: decimal.Decimal = None,
