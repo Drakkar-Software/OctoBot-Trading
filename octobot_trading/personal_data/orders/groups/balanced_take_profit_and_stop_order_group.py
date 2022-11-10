@@ -16,7 +16,6 @@
 import octobot_trading.personal_data.orders.order_group as order_group
 import octobot_trading.personal_data.orders.order_util as order_util
 import octobot_trading.constants as constants
-import octobot_commons.logging as logging
 import octobot_trading.signals as signals
 
 
@@ -97,7 +96,6 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
         if not self.enabled:
             return
         locally_balancing_orders = []
-        logger = logging.get_logger(self.__class__.__name__)
         try:
             updated_orders = False
             balance = self._get_balance(closed_order, ignored_orders)
@@ -106,7 +104,7 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
             take_profit_actions = balance[self.TAKE_PROFIT].get_actions_to_balance(balance[self.STOP].get_balance())
             stop_actions = balance[self.STOP].get_actions_to_balance(balance[self.TAKE_PROFIT].get_balance())
             for order in take_profit_actions[self.CANCEL] + stop_actions[self.CANCEL]:
-                logger.debug(f"Cancelling order to keep balance, order: {order}")
+                self.logger.debug(f"Cancelling order to keep balance, order: {order} as {closed_order} is closed")
                 async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
                     await signals.cancel_order(order.trader.exchange_manager,
                                                signals.should_emit_trading_signal(order.trader.exchange_manager),
@@ -114,8 +112,8 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                                                ignored_order=closed_order)
                 updated_orders = True
             for update_data in take_profit_actions[self.UPDATE] + stop_actions[self.UPDATE]:
-                logger.debug(f"Updating order side to {update_data[self.UPDATED_QUANTITY]} to keep balance, "
-                             f"order: {update_data[self.ORDER]}")
+                self.logger.info(f"Updating order side to {update_data[self.UPDATED_QUANTITY]} to keep balance, "
+                                 f"order: {update_data[self.ORDER]}")
                 order = update_data[self.ORDER]
                 async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
                     await signals.edit_order(order.trader.exchange_manager,
@@ -124,9 +122,9 @@ class BalancedTakeProfitAndStopOrderGroup(order_group.OrderGroup):
                                              edited_quantity=update_data[self.UPDATED_QUANTITY])
                 updated_orders = True
             if not updated_orders:
-                logger.debug("Nothing to update, orders are already evenly balanced")
+                self.logger.debug("Nothing to update, orders are already evenly balanced")
         except Exception as e:
-            logger.exception(e, True, f"Error when balancing orders: {e}")
+            self.logger.exception(e, True, f"Error when balancing orders: {e}")
         finally:
             # remove locally_balancing_orders from self.balancing_orders
             self.balancing_orders = [order

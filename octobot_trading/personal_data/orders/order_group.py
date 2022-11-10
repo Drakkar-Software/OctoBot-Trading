@@ -13,12 +13,14 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import octobot_commons.logging as logging
 
 
 class OrderGroup:
     def __init__(self, name, orders_manager):
         self.name = name
         self.orders_manager = orders_manager
+        self.logger = logging.get_logger(str(self))
         self.enabled = True
 
     async def on_fill(self, filled_order, ignored_orders=None):

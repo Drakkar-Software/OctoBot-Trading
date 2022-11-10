@@ -18,6 +18,7 @@
 cdef class OrderGroup:
     cdef public str name
     cdef public object orders_manager
+    cdef public object logger
     cdef public bint enabled
 
     cpdef list get_group_open_orders(self)

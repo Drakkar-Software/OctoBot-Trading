@@ -37,6 +37,7 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
             return
         for order in self.get_group_open_orders():
             if order is not filled_order and order.is_open():
+                self.logger.info(f"Cancelling order [{order}] from order group as {filled_order} is filled")
                 async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
                     await signals.cancel_order(
                         order.trader.exchange_manager,
@@ -61,6 +62,7 @@ class OneCancelsTheOtherOrderGroup(order_group.OrderGroup):
         ignored_order = ignored_orders[0] if ignored_orders else None
         for order in self.get_group_open_orders():
             if order is not cancelled_order and order.is_open():
+                self.logger.info(f"Cancelling order [{order}] from order group as {cancelled_order} is cancelled")
                 async with signals.remote_signal_publisher(order.trader.exchange_manager, order.symbol, True):
                     await signals.cancel_order(order.trader.exchange_manager,
                                                signals.should_emit_trading_signal(order.trader.exchange_manager),

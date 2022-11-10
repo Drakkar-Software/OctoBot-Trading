@@ -24,7 +24,10 @@ class FillOrderState(order_state.OrderState):
     def __init__(self, order, is_from_exchange_data):
         super().__init__(order, is_from_exchange_data)
         self.state = enums.OrderStates.FILLING \
-            if ((not self.order.simulated and not self.is_status_filled()) or self.is_status_pending()) \
+            if ((
+                    (not self.order.simulated and not self.order.is_self_managed())
+                    and not self.is_status_filled()
+                ) or self.is_status_pending()) \
             else enums.OrderStates.FILLED
 
     async def initialize_impl(self, forced=False) -> None:
@@ -90,6 +93,8 @@ class FillOrderState(order_state.OrderState):
                 if self.order.order_group:
                     await self.order.order_group.on_fill(self.order)
 
+                # always make sure this order has not been cleared when the is a risk to avoid AttributeError
+                self.ensure_not_cleared(self.order)
                 # update portfolio with filled order and position if any
                 async with self.order.exchange_manager.exchange_personal_data.portfolio_manager.portfolio.lock:
                     self.ensure_not_cleared(self.order)
