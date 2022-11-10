@@ -134,7 +134,7 @@ class Trader(util.Initializable):
         async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
             await signals.create_order(
                 self.exchange_manager,
-                signals.should_emit_trading_signal(self.exchange_manager),
+                emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                 order
             )
 
@@ -331,7 +331,7 @@ class Trader(util.Initializable):
             async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
                 return await signals.cancel_order(
                     self.exchange_manager,
-                    signals.should_emit_trading_signal(self.exchange_manager),
+                    emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                     order)
         except KeyError:
             return False
@@ -357,7 +357,7 @@ class Trader(util.Initializable):
                 async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
                     cancelled = await signals.cancel_order(
                         self.exchange_manager,
-                        signals.should_emit_trading_signal(self.exchange_manager),
+                        emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                         order)
                 if cancelled:
                     cancelled_orders.append(order)
@@ -392,7 +392,7 @@ class Trader(util.Initializable):
                 async with signals.remote_signal_publisher(self.exchange_manager, order.symbol, emit_trading_signals):
                     all_cancelled = await signals.cancel_order(
                         self.exchange_manager,
-                        signals.should_emit_trading_signal(self.exchange_manager),
+                        emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                         order) and all_cancelled
         return all_cancelled
 
@@ -496,7 +496,7 @@ class Trader(util.Initializable):
                                                            emit_trading_signals):
                     order = await signals.create_order(
                         self.exchange_manager,
-                        signals.should_emit_trading_signal(self.exchange_manager),
+                        emit_trading_signals and signals.should_emit_trading_signal(self.exchange_manager),
                         current_order)
                 created_orders.append(order)
         return created_orders
