@@ -133,6 +133,7 @@ class State(util.Initializable):
 
     @contextlib.asynccontextmanager
     async def refresh_operation(self):
+        self.get_logger().debug("Starting refresh_operation")
         previous_state = self.state
         async with self.lock:
             self.state = enums.States.REFRESHING
@@ -142,6 +143,7 @@ class State(util.Initializable):
             async with self.lock:
                 if self.state is enums.States.REFRESHING:
                     self.state = previous_state
+            self.get_logger().debug("Completed refresh_operation")
 
     async def _synchronize_with_exchange(self, force_synchronization: bool = False) -> None:
         """
