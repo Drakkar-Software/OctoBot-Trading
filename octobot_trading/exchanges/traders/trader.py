@@ -120,7 +120,7 @@ class Trader(util.Initializable):
         return created_order
 
     async def create_artificial_order(self, order_type, symbol, current_price, quantity, price,
-                                      emit_trading_signals=True):
+                                      emit_trading_signals=False):
         """
         Creates an OctoBot managed order (managed orders example: stop loss that is not published on the exchange and
         that is maintained internally).
