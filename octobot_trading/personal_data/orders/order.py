@@ -604,7 +604,8 @@ class Order(util.Initializable):
             self.order_id = order_util.generate_order_id()
 
     def to_dict(self):
-        filled_price = self.filled_price if self.filled_price > 0 else self.origin_price
+        filled_price = self.filled_price if self.filled_price > 0 \
+            else self.origin_price if not self.origin_stop_price else self.origin_stop_price
         return {
             enums.ExchangeConstantsOrderColumns.ID.value: self.order_id,
             enums.ExchangeConstantsOrderColumns.SYMBOL.value: self.symbol,
