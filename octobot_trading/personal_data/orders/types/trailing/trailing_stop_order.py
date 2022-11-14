@@ -67,9 +67,10 @@ class TrailingStopOrder(order_class.Order):
         :param price_events_manager: the price events manager to use
         :param new_price: the new trailing price
         """
+        self.origin_stop_price = self._calculate_stop_price(new_price)
         if self.trailing_stop_price_hit_event is None:
             self.trailing_stop_price_hit_event = price_events_manager.new_event(
-                self._calculate_stop_price(new_price), new_price_time,
+                self.origin_stop_price, new_price_time,
                 self.side is enums.TradeOrderSide.BUY, self.allow_instant_fill)
         if self.trailing_price_hit_event is None:
             # don't allow instant fill since this event should only be triggered by next recent trades and prices
@@ -143,17 +144,24 @@ class TrailingStopOrder(order_class.Order):
                                                          f"replacing stop...")
         await self._reset_events(decimal.Decimal(str(prices_manager.mark_price)), prices_manager.mark_price_set_time)
 
+    def on_fill_actions(self):
+        self.filled_price = self.origin_stop_price
+        self.filled_quantity = self.origin_quantity
+        self._update_total_cost()
+        order_class.Order.on_fill_actions(self)
+
     async def on_filled(self):
         """
         Create an artificial when trailing stop is filled
         """
         await order_class.Order.on_filled(self)
-        # TODO replace with chained order ?
-        await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
-                                                  if self.side is enums.TradeOrderSide.SELL
-                                                  else enums.TraderOrderType.BUY_MARKET,
-                                                  self.symbol, self.origin_stop_price,
-                                                  self.origin_quantity, self.origin_stop_price)
+        if not self.trader.simulate and self.is_self_managed():
+            # TODO replace with chained order ?
+            await self.trader.create_artificial_order(enums.TraderOrderType.SELL_MARKET
+                                                      if self.side is enums.TradeOrderSide.SELL
+                                                      else enums.TraderOrderType.BUY_MARKET,
+                                                      self.symbol, self.origin_stop_price,
+                                                      self.origin_quantity, self.origin_stop_price)
 
     def _clear_event_and_tasks(self):
         """
