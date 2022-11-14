@@ -47,7 +47,7 @@ class TrailingStopOrder(order_class.Order):
         Set trailing percent and reset event and tasks
         :param trailing_percent: the new trailing percent
         """
-        self.trailing_percent = trailing_percent
+        self.trailing_percent = decimal.Decimal(f"{abs(trailing_percent)}")
         await self._reset_events(self.origin_price, self.creation_time)
 
     async def _reset_events(self, new_price, new_price_time):
