@@ -13,26 +13,29 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import decimal
 import typing
 
 from octobot_commons import enums as common_enums
 
+from octobot_trading.exchanges.config import ccxt_exchange_settings
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as trading_enums
 
+
 #TODO remove
 class FutureCCXTExchange(exchanges_types.FutureExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
+    CONNECTOR_SETTINGS = ccxt_exchange_settings.CCXTExchangeConfig
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.connector = self.CONNECTOR_CLASS(
             config,
             exchange_manager,
-            additional_ccxt_config=self.get_additional_connector_config()
+            additional_ccxt_config=self.get_additional_connector_config(),   
+            connector_config = self.CONNECTOR_SETTINGS,
         )
 
     async def initialize_impl(self):
@@ -45,6 +48,19 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     async def stop(self) -> None:
         await self.connector.stop()
         self.exchange_manager = None
+        
+
+    @classmethod
+    def init_user_inputs(cls, inputs: dict) -> None:
+        """
+        Called at constructor, should define all the exchange's user inputs.
+        """
+        ccxt_exchange_settings.initialize_experimental_exchange_settings(cls, inputs)
+
+
+    @classmethod
+    def is_configurable(cls):
+        return True
 
     @classmethod
     def is_supporting_exchange(cls, exchange_candidate_name) -> bool:
@@ -60,7 +76,8 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
         return self.connector.get_uniform_timestamp(timestamp)
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
-        return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
+        return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer,
+                                                market_status_fixer=self.fix_market_status)
 
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
@@ -75,29 +92,40 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
         return await self.connector.get_order_book(symbol=symbol, limit=limit, **kwargs)
 
-    async def get_recent_trades(self, symbol: str, limit: int = 50, **kwargs: dict) -> typing.Optional[list]:
-        return await self.connector.get_recent_trades(symbol=symbol, limit=limit, **kwargs)
-
     async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
         return await self.connector.get_price_ticker(symbol=symbol, **kwargs)
 
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
 
-    async def get_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> dict:
-        return await self.connector.get_order(symbol=symbol, order_id=order_id, **kwargs)
+    async def get_order(self, order_id: str, symbol: str = None, 
+                        check_completeness: bool = None, **kwargs: dict) -> dict:
+        return await self.connector.get_order(symbol=symbol, order_id=order_id, 
+                                              check_completeness=check_completeness, **kwargs)
 
-    async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+    async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None, 
+                             check_completeness: bool = None, **kwargs: dict) -> list:
+        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, 
+                                                   check_completeness=check_completeness, **kwargs)
 
-    async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+    async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None, 
+                              check_completeness: bool = None, **kwargs: dict) -> list:
+        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit, 
+                                                    check_completeness=check_completeness, **kwargs)
 
-    async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit, **kwargs)
+    async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None, 
+                                check_completeness: bool = None, **kwargs: dict) -> list:
+        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit, 
+                                                      check_completeness=check_completeness, **kwargs)
 
-    async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, **kwargs: dict) -> list:
-        return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, **kwargs)
+    async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, 
+                                   check_completeness: bool = None, **kwargs: dict) -> list:
+        return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, 
+                                                         check_completeness=check_completeness, **kwargs)
+    
+    async def get_recent_trades(self, symbol: str, limit: int = 50, 
+                                check_completeness: bool = None, **kwargs: dict) -> typing.Optional[list]:
+        return await self.connector.get_recent_trades(symbol=symbol, limit=limit, check_completeness=check_completeness, **kwargs)
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         return await self.connector.cancel_order(symbol=symbol, order_id=order_id, **kwargs)
@@ -111,7 +139,7 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     def get_pair_from_exchange(self, pair) -> str:
         return self.connector.get_pair_from_exchange(pair)
 
-    def get_split_pair_from_exchange(self, pair) -> (str, str):
+    def get_split_pair_from_exchange(self, pair) -> typing.Tuple[str, str]:
         return self.connector.get_split_pair_from_exchange(pair)
 
     def get_exchange_pair(self, pair) -> str:
@@ -132,12 +160,6 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     def parse_balance(self, balance):
         return personal_data.parse_decimal_portfolio(self.connector.parse_balance(balance))
 
-    def parse_trade(self, trade):
-        return self.connector.parse_trade(trade)
-
-    def parse_order(self, order):
-        return self.connector.parse_order(order)
-
     def parse_ticker(self, ticker):
         return self.connector.parse_ticker(ticker)
 
@@ -156,32 +178,11 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
     def parse_currency(self, currency):
         return self.connector.parse_currency(currency)
 
-    def parse_order_id(self, order):
-        return self.connector.parse_order_id(order)
-
-    def parse_order_symbol(self, order):
-        return self.connector.parse_order_symbol(order)
-
-    def parse_status(self, status):
-        return self.connector.parse_status(status)
-
-    def parse_side(self, side):
-        return self.connector.parse_side(side)
-
     def parse_account(self, account):
         return self.connector.parse_account(account)
 
-    def clean_recent_trade(self, recent_trade):
-        return self.connector.clean_recent_trade(recent_trade)
-
-    def clean_trade(self, trade):
-        return self.connector.clean_trade(trade)
-
-    def clean_order(self, order):
-        return self.connector.clean_order(order)
-
-    async def get_positions(self, symbols=None, **kwargs: dict) -> list:
-        return await self.connector.get_positions(symbols=symbols, **kwargs)
+    async def get_positions(self, **kwargs: dict) -> list:
+        return await self.connector.get_positions(**kwargs)
 
     async def get_position(self, symbol: str, **kwargs: dict) -> dict:
         return await self.connector.get_position(symbol=symbol, **kwargs)
@@ -225,49 +226,3 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
 
     def is_option_symbol(self, symbol):
         return self.get_pair_market_type(symbol, "option") == "True"
-
-    def parse_position(self, position_dict) -> dict:
-        try:
-            position_dict.update({
-                trading_enums.ExchangeConstantsPositionColumns.SYMBOL.value:
-                    position_dict.get(position_dict[trading_enums.ExchangePositionCCXTColumns.SYMBOL.value]),
-                trading_enums.ExchangeConstantsPositionColumns.TIMESTAMP.value:
-                    position_dict.get(trading_enums.ExchangePositionCCXTColumns.TIMESTAMP.value,
-                                      self.connector.get_exchange_current_time()),
-                trading_enums.ExchangeConstantsPositionColumns.SIDE.value:
-                    self.parse_position_side(
-                        position_dict.get(trading_enums.ExchangePositionCCXTColumns.SIDE.value,
-                                          trading_enums.PositionSide.UNKNOWN.value), None),
-                trading_enums.ExchangeConstantsPositionColumns.MARGIN_TYPE.value:
-                    position_dict.get(trading_enums.ExchangePositionCCXTColumns.MARGIN_TYPE.value, None),
-                trading_enums.ExchangeConstantsPositionColumns.QUANTITY.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.CONTRACT_SIZE.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.COLLATERAL.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.COLLATERAL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.NOTIONAL.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.NOTIONAL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.LEVERAGE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.LEVERAGE.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.UNREALISED_PNL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.REALISED_PNL.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.REALISED_PNL.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.LIQUIDATION_PRICE.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.MARK_PRICE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.MARK_PRICE.value, 0)}"),
-                trading_enums.ExchangeConstantsPositionColumns.ENTRY_PRICE.value:
-                    decimal.Decimal(
-                        f"{position_dict.get(trading_enums.ExchangePositionCCXTColumns.ENTRY_PRICE.value, 0)}"),
-            })
-        except KeyError as e:
-            self.logger.error(f"Fail to parse position dict ({e})")
-        return position_dict

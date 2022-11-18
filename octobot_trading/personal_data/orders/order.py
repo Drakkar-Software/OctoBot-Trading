@@ -489,41 +489,30 @@ class Order(util.Initializable):
         return self.side is enums.TradeOrderSide.SELL
 
     def update_from_raw(self, raw_order):
-        if self.side is None or self.order_type is None:
-            try:
+        try:
+            if self.side is None or self.order_type is None:
                 self._update_type_from_raw(raw_order)
-                if self.taker_or_maker is None:
-                    self._update_taker_maker()
-            except KeyError:
-                logging.get_logger(self.__class__.__name__).warning("Failed to parse order side and type")
-
-        price = raw_order.get(enums.ExchangeConstantsOrderColumns.PRICE.value, 0.0) or 0.0
-        # TODO replace with := when cython will be supporting it
-        stop_price = raw_order.get(enums.ExchangeConstantsOrderColumns.STOP_PRICE.value, None)
-        if stop_price is not None and (price is None or price == 0):
-            # parse stop price when available
-            price = stop_price
-        filled_price = decimal.Decimal(str(price))
-        # set average price with real average price if available, use filled_price otherwise
-        average_price = decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value, 0.0)
-                                            or filled_price))
-
-        return self.update(
-            symbol=str(raw_order.get(enums.ExchangeConstantsOrderColumns.SYMBOL.value, None)),
-            current_price=decimal.Decimal(str(price)),
-            quantity=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.AMOUNT.value, 0.0) or 0.0)),
-            price=decimal.Decimal(str(price)),
-            status=order_util.parse_order_status(raw_order),
-            order_id=str(raw_order.get(enums.ExchangeConstantsOrderColumns.ID.value, None)),
-            quantity_filled=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value, 0.0)
-                                                or 0.0)),
-            filled_price=decimal.Decimal(str(filled_price)),
-            average_price=decimal.Decimal(str(average_price)),
-            total_cost=decimal.Decimal(str(raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value, 0.0) or 0.0)),
-            fee=order_util.parse_raw_fees(raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value, None)),
-            timestamp=raw_order.get(enums.ExchangeConstantsOrderColumns.TIMESTAMP.value, None),
-            reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value, False)
-        )
+            if self.taker_or_maker is None:
+                self.taker_or_maker = raw_order[enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value]
+            price = raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value]
+            return self.update(
+                order_id=raw_order[enums.ExchangeConstantsOrderColumns.ID.value],
+                symbol=raw_order[enums.ExchangeConstantsOrderColumns.SYMBOL.value],
+                current_price=price,
+                quantity=raw_order[enums.ExchangeConstantsOrderColumns.AMOUNT.value],
+                price=price,
+                status=order_util.parse_order_status(raw_order),
+                quantity_filled=raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value),
+                filled_price=raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED_PRICE.value),
+                average_price=raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value),
+                total_cost=raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value),
+                fee=raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value),
+                timestamp=raw_order[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value],
+                reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value),
+                tag=raw_order.get(enums.ExchangeConstantsOrderColumns.TAG.value),
+            )           
+        except KeyError:
+            raise RuntimeError("Failed to update order from parsed order")
 
     async def update_from_order(self, other_order):
         self.is_synchronized_with_exchange = other_order.is_synchronized_with_exchange
@@ -579,18 +568,22 @@ class Order(util.Initializable):
 
     def update_order_from_raw(self, raw_order):
         self.status = order_util.parse_order_status(raw_order)
-        self.total_cost = decimal.Decimal(str(raw_order[enums.ExchangeConstantsOrderColumns.COST.value] or 0))
-        self.filled_quantity = decimal.Decimal(str(raw_order[enums.ExchangeConstantsOrderColumns.FILLED.value] or 0))
-        self.filled_price = decimal.Decimal(str(raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value] or 0))
+        self.total_cost = raw_order[enums.ExchangeConstantsOrderColumns.COST.value]
+        self.filled_quantity = raw_order[
+            enums.ExchangeConstantsOrderColumns.FILLED.value
+        ]
+        self.filled_price = raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value]
         if not self.filled_price and self.filled_quantity:
-            self.filled_price = self.total_cost / self.filled_quantity
-
-        self._update_taker_maker()
-
-        self.fee = order_util.parse_raw_fees(raw_order[enums.ExchangeConstantsOrderColumns.FEE.value])
-
-        self.executed_time = self.trader.exchange.get_uniformized_timestamp(
-            raw_order[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value])
+            self.filled_price = raw_order[
+                enums.ExchangeConstantsOrderColumns.PRICE.value
+            ]
+        self.taker_or_maker = raw_order[
+            enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value
+        ]
+        self.fee = raw_order[enums.ExchangeConstantsOrderColumns.FEE.value]
+        self.executed_time = raw_order[
+            enums.ExchangeConstantsOrderColumns.TIMESTAMP.value
+        ]
 
     def _update_type_from_raw(self, raw_order):
         try:

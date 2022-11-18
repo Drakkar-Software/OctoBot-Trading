@@ -31,7 +31,6 @@ from octobot_trading.personal_data.orders import (
     get_max_order_quantity_for_price,
     total_fees_from_order_dict,
     get_fees_for_currency,
-    parse_raw_fees,
     parse_order_status,
     parse_is_cancelled,
     get_pnl_transaction_source_from_order,

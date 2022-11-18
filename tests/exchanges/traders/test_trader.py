@@ -28,7 +28,7 @@ import octobot_commons.constants as commons_constants
 from octobot_commons.asyncio_tools import wait_asyncio_next_cycle
 from octobot_commons.tests.test_config import load_test_config
 from octobot_trading.personal_data.orders import Order
-from octobot_trading.enums import TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, \
+from octobot_trading.enums import ExchangeConstantsOrderColumns, TraderOrderType, TradeOrderSide, TradeOrderType, OrderStatus, FeePropertyColumns, \
     ExchangeConstantsPositionColumns, PositionMode, MarginType, TakeProfitStopLossMode
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance, create_order_instance_from_raw
@@ -807,24 +807,35 @@ class TestTrader:
 
         await self.stop(exchange_manager)
 
-    async def test_parse_exchange_order_to_trade_instance(self):
+    async def test_parsed_exchange_order_to_trade_instance(self):
         _, exchange_manager, trader_inst = await self.init_default()
 
         timestamp = time.time()
         order_to_test = Order(trader_inst)
         exchange_order = {
+            'id': '75454401472',
+            "timestamp": timestamp,
+            "side": TradeOrderSide.BUY.value,
             "status": OrderStatus.PARTIALLY_FILLED.value,
             "symbol": self.DEFAULT_SYMBOL,
+            'type': 'market', 
+            'octobot_order_type': 'buy_market', 
+            'takerOrMaker': 'taker', 
             # "fee": 0.001,
-            "price": 10.1444215411,
-            "cost": 100.1444215411,
-            "filled": 1.568415145687741563132,
-            "timestamp": timestamp
+            "cost": decimal.Decimal("100.1444215411"),
+            "filled": decimal.Decimal("1.5684151456877415"),
+            'amount': decimal.Decimal("0.128"), 
+            "price": decimal.Decimal("10.1444215411"),
+            'filled_price': decimal.Decimal("10.1444215411"),
+            'average': decimal.Decimal("10.1444215411"), 
         }
 
         order_to_test.update_from_raw(exchange_order)
 
         assert order_to_test.status == OrderStatus.PARTIALLY_FILLED
+        assert order_to_test.exchange_order_type == TradeOrderType.MARKET
+        assert order_to_test.order_type == TraderOrderType.BUY_MARKET
+        assert order_to_test.taker_or_maker == "taker"
         assert order_to_test.filled_quantity == decimal.Decimal("1.5684151456877415")
         assert order_to_test.filled_price == decimal.Decimal("10.1444215411")
         # assert order_to_test.fee == 0.001
@@ -838,15 +849,18 @@ class TestTrader:
         timestamp = time.time()
 
         exchange_order = {
+            "id": "1546541123",
+            "timestamp": timestamp,
             "side": TradeOrderSide.SELL.value,
             "type": TradeOrderType.LIMIT.value,
-            "symbol": self.DEFAULT_SYMBOL,
-            "amount": 1564.7216721637,
-            "filled": 15.15467,
-            "id": "1546541123",
             "status": OrderStatus.OPEN.value,
-            "price": 10254.4515,
-            "timestamp": timestamp
+            ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.SELL_LIMIT.value,
+            'takerOrMaker': 'maker', 
+            "symbol": self.DEFAULT_SYMBOL,
+            "amount": decimal.Decimal("1564.7216721637"),
+            "filled": decimal.Decimal("15.15467"),
+            "price": decimal.Decimal("10254.4515"),
+            'filled_price': decimal.Decimal('16801.0'),
         }
 
         order_to_test = create_order_instance_from_raw(trader_inst, exchange_order)

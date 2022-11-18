@@ -71,7 +71,7 @@ class TradesUpdater(trades_channel.TradesProducer):
                 limit=self.MAX_OLD_TRADES_TO_FETCH)
 
             if trades:
-                await self.push(list(map(self.channel.exchange_manager.exchange.clean_trade, trades)))
+                await self.push(trades)
             if not self._is_initialized_event_set:
                 self._set_initialized_event(symbol)
         self._is_initialized_event_set = True

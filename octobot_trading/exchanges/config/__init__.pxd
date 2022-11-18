@@ -23,8 +23,13 @@ from octobot_trading.exchanges.config cimport backtesting_exchange_config
 from octobot_trading.exchanges.config.backtesting_exchange_config cimport (
     BacktestingExchangeConfig,
 )
-
+from octobot_trading.exchanges.config cimport ccxt_exchange_settings
+from octobot_trading.exchanges.config.ccxt_exchange_settings cimport (
+    CCXTExchangeConfig,
+    initialize_experimental_exchange_settings,
+)
 __all__ = [
     "ExchangeConfig",
-    "BacktestingExchangeConfig",
+    "CCXTExchangeConfig",
+    "initialize_experimental_exchange_settings",
 ]

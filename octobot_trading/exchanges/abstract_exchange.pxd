@@ -53,23 +53,14 @@ cdef class AbstractExchange(util.Initializable):
 
     # parsers
     cpdef dict parse_balance(self, dict balance)
-    cpdef dict parse_trade(self, dict trade)
-    cpdef dict parse_order(self, dict order)
     cpdef dict parse_ticker(self, dict ticker)
     cpdef dict parse_ohlcv(self, dict ohlcv)
     cpdef dict parse_order_book(self, dict order_book)
     cpdef dict parse_order_book_ticker(self, dict order_book_ticker)
     cpdef object parse_timestamp(self, dict data_dict, str timestamp_key, object default_value=*, bint ms=*)
     cpdef str parse_currency(self, str currency)
-    cpdef str parse_order_id(self, dict order)
-    cpdef object parse_status(self, str status)
-    cpdef object parse_side(self, str side)
     cpdef object parse_account(self, str account)
 
-    # cleaners
-    cpdef dict clean_recent_trade(self, dict recent_trade)
-    cpdef dict clean_trade(self, dict trade)
-    cpdef dict clean_order(self, dict order)
 
     # uniformization
     cpdef object get_exchange_current_time(self)

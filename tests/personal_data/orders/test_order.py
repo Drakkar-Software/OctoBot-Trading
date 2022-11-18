@@ -170,24 +170,24 @@ def test_update_from_raw(trader_simulator):
     # binance example market order
     raw_order = {
         'id': '362550114',
-        'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
-        'timestamp': 1637579281.377,
-        'datetime': '2021-11-22T11:08:01.377Z',
-        'lastTradeTimestamp': None,
-        'symbol': 'UNI/USDT',
+        'timestamp': 1637579281,
+        'symbol': 'WIN/USDT',
         'type': 'market',
+        enums.ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: 
+            enums.TraderOrderType.SELL_MARKET.value,
+        enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value: "taker",
         'timeInForce': 'GTC',
         'postOnly': False,
         'side': 'sell',
         'price': None,
         'stopPrice': None,
-        'amount': 44964.0,
+        'amount': decimal.Decimal("44964.0"),
         'cost': None,
         'average': None,
-        'filled': 44964.0,
-        'remaining': 0.0,
+        'filled': decimal.Decimal("44964.0"),
+        'remaining': decimal.Decimal("0.0"),
         'status': 'closed',
-        'fee': {'cost': 0.03764836, 'currency': 'USDT'},
+        'fee': {'cost': decimal.Decimal("0.03764836"), 'currency': 'USDT'},
         'trades': [],
         'fees': []
     }
@@ -207,35 +207,33 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.filled_price == constants.ZERO
     assert order_inst.total_cost == constants.ZERO
     assert order_inst.created_last_price == constants.ZERO
-    assert order_inst.timestamp == 1637579281.377
+    assert order_inst.timestamp == 1637579281
     assert order_inst.canceled_time == 0
-    assert order_inst.executed_time == 1637579281.377
+    assert order_inst.executed_time == 1637579281
     assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
 
     order_inst = personal_data.Order(trader_inst)
     # binance example limit order
     raw_order = {
         'id': '362550114',
-        'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
-        'timestamp': 1637579281.377,
-        'datetime': '2021-11-22T11:08:01.377Z',
+        'timestamp': 1637579281,
         'lastTradeTimestamp': None,
         'symbol': 'UNI/USDT',
         'type': 'limit',
-        'timeInForce': 'GTC',
+        enums.ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: 
+            enums.TraderOrderType.BUY_LIMIT.value,
+        enums.ExchangeConstantsOrderColumns.TAKERORMAKER.value: "maker",
         'postOnly': False,
         'side': 'buy',
-        'price': 12.664,
+        'price': decimal.Decimal("12.664"),
         'stopPrice': None,
-        'amount': 44964.0,
-        'cost': 123.6667,
-        'average': 13,
-        'filled': 44964.0,
-        'remaining': 0.0,
+        'amount': decimal.Decimal("44964.0"),
+        'cost': decimal.Decimal("123.6667"),
+        'average': decimal.Decimal("13"),
+        'filled': decimal.Decimal("44964.0"),
+        'remaining': decimal.Decimal("0.0"),
         'status': 'closed',
-        'fee': {'cost': 0.03764836, 'currency': 'USDT'},
-        'trades': [],
-        'fees': []
+        'fee': {'cost': decimal.Decimal("0.03764836"), 'currency': 'USDT'},
     }
     assert order_inst.update_from_raw(raw_order) is True
     assert order_inst.order_type is enums.TraderOrderType.BUY_LIMIT
@@ -253,9 +251,9 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.filled_price == decimal.Decimal("13")
     assert order_inst.total_cost == decimal.Decimal("123.6667")
     assert order_inst.created_last_price == decimal.Decimal("12.664")
-    assert order_inst.timestamp == 1637579281.377
+    assert order_inst.timestamp == 1637579281
     assert order_inst.canceled_time == 0
-    assert order_inst.executed_time == 1637579281.377
+    assert order_inst.executed_time == 1637579281
     assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
 
 

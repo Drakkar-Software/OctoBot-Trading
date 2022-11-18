@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import typing
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 
@@ -56,7 +57,7 @@ class MarginExchangeSimulator(exchanges_types.MarginExchange):
     def get_available_time_frames(self):
         return self.connector.get_available_time_frames()
 
-    def get_split_pair_from_exchange(self, pair) -> (str, str):
+    def get_split_pair_from_exchange(self, pair) -> typing.Tuple[str, str]:
         return self.connector.get_split_pair_from_exchange(pair)
 
     def get_pair_cryptocurrency(self, pair) -> str:

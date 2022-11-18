@@ -221,14 +221,6 @@ def get_fees_for_currency(fee, currency):
     return constants.ZERO
 
 
-def parse_raw_fees(raw_fees):
-    fees = raw_fees
-    if fees and enums.ExchangeConstantsOrderColumns.COST.value in fees:
-        raw_fees[enums.ExchangeConstantsOrderColumns.COST.value] = \
-            decimal.Decimal(str(raw_fees[enums.ExchangeConstantsOrderColumns.COST.value]))
-    return fees
-
-
 def parse_order_status(raw_order):
     try:
         return enums.OrderStatus(raw_order[enums.ExchangeConstantsOrderColumns.STATUS.value])

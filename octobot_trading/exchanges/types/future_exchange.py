@@ -259,20 +259,6 @@ class FutureExchange(abstract_exchange.AbstractExchange):
     Parsers
     """
 
-    def parse_positions(self, positions) -> list:
-        """
-        :param positions: a list of positions dict to parse
-        :return: uniformized positions
-        """
-        return [self.parse_position(position) for position in positions]
-
-    def parse_position(self, position_dict) -> dict:
-        """
-        :param position_dict: the position dict
-        :return: the uniformized position dict
-        """
-        raise NotImplementedError("parse_position is not implemented")
-
     def parse_funding(self, funding_dict, from_ticker=False) -> dict:
         """
         :param from_ticker: when True, the funding dict is extracted from ticker data
@@ -295,35 +281,3 @@ class FutureExchange(abstract_exchange.AbstractExchange):
         :return: the uniformized liquidation dict
         """
         raise NotImplementedError("parse_liquidation is not implemented")
-
-    def parse_position_status(self, status):
-        """
-        :param status: the position raw status
-        :return: the uniformized position status
-        """
-        try:
-            return octobot_trading.enums.PositionStatus(status)
-        except ValueError:
-            return ValueError("Could not parse position status")
-
-    def parse_position_side(self, side, mode):
-        """
-        :param side: the raw side
-        :param mode: the parsed mode
-        :return: the uniformized PositionSide instance from the raw side
-        """
-        if mode is octobot_trading.enums.PositionMode.ONE_WAY:
-            return octobot_trading.enums.PositionSide.BOTH
-        return octobot_trading.enums.PositionSide.LONG \
-            if side == octobot_trading.enums.PositionSide.LONG.value else octobot_trading.enums.PositionSide.SHORT
-
-    def calculate_position_value(self, quantity, mark_price):
-        """
-        Calculates the position value
-        :param quantity: the position quantity
-        :param mark_price: the position symbol mark price
-        :return: the position value
-        """
-        if mark_price:
-            return quantity / mark_price
-        return 0

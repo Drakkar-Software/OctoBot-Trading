@@ -26,6 +26,7 @@ from octobot_trading.constants import ZERO
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.personal_data.orders.order_factory import create_order_instance_from_raw
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
+from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 from octobot_trading.personal_data.trades import create_trade_instance_from_raw, create_trade_from_order, \
     create_trade_instance
@@ -58,29 +59,24 @@ class TestTradeFactory:
 
     async def test_create_trade_instance_from_raw(self):
         _, exchange_manager, trader = await self.init_default()
-
-        raw_trade = json.loads(
-            """
-            {	
-              "info": {},
+        raw_trade = {	
               "id": "12345-67890:09876/54321",
-              "timestamp": 1502962946216,
-              "datetime": "2017-08-17 12:42:48.000",
+              "timestamp": 1502962946,
               "symbol": "ETH/BTC",
               "order": "12345-67890:09876/54321",
               "type": "limit",
+              ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.BUY_MARKET.value,
               "side": "buy",
               "takerOrMaker": "taker",
-              "price": 0.06917684,
-              "amount": 1.5,
-              "cost": 0.10376526,
+              "price": decimal.Decimal("0.06917684"),
+              "amount": decimal.Decimal("1.5"),
+              "cost": decimal.Decimal("0.10376526"),
               "fee": {
                 "cost": 0.0015,
                 "currency": "ETH",
                 "rate": 0.002
               }
             }
-            """)
 
         trade = create_trade_instance_from_raw(trader, raw_trade)
 
@@ -92,10 +88,10 @@ class TestTradeFactory:
         assert trade.executed_quantity == decimal.Decimal(str(1.5))
         assert trade.origin_price == decimal.Decimal(str(0.06917684))
         assert trade.executed_price == decimal.Decimal(str(0.06917684))
-        assert trade.executed_time == 1502962946216
+        assert trade.executed_time == 1502962946
         assert trade.status == OrderStatus.FILLED
         assert trade.fee == {
-            FeePropertyColumns.COST.value: decimal.Decimal("0.0015"),
+            FeePropertyColumns.COST.value: 0.0015,
             FeePropertyColumns.CURRENCY.value: "ETH",
             FeePropertyColumns.RATE.value: 0.002
         }
@@ -108,31 +104,28 @@ class TestTradeFactory:
         _, exchange_manager, trader = await self.init_default()
 
         # limit order
-        raw_order = json.loads(
-            """
-            {
+        raw_order = {
                 "id":                "12345-67890:09876/54321",
-                "datetime":          "2017-08-17 12:42:48.000",
-                "timestamp":          1502962946216,
-                "lastTradeTimestamp": 1502962956216,
+                "timestamp":          1502962946,
                 "status":     "open",
                 "symbol":     "BTC/USDT",
                 "type":       "limit",
+                ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.SELL_LIMIT.value,
                 "side":       "sell",
-                "price":       7684,
-                "amount":      1.5,
-                "filled":      1.1,
-                "remaining":   0.4,
-                "cost":        0.076094524,
-                "trades":    [],
+                "takerOrMaker": "maker",
+                "price":       decimal.Decimal("7684"),
+                "filled_price":       decimal.Decimal("7684"),
+                "amount":      decimal.Decimal("1.5"),
+                "filled":      decimal.Decimal("1.1"),
+                "remaining":   decimal.Decimal("0.4"),
+                "cost":        decimal.Decimal("0.076094524"),
                 "fee": {
                     "currency": "BTC",
                     "cost": 0.0009,
                     "rate": 0.002
-                },
-                "info": {}
+                }
             }
-            """)
+            
 
         order = create_order_instance_from_raw(trader, raw_order)
         order.tag = "tag"
@@ -162,26 +155,21 @@ class TestTradeFactory:
         # market order
         raw_order = {
             'id': '362550114',
-            'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
-            'timestamp': 1637579281.377,
-            'datetime': '2021-11-22T11:08:01.377Z',
-            'lastTradeTimestamp': None,
-            'symbol': 'UNI/USDT',
+            'timestamp': 1637579281,
+            'symbol': 'WIN/USDT',
             'type': 'market',
-            'timeInForce': 'GTC',
-            'postOnly': False,
+            ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.SELL_MARKET.value,
             'side': 'sell',
+            "takerOrMaker": "taker",
             'price': None,
             'stopPrice': None,
-            'amount': 44964.0,
+            'amount': decimal.Decimal(44964.0),
             'cost': None,
             'average': None,
-            'filled': 44964.0,
-            'remaining': 0.0,
+            'filled': decimal.Decimal(44964.0),
+            'remaining': decimal.Decimal(0.0),
             'status': 'closed',
             'fee': {'cost': 0.03764836, 'currency': 'USDT'},
-            'trades': [],
-            'fees': []
         }
         order = create_order_instance_from_raw(trader, raw_order)
         trade = create_trade_from_order(order, close_status=OrderStatus.FILLED)
@@ -196,7 +184,7 @@ class TestTradeFactory:
         assert trade.origin_price == ZERO
         assert trade.executed_price == ZERO
         assert trade.status == OrderStatus.FILLED
-        assert trade.executed_time == 1637579281.377
+        assert trade.executed_time == 1637579281
         assert trade.is_closing_order is True
 
         await self.stop(exchange_manager)
@@ -204,31 +192,27 @@ class TestTradeFactory:
     async def test_create_trade_from_partially_filled_order(self):
         _, exchange_manager, trader = await self.init_default()
 
-        raw_order = json.loads(
-            """
-            {
+        raw_order =  {
                 "id":                "12345-67890:09876/54321",
-                "datetime":          "2017-08-17 12:42:48.000",
-                "timestamp":          1502962946216,
-                "lastTradeTimestamp": 1502962956216,
+                "timestamp":          1502962946,
                 "status":     "open",
                 "symbol":     "BTC/USDT",
                 "type":       "limit",
+                "takerOrMaker": "maker",
+                ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value: TraderOrderType.SELL_LIMIT.value,
                 "side":       "sell",
-                "price":       7684,
-                "amount":      1.5,
-                "filled":      1.1,
-                "remaining":   0.4,
-                "cost":        0.076094524,
-                "trades":    [],
+                "price":       decimal.Decimal("7684"),
+                "filled_price":       decimal.Decimal("7684"),
+                "amount":      decimal.Decimal("1.5"),
+                "filled":      decimal.Decimal("1.1"),
+                "remaining":   decimal.Decimal("0.4"),
+                "cost":        decimal.Decimal("0.076094524"),
                 "fee": {
                     "currency": "BTC",
                     "cost": 0.0009,
                     "rate": 0.002
-                },
-                "info": {}
+                }
             }
-            """)
 
         order = create_order_instance_from_raw(trader, raw_order)
         trade = create_trade_from_order(order, close_status=OrderStatus.OPEN)

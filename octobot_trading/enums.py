@@ -103,6 +103,7 @@ class PositionStatus(enum.Enum):
     LIQUIDATED = "liquidated"
     OPEN = "open"
     ADL = "auto_deleveraging"
+    CLOSED = "closed"
 
 
 class BlockchainTransactionStatus(enum.Enum):
@@ -189,6 +190,34 @@ class ExchangePositionCCXTColumns(enum.Enum):
     PERCENTAGE = "percentage"
     SIDE = "side"
     INFO = "info"
+    
+class CCXTExchangeConfigMethods(enum.Enum):
+    GET_ORDER_DEFAULT = "get_order_default"
+    GET_ORDER_PRIVATE = "get_order_private"
+    GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS = "get_order_from_open_and_closed_orders"
+    GET_ORDER_USING_STOP_ID = "get_order_using_stop_id"
+    GET_ORDER_FROM_TRADES = "get_order_from_trades"
+    
+    GET_ALL_ORDERS_DEFAULT = "get_all_orders_default"
+    GET_ALL_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT = "get_all_stop_orders_using_stop_loss_endpoint"
+    
+    GET_OPEN_ORDERS_DEFAULT = "get_open_orders_default"
+    GET_OPEN_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT \
+        = "get_open_stop_orders_using_stop_loss_endpoint"
+       
+    GET_CLOSED_ORDERS_DEFAULT = "get_closed_orders_default"
+    GET_CLOSED_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT = "get_closed_stop_orders_using_stop_loss_endpoint"
+    
+    GET_MY_RECENT_TRADES_DEFAULT = "get_my_recent_trades_default"
+    GET_MY_RECENT_TRADES_USING_RECENT_TRADES = "get_my_recent_trades_using_recent_trades"
+    GET_MY_RECENT_TRADES_USING_CLOSED_ORDERS = "get_my_recent_trades_using_closed_orders"
+    
+    CANCEL_ORDER_DEFAULT = "cancel_order_default"
+    CANCEL_STOP_ORDER_USING_STOP_LOSS_ENDPOINT = "cancel_stop_order_using_stop_loss_endpoint"
+    
+    GET_POSITION_DEFAULT = "get_position_default"
+    GET_POSITION_BY_SUB_TYPE = "get_position_by_sub_type"
+    GET_POSITION_WITH_PRIVATE_GET_POSITION_RISK = "get_position_with_private_get_position_risk"
 
 
 class ExchangeFundingCCXTColumns(enum.Enum):
@@ -364,12 +393,14 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     SYMBOL = "symbol"
     QUANTITY_CURRENCY = "quantity_currency"
     TYPE = "type"
+    OCTOBOT_ORDER_TYPE = "octobot_order_type"
     SIDE = "side"
     PRICE = "price"
     AMOUNT = "amount"
     COST = "cost"
     AVERAGE = "average"
     FILLED = "filled"
+    FILLED_PRICE = "filled_price"
     REMAINING = "remaining"
     STATUS = "status"
     FEE = "fee"
@@ -397,6 +428,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     CLOSING_FEE = "closing_fee"
     QUANTITY = "quantity"
     SIZE = "size"
+    VALUE = "value"
     NOTIONAL = "notional"
     INITIAL_MARGIN = "initial_margin"
     COLLATERAL = "collateral"
@@ -407,6 +439,7 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     MAINTENANCE_MARGIN_RATE = "maintenance_margin_rate"
     STATUS = "status"
     SIDE = "side"
+    ORIGINAL_SIDE = "original_side"
 
 
 class ExchangeConstantsLiquidationColumns(enum.Enum):

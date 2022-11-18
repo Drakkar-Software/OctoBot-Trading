@@ -16,11 +16,19 @@
 import octobot_trading.personal_data as personal_data
 import octobot_trading.enums as enums
 import octobot_trading.constants as constants
+from octobot_trading.enums import ExchangeConstantsOrderColumns
 
 
 def create_order_from_raw(trader, raw_order):
-    _, order_type = personal_data.parse_order_type(raw_order)
-    return create_order_from_type(trader, order_type)
+    try:
+        order_type = raw_order[ExchangeConstantsOrderColumns.OCTOBOT_ORDER_TYPE.value]
+    except KeyError:
+        raise RuntimeError("Failed to create order from parsed order type. "
+                           "Order type not found, which should never be the case")
+    except ValueError:
+        raise RuntimeError("Failed to create order from parsed order type. "
+                           "Order type is not a valid TraderOrderType, which should never be the case")
+    return create_order_from_type(trader, enums.TraderOrderType(order_type))
 
 
 def create_order_instance_from_raw(trader, raw_order, force_open=False):

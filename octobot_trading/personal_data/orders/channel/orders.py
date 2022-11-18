@@ -20,6 +20,7 @@ import async_channel.constants as channel_constants
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.exchanges as exchanges
 import octobot_trading.constants as constants
+import octobot_trading.enums as enums
 
 
 class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
@@ -33,10 +34,10 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
             has_new_order = False
             for order in orders:
                 symbol = self.channel.exchange_manager.get_exchange_symbol(
-                    self.channel.exchange_manager.exchange.parse_order_symbol(order))
+                    order[enums.ExchangeConstantsOrderColumns.SYMBOL.value])
                 if self.channel.get_filtered_consumers(symbol=channel_constants.CHANNEL_WILDCARD) or \
                         self.channel.get_filtered_consumers(symbol=symbol):
-                    order_id: str = self.channel.exchange_manager.exchange.parse_order_id(order)
+                    order_id: str = order[enums.ExchangeConstantsOrderColumns.ID.value]
 
                     # if this order was not managed by order_manager before
                     is_new_order = not self.channel.exchange_manager.exchange_personal_data.orders_manager. \
@@ -146,7 +147,7 @@ class OrdersProducer(exchanges_channel.ExchangeChannelProducer):
                 self.channel.exchange_manager.exchange_personal_data.orders_manager.get_open_orders(symbol)
                 if not order.is_self_managed()) -
             set(
-                self.channel.exchange_manager.exchange.parse_order_id(order)
+                order[enums.ExchangeConstantsOrderColumns.ID.value]
                 for order in orders)
         )
         if missing_order_ids:

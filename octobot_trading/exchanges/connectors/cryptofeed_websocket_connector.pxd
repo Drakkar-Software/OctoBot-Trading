@@ -68,8 +68,5 @@ cdef class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExch
     cdef void _fix_signal_handler(self)
     cdef void _fix_logger(self)
     cdef list _convert_book_prices_to_orders(self, dict book_prices, str book_side)
-    cdef str _parse_order_type(self, str raw_order_type)
-    cdef str _parse_order_status(self, str raw_order_status)
-    cdef str _parse_order_side(self, str raw_order_side)
     cdef void _register_previous_open_candle(self, object time_frame, str symbol, list candle)
     cdef list _get_previous_open_candle(self, object time_frame, str symbol)

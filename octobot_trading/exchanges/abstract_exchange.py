@@ -27,6 +27,7 @@ import octobot_tentacles_manager.api as octobot_tentacles_manager_api
 import octobot_trading.constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
+from octobot_commons import number_util
 
 
 class AbstractExchange(util.Initializable):
@@ -153,6 +154,35 @@ class AbstractExchange(util.Initializable):
         :return: market status dict
         """
         raise NotImplementedError("get_market_status is not implemented")
+
+    @staticmethod
+    def fix_market_status(market_status, remove_price_limits: bool):
+        """
+            Use this method when market status has to be fixed.
+            Try the default fixing methods by setting USE_FIXED_MARKET_STATUS and/or MARKET_STATUS_FIXER_REMOVE_PRICE_LIMITS
+            Changes PRECISION_AMOUNT and PRECISION_PRICE from decimals to integers
+            (use number of digits instead of price example) by default.
+            Override _fix_market_status to change other elements
+        """
+        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = number_util.get_digits_count(
+            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value]
+        )
+        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value] = number_util.get_digits_count(
+            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
+                enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
+        )
+        if remove_price_limits:
+            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value] = None
+            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
+                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value] = None
+
+        return market_status
 
     async def get_balance(self, **kwargs: dict):
         """
@@ -425,20 +455,6 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("parse_balance is not implemented")
 
-    def parse_trade(self, trade):
-        """
-        :param trade: the trade dict
-        :return: the uniformized trade dict
-        """
-        raise NotImplementedError("parse_trade is not implemented")
-
-    def parse_order(self, order):
-        """
-        :param order: the order dict
-        :return: the uniformized order dict
-        """
-        raise NotImplementedError("parse_order is not implemented")
-
     def parse_ticker(self, ticker):
         """
         :param ticker: the ticker dict
@@ -485,68 +501,12 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("parse_currency is not implemented")
 
-    def parse_order_id(self, order):
-        """
-        :param order: the order dict
-        :return: the order id
-        """
-        raise NotImplementedError("parse_order_id is not implemented")
-
-    def parse_order_symbol(self, order):
-        """
-        :param order: the order dict
-        :return: the order symbol
-        """
-        raise NotImplementedError("parse_order_symbol is not implemented")
-
-    def parse_status(self, status):
-        """
-        :param status: the raw status
-        :return: the OrderStatus instance related to the row status
-        """
-        raise NotImplementedError("parse_status is not implemented")
-
-    def parse_side(self, side):
-        """
-        :param side: the raw side
-        :return: the TradeOrderSide related to the side
-        """
-        raise NotImplementedError("parse_side is not implemented")
-
     def parse_account(self, account):
         """
         :param account: the raw account
         :return: the AccountTypes related to the account
         """
         raise NotImplementedError("parse_account is not implemented")
-
-    """
-    Cleaners
-    """
-
-    def clean_recent_trade(self, recent_trade):
-        """
-        Clean the specified recent trade list
-        :param recent_trade: the recent trade list
-        :return: the cleaned recent trade list
-        """
-        raise NotImplementedError("clean_recent_trade is not implemented")
-
-    def clean_trade(self, trade):
-        """
-        Clean the specified trade dict
-        :param trade: the trade dict
-        :return: the cleaned trade dict
-        """
-        raise NotImplementedError("clean_trade is not implemented")
-
-    def clean_order(self, order):
-        """
-        Clean the specified order dict
-        :param order: the order dict
-        :return: the cleaned order dict
-        """
-        raise NotImplementedError("clean_order is not implemented")
 
     """
     Uniformization

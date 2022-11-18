@@ -41,6 +41,7 @@ import octobot_trading.exchanges.connectors.abstract_websocket_connector as abst
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC, \
     ExchangeConstantsTickersColumns as Ectc
 from octobot_trading.enums import WebsocketFeeds as Feeds
+from octobot_trading.exchanges.util.parser import OrdersParser as OrdersParser
 
 
 class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):
@@ -799,18 +800,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param order the order object defined in cryptofeed.types.?
         :param receipt_timestamp: received timestamp
         """
-        await self.push_to_channel(trading_constants.ORDERS_CHANNEL, [{
-            trading_enums.ExchangeConstantsOrderColumns.TYPE.value: self._parse_order_type(order.type),
-            trading_enums.ExchangeConstantsOrderColumns.STATUS.value: self._parse_order_status(order.status),
-            trading_enums.ExchangeConstantsOrderColumns.ID.value: order.id,
-            trading_enums.ExchangeConstantsOrderColumns.SYMBOL.value: order.symbol,
-            trading_enums.ExchangeConstantsOrderColumns.PRICE.value: order.price,
-            trading_enums.ExchangeConstantsOrderColumns.AMOUNT.value: order.amount,
-            trading_enums.ExchangeConstantsOrderColumns.REMAINING.value: order.remaining,
-            trading_enums.ExchangeConstantsOrderColumns.FILLED.value: order.amount - order.remaining,
-            trading_enums.ExchangeConstantsOrderColumns.TIMESTAMP.value: order.timestamp,
-            trading_enums.ExchangeConstantsOrderColumns.SIDE.value: self._parse_order_side(order.side)
-        }])
+        order_parser = OrdersParser(self.exchange)
+        await self.push_to_channel(trading_constants.ORDERS_CHANNEL, [await order_parser.parse_order(order, timestamp=receipt_timestamp)])
 
     async def trade(self, trade, receipt_timestamp: float):
         """
@@ -818,7 +809,8 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param trade: the trade object defined in cryptofeed.types.?
         :param receipt_timestamp: received timestamp
         """
-        await self.push_to_channel(trading_constants.TRADES_CHANNEL, [self.exchange.parse_trade(trade)])
+        await self.push_to_channel(trading_constants.TRADES_CHANNEL,
+                                   [await self.exchange.connector.parse_trade(trade, timestamp=receipt_timestamp)])
 
     async def balance(self, balance: cryptofeed_types.Balance, receipt_timestamp: float):
         """
@@ -842,76 +834,6 @@ class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange)
         :param fill: the fill object defined in cryptofeed.types.Fill
         :param receipt_timestamp: received timestamp
         """
-
-    """
-    Parsers
-    """
-
-    def _parse_order_type(self, raw_order_type):
-        """
-        :param raw_order_type: the cryptofeed unified order type
-        :return: the unified OctoBot order type
-        """
-        # TODO Migrate to switch case with python 3.10
-        if raw_order_type == cryptofeed_constants.LIMIT:
-            return trading_enums.TradeOrderType.LIMIT.value
-        elif raw_order_type == cryptofeed_constants.MARKET:
-            return trading_enums.TradeOrderType.MARKET.value
-        elif raw_order_type == cryptofeed_constants.STOP_LIMIT:
-            return trading_enums.TradeOrderType.STOP_LOSS_LIMIT.value
-        elif raw_order_type == cryptofeed_constants.STOP_MARKET:
-            return trading_enums.TradeOrderType.STOP_LOSS.value
-        elif raw_order_type == cryptofeed_constants.MAKER_OR_CANCEL:
-            pass
-        elif raw_order_type == cryptofeed_constants.FILL_OR_KILL:
-            pass
-        elif raw_order_type == cryptofeed_constants.IMMEDIATE_OR_CANCEL:
-            pass
-        elif raw_order_type == cryptofeed_constants.GOOD_TIL_CANCELED:
-            pass
-        self.logger.error(f"Failed to parse {raw_order_type} order type (not supported).")
-        return None
-
-    def _parse_order_status(self, raw_order_status):
-        """
-        :param raw_order_status: the cryptofeed unified order status
-        :return: the unified OctoBot order status
-        """
-        # TODO Migrate to switch case with python 3.10
-        if raw_order_status == cryptofeed_constants.OPEN:
-            return trading_enums.OrderStatus.OPEN.value
-        elif raw_order_status == cryptofeed_constants.PENDING:
-            return trading_enums.OrderStatus.OPEN.value
-        elif raw_order_status == cryptofeed_constants.FILLED:
-            return trading_enums.OrderStatus.FILLED.value
-        elif raw_order_status == cryptofeed_constants.PARTIAL:
-            return trading_enums.OrderStatus.PARTIALLY_FILLED.value
-        elif raw_order_status == cryptofeed_constants.CANCELLED:
-            return trading_enums.OrderStatus.CANCELED.value
-        elif raw_order_status == cryptofeed_constants.UNFILLED:
-            return trading_enums.OrderStatus.OPEN.value
-        elif raw_order_status == cryptofeed_constants.EXPIRED:
-            return trading_enums.OrderStatus.EXPIRED.value
-        elif raw_order_status == cryptofeed_constants.FAILED:
-            return trading_enums.OrderStatus.REJECTED.value
-        elif raw_order_status == cryptofeed_constants.SUBMITTING:
-            return trading_enums.OrderStatus.OPEN.value
-        elif raw_order_status == cryptofeed_constants.CANCELLING:
-            return trading_enums.OrderStatus.PENDING_CANCEL.value
-        elif raw_order_status == cryptofeed_constants.CLOSED:
-            return trading_enums.OrderStatus.CLOSED.value
-        elif raw_order_status == cryptofeed_constants.SUSPENDED:
-            pass
-        self.logger.error(f"Failed to parse {raw_order_status} order status (not supported).")
-        return None
-
-    def _parse_order_side(self, raw_order_side):
-        """
-        :param raw_order_side: the cryptofeed unified order side
-        :return: the unified OctoBot order side
-        """
-        return trading_enums.TradeOrderSide.BUY.value \
-            if raw_order_side == cryptofeed_constants.BUY else trading_enums.TradeOrderSide.SELL.value
 
     def _register_previous_open_candle(self, time_frame, symbol, candle):
         try:
