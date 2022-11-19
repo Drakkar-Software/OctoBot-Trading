@@ -238,8 +238,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return self.connector.get_uniform_timestamp(timestamp)
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True):
-        return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer,
-                                                market_status_fixer=self.fix_market_status)
+        return self.connector.get_market_status(symbol, price_example=price_example, with_fixer=with_fixer)
 
     async def get_balance(self, **kwargs: dict):
         return await self.connector.get_balance(**kwargs)
@@ -322,9 +321,6 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     def parse_balance(self, balance):
         return personal_data.parse_decimal_portfolio(self.connector.parse_balance(balance))
-
-    def parse_ticker(self, ticker):
-        return self.connector.parse_ticker(ticker)
 
     def parse_ohlcv(self, ohlcv):
         return self.connector.parse_ohlcv(ohlcv)

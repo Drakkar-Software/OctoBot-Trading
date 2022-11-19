@@ -14,11 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-from octobot_trading.exchanges.util cimport exchange_market_status_fixer
-from octobot_trading.exchanges.util.exchange_market_status_fixer cimport (
-    ExchangeMarketStatusFixer,
-    is_ms_valid,
-)
 from octobot_trading.exchanges.util cimport exchange_util
 from octobot_trading.exchanges.util.exchange_util cimport (
     get_margin_exchange_class,
@@ -36,7 +31,9 @@ from octobot_trading.exchanges.util.websockets_util cimport (
     check_web_socket_config,
     search_websocket_class,
 )
-from octobot_trading.exchanges.util.parser cimport PositionsParser, OrdersParser, TradesParser
+from octobot_trading.exchanges.parser cimport parser
+from octobot_trading.exchanges.parser cimport PositionsParser, OrdersParser, \
+    TradesParser, ExchangeMarketStatusFixer, is_ms_valid, TickerParser
 
 
 __all__ = [
@@ -56,4 +53,5 @@ __all__ = [
     "PositionsParser",
     "OrdersParser",
     "TradesParser",
+    "TickerParser",
 ]

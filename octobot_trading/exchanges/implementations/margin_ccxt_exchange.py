@@ -153,9 +153,6 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
     def parse_balance(self, balance):
         return personal_data.parse_decimal_portfolio(self.connector.parse_balance(balance))
 
-    def parse_ticker(self, ticker):
-        return self.connector.parse_ticker(ticker)
-
     def parse_ohlcv(self, ohlcv):
         return self.connector.parse_ohlcv(ohlcv)
 

@@ -184,9 +184,6 @@ class OrdersParser(Parser):
                 pass  # todo is it canceled?
 
         def found_status(raw_status):
-            raw_status = self.exchange.connector.client.parse_order_status(
-                raw_status
-            )  # isn't it already parsed through that ccxt side?
             try:
                 return OrderStatus(raw_status).value
             except ValueError:

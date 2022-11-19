@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import typing
 
 import octobot_backtesting.api as backtesting_api
 import octobot_backtesting.importers as importers
@@ -208,7 +209,7 @@ class ExchangeSimulator(abstract_exchange.AbstractExchange):
                                                         set(self.exchange_manager.exchange_config.traded_time_frames)),
                                                    reverse=True)
 
-    def get_split_pair_from_exchange(self, pair) -> (str, str):
+    def get_split_pair_from_exchange(self, pair) -> typing.Tuple[str, str]:
         return symbol_util.parse_symbol(pair).base_and_quote()
 
     def get_pair_cryptocurrency(self, pair) -> str:

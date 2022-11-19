@@ -16,9 +16,13 @@
 import os
 from math import nan
 
-from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc, \
-    ExchangeConstantsMarketStatusInfoColumns as Ecmsic
-from octobot_trading.exchanges.util.exchange_market_status_fixer import ExchangeMarketStatusFixer
+from octobot_trading.enums import (
+    ExchangeConstantsMarketStatusColumns as Ecmsc,
+    ExchangeConstantsMarketStatusInfoColumns as Ecmsic,
+)
+from octobot_trading.exchanges.parser.market_status_parser import (
+    ExchangeMarketStatusParser,
+)
 
 
 class TestExchangeMarketStatusFixer:

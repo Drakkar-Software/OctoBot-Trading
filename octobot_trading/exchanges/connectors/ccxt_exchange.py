@@ -35,9 +35,8 @@ import octobot_trading.exchanges as exchanges
 import octobot_trading.exchanges.abstract_exchange as abstract_exchange
 import octobot_trading.exchanges.config.ccxt_exchange_settings as ccxt_exchange_settings
 import octobot_trading.personal_data as personal_data
-from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, OrderStatus, TradeOrderType
-from octobot_trading.enums import ExchangeConstantsTickersColumns as t_cols
-import octobot_trading.exchanges.util.parser as parser
+from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, OrderStatus
+import octobot_trading.exchanges.parser as parser
 
 
 class CCXTExchange(abstract_exchange.AbstractExchange):
@@ -56,6 +55,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         self.orders_parser: parser.OrdersParser = connector_config.ORDERS_PARSER_CLASS
         self.trades_parser: parser.TradesParser = connector_config.TRADES_PARSER_CLASS
         self.positions_parser: parser.PositionsParser = connector_config.POSITIONS_PARSER_CLASS
+        self.ticker_parser: parser.TickerParser = connector_config.TICKER_PARSER_CLASS
+        self.market_status_parser: parser.ExchangeMarketStatusParser = connector_config.MARKET_STATUS_PARSER_CLASS
 
         self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED = 100
 
@@ -228,6 +229,15 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         parser = self.positions_parser(self.exchange_manager.exchange)
         return await parser.parse_positions(raw_positions)
 
+    def parse_ticker(self, raw_ticker: dict, symbol) -> dict:
+        return self.ticker_parser.parse_ticker(ticker=raw_ticker, exchange = self.exchange_manager.exchange, symbol=symbol)
+
+    def parse_market_status(self, raw_market_status: dict, with_fixer: bool, price_example) -> dict:
+        return self.market_status_parser(
+            market_status=raw_market_status, with_fixer=with_fixer, price_example=price_example,
+            fix_precision=self.connector_config.MARKET_STATUS_FIX_PRECISION,
+            remove_invalid_price_limits=self.connector_config.MARKET_STATUS_REMOVE_INVALID_PRICE_LIMITS).market_status
+
     def get_client_symbols(self):
         return set(self.client.symbols) \
             if hasattr(self.client, "symbols") and self.client.symbols is not None else set()
@@ -348,28 +358,12 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         config.update(self.additional_ccxt_config or {})
         return config
 
-    def get_market_status(self, symbol, price_example=None, with_fixer=True, market_status_fixer=None) -> dict:
+    def get_market_status(self, symbol, price_example=None, with_fixer=True,) -> dict:
         try:
-            return self.get_fixed_market_status(symbol, price_example=price_example, with_fixer=with_fixer,
-                                                market_status_fixer=market_status_fixer)
+            return self.parse_market_status(
+                raw_market_status=self.client.market(symbol), with_fixer=with_fixer, price_example=price_example)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
-        except Exception as e:
-            self.logger.error(f"Fail to get market status of {symbol}: {e}")
-            return {}
-
-    def get_fixed_market_status(self, symbol, price_example=None, with_fixer=True, market_status_fixer=None) -> dict:
-        # todo check if behavior is good
-        # if USE_FIXED_MARKET_STATUS is not set, it's using fixed_market_status with remove_price_limits disabled
-        market_status = self.client.market(symbol)
-        if market_status_fixer and self.connector_config.USE_FIXED_MARKET_STATUS:
-            market_status = market_status_fixer(
-                copy.deepcopy(market_status),
-                remove_price_limits=self.connector_config.MARKET_STATUS_FIXER_REMOVE_PRICE_LIMITS
-            )
-        if with_fixer:
-            return exchanges.ExchangeMarketStatusFixer(market_status, price_example).market_status
-        return market_status
 
     async def get_balance(self, **kwargs: dict):
         """
@@ -462,23 +456,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.FailedRequest(f"Failed to get_recent_trades {e}")
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
-    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
+    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> dict:
         try:
             with self.error_describer():
                 ticker = await self.client.fetch_ticker(symbol, params=kwargs)
-                # some exchanges are missing values
-                if not ticker[ecoc.TIMESTAMP.value]:
-                    ticker[t_cols.TIMESTAMP.value] = self.client.milliseconds()
-                if not ticker[t_cols.BASE_VOLUME.value]:
-                    try:
-                        ticker[t_cols.BASE_VOLUME.value] \
-                            = ticker[t_cols.QUOTE_VOLUME.value] / ticker[t_cols.CLOSE.value]
-                    except Exception as e:
-                        # todo is it critical?
-                        self.logger.warning(f"Failed to get ticker parameter: "
-                                            f"base volume - symbol {symbol} - error: {e}")
-                return ticker
-
+                return self.parse_ticker(raw_ticker=ticker, symbol=symbol)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
@@ -498,14 +480,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.FailedRequest(f"Failed to get_all_currencies_price_ticker {e}")
 
     async def get_order(self, order_id: str, symbol: str = None, check_completeness: bool = True,
-                        **kwargs: dict) -> dict:
+                        **kwargs: dict) -> typing.Optional[dict]:
         defined_methods = self.connector_config.GET_ORDER_METHODS
         if enums.CCXTExchangeConfigMethods.GET_ORDER_DEFAULT.value in defined_methods and\
                 (order := await self.get_order_default(order_id, symbol,
-                                                       check_completeness=check_completeness, **kwargs)):
-            return order
-        if enums.CCXTExchangeConfigMethods.GET_ORDER_PRIVATE.value in defined_methods and \
-                (order := await self.get_order_private(order_id, symbol,
                                                        check_completeness=check_completeness, **kwargs)):
             return order
         if enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS.value in defined_methods and \
@@ -517,7 +495,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 (order := await self.get_order_using_stop_id(order_id, symbol, check_completeness=check_completeness)):
             return order
         if enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_TRADES.value in defined_methods and \
-                (order := await self.get_order_from_trades(order_id, symbol, check_completeness=check_completeness)):
+                (order := await self.get_trade(order_id, symbol, check_completeness=check_completeness)):
             return order
         self.logger.debug(f"Order not found using get_order: {order_id} / {symbol} - order might not exist anymore")
 
@@ -534,9 +512,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
                 pass
             except ccxt.NotSupported as e:
-                self.logger.error(f"Failed to fetch closed orders using get_order_default: Not Supported {e}")
+                self.logger.exception(e, True, "Failed to fetch closed orders using get_order_default: Not Supported")
             except Exception as e:
-                self.logger.error(f"Failed to fetch closed orders using get_order_default: {e}")
+                self.logger.exception(e, True, "Failed to fetch closed orders using get_order_default")
         return None
 
     async def get_order_using_stop_id(self, order_id: str, symbol: str = None, check_completeness: bool = True,
@@ -553,7 +531,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 # some exchanges are throwing this error when an order is cancelled
                 pass
             except Exception as e:
-                self.logger.error(f"Failed to get order using get_order_using_stop_id: {e}")
+                self.logger.exception(e, True, "Failed to get order using get_order_using_stop_id")
         return None
 
     async def get_order_using_get_orders(self, order_id: str, symbol: str = None, check_completeness: bool = True,
@@ -565,7 +543,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 if order.get(ecoc.ID.value, None) == order_id:
                     return order
         except Exception as e:
-            self.logger.error(f"Failed to get order using get_order_using_get_orders: {e}")
+            self.logger.exception(e, True, "Failed to get order using get_order_using_get_orders")
         return None
 
     async def get_order_from_open_and_closed_orders(self, order_id: str, symbol: str = None,
@@ -579,74 +557,16 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 return order
         return None  # OrderNotFound
 
-    async def get_order_from_trades(self, order_id, symbol, check_completeness=True):
-        trades = await self.get_my_recent_trades(symbol, check_completeness=check_completeness)
-        # usually the right trade is within the last ones
-        for trade in trades[::-1]:
-            if trade[ecoc.ID.value] == order_id:
-                return trade
-        return None  # OrderNotFound
-
-    async def get_order_private(self, order_id: str, symbol: str = None, check_completeness: bool = True,
-                                **kwargs: dict) -> typing.Optional[dict]:
-        # todo moved from bybit - should be checked
-        # fetchOrder() supports spot markets and linear non-USDC perpetual swap markets only
-        # try to force fetch order with id even on USDC / non-linear markets
-        # from ccxt/async_support/bybit/fetch_order
-        # from ccxt/async_support/bybit/fetch_orders
-        market = self.client.market(symbol)
-        isStop = self.client.safe_value(kwargs, 'stop', False)
-        stopOrderId = self.client.safe_string(kwargs, 'stop_order_id')  # might want to filter by id
-        orderType = self.client.safe_string_lower(kwargs, 'orderType')
-        isConditionalOrder = isStop or (stopOrderId is not None) or (orderType == 'stop' or orderType == 'conditional')
-        params = self.client.omit(kwargs, ['orderType', 'stop', 'orderType'])
-        if stopOrderId is None:
-            if isConditionalOrder:
-                orderKey = 'stop_order_id'
-            else:
-                isUsdcSettled = (market['settle'] == 'USDC')
-                orderKey = 'orderId' if isUsdcSettled else 'order_id'
-            if order_id is not None:  # The user can also use argument params["order_link_id"] and leave self as None
-                params[orderKey] = order_id
-        if market['linear']:
-            method = 'privateGetPrivateLinearStopOrderList' if isConditionalOrder else 'privateGetPrivateLinearOrderList'
-        elif market['future']:
-            method = 'privateGetFuturesPrivateStopOrderList' if isConditionalOrder else 'privateGetFuturesPrivateOrderList'
-        else:
-            # inverse swap
-            method = 'privateGetV2PrivateStopOrderList' if isConditionalOrder else 'privateGetV2PrivateOrderList'
-        request = {
-            'symbol': market['id'],
-            # 'order_id': 'string'
-            # 'order_link_id': 'string',  # unique client order id, max 36 characters
-            # 'symbol': market['id'],  # default BTCUSD
-            # 'order': 'desc',  # asc
-            # 'page': 1,
-            # 'limit': 20,  # max 50
-            # 'order_status': 'Created,New'
-            # conditional orders ---------------------------------------------
-            # 'stop_order_id': 'string',
-            # 'stop_order_status': 'Untriggered',
-        }
-        response = await getattr(self.client, method)(self.client.extend(request, params))
-        result = self.client.safe_value(response, 'result', {})
-        data = self.client.safe_value(result, 'data', [])
-        orders = self.client.parse_orders(data, market)
-        for order in orders:
-            if order[ecoc.ID.value] == order_id:
-                return await self.parse_order(order, check_completeness=check_completeness)
-        return None
-
     async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None,
                              check_completeness: bool = True, **kwargs: dict) -> list:
         limit = self.cut_order_pagination_limit(limit)
         defined_methods = self.connector_config.GET_ALL_ORDERS_METHODS
         orders = []
         if enums.CCXTExchangeConfigMethods.GET_ALL_ORDERS_DEFAULT.value in defined_methods:
-            orders += self.get_all_orders_default(symbol=symbol, since=since, limit=limit, 
+            orders += await self.get_all_orders_default(symbol=symbol, since=since, limit=limit, 
                                                 check_completeness=check_completeness, kwargs=kwargs)
         if enums.CCXTExchangeConfigMethods.GET_ALL_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value in defined_methods:
-            orders += self.get_all_stop_orders_using_stop_loss_endpoint(symbol=symbol, since=since, limit=limit, 
+            orders += await self.get_all_stop_orders_using_stop_loss_endpoint(symbol=symbol, since=since, limit=limit, 
                                                 check_completeness=check_completeness, kwargs=kwargs)
         return orders
 
@@ -672,8 +592,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                                           check_completeness=check_completeness, **kwargs)
             return []
         except Exception as e:
-            self.logger.error(f"Failed to fetch all stop orders using"
-                              f" get_all_stop_order_using_stop_loss_endpoint: {e}")
+            self.logger.exception(e, True, "Failed to fetch all stop orders using"
+                                  " get_all_stop_order_using_stop_loss_endpoint")
             return []
 
     async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None,
@@ -714,8 +634,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                                           check_completeness=check_completeness, **kwargs)
             return []
         except Exception as e:
-            self.logger.error(f"Failed to fetch closed stop orders using"
-                              f" get_open_stop_order_using_stop_loss_endpoint: {e}")
+            self.logger.exception(e, True, "Failed to fetch open stop orders using"
+                                  " get_open_stop_order_using_stop_loss_endpoint")
             return []
 
     async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None,
@@ -737,7 +657,6 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def get_closed_orders_default(self, symbol: str = None, since: int = None, limit: int = None,
                                         check_completeness: bool = True, **kwargs: dict) -> list:
-        orders = []
         if self.client.has.get('fetchClosedOrders'):
             with self.error_describer():
                 return await self.parse_orders(
@@ -756,6 +675,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                                             check_completeness=check_completeness, **kwargs)
             except ccxt.AuthenticationError as e:
                 self.logger.debug(f"(known issue) Fail to fetching closed stop orders : {e}")
+            except Exception as e:
+                self.logger.exception(e, True, "Failed to fetch closed stop orders using"
+                                      " get_open_stop_order_using_stop_loss_endpoint")
         return []
 
     def cut_order_pagination_limit(self, limit: int) -> typing.Optional[int]:
@@ -796,6 +718,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         if error_messages != "":
             raise octobot_trading.errors.NotSupported("This exchange doesn't support fetching trade history.\n"
                                                       f"Errors: {error_messages}")
+        self.logger.warning("No trades found when fetching my recent trades. This is only normal if this account didn't trade yet")
+        return []
 
     async def get_my_recent_trades_default(self, symbol: str = None, since: int = None, limit: int = None,
                                            check_completeness: bool = True,
@@ -833,12 +757,20 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         except Exception as e:
             return None, f"Failed to fetch recent trades using get_my_recent_trades_using_closed_orders: {e}"
 
-    def cut_recent_trades_pagination_limit(self, limit: int) -> typing.Optional[int]:
+    def cut_recent_trades_pagination_limit(self, limit: int) -> typing.Union[int, None]:
         if self.connector_config.MAX_RECENT_TRADES_PAGINATION_LIMIT:
             return min(self.connector_config.MAX_RECENT_TRADES_PAGINATION_LIMIT, limit)
         else:
             return limit
 
+    async def get_trade(self, trade_id, symbol, check_completeness=True) -> typing.Union[None, dict]:
+        trades = await self.get_my_recent_trades(symbol, check_completeness=check_completeness)
+        # usually the right trade is within the last ones
+        for trade in trades[::-1]:
+            if trade[ecoc.ID.value] == trade_id:
+                return trade
+        return None  # TradeNotFound
+    
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         defined_methods = self.connector_config.CANCEL_ORDERS_METHODS
         messages = ""
@@ -961,8 +893,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             if funding_rate := await self.client.fetch_funding_rate(symbol=symbol, params=kwargs):
                 return funding_rate
         except Exception as e:
-            self.logger.error(f"Failed to get funding rate - error: ({e})\n "
-                              f"- OctoBot is trying to use get_funding_rate_history instead ")
+            self.logger.exception(
+                e, True, "Failed to get funding rate - OctoBot is trying to use get_funding_rate_history instead ")
             # continue on every error as there is another way
         return (await self.get_funding_rate_history(symbol=symbol, limit=1))[-1]
 
@@ -1038,7 +970,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except Exception as e:
-            self.logger.error(f"Fees data for {symbol} was not found ({e})")
+            self.logger.exception(e, True, f"Fees data for {symbol} was not found")
             return {
                 enums.ExchangeConstantsMarketPropertyColumns.TAKER.value: constants.CONFIG_DEFAULT_FEES,
                 enums.ExchangeConstantsMarketPropertyColumns.MAKER.value: constants.CONFIG_DEFAULT_FEES,
@@ -1116,9 +1048,6 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     def parse_balance(self, balance):
         return self.client.parse_balance(balance)
-
-    def parse_ticker(self, ticker):
-        return self.client.parse_ticker(ticker)
 
     def parse_ohlcv(self, ohlcv):
         return self.uniformize_candles_if_necessary(self.client.parse_ohlcv(ohlcv))

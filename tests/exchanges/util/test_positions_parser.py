@@ -24,7 +24,7 @@ from octobot_trading.enums import (
     TraderPositionType,
     ExchangeConstantsPositionColumns as PositionCols,
 )
-from octobot_trading.exchanges.util import parser
+import octobot_trading.exchanges.parser as parser
 
 pytestmark = pytest.mark.asyncio
 

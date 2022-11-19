@@ -155,35 +155,6 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("get_market_status is not implemented")
 
-    @staticmethod
-    def fix_market_status(market_status, remove_price_limits: bool):
-        """
-            Use this method when market status has to be fixed.
-            Try the default fixing methods by setting USE_FIXED_MARKET_STATUS and/or MARKET_STATUS_FIXER_REMOVE_PRICE_LIMITS
-            Changes PRECISION_AMOUNT and PRECISION_PRICE from decimals to integers
-            (use number of digits instead of price example) by default.
-            Override _fix_market_status to change other elements
-        """
-        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-            enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value] = number_util.get_digits_count(
-            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-                enums.ExchangeConstantsMarketStatusColumns.PRECISION_AMOUNT.value]
-        )
-        market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-            enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value] = number_util.get_digits_count(
-            market_status[enums.ExchangeConstantsMarketStatusColumns.PRECISION.value][
-                enums.ExchangeConstantsMarketStatusColumns.PRECISION_PRICE.value]
-        )
-        if remove_price_limits:
-            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MIN.value] = None
-            market_status[enums.ExchangeConstantsMarketStatusColumns.LIMITS.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE.value][
-                enums.ExchangeConstantsMarketStatusColumns.LIMITS_PRICE_MAX.value] = None
-
-        return market_status
-
     async def get_balance(self, **kwargs: dict):
         """
         :return: current user balance from exchange
@@ -454,13 +425,6 @@ class AbstractExchange(util.Initializable):
         :return: the uniformized balance dict
         """
         raise NotImplementedError("parse_balance is not implemented")
-
-    def parse_ticker(self, ticker):
-        """
-        :param ticker: the ticker dict
-        :return: the uniformized ticker dict
-        """
-        raise NotImplementedError("parse_ticker is not implemented")
 
     def parse_ohlcv(self, ohlcv):
         """

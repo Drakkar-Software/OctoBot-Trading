@@ -41,9 +41,12 @@ class Parser:
     def _create_debugging_report(self):
         if self.debugging_report_dict:
             # filter duplicated errors
-            debugging_report_str = "" 
+            debugging_report_str = ""
             missing_attributes_str = ""
-            for attribute_name, error_messages_list in self.debugging_report_dict.items():
+            for (
+                attribute_name,
+                error_messages_list,
+            ) in self.debugging_report_dict.items():
                 for index in range(len(error_messages_list)):
                     if not error_messages_list[index] in error_messages_list[:index]:
                         debugging_report_str += error_messages_list[index]
@@ -139,8 +142,11 @@ class Parser:
             self.formatted_record[key_to_set] = value
             return True
         return self._handle_not_found(
-            not_found_method=not_found_method, key_to_set=key_to_set, 
-            keys_to_test=keys_to_test, not_found_val=not_found_val, enable_log=enable_log
+            not_found_method=not_found_method,
+            key_to_set=key_to_set,
+            keys_to_test=keys_to_test,
+            not_found_val=not_found_val,
+            enable_log=enable_log,
         )
 
     def _handle_not_found(
@@ -195,7 +201,9 @@ class Parser:
 
         if not_found_method:
             try:
-                self.formatted_record[key_to_set] = decimal.Decimal(str(not_found_method()))
+                self.formatted_record[key_to_set] = decimal.Decimal(
+                    str(not_found_method())
+                )
                 return False
             except Exception as e:
                 self._log_missing_with_method(
@@ -273,10 +281,12 @@ class Parser:
                 )
             )
 
-    def _log_missing(self, key_to_set, tried_message, additional_message=""):
+    def _log_missing(
+        self, key_to_set, tried_message, additional_message="", error=None
+    ):
         _message = (
             f"> Failed to parse {self.PARSER_TITLE} attribute: {key_to_set} - tried: {tried_message}\n"
-            f"{additional_message}\n"
+            f"{additional_message}{' - Error: '+error if error else ''}\n"
         )
         if key_to_set in self.debugging_report_dict:
             self.debugging_report_dict[key_to_set].append(_message)

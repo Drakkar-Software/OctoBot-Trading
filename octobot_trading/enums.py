@@ -180,7 +180,7 @@ class ExchangePositionCCXTColumns(enum.Enum):
     MAINTENANCE_MARGIN_PERCENTAGE = "maintenanceMarginPercentage"
     NOTIONAL = "notional"
     MARGIN_RATIO = "marginRatio"
-    UNREALISED_PNL = "unrealizedPnl"
+    UNREALIZED_PNL = "unrealizedPnl"
     REALISED_PNL = "realizedPnl"
     LIQUIDATION_PRICE = "liquidationPrice"
     MARK_PRICE = "markPrice"
@@ -193,7 +193,6 @@ class ExchangePositionCCXTColumns(enum.Enum):
     
 class CCXTExchangeConfigMethods(enum.Enum):
     GET_ORDER_DEFAULT = "get_order_default"
-    GET_ORDER_PRIVATE = "get_order_private"
     GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS = "get_order_from_open_and_closed_orders"
     GET_ORDER_USING_STOP_ID = "get_order_using_stop_id"
     GET_ORDER_FROM_TRADES = "get_order_from_trades"

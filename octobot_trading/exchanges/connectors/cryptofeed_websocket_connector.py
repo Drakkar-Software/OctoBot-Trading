@@ -41,7 +41,7 @@ import octobot_trading.exchanges.connectors.abstract_websocket_connector as abst
 from octobot_trading.enums import ExchangeConstantsOrderBookInfoColumns as ECOBIC, \
     ExchangeConstantsTickersColumns as Ectc
 from octobot_trading.enums import WebsocketFeeds as Feeds
-from octobot_trading.exchanges.util.parser import OrdersParser as OrdersParser
+from octobot_trading.exchanges.parser import OrdersParser as OrdersParser
 
 
 class CryptofeedWebsocketConnector(abstract_websocket.AbstractWebsocketExchange):

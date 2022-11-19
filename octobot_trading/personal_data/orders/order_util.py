@@ -25,7 +25,7 @@ import octobot_commons.timestamp_util as timestamp_util
 import octobot_trading.constants as constants
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
-import octobot_trading.exchanges.util.exchange_market_status_fixer as exchange_market_status_fixer
+import octobot_trading.exchanges.parser.market_status_parser as market_status_parser
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 
 
@@ -39,7 +39,7 @@ def is_valid(element, key):
     :param key:
     :return:
     """
-    return key in element and exchange_market_status_fixer.is_ms_valid(element[key])
+    return key in element and market_status_parser.is_ms_valid(element[key])
 
 
 def get_min_max_amounts(symbol_market, default_value=None):
