@@ -167,6 +167,12 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
         except KeyError:
             return self.get_name()
 
+    def is_following_trading_signals(self) -> bool:
+        """
+        :return: True when the trading mode is following trading signals
+        """
+        return False
+
     @classmethod
     def get_is_trading_on_exchange(cls, exchange_name,
                                    tentacles_setup_config: tm_configuration.TentaclesSetupConfiguration) -> bool:

@@ -15,6 +15,7 @@
 #  License along with this library.
 
 import octobot_trading.modes as modes
+import octobot_commons.constants as commons_constants
 
 
 def get_trading_modes(exchange_manager) -> list:
@@ -23,6 +24,12 @@ def get_trading_modes(exchange_manager) -> list:
 
 def get_trading_mode_symbol(trading_mode) -> list:
     return trading_mode.symbol
+
+
+def get_trading_mode_followed_strategy_signals_identifier(trading_mode) -> str:
+    if trading_mode.is_following_trading_signals():
+        return trading_mode.trading_config.get(commons_constants.CONFIG_TRADING_SIGNALS_STRATEGY, "")
+    return None
 
 
 def get_trading_mode_current_state(trading_mode) -> tuple:
