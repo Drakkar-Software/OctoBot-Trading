@@ -224,10 +224,11 @@ class PositionsParser(Parser):
                         symbol, commons_enums.TimeFrames.ONE_MINUTE
                     )
                     try:
-                        self.formatted_record[
-                            PositioCols.MARK_PRICE.value
-                        ] = decimal.Decimal(str(kline_data[0][4]))
-                        return
+                        if mark_price := decimal.Decimal(str(kline_data[0][4])):
+                            self.formatted_record[
+                                PositioCols.MARK_PRICE.value
+                            ] = mark_price
+                            return
                     except KeyError:
                         self._log_missing(
                             PositioCols.MARK_PRICE.value,
@@ -367,7 +368,7 @@ class ValueSynonyms:
 
 
 class SizeSynonyms:
-    keys = ["positionAmt", ExchangeCols.CONTRACTS.value]
+    keys = [ExchangeCols.CONTRACTS.value, "positionAmt"]
 
 
 class QuantitySynonyms:

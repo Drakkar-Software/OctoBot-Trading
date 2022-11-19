@@ -497,17 +497,17 @@ class Order(util.Initializable):
             price = raw_order[enums.ExchangeConstantsOrderColumns.PRICE.value]
             return self.update(
                 order_id=raw_order[enums.ExchangeConstantsOrderColumns.ID.value],
+                timestamp=raw_order[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value],
+                status=order_util.parse_order_status(raw_order),
                 symbol=raw_order[enums.ExchangeConstantsOrderColumns.SYMBOL.value],
                 current_price=price,
-                quantity=raw_order[enums.ExchangeConstantsOrderColumns.AMOUNT.value],
                 price=price,
-                status=order_util.parse_order_status(raw_order),
-                quantity_filled=raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED.value),
-                filled_price=raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED_PRICE.value),
                 average_price=raw_order.get(enums.ExchangeConstantsOrderColumns.AVERAGE.value),
+                filled_price=raw_order.get(enums.ExchangeConstantsOrderColumns.FILLED_PRICE.value),
+                quantity=raw_order[enums.ExchangeConstantsOrderColumns.AMOUNT.value],
+                quantity_filled=raw_order[enums.ExchangeConstantsOrderColumns.FILLED.value],
                 total_cost=raw_order.get(enums.ExchangeConstantsOrderColumns.COST.value),
                 fee=raw_order.get(enums.ExchangeConstantsOrderColumns.FEE.value),
-                timestamp=raw_order[enums.ExchangeConstantsOrderColumns.TIMESTAMP.value],
                 reduce_only=raw_order.get(enums.ExchangeConstantsOrderColumns.REDUCE_ONLY.value),
                 tag=raw_order.get(enums.ExchangeConstantsOrderColumns.TAG.value),
             )           

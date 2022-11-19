@@ -23,6 +23,10 @@ from octobot_trading.exchanges.config.exchange_config_data import (
 from octobot_trading.exchanges.config import ccxt_exchange_settings
 from octobot_trading.exchanges.config.ccxt_exchange_settings import (
     CCXTExchangeConfig,
+)
+
+from octobot_trading.exchanges.config import ccxt_exchange_ui_settings
+from octobot_trading.exchanges.config.ccxt_exchange_ui_settings import (
     initialize_experimental_exchange_settings,
 )
 from octobot_trading.exchanges.config import backtesting_exchange_config

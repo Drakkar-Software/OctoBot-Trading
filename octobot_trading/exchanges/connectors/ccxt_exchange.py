@@ -465,8 +465,6 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(f"Failed to get_price_ticker {e}")
-        except Exception as e:
-            raise octobot_trading.errors.FailedRequest(f"Failed to get_price_ticker {e}")
 
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         try:

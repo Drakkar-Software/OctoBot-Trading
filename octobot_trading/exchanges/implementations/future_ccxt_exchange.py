@@ -17,7 +17,7 @@ import typing
 
 from octobot_commons import enums as common_enums
 
-from octobot_trading.exchanges.config import ccxt_exchange_settings
+from octobot_trading.exchanges.config import ccxt_exchange_settings, ccxt_exchange_ui_settings
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.personal_data as personal_data
@@ -55,7 +55,7 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
         """
         Called at constructor, should define all the exchange's user inputs.
         """
-        ccxt_exchange_settings.initialize_experimental_exchange_settings(cls, inputs)
+        ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(cls, inputs)
 
 
     @classmethod

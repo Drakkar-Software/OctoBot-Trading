@@ -17,7 +17,7 @@ import typing
 
 from octobot_commons import enums as common_enums
 
-from octobot_trading.exchanges.config import ccxt_exchange_settings
+from octobot_trading.exchanges.config import ccxt_exchange_settings, ccxt_exchange_ui_settings
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.personal_data as personal_data
@@ -48,7 +48,7 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
         """
         Called at constructor, should define all the exchange's user inputs.
         """
-        ccxt_exchange_settings.initialize_experimental_exchange_settings(cls, inputs)
+        ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(cls, inputs)
 
 
     @classmethod
@@ -132,7 +132,7 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
     def get_pair_from_exchange(self, pair) -> str:
         return self.connector.get_pair_from_exchange(pair)
 
-    def get_split_pair_from_exchange(self, pair) -> (str, str):
+    def get_split_pair_from_exchange(self, pair) -> typing.Tuple[str, str]:
         return self.connector.get_split_pair_from_exchange(pair)
 
     def get_exchange_pair(self, pair) -> str:
