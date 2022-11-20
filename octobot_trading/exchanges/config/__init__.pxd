@@ -34,6 +34,7 @@ from octobot_trading.exchanges.config.ccxt_exchange_ui_settings cimport (
 )
 __all__ = [
     "ExchangeConfig",
+    "BacktestingExchangeConfig",
     "CCXTExchangeConfig",
     "initialize_experimental_exchange_settings",
 ]

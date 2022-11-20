@@ -24,25 +24,25 @@ import octobot_trading.personal_data as personal_data
 from octobot_trading import enums as enums
 
 
-#TODO remove
+# TODO remove
 class MarginCCXTExchange(exchanges_types.MarginExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
-    CONNECTOR_SETTINGS = ccxt_exchange_settings.CCXTExchangeConfig
-    
+    CONNECTOR_SETTINGS: ccxt_exchange_settings.CCXTExchangeConfig = ccxt_exchange_settings.CCXTExchangeConfig
+
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.connector = self.CONNECTOR_CLASS(
             config,
             exchange_manager,
-            additional_ccxt_config=self.get_additional_connector_config(), 
-            connector_config = self.CONNECTOR_SETTINGS,
+            additional_ccxt_config=self.get_additional_connector_config(),
+            connector_config=self.CONNECTOR_SETTINGS,
         )
 
     async def initialize_impl(self):
         await self.connector.initialize()
         self.symbols = self.connector.symbols
         self.time_frames = self.connector.time_frames
-        
+
     @classmethod
     def init_user_inputs(cls, inputs: dict) -> None:
         """
@@ -50,11 +50,10 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
         """
         ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(cls, inputs)
 
-
     @classmethod
     def is_configurable(cls):
         return True
-    
+
     async def stop(self) -> None:
         await self.connector.stop()
         self.exchange_manager = None
@@ -79,7 +78,8 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
                                 **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_symbol_prices(symbol=symbol, time_frame=time_frame, limit=limit, **kwargs)
 
-    async def get_kline_price(self, symbol: str, time_frame: common_enums.TimeFrames, **kwargs: dict) -> typing.Optional[list]:
+    async def get_kline_price(self, symbol: str, time_frame: common_enums.TimeFrames,
+                              **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_kline_price(symbol=symbol, time_frame=time_frame, **kwargs)
 
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
@@ -90,35 +90,36 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
 
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
-    
-    async def get_order(self, order_id: str, symbol: str = None, 
+
+    async def get_order(self, order_id: str, symbol: str = None,
                         check_completeness: bool = None, **kwargs: dict) -> dict:
-        return await self.connector.get_order(symbol=symbol, order_id=order_id, 
+        return await self.connector.get_order(symbol=symbol, order_id=order_id,
                                               check_completeness=check_completeness, **kwargs)
 
-    async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None, 
+    async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None,
                              check_completeness: bool = None, **kwargs: dict) -> list:
-        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, 
+        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit,
                                                    check_completeness=check_completeness, **kwargs)
 
-    async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None, 
+    async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None,
                               check_completeness: bool = None, **kwargs: dict) -> list:
-        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit, 
+        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit,
                                                     check_completeness=check_completeness, **kwargs)
 
-    async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None, 
+    async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None,
                                 check_completeness: bool = None, **kwargs: dict) -> list:
-        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit, 
+        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit,
                                                       check_completeness=check_completeness, **kwargs)
 
-    async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, 
+    async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None,
                                    check_completeness: bool = None, **kwargs: dict) -> list:
-        return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, 
+        return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit,
                                                          check_completeness=check_completeness, **kwargs)
-    
-    async def get_recent_trades(self, symbol: str, limit: int = 50, 
+
+    async def get_recent_trades(self, symbol: str, limit: int = 50,
                                 check_completeness: bool = None, **kwargs: dict) -> typing.Optional[list]:
-        return await self.connector.get_recent_trades(symbol=symbol, limit=limit, check_completeness=check_completeness, **kwargs)
+        return await self.connector.get_recent_trades(symbol=symbol, limit=limit, check_completeness=check_completeness,
+                                                      **kwargs)
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         return await self.connector.cancel_order(symbol=symbol, order_id=order_id, **kwargs)

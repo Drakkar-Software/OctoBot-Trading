@@ -1,5 +1,4 @@
 from octobot_trading.enums import OrderStatus
-from octobot_trading.enums import ExchangeConstantsOrderColumns as order_cols
 from .orders_parser import OrdersParser
 
 
@@ -26,7 +25,8 @@ class TradesParser(OrdersParser):
 
         :param raw_trades:
          # optional
-        :param check_completeness: if true checks all attributes, if somethings missing it'll try to fetch it from the exchange
+        :param check_completeness: if true checks all attributes,
+            if somethings missing it'll try to fetch it from the exchange
 
         :return: formatted trades list of trade dicts
 

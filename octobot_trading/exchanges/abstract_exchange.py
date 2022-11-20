@@ -27,7 +27,6 @@ import octobot_tentacles_manager.api as octobot_tentacles_manager_api
 import octobot_trading.constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
-from octobot_commons import number_util
 
 
 class AbstractExchange(util.Initializable):

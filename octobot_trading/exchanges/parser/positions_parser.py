@@ -29,8 +29,8 @@ class PositionsParser(Parser):
         self.PARSER_TITLE = "positions"
 
         self.MODE_KEY_NAMES: list = ["hedged"]
-        self.ONEWAY_VALUES: tuple = False
-        self.HEDGE_VALUES: tuple = True
+        self.ONEWAY_VALUES: tuple = (False)
+        self.HEDGE_VALUES: tuple = (True)
 
     async def parse_positions(self, raw_positions: list) -> list:
         """
@@ -91,24 +91,10 @@ class PositionsParser(Parser):
         to adapt to a new exchange
         """
         if self.ONEWAY_VALUES and self.HEDGE_VALUES and self.MODE_KEY_NAMES:
-
-            def mode_found(raw_mode):
-                if raw_mode in self.ONEWAY_VALUES:
-                    return PositionMode.ONE_WAY
-                if raw_mode in self.HEDGE_VALUES:
-                    return PositionMode.HEDGE
-                self._log_missing(
-                    PositioCols.POSITION_MODE.value,
-                    f"key: {self.MODE_KEY_NAMES}, "
-                    f"got raw_mode: {raw_mode or 'no raw mode'}, "
-                    f"allowed oneway values: {self.ONEWAY_VALUES}, "
-                    f"allowed hedge values: {self.HEDGE_VALUES}",
-                )
-
             self._try_to_find_and_parse_with_method(
                 PositioCols.POSITION_MODE.value,
                 self.MODE_KEY_NAMES,
-                parse_method=mode_found,
+                parse_method=self.mode_found,
                 use_info_sub_dict=True,
             )
         else:
@@ -155,7 +141,7 @@ class PositionsParser(Parser):
             else:
                 self.formatted_record[PositioCols.STATUS.value] = PositionStatus.CLOSED
         except Exception as e:
-            self._log_missing_with_method(
+            self._log_missing(
                 PositioCols.SIZE.value,
                 f"a valid size ({size or 'no size'}) is required to parse status",
                 error=e,
@@ -171,17 +157,8 @@ class PositionsParser(Parser):
     def _parse_value(self):
         keys_to_find = [PositioCols.VALUE.value] + ValueSynonyms.keys
 
-        def missing_value():
-            if (
-                mark_price := self.formatted_record.get(PositioCols.MARK_PRICE.value)
-            ) and (quantity := self.formatted_record.get(PositioCols.QUANTITY.value)):
-                return quantity / mark_price
-            self._log_missing(
-                PositioCols.VALUE.value,
-                f"keys: {keys_to_find} "
-                f"and using quantity ({quantity or 'no quantity'}) "
-                f"/ mark price ({mark_price or 'no mark price'})",
-            )
+        def missing_value(_):
+            self.handle_missing_value(keys_to_find)
 
         self._try_to_find_and_set_decimal(
             PositioCols.VALUE.value,
@@ -263,15 +240,15 @@ class PositionsParser(Parser):
 
     def _parse_side(self):
         if (
-            mode := self.formatted_record.get(PositioCols.POSITION_MODE.value)
+                mode := self.formatted_record.get(PositioCols.POSITION_MODE.value)
         ) is PositionMode.ONE_WAY:
             # todo is it good to keep it like that in ONE_WAY mode?
             self.formatted_record[PositioCols.SIDE.value] = PositionSide.BOTH
         elif mode is PositionMode.HEDGE:
             if (
-                original_side := self.formatted_record.get(
-                    PositioCols.ORIGINAL_SIDE.value
-                )
+                    original_side := self.formatted_record.get(
+                        PositioCols.ORIGINAL_SIDE.value
+                    )
             ) == PositionSide.LONG.value:
                 self.formatted_record[PositioCols.SIDE.value] = PositionSide.LONG
             elif original_side == PositionSide.SHORT.value:
@@ -287,19 +264,10 @@ class PositionsParser(Parser):
             )
 
     def _parse_size(self):
-        def size_found(_size):
-            if (
-                self.formatted_record[PositioCols.SIDE.value] == PositionSide.LONG
-                or self.formatted_record[PositioCols.SIDE.value] == PositionSide.BOTH
-            ):
-                return _size
-            # short - so we set it to negative if it isn't already
-            return -_size if _size > 0 else _size
-
         self._try_to_find_and_set_decimal(
             PositioCols.SIZE.value,
             SizeSynonyms.keys,
-            parse_method=size_found,
+            parse_method=self.size_found,
             use_info_sub_dict=True,
         )
 
@@ -331,25 +299,56 @@ class PositionsParser(Parser):
             )
 
     def _parse_timestamp(self):
-        def timestamp_not_found():
-            try:
-                return int(self.exchange.connector.get_exchange_current_time())
-            except Exception as e:
-                self._log_missing(
-                    PositioCols.CONTRACT_TYPE.value,
-                    f"Failed to get time with get_exchange_current_time: "
-                    f"{self.formatted_record[PositioCols.SYMBOL.value]}",
-                    error=e,
-                )
-
         self._try_to_find_and_parse_with_method(
             PositioCols.TIMESTAMP.value,
             [ExchangeCols.TIMESTAMP.value],
             int,
-            not_found_method=timestamp_not_found,
+            not_found_method=self.timestamp_not_found,
         )
 
+    def mode_found(self, raw_mode):
+        if raw_mode in self.ONEWAY_VALUES:
+            return PositionMode.ONE_WAY
+        if raw_mode in self.HEDGE_VALUES:
+            return PositionMode.HEDGE
+        self._log_missing(
+            PositioCols.POSITION_MODE.value,
+            f"key: {self.MODE_KEY_NAMES}, "
+            f"got raw_mode: {raw_mode or 'no raw mode'}, "
+            f"allowed oneway values: {self.ONEWAY_VALUES}, "
+            f"allowed hedge values: {self.HEDGE_VALUES}",
+        )
 
+    def handle_missing_value(self, keys_to_find):
+        quantity = None
+        if (mark_price := self.formatted_record.get(PositioCols.MARK_PRICE.value)) \
+                and (quantity := self.formatted_record.get(PositioCols.QUANTITY.value)):
+            return quantity / mark_price
+        self._log_missing(
+            PositioCols.VALUE.value,
+            f"keys: {keys_to_find} and using quantity ({quantity or 'no quantity'}) "
+            f"/ mark price ({mark_price or 'no mark price'})",
+        )
+
+    def size_found(self, _size):
+        if (
+                self.formatted_record[PositioCols.SIDE.value] == PositionSide.LONG
+                or self.formatted_record[PositioCols.SIDE.value] == PositionSide.BOTH
+        ):
+            return _size
+        # short - so we set it to negative if it isn't already
+        return -_size if _size > 0 else _size
+
+    def timestamp_not_found(self, _):
+        try:
+            return int(self.exchange.connector.get_exchange_current_time())
+        except Exception as e:
+            self._log_missing(
+                PositioCols.CONTRACT_TYPE.value,
+                f"Failed to get time with get_exchange_current_time: "
+                f"{self.formatted_record[PositioCols.SYMBOL.value]}",
+                error=e,
+            )
 # only keep keys here from exchanges that are 100% safe with any exchange
 class LiquidationSynonyms:
     keys = ["bust_price"]

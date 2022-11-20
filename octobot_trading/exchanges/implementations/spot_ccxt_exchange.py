@@ -35,15 +35,15 @@ import octobot_trading.personal_data as personal_data
 # TODO remove
 class SpotCCXTExchange(exchanges_types.SpotExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
-    CONNECTOR_SETTINGS = ccxt_exchange_settings.CCXTExchangeConfig
-        
+    CONNECTOR_SETTINGS: ccxt_exchange_settings.CCXTExchangeConfig = ccxt_exchange_settings.CCXTExchangeConfig
+
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.connector = self.CONNECTOR_CLASS(
             config,
             exchange_manager,
             additional_ccxt_config=self.get_additional_connector_config(),
-            connector_config = self.CONNECTOR_SETTINGS,
+            connector_config=self.CONNECTOR_SETTINGS,
         )
 
         self.connector.client.options['defaultType'] = self.get_default_type()
@@ -52,7 +52,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         await self.connector.initialize()
         self.symbols = self.connector.symbols
         self.time_frames = self.connector.time_frames
-        
+
     @classmethod
     def init_user_inputs(cls, inputs: dict) -> None:
         """
@@ -60,11 +60,10 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         """
         ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(cls, inputs)
 
-
     @classmethod
     def is_configurable(cls):
         return True
-    
+
     async def stop(self) -> None:
         await self.connector.stop()
         self.exchange_manager = None
@@ -88,9 +87,8 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             raw_created_order = await self._create_order_with_retry(order_type, symbol, quantity,
                                                                     price, side, current_price, params)
             return await self.connector.parse_order(raw_created_order, order_type=order_type.value, quantity=quantity,
-                                                            price=price, status=enums.OrderStatus.OPEN.value,
-                                                            symbol=symbol, side=side, timestamp=time.time())
-        return None
+                                                    price=price, status=enums.OrderStatus.OPEN.value,
+                                                    symbol=symbol, side=side, timestamp=time.time())
 
     async def edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
                          quantity: decimal.Decimal, price: decimal.Decimal,
@@ -114,7 +112,6 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
                                                   current_price=float_current_price, params=params)
             return await self.connector.parse_order(edited_order, order_type=order_type.value, quantity=quantity,
                                                     price=price, symbol=symbol, side=side)
-        return None
 
     async def _edit_order(self, order_id: str, order_type: enums.TraderOrderType, symbol: str,
                           quantity: float, price: float, stop_price: float = None, side: str = None,
@@ -260,34 +257,35 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
 
-    async def get_order(self, order_id: str, symbol: str = None, 
+    async def get_order(self, order_id: str, symbol: str = None,
                         check_completeness: bool = None, **kwargs: dict) -> dict:
-        return await self.connector.get_order(symbol=symbol, order_id=order_id, 
+        return await self.connector.get_order(symbol=symbol, order_id=order_id,
                                               check_completeness=check_completeness, **kwargs)
 
-    async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None, 
+    async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None,
                              check_completeness: bool = None, **kwargs: dict) -> list:
-        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit, 
+        return await self.connector.get_all_orders(symbol=symbol, since=since, limit=limit,
                                                    check_completeness=check_completeness, **kwargs)
 
-    async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None, 
+    async def get_open_orders(self, symbol: str = None, since: int = None, limit: int = None,
                               check_completeness: bool = None, **kwargs: dict) -> list:
-        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit, 
+        return await self.connector.get_open_orders(symbol=symbol, since=since, limit=limit,
                                                     check_completeness=check_completeness, **kwargs)
 
-    async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None, 
+    async def get_closed_orders(self, symbol: str = None, since: int = None, limit: int = None,
                                 check_completeness: bool = None, **kwargs: dict) -> list:
-        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit, 
+        return await self.connector.get_closed_orders(symbol=symbol, since=since, limit=limit,
                                                       check_completeness=check_completeness, **kwargs)
 
-    async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None, 
+    async def get_my_recent_trades(self, symbol: str = None, since: int = None, limit: int = None,
                                    check_completeness: bool = None, **kwargs: dict) -> list:
-        return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit, 
+        return await self.connector.get_my_recent_trades(symbol=symbol, since=since, limit=limit,
                                                          check_completeness=check_completeness, **kwargs)
-    
-    async def get_recent_trades(self, symbol: str, limit: int = 50, 
+
+    async def get_recent_trades(self, symbol: str, limit: int = 50,
                                 check_completeness: bool = None, **kwargs: dict) -> typing.Optional[list]:
-        return await self.connector.get_recent_trades(symbol=symbol, limit=limit, check_completeness=check_completeness, **kwargs)
+        return await self.connector.get_recent_trades(symbol=symbol, limit=limit, check_completeness=check_completeness,
+                                                      **kwargs)
 
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         return await self.connector.cancel_order(symbol=symbol, order_id=order_id, **kwargs)

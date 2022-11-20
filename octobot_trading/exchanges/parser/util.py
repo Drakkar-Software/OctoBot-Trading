@@ -154,7 +154,7 @@ class Parser:
     ) -> False:
         if not_found_method:
             try:
-                self.formatted_record[key_to_set] = not_found_method()
+                self.formatted_record[key_to_set] = not_found_method(not_found_val)
                 return False
             except Exception as e:
                 self._log_missing_with_method(
@@ -202,7 +202,7 @@ class Parser:
         if not_found_method:
             try:
                 self.formatted_record[key_to_set] = decimal.Decimal(
-                    str(not_found_method())
+                    str(not_found_method(not_found_val))
                 )
                 return False
             except Exception as e:
@@ -254,7 +254,7 @@ class Parser:
         return not_found_val
 
     def _ensure_dict(self, raw_record):
-        if (_type := type(raw_record)) is dict:
+        if type(raw_record) is dict:
             self.formatted_record = {}  # clear record first
             self.raw_record = raw_record
         else:
@@ -262,7 +262,7 @@ class Parser:
                 self.debugging_report_template(
                     f"{self.PARSER_TITLE} parser received an invalid format\n"
                     "type should be a dict\n"
-                    f"received raw data type:  {_type or 'no data type'}\n"
+                    f"received raw data type:  {type(raw_record) or 'no data type'}\n"
                     f"received raw data:  {raw_record or 'no data'}\n"
                 )
             )

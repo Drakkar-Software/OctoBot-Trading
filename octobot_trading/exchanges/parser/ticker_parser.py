@@ -1,5 +1,3 @@
-
-
 from octobot_trading.enums import ExchangeConstantsOrderColumns as ecoc, \
     ExchangeConstantsTickersColumns as t_cols
 
@@ -18,7 +16,9 @@ class TickerParser:
 
         use this method to parse a raw ticker
 
-        :param raw_ticker:
+        :param symbol:
+        :param ticker:
+        :param exchange:
 
         :return: formatted ticker
 
