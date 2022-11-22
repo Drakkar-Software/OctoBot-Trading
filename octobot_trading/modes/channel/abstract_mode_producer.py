@@ -33,7 +33,6 @@ import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
 import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
-import octobot_trading.modes.script_keywords.context_management as context_management
 
 
 class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
@@ -370,7 +369,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 databases.RunDatabasesProvider.instance().get_run_db(self.trading_mode.bot_id)
             )
         await self._register_and_apply_required_user_inputs(
-            self.get_context(None, None, self.trading_mode.symbol, None, None, None, None, None, True)
+            self.trading_mode.get_minimal_context(self.trading_mode.symbol, init_call=True)
         )
 
     async def _register_and_apply_required_user_inputs(self, context):
@@ -389,26 +388,3 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 common_enums.ActivationTopics.EVALUATION_CYCLE.value,
                 activation_topic_values
             )
-
-    def get_context(self, matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
-                    candle, kline, init_call=False):
-        context = context_management.Context(
-            self.trading_mode,
-            self.exchange_manager,
-            self.exchange_manager.trader,
-            self.exchange_name,
-            self.trading_mode.symbol,
-            matrix_id,
-            cryptocurrency,
-            symbol,
-            time_frame,
-            self.logger,
-            self.trading_mode.__class__,
-            trigger_cache_timestamp,
-            trigger_source,
-            candle or kline,
-            None,
-            None,
-        )
-        context.enable_trading = not init_call
-        return context

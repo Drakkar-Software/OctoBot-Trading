@@ -20,7 +20,6 @@ import decimal
 import octobot_commons.constants as common_constants
 import octobot_commons.enums as common_enums
 import octobot_commons.logging as logging
-import octobot_commons.configuration as commons_configuration
 import octobot_commons.tentacles_management as abstract_tentacle
 
 import async_channel.constants as channel_constants
@@ -35,6 +34,8 @@ import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.modes_factory as modes_factory
 import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_producer
 import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
+import octobot_trading.modes.script_keywords.context_management as context_management
+import octobot_trading.modes.mode_config as mode_config
 import octobot_trading.signals as signals
 
 
@@ -129,34 +130,11 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
     def get_mode_consumer_classes(self) -> list:
         return self.MODE_CONSUMER_CLASSES
 
-    def should_emit_trading_signals_user_input(self, inputs: dict):
-        if self.UI.user_input(
-            common_constants.CONFIG_EMIT_TRADING_SIGNALS, common_enums.UserInputTypes.BOOLEAN, False, inputs,
-            title="Emit trading signals on Astrolab for people to follow.",
-            order=commons_configuration.UserInput.MAX_ORDER - 2
-        ):
-            self.UI.user_input(
-                common_constants.CONFIG_TRADING_SIGNALS_STRATEGY, common_enums.UserInputTypes.TEXT, self.get_name(),
-                inputs,
-                title="Name of the strategy to send signals on.",
-                order=commons_configuration.UserInput.MAX_ORDER - 1,
-                other_schema_values={"minLength": 0}
-            )
-
-    def is_trading_signal_emitter(self) -> bool:
-        """
-        :return: True if the mode should be emitting trading signals according to configuration
-        """
-        try:
-            return self.trading_config[common_constants.CONFIG_EMIT_TRADING_SIGNALS]
-        except KeyError:
-            return False
-
     def should_emit_trading_signal(self) -> bool:
         """
         :return: True if the mode should be emitting trading signals according to configuration and trading environment
         """
-        return not self.exchange_manager.is_backtesting and self.is_trading_signal_emitter()
+        return not self.exchange_manager.is_backtesting and mode_config.is_trading_signal_emitter(self)
 
     def get_trading_signal_identifier(self) -> str:
         """
@@ -407,3 +385,28 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             if isinstance(consumer, abstract_mode_consumer.AbstractTradingModeConsumer)
         ]
 
+    def get_minimal_context(self, symbol, init_call=False):
+        return self.get_context(None, None, symbol, None, None, None, None, None, init_call=init_call)
+
+    def get_context(self, matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
+                    candle, kline, init_call=False):
+        context = context_management.Context(
+            self,
+            self.exchange_manager,
+            self.exchange_manager.trader,
+            self.exchange_manager.exchange_name,
+            self.symbol,
+            matrix_id,
+            cryptocurrency,
+            symbol,
+            time_frame,
+            self.logger,
+            self.__class__,
+            trigger_cache_timestamp,
+            trigger_source,
+            candle or kline,
+            None,
+            None,
+        )
+        context.enable_trading = not init_call
+        return context

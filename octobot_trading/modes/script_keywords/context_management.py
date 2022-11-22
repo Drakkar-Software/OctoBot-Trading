@@ -118,7 +118,7 @@ class Context(databases.CacheClient):
 
     def is_trading_signal_emitter(self):
         try:
-            return self.tentacle.is_trading_signal_emitter()
+            return modes.is_trading_signal_emitter(self.tentacle)
         except AttributeError:
             return False
 

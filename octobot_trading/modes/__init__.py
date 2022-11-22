@@ -44,6 +44,10 @@ from octobot_trading.modes.script_keywords import (
 from octobot_trading.modes import mode_config
 from octobot_trading.modes.mode_config import (
     get_activated_trading_mode,
+    should_emit_trading_signals_user_input,
+    is_trading_signal_emitter,
+    user_select_order_amount,
+    get_user_selected_order_amount,
 )
 
 from octobot_trading.modes import modes_factory
@@ -73,5 +77,9 @@ __all__ = [
     "create_trading_mode",
     "create_temporary_trading_mode_with_local_config",
     "get_activated_trading_mode",
+    "should_emit_trading_signals_user_input",
+    "is_trading_signal_emitter",
+    "user_select_order_amount",
+    "get_user_selected_order_amount",
     "get_required_candles_count",
 ]

@@ -15,14 +15,20 @@
 #  License along with this library.
 import octobot_commons.errors as errors
 import octobot_commons.logging as logging
+import octobot_commons.enums as common_enums
+import octobot_commons.constants as common_constants
+import octobot_commons.configuration as commons_configuration
 import octobot_commons.tentacles_management as class_inspector
 
 import octobot_tentacles_manager.api as configurator
 
+import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 import octobot_trading.modes as modes
+import octobot_trading.modes.script_keywords.dsl as dsl
 
 
-def get_activated_trading_mode(tentacles_setup_config) -> modes.AbstractTradingMode.__class__:
+def get_activated_trading_mode(tentacles_setup_config):
     if tentacles_setup_config is not None:
         try:
             trading_modes = [tentacle_class
@@ -47,3 +53,61 @@ def get_activated_trading_mode(tentacles_setup_config) -> modes.AbstractTradingM
 
     raise errors.ConfigTradingError(f"Please ensure your tentacles configuration file is valid and "
                                     f"at least one trading mode is activated")
+
+
+def should_emit_trading_signals_user_input(trading_mode, inputs: dict):
+    if trading_mode.UI.user_input(
+        common_constants.CONFIG_EMIT_TRADING_SIGNALS, common_enums.UserInputTypes.BOOLEAN, False, inputs,
+        title="Emit trading signals on Astrolab for people to follow.",
+        order=commons_configuration.UserInput.MAX_ORDER - 2
+    ):
+        trading_mode.UI.user_input(
+            common_constants.CONFIG_TRADING_SIGNALS_STRATEGY, common_enums.UserInputTypes.TEXT, trading_mode.get_name(),
+            inputs,
+            title="Name of the strategy to send signals on.",
+            order=commons_configuration.UserInput.MAX_ORDER - 1,
+            other_schema_values={"minLength": 0}
+        )
+
+
+def is_trading_signal_emitter(trading_mode) -> bool:
+    """
+    :return: True if the mode should be emitting trading signals according to configuration
+    """
+    try:
+        return trading_mode.trading_config[common_constants.CONFIG_EMIT_TRADING_SIGNALS]
+    except KeyError:
+        return False
+
+
+def _get_order_amount_title(side):
+    return f"Amount per {side} order. To specify the amount per order, " \
+        f"use the following syntax: " \
+        f"0.1 to trade 0.1 BTC on BTC/USD, " \
+        f"2{dsl.QuantityType.PERCENT.value} to trade 2% of the total portfolio value, " \
+        f"12{dsl.QuantityType.AVAILABLE_PERCENT.value} to trade 12% of the available holdings, " \
+        f"Leave empty to auto-compute the amount."
+
+
+def user_select_order_amount(trading_mode, inputs: dict, include_buy=True, include_sell=True):
+    if include_buy:
+        trading_mode.UI.user_input(
+                constants.CONFIG_BUY_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
+                title=_get_order_amount_title("buy")
+        )
+    if include_sell:
+        trading_mode.UI.user_input(
+                constants.CONFIG_SELL_ORDER_AMOUNT, common_enums.UserInputTypes.TEXT, "", inputs,
+                title=_get_order_amount_title("sell")
+        )
+
+
+def get_user_selected_order_amount(trading_mode, side) -> str:
+    try:
+        if side is enums.TradeOrderSide.SELL:
+            return trading_mode.trading_config[constants.CONFIG_SELL_ORDER_AMOUNT]
+        if side is enums.TradeOrderSide.BUY:
+            return trading_mode.trading_config[constants.CONFIG_BUY_ORDER_AMOUNT]
+    except KeyError:
+        return ""
+    raise KeyError(f"Unknown side :{side}")
