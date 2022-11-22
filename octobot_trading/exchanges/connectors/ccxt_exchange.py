@@ -385,8 +385,16 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 raise octobot_trading.errors.FailedRequest(
                     f"Failed to get_symbol_prices: Unknown error on {symbol}/{time_frame} {e}")
         # try again with a limit
-        return await self.get_symbol_prices(symbol=symbol, time_frame=time_frame, since=since,
-                                            limit=self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED, **kwargs)
+        
+        if prices := await self.get_symbol_prices(symbol=symbol, time_frame=time_frame, since=since,
+                                              limit=self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED, **kwargs):
+            self.logger.warning("Failed to get symbol prices without a pagination limit. "
+                                f"But succeeded with a limit of {self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED}. "
+                                "This can lead to rate limits getting triggered. "
+                                "Send this log to the OctoBot team, so we able to fix this issue.")
+            return prices
+        else:
+            raise octobot_trading.errors.FailedRequest("Failed to get symbol prices. OctoBot didn't receive any prices") 
 
     def cut_candle_limit(self, limit) -> typing.Optional[int]:
         if self.connector_config.CANDLE_LOADING_LIMIT:

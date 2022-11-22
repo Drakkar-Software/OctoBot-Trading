@@ -294,7 +294,6 @@ class OrdersParser(Parser):
             OrderCols.FILLED.value,
             [OrderCols.FILLED.value],
             not_found_method=self.missing_filled,
-            allow_zero=True,
         )
 
     def _parse_taker_or_maker(self):
