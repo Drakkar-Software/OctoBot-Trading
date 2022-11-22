@@ -33,6 +33,34 @@ import octobot_tentacles_manager.api as tentacles_manager_api
 import octobot_tentacles_manager.models as tentacles_manager_models
 
 
+def get_base_context(trading_mode, symbol=None, init_call=False):
+    return get_full_context(trading_mode, None, None, symbol, None, None, None, None, None, init_call=init_call)
+
+
+def get_full_context(trading_mode, matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
+                     candle, kline, init_call=False):
+    context = Context(
+        trading_mode,
+        trading_mode.exchange_manager,
+        trading_mode.exchange_manager.trader,
+        trading_mode.exchange_manager.exchange_name,
+        trading_mode.symbol,
+        matrix_id,
+        cryptocurrency,
+        symbol or trading_mode.symbol,
+        time_frame,
+        trading_mode.logger,
+        trading_mode.__class__,
+        trigger_cache_timestamp,
+        trigger_source,
+        candle or kline,
+        None,
+        None,
+    )
+    context.enable_trading = not init_call
+    return context
+
+
 class Context(databases.CacheClient):
     def __init__(
         self,

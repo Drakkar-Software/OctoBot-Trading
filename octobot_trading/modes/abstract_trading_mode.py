@@ -34,7 +34,6 @@ import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.modes_factory as modes_factory
 import octobot_trading.modes.channel.abstract_mode_producer as abstract_mode_producer
 import octobot_trading.modes.channel.abstract_mode_consumer as abstract_mode_consumer
-import octobot_trading.modes.script_keywords.context_management as context_management
 import octobot_trading.modes.mode_config as mode_config
 import octobot_trading.signals as signals
 
@@ -384,29 +383,3 @@ class AbstractTradingMode(abstract_tentacle.AbstractTentacle):
             for consumer in self.consumers
             if isinstance(consumer, abstract_mode_consumer.AbstractTradingModeConsumer)
         ]
-
-    def get_minimal_context(self, symbol, init_call=False):
-        return self.get_context(None, None, symbol, None, None, None, None, None, init_call=init_call)
-
-    def get_context(self, matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp,
-                    candle, kline, init_call=False):
-        context = context_management.Context(
-            self,
-            self.exchange_manager,
-            self.exchange_manager.trader,
-            self.exchange_manager.exchange_name,
-            self.symbol,
-            matrix_id,
-            cryptocurrency,
-            symbol,
-            time_frame,
-            self.logger,
-            self.__class__,
-            trigger_cache_timestamp,
-            trigger_source,
-            candle or kline,
-            None,
-            None,
-        )
-        context.enable_trading = not init_call
-        return context

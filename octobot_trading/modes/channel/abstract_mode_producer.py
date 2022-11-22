@@ -32,7 +32,7 @@ import octobot_trading.util as util
 import octobot_trading.exchanges.exchanges as exchanges
 import octobot_trading.exchange_channel as exchanges_channel
 import octobot_trading.modes.channel as modes_channel
-import octobot_trading.modes.script_keywords.basic_keywords as basic_keywords
+import octobot_trading.modes.script_keywords as script_keywords
 
 
 class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
@@ -369,12 +369,12 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 databases.RunDatabasesProvider.instance().get_run_db(self.trading_mode.bot_id)
             )
         await self._register_and_apply_required_user_inputs(
-            self.trading_mode.get_minimal_context(self.trading_mode.symbol, init_call=True)
+            script_keywords.get_base_context(self.trading_mode, init_call=True)
         )
 
     async def _register_and_apply_required_user_inputs(self, context):
         if context.exchange_manager.is_future:
-            await basic_keywords.set_leverage(context, await basic_keywords.user_select_leverage(context))
+            await script_keywords.set_leverage(context, await script_keywords.user_select_leverage(context))
 
         if self.trading_mode.ALLOW_CUSTOM_TRIGGER_SOURCE:
             # register activating topics user input
@@ -383,7 +383,7 @@ class AbstractTradingModeProducer(modes_channel.ModeChannelProducer):
                 common_enums.ActivationTopics.FULL_CANDLES.value,
                 common_enums.ActivationTopics.IN_CONSTRUCTION_CANDLES.value
             ]
-            await basic_keywords.get_activation_topics(
+            await script_keywords.get_activation_topics(
                 context,
                 common_enums.ActivationTopics.EVALUATION_CYCLE.value,
                 activation_topic_values

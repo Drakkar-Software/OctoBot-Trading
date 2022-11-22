@@ -264,8 +264,10 @@ class AbstractScriptedTradingModeProducer(modes_channel.AbstractTradingModeProdu
     async def call_script(self, matrix_id: str, cryptocurrency: str, symbol: str, time_frame: str,
                           trigger_source: str, trigger_cache_timestamp: float,
                           candle: dict = None, kline: dict = None, init_call: bool = False):
-        context = self.trading_mode.get_context(matrix_id, cryptocurrency, symbol, time_frame, trigger_source,
-                                                trigger_cache_timestamp, candle, kline, init_call)
+        context = context_management.get_full_context(
+            self.trading_mode, matrix_id, cryptocurrency, symbol, time_frame,
+            trigger_source, trigger_cache_timestamp, candle, kline, init_call=init_call
+        )
         self.last_call_by_timeframe[time_frame] = \
             (matrix_id, cryptocurrency, symbol, time_frame, trigger_source, trigger_cache_timestamp, candle, kline, init_call)
         context.matrix_id = matrix_id
