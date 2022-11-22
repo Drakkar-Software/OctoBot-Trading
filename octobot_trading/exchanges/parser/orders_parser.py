@@ -31,16 +31,16 @@ class OrdersParser(Parser):
         self.fetched_order = None
 
     async def parse_orders(
-            self,
-            raw_orders: list,
-            order_type: str = None,
-            quantity: decimal.Decimal = None,
-            price: decimal.Decimal = None,
-            status: str = None,
-            symbol: str = None,
-            side: str = None,
-            timestamp: int or float = None,
-            check_completeness: bool = True,
+        self,
+        raw_orders: list,
+        order_type: str = None,
+        quantity: decimal.Decimal = None,
+        price: decimal.Decimal = None,
+        status: str = None,
+        symbol: str = None,
+        side: str = None,
+        timestamp: int or float = None,
+        check_completeness: bool = True,
     ) -> list:
         """
         use this method to parse a raw list of orders
@@ -89,16 +89,16 @@ class OrdersParser(Parser):
         return self.formatted_records
 
     async def parse_order(
-            self,
-            raw_order: dict,
-            order_type: str = None,
-            quantity: decimal.Decimal = None,
-            price: decimal.Decimal = None,
-            status: str = None,
-            symbol: str = None,
-            side: str = None,
-            timestamp: int or float = None,
-            check_completeness: bool = True,
+        self,
+        raw_order: dict,
+        order_type: str = None,
+        quantity: decimal.Decimal = None,
+        price: decimal.Decimal = None,
+        status: str = None,
+        symbol: str = None,
+        side: str = None,
+        timestamp: int or float = None,
+        check_completeness: bool = True,
     ) -> dict:
         """
         use this method to format a single order
@@ -153,24 +153,11 @@ class OrdersParser(Parser):
         return self.formatted_record
 
     def _parse_status(self, missing_status_value):
-        def missing_status():
-            if missing_status_value:
-                return missing_status_value
-            self._log_missing(OrderCols.STATUS.value, OrderCols.STATUS.value)
-
-        def found_status(raw_status):
-            try:
-                return OrderStatus(raw_status).value
-            except ValueError:
-                if order_status := try_cryptofeed_order_status(raw_status):
-                    return order_status
-                missing_status()
-
         self._try_to_find_and_parse_with_method(
             OrderCols.STATUS.value,
             [OrderCols.STATUS.value],
-            parse_method=found_status,
-            not_found_method=missing_status,
+            parse_method=self.found_status,
+            not_found_val=missing_status_value,
         )
 
     def _parse_id(self):
@@ -182,7 +169,6 @@ class OrdersParser(Parser):
             [OrderCols.TIMESTAMP.value],
             parse_method=self.found_timestamp,
             not_found_val=missing_timestamp_value,
-            enable_log=False if missing_timestamp_value else True,
         )
 
     # def _parse_datetime(self, missing_timestamp_value):
@@ -212,12 +198,11 @@ class OrdersParser(Parser):
             OrderCols.SYMBOL.value,
             [OrderCols.SYMBOL.value],
             not_found_val=missing_symbol,
-            enable_log=False if missing_symbol else True,
         )
 
     def _parse_type(self, missing_type_value=None):
         def type_found(raw_order_type):
-            self.handle_type_found(raw_order_type, missing_type_value)
+            return self.handle_type_found(raw_order_type, missing_type_value)
 
         self._try_to_find_and_parse_with_method(
             OrderCols.OCTOBOT_ORDER_TYPE.value,
@@ -226,11 +211,18 @@ class OrdersParser(Parser):
             not_found_method=self.missing_type,
             enable_log=False,
         )
-
+        if not self.formatted_record[OrderCols.TYPE.value] or not self.formatted_record[OrderCols.OCTOBOT_ORDER_TYPE.value]:
+            test = 1
         # market orders with no price but with stop price are stop orders
-        if self.raw_record.get(OrderCols.STOP_PRICE.value) and not self.raw_record.get(OrderCols.PRICE.value) \
-                and self.formatted_record[OrderCols.TYPE.value] == TradeOrderType.MARKET.value:
-            self.formatted_record[OrderCols.OCTOBOT_ORDER_TYPE.value] = TraderOrderType.STOP_LOSS.value
+        if (
+            self.raw_record.get(OrderCols.STOP_PRICE.value)
+            and not self.raw_record.get(OrderCols.PRICE.value)
+            and self.formatted_record[OrderCols.TYPE.value]
+            == TradeOrderType.MARKET.value
+        ):
+            self.formatted_record[
+                OrderCols.OCTOBOT_ORDER_TYPE.value
+            ] = TraderOrderType.STOP_LOSS.value
             self.formatted_record[OrderCols.TYPE.value] = TradeOrderType.STOP_LOSS.value
 
     def _parse_side(self, missing_side_value):
@@ -239,13 +231,11 @@ class OrdersParser(Parser):
             [OrderCols.SIDE.value],
             parse_method=found_side,
             not_found_val=missing_side_value,
-            enable_log=False if missing_side_value else True,
         )
 
     def _parse_price(self, missing_price_value):
-        def found_price(raw_price):
-            self.handle_found_price(raw_price, missing_price_value)
-
+        def handle_found_price(raw_price):
+            return self.found_price(raw_price, missing_price_value)
         self._try_to_find_and_set_decimal(
             OrderCols.PRICE.value,
             [
@@ -253,9 +243,11 @@ class OrdersParser(Parser):
                 OrderCols.PRICE.value,
                 OrderCols.STOP_PRICE.value,
             ],
-            parse_method=found_price,
+            parse_method=handle_found_price,
             not_found_val=missing_price_value,
         )
+        if self.formatted_record[OrderCols.PRICE.value] is None:
+            test = 1
 
     def _parse_filled_price(self):
         self._try_to_find_and_set_decimal(
@@ -269,15 +261,16 @@ class OrdersParser(Parser):
         self._try_to_find_and_set_decimal(
             OrderCols.AMOUNT.value,
             [OrderCols.AMOUNT.value],
-            missing_quantity_value or 0,
+            not_found_val=missing_quantity_value,
             enable_log=False if missing_quantity_value else True,
         )
 
     def _parse_cost(self):
-        # is this important as its missing sometimes
-        # if not self.filled_price and self.filled_quantity:
-        #     self.filled_price = self.total_cost / self.filled_quantity
-        self._try_to_find_and_set_decimal(OrderCols.COST.value, [OrderCols.COST.value])
+        self._try_to_find_and_set_decimal(
+            OrderCols.COST.value,
+            [OrderCols.COST.value],
+            not_found_method=self.missing_cost,
+        )
 
     def _parse_average_price(self):
         self._try_to_find_and_set_decimal(
@@ -301,6 +294,7 @@ class OrdersParser(Parser):
             OrderCols.FILLED.value,
             [OrderCols.FILLED.value],
             not_found_method=self.missing_filled,
+            allow_zero=True,
         )
 
     def _parse_taker_or_maker(self):
@@ -316,7 +310,7 @@ class OrdersParser(Parser):
             [OrderCols.REDUCE_ONLY.value] + ReduceOnlySynonyms.keys,
             not_found_method=self.missing_reduce_only,
             use_info_sub_dict=True,
-            allowed_falsely_values=(False)
+            allowed_falsely_values=(False,),
         )
 
     def _parse_tag(self):
@@ -333,31 +327,34 @@ class OrdersParser(Parser):
 
     async def _fetch_if_missing(self):
         to_find_id = self.formatted_record.get(OrderCols.ID.value)
-        if self.debugging_report_dict and to_find_id and \
-                (symbol := self.formatted_record.get(OrderCols.SYMBOL.value)):
+        if (
+            self.debugging_report_dict
+            and to_find_id
+            and (symbol := self.formatted_record.get(OrderCols.SYMBOL.value))
+        ):
             if fetched_order := await self.exchange.get_order(
-                    order_id=to_find_id, symbol=symbol, check_completeness=False
+                order_id=to_find_id, symbol=symbol, check_completeness=False
             ):
                 self.fetched_order = fetched_order  # just for debugging purpose
                 # overwrite with fetched order details
                 for key in (
-                        OrderCols.STATUS.value,
-                        OrderCols.TIMESTAMP.value,
-                        OrderCols.SYMBOL.value,
-                        OrderCols.SIDE.value,
-                        OrderCols.OCTOBOT_ORDER_TYPE.value,
-                        OrderCols.TYPE.value,
-                        OrderCols.TAKERORMAKER.value,
-                        OrderCols.PRICE.value,
-                        OrderCols.FILLED_PRICE.value,
-                        OrderCols.AVERAGE.value,
-                        OrderCols.AMOUNT.value,
-                        OrderCols.REMAINING.value,
-                        OrderCols.FILLED.value,
-                        OrderCols.COST.value,
-                        OrderCols.REDUCE_ONLY.value,
-                        OrderCols.TAG.value,
-                        OrderCols.FEE.value,
+                    OrderCols.STATUS.value,
+                    OrderCols.TIMESTAMP.value,
+                    OrderCols.SYMBOL.value,
+                    OrderCols.SIDE.value,
+                    OrderCols.OCTOBOT_ORDER_TYPE.value,
+                    OrderCols.TYPE.value,
+                    OrderCols.TAKERORMAKER.value,
+                    OrderCols.PRICE.value,
+                    OrderCols.FILLED_PRICE.value,
+                    OrderCols.AVERAGE.value,
+                    OrderCols.AMOUNT.value,
+                    OrderCols.REMAINING.value,
+                    OrderCols.FILLED.value,
+                    OrderCols.COST.value,
+                    OrderCols.REDUCE_ONLY.value,
+                    OrderCols.TAG.value,
+                    OrderCols.FEE.value,
                 ):
                     self.set_fetched_attribute(fetched_order, key)
 
@@ -396,13 +393,15 @@ class OrdersParser(Parser):
         )
 
     def handle_type_found(self, raw_order_type, missing_type_value):
-        exchange_order_type = self.parse_exchange_order_type(raw_order_type, missing_type_value)
+        exchange_order_type = self.parse_exchange_order_type(
+            raw_order_type, missing_type_value
+        )
         try:
             # if type is already a TraderOrderType
             return TraderOrderType(raw_order_type).value
         except ValueError:
             if order_type := convert_trade_to_trader_order_type(
-                    self, exchange_order_type
+                self, exchange_order_type
             ):
                 return order_type
 
@@ -420,16 +419,19 @@ class OrdersParser(Parser):
                     new_type = TraderOrderType.BUY_MARKET.value
                 elif taker_or_maker == MarketCols.MAKER.value:
                     new_type = TraderOrderType.BUY_LIMIT.value
-            elif self.formatted_record[OrderCols.SIDE.value] == TradeOrderSide.SELL.value:
+            elif (
+                self.formatted_record[OrderCols.SIDE.value] == TradeOrderSide.SELL.value
+            ):
                 if taker_or_maker == MarketCols.TAKER.value:
                     new_type = TraderOrderType.SELL_MARKET.value
                 elif taker_or_maker == MarketCols.MAKER.value:
                     new_type = TraderOrderType.SELL_LIMIT.value
         if new_type:
-            self.formatted_record[OrderCols.TYPE.value] \
-                = self.parse_exchange_order_type(new_type, missing_type_value)
+            self.formatted_record[
+                OrderCols.TYPE.value
+            ] = self.parse_exchange_order_type(new_type, missing_type_value)
             return new_type
-        type_exists_message = (
+        type_missing_message = (
             f", got: {raw_order_type or 'no exchange order type'} which is not a TradeOrderType or TraderOrderType"
             if raw_order_type
             else ""
@@ -437,17 +439,22 @@ class OrdersParser(Parser):
         self._log_missing(
             OrderCols.OCTOBOT_ORDER_TYPE.value,
             f"{OrderCols.OCTOBOT_ORDER_TYPE.value} and based on taker_or_maker "
-            f"({taker_or_maker or 'no taker_or_maker'}) which also failed to parse{type_exists_message}",
+            f"({taker_or_maker or 'no taker_or_maker'}) which also failed to parse{type_missing_message}",
         )
 
-    def handle_found_price(self, raw_price, missing_price_value):
-        if (status := self.formatted_record.get(OrderCols.STATUS.value)) \
-                and (order_type := self.formatted_record.get(OrderCols.TYPE.value)):
+    def found_price(self, raw_price, missing_price_value):
+        if (status := self.formatted_record.get(OrderCols.STATUS.value)) and (
+            order_type := self.formatted_record.get(OrderCols.TYPE.value)
+        ):
             # todo investigate - ccxt is returning a wrong price (~1000k higher on bybit btc)
             # on open market orders so we dont use it
             # tried with current(1.95.36) and latest (2.1.92) ccxt version
-            if missing_price_value and status == OrderStatus.OPEN.value \
-                    or status == OrderStatus.PENDING_CREATION.value and order_type == TradeOrderType.MARKET.value:
+            if (
+                missing_price_value
+                and status == OrderStatus.OPEN.value
+                or status == OrderStatus.PENDING_CREATION.value
+                and order_type == TradeOrderType.MARKET.value
+            ):
                 return missing_price_value
             return raw_price
         self._log_missing(
@@ -460,22 +467,24 @@ class OrdersParser(Parser):
         # todo check if safe
         filled_quantity = None
         if status := self.formatted_record.get(OrderCols.STATUS.value):
-            if (status == OrderStatus.FILLED.value or status == OrderStatus.CLOSED.value) \
-                    and (price := self.formatted_record.get(OrderCols.PRICE.value)):
+            if (
+                status == OrderStatus.FILLED.value or status == OrderStatus.CLOSED.value
+            ) and (price := self.formatted_record.get(OrderCols.PRICE.value)):
                 return price
             if (
-                    status == OrderStatus.CANCELED.value
-                    or status == OrderStatus.OPEN.value
-                    or status == OrderStatus.PENDING_CANCEL.value
-                    or status == OrderStatus.EXPIRED.value
-                    or status == OrderStatus.PENDING_CREATION.value
-                    or status == OrderStatus.REJECTED.value
+                status == OrderStatus.CANCELED.value
+                or status == OrderStatus.OPEN.value
+                or status == OrderStatus.PENDING_CANCEL.value
+                or status == OrderStatus.EXPIRED.value
+                or status == OrderStatus.PENDING_CREATION.value
+                or status == OrderStatus.REJECTED.value
             ):
                 return 0  # to check - should we set it to None?
             if status == OrderStatus.PARTIALLY_FILLED.value:
                 pass  # just here so you know whats unhandled
-        if (cost := self.formatted_record.get(OrderCols.COST.value)) \
-                and (filled_quantity := self.formatted_record.get(OrderCols.FILLED.value)):
+        if (cost := self.formatted_record.get(OrderCols.COST.value)) and (
+            filled_quantity := self.formatted_record.get(OrderCols.FILLED.value)
+        ):
             return cost / filled_quantity
         self._log_missing(
             OrderCols.FILLED_PRICE.value,
@@ -487,17 +496,17 @@ class OrdersParser(Parser):
     def missing_remaining(self, _):
         if status := self.formatted_record.get(OrderCols.STATUS.value):
             if (
-                    status == OrderStatus.FILLED.value
-                    or status == OrderStatus.CLOSED.value
-                    or status == OrderStatus.CANCELED.value
-                    or status == OrderStatus.REJECTED.value
-                    or status == OrderStatus.EXPIRED.value
+                status == OrderStatus.FILLED.value
+                or status == OrderStatus.CLOSED.value
+                or status == OrderStatus.CANCELED.value
+                or status == OrderStatus.REJECTED.value
+                or status == OrderStatus.EXPIRED.value
             ):
                 return 0
             if (amount := self.formatted_record.get(OrderCols.AMOUNT.value)) and (
-                    status == OrderStatus.PENDING_CREATION.value
-                    or status == OrderStatus.OPEN.value
-                    or status == OrderStatus.PENDING_CANCEL.value
+                status == OrderStatus.PENDING_CREATION.value
+                or status == OrderStatus.OPEN.value
+                or status == OrderStatus.PENDING_CANCEL.value
             ):
                 return amount
             if status == OrderStatus.PARTIALLY_FILLED.value:
@@ -512,24 +521,24 @@ class OrdersParser(Parser):
         remaining = None
         if status := self.formatted_record.get(OrderCols.STATUS.value):
             if (amount := self.formatted_record.get(OrderCols.AMOUNT.value)) and (
-                    status == OrderStatus.FILLED.value
-                    or status == OrderStatus.CLOSED.value
+                status == OrderStatus.FILLED.value or status == OrderStatus.CLOSED.value
             ):
                 return amount
             if (
-                    status == OrderStatus.EXPIRED.value
-                    or status == OrderStatus.CANCELED.value
-                    or status == OrderStatus.REJECTED.value
-                    or status == OrderStatus.EXPIRED.value
-                    or status == OrderStatus.PENDING_CREATION.value
-                    or status == OrderStatus.OPEN.value
-                    or status == OrderStatus.PENDING_CANCEL.value
+                status == OrderStatus.EXPIRED.value
+                or status == OrderStatus.CANCELED.value
+                or status == OrderStatus.REJECTED.value
+                or status == OrderStatus.EXPIRED.value
+                or status == OrderStatus.PENDING_CREATION.value
+                or status == OrderStatus.OPEN.value
+                or status == OrderStatus.PENDING_CANCEL.value
             ):
                 return constants.ZERO
             if status == OrderStatus.PARTIALLY_FILLED.value:
                 pass  # just here to let you know whats unhandled
-        if (amount := self.formatted_record.get(OrderCols.AMOUNT.value)) \
-                and (remaining := self.formatted_record.get(OrderCols.REMAINING.value)):
+        if (amount := self.formatted_record.get(OrderCols.AMOUNT.value)) and (
+            remaining := self.formatted_record.get(OrderCols.REMAINING.value)
+        ):
             return amount - remaining
 
         self._log_missing(
@@ -540,22 +549,20 @@ class OrdersParser(Parser):
         )
 
     def missing_taker_or_maker(self, _):
-        if order_type := self.formatted_record.get(
-                OrderCols.OCTOBOT_ORDER_TYPE.value
-        ):
+        if order_type := self.formatted_record.get(OrderCols.OCTOBOT_ORDER_TYPE.value):
             if order_type in (
-                    TraderOrderType.BUY_MARKET.value,
-                    TraderOrderType.SELL_MARKET.value,
-                    TraderOrderType.STOP_LOSS.value,
-                    TraderOrderType.TRAILING_STOP.value,
+                TraderOrderType.BUY_MARKET.value,
+                TraderOrderType.SELL_MARKET.value,
+                TraderOrderType.STOP_LOSS.value,
+                TraderOrderType.TRAILING_STOP.value,
             ):
                 return MarketCols.TAKER.value
             elif order_type in (
-                    TraderOrderType.SELL_LIMIT.value,
-                    TraderOrderType.BUY_LIMIT.value,
-                    TraderOrderType.STOP_LOSS_LIMIT.value,
-                    TraderOrderType.TAKE_PROFIT_LIMIT.value,
-                    TraderOrderType.TRAILING_STOP_LIMIT.value,
+                TraderOrderType.SELL_LIMIT.value,
+                TraderOrderType.BUY_LIMIT.value,
+                TraderOrderType.STOP_LOSS_LIMIT.value,
+                TraderOrderType.TAKE_PROFIT_LIMIT.value,
+                TraderOrderType.TRAILING_STOP_LIMIT.value,
             ):
                 return MarketCols.MAKER.value
         self._log_missing(
@@ -565,17 +572,17 @@ class OrdersParser(Parser):
         )
 
     def missing_reduce_only(self, _):
-        if self.formatted_record.get(OrderCols.OCTOBOT_ORDER_TYPE.value) == TradeOrderType.STOP_LOSS.value:
+        if (
+            self.formatted_record.get(OrderCols.OCTOBOT_ORDER_TYPE.value)
+            == TradeOrderType.STOP_LOSS.value
+        ):
             return True
         return None  # dont raise as it's optional
 
     def missing_fees(self, _):
         # only required for CLOSED and FILLED orders
         if status := self.formatted_record.get(OrderCols.STATUS.value):
-            if (
-                    status == OrderStatus.CLOSED.value
-                    or status == OrderStatus.FILLED.value
-            ):
+            if status == OrderStatus.CLOSED.value or status == OrderStatus.FILLED.value:
                 # fees are missing on bybit trades
                 # getting it from the order is also not possible as trade id != order id
                 pass
@@ -590,7 +597,7 @@ class OrdersParser(Parser):
         if type(fees_dict) is not dict:
             self.missing_fees(None)
         if ExchangeConstantsFeesColumns.CURRENCY.value not in fees_dict and (
-                currency := fees_dict.get("code")
+            currency := fees_dict.get("code")
         ):
             fees_dict[ExchangeConstantsFeesColumns.CURRENCY.value] = currency
         if fee := fees_dict[ExchangeConstantsFeesColumns.COST.value]:
@@ -598,11 +605,40 @@ class OrdersParser(Parser):
                 fee * -1 if fee < 0 else fee
             )
         if (
-                fees_dict[ExchangeConstantsFeesColumns.CURRENCY.value]
-                and fees_dict[ExchangeConstantsFeesColumns.COST.value]
+            fees_dict[ExchangeConstantsFeesColumns.CURRENCY.value]
+            and fees_dict[ExchangeConstantsFeesColumns.COST.value]
         ):
             return
         self.missing_fees(None)
+
+    def missing_cost(self, _):
+        # check and should it be with fees?
+        filled_price = filled_quantity = None
+        if (
+            filled_price := self.formatted_record.get(OrderCols.FILLED_PRICE.value)
+        ) and (filled_quantity := self.formatted_record.get(OrderCols.FILLED.value)):
+            return filled_quantity * filled_price
+        if (
+            (status := self.formatted_record.get(OrderCols.STATUS.value))
+            and status != OrderStatus.FILLED
+            and status != OrderStatus.CLOSED
+            and status != OrderStatus.PARTIALLY_FILLED
+        ):
+            return constants.ZERO
+        # only required for filled orders
+        self._log_missing(
+            OrderCols.COST.value,
+            f"key: {OrderCols.COST.value} is missing and failed to calculate based on: "
+            f"filled-quantity ({filled_quantity or 'no filled_quantity'}) * ({filled_price or 'no filled_price'})",
+        )
+
+    def found_status(self, raw_status):
+        try:
+            return OrderStatus(raw_status).value
+        except ValueError:
+            if order_status := try_cryptofeed_order_status(raw_status):
+                return order_status
+            self._log_missing(OrderCols.STATUS.value, OrderCols.STATUS.value)
 
 
 def found_side(raw_side):
@@ -640,16 +676,16 @@ def convert_trade_to_trader_order_type(parser, exchange_order_type):
     if exchange_order_type:
         if parser.formatted_record[OrderCols.SIDE.value] == TradeOrderSide.BUY.value:
             if (
-                    exchange_order_type == TradeOrderType.LIMIT.value
-                    or exchange_order_type == TradeOrderType.LIMIT_MAKER.value
+                exchange_order_type == TradeOrderType.LIMIT.value
+                or exchange_order_type == TradeOrderType.LIMIT_MAKER.value
             ):
                 return TraderOrderType.BUY_LIMIT.value
             if exchange_order_type == TradeOrderType.MARKET.value:
                 return TraderOrderType.BUY_MARKET.value
         if parser.formatted_record[OrderCols.SIDE.value] == TradeOrderSide.SELL.value:
             if (
-                    exchange_order_type == TradeOrderType.LIMIT.value
-                    or exchange_order_type == TradeOrderType.LIMIT_MAKER.value
+                exchange_order_type == TradeOrderType.LIMIT.value
+                or exchange_order_type == TradeOrderType.LIMIT_MAKER.value
             ):
                 return TraderOrderType.SELL_LIMIT.value
             if exchange_order_type == TradeOrderType.MARKET.value:
@@ -657,7 +693,7 @@ def convert_trade_to_trader_order_type(parser, exchange_order_type):
 
 
 def convert_type_to_trade_order_type(
-        raw_order_type: str, missing_type_value: str
+    raw_order_type: str, missing_type_value: str
 ) -> typing.Union[TradeOrderType, None]:
     # try cryptofeed_constants
     if raw_order_type == cryptofeed_constants.LIMIT:
@@ -685,13 +721,13 @@ def convert_type_to_trade_order_type(
             trader_order_type = TraderOrderType(missing_type_value)
         return None
     if (
-            trader_order_type is TraderOrderType.BUY_LIMIT
-            or trader_order_type is TraderOrderType.SELL_LIMIT
+        trader_order_type is TraderOrderType.BUY_LIMIT
+        or trader_order_type is TraderOrderType.SELL_LIMIT
     ):
         return TradeOrderType.LIMIT.value
     if (
-            trader_order_type is TraderOrderType.BUY_MARKET
-            or trader_order_type is TraderOrderType.SELL_MARKET
+        trader_order_type is TraderOrderType.BUY_MARKET
+        or trader_order_type is TraderOrderType.SELL_MARKET
     ):
         return TradeOrderType.MARKET.value
     if trader_order_type is TraderOrderType.STOP_LOSS:

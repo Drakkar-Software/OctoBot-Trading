@@ -29,8 +29,8 @@ class PositionsParser(Parser):
         self.PARSER_TITLE = "positions"
 
         self.MODE_KEY_NAMES: list = ["hedged"]
-        self.ONEWAY_VALUES: tuple = (False)
-        self.HEDGE_VALUES: tuple = (True)
+        self.ONEWAY_VALUES: tuple = False
+        self.HEDGE_VALUES: tuple = True
 
     async def parse_positions(self, raw_positions: list) -> list:
         """
@@ -96,7 +96,7 @@ class PositionsParser(Parser):
                 self.MODE_KEY_NAMES,
                 parse_method=self.mode_found,
                 use_info_sub_dict=True,
-                allowed_falsely_values=(False)
+                allowed_falsely_values=(False,),
             )
         else:
             self._log_missing(
@@ -126,13 +126,14 @@ class PositionsParser(Parser):
             PositioCols.REALISED_PNL.value,
             [ExchangeCols.REALISED_PNL.value] + RealizedPnlSynonyms.keys,
             use_info_sub_dict=True,
-            allowed_falsely_values=(0.0, 0)
+            allow_zero=True,
         )
 
     def _parse_unrealized_pnl(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.UNREALIZED_PNL.value, [ExchangeCols.UNREALIZED_PNL.value],
-            allowed_falsely_values=(0.0, 0)
+            PositioCols.UNREALIZED_PNL.value,
+            [ExchangeCols.UNREALIZED_PNL.value],
+            allow_zero=True,
         )
 
     def _parse_status(self):
@@ -196,7 +197,7 @@ class PositionsParser(Parser):
             enable_log=False,
         )
         if not self.formatted_record[PositioCols.MARK_PRICE.value]:
-            error = ""
+            error = None
             if symbol := self.formatted_record[PositioCols.SYMBOL.value]:
                 try:
                     # todo replace with get_mark_price
@@ -219,7 +220,7 @@ class PositionsParser(Parser):
                     pass
             self._log_missing(
                 PositioCols.MARK_PRICE.value,
-                f"key: {PositioCols.MARK_PRICE.value} and using get_kline_price{error}",
+                f"key: {PositioCols.MARK_PRICE.value} and using get_kline_price{error or ''}",
             )
 
     def _parse_collateral(self):
@@ -243,15 +244,15 @@ class PositionsParser(Parser):
 
     def _parse_side(self):
         if (
-                mode := self.formatted_record.get(PositioCols.POSITION_MODE.value)
+            mode := self.formatted_record.get(PositioCols.POSITION_MODE.value)
         ) is PositionMode.ONE_WAY:
             # todo is it good to keep it like that in ONE_WAY mode?
             self.formatted_record[PositioCols.SIDE.value] = PositionSide.BOTH
         elif mode is PositionMode.HEDGE:
             if (
-                    original_side := self.formatted_record.get(
-                        PositioCols.ORIGINAL_SIDE.value
-                    )
+                original_side := self.formatted_record.get(
+                    PositioCols.ORIGINAL_SIDE.value
+                )
             ) == PositionSide.LONG.value:
                 self.formatted_record[PositioCols.SIDE.value] = PositionSide.LONG
             elif original_side == PositionSide.SHORT.value:
@@ -272,6 +273,7 @@ class PositionsParser(Parser):
             SizeSynonyms.keys,
             parse_method=self.size_found,
             use_info_sub_dict=True,
+            allow_zero=True,
         )
 
     def _parse_quantity(self):
@@ -279,8 +281,7 @@ class PositionsParser(Parser):
         quantity is the size for a single contract
         """
         self._try_to_find_and_set_decimal(
-            PositioCols.QUANTITY.value, QuantitySynonyms.keys,
-            use_info_sub_dict=True
+            PositioCols.QUANTITY.value, QuantitySynonyms.keys, use_info_sub_dict=True
         )
 
     def _parse_contract_type(self):
@@ -324,8 +325,9 @@ class PositionsParser(Parser):
 
     def handle_missing_value(self, keys_to_find):
         quantity = None
-        if (mark_price := self.formatted_record.get(PositioCols.MARK_PRICE.value)) \
-                and (quantity := self.formatted_record.get(PositioCols.QUANTITY.value)):
+        if (mark_price := self.formatted_record.get(PositioCols.MARK_PRICE.value)) and (
+            quantity := self.formatted_record.get(PositioCols.QUANTITY.value)
+        ):
             return quantity / mark_price
         self._log_missing(
             PositioCols.VALUE.value,
@@ -335,8 +337,8 @@ class PositionsParser(Parser):
 
     def size_found(self, _size):
         if (
-                self.formatted_record[PositioCols.SIDE.value] == PositionSide.LONG
-                or self.formatted_record[PositioCols.SIDE.value] == PositionSide.BOTH
+            self.formatted_record[PositioCols.SIDE.value] == PositionSide.LONG
+            or self.formatted_record[PositioCols.SIDE.value] == PositionSide.BOTH
         ):
             return _size
         # short - so we set it to negative if it isn't already
@@ -352,6 +354,8 @@ class PositionsParser(Parser):
                 f"{self.formatted_record[PositioCols.SYMBOL.value]}",
                 error=e,
             )
+
+
 # only keep keys here from exchanges that are 100% safe with any exchange
 class LiquidationSynonyms:
     keys = ["bust_price"]

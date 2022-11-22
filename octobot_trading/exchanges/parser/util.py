@@ -86,14 +86,15 @@ class Parser:
 
     def _try_to_find_and_parse_with_method(
         self,
-        key_to_set,
-        keys_to_test,
+        key_to_set: str,
+        keys_to_test: list,
         parse_method,
         not_found_val=None,
         not_found_method=None,
-        enable_log=True,
-        use_dict_root=True,
-        use_info_sub_dict=False,
+        enable_log: bool=True,
+        use_dict_root: bool=True,
+        use_info_sub_dict: bool=False,
+        allowed_falsely_values: tuple = (),
     ) -> bool:
         try:
             if value := self._try_to_find(
@@ -103,6 +104,7 @@ class Parser:
                 enable_log=False,
                 use_dict_root=use_dict_root,
                 use_info_sub_dict=use_info_sub_dict,
+                allowed_falsely_values=allowed_falsely_values,
             ):
                 self.formatted_record[key_to_set] = parse_method(value)
                 return True
@@ -123,22 +125,26 @@ class Parser:
 
     def _try_to_find_and_set(
         self,
-        key_to_set,
-        keys_to_test,
+        key_to_set: str,
+        keys_to_test: list,
         not_found_val=None,
         not_found_method=None,
-        enable_log=True,
-        use_dict_root=True,
-        use_info_sub_dict=False,
+        enable_log: bool=True,
+        use_dict_root: bool=True,
+        use_info_sub_dict: bool=False,
+        allowed_falsely_values: tuple = (),
     ) -> bool:
-        if value := self._try_to_find(
-            key_to_set=key_to_set,
-            keys_to_test=keys_to_test,
-            not_found_val=not_found_val,
-            enable_log=False,
-            use_dict_root=use_dict_root,
-            use_info_sub_dict=use_info_sub_dict,
-        ):
+        if (
+            value := self._try_to_find(
+                key_to_set=key_to_set,
+                keys_to_test=keys_to_test,
+                not_found_val=not_found_val,
+                enable_log=False,
+                use_dict_root=use_dict_root,
+                use_info_sub_dict=use_info_sub_dict,
+                allowed_falsely_values=allowed_falsely_values,
+            )
+        ) or value in allowed_falsely_values:
             self.formatted_record[key_to_set] = value
             return True
         return self._handle_not_found(
@@ -150,7 +156,12 @@ class Parser:
         )
 
     def _handle_not_found(
-        self, not_found_method, key_to_set, keys_to_test, not_found_val, enable_log
+        self,
+        not_found_method,
+        key_to_set: str,
+        keys_to_test: list,
+        not_found_val,
+        enable_log: bool,
     ) -> False:
         if not_found_method:
             try:
@@ -173,32 +184,34 @@ class Parser:
 
     def _try_to_find_and_set_decimal(
         self,
-        key_to_set,
-        keys_to_test,
-        not_found_val=0,
+        key_to_set: str,
+        keys_to_test: list,
+        not_found_val: float or int = 0,
         parse_method=None,
         not_found_method=None,
-        enable_log=True,
-        use_dict_root=True,
-        use_info_sub_dict=False,
+        enable_log: bool = True,
+        use_dict_root: bool = True,
+        use_info_sub_dict: bool = False,
+        allow_zero: bool = False,
     ) -> bool:
-        if value := decimal.Decimal(
+        value = decimal.Decimal(
             str(
                 self._try_to_find(
                     key_to_set=key_to_set,
                     keys_to_test=keys_to_test,
-                    not_found_val=not_found_val,
+                    not_found_val=not_found_val or 0,
                     enable_log=False,
                     use_dict_root=use_dict_root,
                     use_info_sub_dict=use_info_sub_dict,
+                    allowed_falsely_values=(0, 0.0) if allow_zero else (),
                 )
             )
-        ):
+        )
+        if value or (allow_zero and value == trading_constants.ZERO):
             self.formatted_record[key_to_set] = (
                 parse_method(value) if parse_method else value
             )
             return True
-
         if not_found_method:
             try:
                 self.formatted_record[key_to_set] = decimal.Decimal(
@@ -213,7 +226,7 @@ class Parser:
                     error=e,
                 )
                 return False
-        if enable_log and value != trading_constants.ZERO:
+        if enable_log:
             self._log_missing(
                 key_to_set=key_to_set,
                 tried_message=keys_to_test,
@@ -223,35 +236,39 @@ class Parser:
 
     def _try_to_find(
         self,
-        key_to_set,
-        keys_to_test,
+        key_to_set: str,
+        keys_to_test: list,
         not_found_val=None,
-        enable_log=True,
-        use_dict_root=True,
-        use_info_sub_dict=False,
+        enable_log: bool = True,
+        use_dict_root: bool = True,
+        use_info_sub_dict: bool = False,
+        allowed_falsely_values: tuple = (),
     ):
         value = None
         for key in keys_to_test:
             try:
                 if use_dict_root:
                     value = self.raw_record[key]
-                    if (value != 0 and value is not None) or value is False:
+                    if value or value in allowed_falsely_values:
                         return value
-            except:
+            except KeyError:
                 pass
             try:
                 if use_info_sub_dict:
                     value = self.raw_record[ExchangePositionCCXTColumns.INFO.value][key]
-                    if (value != 0 and value is not None) or False:
+                    if value or value in allowed_falsely_values:
                         return value
-            except:
+            except KeyError:
                 pass
-        if value != float(0) and enable_log:
+        if not_found_val is not None:
+            return not_found_val
+
+        if enable_log:
             self._log_missing(
                 key_to_set=key_to_set,
                 tried_message=keys_to_test,
             )
-        return not_found_val
+        return None
 
     def _ensure_dict(self, raw_record):
         if type(raw_record) is dict:
@@ -268,7 +285,7 @@ class Parser:
             )
 
     def _ensure_list(self, raw_records):
-        if (_type := type(raw_records)) is list:
+        if type(raw_records) is list:
             self.raw_records = raw_records
             self.multiple_records = True
         else:
@@ -276,13 +293,17 @@ class Parser:
                 self.debugging_report_template(
                     f"{self.PARSER_TITLE} parser received an invalid format\n"
                     f"type should be a list of multiple {self.PARSER_TITLE}\n"
-                    f"received raw data type:  {_type or 'no raw data type'}\n"
+                    f"received raw data type:  {type(raw_records) or 'no raw data type'}\n"
                     f"received raw data: {raw_records or 'no raw data'}"
                 )
             )
 
     def _log_missing(
-        self, key_to_set, tried_message, additional_message="", error=None
+        self,
+        key_to_set: str,
+        tried_message: str,
+        additional_message: str = "",
+        error=None,
     ):
         _message = (
             f"> Failed to parse {self.PARSER_TITLE} attribute: {key_to_set} - tried: {tried_message}\n"
