@@ -32,6 +32,18 @@ from octobot_trading.modes.script_keywords.basic_keywords.configuration import (
     set_partial_take_profit_stop_loss,
 )
 
+from octobot_trading.modes.script_keywords.basic_keywords.amount import (
+    get_amount_from_input_amount,
+)
+
+from octobot_trading.modes.script_keywords.basic_keywords.account_balance import (
+    total_account_balance,
+    available_account_balance,
+    adapt_amount_to_holdings,
+    account_holdings,
+    get_order_size_portfolio_percent,
+)
+
 from octobot_trading.modes.script_keywords.basic_keywords.trading_signals import (
     is_emitting_trading_signals,
     emit_trading_signals,
@@ -59,6 +71,12 @@ __all__ = [
     "emit_trading_signals",
     "set_leverage",
     "set_partial_take_profit_stop_loss",
+    "get_amount_from_input_amount",
+    "total_account_balance",
+    "available_account_balance",
+    "adapt_amount_to_holdings",
+    "account_holdings",
+    "get_order_size_portfolio_percent",
     "disable_candles_plot",
     "set_plot_orders",
     "store_orders",
