@@ -96,6 +96,7 @@ class PositionsParser(Parser):
                 self.MODE_KEY_NAMES,
                 parse_method=self.mode_found,
                 use_info_sub_dict=True,
+                allowed_falsely_values=(False)
             )
         else:
             self._log_missing(
@@ -125,11 +126,13 @@ class PositionsParser(Parser):
             PositioCols.REALISED_PNL.value,
             [ExchangeCols.REALISED_PNL.value] + RealizedPnlSynonyms.keys,
             use_info_sub_dict=True,
+            allowed_falsely_values=(0.0, 0)
         )
 
     def _parse_unrealized_pnl(self):
         self._try_to_find_and_set_decimal(
-            PositioCols.UNREALIZED_PNL.value, [ExchangeCols.UNREALIZED_PNL.value]
+            PositioCols.UNREALIZED_PNL.value, [ExchangeCols.UNREALIZED_PNL.value],
+            allowed_falsely_values=(0.0, 0)
         )
 
     def _parse_status(self):

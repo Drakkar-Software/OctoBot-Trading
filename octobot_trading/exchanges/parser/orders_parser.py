@@ -316,6 +316,7 @@ class OrdersParser(Parser):
             [OrderCols.REDUCE_ONLY.value] + ReduceOnlySynonyms.keys,
             not_found_method=self.missing_reduce_only,
             use_info_sub_dict=True,
+            allowed_falsely_values=(False)
         )
 
     def _parse_tag(self):
