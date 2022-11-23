@@ -35,7 +35,7 @@ async def total_account_balance(context, side=trading_enums.PositionSide.BOTH.va
         # on linear, return balance in currency (ex: BTC)
         # on inverse, return balance in market (ex: USD)
         on_inverse_contract = context.exchange_manager.exchange_personal_data.positions_manager.get_symbol_position(
-            context.symbol, side
+            context.symbol, trading_enums.PositionSide(side)
         ).symbol_contract.is_inverse_contract()
     value = context.exchange_manager.exchange_personal_data.\
         portfolio_manager.portfolio_value_holder.portfolio_current_value
