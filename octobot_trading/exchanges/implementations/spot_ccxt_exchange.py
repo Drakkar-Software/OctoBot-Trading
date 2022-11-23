@@ -58,7 +58,8 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         """
         Called at constructor, should define all the exchange's user inputs.
         """
-        ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(cls, inputs)
+        if not cls.CONNECTOR_SETTINGS.is_fully_tested_and_supported():
+            ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(cls, inputs)
 
     @classmethod
     def is_configurable(cls):
