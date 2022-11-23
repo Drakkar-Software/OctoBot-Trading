@@ -198,8 +198,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         _parser = self.connector_config.POSITIONS_PARSER_CLASS(self.exchange_manager.exchange)
         return await _parser.parse_positions(raw_positions)
 
-    def parse_ticker(self, raw_ticker: dict, symbol) -> dict:
-        return self.connector_config.TICKER_PARSER_CLASS.parse_ticker(
+    async def parse_ticker(self, raw_ticker: dict, symbol) -> dict:
+        return await self.connector_config.TICKER_PARSER_CLASS.parse_ticker(
             ticker=raw_ticker, exchange=self.exchange_manager.exchange, symbol=symbol)
 
     def parse_market_status(self, raw_market_status: dict, with_fixer: bool, price_example) -> dict:
@@ -385,7 +385,6 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                 raise octobot_trading.errors.FailedRequest(
                     f"Failed to get_symbol_prices: Unknown error on {symbol}/{time_frame} {e}")
         # try again with a limit
-        
         if prices := await self.get_symbol_prices(symbol=symbol, time_frame=time_frame, since=since,
                                               limit=self.CANDLE_LOADING_LIMIT_TO_TRY_IF_FAILED, **kwargs):
             self.logger.warning("Failed to get symbol prices without a pagination limit. "
@@ -393,12 +392,13 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                 "This can lead to rate limits getting triggered. "
                                 "Send this log to the OctoBot team, so we able to fix this issue.")
             return prices
-        else:
-            raise octobot_trading.errors.FailedRequest("Failed to get symbol prices. OctoBot didn't receive any prices") 
+        raise octobot_trading.errors.FailedRequest("Failed to get symbol prices. OctoBot didn't receive any prices") 
 
     def cut_candle_limit(self, limit) -> typing.Optional[int]:
         if self.connector_config.CANDLE_LOADING_LIMIT:
-            limit = min(limit, self.connector_config.CANDLE_LOADING_LIMIT)
+            if limit: 
+                limit = min(limit, self.connector_config.CANDLE_LOADING_LIMIT)
+            return self.connector_config.CANDLE_LOADING_LIMIT
         return limit
 
     async def get_kline_price(self,
@@ -440,7 +440,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         try:
             with self.error_describer():
                 ticker = await self.client.fetch_ticker(symbol, params=kwargs)
-                return self.parse_ticker(raw_ticker=ticker, symbol=symbol)
+                return await self.parse_ticker(raw_ticker=ticker, symbol=symbol)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
