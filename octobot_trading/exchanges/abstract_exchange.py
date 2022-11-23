@@ -204,11 +204,13 @@ class AbstractExchange(util.Initializable):
         """
         raise NotImplementedError("get_recent_trades is not implemented")
 
-    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
+    async def get_price_ticker(
+        self, symbol: str, also_get_mini_ticker: bool = True, **kwargs: dict
+        ) -> dict or typing.Tuple[dict, dict]:
         """
         Get the symbol ticker from the exchange
         :param symbol: the symbol
-        :return: the symbol ticker
+        :return: formatted symbol ticker or (formatted symbol ticker, formatted mini symbol ticker)
         """
         raise NotImplementedError("get_price_ticker is not implemented")
 

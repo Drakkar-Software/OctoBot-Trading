@@ -31,11 +31,9 @@ class FutureExchange(abstract_exchange.AbstractExchange):
 
     # Mark price params
     MARK_PRICE_IN_POSITION = False
-    MARK_PRICE_IN_TICKER = False
 
     # Funding rate params
     FUNDING_WITH_MARK_PRICE = False
-    FUNDING_IN_TICKER = False
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)

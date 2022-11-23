@@ -4,7 +4,7 @@ import octobot_trading.exchanges.config.ccxt_exchange_settings as ccxt_exchange_
 
 
 def initialize_experimental_exchange_settings(exchange, inputs):
-    settings: ccxt_exchange_settings.CCXTExchangeConfig = exchange.CONNECTOR_SETTINGS
+    settings: ccxt_exchange_settings.CCXTExchangeConfig = exchange.connector_config
     experimental_enabled = exchange.UI.user_input(
         "experimental_mode",
         common_enums.UserInputTypes.BOOLEAN,

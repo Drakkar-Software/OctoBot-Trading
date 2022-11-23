@@ -26,7 +26,10 @@ from octobot_commons import number_util
 
 import octobot_trading.enums as enums
 import octobot_trading.errors as errors
-from octobot_trading.exchanges.config import ccxt_exchange_settings, ccxt_exchange_ui_settings
+from octobot_trading.exchanges.config import (
+    ccxt_exchange_settings,
+    ccxt_exchange_ui_settings,
+)
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.personal_data as personal_data
@@ -35,7 +38,9 @@ import octobot_trading.personal_data as personal_data
 # TODO remove
 class SpotCCXTExchange(exchanges_types.SpotExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
-    CONNECTOR_SETTINGS: ccxt_exchange_settings.CCXTExchangeConfig = ccxt_exchange_settings.CCXTExchangeConfig
+    connector_config: ccxt_exchange_settings.CCXTExchangeConfig = (
+        ccxt_exchange_settings.CCXTExchangeConfig
+    )
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
@@ -43,10 +48,10 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
             config,
             exchange_manager,
             additional_ccxt_config=self.get_additional_connector_config(),
-            connector_config=self.CONNECTOR_SETTINGS,
+            connector_config=self.connector_config,
         )
 
-        self.connector.client.options['defaultType'] = self.get_default_type()
+        self.connector.client.options["defaultType"] = self.get_default_type()
 
     async def initialize_impl(self):
         await self.connector.initialize()
@@ -58,8 +63,10 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         """
         Called at constructor, should define all the exchange's user inputs.
         """
-        if not cls.CONNECTOR_SETTINGS.is_fully_tested_and_supported():
-            ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(cls, inputs)
+        if not cls.connector_config.is_fully_tested_and_supported():
+            ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(
+                cls, inputs
+            )
 
     @classmethod
     def is_configurable(cls):
@@ -70,9 +77,13 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         self.exchange_manager = None
 
     @classmethod
-    def is_supporting_exchange(cls, exchange_candidate_name) -> bool:  # move to connector
-        return cls.CONNECTOR_CLASS.is_supporting_exchange(exchange_candidate_name) \
-               or cls.get_name() == exchange_candidate_name
+    def is_supporting_exchange(
+        cls, exchange_candidate_name
+    ) -> bool:  # move to connector
+        return (
+            cls.CONNECTOR_CLASS.is_supporting_exchange(exchange_candidate_name)
+            or cls.get_name() == exchange_candidate_name
+        )
 
     def get_default_type(self):
         # keep default value
@@ -251,11 +262,13 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
 
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
         return await self.connector.get_order_book(symbol=symbol, limit=limit, **kwargs)
-
-    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
-        return await self.connector.get_price_ticker(symbol=symbol, **kwargs)
-
-    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
+   
+    async def get_price_ticker(self, symbol: str, also_get_mini_ticker: bool=False, **kwargs: dict
+                               ) -> typing.Tuple[dict, dict]:
+        return await self.connector.get_price_ticker(
+            symbol=symbol, also_get_mini_ticker=also_get_mini_ticker, **kwargs)
+        
+    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> list:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)
 
     async def get_order(self, order_id: str, symbol: str = None,

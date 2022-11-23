@@ -153,7 +153,7 @@ class OrdersParser(Parser):
         return self.formatted_record
 
     def _parse_status(self, missing_status_value):
-        self._try_to_find_and_parse_with_method(
+        self._try_to_find_and_set(
             OrderCols.STATUS.value,
             [OrderCols.STATUS.value],
             parse_method=self.found_status,
@@ -164,7 +164,7 @@ class OrdersParser(Parser):
         self._try_to_find_and_set(OrderCols.ID.value, [OrderCols.ID.value])
 
     def _parse_timestamp(self, missing_timestamp_value):
-        self._try_to_find_and_parse_with_method(
+        self._try_to_find_and_set(
             OrderCols.TIMESTAMP.value,
             [OrderCols.TIMESTAMP.value],
             parse_method=self.found_timestamp,
@@ -204,7 +204,7 @@ class OrdersParser(Parser):
         def type_found(raw_order_type):
             return self.handle_type_found(raw_order_type, missing_type_value)
 
-        self._try_to_find_and_parse_with_method(
+        self._try_to_find_and_set(
             OrderCols.OCTOBOT_ORDER_TYPE.value,
             [OrderCols.TYPE.value],
             parse_method=type_found,
@@ -226,7 +226,7 @@ class OrdersParser(Parser):
             self.formatted_record[OrderCols.TYPE.value] = TradeOrderType.STOP_LOSS.value
 
     def _parse_side(self, missing_side_value):
-        self._try_to_find_and_parse_with_method(
+        self._try_to_find_and_set(
             OrderCols.SIDE.value,
             [OrderCols.SIDE.value],
             parse_method=found_side,
@@ -246,8 +246,6 @@ class OrdersParser(Parser):
             parse_method=handle_found_price,
             not_found_val=missing_price_value,
         )
-        if self.formatted_record[OrderCols.PRICE.value] is None:
-            test = 1
 
     def _parse_filled_price(self):
         self._try_to_find_and_set_decimal(
@@ -317,7 +315,7 @@ class OrdersParser(Parser):
         pass
 
     def _parse_fees(self):
-        self._try_to_find_and_parse_with_method(
+        self._try_to_find_and_set(
             OrderCols.FEE.value,
             [OrderCols.FEE.value],
             parse_method=self.found_fees,

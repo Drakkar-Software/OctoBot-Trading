@@ -79,11 +79,14 @@ class CCXTExchangeConfig:
     ORDERS_PARSER_CLASS = parser.OrdersParser
     TRADES_PARSER_CLASS = parser.TradesParser
     POSITIONS_PARSER_CLASS = parser.PositionsParser
-    TICKER_PARSER_CLASS = parser.TickerParser()
+    TICKER_PARSER_CLASS = parser.TickerParser
     MARKET_STATUS_PARSER_CLASS = parser.ExchangeMarketStatusParser
 
     MARKET_STATUS_FIX_PRECISION = False
     MARKET_STATUS_REMOVE_INVALID_PRICE_LIMITS = False
+    
+    FUNDING_IN_TICKER = True
+    MARK_PRICE_IN_TICKER = True
 
     CANDLE_LOADING_LIMIT = 0
     MAX_RECENT_TRADES_PAGINATION_LIMIT = 0

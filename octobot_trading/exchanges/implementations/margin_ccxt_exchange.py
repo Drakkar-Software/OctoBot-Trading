@@ -17,7 +17,10 @@ import typing
 
 from octobot_commons import enums as common_enums
 
-from octobot_trading.exchanges.config import ccxt_exchange_settings, ccxt_exchange_ui_settings
+from octobot_trading.exchanges.config import (
+    ccxt_exchange_settings,
+    ccxt_exchange_ui_settings,
+)
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
 import octobot_trading.personal_data as personal_data
@@ -27,7 +30,9 @@ from octobot_trading import enums as enums
 # TODO remove
 class MarginCCXTExchange(exchanges_types.MarginExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
-    CONNECTOR_SETTINGS: ccxt_exchange_settings.CCXTExchangeConfig = ccxt_exchange_settings.CCXTExchangeConfig
+    connector_config: ccxt_exchange_settings.CCXTExchangeConfig = (
+        ccxt_exchange_settings.CCXTExchangeConfig
+    )
 
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
@@ -35,7 +40,7 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
             config,
             exchange_manager,
             additional_ccxt_config=self.get_additional_connector_config(),
-            connector_config=self.CONNECTOR_SETTINGS,
+            connector_config=self.connector_config,
         )
 
     async def initialize_impl(self):
@@ -48,8 +53,10 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
         """
         Called at constructor, should define all the exchange's user inputs.
         """
-        if not cls.CONNECTOR_SETTINGS.is_fully_tested_and_supported():
-            ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(cls, inputs)
+        if not cls.connector_config.is_fully_tested_and_supported():
+            ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(
+                cls, inputs
+            )
 
     @classmethod
     def is_configurable(cls):
@@ -86,8 +93,10 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
     async def get_order_book(self, symbol: str, limit: int = 5, **kwargs: dict) -> typing.Optional[dict]:
         return await self.connector.get_order_book(symbol=symbol, limit=limit, **kwargs)
 
-    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> typing.Optional[dict]:
-        return await self.connector.get_price_ticker(symbol=symbol, **kwargs)
+    async def get_price_ticker(self, symbol: str, also_get_mini_ticker: bool=False, **kwargs: dict
+                               ) -> typing.Tuple[dict, dict]:
+        return await self.connector.get_price_ticker(
+            symbol=symbol, also_get_mini_ticker=also_get_mini_ticker, **kwargs)
 
     async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
         return await self.connector.get_all_currencies_price_ticker(**kwargs)

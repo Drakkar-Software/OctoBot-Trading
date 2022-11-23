@@ -84,54 +84,16 @@ class Parser:
             f"!!!!!!!!!!!!  DEBUGGING REPORT {self.PARSER_TITLE.upper()} END  !!!!!!!!!!!!"
         )
 
-    def _try_to_find_and_parse_with_method(
-        self,
-        key_to_set: str,
-        keys_to_test: list,
-        parse_method,
-        not_found_val=None,
-        not_found_method=None,
-        enable_log: bool=True,
-        use_dict_root: bool=True,
-        use_info_sub_dict: bool=False,
-        allowed_falsely_values: tuple = (),
-    ) -> bool:
-        try:
-            if value := self._try_to_find(
-                key_to_set=key_to_set,
-                keys_to_test=keys_to_test,
-                not_found_val=not_found_val,
-                enable_log=False,
-                use_dict_root=use_dict_root,
-                use_info_sub_dict=use_info_sub_dict,
-                allowed_falsely_values=allowed_falsely_values,
-            ):
-                self.formatted_record[key_to_set] = parse_method(value)
-                return True
-        except Exception as e:
-            self._log_missing_with_method(
-                key_to_set=key_to_set,
-                tried_message=keys_to_test,
-                method=not_found_method,
-                error=e,
-            )
-        return self._handle_not_found(
-            not_found_method=not_found_method,
-            not_found_val=not_found_val,
-            key_to_set=key_to_set,
-            keys_to_test=keys_to_test,
-            enable_log=enable_log,
-        )
-
     def _try_to_find_and_set(
         self,
         key_to_set: str,
         keys_to_test: list,
+        parse_method=None,
         not_found_val=None,
         not_found_method=None,
-        enable_log: bool=True,
-        use_dict_root: bool=True,
-        use_info_sub_dict: bool=False,
+        enable_log: bool = True,
+        use_dict_root: bool = True,
+        use_info_sub_dict: bool = False,
         allowed_falsely_values: tuple = (),
     ) -> bool:
         if (
@@ -145,7 +107,21 @@ class Parser:
                 allowed_falsely_values=allowed_falsely_values,
             )
         ) or value in allowed_falsely_values:
-            self.formatted_record[key_to_set] = value
+            if parse_method:
+                try:
+                    self.formatted_record[key_to_set] = parse_method(value)
+                except Exception as e:
+                    self._log_missing_with_method(
+                        key_to_set=key_to_set,
+                        tried_message=f"{keys_to_test} - found value {value}, but failed to parse with method",
+                        method=not_found_method,
+                        error=e,
+                    )
+                    return False
+            else:
+                self.formatted_record[key_to_set] = (
+                    parse_method(value) if parse_method else value
+                )
             return True
         return self._handle_not_found(
             not_found_method=not_found_method,
@@ -174,12 +150,21 @@ class Parser:
                     method=not_found_method,
                     error=e,
                 )
+        else:
+            self._handle_not_found_value(
+                enable_log, keys_to_test, not_found_val, key_to_set
+            )
+
+    def _handle_not_found_value(
+        self, enable_log, keys_to_test, not_found_val, key_to_set
+    ):
+        if not_found_val:
+            self.formatted_record[key_to_set] = not_found_val
         elif enable_log:
             self._log_missing(
                 key_to_set=key_to_set,
                 tried_message=keys_to_test,
             )
-        self.formatted_record[key_to_set] = not_found_val
         return False
 
     def _try_to_find_and_set_decimal(
@@ -194,7 +179,104 @@ class Parser:
         use_info_sub_dict: bool = False,
         allow_zero: bool = False,
     ) -> bool:
-        value = decimal.Decimal(
+        value = self._try_to_find_decimal(
+            key_to_set,
+            keys_to_test,
+            not_found_val,
+            use_dict_root,
+            use_info_sub_dict,
+            allow_zero,
+        )
+        if value or (allow_zero and value == trading_constants.ZERO):
+            return self.set_decimal(
+                key_to_set, parse_method(value) if parse_method else value
+            )
+        if not_found_method:
+            try:
+                return self.set_decimal(
+                    key_to_set,
+                    not_found_method(not_found_val),
+                )
+            except Exception as e:
+                self._log_missing_with_method(
+                    key_to_set=key_to_set,
+                    tried_message=keys_to_test,
+                    method=not_found_method,
+                    error=e,
+                )
+                return False
+        return self._handle_not_found_decimal_value(
+            enable_log, keys_to_test, not_found_val, key_to_set
+        )
+
+    async def _try_to_find_and_set_decimal_async(
+        self,
+        key_to_set: str,
+        keys_to_test: list,
+        not_found_val: float or int = 0,
+        parse_method=None,
+        parse_method_is_async: bool = False,
+        not_found_method=None,
+        not_found_method_is_async: bool = False,
+        enable_log: bool = True,
+        use_dict_root: bool = True,
+        use_info_sub_dict: bool = False,
+        allow_zero: bool = False,
+    ) -> bool:
+        if (
+            value := self._try_to_find_decimal(
+                key_to_set,
+                keys_to_test,
+                not_found_val,
+                use_dict_root,
+                use_info_sub_dict,
+                allow_zero,
+            )
+        ) or (allow_zero and value == trading_constants.ZERO):
+            if parse_method:
+                value = (
+                    await parse_method(value)
+                    if parse_method_is_async
+                    else parse_method(value)
+                )
+            return self.set_decimal(key_to_set, value)
+        if not_found_method:
+            try:
+                return self.set_decimal(
+                    key_to_set,
+                    (
+                        await not_found_method(not_found_val)
+                        if not_found_method_is_async
+                        else not_found_method(not_found_val)
+                    ),
+                )
+            except Exception as e:
+                self._log_missing_with_method(
+                    key_to_set=key_to_set,
+                    tried_message=keys_to_test,
+                    method=not_found_method,
+                    error=e,
+                )
+                return False
+        return self._handle_not_found_decimal_value(
+            enable_log, keys_to_test, not_found_val, key_to_set
+        )
+
+    def set_decimal(self, key_to_set, value):
+        self.formatted_record[key_to_set] = (
+            value if type(value) is decimal.Decimal else decimal.Decimal(str(value))
+        )
+
+    def _try_to_find_decimal(
+        self,
+        key_to_set,
+        keys_to_test,
+        not_found_val,
+        use_dict_root,
+        use_info_sub_dict,
+        allow_zero,
+    ):
+        return decimal.Decimal(
             str(
                 self._try_to_find(
                     key_to_set=key_to_set,
@@ -207,31 +289,17 @@ class Parser:
                 )
             )
         )
-        if value or (allow_zero and value == trading_constants.ZERO):
-            self.formatted_record[key_to_set] = (
-                parse_method(value) if parse_method else value
-            )
-            return True
-        if not_found_method:
-            try:
-                self.formatted_record[key_to_set] = decimal.Decimal(
-                    str(not_found_method(not_found_val))
-                )
-                return False
-            except Exception as e:
-                self._log_missing_with_method(
-                    key_to_set=key_to_set,
-                    tried_message=keys_to_test,
-                    method=not_found_method,
-                    error=e,
-                )
-                return False
-        if enable_log:
+
+    def _handle_not_found_decimal_value(
+        self, enable_log, keys_to_test, not_found_val, key_to_set
+    ):
+        if not_found_val is not None:
+            self.set_decimal(key_to_set, not_found_val)
+        elif enable_log:
             self._log_missing(
                 key_to_set=key_to_set,
                 tried_message=keys_to_test,
             )
-        self.formatted_record[key_to_set] = decimal.Decimal(str(not_found_val))
         return False
 
     def _try_to_find(
@@ -245,21 +313,28 @@ class Parser:
         allowed_falsely_values: tuple = (),
     ):
         value = None
+        potential_value = None
         for key in keys_to_test:
             try:
                 if use_dict_root:
                     value = self.raw_record[key]
-                    if value or value in allowed_falsely_values:
+                    if value:
                         return value
+                    if value in allowed_falsely_values:
+                        potential_value = value
             except KeyError:
                 pass
             try:
                 if use_info_sub_dict:
                     value = self.raw_record[ExchangePositionCCXTColumns.INFO.value][key]
-                    if value or value in allowed_falsely_values:
+                    if value:
                         return value
+                    if value in allowed_falsely_values:
+                        potential_value = value
             except KeyError:
                 pass
+        if potential_value is not None:
+            return potential_value
         if not_found_val is not None:
             return not_found_val
 

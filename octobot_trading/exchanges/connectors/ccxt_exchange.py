@@ -198,9 +198,14 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         _parser = self.connector_config.POSITIONS_PARSER_CLASS(self.exchange_manager.exchange)
         return await _parser.parse_positions(raw_positions)
 
-    async def parse_ticker(self, raw_ticker: dict, symbol) -> dict:
-        return await self.connector_config.TICKER_PARSER_CLASS.parse_ticker(
-            ticker=raw_ticker, exchange=self.exchange_manager.exchange, symbol=symbol)
+    async def parse_ticker(self, raw_ticker: dict, symbol: str, also_get_mini_ticker: bool=False) -> dict:
+        _parser = self.connector_config.TICKER_PARSER_CLASS(self.exchange_manager.exchange)
+        return await _parser.parse_ticker(
+            ticker=raw_ticker, symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
+
+    async def parse_tickers(self, raw_tickers: list) -> list:
+        _parser = self.connector_config.TICKER_PARSER_CLASS(self.exchange_manager.exchange)
+        return await _parser.parse_ticker_list(ticker=raw_tickers)
 
     def parse_market_status(self, raw_market_status: dict, with_fixer: bool, price_example) -> dict:
         return self.connector_config.MARKET_STATUS_PARSER_CLASS(
@@ -436,21 +441,24 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             raise octobot_trading.errors.FailedRequest(f"Failed to get_recent_trades {e}")
 
     # A price ticker contains statistics for a particular market/symbol for some period of time in recent past (24h)
-    async def get_price_ticker(self, symbol: str, **kwargs: dict) -> dict:
+    async def get_price_ticker(self, symbol: str, also_get_mini_ticker: bool=False, **kwargs: dict
+                               ) -> dict or typing.Tuple[dict, dict]:
         try:
             with self.error_describer():
-                ticker = await self.client.fetch_ticker(symbol, params=kwargs)
-                return await self.parse_ticker(raw_ticker=ticker, symbol=symbol)
+                return await self.parse_ticker(
+                    raw_ticker=await self.client.fetch_ticker(symbol, params=kwargs), 
+                    symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
         except ccxt.BaseError as e:
             raise octobot_trading.errors.FailedRequest(f"Failed to get_price_ticker {e}")
 
-    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> typing.Optional[list]:
+    async def get_all_currencies_price_ticker(self, **kwargs: dict) -> list:
         try:
             with self.error_describer():
                 symbols = kwargs.pop("symbols", None)
-                self.all_currencies_price_ticker = await self.client.fetch_tickers(symbols, params=kwargs)
+                self.all_currencies_price_ticker = await self.parse_tickers(
+                    await self.client.fetch_tickers(symbols, params=kwargs))
             return self.all_currencies_price_ticker
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported

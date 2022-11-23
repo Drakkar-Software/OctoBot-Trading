@@ -29,8 +29,8 @@ class PositionsParser(Parser):
         self.PARSER_TITLE = "positions"
 
         self.MODE_KEY_NAMES: list = ["hedged"]
-        self.ONEWAY_VALUES: tuple = False
-        self.HEDGE_VALUES: tuple = True
+        self.ONEWAY_VALUES: tuple = (False,)
+        self.HEDGE_VALUES: tuple = (True,)
 
     async def parse_positions(self, raw_positions: list) -> list:
         """
@@ -65,7 +65,7 @@ class PositionsParser(Parser):
         self._parse_leverage()
         self._parse_realized_pnl()
         self._parse_status()
-        if self.formatted_record[PositioCols.SIZE.value] == constants.ZERO:
+        if self.formatted_record[PositioCols.STATUS.value] == PositionStatus.CLOSED:
             # todo check what is required for empty
             # partially parse empty position as we might need it to create contracts
             self._create_debugging_report_for_record()
@@ -91,7 +91,7 @@ class PositionsParser(Parser):
         to adapt to a new exchange
         """
         if self.ONEWAY_VALUES and self.HEDGE_VALUES and self.MODE_KEY_NAMES:
-            self._try_to_find_and_parse_with_method(
+            self._try_to_find_and_set(
                 PositioCols.POSITION_MODE.value,
                 self.MODE_KEY_NAMES,
                 parse_method=self.mode_found,
@@ -105,7 +105,7 @@ class PositionsParser(Parser):
 
     def _parse_symbol(self):
         # check is get_pair_from_exchange required? isn't ccxt already doing this?
-        self._try_to_find_and_parse_with_method(
+        self._try_to_find_and_set(
             PositioCols.SYMBOL.value,
             [ExchangeCols.SYMBOL.value],
             parse_method=self.exchange.get_pair_from_exchange,
@@ -138,18 +138,17 @@ class PositionsParser(Parser):
 
     def _parse_status(self):
         # todo improve - add LIQUIDATING, LIQUIDATED and ADL
-        size = self.formatted_record.get(PositioCols.SIZE.value)
-        try:
-            if size >= 0:
+        if size := self.formatted_record.get(PositioCols.SIZE.value):
+            if size > 0 or size < 0:
                 self.formatted_record[PositioCols.STATUS.value] = PositionStatus.OPEN
-            else:
-                self.formatted_record[PositioCols.STATUS.value] = PositionStatus.CLOSED
-        except Exception as e:
-            self._log_missing(
-                PositioCols.SIZE.value,
-                f"a valid size ({size or 'no size'}) is required to parse status",
-                error=e,
-            )
+                return
+        if size == constants.ZERO:
+            self.formatted_record[PositioCols.STATUS.value] = PositionStatus.CLOSED
+            return
+        self._log_missing(
+            PositioCols.STATUS.value,
+            f"a valid size ({size or 'no size'}) is required to parse status",
+        )
 
     def _parse_liquidation_price(self):
         self._try_to_find_and_set_decimal(
@@ -229,7 +228,7 @@ class PositionsParser(Parser):
         )
 
     def _parse_margin_type(self):
-        self._try_to_find_and_parse_with_method(
+        self._try_to_find_and_set(
             PositioCols.MARGIN_TYPE.value,
             [ExchangeCols.MARGIN_TYPE.value, ExchangeCols.MARGIN_MODE.value],
             parse_method=TraderPositionType,
@@ -303,10 +302,10 @@ class PositionsParser(Parser):
             )
 
     def _parse_timestamp(self):
-        self._try_to_find_and_parse_with_method(
+        self._try_to_find_and_set(
             PositioCols.TIMESTAMP.value,
             [ExchangeCols.TIMESTAMP.value],
-            int,
+            parse_method=int,
             not_found_method=self.timestamp_not_found,
         )
 
@@ -336,13 +335,12 @@ class PositionsParser(Parser):
         )
 
     def size_found(self, _size):
-        if (
-            self.formatted_record[PositioCols.SIDE.value] == PositionSide.LONG
-            or self.formatted_record[PositioCols.SIDE.value] == PositionSide.BOTH
-        ):
-            return _size
-        # short - so we set it to negative if it isn't already
-        return -_size if _size > 0 else _size
+        if side := self.formatted_record.get(PositioCols.SIDE.value):
+            if side == PositionSide.LONG or side == PositionSide.BOTH:
+                return _size
+            # short - so we set it to negative if it isn't already
+            return -_size if _size > 0 else _size
+        self._log_missing(PositioCols.SIZE.value, f"requires side ({side or 'no side'}) to parse")
 
     def timestamp_not_found(self, _):
         try:
