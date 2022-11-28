@@ -159,6 +159,10 @@ def get_exchange_name(exchange_manager) -> str:
     return exchange_manager.get_exchange_name()
 
 
+def get_exchange_type(exchange_manager) -> octobot_trading.enums.ExchangeTypes:
+    return exchanges.get_exchange_type(exchange_manager)
+
+
 def has_only_ohlcv(exchange_importers):
     return exchanges.ExchangeSimulator.get_real_available_data(exchange_importers) == \
            set(exchange_data.SIMULATOR_PRODUCERS_TO_POSSIBLE_DATA_TYPE[octobot_trading.constants.OHLCV_CHANNEL])
