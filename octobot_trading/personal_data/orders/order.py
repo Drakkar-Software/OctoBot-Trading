@@ -414,7 +414,19 @@ class Order(util.Initializable):
         await self.initialize()
 
     def should_be_created(self):
-        return not self.is_created() and self.is_waiting_for_chained_trigger
+        return not self.is_created() and self.is_waiting_for_chained_trigger and \
+               not self._are_simultaneously_triggered_grouped_orders_closed()
+
+    def _are_simultaneously_triggered_grouped_orders_closed(self):
+        if self.triggered_by is None:
+            return False
+        for other_order in self.triggered_by.chained_orders:
+            if other_order is self:
+                return False
+            if self.order_group is not None and self.order_group is other_order.order_group \
+                    and other_order.is_closed():
+                return True
+        return False
 
     def get_computed_fee(self, forced_value=None):
         if self.fees_currency_side is enums.FeesCurrencySide.UNDEFINED:
