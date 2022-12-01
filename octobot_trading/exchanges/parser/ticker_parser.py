@@ -70,14 +70,14 @@ class TickerParser(parser_util.Parser):
         self._parse_previous_close_price()
         self._parse_change()
         self._parse_percentage()
-        self._parse_open_price()
-        self._parse_high_price()
-        self._parse_low_price()
-        self._parse_close_price()
+        await self._parse_open_price()
+        await self._parse_high_price()
+        await self._parse_low_price()
+        await self._parse_close_price()
         self._parse_mark_price()  # parse after close price
         self._parse_quote_volume()
-        await self._parse_base_volume()  # parse after mark price and quote volume
-        if self.exchange.is_future:
+        self._parse_base_volume()  # parse after mark price and quote volume
+        if self.exchange.exchange_manager.is_future:
             if self.exchange.connector.connector_config.MARK_PRICE_IN_TICKER:
                 await self._parse_mark_price()
             if self.exchange.connector.connector_config.FUNDING_IN_TICKER:
@@ -124,16 +124,17 @@ class TickerParser(parser_util.Parser):
             return {}
 
     def _parse_symbol(self, missing_symbol_value):
-        self._try_to_find_and_set_decimal(
+        self._try_to_find_and_set(
             TickerCols.SYMBOL.value,
             [TickerCols.SYMBOL.value],
             not_found_val=missing_symbol_value,
         )
 
     def _parse_timestamp(self):
-        self._try_to_find_and_set_decimal(
+        self._try_to_find_and_set(
             TickerCols.TIMESTAMP.value,
             [TickerCols.TIMESTAMP.value],
+            parse_method=int,
             not_found_method=self.exchange.connector.client.milliseconds,
         )
 
@@ -235,32 +236,32 @@ class TickerParser(parser_util.Parser):
             enable_log=False,
         )
 
-    def _parse_open_price(self):
-        self._try_to_find_and_set_decimal(
+    async def _parse_open_price(self):
+        await self._try_to_find_and_set_decimal_async(
             TickerCols.OPEN.value,
             [TickerCols.OPEN.value],
             not_found_method=self.missing_open_price,
             not_found_method_is_async=True,
         )
 
-    def _parse_high_price(self):
-        self._try_to_find_and_set_decimal(
+    async def _parse_high_price(self):
+        await self._try_to_find_and_set_decimal_async(
             TickerCols.HIGH.value,
             [TickerCols.HIGH.value],
             not_found_method=self.missing_high_price,
             not_found_method_is_async=True,
         )
 
-    def _parse_low_price(self):
-        self._try_to_find_and_set_decimal(
+    async def _parse_low_price(self):
+        await self._try_to_find_and_set_decimal_async(
             TickerCols.LOW.value,
             [TickerCols.LOW.value],
             not_found_method=self.missing_low_price,
             not_found_method_is_async=True,
         )
 
-    def _parse_close_price(self):
-        self._try_to_find_and_set_decimal(
+    async def _parse_close_price(self):
+        await self._try_to_find_and_set_decimal_async(
             TickerCols.CLOSE.value,
             [TickerCols.CLOSE.value],
             not_found_method=self.missing_close_price,

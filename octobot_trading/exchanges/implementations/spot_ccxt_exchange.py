@@ -211,13 +211,13 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return raw_created_order
 
     async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_market_buy_order(symbol, quantity, params=params)
+        return await self.connector.client.create_market_buy_order(symbol, quantity, params={**params, "cost": quantity * price})
 
     async def _create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return await self.connector.client.create_limit_buy_order(symbol, quantity, price, params=params)
 
     async def _create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_market_sell_order(symbol, quantity, params=params)
+        return await self.connector.client.create_market_sell_order(symbol, quantity, params={**params, "cost": quantity * price})
 
     async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)

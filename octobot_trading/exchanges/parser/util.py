@@ -264,6 +264,7 @@ class Parser:
         )
 
     def set_decimal(self, key_to_set, value):
+        value = value or 0
         self.formatted_record[key_to_set] = (
             value if type(value) is decimal.Decimal else decimal.Decimal(str(value))
         )

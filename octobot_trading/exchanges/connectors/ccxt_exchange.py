@@ -201,11 +201,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def parse_ticker(self, raw_ticker: dict, symbol: str, also_get_mini_ticker: bool=False) -> dict:
         _parser = self.connector_config.TICKER_PARSER_CLASS(self.exchange_manager.exchange)
         return await _parser.parse_ticker(
-            ticker=raw_ticker, symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
+            raw_ticker=raw_ticker, symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
 
     async def parse_tickers(self, raw_tickers: list) -> list:
         _parser = self.connector_config.TICKER_PARSER_CLASS(self.exchange_manager.exchange)
-        return await _parser.parse_ticker_list(ticker=raw_tickers)
+        return await _parser.parse_ticker_list(raw_tickers=raw_tickers)
 
     def parse_market_status(self, raw_market_status: dict, with_fixer: bool, price_example) -> dict:
         return self.connector_config.MARKET_STATUS_PARSER_CLASS(
@@ -446,8 +446,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                                ) -> dict or typing.Tuple[dict, dict]:
         try:
             with self.error_describer():
+                raw_ticker=await self.client.fetch_ticker(symbol, params=kwargs)
                 return await self.parse_ticker(
-                    raw_ticker=await self.client.fetch_ticker(symbol, params=kwargs), 
+                    raw_ticker=raw_ticker, 
                     symbol=symbol, also_get_mini_ticker=also_get_mini_ticker)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported

@@ -132,7 +132,7 @@ class PositionsParser(Parser):
     def _parse_unrealized_pnl(self):
         self._try_to_find_and_set_decimal(
             PositioCols.UNREALIZED_PNL.value,
-            [ExchangeCols.UNREALIZED_PNL.value],
+            [ExchangeCols.UNREALIZED_PNL.value] + UnrealizedPnlSynonyms.keys,
             allow_zero=True,
         )
 
@@ -278,9 +278,10 @@ class PositionsParser(Parser):
         quantity is the size for a single contract
         """
         self._try_to_find_and_set_decimal(
-            PositioCols.QUANTITY.value, QuantitySynonyms.keys, 
+            PositioCols.QUANTITY.value,
+            QuantitySynonyms.keys,
             parse_method=self.quantity_found,
-            use_info_sub_dict=True
+            use_info_sub_dict=True,
         )
 
     def _parse_contract_type(self):
@@ -366,7 +367,17 @@ class LiquidationSynonyms:
 
 
 class RealizedPnlSynonyms:
-    keys = ["cum_realized_pnl", "realized_pnl","cum_realised_pnl", "realised_pnl","realizedPnl"]
+    keys = [
+        "cum_realized_pnl",
+        "realized_pnl",
+        "cum_realised_pnl",
+        "realised_pnl",
+        "realisedPnl",
+    ]
+
+
+class UnrealizedPnlSynonyms:
+    keys = ["unrealizedPnl"]
 
 
 class ClosingFeeSynonyms:

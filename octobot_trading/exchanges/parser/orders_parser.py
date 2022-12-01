@@ -1,10 +1,14 @@
+import asyncio
 import decimal
+import time
 import typing
 import cryptofeed.defines as cryptofeed_constants
+from octobot_commons.symbols import symbol_util
 
 from octobot_trading import constants
 from octobot_trading.enums import (
     ExchangeConstantsFeesColumns,
+    ExchangeConstantsMarketStatusColumns,
     ExchangeConstantsOrderColumns as OrderCols,
     OrderStatus,
     TradeOrderSide,
@@ -126,9 +130,9 @@ class OrdersParser(Parser):
         # todo post only
         self.fetched_order = None  # clear previous fetched order
         self._ensure_dict(raw_order)
-        self._parse_id()
-        self._parse_status(status)
         self._parse_timestamp(timestamp)
+        self._parse_status(status)
+        self._parse_id()  # parse after status and timestamp
         self._parse_symbol(symbol)
         self._parse_side(side)
         self._parse_type(order_type)  # parse after side
@@ -139,7 +143,7 @@ class OrdersParser(Parser):
         self._parse_amount(quantity)
         self._parse_remaining()  # parse after amount and status
         self._parse_filled_amount()  # parse after amount and remaining
-        self._parse_cost()
+        await self._parse_cost()
         self._parse_reduce_only()  # parse after type
         self._parse_tag()
         self._parse_fees()
@@ -161,7 +165,22 @@ class OrdersParser(Parser):
         )
 
     def _parse_id(self):
-        self._try_to_find_and_set(OrderCols.ID.value, [OrderCols.ID.value])
+        self._try_to_find_and_set(
+            OrderCols.ID.value, [OrderCols.ID.value], not_found_method=self.missing_id
+        )
+
+    def missing_id(self, _):
+        # some exchanges dont provide an id use time instead
+        if (
+            (status := self.formatted_record.get(OrderCols.STATUS.value))
+            == OrderStatus.CLOSED.value
+            or status == OrderStatus.CANCELED.value
+            or status == OrderStatus.EXPIRED.value
+            or status == OrderStatus.REJECTED.value
+        ):
+            return self.formatted_record.get(OrderCols.TIMESTAMP.value)
+        else:
+            self._log_missing(OrderCols.ID.value, f"{OrderCols.ID.value}")
 
     def _parse_timestamp(self, missing_timestamp_value):
         self._try_to_find_and_set(
@@ -228,8 +247,19 @@ class OrdersParser(Parser):
             OrderCols.SIDE.value,
             [OrderCols.SIDE.value],
             parse_method=found_side,
+            not_found_method=self.missing_side,
             not_found_val=missing_side_value,
         )
+
+    def missing_side(self, missing_side_value):
+        if missing_side_value:
+            return missing_side_value
+        if buyer_maker := (self.raw_record[OrderCols.INFO.value].get("isBuyerMaker")):
+            return TradeOrderSide.BUY.value
+        elif buyer_maker is False:
+            return TradeOrderSide.SELL.value
+        else:
+            self._log_missing(OrderCols.SIDE.value, OrderCols.SIDE.value)
 
     def _parse_price(self, missing_price_value):
         def handle_found_price(raw_price):
@@ -262,11 +292,13 @@ class OrdersParser(Parser):
             enable_log=False if missing_quantity_value else True,
         )
 
-    def _parse_cost(self):
-        self._try_to_find_and_set_decimal(
+    async def _parse_cost(self):
+
+        await self._try_to_find_and_set_decimal_async(
             OrderCols.COST.value,
             [OrderCols.COST.value],
             not_found_method=self.missing_cost,
+            not_found_method_is_async=True,
         )
 
     def _parse_average_price(self):
@@ -456,7 +488,7 @@ class OrdersParser(Parser):
         self._log_missing(
             OrderCols.PRICE.value,
             f"Parsing price requires status ({status or 'no status'}) "
-            "and order type ({order_type or 'no order type'})",
+            f"and order type ({order_type or 'no order type'})",
         )
 
     def missing_filled_price(self, _):
@@ -607,12 +639,32 @@ class OrdersParser(Parser):
             return
         self.missing_fees(None)
 
-    def missing_cost(self, _):
+    async def missing_cost(self, _):
         # check and should it be with fees?
-        filled_price = filled_quantity = None
+        symbol = self.formatted_record.get(OrderCols.SYMBOL.value)
+
+        market_status = (
+            self.exchange.get_market_status(symbol, with_fixer=False)
+            if symbol
+            else None
+        )
+        if not market_status or not symbol:
+            self._log_missing(
+                OrderCols.COST.value,
+                f"key: {OrderCols.COST.value} and calculating not "
+                "possible because market_status not loaded",
+            )
+            return 0
+        parsed_symbol = symbol_util.parse_symbol(symbol)
+
+        if (filled_quantity := self.formatted_record.get(OrderCols.FILLED.value)) is not None and (
+            market_status[ExchangeConstantsMarketStatusColumns.MARKET.value]
+            == parsed_symbol.quote
+        ):
+            return filled_quantity
         if (
             filled_price := self.formatted_record.get(OrderCols.FILLED_PRICE.value)
-        ) and (filled_quantity := self.formatted_record.get(OrderCols.FILLED.value)):
+        ) and filled_quantity:
             return filled_quantity * filled_price
         if (
             (status := self.formatted_record.get(OrderCols.STATUS.value))

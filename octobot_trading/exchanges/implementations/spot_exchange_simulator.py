@@ -15,10 +15,14 @@
 #  License along with this library.
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.exchanges.types as exchanges_types
+from octobot_trading.exchanges.config import ccxt_exchange_settings
 
 
 #TODO remove
 class SpotExchangeSimulator(exchanges_types.SpotExchange):
+    connector_config: ccxt_exchange_settings.CCXTExchangeConfig = (
+        ccxt_exchange_settings.CCXTExchangeConfig
+    )
     def __init__(self, config, exchange_manager, backtesting):
         super().__init__(config, exchange_manager)
 
