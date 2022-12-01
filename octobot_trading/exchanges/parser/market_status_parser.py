@@ -15,8 +15,9 @@
 #  License along with this library.
 import decimal
 import math
+import copy
 import octobot_commons.number_util as number_util
- 
+
 import octobot_commons.logging as logging
 from octobot_trading.enums import ExchangeConstantsMarketStatusColumns as Ecmsc
 from octobot_trading.enums import ExchangeConstantsMarketStatusInfoColumns as Ecmsic
@@ -194,25 +195,49 @@ class ExchangeMarketStatusParser:
     Utility class that performs exchange_self.market_status fixes
     """
 
-    def __init__(self, market_status, with_fixer=True, price_example=None,
-                 fix_precision=False, remove_invalid_price_limits=False):
+    def __init__(
+        self,
+        market_status,
+        with_fixer=True,
+        price_example=None,
+        fix_precision=False,
+        remove_invalid_price_limits=False,
+    ):
         self.logger = logging.get_logger(self.__class__.__name__)
-        self.market_status = market_status
+        self.market_status = copy.deepcopy(market_status)
         self.price_example = price_example
-        if fix_precision and market_status.get(Ecmsc.PRECISION.value):
-            if market_status[Ecmsc.PRECISION.value].get(Ecmsc.PRECISION_AMOUNT.value):
-                market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value] = \
-                    number_util.get_digits_count(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_AMOUNT.value])
+        if fix_precision and self.market_status.get(Ecmsc.PRECISION.value):
+            if (
+                amount := self.market_status[Ecmsc.PRECISION.value].get(
+                    Ecmsc.PRECISION_AMOUNT.value
+                )
+            ):
+                self.market_status[Ecmsc.PRECISION.value][
+                    Ecmsc.PRECISION_AMOUNT.value
+                ] = number_util.get_digits_count(amount)
             else:
-                raise RuntimeError("Failed to fix precision amount, precision amount not available")
-            if market_status[Ecmsc.PRECISION.value].get(Ecmsc.PRECISION_PRICE.value):
-                market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value] = \
-                    number_util.get_digits_count(market_status[Ecmsc.PRECISION.value][Ecmsc.PRECISION_PRICE.value])
+                raise RuntimeError(
+                    "Failed to fix precision amount, precision amount not available"
+                )
+            if (
+                precision := self.market_status[Ecmsc.PRECISION.value].get(
+                    Ecmsc.PRECISION_PRICE.value
+                )
+            ):
+                self.market_status[Ecmsc.PRECISION.value][
+                    Ecmsc.PRECISION_PRICE.value
+                ] = number_util.get_digits_count(precision)
             else:
-                raise RuntimeError("Failed to fix precision price, precision price not available")
+                raise RuntimeError(
+                    "Failed to fix precision price, precision price not available"
+                )
         if remove_invalid_price_limits:
-            market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MIN.value] = None
-            market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][Ecmsc.LIMITS_PRICE_MAX.value] = None
+            self.market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][
+                Ecmsc.LIMITS_PRICE_MIN.value
+            ] = None
+            self.market_status[Ecmsc.LIMITS.value][Ecmsc.LIMITS_PRICE.value][
+                Ecmsc.LIMITS_PRICE_MAX.value
+            ] = None
 
         if with_fixer:
             if Ecmsc.INFO.value in self.market_status:

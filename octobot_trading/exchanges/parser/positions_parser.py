@@ -366,7 +366,7 @@ class LiquidationSynonyms:
 
 
 class RealizedPnlSynonyms:
-    keys = ["cum_realized_pnl", "realized_pnl"]
+    keys = ["cum_realized_pnl", "realized_pnl","cum_realised_pnl", "realised_pnl","realizedPnl"]
 
 
 class ClosingFeeSynonyms:

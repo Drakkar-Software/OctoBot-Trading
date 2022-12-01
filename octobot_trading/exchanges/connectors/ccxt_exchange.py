@@ -335,8 +335,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     def get_market_status(self, symbol, price_example=None, with_fixer=True, ) -> dict:
         try:
+            raw_market_status = self.client.market(symbol)
             return self.parse_market_status(
-                raw_market_status=self.client.market(symbol), with_fixer=with_fixer, price_example=price_example)
+                raw_market_status=raw_market_status, with_fixer=with_fixer, price_example=price_example)
         except ccxt.NotSupported:
             raise octobot_trading.errors.NotSupported
 
