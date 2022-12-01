@@ -722,7 +722,7 @@ class Position(util.Initializable):
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
             unrealized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value,
                                             constants.ZERO),
-            realized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.realized_PNL.value, constants.ZERO),
+            realized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.REALIZED_PNL.value, constants.ZERO),
             fee_to_close=raw_position.get(enums.ExchangeConstantsPositionColumns.CLOSING_FEE.value, constants.ZERO),
             status=position_util.parse_position_status(raw_position)
         )
@@ -743,7 +743,7 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
             enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
             enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value: self.unrealized_pnl,
-            enums.ExchangeConstantsPositionColumns.realized_PNL.value: self.realized_pnl,
+            enums.ExchangeConstantsPositionColumns.REALIZED_PNL.value: self.realized_pnl,
         }
 
     def _check_for_liquidation(self):

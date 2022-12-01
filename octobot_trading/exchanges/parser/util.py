@@ -179,6 +179,7 @@ class Parser:
         use_info_sub_dict: bool = False,
         allow_zero: bool = False,
     ) -> bool:
+        not_found_val = not_found_val or 0
         value = self._try_to_find_decimal(
             key_to_set,
             keys_to_test,

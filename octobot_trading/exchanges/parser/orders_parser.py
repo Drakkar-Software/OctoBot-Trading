@@ -211,8 +211,6 @@ class OrdersParser(Parser):
             not_found_method=self.missing_type,
             enable_log=False,
         )
-        if not self.formatted_record[OrderCols.TYPE.value] or not self.formatted_record[OrderCols.OCTOBOT_ORDER_TYPE.value]:
-            test = 1
         # market orders with no price but with stop price are stop orders
         if (
             self.raw_record.get(OrderCols.STOP_PRICE.value)
@@ -236,6 +234,7 @@ class OrdersParser(Parser):
     def _parse_price(self, missing_price_value):
         def handle_found_price(raw_price):
             return self.found_price(raw_price, missing_price_value)
+
         self._try_to_find_and_set_decimal(
             OrderCols.PRICE.value,
             [

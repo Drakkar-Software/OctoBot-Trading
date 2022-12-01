@@ -245,7 +245,6 @@ class PositionsParser(Parser):
         if (
             mode := self.formatted_record.get(PositioCols.POSITION_MODE.value)
         ) is PositionMode.ONE_WAY:
-            # todo is it good to keep it like that in ONE_WAY mode?
             self.formatted_record[PositioCols.SIDE.value] = PositionSide.BOTH
         elif mode is PositionMode.HEDGE:
             if (
@@ -270,7 +269,6 @@ class PositionsParser(Parser):
         self._try_to_find_and_set_decimal(
             PositioCols.SIZE.value,
             SizeSynonyms.keys,
-            parse_method=self.size_found,
             use_info_sub_dict=True,
             allow_zero=True,
         )
@@ -280,7 +278,9 @@ class PositionsParser(Parser):
         quantity is the size for a single contract
         """
         self._try_to_find_and_set_decimal(
-            PositioCols.QUANTITY.value, QuantitySynonyms.keys, use_info_sub_dict=True
+            PositioCols.QUANTITY.value, QuantitySynonyms.keys, 
+            parse_method=self.quantity_found,
+            use_info_sub_dict=True
         )
 
     def _parse_contract_type(self):
@@ -334,17 +334,17 @@ class PositionsParser(Parser):
             f"/ mark price ({mark_price or 'no mark price'})",
         )
 
-    def size_found(self, _size):
-        if _size == constants.ZERO:
-            return _size
+    def quantity_found(self, quantity):
+        if quantity == constants.ZERO:
+            return quantity
         if side := self.formatted_record.get(PositioCols.ORIGINAL_SIDE.value):
             if side == PositionSide.LONG.value:
-                return _size
+                return quantity
             elif side == PositionSide.SHORT.value:
                 # short - so we set it to negative if it isn't already
-                return -_size if _size > 0 else _size
+                return -quantity if quantity > 0 else quantity
         self._log_missing(
-            PositioCols.SIZE.value,
+            PositioCols.QUANTITY.value,
             f"requires valid side ({side or 'no side'}) to parse",
         )
 
