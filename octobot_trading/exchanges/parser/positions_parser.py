@@ -215,8 +215,8 @@ class PositionsParser(Parser):
                             f"key: {PositioCols.MARK_PRICE.value} and using get_kline_price "
                             "(malformed kline data: {kline_data or 'no kline data'})",
                         )
-                except Exception as error:
-                    pass
+                except Exception as e:
+                    error = e
             self._log_missing(
                 PositioCols.MARK_PRICE.value,
                 f"key: {PositioCols.MARK_PRICE.value} and using get_kline_price{error or ''}",
@@ -335,12 +335,18 @@ class PositionsParser(Parser):
         )
 
     def size_found(self, _size):
-        if side := self.formatted_record.get(PositioCols.SIDE.value):
-            if side == PositionSide.LONG or side == PositionSide.BOTH:
+        if _size == constants.ZERO:
+            return _size
+        if side := self.formatted_record.get(PositioCols.ORIGINAL_SIDE.value):
+            if side == PositionSide.LONG.value:
                 return _size
-            # short - so we set it to negative if it isn't already
-            return -_size if _size > 0 else _size
-        self._log_missing(PositioCols.SIZE.value, f"requires side ({side or 'no side'}) to parse")
+            elif side == PositionSide.SHORT.value:
+                # short - so we set it to negative if it isn't already
+                return -_size if _size > 0 else _size
+        self._log_missing(
+            PositioCols.SIZE.value,
+            f"requires valid side ({side or 'no side'}) to parse",
+        )
 
     def timestamp_not_found(self, _):
         try:
@@ -360,7 +366,7 @@ class LiquidationSynonyms:
 
 
 class RealizedPnlSynonyms:
-    keys = ["cum_realized_pnl"]
+    keys = ["cum_realized_pnl", "realized_pnl"]
 
 
 class ClosingFeeSynonyms:
