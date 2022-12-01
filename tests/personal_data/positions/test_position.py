@@ -492,7 +492,7 @@ async def test_update_size_from_order_realized_pnl_position(btc_usdt_future_trad
             position_inst.update_from_order(buy_limit)
         assert position_inst.size == decimal.Decimal("-49")
         assert position_inst.entry_price == decimal.Decimal("20")
-        assert position_inst.realised_pnl == decimal.Decimal("-5")
+        assert position_inst.realized_pnl == decimal.Decimal("-5")
 
 
 async def test_update_size_from_order_with_short_overbought_one_way_position(
@@ -1164,11 +1164,11 @@ async def test__update_realized_pnl_from_size_update_long(btc_usdt_future_trader
     # = position_size / decimal.Decimal(2) * decimal.Decimal(0.8)
     assert position_inst.unrealized_pnl == decimal.Decimal('3.999999999999999944488848768')
     # = position_size / decimal.Decimal(2) * decimal.Decimal(0.2)
-    assert position_inst.realised_pnl == decimal.Decimal('1.000000000000000055511151232')
+    assert position_inst.realized_pnl == decimal.Decimal('1.000000000000000055511151232')
 
     assert len(tm.transactions) == 1
     assert list(tm.transactions.values())[-1].symbol == DEFAULT_FUTURE_SYMBOL
-    assert list(tm.transactions.values())[-1].realised_pnl == decimal.Decimal('1.000000000000000055511151232')
+    assert list(tm.transactions.values())[-1].realized_pnl == decimal.Decimal('1.000000000000000055511151232')
 
     position_size = decimal.Decimal(8)
 
@@ -1176,18 +1176,18 @@ async def test__update_realized_pnl_from_size_update_long(btc_usdt_future_trader
     await position_inst.update(-position_size * decimal.Decimal(0.5))
     # = position_size / decimal.Decimal(4) * decimal.Decimal(0.5)
     assert position_inst.unrealized_pnl == decimal.Decimal('1.999999999999999944488848768')
-    # = position_size / decimal.Decimal(4) * decimal.Decimal(0.5) + previous realised pnl
-    assert position_inst.realised_pnl == decimal.Decimal('3.000000000000000055511151232')
+    # = position_size / decimal.Decimal(4) * decimal.Decimal(0.5) + previous realized pnl
+    assert position_inst.realized_pnl == decimal.Decimal('3.000000000000000055511151232')
 
     assert len(tm.transactions) == 2
-    assert list(tm.transactions.values())[-1].realised_pnl == decimal.Decimal('3.000000000000000055511151232') - \
+    assert list(tm.transactions.values())[-1].realized_pnl == decimal.Decimal('3.000000000000000055511151232') - \
            decimal.Decimal('1.000000000000000055511151232')
 
     position_size = decimal.Decimal(4)
 
-    # Increase by 50% --> shouldn't increase realised pnl
+    # Increase by 50% --> shouldn't increase realized pnl
     await position_inst.update(position_size * decimal.Decimal(0.5))
-    assert position_inst.realised_pnl == decimal.Decimal('3.000000000000000055511151232')  # = previous realised pnl
+    assert position_inst.realized_pnl == decimal.Decimal('3.000000000000000055511151232')  # = previous realized pnl
     assert len(tm.transactions) == 2
 
 
@@ -1209,28 +1209,28 @@ async def test__update_realized_pnl_from_size_update_short(btc_usdt_future_trade
     # reduce size by 30% --> 0.3
     await position_inst.update(position_size * decimal.Decimal(0.3))  # = 0.3
     assert position_inst.unrealized_pnl == decimal.Decimal('35.00000000000000055511151232')
-    assert position_inst.realised_pnl == decimal.Decimal('14.99999999999999944488848768')
+    assert position_inst.realized_pnl == decimal.Decimal('14.99999999999999944488848768')
 
     assert len(tm.transactions) == 1
     assert list(tm.transactions.values())[-1].symbol == DEFAULT_FUTURE_SYMBOL
-    assert list(tm.transactions.values())[-1].realised_pnl == decimal.Decimal('14.99999999999999944488848768')
+    assert list(tm.transactions.values())[-1].realized_pnl == decimal.Decimal('14.99999999999999944488848768')
 
     position_size = decimal.Decimal(70)
 
     # reduce size by 40% --> 0.4
     await position_inst.update(position_size * decimal.Decimal(0.4))
     assert position_inst.unrealized_pnl == decimal.Decimal('20.99999999999999977795539508')
-    assert position_inst.realised_pnl == decimal.Decimal('29.00000000000000022204460492')
+    assert position_inst.realized_pnl == decimal.Decimal('29.00000000000000022204460492')
 
     assert len(tm.transactions) == 2
-    assert list(tm.transactions.values())[-1].realised_pnl == decimal.Decimal('29.00000000000000022204460492') - \
+    assert list(tm.transactions.values())[-1].realized_pnl == decimal.Decimal('29.00000000000000022204460492') - \
            decimal.Decimal('14.99999999999999944488848768')
 
     position_size = decimal.Decimal(42)
 
-    # Increase by 50% --> shouldn't increase realised pnl
+    # Increase by 50% --> shouldn't increase realized pnl
     await position_inst.update(-position_size * decimal.Decimal(0.5))
-    assert position_inst.realised_pnl == decimal.Decimal('29.00000000000000022204460492')  # = previous realised pnl
+    assert position_inst.realized_pnl == decimal.Decimal('29.00000000000000022204460492')  # = previous realized pnl
     assert len(tm.transactions) == 2
 
 
@@ -1266,5 +1266,5 @@ async def test_update_position_when_overliquidated_position_with_long_position_i
 
     assert len(tm.transactions) == 1
     transaction = next(iter(tm.transactions.values()))
-    assert transaction.realised_pnl == decimal.Decimal("-9.999")
+    assert transaction.realized_pnl == decimal.Decimal("-9.999")
     assert transaction.trigger_source is enums.PNLTransactionSource.LIQUIDATION

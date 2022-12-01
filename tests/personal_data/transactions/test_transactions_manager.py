@@ -43,13 +43,13 @@ async def test_insert_transaction_instance(backtesting_trader):
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 0
     t_id = str(uuid.uuid4())
     t_id_2 = str(uuid.uuid4())
-    transaction = transaction_types.RealisedPnlTransaction(
+    transaction = transaction_types.RealizedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
-        transaction_type=enums.TransactionType.REALISED_PNL,
+        transaction_type=enums.TransactionType.REALIZED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
-        realised_pnl=constants.ZERO,
+        realized_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
         first_entry_time=constants.ONE,
@@ -104,14 +104,14 @@ async def test_insert_transaction_instance(backtesting_trader):
 async def test_get_transaction(backtesting_trader):
     _, exchange_manager, _ = backtesting_trader
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 0
-    transaction = transaction_types.RealisedPnlTransaction(
+    transaction = transaction_types.RealizedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
-        transaction_type=enums.TransactionType.REALISED_PNL,
+        transaction_type=enums.TransactionType.REALIZED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
         side=enums.PositionSide.BOTH,
-        realised_pnl=constants.ZERO,
+        realized_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
         first_entry_time=constants.ONE,
@@ -120,14 +120,14 @@ async def test_get_transaction(backtesting_trader):
         order_exit_price=constants.ONE,
         leverage=constants.ONE,
         trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
-    transaction_2 = transaction_types.RealisedPnlTransaction(
+    transaction_2 = transaction_types.RealizedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
-        transaction_type=enums.TransactionType.REALISED_PNL,
+        transaction_type=enums.TransactionType.REALIZED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
         side=enums.PositionSide.LONG,
-        realised_pnl=constants.ZERO,
+        realized_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
         first_entry_time=constants.ONE,
@@ -165,14 +165,14 @@ async def test_update_transaction_id(backtesting_trader):
     t_id_3 = str(uuid.uuid4())
     t_id_4 = str(uuid.uuid4())
     assert len(exchange_manager.exchange_personal_data.transactions_manager.transactions) == 0
-    transaction = transaction_types.RealisedPnlTransaction(
+    transaction = transaction_types.RealizedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
-        transaction_type=enums.TransactionType.REALISED_PNL,
+        transaction_type=enums.TransactionType.REALIZED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
         side=enums.PositionSide.BOTH,
-        realised_pnl=constants.ZERO,
+        realized_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
         first_entry_time=constants.ONE,
@@ -182,14 +182,14 @@ async def test_update_transaction_id(backtesting_trader):
         leverage=constants.ONE,
         trigger_source=enums.PNLTransactionSource.LIMIT_ORDER)
     transaction.set_transaction_id(t_id)
-    transaction_2 = transaction_types.RealisedPnlTransaction(
+    transaction_2 = transaction_types.RealizedPnlTransaction(
         exchange_name=exchange_manager.exchange_name,
         creation_time=exchange_manager.exchange.get_exchange_current_time(),
-        transaction_type=enums.TransactionType.REALISED_PNL,
+        transaction_type=enums.TransactionType.REALIZED_PNL,
         currency=TRANSACTION_CURRENCY,
         symbol=TRANSACTION_SYMBOL,
         side=enums.PositionSide.SHORT,
-        realised_pnl=constants.ZERO,
+        realized_pnl=constants.ZERO,
         closed_quantity=constants.ONE,
         cumulated_closed_quantity=constants.ONE,
         first_entry_time=constants.ONE,

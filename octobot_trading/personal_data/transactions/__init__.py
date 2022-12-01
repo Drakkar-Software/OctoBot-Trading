@@ -24,7 +24,7 @@ from octobot_trading.personal_data.transactions.transactions_manager import (
 )
 from octobot_trading.personal_data.transactions.transaction_factory import (
     create_blockchain_transaction,
-    create_realised_pnl_transaction,
+    create_realized_pnl_transaction,
     create_fee_transaction,
     create_transfer_transaction,
 )
@@ -34,7 +34,7 @@ from octobot_trading.personal_data.transactions.transaction import (
 from octobot_trading.personal_data.transactions.types import (
     BlockchainTransaction,
     FeeTransaction,
-    RealisedPnlTransaction,
+    RealizedPnlTransaction,
     TransferTransaction,
 )
 
@@ -43,10 +43,10 @@ __all__ = [
     "Transaction",
     "BlockchainTransaction",
     "FeeTransaction",
-    "RealisedPnlTransaction",
+    "RealizedPnlTransaction",
     "TransferTransaction",
     "create_blockchain_transaction",
-    "create_realised_pnl_transaction",
+    "create_realized_pnl_transaction",
     "create_fee_transaction",
     "create_transfer_transaction",
 ]

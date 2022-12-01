@@ -1153,7 +1153,7 @@ async def test_update_portfolio_data_with_fees_long_position(future_trader_simul
                    required_funds
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
             assert position.size == quantity
-            assert position.realised_pnl == -fees_per_order
+            assert position.realized_pnl == -fees_per_order
 
         with mock.patch.object(market_sell, "get_total_fees", mock.Mock(return_value=fees_per_order)) \
                 as get_total_fees_mock:
@@ -1172,7 +1172,7 @@ async def test_update_portfolio_data_with_fees_long_position(future_trader_simul
                    required_funds
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
             assert position.size == quantity
-            assert position.realised_pnl == -fees_per_order
+            assert position.realized_pnl == -fees_per_order
 
             # fill order with fees
             profits = (sell_order_price - buy_order_price) * quantity
@@ -1188,7 +1188,7 @@ async def test_update_portfolio_data_with_fees_long_position(future_trader_simul
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
             assert portfolio_manager.portfolio.get_currency_portfolio("USDT").unrealized_pnl == constants.ZERO
             assert position.size == constants.ZERO
-            assert position.realised_pnl == total_pnl
+            assert position.realized_pnl == total_pnl
 
 
 async def test_update_portfolio_reduce_size_with_market_sell_long_linear_contract(

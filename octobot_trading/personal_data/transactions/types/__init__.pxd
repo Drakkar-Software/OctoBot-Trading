@@ -16,7 +16,7 @@
 
 from octobot_trading.personal_data.transactions.types cimport blockchain_transaction
 from octobot_trading.personal_data.transactions.types cimport fee_transaction
-from octobot_trading.personal_data.transactions.types cimport realised_pnl_transaction
+from octobot_trading.personal_data.transactions.types cimport realized_pnl_transaction
 from octobot_trading.personal_data.transactions.types cimport transfer_transaction
 
 from octobot_trading.personal_data.transactions.types.blockchain_transaction cimport (
@@ -25,8 +25,8 @@ from octobot_trading.personal_data.transactions.types.blockchain_transaction cim
 from octobot_trading.personal_data.transactions.types.fee_transaction cimport (
     FeeTransaction,
 )
-from octobot_trading.personal_data.transactions.types.realised_pnl_transaction cimport (
-    RealisedPnlTransaction,
+from octobot_trading.personal_data.transactions.types.realized_pnl_transaction cimport (
+    RealizedPnlTransaction,
 )
 from octobot_trading.personal_data.transactions.types.transfer_transaction cimport (
     TransferTransaction,
@@ -35,6 +35,6 @@ from octobot_trading.personal_data.transactions.types.transfer_transaction cimpo
 __all__ = [
     "BlockchainTransaction",
     "FeeTransaction",
-    "RealisedPnlTransaction",
+    "RealizedPnlTransaction",
     "TransferTransaction",
 ]

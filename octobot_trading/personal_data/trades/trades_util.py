@@ -49,9 +49,16 @@ def compute_win_rate(exchange_manager):
         else:  # try fallback to transactions for trailing stops and multiple exits
             lost_trades_count = constants.ZERO
             won_trades_count = constants.ZERO
-            for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
-                if isinstance(transaction, personal_data.RealisedPnlTransaction) and transaction.is_closed_pnl():
-                    if transaction.realised_pnl > constants.ZERO:
+            for (
+                transaction
+            ) in (
+                exchange_manager.exchange_personal_data.transactions_manager.transactions.values()
+            ):
+                if (
+                    isinstance(transaction, personal_data.RealizedPnlTransaction)
+                    and transaction.is_closed_pnl()
+                ):
+                    if transaction.realized_pnl > constants.ZERO:
                         won_trades_count += constants.ONE
                     else:
                         lost_trades_count += constants.ONE

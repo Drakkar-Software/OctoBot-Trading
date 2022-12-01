@@ -119,8 +119,8 @@ class TransactionType(enum.Enum):
     BLOCKCHAIN_WITHDRAWAL = "blockchain_withdrawal"
     FUNDING_FEE = "funding_fee"
     TRADING_FEE = "trading_fee"
-    REALISED_PNL = "realised_pnl"
-    CLOSE_REALISED_PNL = "close_realised_pnl"
+    REALIZED_PNL = "realized_pnl"
+    CLOSE_REALIZED_PNL = "close_realized_pnl"
     TRANSFER = "transfer"
 
 
@@ -181,7 +181,7 @@ class ExchangePositionCCXTColumns(enum.Enum):
     NOTIONAL = "notional"
     MARGIN_RATIO = "marginRatio"
     UNREALIZED_PNL = "unrealizedPnl"
-    REALISED_PNL = "realizedPnl"
+    REALIZED_PNL = "realizedPnl"
     LIQUIDATION_PRICE = "liquidationPrice"
     MARK_PRICE = "markPrice"
     ENTRY_PRICE = "entryPrice"
@@ -422,8 +422,8 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     MARK_PRICE = "mark_price"
     LIQUIDATION_PRICE = "liquidation_price"
     BANKRUPTCY_PRICE = "bankruptcy_price"
-    UNREALIZED_PNL = "unrealised_pnl"   # unrealised_pnl on Bybit api and unrealized_pnl on exchange UI
-    REALISED_PNL = "realised_pnl"
+    UNREALIZED_PNL = "unrealized_pnl"  # unrealized_pnl on Bybit api and unrealized_pnl on exchange UI
+    REALIZED_PNL = "realized_pnl"
     CLOSING_FEE = "closing_fee"
     QUANTITY = "quantity"
     SIZE = "size"

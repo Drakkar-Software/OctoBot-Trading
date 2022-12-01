@@ -163,10 +163,10 @@ from octobot_trading.personal_data.transactions import (
     Transaction,
     BlockchainTransaction,
     FeeTransaction,
-    RealisedPnlTransaction,
+    RealizedPnlTransaction,
     TransferTransaction,
     create_blockchain_transaction,
-    create_realised_pnl_transaction,
+    create_realized_pnl_transaction,
     create_fee_transaction,
     create_transfer_transaction,
 )
@@ -180,12 +180,12 @@ AUTHENTICATED_UPDATER_PRODUCERS = [
     OrdersUpdater,
     TradesUpdater,
     PositionsUpdater,
-    BalanceProfitabilityUpdater
+    BalanceProfitabilityUpdater,
 ]
 AUTHENTICATED_UPDATER_SIMULATOR_PRODUCERS = [
     OrdersUpdaterSimulator,
     BalanceProfitabilityUpdater,
-    PositionsUpdaterSimulator
+    PositionsUpdaterSimulator,
 ]
 
 TraderOrderTypeClasses = {
@@ -346,10 +346,10 @@ __all__ = [
     "Transaction",
     "BlockchainTransaction",
     "FeeTransaction",
-    "RealisedPnlTransaction",
+    "RealizedPnlTransaction",
     "TransferTransaction",
     "create_blockchain_transaction",
-    "create_realised_pnl_transaction",
+    "create_realized_pnl_transaction",
     "create_fee_transaction",
     "create_transfer_transaction",
 ]

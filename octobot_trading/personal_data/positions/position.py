@@ -70,7 +70,7 @@ class Position(util.Initializable):
 
         # PNL
         self.unrealized_pnl = constants.ZERO
-        self.realised_pnl = constants.ZERO
+        self.realized_pnl = constants.ZERO
 
         # original position attributes
         self.creation_time = self.exchange_manager.exchange.get_exchange_current_time()
@@ -121,7 +121,7 @@ class Position(util.Initializable):
     def _update(self, position_id, symbol, currency, market, timestamp,
                 entry_price, mark_price, liquidation_price,
                 quantity, size, value, initial_margin,
-                unrealized_pnl, realised_pnl, fee_to_close,
+                unrealized_pnl, realized_pnl, fee_to_close,
                 status=None):
         changed: bool = False
 
@@ -162,8 +162,8 @@ class Position(util.Initializable):
             self.unrealized_pnl = unrealized_pnl
             changed = True
 
-        if self._should_change(self.realised_pnl, realised_pnl):
-            self.realised_pnl = realised_pnl
+        if self._should_change(self.realized_pnl, realized_pnl):
+            self.realized_pnl = realized_pnl
             changed = True
 
         if self._should_change(self.entry_price, entry_price):
@@ -231,10 +231,10 @@ class Position(util.Initializable):
         """
         size_update = self.get_quantity_to_close()
         self.unrealized_pnl = -self.initial_margin
-        realised_pnl_update = self._update_realized_pnl_from_size_update(
+        realized_pnl_update = self._update_realized_pnl_from_size_update(
             size_update, is_closing=True, update_price=self.mark_price,
             trigger_source=enums.PNLTransactionSource.LIQUIDATION)
-        self._on_size_update(size_update, realised_pnl_update, self.unrealized_pnl, False)
+        self._on_size_update(size_update, realized_pnl_update, self.unrealized_pnl, False)
         await self.close()
 
     def _update_mark_price(self, mark_price, check_liquidation=True):
@@ -298,7 +298,7 @@ class Position(util.Initializable):
         size_to_close = self.get_quantity_to_close()
 
         # Remove / add order fees from realized pnl
-        realised_pnl_fees_update = self._update_realized_pnl_from_order(order)
+        realized_pnl_fees_update = self._update_realized_pnl_from_order(order)
 
         trigger_source = order_util.get_pnl_transaction_source_from_order(order)
 
@@ -306,7 +306,7 @@ class Position(util.Initializable):
         if order.close_position:
             # set position size to 0 to schedule position close at the next update
             self._update_size(size_to_close,
-                              realised_pnl_update=realised_pnl_fees_update,
+                              realized_pnl_update=realized_pnl_fees_update,
                               trigger_source=trigger_source)
             return
 
@@ -324,8 +324,8 @@ class Position(util.Initializable):
         elif self._is_update_decreasing_size(size_update):
             self._update_exit_data(size_update, self.mark_price)
 
-        # update size and realised pnl
-        self._update_size(size_update, realised_pnl_update=realised_pnl_fees_update, trigger_source=trigger_source)
+        # update size and realized pnl
+        self._update_size(size_update, realized_pnl_update=realized_pnl_fees_update, trigger_source=trigger_source)
 
     def _update_realized_pnl_from_order(self, order):
         """
@@ -334,12 +334,12 @@ class Position(util.Initializable):
         :param order: the realized pnl update
         """
         fees_currency = order.currency if self.symbol_contract.is_inverse_contract() else order.market
-        realised_pnl_update = -order.get_total_fees(fees_currency)
+        realized_pnl_update = -order.get_total_fees(fees_currency)
         transaction_factory.create_fee_transaction(self.exchange_manager, fees_currency, self.symbol,
-                                                   quantity=realised_pnl_update,
+                                                   quantity=realized_pnl_update,
                                                    order_id=order.order_id)
-        self.realised_pnl += realised_pnl_update
-        return realised_pnl_update
+        self.realized_pnl += realized_pnl_update
+        return realized_pnl_update
 
     def _calculates_size_update_from_filled_order(self, order, size_to_close):
         """
@@ -393,18 +393,18 @@ class Position(util.Initializable):
             return self.size + size_update <= constants.ZERO
         return self.size + size_update >= constants.ZERO
 
-    def _update_size(self, size_update, realised_pnl_update=constants.ZERO,
+    def _update_size(self, size_update, realized_pnl_update=constants.ZERO,
                      trigger_source=enums.PNLTransactionSource.UNKNOWN):
         """
         Updates position size and triggers size related attributes update
         :param size_update: the size quantity
-        :param realised_pnl_update: the current realised pnl update
+        :param realized_pnl_update: the current realized pnl update
         :return: True if the update increased position size
         """
         margin_update = constants.ZERO
         is_update_increasing_position_size = self._is_update_increasing_size(size_update)
         if self._is_update_decreasing_size(size_update):
-            realised_pnl_update += self._update_realized_pnl_from_size_update(
+            realized_pnl_update += self._update_realized_pnl_from_size_update(
                 size_update, is_closing=self._is_update_closing(size_update),
                 update_price=self.mark_price, trigger_source=trigger_source)
         self._check_and_update_size(size_update)
@@ -417,7 +417,7 @@ class Position(util.Initializable):
             self.update_value()
             self.update_pnl()
         self._on_size_update(size_update,
-                             realised_pnl_update,
+                             realized_pnl_update,
                              margin_update,
                              is_update_increasing_position_size)
 
@@ -429,12 +429,12 @@ class Position(util.Initializable):
         :param is_closing: True when the position will be closed after size update
         """
         try:
-            realised_pnl_update = -size_update / self.size * self.unrealized_pnl
-            transaction_factory.create_realised_pnl_transaction(self.exchange_manager,
+            realized_pnl_update = -size_update / self.size * self.unrealized_pnl
+            transaction_factory.create_realized_pnl_transaction(self.exchange_manager,
                                                                 self.get_currency(),
                                                                 self.symbol,
                                                                 self.side,
-                                                                realised_pnl=realised_pnl_update,
+                                                                realized_pnl=realized_pnl_update,
                                                                 is_closed_pnl=is_closing,
                                                                 cumulated_closed_quantity=self.already_reduced_size,
                                                                 closed_quantity=size_update,
@@ -445,9 +445,9 @@ class Position(util.Initializable):
                                                                 leverage=self.symbol_contract.current_leverage,
                                                                 trigger_source=trigger_source)
         except (decimal.DivisionByZero, decimal.InvalidOperation):
-            realised_pnl_update = constants.ZERO
-        self.realised_pnl += realised_pnl_update
-        return realised_pnl_update
+            realized_pnl_update = constants.ZERO
+        self.realized_pnl += realized_pnl_update
+        return realized_pnl_update
 
     def _check_and_update_size(self, size_update):
         """
@@ -482,7 +482,7 @@ class Position(util.Initializable):
 
     def update_pnl(self):
         """
-        Update position unrealised pnl
+        Update position unrealized pnl
         """
         try:
             self.unrealized_pnl = self.get_unrealized_pnl(self.mark_price)
@@ -682,7 +682,7 @@ class Position(util.Initializable):
 
     def _on_size_update(self,
                         size_update,
-                        realised_pnl_update,
+                        realized_pnl_update,
                         margin_update,
                         is_update_increasing_position_size):
         """
@@ -690,7 +690,7 @@ class Position(util.Initializable):
         """
         self.exchange_manager.exchange_personal_data.portfolio_manager.portfolio. \
             update_portfolio_data_from_position_size_update(self,
-                                                            realised_pnl_update,
+                                                            realized_pnl_update,
                                                             size_update,
                                                             margin_update,
                                                             is_update_increasing_position_size)
@@ -722,7 +722,7 @@ class Position(util.Initializable):
             timestamp=raw_position.get(enums.ExchangeConstantsPositionColumns.TIMESTAMP.value, 0),
             unrealized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value,
                                             constants.ZERO),
-            realised_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.REALISED_PNL.value, constants.ZERO),
+            realized_pnl=raw_position.get(enums.ExchangeConstantsPositionColumns.realized_PNL.value, constants.ZERO),
             fee_to_close=raw_position.get(enums.ExchangeConstantsPositionColumns.CLOSING_FEE.value, constants.ZERO),
             status=position_util.parse_position_status(raw_position)
         )
@@ -743,7 +743,7 @@ class Position(util.Initializable):
             enums.ExchangeConstantsPositionColumns.MARK_PRICE.value: self.mark_price,
             enums.ExchangeConstantsPositionColumns.LIQUIDATION_PRICE.value: self.liquidation_price,
             enums.ExchangeConstantsPositionColumns.UNREALIZED_PNL.value: self.unrealized_pnl,
-            enums.ExchangeConstantsPositionColumns.REALISED_PNL.value: self.realised_pnl,
+            enums.ExchangeConstantsPositionColumns.realized_PNL.value: self.realized_pnl,
         }
 
     def _check_for_liquidation(self):
@@ -808,7 +808,7 @@ class Position(util.Initializable):
                 f"Unrealized PNL : {round(self.unrealized_pnl, 14).normalize()} {currency} "
                 f"({round(self.get_unrealized_pnl_percent(), 3)}%) | "
                 f"Liquidation price : {round(self.liquidation_price, 10).normalize()} | "
-                f"Realised PNL : {round(self.realised_pnl, 14).normalize()} {currency} "
+                f"realized PNL : {round(self.realized_pnl, 14).normalize()} {currency} "
                 f"State : {self.state.state.value if self.state is not None else 'Unknown'} "
                 f"({position_mode})")
 
@@ -833,7 +833,7 @@ class Position(util.Initializable):
         self.status = enums.PositionStatus.OPEN
         self.side = enums.PositionSide.UNKNOWN
         self.unrealized_pnl = constants.ZERO
-        self.realised_pnl = constants.ZERO
+        self.realized_pnl = constants.ZERO
         self.creation_time = 0
         self.on_pnl_update()  # notify portfolio to reset unrealized PNL
         if not self.is_open():
@@ -865,7 +865,7 @@ class Position(util.Initializable):
         self.initial_margin = other_position.initial_margin
         self.margin = other_position.margin
         self.unrealized_pnl = other_position.unrealized_pnl
-        self.realised_pnl = other_position.realised_pnl
+        self.realized_pnl = other_position.realized_pnl
 
     @contextlib.contextmanager
     def update_or_restore(self):

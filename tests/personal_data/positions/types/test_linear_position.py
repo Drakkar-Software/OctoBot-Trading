@@ -172,7 +172,7 @@ async def test_update_pnl_with_loss_with_too_big_positions(future_trader_simulat
     with pytest.raises(errors.PortfolioNegativeValueError):
         await position_inst.update(update_size=constants.ONE_HUNDRED, mark_price=FORTY)
     assert position_inst.unrealized_pnl == constants.ZERO
-    assert position_inst.realised_pnl == constants.ZERO
+    assert position_inst.realized_pnl == constants.ZERO
     assert position_inst.initial_margin == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
@@ -184,7 +184,7 @@ async def test_update_pnl_with_loss_with_too_big_positions(future_trader_simulat
     with pytest.raises(errors.PortfolioNegativeValueError):
         await position_inst.update(update_size=-constants.ONE_HUNDRED, mark_price=FORTY)
     assert position_inst.unrealized_pnl == constants.ZERO
-    assert position_inst.realised_pnl == constants.ZERO
+    assert position_inst.realized_pnl == constants.ZERO
     assert position_inst.initial_margin == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1000')
@@ -200,7 +200,7 @@ async def test_update_pnl_with_loss_with_full_long_position(future_trader_simula
     # open long of 25 contracts at 40 usdt
     await position_inst.update(update_size=TWENTY_FIVE, mark_price=FORTY)
     assert position_inst.unrealized_pnl == constants.ZERO
-    assert position_inst.realised_pnl == constants.ZERO
+    assert position_inst.realized_pnl == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('1000')
     assert portfolio.get_currency_portfolio("USDT").available == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
@@ -211,7 +211,7 @@ async def test_update_pnl_with_loss_with_full_long_position(future_trader_simula
 
     # now have 24 contracts each now worth 43.816 (40 * 1.0954) usdt => 40 - 43.816 in profit per contract
     assert position_inst.unrealized_pnl == decimal.Decimal("91.584")
-    assert position_inst.realised_pnl == decimal.Decimal("3.816")
+    assert position_inst.realized_pnl == decimal.Decimal("3.816")
     assert portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('960')
     assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('43.816000')
     assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1095.400000')
@@ -222,7 +222,7 @@ async def test_update_pnl_with_loss_with_full_long_position(future_trader_simula
     # now have 24 contracts each now worth 38 (40 - 2) usdt => 40 - 38 in loss per contract
     # position got reset
     assert position_inst.unrealized_pnl == constants.ZERO
-    assert position_inst.realised_pnl == constants.ZERO
+    assert position_inst.realized_pnl == constants.ZERO
     # position closed with 40 - 38 in loss per contract
     assert portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('955.816')
@@ -238,7 +238,7 @@ async def test_update_pnl_with_loss_with_full_short_position(future_trader_simul
     # open short of 25 contracts at 40 usdt
     await position_inst.update(update_size=-TWENTY_FIVE, mark_price=FORTY)
     assert position_inst.unrealized_pnl == constants.ZERO
-    assert position_inst.realised_pnl == constants.ZERO
+    assert position_inst.realized_pnl == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('1000')
     assert portfolio.get_currency_portfolio("USDT").available == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('1000')
@@ -249,7 +249,7 @@ async def test_update_pnl_with_loss_with_full_short_position(future_trader_simul
 
     # now have 24 contracts each now worth 43.816 (40 * 1.0954) usdt => 40 - 43.816 in loss per contract
     assert position_inst.unrealized_pnl == decimal.Decimal("-91.584")
-    assert position_inst.realised_pnl == decimal.Decimal("-3.816")
+    assert position_inst.realized_pnl == decimal.Decimal("-3.816")
     assert portfolio.get_currency_portfolio("USDT").position_margin == decimal.Decimal('960')
     assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('36.184')
     assert portfolio.get_currency_portfolio("USDT").total == decimal.Decimal('904.6')
@@ -260,7 +260,7 @@ async def test_update_pnl_with_loss_with_full_short_position(future_trader_simul
     # now have 24 contracts each now worth 38 (40 - 2) usdt => 40 - 38 in profit per contract
     # position got reset
     assert position_inst.unrealized_pnl == constants.ZERO
-    assert position_inst.realised_pnl == constants.ZERO
+    assert position_inst.realized_pnl == constants.ZERO
     # position closed with 40 - 38 in profit per contract
     assert portfolio.get_currency_portfolio("USDT").position_margin == constants.ZERO
     assert portfolio.get_currency_portfolio("USDT").available == decimal.Decimal('1044.184')

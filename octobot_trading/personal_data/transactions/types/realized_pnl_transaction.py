@@ -19,12 +19,29 @@ import octobot_trading.enums as enums
 import octobot_trading.personal_data.transactions.transaction as transaction
 
 
-class RealisedPnlTransaction(transaction.Transaction):
-    def __init__(self, exchange_name, creation_time, transaction_type, currency, symbol, realised_pnl, closed_quantity,
-                 cumulated_closed_quantity, first_entry_time, average_entry_price, average_exit_price, order_exit_price,
-                 leverage, trigger_source, side):
-        super().__init__(exchange_name, creation_time, transaction_type, currency, symbol=symbol)
-        self.realised_pnl = realised_pnl
+class RealizedPnlTransaction(transaction.Transaction):
+    def __init__(
+        self,
+        exchange_name,
+        creation_time,
+        transaction_type,
+        currency,
+        symbol,
+        realized_pnl,
+        closed_quantity,
+        cumulated_closed_quantity,
+        first_entry_time,
+        average_entry_price,
+        average_exit_price,
+        order_exit_price,
+        leverage,
+        trigger_source,
+        side,
+    ):
+        super().__init__(
+            exchange_name, creation_time, transaction_type, currency, symbol=symbol
+        )
+        self.realized_pnl = realized_pnl
         self.closed_quantity = closed_quantity
         self.cumulated_closed_quantity = cumulated_closed_quantity
         self.first_entry_time = first_entry_time
@@ -34,11 +51,13 @@ class RealisedPnlTransaction(transaction.Transaction):
         self.leverage = leverage
         self.trigger_source = trigger_source
         self.side = side
-        self.transaction_id = f"{self.exchange_name}" \
-                              f"-{str(uuid.uuid4())}" \
-                              f"-{self.symbol}" \
-                              f"-{str(self.creation_time)}" \
-                              f"{'-closed' if self.is_closed_pnl() else ''}"
+        self.transaction_id = (
+            f"{self.exchange_name}"
+            f"-{str(uuid.uuid4())}"
+            f"-{self.symbol}"
+            f"-{str(self.creation_time)}"
+            f"{'-closed' if self.is_closed_pnl() else ''}"
+        )
 
     def is_closed_pnl(self):
-        return self.transaction_type is enums.TransactionType.CLOSE_REALISED_PNL
+        return self.transaction_type is enums.TransactionType.CLOSE_REALIZED_PNL

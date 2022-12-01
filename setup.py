@@ -157,7 +157,7 @@ packages_list = [
     "octobot_trading.personal_data.transactions.transactions_manager",
     "octobot_trading.personal_data.transactions.types.blockchain_transaction",
     "octobot_trading.personal_data.transactions.types.fee_transaction",
-    "octobot_trading.personal_data.transactions.types.realised_pnl_transaction",
+    "octobot_trading.personal_data.transactions.types.realized_pnl_transaction",
     "octobot_trading.personal_data.transactions.types.transfer_transaction",
     "octobot_trading.modes.modes_factory",
     "octobot_trading.modes.modes_util",

@@ -75,7 +75,7 @@ def get_draw_down(exchange_manager):
                 .origin_portfolio.portfolio[value_currency].total
             portfolio_history = [origin_value]
             for transaction in exchange_manager.exchange_personal_data.transactions_manager.transactions.values():
-                current_pnl = transaction.quantity if hasattr(transaction, "quantity") else transaction.realised_pnl
+                current_pnl = transaction.quantity if hasattr(transaction, "quantity") else transaction.realized_pnl
                 portfolio_history.append(portfolio_history[-1] + current_pnl)
 
                 current_draw_down = constants.ONE_HUNDRED - \
@@ -100,15 +100,15 @@ async def get_coefficient_of_determination_data(transactions, start_balance,
             if hasattr(transaction, "quantity"):
                 current_pnl = float(transaction.quantity)
                 pnl_history_times.append(transaction.creation_time)
-            elif hasattr(transaction, 'realised_pnl'):
-                current_pnl = float(transaction.realised_pnl)
+            elif hasattr(transaction, "realized_pnl"):
+                current_pnl = float(transaction.realized_pnl)
                 pnl_history_times.append(transaction.creation_time)
             elif isinstance(transaction, dict):
                 if transaction["quantity"]:
                     current_pnl = transaction["quantity"]
                     pnl_history_times.append(transaction["x"])
-                elif transaction['realised_pnl']:
-                    current_pnl = transaction['realised_pnl']
+                elif transaction["realized_pnl"]:
+                    current_pnl = transaction["realized_pnl"]
                     pnl_history_times.append(transaction["x"])
 
             if current_pnl is not None:

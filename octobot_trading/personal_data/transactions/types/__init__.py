@@ -16,7 +16,7 @@
 
 from octobot_trading.personal_data.transactions.types import blockchain_transaction
 from octobot_trading.personal_data.transactions.types import fee_transaction
-from octobot_trading.personal_data.transactions.types import realised_pnl_transaction
+from octobot_trading.personal_data.transactions.types import realized_pnl_transaction
 from octobot_trading.personal_data.transactions.types import transfer_transaction
 
 from octobot_trading.personal_data.transactions.types.blockchain_transaction import (
@@ -25,8 +25,8 @@ from octobot_trading.personal_data.transactions.types.blockchain_transaction imp
 from octobot_trading.personal_data.transactions.types.fee_transaction import (
     FeeTransaction,
 )
-from octobot_trading.personal_data.transactions.types.realised_pnl_transaction import (
-    RealisedPnlTransaction,
+from octobot_trading.personal_data.transactions.types.realized_pnl_transaction import (
+    RealizedPnlTransaction,
 )
 from octobot_trading.personal_data.transactions.types.transfer_transaction import (
     TransferTransaction,
@@ -35,6 +35,6 @@ from octobot_trading.personal_data.transactions.types.transfer_transaction impor
 __all__ = [
     "BlockchainTransaction",
     "FeeTransaction",
-    "RealisedPnlTransaction",
+    "RealizedPnlTransaction",
     "TransferTransaction",
 ]

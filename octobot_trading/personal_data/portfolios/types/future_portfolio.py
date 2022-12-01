@@ -54,7 +54,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
         """
         Update portfolio data from position size update
         :param position: the position updated instance
-        :param realized_pnl_update: the position realised pnl update
+        :param realized_pnl_update: the position realized pnl update
         :param size_update: the position size update
         :param margin_update: the position margin update
         :param has_increased_position_size: if the update increased position size
@@ -89,7 +89,7 @@ class FuturePortfolio(portfolio_class.Portfolio):
 
     def update_portfolio_available_from_order(self, order, is_new_order=True):
         """
-        Realise portfolio availability update
+        Realize portfolio availability update
         :param order: the order that triggers the portfolio update
         :param is_new_order: True when the order is being created
         """

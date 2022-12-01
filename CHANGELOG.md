@@ -197,7 +197,7 @@ No change, pypi issue version
 - [Transaction] class
 - [TransactionsManager] class
 - [TransactionsManager] factory
-- [TransactionsManager] transfer, blockchain, fee and realised_pnl
+- [TransactionsManager] transfer, blockchain, fee and realized_pnl
 
 ### Fixed
 - [Positions] missing mark_price fetching

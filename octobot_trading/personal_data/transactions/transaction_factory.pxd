@@ -27,11 +27,11 @@ cpdef transaction_types.BlockchainTransaction create_blockchain_transaction(obje
                                                                             object quantity=*,
                                                                             object transaction_fee=*,
                                                                             bint is_deposit=*)
-cpdef transaction_types.RealisedPnlTransaction create_realised_pnl_transaction(object exchange_manager,
+cpdef transaction_types.RealizedPnlTransaction create_realized_pnl_transaction(object exchange_manager,
                                                                                str currency,
                                                                                str symbol,
                                                                                object side,
-                                                                               object realised_pnl=*,
+                                                                               object realized_pnl=*,
                                                                                bint is_closed_pnl=*,
                                                                                object closed_quantity=*,
                                                                                object cumulated_closed_quantity=*,

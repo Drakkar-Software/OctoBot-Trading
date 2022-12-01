@@ -63,7 +63,7 @@ def _format_transaction(transaction, exchange_manager, chart, x_multiplier, kind
         "quantity": float(transaction.quantity) if hasattr(transaction, "quantity") else None,
         "order_id": transaction.order_id if hasattr(transaction, "order_id") else None,
         "funding_rate": float(transaction.funding_rate) if hasattr(transaction, "funding_rate") else None,
-        "realised_pnl": float(transaction.realised_pnl) if hasattr(transaction, "realised_pnl") else None,
+        "realized_pnl": float(transaction.realized_pnl) if hasattr(transaction, "realized_pnl") else None,
         "transaction_fee": float(transaction.transaction_fee) if hasattr(transaction, "transaction_fee") else None,
         "closed_quantity": float(transaction.closed_quantity) if hasattr(transaction, "closed_quantity") else None,
         "cumulated_closed_quantity": float(transaction.cumulated_closed_quantity)
