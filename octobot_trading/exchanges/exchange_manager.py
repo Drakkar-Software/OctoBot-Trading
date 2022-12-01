@@ -216,8 +216,9 @@ class ExchangeManager(util.Initializable):
             self.client_symbols = list(self.exchange.symbols)
             self.client_time_frames = list(self.exchange.time_frames)
         elif not self.exchange_only:
-            self.logger.error("Failed to load exchange symbols or time frames")
-            self._raise_exchange_load_error()
+            err_message = "Failed to load exchange symbols or time frames"
+            self.logger.error(err_message)
+            self._raise_exchange_load_error(err_message)
 
     def symbol_exists(self, symbol):
         if self.client_symbols is None:
@@ -232,8 +233,8 @@ class ExchangeManager(util.Initializable):
         return time_frame in self.client_time_frames
 
     # Exceptions
-    def _raise_exchange_load_error(self):
-        raise Exception(f"{self.exchange} - Failed to load exchange instances")
+    def _raise_exchange_load_error(self, desc):
+        raise Exception(f"{self.exchange} - Failed to load exchange instances: {desc}")
 
     def get_exchange_name(self):
         return self.exchange_class_string
