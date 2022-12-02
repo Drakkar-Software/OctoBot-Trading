@@ -28,7 +28,6 @@ jobs:
   notify:
     if: ${{ failure() }}
     needs:
-      - lint
       - tests
       - publish
     uses: Drakkar-Software/.github/.github/workflows/failure_notify_workflow.yml@master
