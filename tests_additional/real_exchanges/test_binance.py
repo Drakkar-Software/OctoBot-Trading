@@ -53,7 +53,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
             TimeFrames.ONE_MONTH.value
         ))
 
-    async def test_get_market_status(self):
+    async def _test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
