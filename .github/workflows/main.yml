@@ -30,13 +30,12 @@ jobs:
 
     - name: Pytests
       run: |
-        pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests_additional
+        pytest --cov=. --cov-config=.coveragerc --durations=0 -rw -s tests_additional
 
   notify:
     if: ${{ failure() }}
     needs:
       - tests
-      - publish
     uses: Drakkar-Software/.github/.github/workflows/failure_notify_workflow.yml@master
     secrets:
       DISCORD_GITHUB_WEBHOOK: ${{ secrets.DISCORD_GITHUB_WEBHOOK }}

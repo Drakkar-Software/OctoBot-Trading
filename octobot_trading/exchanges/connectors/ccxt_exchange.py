@@ -57,9 +57,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
         self._create_exchange_type()
         self._create_client()
+        print(f"client tf: {self.client.timeframes}")
 
     async def initialize_impl(self):
         try:
+            print(f"ccxt exchange initialize_impl: {self.client.timeframes}")
             if self.exchange_manager.exchange.is_supporting_sandbox():
                 self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
 
@@ -73,6 +75,8 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             # initialize symbols and timeframes
             self.symbols = self.get_client_symbols()
             self.time_frames = self.get_client_time_frames()
+            print(f"ccxt exchange time_frames: {self.time_frames}")
+
 
         except (ccxt.ExchangeNotAvailable, ccxt.RequestTimeout) as e:
             raise octobot_trading.errors.UnreachableExchange() from e
