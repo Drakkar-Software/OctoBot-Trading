@@ -212,7 +212,7 @@ class ExchangeManager(util.Initializable):
         return enums.RestExchangePairsRefreshMaxThresholds.SLOW
 
     def _load_config_symbols_and_time_frames(self):
-        print(f"_load_config_symbols_and_time_frames: {self.exchange.time_frames} {self.exchange.symbols}")
+        # print(f"_load_config_symbols_and_time_frames: {self.exchange.time_frames} {self.exchange.symbols}")
         if self.exchange.symbols and self.exchange.time_frames:
             self.client_symbols = list(self.exchange.symbols)
             self.client_time_frames = list(self.exchange.time_frames)
