@@ -53,7 +53,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
             TimeFrames.ONE_MONTH.value
         ))
 
-    async def test_get_market_status(self):
+    async def _test_get_market_status(self):
         for market_status in await self.get_market_statuses():
             assert market_status
             assert market_status[Ecmsc.SYMBOL.value] in (self.SYMBOL, self.SYMBOL_2, self.SYMBOL_3)
@@ -68,7 +68,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
                                     Ecmsc.LIMITS_COST.value))
             self.check_market_status_limits(market_status, expect_invalid_price_limit_values=False)
 
-    async def test_get_symbol_prices(self):
+    async def _test_get_symbol_prices(self):
         # without limit
         symbol_prices = await self.get_symbol_prices()
         assert len(symbol_prices) == 500
@@ -85,7 +85,7 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
         # check last candle is the current candle
         assert symbol_prices[-1][PriceIndexes.IND_PRICE_TIME.value] >= self.get_time() - self.get_allowed_time_delta()
 
-    async def test_get_kline_price(self):
+    async def _test_get_kline_price(self):
         kline_price = await self.get_kline_price()
         assert len(kline_price) == 1
         assert len(kline_price[0]) == 6
@@ -93,24 +93,24 @@ class TestBinanceRealExchangeTester(RealExchangeTester):
         # assert kline is the current candle
         assert kline_start_time >= self.get_time() - self.get_allowed_time_delta()
 
-    async def test_get_order_book(self):
+    async def _test_get_order_book(self):
         order_book = await self.get_order_book()
         assert len(order_book[Ecobic.ASKS.value]) == 5
         assert len(order_book[Ecobic.ASKS.value][0]) == 2
         assert len(order_book[Ecobic.BIDS.value]) == 5
         assert len(order_book[Ecobic.BIDS.value][0]) == 2
 
-    async def test_get_recent_trades(self):
+    async def _test_get_recent_trades(self):
         recent_trades = await self.get_recent_trades()
         assert len(recent_trades) == 50
         # check trades order (oldest first)
         self.ensure_elements_order(recent_trades, Ecoc.TIMESTAMP.value)
 
-    async def test_get_price_ticker(self):
+    async def _test_get_price_ticker(self):
         ticker = await self.get_price_ticker()
         self._check_ticker(ticker, self.SYMBOL, check_content=True)
 
-    async def test_get_all_currencies_price_ticker(self):
+    async def _test_get_all_currencies_price_ticker(self):
         tickers = await self.get_all_currencies_price_ticker()
         for symbol, ticker in tickers.items():
             self._check_ticker(ticker, symbol)

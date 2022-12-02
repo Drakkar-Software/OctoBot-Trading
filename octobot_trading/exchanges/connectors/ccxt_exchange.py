@@ -61,7 +61,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
     async def initialize_impl(self):
         try:
-            print(f"ccxt exchange initialize_impl: {self.client.timeframes}")
+            print(f"ccxt exchange initialize_impl")
             if self.exchange_manager.exchange.is_supporting_sandbox():
                 self.set_sandbox_mode(self.exchange_manager.is_sandboxed)
 

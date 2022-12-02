@@ -53,6 +53,8 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         await self.connector.initialize()
         self.symbols = self.connector.symbols
         self.time_frames = self.connector.time_frames
+        print(f"spot ccxt initialize_impl: {self.time_frames} {self.symbols}")
+
 
     async def stop(self) -> None:
         await self.connector.stop()
