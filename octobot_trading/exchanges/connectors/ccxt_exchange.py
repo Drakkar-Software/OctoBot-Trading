@@ -73,10 +73,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                     try:
                         print(f"pre load_markets {self.client.symbols}")
                         await self.client.load_markets()
-                        print(f"post load_markets {self.client.symbols}")
+                        print(f"post load_markets symbols {self.client.symbols}")
+                        print(f"post load_markets markets {self.client.markets}")
                     except Exception as e:
                         print(f"load_markets EXCEPTION: {e}")
-                        raise 
+                        raise
 
             # initialize symbols and timeframes
             self.symbols = self.get_client_symbols()
