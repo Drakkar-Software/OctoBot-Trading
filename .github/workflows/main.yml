@@ -8,13 +8,8 @@ on:
   pull_request:
 
 jobs:
-  lint:
-    uses: Drakkar-Software/.github/.github/workflows/python3_lint_workflow.yml@master
-    with:
-      project_main_package: octobot_trading
 
   tests:
-    needs: lint
     uses: Drakkar-Software/.github/.github/workflows/python3_tests_workflow.yml@master
     with:
       use_cython: true
