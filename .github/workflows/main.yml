@@ -10,20 +10,27 @@ on:
 jobs:
 
   tests:
-    uses: Drakkar-Software/.github/.github/workflows/python3_tests_workflow.yml@master
-    with:
-      use_cython: true
-    secrets:
-      COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+    name: ${{ matrix.os }}${{ matrix.arch }} - Python 3.8 - tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+        arch: [ x64 ]
 
-  publish:
-    needs: tests
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    uses: Drakkar-Software/.github/.github/workflows/python3_wheel_workflow.yml@master
-    secrets:
-      PYPI_OFFICIAL_UPLOAD_URL: ${{ secrets.PYPI_OFFICIAL_UPLOAD_URL }}
-      PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
-      PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8.x'
+        architecture: ${{ matrix.arch }}
+
+    - name: Install dependencies
+      run: pip install --prefer-binary -r dev_requirements.txt -r requirements.txt
+
+    - name: Pytests
+      run: |
+        pytest --cov=. --cov-config=.coveragerc --durations=0 -rw tests_additional
 
   notify:
     if: ${{ failure() }}
