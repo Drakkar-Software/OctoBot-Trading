@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 import contextlib
 import decimal
 import logging
@@ -78,6 +79,9 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                         print(f"load_markets in {time.time() - t0}s")
                         print(f"post load_markets symbols {self.client.symbols}")
                         print(f"post load_markets markets {self.client.markets}")
+                        await asyncio.sleep(2)
+                        print(f"after sleep load_markets symbols {self.client.symbols}")
+                        print(f"after sleep load_markets markets {self.client.markets}")
                     except Exception as e:
                         print(f"load_markets EXCEPTION: {e}")
                         raise
