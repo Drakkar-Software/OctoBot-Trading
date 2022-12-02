@@ -71,8 +71,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             if self.exchange_manager.is_loading_markets:
                 with self.error_describer():
                     try:
+                        import time
                         print(f"pre load_markets {self.client.symbols}")
+                        t0 = time.time()
                         await self.client.load_markets()
+                        print(f"post load_markets in {time.time() - t0}s")
                         print(f"post load_markets symbols {self.client.symbols}")
                         print(f"post load_markets markets {self.client.markets}")
                     except Exception as e:
