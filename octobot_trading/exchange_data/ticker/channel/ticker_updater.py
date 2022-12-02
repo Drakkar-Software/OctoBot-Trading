@@ -71,7 +71,7 @@ class TickerUpdater(ticker_channel.TickerProducer):
             (
                 ticker,
                 mini_ticker,
-            ) = await self.channel.exchange_manager.exchange.get_price_ticker(pair)
+            ) = await self.channel.exchange_manager.exchange.get_price_ticker(pair, also_get_mini_ticker=True)
             if ticker:
                 await self.push(pair, ticker)
                 if self.channel.exchange_manager.is_future:

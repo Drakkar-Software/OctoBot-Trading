@@ -1,5 +1,4 @@
 import decimal
-import enum
 import octobot_commons.enums as commons_enums
 import octobot_trading.constants as constants
 from octobot_trading.enums import (

@@ -61,6 +61,7 @@ class TickerParser(parser_util.Parser):
         self._ensure_dict(raw_ticker)
         self.fetched_symbol_prices = None  # clear previously fetched data
         self._parse_symbol(symbol)
+        self._parse_timestamp()
         self._parse_average()
         self._parse_bid()
         self._parse_bid_volume()
@@ -91,7 +92,7 @@ class TickerParser(parser_util.Parser):
             return self.formatted_record, self._parse_mini_ticker()
         return self.formatted_record
 
-    async def _parse_mini_ticker(self) -> typing.Tuple[dict]:
+    def _parse_mini_ticker(self) -> dict:
         """
         Mini ticker
         """
@@ -115,10 +116,10 @@ class TickerParser(parser_util.Parser):
                 mTickerCols.TIMESTAMP.value: self.formatted_record[
                     TickerCols.TIMESTAMP.value
                 ],
-            }, True
+            }
         except KeyError:
             # this error should never happen as we already raise if missing before 
-            self.logger.error(
+            self.exchange.logger.error(
                 f"Failed to parse mini ticker, raw ticker: {self.formatted_record}"
             )
             return {}

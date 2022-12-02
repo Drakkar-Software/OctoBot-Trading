@@ -495,7 +495,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
                     params = kwargs.pop("params", {})
                     return await self.parse_order(
                         await self.client.fetch_order(order_id, symbol, params=params, **kwargs),
-                        check_completeness=check_completeness, )
+                        check_completeness=check_completeness)
             except ccxt.OrderNotFound:
                 # some exchanges are throwing this error when an order is cancelled (ex: coinbase pro)
                 pass
