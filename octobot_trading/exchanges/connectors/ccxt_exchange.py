@@ -71,20 +71,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
             if self.exchange_manager.is_loading_markets:
                 with self.error_describer():
-                    try:
-                        import time
-                        print(f"pre load_markets {self.client.symbols}")
-                        t0 = time.time()
-                        await self.client.load_markets(reload=True)
-                        print(f"load_markets in {time.time() - t0}s")
-                        print(f"post load_markets symbols {self.client.symbols}")
-                        print(f"post load_markets markets {self.client.markets}")
-                        await asyncio.sleep(2)
-                        print(f"after sleep load_markets symbols {self.client.symbols}")
-                        print(f"after sleep load_markets markets {self.client.markets}")
-                    except Exception as e:
-                        print(f"load_markets EXCEPTION: {e}")
-                        raise
+                    await self.client.load_markets()
 
             # initialize symbols and timeframes
             self.symbols = self.get_client_symbols()
