@@ -32,7 +32,7 @@ class TestCREX24RealExchangeTester(RealExchangeTester):
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "XRP/BTC"
-    ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 2
+    ALLOWED_TIMEFRAMES_WITHOUT_CANDLE = 4
 
     async def test_time_frames(self):
         time_frames = await self.time_frames()
@@ -140,6 +140,6 @@ class TestCREX24RealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
-            assert ticker[Ectc.BASE_VOLUME.value]
+            assert ticker[Ectc.BASE_VOLUME.value] is not None
             assert ticker[Ectc.TIMESTAMP.value]
             RealExchangeTester.check_ticker_typing(ticker, check_open=False)
