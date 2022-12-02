@@ -84,7 +84,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
         symbol_prices = await self.get_symbol_prices()
         # no idea why 4 candles less than asked for but it seems to be a bitfinex issue
         candle_limit_error = 4
-        assert len(symbol_prices) == self.DEFAULT_CANDLE_LIMIT - candle_limit_error
+        assert self.DEFAULT_CANDLE_LIMIT >= len(symbol_prices) >= self.DEFAULT_CANDLE_LIMIT - candle_limit_error
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle
@@ -92,7 +92,7 @@ class TestBitfinexRealExchangeTester(RealExchangeTester):
 
         # try with candles limit (used in candled updater)
         symbol_prices = await self.get_symbol_prices(limit=200)
-        assert len(symbol_prices) == 200 - candle_limit_error
+        assert 200 >= len(symbol_prices) >= 200 - candle_limit_error
         # check candles order (oldest first)
         self.ensure_elements_order(symbol_prices, PriceIndexes.IND_PRICE_TIME.value)
         # check last candle is the current candle

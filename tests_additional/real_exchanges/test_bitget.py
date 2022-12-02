@@ -34,11 +34,6 @@ class TestBitgetRealExchangeTester(RealExchangeTester):
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "XRP/BTC"
 
-    async def time_frames(self):
-        async with get_exchange_manager(self.EXCHANGE_NAME) as exchange_manager:
-            # warning: need to use client.timeframes["spot"]
-            return set(exchange_manager.exchange.connector.client.timeframes["spot"])
-
     async def test_time_frames(self):
         time_frames = await self.time_frames()
         assert all(time_frame in time_frames for time_frame in (

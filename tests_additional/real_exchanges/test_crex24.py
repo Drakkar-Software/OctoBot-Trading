@@ -140,6 +140,6 @@ class TestCREX24RealExchangeTester(RealExchangeTester):
             assert ticker[Ectc.CLOSE.value]
             assert ticker[Ectc.LAST.value]
             assert ticker[Ectc.PREVIOUS_CLOSE.value] is None
-            assert ticker[Ectc.BASE_VOLUME.value]
+            assert ticker[Ectc.BASE_VOLUME.value] is not None
             assert ticker[Ectc.TIMESTAMP.value]
             RealExchangeTester.check_ticker_typing(ticker, check_open=False)
