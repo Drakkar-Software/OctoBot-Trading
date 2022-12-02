@@ -4,7 +4,7 @@ pytest-pep8
 pytest-cov
 pytest-xdist
 pytest-randomly
-twine-4.0.1
+twine==4.0.1
 mock>=4.0.2
 
 coverage
