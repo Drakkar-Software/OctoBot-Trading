@@ -70,7 +70,13 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
 
             if self.exchange_manager.is_loading_markets:
                 with self.error_describer():
-                    await self.client.load_markets()
+                    try:
+                        print(f"pre load_markets {self.client.symbols}")
+                        await self.client.load_markets()
+                        print(f"post load_markets {self.client.symbols}")
+                    except Exception as e:
+                        print(f"load_markets EXCEPTION: {e}")
+                        raise 
 
             # initialize symbols and timeframes
             self.symbols = self.get_client_symbols()
