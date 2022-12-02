@@ -28,7 +28,7 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestBinanceRealExchangeTester(RealExchangeTester):
-    EXCHANGE_NAME = "binance"
+    EXCHANGE_NAME = "binanceus"
     SYMBOL = "BTC/USDT"
     SYMBOL_2 = "ETH/BTC"
     SYMBOL_3 = "XRP/BTC"
