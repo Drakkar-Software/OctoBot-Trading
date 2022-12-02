@@ -34,15 +34,15 @@ async def basic_exchange_wrapper():
 
 async def test_constructor(basic_exchange_wrapper):
     assert isinstance(basic_exchange_wrapper.exchange, ccxt.async_support.binance)
-    async with exchanges.temporary_exchange_wrapper("ftx", enums.ExchangeWrapperLibs.CCXT) as wrapper:
-        assert isinstance(wrapper.exchange, ccxt.ftx)
+    async with exchanges.temporary_exchange_wrapper("okx", enums.ExchangeWrapperLibs.CCXT) as wrapper:
+        assert isinstance(wrapper.exchange, ccxt.okx)
 
 
 async def test_temporary_exchange_wrapper():
-    with mock.patch.object(ccxt.async_support.ftx, "close", mock.AsyncMock()) as close_mock:
+    with mock.patch.object(ccxt.async_support.okx, "close", mock.AsyncMock()) as close_mock:
         with pytest.raises(ZeroDivisionError):
-            async with exchanges.temporary_exchange_wrapper("ftx", enums.ExchangeWrapperLibs.ASYNC_CCXT) as wrapper:
-                assert isinstance(wrapper.exchange, ccxt.async_support.ftx)
+            async with exchanges.temporary_exchange_wrapper("okx", enums.ExchangeWrapperLibs.ASYNC_CCXT) as wrapper:
+                assert isinstance(wrapper.exchange, ccxt.async_support.okx)
                 close_mock.assert_not_called()
                 1/0
         close_mock.assert_called_once()
