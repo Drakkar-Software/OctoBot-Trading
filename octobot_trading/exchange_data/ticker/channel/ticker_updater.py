@@ -99,8 +99,8 @@ class TickerUpdater(ticker_channel.TickerProducer):
 
     def _should_use_future(self):
         return self.channel.exchange_manager.is_future and (
-            self.channel.exchange_manager.exchange.connector_config.FUNDING_IN_TICKER
-            or self.channel.exchange_manager.exchange.connector_config.MARK_PRICE_IN_TICKER
+            self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.FUNDING_IN_TICKER
+            or self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_TICKER
         )
 
     async def update_future_data(self, symbol: str, ticker: dict):

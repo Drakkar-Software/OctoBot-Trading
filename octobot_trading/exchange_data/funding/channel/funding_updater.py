@@ -141,8 +141,8 @@ class FundingUpdater(funding_channel.FundingProducer):
         if not self.channel.exchange_manager.is_future:
             return False
         return not (
-            self.channel.exchange_manager.exchange.connector_config.FUNDING_WITH_MARK_PRICE
-            or self.channel.exchange_manager.exchange.connector_config.FUNDING_IN_TICKER
+            self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.FUNDING_WITH_MARK_PRICE
+            or self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.FUNDING_IN_TICKER
         )
 
     def _get_time_until_next_funding(self, next_funding_time):

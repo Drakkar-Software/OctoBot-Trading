@@ -64,6 +64,8 @@ class PositionsParser(parser_util.Parser):
         self._parse_leverage()
         self._parse_realized_pnl()
         self._parse_status()
+        if self.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_POSITION:
+            await self._parse_mark_price()
         if self.formatted_record[PositioCols.STATUS.value] == PositionStatus.CLOSED:
             # todo check what is required for empty
             # partially parse empty position as we might need it to create contracts
@@ -76,7 +78,6 @@ class PositionsParser(parser_util.Parser):
         self._parse_unrealized_pnl()
         self._parse_liquidation_price()
         self._parse_closing_fee()
-        await self._parse_mark_price()
         self._parse_value()  # parse after mark_price and quantity
         self._parse_initial_margin()
         self._parse_entry_price()
@@ -192,34 +193,7 @@ class PositionsParser(parser_util.Parser):
         self._try_to_find_and_set_decimal(
             PositioCols.MARK_PRICE.value,
             [ExchangeCols.MARK_PRICE.value],
-            enable_log=False,
         )
-        if not self.formatted_record[PositioCols.MARK_PRICE.value]:
-            error = None
-            if symbol := self.formatted_record[PositioCols.SYMBOL.value]:
-                try:
-                    # todo replace with get_mark_price
-                    kline_data = await self.exchange.get_kline_price(
-                        symbol, commons_enums.TimeFrames.ONE_MINUTE
-                    )
-                    try:
-                        if mark_price := decimal.Decimal(str(kline_data[0][4])):
-                            self.formatted_record[
-                                PositioCols.MARK_PRICE.value
-                            ] = mark_price
-                            return
-                    except KeyError:
-                        self._log_missing(
-                            PositioCols.MARK_PRICE.value,
-                            f"key: {PositioCols.MARK_PRICE.value} and using get_kline_price "
-                            "(malformed kline data: {kline_data or 'no kline data'})",
-                        )
-                except Exception as e:
-                    error = e
-            self._log_missing(
-                PositioCols.MARK_PRICE.value,
-                f"key: {PositioCols.MARK_PRICE.value} and using get_kline_price{error or ''}",
-            )
 
     def _parse_collateral(self):
         self._try_to_find_and_set_decimal(

@@ -76,13 +76,12 @@ class TickerParser(parser_util.Parser):
         await self._parse_high_price()
         await self._parse_low_price()
         await self._parse_close_price()
-        self._parse_mark_price()  # parse after close price
         self._parse_quote_volume()
         self._parse_base_volume()  # parse after mark price and quote volume
+        if self.exchange.connector.CONNECTOR_CONFIG.MARK_PRICE_IN_TICKER:
+            self._parse_mark_price()
         if self.exchange.exchange_manager.is_future:
-            if self.exchange.connector.connector_config.MARK_PRICE_IN_TICKER:
-                self._parse_mark_price()
-            if self.exchange.connector.connector_config.FUNDING_IN_TICKER:
+            if self.exchange.connector.CONNECTOR_CONFIG.FUNDING_IN_TICKER:
                 self._parse_funding_rate()
                 self._parse_predicted_funding_rate()
                 self._parse_next_funding_time()
@@ -278,15 +277,6 @@ class TickerParser(parser_util.Parser):
             MarkPriceCols.MARK_PRICE.value,
             [MarkPriceCols.MARK_PRICE.value],
             use_info_sub_dict=True,
-            not_found_method=self._missing_mark_price,
-        )
-
-    def _missing_mark_price(self, _):
-        if close := self.formatted_record.get(TickerCols.CLOSE.value):
-            return close
-        self._log_missing(
-            TickerCols.CLOSE.value,
-            f"{MarkPriceCols.MARK_PRICE.value} and based on close which is missing as well",
         )
 
     async def missing_open_price(self, _):

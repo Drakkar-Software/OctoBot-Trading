@@ -30,7 +30,7 @@ import octobot_trading.enums as trading_enums
 # TODO remove
 class FutureCCXTExchange(exchanges_types.FutureExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
-    connector_config: ccxt_exchange_settings.CCXTExchangeConfig = (
+    CONNECTOR_CONFIG: ccxt_exchange_settings.CCXTExchangeConfig = (
         ccxt_exchange_settings.CCXTExchangeConfig
     )
 
@@ -40,7 +40,7 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
             config,
             exchange_manager,
             additional_ccxt_config=self.get_additional_connector_config(),
-            connector_config=self.connector_config,
+            connector_config=self.CONNECTOR_CONFIG,
         )
 
     async def initialize_impl(self):
@@ -59,7 +59,7 @@ class FutureCCXTExchange(exchanges_types.FutureExchange):
         """
         Called at constructor, should define all the exchange's user inputs.
         """
-        if not cls.connector_config.is_fully_tested_and_supported():
+        if not cls.CONNECTOR_CONFIG.is_fully_tested_and_supported():
             ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(
                 cls, inputs
             )

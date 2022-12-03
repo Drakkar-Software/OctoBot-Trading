@@ -118,7 +118,7 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
 
     async def fetch_market_price(self, symbol: str):
         try:
-            if self.channel.exchange_manager.exchange.connector_config.FUNDING_WITH_MARK_PRICE:
+            if self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.FUNDING_WITH_MARK_PRICE:
                 mark_price, funding_rate = await self.channel.exchange_manager.exchange. \
                     get_mark_price_and_funding(symbol)
                 mark_price = decimal.Decimal(str(mark_price))
@@ -148,11 +148,11 @@ class MarkPriceUpdater(prices_channel.MarkPriceProducer):
 
     def _should_fetch_on_exchange(self) -> bool:
         return not (
-                self.channel.exchange_manager.exchange.connector_config.FUNDING_WITH_MARK_PRICE
-                or self.channel.exchange_manager.exchange.connector_config.MARK_PRICE_IN_TICKER
-                or self.channel.exchange_manager.exchange.connector_config.MARK_PRICE_IN_POSITION
+                self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.FUNDING_WITH_MARK_PRICE
+                or self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_TICKER
+                or self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_POSITION
         )
 
     def _should_subscribe(self):
         return not self.channel.exchange_manager.is_future or \
-            not self.channel.exchange_manager.exchange.connector_config.MARK_PRICE_IN_POSITION
+            not self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_POSITION

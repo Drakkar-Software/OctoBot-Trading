@@ -222,7 +222,7 @@ class PositionsUpdater(positions_channel.PositionsProducer):
         return self._has_mark_price_in_position()
 
     def _has_mark_price_in_position(self):
-        return self.channel.exchange_manager.exchange.connector_config.MARK_PRICE_IN_POSITION
+        return self.channel.exchange_manager.exchange.CONNECTOR_CONFIG.MARK_PRICE_IN_POSITION
 
     async def handle_mark_price(self, exchange: str, exchange_id: str, cryptocurrency: str, symbol: str, mark_price):
         """

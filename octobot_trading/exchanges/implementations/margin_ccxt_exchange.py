@@ -30,17 +30,16 @@ from octobot_trading import enums as enums
 # TODO remove
 class MarginCCXTExchange(exchanges_types.MarginExchange):
     CONNECTOR_CLASS = exchange_connectors.CCXTExchange
-    connector_config: ccxt_exchange_settings.CCXTExchangeConfig = (
+    CONNECTOR_CONFIG: ccxt_exchange_settings.CCXTExchangeConfig = (
         ccxt_exchange_settings.CCXTExchangeConfig
     )
-
     def __init__(self, config, exchange_manager):
         super().__init__(config, exchange_manager)
         self.connector = self.CONNECTOR_CLASS(
             config,
             exchange_manager,
             additional_ccxt_config=self.get_additional_connector_config(),
-            connector_config=self.connector_config,
+            connector_config=self.CONNECTOR_CONFIG,
         )
 
     async def initialize_impl(self):
@@ -53,7 +52,7 @@ class MarginCCXTExchange(exchanges_types.MarginExchange):
         """
         Called at constructor, should define all the exchange's user inputs.
         """
-        if not cls.connector_config.is_fully_tested_and_supported():
+        if not cls.CONNECTOR_CONFIG.is_fully_tested_and_supported():
             ccxt_exchange_ui_settings.initialize_experimental_exchange_settings(
                 cls, inputs
             )

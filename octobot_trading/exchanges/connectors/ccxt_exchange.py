@@ -470,19 +470,19 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_order(self, order_id: str, symbol: str = None, check_completeness: bool = True,
                         **kwargs: dict) -> typing.Optional[dict]:
         defined_methods = self.connector_config.GET_ORDER_METHODS
-        if enums.CCXTExchangeConfigMethods.GET_ORDER_DEFAULT.value in defined_methods and \
+        if self.get_order_default.__name__ in defined_methods and \
                 (order := await self.get_order_default(order_id, symbol,
                                                        check_completeness=check_completeness, **kwargs)):
             return order
-        if enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS.value in defined_methods and \
+        if self.get_order_from_open_and_closed_orders.__name__  in defined_methods and \
                 (order := await self.get_order_from_open_and_closed_orders(order_id, symbol,
                                                                            check_completeness=check_completeness,
                                                                            **kwargs)):
             return order
-        if enums.CCXTExchangeConfigMethods.GET_ORDER_USING_STOP_PARAMS.value in defined_methods and \
+        if self.get_order_from_open_and_closed_orders.__name__ in defined_methods and \
                 (order := await self.get_order_using_stop_params(order_id, symbol, check_completeness=check_completeness)):
             return order
-        if enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_TRADES.value in defined_methods and \
+        if self.get_trade.__name__ in defined_methods and \
                 (order := await self.get_trade(order_id, symbol, check_completeness=check_completeness)):
             return order
         self.logger.debug(f"Order not found using get_order: {order_id} / {symbol} - order might not exist anymore")
@@ -536,10 +536,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         limit = self.cut_order_pagination_limit(limit)
         defined_methods = self.connector_config.GET_ALL_ORDERS_METHODS
         orders = []
-        if enums.CCXTExchangeConfigMethods.GET_ALL_ORDERS_DEFAULT.value in defined_methods:
+        if self.get_all_orders_default.__name__ in defined_methods:
             orders += await self.get_all_orders_default(symbol=symbol, since=since, limit=limit,
                                                         check_completeness=check_completeness, kwargs=kwargs)
-        if enums.CCXTExchangeConfigMethods.GET_ALL_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value in defined_methods:
+        if self.get_all_stop_orders_using_stop_loss_endpoint.__name__ in defined_methods:
             orders += await self.get_all_stop_orders_using_stop_loss_endpoint(symbol=symbol, since=since, limit=limit,
                                                                               check_completeness=check_completeness,
                                                                               kwargs=kwargs)
@@ -578,13 +578,12 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         limit = self.cut_order_pagination_limit(limit)
         defined_methods = self.connector_config.GET_OPEN_ORDERS_METHODS
         orders = []
-        if enums.CCXTExchangeConfigMethods.GET_OPEN_ORDERS_DEFAULT.value in defined_methods:
-            orders += await self.get_open_orders_default(symbol, since, limit, check_completeness=check_completeness,
-                                                         **kwargs)
-        if enums.CCXTExchangeConfigMethods.GET_OPEN_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value in defined_methods:
-            orders += await self.get_open_stop_orders_using_stop_loss_endpoint(symbol, since, limit,
-                                                                               check_completeness=check_completeness,
-                                                                               **kwargs)
+        if self.get_open_orders_default.__name__ in defined_methods:
+            orders += await self.get_open_orders_default(
+                symbol, since, limit, check_completeness=check_completeness, **kwargs)
+        if self.get_open_stop_orders_using_stop_loss_endpoint.__name__ in defined_methods:
+            orders += await self.get_open_stop_orders_using_stop_loss_endpoint(
+                symbol, since, limit, check_completeness=check_completeness, **kwargs)
         return orders
 
     async def get_open_orders_default(self, symbol: str = None, since: int = None, limit: int = None,
@@ -619,10 +618,10 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         limit = self.cut_order_pagination_limit(limit)
         defined_methods = self.connector_config.GET_CLOSED_ORDERS_METHODS
         orders = []
-        if enums.CCXTExchangeConfigMethods.GET_CLOSED_ORDERS_DEFAULT.value in defined_methods:
+        if self.get_closed_orders_default.__name__ in defined_methods:
             orders += await self.get_closed_orders_default(symbol, since, limit, check_completeness=check_completeness,
                                                            **kwargs)
-        if enums.CCXTExchangeConfigMethods.GET_CLOSED_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value in defined_methods:
+        if self.get_closed_stop_orders_using_stop_loss_endpoint.__name__ in defined_methods:
             orders += await self.get_closed_stop_orders_using_stop_loss_endpoint(symbol, since, limit,
                                                                                  check_completeness=check_completeness,
                                                                                  **kwargs)
@@ -666,21 +665,21 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         limit = self.cut_recent_trades_pagination_limit(limit)
         defined_methods = self.connector_config.GET_MY_RECENT_TRADES_METHODS
         error_messages = ""
-        if enums.CCXTExchangeConfigMethods.GET_MY_RECENT_TRADES_DEFAULT.value in defined_methods:
+        if self.get_my_recent_trades_default.__name__ in defined_methods:
             fetched_trades, error_message = await self.get_my_recent_trades_default(
                 symbol=symbol, since=since, limit=limit, check_completeness=check_completeness, **kwargs)
             if fetched_trades:
                 return fetched_trades
             elif error_message:
                 error_messages += error_message
-        if enums.CCXTExchangeConfigMethods.GET_MY_RECENT_TRADES_USING_RECENT_TRADES.value in defined_methods:
+        if self.get_my_recent_trades_using_recent_trades.__name__ in defined_methods:
             fetched_trades, error_message = await self.get_my_recent_trades_using_recent_trades(
                 symbol=symbol, limit=limit, check_completeness=check_completeness, **kwargs)
             if fetched_trades:
                 return fetched_trades
             elif error_message:
                 error_messages += error_message
-        if enums.CCXTExchangeConfigMethods.GET_MY_RECENT_TRADES_USING_CLOSED_ORDERS.value in defined_methods:
+        if self.get_my_recent_trades_using_closed_orders.__name__ in defined_methods:
             fetched_trades, error_message = await self.get_my_recent_trades_using_closed_orders(
                 symbol=symbol, since=since, limit=limit, check_completeness=check_completeness, **kwargs)
             if fetched_trades:
@@ -748,13 +747,13 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def cancel_order(self, order_id: str, symbol: str = None, **kwargs: dict) -> bool:
         defined_methods = self.connector_config.CANCEL_ORDERS_METHODS
         messages = ""
-        if enums.CCXTExchangeConfigMethods.CANCEL_ORDER_DEFAULT.value in defined_methods:
+        if self.cancel_order_default.__name__ in defined_methods:
             success, error_message = await self.cancel_order_default(order_id, symbol=symbol, **kwargs)
             if success:
                 return True
             else:
                 messages = error_message or messages
-        if enums.CCXTExchangeConfigMethods.CANCEL_ORDER_DEFAULT.value in defined_methods:
+        if self.cancel_stop_order_using_stop_loss_endpoint.__name__ in defined_methods:
             success, error_message = await self.cancel_stop_order_using_stop_loss_endpoint(order_id, symbol=symbol,
                                                                                            **kwargs)
             if success:
@@ -830,11 +829,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         """
         defined_methods = self.connector_config.GET_POSITION_METHODS
         positions = []
-        if enums.CCXTExchangeConfigMethods.GET_POSITION_DEFAULT.value in defined_methods:
+        if self.get_position_default.__name__ in defined_methods:
             positions += await self.get_position_default(**kwargs)
-        if enums.CCXTExchangeConfigMethods.GET_POSITION_BY_SUB_TYPE.value in defined_methods:
+        if self.get_position_by_sub_type.__name__ in defined_methods:
             positions += await self.get_position_by_sub_type(**kwargs)
-        if enums.CCXTExchangeConfigMethods.GET_POSITION_WITH_PRIVATE_GET_POSITION_RISK.value in defined_methods:
+        if self.get_position_with_private_get_position_risk.__name__ in defined_methods:
             positions += await self.get_position_with_private_get_position_risk()
         return positions
 
@@ -857,11 +856,24 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
     async def get_position_by_sub_type(self, **kwargs: dict) -> list:
         params = {**kwargs}
         positions = []
-        position_types = ("linear", "inverse")
+        position_types = []
+        # if self.exchange_manager.exchange.is_linear_symbol():
+        position_types.append({"type": "linear", "settleCoins": ["USDT", "USDC"]})
+        # if self.exchange_manager.exchange.is_inverse_symbol():
+        position_types.append({"type": "inverse", "settleCoins": ["ETH", "BTC"]})
+        # if self.exchange_manager.exchange.is_swap_symbol():
+        position_types.append({"type": "swap"})
+        # if self.exchange_manager.exchange.is_option_symbol():
+        position_types.append({"type": "option"})
         for position_type in position_types:
             try:
-                params["subType"] = position_type
-                positions += await self.get_position_default(**params)
+                params["subType"] = position_type["type"]
+                if "settleCoins" in position_type:
+                    for coin in position_type["settleCoins"]:
+                        params["settleCoin"] = coin
+                        positions += await self.get_position_default(**params)
+                else:
+                    positions += await self.get_position_default(**params)
             except Exception as e:
                 self.logger.info(f"Failed to load positions using: "
                                  f"get_position_by_sub_type - {position_type} positions: ({e})")

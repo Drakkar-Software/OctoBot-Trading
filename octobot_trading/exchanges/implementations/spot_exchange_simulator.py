@@ -20,7 +20,7 @@ from octobot_trading.exchanges.config import ccxt_exchange_settings
 
 #TODO remove
 class SpotExchangeSimulator(exchanges_types.SpotExchange):
-    connector_config: ccxt_exchange_settings.CCXTExchangeConfig = (
+    CONNECTOR_CONFIG: ccxt_exchange_settings.CCXTExchangeConfig = (
         ccxt_exchange_settings.CCXTExchangeConfig
     )
     def __init__(self, config, exchange_manager, backtesting):

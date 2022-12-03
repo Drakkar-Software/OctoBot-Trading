@@ -225,42 +225,6 @@ class ExchangePositionCCXTColumns(enum.Enum):
     INFO = "info"
 
 
-class CCXTExchangeConfigMethods(enum.Enum):
-    GET_ORDER_DEFAULT = "get_order_default"
-    GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS = "get_order_from_open_and_closed_orders"
-    GET_ORDER_USING_STOP_PARAMS = "get_order_using_stop_params"
-    GET_ORDER_FROM_TRADES = "get_order_from_trades"
-    
-    GET_ALL_ORDERS_DEFAULT = "get_all_orders_default"
-    GET_ALL_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT = "get_all_stop_orders_using_stop_loss_endpoint"
-    
-    GET_OPEN_ORDERS_DEFAULT = "get_open_orders_default"
-    GET_OPEN_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT \
-        = "get_open_stop_orders_using_stop_loss_endpoint"
-       
-    GET_CLOSED_ORDERS_DEFAULT = "get_closed_orders_default"
-    GET_CLOSED_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT = "get_closed_stop_orders_using_stop_loss_endpoint"
-    
-    GET_MY_RECENT_TRADES_DEFAULT = "get_my_recent_trades_default"
-    GET_MY_RECENT_TRADES_USING_RECENT_TRADES = "get_my_recent_trades_using_recent_trades"
-    GET_MY_RECENT_TRADES_USING_CLOSED_ORDERS = "get_my_recent_trades_using_closed_orders"
-    
-    CANCEL_ORDER_DEFAULT = "cancel_order_default"
-    CANCEL_STOP_ORDER_USING_STOP_LOSS_ENDPOINT = "cancel_stop_order_using_stop_loss_endpoint"
-    
-    GET_POSITION_DEFAULT = "get_position_default"
-    GET_POSITION_BY_SUB_TYPE = "get_position_by_sub_type"
-    GET_POSITION_WITH_PRIVATE_GET_POSITION_RISK = "get_position_with_private_get_position_risk"
-
-
-class ExchangeFundingCCXTColumns(enum.Enum):
-    SYMBOL = "symbol"
-    LAST_FUNDING_TIME = "lastFundingTime"
-    FUNDING_RATE = "fundingRate"
-    NEXT_FUNDING_TIME = "nextFundingTime"
-    PREDICTED_FUNDING_RATE = "predictedFundingRate"
-
-
 class ExchangeOrderCCXTColumns(enum.Enum):
     INFO = "info"
     ID = "id"
@@ -288,6 +252,16 @@ class ExchangeOrderCCXTColumns(enum.Enum):
     STOP_PRICE = "stopPrice"
     TRIGGER_ABOVE = "triggerAbove"
     TAG = "tag"
+
+
+
+class ExchangeFundingCCXTColumns(enum.Enum):
+    SYMBOL = "symbol"
+    LAST_FUNDING_TIME = "lastFundingTime"
+    FUNDING_RATE = "fundingRate"
+    NEXT_FUNDING_TIME = "nextFundingTime"
+    PREDICTED_FUNDING_RATE = "predictedFundingRate"
+
 
 class ExchangeConstantsFundingColumns(enum.Enum):
     SYMBOL = "symbol"

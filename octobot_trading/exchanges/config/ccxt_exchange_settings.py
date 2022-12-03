@@ -1,4 +1,4 @@
-from octobot_trading import enums as enums
+import octobot_trading.enums as enums
 import octobot_trading.exchanges.parser as parser
 
 
@@ -7,39 +7,48 @@ class CCXTExchangeConfig:
     override this class if you need custom settings
     """
 
-    # available methods to choose from
-    ALL_GET_ORDER_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_ORDER_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS.value,
-        enums.CCXTExchangeConfigMethods.GET_ORDER_USING_STOP_PARAMS.value,
-        enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_TRADES.value,
-    ]
-    ALL_GET_ALL_ORDERS_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_ALL_ORDERS_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_ALL_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value,
-    ]
-    ALL_GET_OPEN_ORDERS_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_OPEN_ORDERS_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_OPEN_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value,
-    ]
-    ALL_GET_CLOSED_ORDERS_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_CLOSED_ORDERS_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_CLOSED_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value,
-    ]
-    ALL_CANCEL_ORDERS_METHODS = [
-        enums.CCXTExchangeConfigMethods.CANCEL_ORDER_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.CANCEL_STOP_ORDER_USING_STOP_LOSS_ENDPOINT.value,
-    ]
-    ALL_GET_MY_RECENT_TRADES_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_MY_RECENT_TRADES_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_MY_RECENT_TRADES_USING_RECENT_TRADES.value,
-        enums.CCXTExchangeConfigMethods.GET_MY_RECENT_TRADES_USING_CLOSED_ORDERS.value,
-    ]
-    ALL_GET_POSITION_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_POSITION_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_POSITION_BY_SUB_TYPE.value,
-        enums.CCXTExchangeConfigMethods.GET_POSITION_WITH_PRIVATE_GET_POSITION_RISK.value,
-    ]
+    def __init__(self, exchange_connector):
+
+        # available methods to choose from
+        self.ALL_GET_ORDER_METHODS = [
+            exchange_connector.get_order_default.__name__,
+            exchange_connector.get_order_from_open_and_closed_orders.__name__,
+            exchange_connector.get_order_from_open_and_closed_orders.__name__,
+            exchange_connector.get_trade.__name__,
+        ]
+        self.ALL_GET_ALL_ORDERS_METHODS = [
+            exchange_connector.get_all_orders_default.__name__,
+            exchange_connector.get_all_stop_orders_using_stop_loss_endpoint.__name__,
+        ]
+        self.ALL_GET_OPEN_ORDERS_METHODS = [
+            exchange_connector.get_open_orders_default.__name__,
+            exchange_connector.get_open_stop_orders_using_stop_loss_endpoint.__name__,
+        ]
+        self.ALL_GET_CLOSED_ORDERS_METHODS = [
+            exchange_connector.get_closed_orders_default.__name__,
+            exchange_connector.get_closed_stop_orders_using_stop_loss_endpoint.__name__,
+        ]
+        self.ALL_CANCEL_ORDERS_METHODS = [
+            exchange_connector.cancel_order_default.__name__,
+            exchange_connector.cancel_stop_order_using_stop_loss_endpoint.__name__,
+        ]
+        self.ALL_GET_MY_RECENT_TRADES_METHODS = [
+            exchange_connector.get_my_recent_trades_default.__name__,
+            exchange_connector.get_my_recent_trades_using_recent_trades.__name__,
+            exchange_connector.get_my_recent_trades_using_closed_orders.__name__,
+        ]
+        self.ALL_GET_POSITION_METHODS = [
+            exchange_connector.get_position_default.__name__,
+            exchange_connector.get_position_by_sub_type.__name__,
+            exchange_connector.get_position_with_private_get_position_risk.__name__,
+        ]
+        self.GET_ORDER_METHODS = self.ALL_GET_ORDER_METHODS
+        self.GET_ALL_ORDERS_METHODS = self.ALL_GET_ALL_ORDERS_METHODS
+        self.GET_OPEN_ORDERS_METHODS = self.ALL_GET_OPEN_ORDERS_METHODS
+        self.GET_CLOSED_ORDERS_METHODS = self.ALL_GET_CLOSED_ORDERS_METHODS
+        self.CANCEL_ORDERS_METHODS = self.ALL_CANCEL_ORDERS_METHODS
+        self.GET_MY_RECENT_TRADES_METHODS = self.ALL_GET_MY_RECENT_TRADES_METHODS
+        self.GET_POSITION_METHODS = self.ALL_GET_POSITION_METHODS
 
     # set this for each exchange if tested on testnet and real money
 
@@ -96,33 +105,3 @@ class CCXTExchangeConfig:
 
     GET_ORDER_METHODS = [
         enums.CCXTExchangeConfigMethods.GET_ORDER_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_OPEN_AND_CLOSED_ORDERS.value,
-        enums.CCXTExchangeConfigMethods.GET_ORDER_USING_STOP_PARAMS.value,
-        enums.CCXTExchangeConfigMethods.GET_ORDER_FROM_TRADES.value,
-    ]
-    GET_ALL_ORDERS_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_ALL_ORDERS_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_ALL_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value,
-    ]
-    GET_OPEN_ORDERS_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_OPEN_ORDERS_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_OPEN_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value,
-    ]
-    GET_CLOSED_ORDERS_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_CLOSED_ORDERS_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_CLOSED_STOP_ORDERS_USING_STOP_LOSS_ENDPOINT.value,
-    ]
-    CANCEL_ORDERS_METHODS = [
-        enums.CCXTExchangeConfigMethods.CANCEL_ORDER_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.CANCEL_STOP_ORDER_USING_STOP_LOSS_ENDPOINT.value,
-    ]
-    GET_MY_RECENT_TRADES_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_MY_RECENT_TRADES_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_MY_RECENT_TRADES_USING_RECENT_TRADES.value,
-        enums.CCXTExchangeConfigMethods.GET_MY_RECENT_TRADES_USING_CLOSED_ORDERS.value,
-    ]
-    GET_POSITION_METHODS = [
-        enums.CCXTExchangeConfigMethods.GET_POSITION_DEFAULT.value,
-        enums.CCXTExchangeConfigMethods.GET_POSITION_BY_SUB_TYPE.value,
-        enums.CCXTExchangeConfigMethods.GET_POSITION_WITH_PRIVATE_GET_POSITION_RISK.value,
-    ]
