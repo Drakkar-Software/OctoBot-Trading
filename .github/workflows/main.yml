@@ -8,7 +8,8 @@ on:
   pull_request:
 
 env:
-  EXCHANGE_HTTP_PROXY: ${{ secrets.EXCHANGE_HTTP_PROXY }}
+  http_proxy: ${{ secrets.EXCHANGE_HTTP_PROXY }}
+  https_proxy: ${{ secrets.EXCHANGE_HTTP_PROXY }}
 
 jobs:
   lint:
