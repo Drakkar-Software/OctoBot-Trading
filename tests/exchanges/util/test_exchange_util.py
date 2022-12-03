@@ -42,17 +42,17 @@ def exchange_config():
 
 
 async def test_is_compatible_account_with_checked_exchange(exchange_config, tentacles_setup_config):
-    with mock.patch.object(trading_backend.exchanges.binance, "is_valid_account",
+    with mock.patch.object(trading_backend.exchanges.Binance, "is_valid_account",
                            mock.AsyncMock(return_value=(True, None))) as is_valid_account_mock:
-        compatible, auth, error = await exchanges.is_compatible_account("binanceus", exchange_config,
+        compatible, auth, error = await exchanges.is_compatible_account("binance", exchange_config,
                                                                         tentacles_setup_config, False)
         assert compatible is True
         assert auth is True
         assert error is None
         is_valid_account_mock.assert_called_once()
-    with mock.patch.object(trading_backend.exchanges.binance, "is_valid_account",
+    with mock.patch.object(trading_backend.exchanges.Binance, "is_valid_account",
                            mock.AsyncMock(return_value=(False, "plop"))) as is_valid_account_mock:
-        compatible, auth, error = await exchanges.is_compatible_account("binanceus", exchange_config,
+        compatible, auth, error = await exchanges.is_compatible_account("binance", exchange_config,
                                                                         tentacles_setup_config, False)
         # still True as on spot trading
         assert compatible is True
@@ -60,9 +60,9 @@ async def test_is_compatible_account_with_checked_exchange(exchange_config, tent
         assert error is None
         is_valid_account_mock.assert_called_once()
     exchange_config[commons_constants.CONFIG_EXCHANGE_TYPE] = commons_constants.CONFIG_EXCHANGE_FUTURE
-    with mock.patch.object(trading_backend.exchanges.binance, "is_valid_account",
+    with mock.patch.object(trading_backend.exchanges.Binance, "is_valid_account",
                            mock.AsyncMock(return_value=(False, "plop"))) as is_valid_account_mock:
-        compatible, auth, error = await exchanges.is_compatible_account("binanceus", exchange_config,
+        compatible, auth, error = await exchanges.is_compatible_account("binance", exchange_config,
                                                                         tentacles_setup_config, False)
         assert compatible is False
         assert auth is True
