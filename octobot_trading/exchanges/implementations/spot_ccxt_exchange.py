@@ -14,10 +14,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-import asyncio
 import contextlib
 import decimal
-import time
 import typing
 import copy
 
