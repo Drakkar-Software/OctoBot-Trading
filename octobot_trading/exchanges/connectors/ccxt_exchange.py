@@ -164,11 +164,11 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
             self.client = self._get_unauthenticated_exchange()
             self.logger.error("configuration issue: missing login information !")
         self.client.logger.setLevel(logging.INFO)
-        self.set_http_proxy_if_necessary()
+        self.use_http_proxy_if_necessary()
 
-    def set_http_proxy_if_necessary(self):
-        if constants.EXCHANGE_HTTP_PROXY:
-            self.client.aiohttp_proxy = constants.EXCHANGE_HTTP_PROXY
+    def use_http_proxy_if_necessary(self):
+        if constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV:
+            self.client.aiohttp_trust_env = True
 
     def _should_authenticate(self):
         return not (self.exchange_manager.is_simulated or
