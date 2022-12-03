@@ -216,21 +216,49 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         return raw_created_order
 
     async def _create_market_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_market_buy_order(symbol, quantity, params={**params, "cost": quantity * price})
+        return await self.connector.client.create_market_buy_order(
+            symbol,
+            quantity,
+            params=self.add_cost_to_market_order(quantity, price, params),
+        )
 
     async def _create_limit_buy_order(self, symbol, quantity, price=None, params=None) -> dict:
         return await self.connector.client.create_limit_buy_order(symbol, quantity, price, params=params)
 
-    async def _create_market_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
-        return await self.connector.client.create_market_sell_order(symbol, quantity, params={**params, "cost": quantity * price})
+    async def _create_market_sell_order(
+        self, symbol, quantity, price=None, params=None
+    ) -> dict:
+        return await self.connector.client.create_market_sell_order(
+            symbol,
+            quantity,
+            params=self.add_cost_to_market_order(quantity, price, params),
+        )
 
     async def _create_limit_sell_order(self, symbol, quantity, price=None, params=None) -> dict:
         return await self.connector.client.create_limit_sell_order(symbol, quantity, price, params=params)
 
     async def _create_market_stop_loss_order(self, symbol, quantity, price, side, current_price, params=None) -> dict:
+        if self.connector.client.has.get("createStopOrder"):
+            return await self.connector.client.create_stop_order(
+                symbol,
+                enums.TradeOrderType.MARKET.value,
+                side,
+                quantity,
+                price,
+                current_price,
+                params=params,
+            )
+        if self.connector.client.has.get("createStopMarketOrder"):
+            return await self.connector.client.create_stop_market_order(
+                symbol, side, quantity, price, params=params
+            )
         raise NotImplementedError("_create_market_stop_loss_order is not implemented")
 
     async def _create_limit_stop_loss_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
+        if self.connector.client.has.get("createStopLimitOrder"):
+            return await self.connector.client.create_stop_limit_order(
+                symbol, side, quantity, price, params=params
+            )
         raise NotImplementedError("_create_limit_stop_loss_order is not implemented")
 
     async def _create_market_take_profit_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
@@ -245,6 +273,14 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
     async def _create_limit_trailing_stop_order(self, symbol, quantity, price=None, side=None, params=None) -> dict:
         raise NotImplementedError("_create_limit_trailing_stop_order is not implemented")
 
+    def add_cost_to_market_order(self, quantity, price, params) -> dict:
+        if (
+            self.CONNECTOR_CONFIG.ADD_COST_TO_CREATE_SPOT_MARKET_ORDER
+            or self.CONNECTOR_CONFIG.ADD_COST_TO_CREATE_FUTURE_MARKET_ORDER
+        ):
+            return {**params, "cost": quantity * price}
+        return params
+    
     def get_exchange_current_time(self):
         return self.connector.get_exchange_current_time()
 
@@ -280,6 +316,30 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
                         check_completeness: bool = None, **kwargs: dict) -> dict:
         return await self.connector.get_order(symbol=symbol, order_id=order_id,
                                               check_completeness=check_completeness, **kwargs)
+
+    def custom_get_order_stop_params(self, order_id, params) -> dict:
+        """
+        override if certain parameters are required to fetch stop orders
+        """
+        return params
+
+    def custom_get_all_orders_stop_params(self, params) -> dict:
+        """
+        override if certain parameters are required to fetch stop orders
+        """
+        return params
+
+    def custom_get_open_orders_stop_params(self, params) -> dict:
+        """
+        override if certain parameters are required to fetch stop orders
+        """
+        return params
+
+    def custom_get_closed_orders_stop_params(self, params) -> dict:
+        """
+        override if certain parameters are required to fetch stop orders
+        """
+        return params
 
     async def get_all_orders(self, symbol: str = None, since: int = None, limit: int = None,
                              check_completeness: bool = None, **kwargs: dict) -> list:
