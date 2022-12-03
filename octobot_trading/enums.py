@@ -352,6 +352,7 @@ class ExchangeConstantsOrderColumns(enum.Enum):
     TAKERORMAKER = "takerOrMaker"
     REDUCE_ONLY = "reduceOnly"
     STOP_PRICE = "stopPrice"
+    TRIGGER_ABOVE = "triggerAbove"
     TAG = "tag"
 
 

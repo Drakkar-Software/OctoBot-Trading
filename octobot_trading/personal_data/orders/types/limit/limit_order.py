@@ -28,6 +28,14 @@ class LimitOrder(order_class.Order):
         self.trigger_above = self.side is enums.TradeOrderSide.SELL
         self.allow_instant_fill = True
 
+    def update_from_raw(self, raw_order):
+        updated = super().update_from_raw(raw_order)
+        if enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value in raw_order \
+                and self.trigger_above != raw_order[enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value]:
+            updated = True
+            self.trigger_above = raw_order[enums.ExchangeConstantsOrderColumns.TRIGGER_ABOVE.value]
+        return updated
+
     async def update_order_status(self, force_refresh=False):
         if self.limit_price_hit_event is None:
             self._create_hit_event(self.creation_time)
