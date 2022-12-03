@@ -7,6 +7,9 @@ on:
       - '*'
   pull_request:
 
+env:
+  EXCHANGE_HTTP_PROXY: ${{ secrets.EXCHANGE_HTTP_PROXY }}
+
 jobs:
   lint:
     uses: Drakkar-Software/.github/.github/workflows/python3_lint_workflow.yml@master

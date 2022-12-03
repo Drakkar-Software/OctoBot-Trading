@@ -60,7 +60,7 @@ FEES_MOCK = {
 
 class TestTrader:
     DEFAULT_SYMBOL = "BTC/USDT"
-    EXCHANGE_MANAGER_CLASS_STRING = "binanceus"
+    EXCHANGE_MANAGER_CLASS_STRING = "binance"
 
     @staticmethod
     async def init_default(simulated=True, is_future=False):
@@ -568,7 +568,7 @@ class TestTrader:
         # Fill only 1st one
         limit_buy.filled_price = 4
         limit_buy.status = OrderStatus.FILLED
-        with patch.object(ccxt.async_support.binanceus, "calculate_fee", Mock(return_value=FEES_MOCK)) \
+        with patch.object(ccxt.async_support.binance, "calculate_fee", Mock(return_value=FEES_MOCK)) \
                 as calculate_fee_mock:
             await limit_buy.on_fill(force_fill=True)
             # ensure call ccxt calculate_fee for order fees
@@ -612,7 +612,7 @@ class TestTrader:
 
         assert not trades_manager.trades
 
-        with patch.object(ccxt.async_support.binanceus, "calculate_fee", Mock(return_value=FEES_MOCK)) \
+        with patch.object(ccxt.async_support.binance, "calculate_fee", Mock(return_value=FEES_MOCK)) \
                 as calculate_fee_mock:
             await limit_buy.on_fill(force_fill=True)
             calculate_fee_mock.assert_called_once()

@@ -16,7 +16,7 @@
       },
       "Neo": {
         "pairs": [
-          "AVAX/BTC"
+          "NEO/BTC"
         ]
       },
       "Ethereum": {
@@ -31,7 +31,7 @@
       },
       "VeChain": {
         "pairs": [
-          "ADA/BTC"
+          "VEN/BTC"
         ]
       },
       "Nano": {
@@ -49,9 +49,9 @@
           "ONT/BTC"
         ]
       },
-      "Polygon": {
+      "Stellar": {
         "pairs": [
-          "MATIC/BTC"
+          "XLM/BTC"
         ]
       },
       "Power Ledger": {

@@ -29,7 +29,7 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestExchangeManager:
-    EXCHANGE_NAME = "binanceus"
+    EXCHANGE_NAME = "binance"
 
     @staticmethod
     async def init_default(config=None, simulated=True, backtesting=False):
