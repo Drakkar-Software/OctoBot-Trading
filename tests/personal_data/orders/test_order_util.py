@@ -14,8 +14,9 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import decimal
+import os
 
-import mock
+from mock import Mock, patch, AsyncMock
 import pytest
 
 import octobot_trading.api as api
@@ -24,7 +25,7 @@ import octobot_trading.constants as constants
 import octobot_trading.personal_data as personal_data
 
 from tests import event_loop
-from tests.exchanges import future_simulated_exchange_manager, simulated_exchange_manager
+from tests.exchanges import future_simulated_exchange_manager, simulated_exchange_manager, get_fees_mock_value
 from tests.exchanges.traders import future_trader_simulator_with_default_linear, \
     future_trader_simulator_with_default_inverse, DEFAULT_FUTURE_SYMBOL, DEFAULT_FUTURE_FUNDING_RATE, trader_simulator
 
@@ -120,176 +121,184 @@ def test_get_max_order_quantity_for_price_long_linear(future_trader_simulator_wi
     # values also tested with bybit fees
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    # # no need to initialize the position
-    default_contract.set_current_leverage(constants.ONE)
-    # # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
-    # # max quantity would be 9961.7672 / 37000 = 0.269236951351,
-    # # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('0.2691292996314987518506111069')
+    if not os.getenv('CYTHON_IGNORE'):
+        with patch.object(exchange_manager_inst.exchange, "get_fees", Mock(return_value=get_fees_mock_value("USDT"))):
+            # # no need to initialize the position
+            default_contract.set_current_leverage(constants.ONE)
+            # # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+            # # max quantity would be 9961.7672 / 37000 = 0.269236951351,
+            # # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.LinearPosition(trader_inst, default_contract),
+                decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('0.2691292996314987518506111069')
 
-    default_contract.set_current_leverage(decimal.Decimal("2"))
-    # # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
-    # # max quantity would be 9961.7672 / 37000 * 2 = 0.538473902703,
-    # # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('0.5378285084925116886762911533')
+            default_contract.set_current_leverage(decimal.Decimal("2"))
+            # # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+            # # max quantity would be 9961.7672 / 37000 * 2 = 0.538473902703,
+            # # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.LinearPosition(trader_inst, default_contract),
+                decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('0.5378285084925116886762911533')
 
-    default_contract.set_current_leverage(decimal.Decimal("10"))
-    # at price = 43500 and 9943.9078 USDT in stock, if there were no fees,
-    # max quantity would be 9943.9078 / 43500 * 10 = 2.26311218138,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9943.9078"), decimal.Decimal("43500"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('2.268713592786774536511021980')
+            default_contract.set_current_leverage(decimal.Decimal("10"))
+            # at price = 43500 and 9943.9078 USDT in stock, if there were no fees,
+            # max quantity would be 9943.9078 / 43500 * 10 = 2.26311218138,
+            # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.LinearPosition(trader_inst, default_contract),
+                decimal.Decimal("9943.9078"), decimal.Decimal("43500"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('2.268713592786774536511021980')
 
-    # example from bybit docs
-    # Trader place a long entry of 1BTC at USD8000 with 50x leverage.
-    # Order Cost = 160USDT + 6USDT + 5.88USDT = 171.88 USDT
-    default_contract.set_current_leverage(decimal.Decimal("50"))
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("171.88"), decimal.Decimal("8000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('1.033330126971912273951519815')
-    # Here the max size is a bit higher than 1 since binance fees are a bit higher
+            # example from bybit docs
+            # Trader place a long entry of 1BTC at USD8000 with 50x leverage.
+            # Order Cost = 160USDT + 6USDT + 5.88USDT = 171.88 USDT
+            default_contract.set_current_leverage(decimal.Decimal("50"))
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.LinearPosition(trader_inst, default_contract),
+                decimal.Decimal("171.88"), decimal.Decimal("8000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('1.033330126971912273951519815')
+            # Here the max size is a bit higher than 1 since binance fees are a bit higher
 
-    default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    # # at price = 43500 and 9943.9078 USDT in stock, if there were no fees,
-    # max quantity would be 9943.9078 / 43500 * 100 = 22.6311218138,
-    # it is actually less to allow fees (which are huge on 100x)
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9943.9078"), decimal.Decimal("43500"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('21.17409981559794389578089799')
+            default_contract.set_current_leverage(constants.ONE_HUNDRED)
+            # # at price = 43500 and 9943.9078 USDT in stock, if there were no fees,
+            # max quantity would be 9943.9078 / 43500 * 100 = 22.6311218138,
+            # it is actually less to allow fees (which are huge on 100x)
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.LinearPosition(trader_inst, default_contract),
+                decimal.Decimal("9943.9078"), decimal.Decimal("43500"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('21.17409981559794389578089799')
 
 
 def test_get_max_order_quantity_for_price_short_linear(future_trader_simulator_with_default_linear):
     # values also tested with bybit fees
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
 
-    # no need to initialize the position
-    # Differs from long due to the position closing fees at liquidation price which are higher (price is higher)
-    # Therefore to open the same position size, more funds are required than for longs
-    # (max quantity is lower than for longs)
-    default_contract.set_current_leverage(constants.ONE)
-    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
-    # max quantity would be 9961.7672 / 37000 = 0.269236951351,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('0.2689142542462558443381455767')
+    if not os.getenv('CYTHON_IGNORE'):
+        with patch.object(exchange_manager_inst.exchange, "get_fees", Mock(return_value=get_fees_mock_value("USDT"))):
+            # no need to initialize the position
+            # Differs from long due to the position closing fees at liquidation price which are higher (price is higher)
+            # Therefore to open the same position size, more funds are required than for longs
+            # (max quantity is lower than for longs)
+            default_contract.set_current_leverage(constants.ONE)
+            # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+            # max quantity would be 9961.7672 / 37000 = 0.269236951351,
+            # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.LinearPosition(trader_inst, default_contract),
+                decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('0.2689142542462558443381455767')
 
-    default_contract.set_current_leverage(decimal.Decimal("2"))
-    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
-    # max quantity would be 9961.7672 / 37000 * 2 = 0.538473902703,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('0.5373991044937152721583859308')
+            default_contract.set_current_leverage(decimal.Decimal("2"))
+            # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+            # max quantity would be 9961.7672 / 37000 * 2 = 0.538473902703,
+            # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.LinearPosition(trader_inst, default_contract),
+                decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('0.5373991044937152721583859308')
 
-    default_contract.set_current_leverage(decimal.Decimal("50"))
-    # at price = 44500 and 9943.9078 USDT in stock, if there were no fees,
-    # max quantity would be 9943.9078 / 44500 * 50 = 11.1729301124,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9943.9078"), decimal.Decimal("44500"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('10.73907161895381638004397617')
+            default_contract.set_current_leverage(decimal.Decimal("50"))
+            # at price = 44500 and 9943.9078 USDT in stock, if there were no fees,
+            # max quantity would be 9943.9078 / 44500 * 50 = 11.1729301124,
+            # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.LinearPosition(trader_inst, default_contract),
+                decimal.Decimal("9943.9078"), decimal.Decimal("44500"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('10.73907161895381638004397617')
 
-    default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
-    # max quantity would be 9961.7672 / 37000 * 100 = 26.9236951351,
-    # it is actually less to allow fees (which are huge on 100x)
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.LinearPosition(trader_inst, default_contract),
-        decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('24.92011767413470486406436055')
+            default_contract.set_current_leverage(constants.ONE_HUNDRED)
+            # at price = 37000 and 9961.7672 USDT in stock, if there were no fees,
+            # max quantity would be 9961.7672 / 37000 * 100 = 26.9236951351,
+            # it is actually less to allow fees (which are huge on 100x)
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.LinearPosition(trader_inst, default_contract),
+                decimal.Decimal("9961.7672"), decimal.Decimal("37000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('24.92011767413470486406436055')
 
 
 def test_get_max_order_quantity_for_price_long_inverse(future_trader_simulator_with_default_inverse):
     # values also tested with bybit fees
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
 
-    # no need to initialize the position
-    default_contract.set_current_leverage(constants.ONE)
-    # at price = 36000 and 1 btc in stock, if there were no fees,
-    # max quantity would be 1 * 36000 = 36000,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('35956.85177786656012784658410')
+    if not os.getenv('CYTHON_IGNORE'):
+        with patch.object(exchange_manager_inst.exchange, "get_fees", Mock(return_value=get_fees_mock_value("USDT"))):
+            # no need to initialize the position
+            default_contract.set_current_leverage(constants.ONE)
+            # at price = 36000 and 1 btc in stock, if there were no fees,
+            # max quantity would be 1 * 36000 = 36000,
+            # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.InversePosition(trader_inst, default_contract),
+                constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('35956.85177786656012784658410')
 
-    default_contract.set_current_leverage(decimal.Decimal("2"))
-    # at price = 36000 and 1 btc in stock, if there were no fees,
-    # max quantity would be 1 * 36000 * 2 = 72000,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('71856.28742514970059880239519')
+            default_contract.set_current_leverage(decimal.Decimal("2"))
+            # at price = 36000 and 1 btc in stock, if there were no fees,
+            # max quantity would be 1 * 36000 * 2 = 72000,
+            # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.InversePosition(trader_inst, default_contract),
+                constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('71856.28742514970059880239519')
 
-    default_contract.set_current_leverage(decimal.Decimal("25"))
-    # example from bybit docs
-    # Trader places a buy limit order of 10,000 BTCUSD contracts at 6,400 USD, using 25x leverage.
-    # Order Cost = 0.0625 BTC (Initial margin) + 0.00117188 BTC (fee to open) + 0.00121872 BTC (fee to close) = 0.06489060 BTC
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.InversePosition(trader_inst, default_contract),
-        decimal.Decimal("0.06489060"), decimal.Decimal("6400"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('10174.92747941983535868286946')
-    # higher than the 10000 from bybit example as binance fees are lower
+            default_contract.set_current_leverage(decimal.Decimal("25"))
+            # example from bybit docs
+            # Trader places a buy limit order of 10,000 BTCUSD contracts at 6,400 USD, using 25x leverage.
+            # Order Cost = 0.0625 BTC (Initial margin) + 0.00117188 BTC (fee to open) + 0.00121872 BTC (fee to close) = 0.06489060 BTC
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.InversePosition(trader_inst, default_contract),
+                decimal.Decimal("0.06489060"), decimal.Decimal("6400"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('10174.92747941983535868286946')
+            # higher than the 10000 from bybit example as binance fees are lower
 
-    default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    # at price = 36000 and 1 btc in stock, if there were no fees,
-    # max quantity would be 1 * 36000 * 100 = 3600000,
-    # it is actually less to allow fees (which are huge on 100x)
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('3332099.222510181414291003332')
+            default_contract.set_current_leverage(constants.ONE_HUNDRED)
+            # at price = 36000 and 1 btc in stock, if there were no fees,
+            # max quantity would be 1 * 36000 * 100 = 3600000,
+            # it is actually less to allow fees (which are huge on 100x)
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.InversePosition(trader_inst, default_contract),
+                constants.ONE, decimal.Decimal("36000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('3332099.222510181414291003332')
 
 
 def test_get_max_order_quantity_for_price_short_inverse(future_trader_simulator_with_default_inverse):
     # values also tested with bybit fees
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_inverse
 
-    # no need to initialize the position
-    # Differs from long due to the position closing fees at liquidation price which are higher (price is higher)
-    # Therefore to open the same position size, less funds are required than for longs
-    # (max quantity is higher than for longs)
-    default_contract.set_current_leverage(constants.ONE)
-    # at price = 36000 and 1 btc in stock, if there were no fees,
-    # max quantity would be 1 * 36000 = 36000,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('35985.60575769692123150739704')
+    if not os.getenv('CYTHON_IGNORE'):
+        with patch.object(exchange_manager_inst.exchange, "get_fees", Mock(return_value=get_fees_mock_value("USDT"))):
+            # no need to initialize the position
+            # Differs from long due to the position closing fees at liquidation price which are higher (price is higher)
+            # Therefore to open the same position size, less funds are required than for longs
+            # (max quantity is higher than for longs)
+            default_contract.set_current_leverage(constants.ONE)
+            # at price = 36000 and 1 btc in stock, if there were no fees,
+            # max quantity would be 1 * 36000 = 36000,
+            # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.InversePosition(trader_inst, default_contract),
+                constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('35985.60575769692123150739704')
 
-    default_contract.set_current_leverage(decimal.Decimal("2"))
-    # at price = 36000 and 1 btc in stock, if there were no fees,
-    # max quantity would be 1 * 36000 * 2 = 72000,
-    # it is actually less to allow fees
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('71913.70355573312025569316820')
+            default_contract.set_current_leverage(decimal.Decimal("2"))
+            # at price = 36000 and 1 btc in stock, if there were no fees,
+            # max quantity would be 1 * 36000 * 2 = 72000,
+            # it is actually less to allow fees
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.InversePosition(trader_inst, default_contract),
+                constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('71913.70355573312025569316820')
 
-    default_contract.set_current_leverage(constants.ONE_HUNDRED)
-    # at price = 36000 and 1 btc in stock, if there were no fees,
-    # max quantity would be 1 * 36000 * 100 = 3600000,
-    # it is actually less to allow fees (which are huge on 100x)
-    assert personal_data.get_max_order_quantity_for_price(
-        personal_data.InversePosition(trader_inst, default_contract),
-        constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
-    ) == decimal.Decimal('3334568.358651352352723230826')
+            default_contract.set_current_leverage(constants.ONE_HUNDRED)
+            # at price = 36000 and 1 btc in stock, if there were no fees,
+            # max quantity would be 1 * 36000 * 100 = 3600000,
+            # it is actually less to allow fees (which are huge on 100x)
+            assert personal_data.get_max_order_quantity_for_price(
+                personal_data.InversePosition(trader_inst, default_contract),
+                constants.ONE, decimal.Decimal("36000"), enums.PositionSide.SHORT, DEFAULT_FUTURE_SYMBOL
+            ) == decimal.Decimal('3334568.358651352352723230826')
 
 
 @pytest.mark.asyncio
@@ -403,7 +412,7 @@ async def test_create_as_chained_order_bundled_order_no_open_order(trader_simula
 @pytest.mark.asyncio
 async def test_ensure_orders_relevancy_without_positions(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
-    order_mock = mock.Mock(exchange_manager=exchange_manager_inst, symbol="BTC/USD")
+    order_mock = Mock(exchange_manager=exchange_manager_inst, symbol="BTC/USD")
     exchange_manager_inst.exchange_personal_data.positions_manager.positions = {}
     # without positions: doing nothing
     async with personal_data.ensure_orders_relevancy(order=order_mock):
@@ -416,11 +425,11 @@ async def test_ensure_orders_relevancy_with_positions(future_trader_simulator_wi
     config, exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     position = personal_data.LinearPosition(trader_inst, default_contract)
     position.symbol = DEFAULT_FUTURE_SYMBOL
-    order_mock = mock.Mock(exchange_manager=exchange_manager_inst, symbol=DEFAULT_FUTURE_SYMBOL)
-    trader_mock = mock.Mock(cancel_order=mock.AsyncMock())
-    group_mock = mock.Mock(on_cancel=mock.AsyncMock())
-    to_cancel_order_mock = mock.Mock(trader=trader_mock, order_group=group_mock, status=enums.OrderStatus.OPEN,
-                                     is_open=mock.Mock(return_value=True), reduce_only=True,
+    order_mock = Mock(exchange_manager=exchange_manager_inst, symbol=DEFAULT_FUTURE_SYMBOL)
+    trader_mock = Mock(cancel_order=AsyncMock())
+    group_mock = Mock(on_cancel=AsyncMock())
+    to_cancel_order_mock = Mock(trader=trader_mock, order_group=group_mock, status=enums.OrderStatus.OPEN,
+                                     is_open=Mock(return_value=True), reduce_only=True,
                                      symbol=DEFAULT_FUTURE_SYMBOL)
     # with positions
     exchange_manager_inst.exchange_personal_data.positions_manager.positions = {"BTC/USDT": position}
