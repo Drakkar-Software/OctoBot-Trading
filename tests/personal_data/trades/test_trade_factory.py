@@ -166,7 +166,7 @@ class TestTradeFactory:
             'timestamp': 1637579281.377,
             'datetime': '2021-11-22T11:08:01.377Z',
             'lastTradeTimestamp': None,
-            'symbol': 'WIN/USDT',
+            'symbol': 'UNI/USDT',
             'type': 'market',
             'timeInForce': 'GTC',
             'postOnly': False,
@@ -189,7 +189,7 @@ class TestTradeFactory:
         assert trade.trade_id == '362550114'
         assert trade.origin_order_id == '362550114'
         assert trade.trade_type == TraderOrderType.SELL_MARKET
-        assert trade.symbol == 'WIN/USDT'
+        assert trade.symbol == 'UNI/USDT'
         assert trade.total_cost == ZERO
         assert trade.executed_quantity == decimal.Decimal("44964.0")
         assert trade.origin_quantity == decimal.Decimal("44964.0")
