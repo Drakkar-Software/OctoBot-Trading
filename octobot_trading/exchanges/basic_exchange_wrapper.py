@@ -18,6 +18,7 @@ import ccxt.async_support
 import ccxt
 
 import octobot_trading.enums as enums
+import octobot_trading.constants as constants
 
 
 class BasicExchangeWrapper:
@@ -49,6 +50,7 @@ class BasicExchangeWrapper:
         else:
             raise NotImplementedError(
                 f"{self.exchange_lib} exchange lib is not implemented in {self.__class__.__name__}")
+        self.exchange.aiohttp_trust_env = constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV
 
 
 @contextlib.asynccontextmanager

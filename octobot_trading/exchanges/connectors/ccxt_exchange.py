@@ -167,8 +167,7 @@ class CCXTExchange(abstract_exchange.AbstractExchange):
         self.use_http_proxy_if_necessary()
 
     def use_http_proxy_if_necessary(self):
-        if constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV:
-            self.client.aiohttp_trust_env = True
+        self.client.aiohttp_trust_env = constants.ENABLE_EXCHANGE_HTTP_PROXY_FROM_ENV
 
     def _should_authenticate(self):
         return not (self.exchange_manager.is_simulated or
