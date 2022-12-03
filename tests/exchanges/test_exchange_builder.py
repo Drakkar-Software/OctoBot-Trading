@@ -26,7 +26,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_build_trading_modes_if_required(exchange_manager):
-    builder = exchanges.ExchangeBuilder({}, "binance")
+    builder = exchanges.ExchangeBuilder({}, "binanceus")
     builder.exchange_manager = exchange_manager
 
     # no set trader: no trading mode creation attempt

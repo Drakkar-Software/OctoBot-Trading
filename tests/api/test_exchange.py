@@ -29,13 +29,13 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_create_exchange_builder():
-    exchange_builder = create_exchange_builder(load_test_config(), "binance")
+    exchange_builder = create_exchange_builder(load_test_config(), "binanceus")
     assert exchange_builder
 
 
 async def test_get_exchange_configurations_from_exchange_name(exchange_manager):
     Exchanges.instance().add_exchange(exchange_manager, None)
-    assert get_exchange_configurations_from_exchange_name("binance")
+    assert get_exchange_configurations_from_exchange_name("binanceus")
     with pytest.raises(KeyError):
         get_exchange_configurations_from_exchange_name("bitmex")
 
