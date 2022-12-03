@@ -14,6 +14,8 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 import copy
+import pytest
+
 import octobot_trading.util as util
 import octobot_trading.constants as trading_constants
 import octobot_commons.symbols as symbol_util
@@ -62,8 +64,7 @@ def test_get_symbols(config):
     # with disabled currency
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_CRYPTO_PAIRS] = [
         'BTC/USDT',
-        'BTC/EUR',
-        'BTC/USDC'
+        'BTC/USD'
     ]
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
     list_without_bitcoin = _filter_by_base(FULL_PAIRS_LIST, "BTC")
@@ -92,15 +93,16 @@ def test_get_all_currencies(config):
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
     assert util.get_all_currencies(config) == symbols
     symbols_without_bitcoin_symbols = copy.copy(symbols)
-    symbols_without_bitcoin_symbols.remove("EUR")
-    symbols_without_bitcoin_symbols.remove("USDC")
+    with pytest.raises(KeyError):
+        symbols_without_bitcoin_symbols.remove("EUR")
+    symbols_without_bitcoin_symbols.remove("USD")
     assert util.get_all_currencies(config, enabled_only=True) == symbols_without_bitcoin_symbols
     assert util.get_all_currencies(config, enabled_only=False) == symbols
 
 
 def test_get_pairs(config):
     assert util.get_pairs(config, "BTC") == _select_by_base_or_quote(FULL_PAIRS_LIST, "BTC")
-    assert util.get_pairs(config, "ICX") == ["ICX/BTC"]
+    assert util.get_pairs(config, "ADA") == ["ADA/BTC"]
 
     # with disabled currency
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
@@ -113,7 +115,7 @@ def test_get_pairs(config):
 
 def test_get_market_pair(config):
     config[commons_constants.CONFIG_TRADING][commons_constants.CONFIG_TRADER_REFERENCE_MARKET] = "BTC"
-    assert util.get_market_pair(config, "ETH") == ("", False)
+    assert util.get_market_pair(config, "ETH") == ("ETH/BTC", False)
     assert util.get_market_pair(config, "ADA") == ("ADA/BTC", False)
     assert util.get_market_pair(config, "USDT") == ("BTC/USDT", True)
     assert util.get_market_pair(config, "BTC") == ("", False)
@@ -144,8 +146,7 @@ def test_get_traded_pairs_by_currency(config):
     # with disabled currency
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_CRYPTO_PAIRS] = [
         'BTC/USDT',
-        'BTC/EUR',
-        'BTC/USDC'
+        'BTC/USD'
     ]
     config[commons_constants.CONFIG_CRYPTO_CURRENCIES]["Bitcoin"][commons_constants.CONFIG_ENABLED_OPTION] = False
     dict_without_bitcoin = _filter_by_key(FULL_PAIRS_BY_CRYPTO_DICT, "Bitcoin")
@@ -158,38 +159,18 @@ def test_get_traded_pairs_by_currency(config):
 
 FULL_PAIRS_LIST = [
     'BTC/USDT',
-    'BTC/EUR',
-    'BTC/USDC',
-    'NEO/BTC',
+    'BTC/USD',
     'ETH/USDT',
-    'ICX/BTC',
-    'VEN/BTC',
-    'XRB/BTC',
+    'ETH/BTC',
     'ADA/BTC',
-    'ONT/BTC',
-    'XLM/BTC',
-    'POWR/BTC',
-    'ETC/BTC',
-    'WAX/BTC',
-    'XRP/BTC',
-    'XVG/BTC'
+    'LINK/BTC',
 ]
 
 FULL_PAIRS_BY_CRYPTO_DICT = {
-    'Bitcoin': ['BTC/USDT', 'BTC/EUR', 'BTC/USDC'],
-    'Neo': ['NEO/BTC'],
-    'Ethereum': ['ETH/USDT'],
-    'Icon': ['ICX/BTC'],
-    'VeChain': ['VEN/BTC'],
-    'Nano': ['XRB/BTC'],
+    'Bitcoin': ['BTC/USDT', 'BTC/USD'],
+    'Ethereum': ['ETH/USDT', 'ETH/BTC'],
+    'Chainlink': ['LINK/BTC'],
     'Cardano': ['ADA/BTC'],
-    'Ontology': ['ONT/BTC'],
-    'Stellar': ['XLM/BTC'],
-    'Power Ledger': ['POWR/BTC'],
-    'Ethereum Classic': ['ETC/BTC'],
-    'WAX': ['WAX/BTC'],
-    'XRP': ['XRP/BTC'],
-    'Verge': ['XVG/BTC']
 }
 
 
