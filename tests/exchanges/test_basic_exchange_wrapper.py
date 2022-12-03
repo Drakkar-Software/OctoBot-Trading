@@ -28,12 +28,12 @@ pytestmark = pytest.mark.asyncio
 
 @pytest_asyncio.fixture
 async def basic_exchange_wrapper():
-    async with exchanges.temporary_exchange_wrapper("binanceus", enums.ExchangeWrapperLibs.ASYNC_CCXT) as wrapper:
+    async with exchanges.temporary_exchange_wrapper("binance", enums.ExchangeWrapperLibs.ASYNC_CCXT) as wrapper:
         return wrapper
 
 
 async def test_constructor(basic_exchange_wrapper):
-    assert isinstance(basic_exchange_wrapper.exchange, ccxt.async_support.binanceus)
+    assert isinstance(basic_exchange_wrapper.exchange, ccxt.async_support.binance)
     async with exchanges.temporary_exchange_wrapper("okx", enums.ExchangeWrapperLibs.CCXT) as wrapper:
         assert isinstance(wrapper.exchange, ccxt.okx)
 
@@ -50,7 +50,7 @@ async def test_temporary_exchange_wrapper():
 
 async def test_unsupported_lib():
     with pytest.raises(NotImplementedError):
-        exchanges.BasicExchangeWrapper("binanceus", "plop")
+        exchanges.BasicExchangeWrapper("binance", "plop")
 
 
 async def test_get_available_time_frames(basic_exchange_wrapper):

@@ -156,7 +156,7 @@ def test_get_max_order_quantity_for_price_long_linear(future_trader_simulator_wi
         personal_data.LinearPosition(trader_inst, default_contract),
         decimal.Decimal("171.88"), decimal.Decimal("8000"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('1.033330126971912273951519815')
-    # Here the max size is a bit higher than 1 since binanceus fees are a bit higher
+    # Here the max size is a bit higher than 1 since binance fees are a bit higher
 
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
     # # at price = 43500 and 9943.9078 USDT in stock, if there were no fees,
@@ -244,7 +244,7 @@ def test_get_max_order_quantity_for_price_long_inverse(future_trader_simulator_w
         personal_data.InversePosition(trader_inst, default_contract),
         decimal.Decimal("0.06489060"), decimal.Decimal("6400"), enums.PositionSide.LONG, DEFAULT_FUTURE_SYMBOL
     ) == decimal.Decimal('10174.92747941983535868286946')
-    # higher than the 10000 from bybit example as binanceus fees are lower
+    # higher than the 10000 from bybit example as binance fees are lower
 
     default_contract.set_current_leverage(constants.ONE_HUNDRED)
     # at price = 36000 and 1 btc in stock, if there were no fees,

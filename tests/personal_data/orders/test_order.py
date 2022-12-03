@@ -167,7 +167,7 @@ def test_parse_order_type():
 def test_update_from_raw(trader_simulator):
     config, exchange_manager_inst, trader_inst = trader_simulator
     order_inst = personal_data.Order(trader_inst)
-    # binanceus example market order
+    # binance example market order
     raw_order = {
         'id': '362550114',
         'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',
@@ -213,7 +213,7 @@ def test_update_from_raw(trader_simulator):
     assert order_inst.fee == {'cost': decimal.Decimal('0.03764836'), 'currency': 'USDT'}
 
     order_inst = personal_data.Order(trader_inst)
-    # binanceus example limit order
+    # binance example limit order
     raw_order = {
         'id': '362550114',
         'clientOrderId': 'x-T9698eeeeeeeeeeeeee792',

@@ -38,7 +38,7 @@ pytestmark = pytest.mark.asyncio
 
 class TestTradeFactory:
     DEFAULT_SYMBOL = "BTC/USDT"
-    EXCHANGE_MANAGER_CLASS_STRING = "binanceus"
+    EXCHANGE_MANAGER_CLASS_STRING = "binance"
 
     @staticmethod
     async def init_default():
