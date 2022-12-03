@@ -15,6 +15,8 @@
 #  License along with this library.
 import typing
 import decimal
+import time
+import asyncio
 
 import octobot_commons.constants
 import octobot_commons.enums as common_enums
@@ -27,6 +29,7 @@ import octobot_tentacles_manager.api as octobot_tentacles_manager_api
 import octobot_trading.constants
 import octobot_trading.enums as enums
 import octobot_trading.util as util
+import octobot_trading.errors as errors
 
 
 class AbstractExchange(util.Initializable):
@@ -52,6 +55,8 @@ class AbstractExchange(util.Initializable):
     # can be overridden locally to match exchange support
     SUPPORTED_BUNDLED_ORDERS = {}
     ACCOUNTS = {}
+    GET_ORDER_MAX_RETRY_DELAY = octobot_commons.constants.MINUTE_TO_SECONDS
+    GET_ORDER_RETRY_DELAY = 0.5
 
     def __init__(self, config, exchange_manager):
         super().__init__()
@@ -227,6 +232,23 @@ class AbstractExchange(util.Initializable):
         :return: the order data
         """
         raise NotImplementedError("get_order is not implemented")
+
+    async def _default_get_order_retry_func(self, order):
+        return order is not None
+
+    async def get_order_with_retry(self, order_id: str, symbol: str = None, retry_func=None, **kwargs: dict) -> dict:
+        t0 = time.time()
+        retry_func = retry_func or self._default_get_order_retry_func
+        while time.time() - t0 < self.GET_ORDER_MAX_RETRY_DELAY:
+            fetched_order = await self.exchange_manager.exchange.get_order(order_id, symbol, **kwargs)
+            if await retry_func(fetched_order):
+                self.logger.debug(f"Found order with id {order_id} matching {retry_func.__name__}")
+                return fetched_order
+            self.logger.debug(f"Order with id {order_id} matching {retry_func.__name__} not found, retrying in "
+                              f"{self.GET_ORDER_RETRY_DELAY}s")
+            await asyncio.sleep(self.GET_ORDER_RETRY_DELAY)
+        raise errors.NotSupported(f"Can't find created order with id {order_id} matching {retry_func.__name__}. "
+                                  f"Please report this issue if you see it.")
 
     async def get_all_orders(self, symbol: str = None, since: int = None,
                              limit: int = None, **kwargs: dict) -> list:

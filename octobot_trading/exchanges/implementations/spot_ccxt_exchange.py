@@ -14,13 +14,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+import asyncio
 import contextlib
 import decimal
+import time
 import typing
 import copy
 
 import ccxt.async_support as ccxt
-from octobot_commons import enums as common_enums
+import octobot_commons.enums as common_enums
+
 from octobot_commons import number_util
 
 import octobot_trading.enums as enums
@@ -74,6 +77,7 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         async with self._order_operation(order_type, symbol, quantity, price, stop_price):
             created_order = await self._create_order_with_retry(order_type, symbol, quantity,
                                                                 price, side, current_price, params)
+            self.logger.debug(f"Created order: {created_order}")
             return await self._verify_order(created_order, order_type, symbol, price)
         return None
 
@@ -129,8 +133,9 @@ class SpotCCXTExchange(exchanges_types.SpotExchange):
         if created_order and not self._ensure_order_details_completeness(created_order):
             if ecoc.ID.value in created_order:
                 params = params or {}
-                created_order = await self.exchange_manager.exchange.get_order(created_order[ecoc.ID.value], symbol,
-                                                                               params=params)
+                created_order = await self.exchange_manager.exchange.get_order_with_retry(
+                    created_order[ecoc.ID.value], symbol=symbol, params=params
+                )
 
         # on some exchange, market order are not including price, add it manually to ensure uniformity
         if created_order[ecoc.PRICE.value] is None and price is not None:
