@@ -191,12 +191,20 @@ class ExchangePositionCCXTColumns(enum.Enum):
     INFO = "info"
 
 
-class ExchangeConstantsFundingColumns(enum.Enum):
+class ExchangeFundingCCXTColumns(enum.Enum):
     SYMBOL = "symbol"
     LAST_FUNDING_TIME = "lastFundingTime"
     FUNDING_RATE = "fundingRate"
     NEXT_FUNDING_TIME = "nextFundingTime"
     PREDICTED_FUNDING_RATE = "predictedFundingRate"
+
+
+class ExchangeConstantsFundingColumns(enum.Enum):
+    SYMBOL = "symbol"
+    LAST_FUNDING_TIME = "last_funding_time"
+    FUNDING_RATE = "funding_rate"
+    NEXT_FUNDING_TIME = "next_funding_time"
+    PREDICTED_FUNDING_RATE = "predicted_funding_rate"
 
 
 class ExchangeConstantsMarkPriceColumns(enum.Enum):
@@ -351,24 +359,23 @@ class ExchangeConstantsPositionColumns(enum.Enum):
     ID = "id"
     TIMESTAMP = "timestamp"
     SYMBOL = "symbol"
-    ENTRY_PRICE = "entryPrice"
-    MARK_PRICE = "markPrice"
-    LIQUIDATION_PRICE = "liquidationPrice"
-    BANKRUPTCY_PRICE = "bankruptcyPrice"
-    UNREALIZED_PNL = "unrealizedPnl"   # unrealised_pnl on Bybit api and unrealized_pnl on exchange UI
-    REALISED_PNL = "realisedPnl"
-    CLOSING_FEE = "closingFee"
+    ENTRY_PRICE = "entry_price"
+    MARK_PRICE = "mark_price"
+    LIQUIDATION_PRICE = "liquidation_price"
+    BANKRUPTCY_PRICE = "bankruptcy_price"
+    UNREALIZED_PNL = "unrealised_pnl"   # unrealised_pnl on Bybit api and unrealized_pnl on exchange UI
+    REALISED_PNL = "realised_pnl"
+    CLOSING_FEE = "closing_fee"
     QUANTITY = "quantity"
     SIZE = "size"
     NOTIONAL = "notional"
-    INITIAL_MARGIN = "initialMargin"
+    INITIAL_MARGIN = "initial_margin"
     COLLATERAL = "collateral"
     LEVERAGE = "leverage"
-    MARGIN_TYPE = "marginType"
-    MARGIN_MODE = "marginMode"
+    MARGIN_TYPE = "margin_type"
     CONTRACT_TYPE = "contract_type"
     POSITION_MODE = "position_mode"
-    MAINTENANCE_MARGIN_RATE = "maintenanceMarginPercentage"
+    MAINTENANCE_MARGIN_RATE = "maintenance_margin_rate"
     STATUS = "status"
     SIDE = "side"
 
