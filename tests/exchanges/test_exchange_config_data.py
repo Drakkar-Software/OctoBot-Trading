@@ -25,7 +25,7 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestExchangeConfig:
-    EXCHANGE_NAME = "binance"
+    EXCHANGE_NAME = "binanceus"
 
     @staticmethod
     async def init_default(config=None):
@@ -85,7 +85,7 @@ class TestExchangeConfig:
         assert "AVAX/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ADA/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "MATIC/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "ONT/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "ONT/BTC" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "BTC/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "AVAX/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
@@ -95,7 +95,6 @@ class TestExchangeConfig:
         # disabled
         assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
         assert "ADA/ETH" not in exchange_manager.exchange_config.traded_symbol_pairs
-        assert "ADA/ETH" in exchange_manager.exchange_config.all_config_symbol_pairs
 
         cancel_ccxt_throttle_task()
         await exchange_manager.stop()
@@ -150,7 +149,8 @@ class TestExchangeConfig:
         assert "AVAX/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ADA/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "MATIC/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
-        assert "ONT/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "LINK/BTC" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
+        assert "ONT/BTC" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "BTC/USDT" in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
         assert "AVAX/BNB" not in exchange_manager.exchange_config.traded_cryptocurrencies["Bitcoin"]
@@ -160,7 +160,6 @@ class TestExchangeConfig:
         # disabled
         assert "Ethereum" not in exchange_manager.exchange_config.traded_cryptocurrencies
         assert "ADA/ETH" not in exchange_manager.exchange_config.traded_symbol_pairs
-        assert "ADA/ETH" in exchange_manager.exchange_config.all_config_symbol_pairs
         assert "ETH/USDT" not in exchange_manager.exchange_config.traded_symbol_pairs
         assert "ETH/USDT" in exchange_manager.exchange_config.all_config_symbol_pairs
         cancel_ccxt_throttle_task()

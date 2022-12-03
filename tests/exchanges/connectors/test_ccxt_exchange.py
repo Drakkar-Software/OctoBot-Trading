@@ -16,14 +16,15 @@
 #  License along with this library.
 import decimal
 
-import mock
+import ccxt.async_support
+from mock import patch, Mock
 
 import octobot_trading.exchanges.connectors as exchange_connectors
 import octobot_trading.enums as enums
 import octobot_trading.exchange_data.contracts as contracts
 import pytest
 
-from tests.exchanges import exchange_manager, future_simulated_exchange_manager
+from tests.exchanges import exchange_manager, future_simulated_exchange_manager, get_fees_mock_value
 from tests.exchanges.traders import future_trader, future_trader_simulator_with_default_linear, DEFAULT_FUTURE_SYMBOL, \
     DEFAULT_FUTURE_SYMBOL_MARGIN_TYPE, DEFAULT_FUTURE_SYMBOL_LEVERAGE
 
@@ -45,7 +46,7 @@ async def test_initialize_impl_with_none_symbols_and_timeframes(exchange_manager
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with mock.patch.object(ccxt_exchange, 'client', new=MockCCXT()):
+    with patch.object(ccxt_exchange, 'client', new=MockCCXT()):
         await ccxt_exchange.initialize_impl()
         assert ccxt_exchange.symbols == set()
         assert ccxt_exchange.time_frames == set()
@@ -65,7 +66,7 @@ async def test_initialize_impl_with_empty_symbols_and_timeframes(exchange_manage
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with mock.patch.object(ccxt_exchange, 'client', new=MockCCXT()):
+    with patch.object(ccxt_exchange, 'client', new=MockCCXT()):
         await ccxt_exchange.initialize_impl()
         assert ccxt_exchange.symbols == set()
         assert ccxt_exchange.time_frames == set()
@@ -95,12 +96,12 @@ async def test_initialize_impl(exchange_manager):
         def setSandboxMode(self, is_sandboxed):
             pass
 
-    with mock.patch.object(ccxt_exchange, 'client', new=MockCCXT()):
+    with patch.object(ccxt_exchange, 'client', new=MockCCXT()):
         await ccxt_exchange.initialize_impl()
         assert ccxt_exchange.symbols == {
-                "BTC/USDT",
-                "ETH/USDT",
-                "ETH/BTC",
+            "BTC/USDT",
+            "ETH/USDT",
+            "ETH/BTC",
         }
         assert ccxt_exchange.time_frames == {
             "1h",
@@ -129,6 +130,8 @@ async def test_get_ccxt_order_type(exchange_manager):
 
 
 async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_default_linear):
+    future_symbol = "BTC/USDT:USDT"
+    spot_symbol = "BTC/USDT"
     config, fut_exchange_manager_inst, trader_inst, default_contract = future_trader_simulator_with_default_linear
     fut_exchange_manager_inst.is_future = True
     fut_ccxt_exchange = exchange_connectors.CCXTExchange(config, fut_exchange_manager_inst)
@@ -136,29 +139,35 @@ async def test_get_trade_fee(exchange_manager, future_trader_simulator_with_defa
     # spot trading
     spot_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.SPOT.value
     await spot_ccxt_exchange.client.load_markets()
-    assert spot_ccxt_exchange.get_trade_fee("BTC/USDT", enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
+    assert spot_ccxt_exchange.get_trade_fee(spot_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
                                             decimal.Decimal(10000), "taker") == \
            _get_fees("taker", "BTC", 0.001, decimal.Decimal("0.00045"))
-    assert spot_ccxt_exchange.get_trade_fee("BTC/USDT", enums.TraderOrderType.SELL_LIMIT, decimal.Decimal("0.45"),
+    assert spot_ccxt_exchange.get_trade_fee(spot_symbol, enums.TraderOrderType.SELL_LIMIT, decimal.Decimal("0.45"),
                                             decimal.Decimal(10000), "maker") == \
            _get_fees("maker", "USDT", 0.001, decimal.Decimal("4.5"))
     # future trading
     fut_ccxt_exchange.client.options['defaultType'] = enums.ExchangeTypes.FUTURE.value
     await fut_ccxt_exchange.client.load_markets()
     # linear
-    assert fut_ccxt_exchange.get_trade_fee("BTC/USDT", enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
-                                           decimal.Decimal(10000), "taker") == \
-           _get_fees("taker", "USDT", 0.0004, decimal.Decimal("1.8"))
+    with patch.object(ccxt.async_support.bybit, "calculate_fee",
+                      Mock(return_value=get_fees_mock_value(
+                          "USDT", rate=0.0004, fee_type=enums.ExchangeConstantsMarketPropertyColumns.TAKER.value))):
+        assert fut_ccxt_exchange.get_trade_fee(future_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
+                                               decimal.Decimal(10000), "taker") == \
+               _get_fees("taker", "USDT", 0.0004, decimal.Decimal("1.800000"))
     # inverse
-    fut_ccxt_exchange.client.markets["BTC/USDT"]["inverse"] = True
-    fut_ccxt_exchange.client.markets["BTC/USDT"]["linear"] = False
-    contract = contracts.FutureContract(pair="BTC/USDT",
+    fut_ccxt_exchange.client.markets[future_symbol]["inverse"] = True
+    fut_ccxt_exchange.client.markets[future_symbol]["linear"] = False
+    contract = contracts.FutureContract(pair=future_symbol,
                                         margin_type=enums.MarginType.ISOLATED,
                                         contract_type=enums.FutureContractType.INVERSE_PERPETUAL)
-    fut_exchange_manager_inst.exchange.pair_contracts["BTC/USDT"] = contract
-    assert fut_ccxt_exchange.get_trade_fee("BTC/USDT", enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
-                                           decimal.Decimal(10000), "taker") == \
-           _get_fees("taker", "BTC", 0.0004, decimal.Decimal("0.00018"))
+    fut_exchange_manager_inst.exchange.pair_contracts[future_symbol] = contract
+    with patch.object(ccxt.async_support.bybit, "calculate_fee",
+                      Mock(return_value=get_fees_mock_value(
+                          "USDT", rate=0.0004, fee_type=enums.ExchangeConstantsMarketPropertyColumns.TAKER.value))):
+        assert fut_ccxt_exchange.get_trade_fee(future_symbol, enums.TraderOrderType.BUY_LIMIT, decimal.Decimal("0.45"),
+                                               decimal.Decimal(10000), "taker") == \
+               _get_fees("taker", "BTC", 0.0004, decimal.Decimal("0.00018"))
 
 
 def _get_fees(type, currency, rate, cost):

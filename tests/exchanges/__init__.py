@@ -30,13 +30,14 @@ from octobot_trading.api.exchange import create_exchange_builder, cancel_ccxt_th
 from octobot_trading.exchanges.exchange_manager import ExchangeManager
 from octobot_trading.exchanges.traders.trader_simulator import TraderSimulator
 import octobot_trading.personal_data as personal_data
+from octobot_trading.enums import FeePropertyColumns, ExchangeConstantsMarketPropertyColumns
 
 pytestmark = pytest.mark.asyncio
 
 TESTS_FOLDER = "tests"
 TESTS_STATIC_FOLDER = os.path.join(TESTS_FOLDER, "static")
-DEFAULT_EXCHANGE_NAME = "binance"
-DEFAULT_FUTURE_EXCHANGE_NAME = "binance"
+DEFAULT_EXCHANGE_NAME = "binanceus"
+DEFAULT_FUTURE_EXCHANGE_NAME = "bybit"
 
 
 @pytest_asyncio.fixture
@@ -210,6 +211,17 @@ def storage_mock():
         ),
         stop=mock.AsyncMock(),
     )
+
+
+def get_fees_mock_value(currency,
+                        rate=0.1, cost=0.1,  # huge fees for tests
+                        fee_type=ExchangeConstantsMarketPropertyColumns.TAKER.value):
+    return {
+        FeePropertyColumns.RATE.value: rate,
+        FeePropertyColumns.COST.value: cost,
+        FeePropertyColumns.CURRENCY.value: currency,
+        FeePropertyColumns.TYPE.value: fee_type
+    }
 
 
 @pytest_asyncio.fixture
